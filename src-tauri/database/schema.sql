@@ -1,0 +1,62 @@
+CREATE TABLE IF NOT EXISTS media (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  file_path TEXT NOT NULL UNIQUE,
+  content_hash TEXT UNIQUE,
+  file_type TEXT NOT NULL CHECK (file_type IN ('image', 'video', 'audio')),
+  taken_at TEXT,
+  width INTEGER,
+  height INTEGER,
+  duration REAL,
+  size_bytes INTEGER NOT NULL,
+  rating INTEGER NOT NULL DEFAULT 0 CHECK (rating BETWEEN 0 AND 5),
+  comment TEXT NOT NULL DEFAULT '',
+  favorite INTEGER NOT NULL DEFAULT 0,
+  metadata_status TEXT NOT NULL DEFAULT 'queued',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS tag (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS media_tag (
+  media_id INTEGER NOT NULL REFERENCES media(id) ON DELETE CASCADE,
+  tag_id INTEGER NOT NULL REFERENCES tag(id) ON DELETE CASCADE,
+  PRIMARY KEY (media_id, tag_id)
+);
+
+CREATE TABLE IF NOT EXISTS album (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  cover_media_id INTEGER REFERENCES media(id),
+  music_path TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS album_item (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  album_id INTEGER NOT NULL REFERENCES album(id) ON DELETE CASCADE,
+  media_id INTEGER NOT NULL REFERENCES media(id) ON DELETE CASCADE,
+  sequence INTEGER NOT NULL,
+  display_duration REAL,
+  transition_type TEXT NOT NULL DEFAULT 'fade',
+  comment_visible INTEGER NOT NULL DEFAULT 1,
+  UNIQUE(album_id, sequence)
+);
+
+CREATE TABLE IF NOT EXISTS person (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  profile_type TEXT NOT NULL DEFAULT 'person',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS media_person (
+  media_id INTEGER NOT NULL REFERENCES media(id) ON DELETE CASCADE,
+  person_id INTEGER NOT NULL REFERENCES person(id) ON DELETE CASCADE,
+  confidence REAL NOT NULL,
+  confirmed INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (media_id, person_id)
+);

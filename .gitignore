@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+
+# frontend build output
+dist/
+
+# Rust/Tauri build output
+src-tauri/target/
+
+# Playwright and visual QA output
+test-results/
+playwright-report/
+screenshots/
+
+# local runtime data
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+
+# local environment and OS files
+.env
+.env.*
+*.log
+.DS_Store
+Thumbs.db
