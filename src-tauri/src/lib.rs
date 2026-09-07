@@ -8,6 +8,8 @@ use std::{
 };
 use tauri::{AppHandle, Manager};
 use walkdir::WalkDir;
+mod faces;
+mod pets;
 
 #[derive(Serialize)]
 struct MediaItemDto {
@@ -25,10 +27,26 @@ struct MediaItemDto {
     metadata_status: String,
 }
 
+#[derive(Serialize)]
+struct AlbumDto {
+    id: i64,
+    title: String,
+    description: String,
+    cover_color: String,
+    created_at: String,
+    items: Vec<MediaItemDto>,
+}
+
 #[tauri::command]
 fn list_media(app: AppHandle) -> Result<Vec<MediaItemDto>, String> {
     let conn = open_database(&app)?;
     read_media(&conn)
+}
+
+#[tauri::command]
+fn list_albums(app: AppHandle) -> Result<Vec<AlbumDto>, String> {
+    let conn = open_database(&app)?;
+    read_albums(&conn)
 }
 
 #[tauri::command]
@@ -64,7 +82,7 @@ fn create_album_from_media(app: AppHandle, title: String, media_ids: Vec<i64>) -
 
     let conn = open_database(&app)?;
     conn.execute(
-        "INSERT INTO album (title, description, cover_media_id) VALUES (?1, '', ?2)",
+        "INSERT INTO album (title, description, cover_media_id, cover_color) VALUES (?1, '', ?2, '#B9C58E')",
         params![title, media_ids[0]],
     )
     .map_err(|error| format!("앨범을 만들 수 없습니다: {error}"))?;
@@ -82,6 +100,17 @@ fn create_album_from_media(app: AppHandle, title: String, media_ids: Vec<i64>) -
 }
 
 #[tauri::command]
+fn update_album_cover_color(app: AppHandle, id: i64, cover_color: String) -> Result<(), String> {
+    let conn = open_database(&app)?;
+    conn.execute(
+        "UPDATE album SET cover_color = ?1 WHERE id = ?2",
+        params![cover_color, id],
+    )
+    .map_err(|error| format!("앨범 표지색을 저장할 수 없습니다: {error}"))?;
+    Ok(())
+}
+
+#[tauri::command]
 fn register_paths(app: AppHandle, paths: Vec<String>) -> Result<Vec<MediaItemDto>, String> {
     let conn = open_database(&app)?;
     let files = collect_supported_files(paths)?;
@@ -91,6 +120,33 @@ fn register_paths(app: AppHandle, paths: Vec<String>) -> Result<Vec<MediaItemDto
     }
 
     read_media(&conn)
+}
+
+#[tauri::command]
+fn update_album(app: AppHandle, id: i64, title: String, cover_color: String, media_ids: Vec<i64>) -> Result<(), String> {
+    if title.trim().is_empty() { return Err("앨범 제목을 입력해 주세요.".into()); }
+    if cover_color.len() != 7 || !cover_color.starts_with('#') || !cover_color[1..].bytes().all(|c| c.is_ascii_hexdigit()) {
+        return Err("올바른 표지색을 선택해 주세요.".into());
+    }
+    let mut conn = open_database(&app)?;
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let count = tx.execute("UPDATE album SET title = ?1, cover_color = ?2, cover_media_id = ?3 WHERE id = ?4", params![title.trim(), cover_color, media_ids.first(), id]).map_err(|e| e.to_string())?;
+    if count == 0 { return Err("앨범을 찾을 수 없습니다.".into()); }
+    tx.execute("DELETE FROM album_item WHERE album_id = ?1", params![id]).map_err(|e| e.to_string())?;
+    for (index, media_id) in media_ids.iter().enumerate() {
+        tx.execute("INSERT INTO album_item (album_id, media_id, sequence) VALUES (?1, ?2, ?3)", params![id, media_id, index as i64]).map_err(|e| e.to_string())?;
+    }
+    tx.commit().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn delete_albums(app: AppHandle, ids: Vec<i64>) -> Result<(), String> {
+    let mut conn = open_database(&app)?;
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    for id in ids {
+        tx.execute("DELETE FROM album WHERE id = ?1", params![id]).map_err(|e| e.to_string())?;
+    }
+    tx.commit().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -142,6 +198,12 @@ fn migrate_database(conn: &Connection) -> Result<(), String> {
         [],
     )
     .map_err(|error| format!("중복 방지 인덱스를 만들 수 없습니다: {error}"))?;
+
+    match conn.execute("ALTER TABLE album ADD COLUMN cover_color TEXT NOT NULL DEFAULT '#B9C58E'", []) {
+        Ok(_) => {}
+        Err(error) if error.to_string().contains("duplicate column name") => {}
+        Err(error) => return Err(format!("앨범 마이그레이션을 적용할 수 없습니다: {error}")),
+    }
 
     normalize_existing_file_paths(conn)?;
 
@@ -255,6 +317,80 @@ fn read_media(conn: &Connection) -> Result<Vec<MediaItemDto>, String> {
         .map_err(|error| format!("목록을 변환할 수 없습니다: {error}"))
 }
 
+fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, title, description, cover_color, created_at
+             FROM album
+             ORDER BY created_at DESC, id DESC",
+        )
+        .map_err(|error| format!("앨범 목록을 준비할 수 없습니다: {error}"))?;
+
+    let album_rows = stmt
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, i64>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, String>(3)?,
+                row.get::<_, String>(4)?,
+            ))
+        })
+        .map_err(|error| format!("앨범 목록을 읽을 수 없습니다: {error}"))?;
+
+    let albums = album_rows
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| format!("앨범 목록을 변환할 수 없습니다: {error}"))?;
+
+    let mut result = Vec::new();
+    for (id, title, description, cover_color, created_at) in albums {
+        result.push(AlbumDto {
+            id,
+            title,
+            description,
+            cover_color,
+            created_at,
+            items: read_album_media(conn, id)?,
+        });
+    }
+
+    Ok(result)
+}
+
+fn read_album_media(conn: &Connection, album_id: i64) -> Result<Vec<MediaItemDto>, String> {
+    let mut stmt = conn
+        .prepare(
+            "SELECT m.id, m.file_path, m.file_type, m.taken_at, m.width, m.height, m.duration, m.size_bytes, m.rating, m.comment, m.favorite, m.metadata_status
+             FROM album_item ai
+             JOIN media m ON m.id = ai.media_id
+             WHERE ai.album_id = ?1
+             ORDER BY ai.sequence ASC",
+        )
+        .map_err(|error| format!("앨범 항목을 준비할 수 없습니다: {error}"))?;
+
+    let rows = stmt
+        .query_map(params![album_id], |row| {
+            Ok(MediaItemDto {
+                id: row.get(0)?,
+                file_path: row.get(1)?,
+                file_type: row.get(2)?,
+                taken_at: row.get(3)?,
+                width: row.get(4)?,
+                height: row.get(5)?,
+                duration: row.get(6)?,
+                size_bytes: row.get(7)?,
+                rating: row.get(8)?,
+                comment: row.get(9)?,
+                favorite: row.get::<_, i64>(10)? == 1,
+                metadata_status: row.get(11)?,
+            })
+        })
+        .map_err(|error| format!("앨범 항목을 읽을 수 없습니다: {error}"))?;
+
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(|error| format!("앨범 항목을 변환할 수 없습니다: {error}"))
+}
+
 fn is_supported_file(path: &Path) -> bool {
     media_type(path).is_some()
 }
@@ -331,11 +467,25 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             list_media,
+            list_albums,
             clear_registered_media,
             delete_registered_media,
             create_album_from_media,
+            update_album,
+            delete_albums,
+            update_album_cover_color,
             register_paths,
-            update_media_details
+            update_media_details,
+            faces::list_face_index,
+            pets::list_pets,
+            pets::save_pet,
+            pets::delete_pet,
+            faces::find_face_matches,
+            faces::set_faces_excluded,
+            faces::save_face_scan,
+            faces::rename_face_person,
+            faces::move_faces,
+            faces::clear_face_index
         ])
         .run(tauri::generate_context!())
         .expect("failed to run app");

@@ -18,9 +18,11 @@ export interface MediaItem {
   metadataStatus: "ready" | "queued" | "missing-date";
 }
 
-export interface ImportJob {
+export interface SavedAlbum {
   id: string;
-  name: string;
-  status: "검사" | "메타데이터" | "썸네일" | "등록 완료";
-  progress: number;
+  title: string;
+  description: string;
+  createdAt: string;
+  coverColor: string;
+  items: MediaItem[];
 }

@@ -30,7 +30,3 @@ export function groupByTakenDate(items: MediaItem[]) {
     return groups;
   }, {});
 }
-
-export function sameMonthItems(items: MediaItem[], yearMonth: string) {
-  return items.filter((item) => item.takenAt?.startsWith(yearMonth));
-}

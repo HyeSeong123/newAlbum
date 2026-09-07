@@ -1,6 +1,6 @@
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
-import type { MediaItem, MediaType } from "../types/media";
+import type { MediaItem, MediaType, SavedAlbum } from "../types/media";
 
 interface BackendMediaItem {
   id: number;
@@ -17,6 +17,15 @@ interface BackendMediaItem {
   metadata_status: "ready" | "queued" | "missing-date";
 }
 
+interface BackendAlbum {
+  id: number;
+  title: string;
+  description: string;
+  cover_color: string;
+  created_at: string;
+  items: BackendMediaItem[];
+}
+
 const gradients: Record<MediaType, string> = {
   image: "linear-gradient(135deg, #efe0c1 0%, #bac6b5 52%, #6d8f7c 100%)",
   video: "linear-gradient(135deg, #60747d 0%, #bbc2af 52%, #e5cf96 100%)",
@@ -30,6 +39,18 @@ export function isTauriRuntime(): boolean {
 export async function loadRegisteredMedia(): Promise<MediaItem[]> {
   const rows = await invoke<BackendMediaItem[]>("list_media");
   return rows.map(toMediaItem);
+}
+
+export async function loadSavedAlbums(): Promise<SavedAlbum[]> {
+  const rows = await invoke<BackendAlbum[]>("list_albums");
+  return rows.map((row) => ({
+    id: String(row.id),
+    title: row.title,
+    description: row.description,
+    coverColor: row.cover_color,
+    createdAt: row.created_at,
+    items: row.items.map(toMediaItem),
+  }));
 }
 
 export async function clearRegisteredMedia(): Promise<MediaItem[]> {
@@ -48,6 +69,19 @@ export async function createAlbumFromMedia(title: string, ids: string[]): Promis
   const mediaIds = ids.filter((id) => /^\d+$/.test(id)).map(Number);
   if (!mediaIds.length) return null;
   return invoke<number>("create_album_from_media", { title, mediaIds });
+}
+
+export async function updateAlbumCoverColor(id: string, coverColor: string): Promise<void> {
+  if (!/^\d+$/.test(id)) return;
+  await invoke("update_album_cover_color", { id: Number(id), coverColor });
+}
+
+export async function saveAlbum(album: SavedAlbum): Promise<void> {
+  await invoke("update_album", { id: Number(album.id), title: album.title, coverColor: album.coverColor, mediaIds: album.items.map((item) => Number(item.id)) });
+}
+
+export async function deleteAlbums(ids: string[]): Promise<void> {
+  await invoke("delete_albums", { ids: ids.map(Number) });
 }
 
 export async function chooseAndRegisterFiles(): Promise<MediaItem[]> {

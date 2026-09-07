@@ -1,0 +1,327 @@
+/* Product-wide visual tokens. Geometry for the album reader stays in styles.css. */
+:root {
+  --bg: #fafafb;
+  --surface: #ffffff;
+  --surface-soft: #f1f2f4;
+  --primary: #0066cc;
+  --secondary: #202124;
+  --border: #dedfe3;
+  --text: #202124;
+  --muted: #65686f;
+  --danger: #c4313b;
+  --shadow: none;
+  --shadow-strong: 0 24px 80px #10111430;
+  --radius-card: 8px;
+  --radius-inner: 4px;
+  --nav-bg: #18191c;
+  --nav-surface: #2b2d32;
+  --nav-ink: #f5f5f7;
+  --focus-ring: #0066cc;
+  font-family: "SUIT", "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+}
+
+body { background: var(--bg); }
+* { letter-spacing: 0; }
+h1, h2, h3, .brand strong, .dateGroup h2, .pageNumber, .detailHeader strong {
+  font-family: "SUIT", "Segoe UI", system-ui, sans-serif;
+  color: var(--text);
+}
+h1 { font-size: 30px; font-weight: 800; line-height: 1.2; margin: 0; }
+h2 { font-size: 20px; font-weight: 750; line-height: 1.3; }
+h3 { font-size: 17px; line-height: 1.4; }
+button { transition: background-color .16s, color .16s, border-color .16s; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: 2px solid var(--focus-ring); outline-offset: 3px;
+}
+button:disabled { opacity: .45; }
+.app { grid-template-columns: 212px minmax(0, 1fr); background: var(--bg); overflow: visible; }
+.sidebar {
+  position: sticky; top: 0; height: 100dvh; min-height: 0; padding: 32px 16px 24px;
+  gap: 44px; border: 0; background: var(--nav-bg); backdrop-filter: none; color: var(--nav-ink);
+}
+.brand { gap: 10px; padding: 0 12px; }
+.brandMark { width: 32px; height: 32px; flex-shrink: 0; background: transparent; color: var(--nav-ink); border-radius: 0; box-shadow: none; }
+.brand strong { font-size: 24px; font-weight: 800; color: var(--nav-ink); white-space: nowrap; }
+.navList { gap: 6px; }
+.navList button { min-height: 44px; border-radius: 6px; padding: 0 14px; color: #a9abb3; font-weight: 600; gap: 12px; }
+.navList button:hover { color: #fff; background: #24262b; }
+.navList button.active { background: var(--nav-surface); color: #fff; box-shadow: inset 3px 0 #82b9ff; }
+.navList button:last-child { margin-top: 20px; border-top: 1px solid #34363b; border-radius: 0; padding-top: 8px; }
+.memoryNote { border: 0; border-top: 1px solid #34363b; padding: 20px 12px 0; background: transparent; border-radius: 0; box-shadow: none; }
+.memoryNote strong { font-size: 13px; font-weight: 500; color: #a9abb3; }
+.workspace { padding: 32px 36px 40px; min-width: 0; }
+.topbar { min-height: 44px; margin-bottom: 24px; align-items: center; flex-direction: row; }
+.searchBox { width: 300px; height: 40px; min-height: 40px; padding: 0 12px; background: #f0f1f3; border: 1px solid transparent; border-radius: 6px; box-shadow: none; }
+.searchBox:focus-within { border-color: var(--primary); background: #fff; }
+.searchBox input { font-size: 13px; min-width: 0; color: var(--text); }
+.searchBox input::placeholder { color: var(--muted); }
+.importActions { display: flex; flex-direction: row; align-items: center; flex-wrap: wrap; gap: 8px; }
+.importActions button { min-height: 38px; padding: 8px 14px; border: 1px solid var(--border); border-radius: 6px; background: #fff; box-shadow: none; font-size: 13px; font-weight: 650; }
+.importActions button.primary { color: #fff; background: var(--secondary); border-color: var(--secondary); }
+.importActions button:hover { background: #eceef1; }
+.importActions button.primary:hover { background: #363940; }
+.importStatus { padding: 8px; border: 0; border-radius: 4px; background: #edf5ff; font-size: 12px; }
+.mainPanel { padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.panelHeader { gap: 16px; align-items: center; flex-direction: row; }
+.panelHeader h2 { margin: 0; }
+.viewTabs { display: inline-flex; padding: 4px; gap: 2px; margin: 0 0 24px; border: 0; border-radius: 8px; background: #ebecef; }
+.viewTabs button { min-height: 38px; padding: 0 16px; border-radius: 5px; color: var(--muted); font-size: 13px; font-weight: 650; }
+.viewTabs button:hover { background: #e0e2e7; color: var(--text); }
+.viewTabs button.active { background: #fff; color: var(--text); box-shadow: 0 1px 3px #10111412; }
+.calendarModeTabs { border: 0; background: transparent; padding: 0; border-radius: 0; gap: 16px; }
+.calendarModeTabs button { border-radius: 0; padding: 0 0 8px; min-height: 34px; border-bottom: 2px solid transparent; color: var(--muted); }
+.calendarModeTabs button.active { background: transparent; color: var(--text); border-color: var(--text); }
+.calendarModeTabs button:hover { background: transparent; color: var(--primary); }
+.iconText, .selectionToggle, .pagination button, .monthControls button, .albumActions button, .peopleActions button, .favorite, .dangerButton {
+  min-height: 38px; border-radius: 6px; box-shadow: none; font-weight: 600; font-size: 13px;
+}
+.iconText:hover, .selectionToggle:hover, .pagination button:hover, .monthControls button:hover { background: #edf0f4; }
+.iconText.activeAction, .selectionToggle.activeAction { background: var(--secondary); color: #fff; }
+.galleryGrid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 24px 16px; margin-top: 20px; }
+.mediaTile { padding: 0; border: 0; border-radius: 4px; background: transparent; box-shadow: none; transform: none; }
+.mediaTile:hover { background: transparent; box-shadow: none; transform: none; }
+.mediaTile:hover .thumb { filter: brightness(.96); }
+.mediaTile.multiSelected { background: transparent; box-shadow: none; border: 0; }
+.mediaTile.multiSelected .thumb { outline: 2px solid var(--primary); outline-offset: 3px; }
+.thumb { border: 0; border-radius: 4px; }
+.mediaTile .mediaDate { margin: 10px 0 0; font-weight: 500; font-size: 12px; color: var(--muted); }
+.selectMark { box-shadow: none; }
+.emptyState { background: transparent; border: 0; border-radius: 0; box-shadow: none; min-height: 260px; color: var(--muted); }
+.pagination { border-top: 1px solid var(--border); padding-top: 20px; }
+.monthPicker select, .scheduleForm input:not([type="checkbox"]), .scheduleForm select, .commentForm input, .commentForm textarea, .dayNote textarea, .settingsPanel input {
+  border-radius: 6px; background: #fff; color: var(--text); border-color: var(--border); font-size: 14px;
+}
+.calendarGrid { gap: 1px; padding: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.calendarGrid .weekday { background: var(--bg); padding: 12px 0; color: var(--muted); }
+.calendarGrid button, .calendarGrid .emptyDay { border: 0; border-radius: 0; background: #fff; min-height: 190px; }
+.calendarGrid button { padding: 10px; }
+.calendarGrid button:hover { background: #f0f6ff; }
+.calendarGrid button.hasMedia, .calendarGrid button.hasNote, .calendarGrid button.hasEvent { background: #fff; }
+.calendarGrid .dayNumber { color: var(--text); font-weight: 650; }
+.calendarGrid small { background: #edf2fa; color: #315580; box-shadow: none; border-radius: 3px; }
+.calendarGrid i { border-radius: 3px; }
+.dayBadges { background: #ffffffed; border-radius: 3px; }
+.dayBadges small { color: #3e5369; }
+.dayBadges em { color: #176c47; background: #e8f5ed; }
+.recordedDayGrid button { border-radius: 6px; box-shadow: none; background: #fff; }
+.modalBackdrop { background: #10121699; backdrop-filter: blur(8px); padding: 24px; }
+.detailModal, .dayModal, .eventModal, .albumEditor { border: 1px solid #dedfe3; border-radius: 8px; box-shadow: var(--shadow-strong); }
+.detailHeader, .dayModalHeader, .eventModalHeader { background: #fff; border-color: var(--border); padding: 16px 20px; }
+.detailHeader strong { font-size: 17px; font-weight: 750; }
+.closeButton { color: #fff !important; background: #292b30 !important; border-color: #292b30 !important; box-shadow: none; border-radius: 6px; }
+.closeButton:hover { background: #454851 !important; border-color: #454851 !important; }
+.detailPhotoPane, .detailStage, .detailStage .mediaImage { background: #17181b; }
+.detailStage { border-radius: 0; border: 0; box-shadow: none; }
+.detailBody { padding: 24px; }
+.viewerMeta h3 { font-size: 20px; font-weight: 700; }
+.rating button { border-radius: 6px; background: #f2f3f5; color: #946916; }
+.rating button:hover { background: #fff0cb; }
+.photoNavButton { display: grid; place-items: center; border-radius: 50%; background: #202228c9; box-shadow: none; }
+.photoNavButton:hover { background: #444750; }
+.commentItem { background: #f6f7f9; border: 0; border-radius: 6px; padding: 14px; }
+.commentForm button { border-radius: 6px; background: var(--secondary); }
+.commentForm input:focus, .commentForm textarea:focus { outline-color: #0066cc55; }
+.daySchedule { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.eventItem { border-radius: 6px; background: #f6f7f9; }
+.eventIcon { background: #e8effc; color: #2860af; border-radius: 6px; }
+.eventItem.birthday .eventIcon { background: #fff0f2; color: #b03162; }
+.eventItem.anniversary .eventIcon { background: #fff5dc; color: #8b6218; }
+.eventItem.memorial .eventIcon { background: #e9efed; color: #425e52; }
+.scheduleForm .ddayCheck { border: 0; background: #f3f4f6; border-radius: 6px; }
+.scheduleForm button[type="submit"] { border-radius: 6px; background: var(--secondary); }
+.dayMainPhoto { background: #17181b; border-radius: 4px; }
+.dayPhotoList button { border-radius: 4px; }
+.albumFullscreen { background: #17181b; }
+.albumFullscreenHeader { border-color: #383a40; }
+.albumFullscreenHeader h2 { color: #f5f5f7; font-size: 20px; }
+.albumFullscreenHeader .eyebrow { color: #b4b7c1; }
+.albumFullscreen .albumPager { color: #b4b7c1; }
+.immersive .bookPage { background: #fafafa; }
+.immersive .leftPage { box-shadow: inset -12px 0 24px #17181b12, -1px 6px #eeeef0, -2px 12px #d2d3d7, -3px 18px #b2b4b9; }
+.immersive .rightPage { box-shadow: inset 12px 0 24px #17181b12, 1px 6px #eeeef0, 2px 12px #d2d3d7, 3px 18px #b2b4b9; }
+.pageNumber { color: var(--muted); font-size: 12px; }
+.savedAlbumGrid { gap: 24px; }
+.savedAlbumCard { border: 0; background: transparent; box-shadow: none; height: 360px; min-height: 360px; align-items: center; }
+.savedAlbumOpen { min-height: 360px; height: 360px; align-items: center; }
+.savedAlbumBook { min-height: 326px; transform: scale(1); }
+.savedAlbumCoverFace { color: var(--text); }
+.albumSelectionMark, .faceCheck { box-shadow: none; }
+.albumActions button[type="submit"] { background: var(--secondary); }
+.peopleView { gap: 24px; }
+.peopleActions button { border-radius: 6px; }
+.peopleActions button:hover:not(:disabled) { background: #edf3fb; border-color: #b9c9e3; }
+.personTile:hover { background: #eceef2; }
+.personTile span, .peopleSummary { color: var(--muted); }
+.personTile > img { border-radius: 50%; }
+.dangerPanel { padding: 20px 0; border: 0; border-top: 1px solid var(--border); border-radius: 0; box-shadow: none; background: transparent; }
+.dangerButton { background: #c4313b; color: #fff; }
+.dangerButton:hover { background: #a8202a; }
+.settingsPanel { max-width: 780px; }
+.settingsPanel > label { background: transparent; border-radius: 0; border-bottom: 1px solid var(--border); }
+.memoryGrid button { border-radius: 4px; box-shadow: none; }
+.dateGroup h2 { font-size: 20px; }
+@media (min-width: 1700px) { .galleryGrid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+@media (max-width: 1150px) {
+  .app { grid-template-columns: 184px minmax(0, 1fr); }
+  .workspace { padding: 28px 24px; }
+  .sidebar { padding-left: 12px; padding-right: 12px; }
+  .brand { padding: 0 6px; gap: 6px; }
+  .brand strong { font-size: 22px; }
+  .galleryGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px 12px; }
+  .calendarGrid button, .calendarGrid .emptyDay { min-height: 160px; }
+}
+@media (max-width: 800px) {
+  .app { display: block; }
+  .sidebar { position: relative; height: auto; min-height: 0; padding: 20px 20px 0; gap: 20px; }
+  .brand strong { font-size: 23px; }
+  .brand { padding: 0; }
+  .navList { display: flex; overflow-x: auto; gap: 4px; padding-bottom: 12px; }
+  .navList button { flex: 0 0 auto; min-height: 44px; padding: 0 12px; gap: 7px; font-size: 13px; }
+  .navList button:last-child { margin: 0; border: 0; padding: 0 12px; border-radius: 6px; }
+  .navList button.active { box-shadow: none; background: #35373e; }
+  .memoryNote { display: none; }
+  .workspace { padding: 24px 20px 32px; }
+  .topbar { margin-bottom: 20px; }
+  h1 { font-size: 26px; }
+  .toolbar { width: auto; }
+  .searchBox { width: 240px; }
+  .galleryGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .detailLayout { grid-template-columns: minmax(0, 1fr); }
+  .modalBackdrop { padding: 12px; }
+  .detailPhotoPane { padding: 12px; }
+  .detailStage { min-height: 320px; }
+  .detailModal, .dayModal { width: 100%; max-height: calc(100dvh - 24px); }
+}
+@media (max-width: 520px) {
+  .topbar { flex-wrap: wrap; gap: 12px; text-align: left; }
+  .toolbar, .searchBox { width: 100%; }
+  .importActions { width: 100%; }
+  .importActions button { flex: 1 1 0; }
+  .galleryGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; }
+  .viewTabs { display: flex; width: 100%; }
+  .viewTabs button { flex: 1; padding: 0 6px; gap: 6px; min-height: 42px; font-size: 12px; }
+  .panelHeader { flex-wrap: wrap; gap: 12px; }
+  .panelHeader > .panelActions { width: auto; margin-left: auto; }
+  .panelActions button { flex: 0 0 auto; padding: 0 10px; min-width: 0; }
+  h2 { font-size: 18px; }
+  .calendarGrid button, .calendarGrid .emptyDay { min-height: 116px; padding: 5px; }
+  .calendarGrid i { min-height: 56px; }
+  .calendarGrid .dayNumber { font-size: 12px; }
+  .calendarGrid .dayNumber { left: 5px; top: 7px; }
+  .calendarGrid b { right: 4px; top: 8px; font-size: 9px; color: var(--muted); }
+  .calendarGrid i { inset: 30px 4px 6px; border: 0; }
+  .calendarGrid .weekday { border-radius: 0; }
+  .dayBadges { padding: 2px; }
+  .dayBadges small { font-size: 9px; gap: 2px; flex-wrap: wrap; }
+  .monthPicker { display: flex; width: 100%; gap: 12px; }
+  .monthPicker label { display: flex; flex: 1; gap: 6px; align-items: center; }
+  .monthPicker select { width: 100%; min-width: 0; }
+  .monthControls { display: flex; width: 100%; flex-wrap: nowrap; gap: 6px; }
+  .monthControls button { flex: 1 1 auto; padding: 0 7px; font-size: 12px; }
+  .monthControls .primaryControl { box-shadow: none; }
+  .detailStage { min-height: 280px; }
+  .detailBody { padding: 20px; }
+  .savedAlbumGrid { grid-template-columns: minmax(0, 1fr); }
+  .savedAlbumBook { width: 306px; }
+  .savedAlbumCard { min-height: 360px; }
+  .albumActions button, .peopleActions button { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  button { transition: none; }
+  .mediaTile:hover, .savedAlbumOpen:hover { transform: none; }
+}
+
+/* Collection shell: global navigation, collection toolbar, then content. */
+.app { display: block; }
+.sidebar { position: sticky; top: 0; z-index: 15; width: 100%; height: 72px; min-height: 0; padding: 0 32px; display: flex; flex-direction: row; align-items: center; gap: 44px; }
+.sidebar .brand { padding: 0; flex-shrink: 0; }
+.sidebar .navList { display: flex; align-items: center; gap: 6px; padding: 0; overflow-x: auto; }
+.sidebar .navList button { flex: 0 0 auto; min-height: 40px; padding: 0 14px; }
+.sidebar .navList button.active { box-shadow: none; background: #34363d; }
+.sidebar .navList button:last-child { margin: 0; padding: 0 14px; border: 0; border-radius: 6px; }
+.sidebar .memoryNote { margin: 0 0 0 auto; padding: 0; border: 0; white-space: nowrap; }
+.workspace { padding: 28px 32px 40px; }
+.topbar { padding-bottom: 24px; margin-bottom: 24px; border-bottom: 1px solid var(--border); gap: 24px; }
+.topbar > div:first-child { display: flex; align-items: baseline; gap: 14px; }
+.collectionCount { color: var(--muted); font-size: 13px; white-space: nowrap; }
+.topbar .toolbar { display: flex; align-items: center; gap: 12px; width: auto; flex-wrap: wrap; }
+.topbar .importActions { width: auto; position: relative; }
+.topbar .importActions button { flex: none; }
+.topbar .importStatus { position: absolute; right: 0; top: 48px; width: 300px; z-index: 20; background: #edf5ff; }
+.photoWorkspace { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 24px; align-items: center; }
+.photoWorkspace > .viewTabs { grid-column: 1; grid-row: 1; margin: 0; }
+.photoWorkspace > .collectionTools { grid-column: 2; grid-row: 1; justify-content: flex-end; }
+.photoWorkspace > :not(.viewTabs):not(.collectionTools) { grid-column: 1 / -1; }
+.photoWorkspace .galleryGrid { margin-top: 24px; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 24px 16px; }
+.photoWorkspace > .calendarPanel { margin-top: 24px; }
+.savedAlbums > .panelHeader { justify-content: flex-end; }
+
+/* The photo is above its metadata and comments, never beside an editor. */
+.photoLightboxBackdrop { padding: 0; background: #111215; backdrop-filter: none; z-index: 100; }
+.photoLightbox.detailModal { width: 100%; height: 100dvh; max-height: none; border: 0; border-radius: 0; grid-template-rows: 60px minmax(0, 1fr); background: #17181b; box-shadow: none; }
+.photoLightbox .detailHeader { padding: 8px 24px; background: #17181b; border-color: #32343a; color: #fff; }
+.photoLightbox .detailHeader strong { color: #fff; }
+.photoLightbox .detailHeader button { width: 40px; min-height: 40px; padding: 0; display: inline-flex; align-items: center; justify-content: center; color: #e9eaed; background: #292b31; border-color: #3c3f46; border-radius: 6px; }
+.photoLightbox .detailHeader button svg { flex-shrink: 0; }
+.photoLightbox .detailHeader button:hover { background: #41454e; }
+.photoLightbox .detailHeader .favorite.active { color: #ff929f; }
+.photoLightbox .detailLayout { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(200px, 1fr) auto; min-height: 0; overflow: hidden; }
+.photoLightbox .detailPhotoPane { padding: 12px 56px; min-height: 0; }
+.photoLightbox .detailStage { min-height: 0; height: 100%; }
+.photoLightbox .detailBody { padding: 0; max-height: 38dvh; overflow-y: auto; background: #fff; }
+.detailInfoStrip { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 10px 32px; border-bottom: 1px solid var(--border); }
+.photoLightbox .viewerMeta { margin: 0; display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.detailInfoStrip .detailSection { margin: 0; display: flex; align-items: center; gap: 12px; }
+.photoLightbox .rating { gap: 2px; }
+.photoLightbox .rating button { width: 34px; min-height: 34px; background: transparent; }
+.photoLightbox .commentBox { margin: 0; padding: 16px 32px 20px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 12px 32px; }
+.photoLightbox .commentBox > strong { grid-column: 1 / -1; }
+.photoLightbox .commentForm { grid-template-columns: 120px minmax(0, 1fr) auto; align-items: end; gap: 12px; }
+.photoLightbox .commentForm textarea { min-height: 64px; height: 64px; }
+.photoLightbox .commentForm input { height: 64px; }
+.photoLightbox .commentForm button { height: 64px; padding: 0 16px; }
+.photoLightbox .commentList { max-height: 130px; overflow: auto; align-content: start; }
+.photoLightbox .commentList > p { padding: 20px 0; }
+.photoLightbox .commentItem { padding: 10px 14px; }
+@media (max-width: 1100px) {
+  .sidebar { gap: 24px; padding: 0 24px; }
+  .sidebar .navList button { padding: 0 10px; }
+  .sidebar .memoryNote { display: none; }
+  .topbar .searchBox { width: 220px; }
+  .topbar > div:first-child { display: block; }
+  .photoLightbox .commentForm { grid-template-columns: 100px minmax(0, 1fr); }
+  .photoLightbox .commentForm button { grid-column: 1 / -1; height: 38px; }
+}
+@media (max-width: 720px) {
+  .sidebar { height: auto; padding: 16px 20px 12px; gap: 12px; flex-wrap: wrap; position: relative; }
+  .sidebar .brand strong { font-size: 22px; }
+  .sidebar .navList { flex-basis: 100%; }
+  .sidebar .navList button { min-height: 44px; }
+  .workspace { padding: 20px 16px 32px; }
+  .topbar { gap: 16px; margin-bottom: 16px; padding-bottom: 16px; flex-wrap: wrap; }
+  .topbar > div:first-child { display: flex; }
+  .topbar .toolbar { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  .topbar .searchBox { width: 100%; }
+  .topbar .importActions { gap: 6px; }
+  .topbar .importActions button { font-size: 12px; min-height: 40px; padding: 0 9px; }
+  .topbar .importActions button svg { width: 15px; }
+  .photoWorkspace { grid-template-columns: minmax(0, 1fr); }
+  .photoWorkspace > .collectionTools { grid-column: 1; grid-row: 2; margin-top: 12px; }
+  .photoWorkspace > .viewTabs { width: 100%; }
+  .photoWorkspace .galleryGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 16px; gap: 18px 10px; }
+  .photoLightbox.detailModal { grid-template-rows: 56px minmax(0, 1fr); }
+  .photoLightbox .detailHeader { padding: 8px 12px; gap: 6px; }
+  .photoLightbox .detailHeader strong { font-size: 15px; }
+  .photoLightbox .detailHeader button { width: 36px; min-height: 38px; }
+  .photoLightbox .detailPhotoPane { padding: 8px; }
+  .photoLightbox .detailBody { max-height: 48dvh; }
+  .detailInfoStrip { padding: 8px 16px; gap: 8px; flex-wrap: wrap; }
+  .photoLightbox .viewerMeta { gap: 6px 12px; }
+  .photoLightbox .commentBox { padding: 12px 16px 16px; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .photoLightbox .commentForm { grid-template-columns: 90px minmax(0, 1fr) auto; gap: 8px; }
+  .photoLightbox .commentForm input, .photoLightbox .commentForm textarea { min-height: 52px; height: 52px; padding: 8px; }
+  .photoLightbox .commentForm button { grid-column: auto; height: 52px; padding: 0 10px; }
+  .photoLightbox .commentForm button svg { display: none; }
+  .photoLightbox .commentList { max-height: 180px; }
+}
