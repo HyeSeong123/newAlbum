@@ -10,6 +10,7 @@ use tauri::{AppHandle, Manager};
 use walkdir::WalkDir;
 mod faces;
 mod pets;
+mod thumbnails;
 
 #[derive(Serialize)]
 struct MediaItemDto {
@@ -24,6 +25,7 @@ struct MediaItemDto {
     rating: i64,
     comment: String,
     favorite: bool,
+    view_count: i64,
     metadata_status: String,
 }
 
@@ -70,7 +72,16 @@ fn delete_registered_media(app: AppHandle, ids: Vec<i64>) -> Result<Vec<MediaIte
 }
 
 #[tauri::command]
-fn create_album_from_media(app: AppHandle, title: String, media_ids: Vec<i64>) -> Result<i64, String> {
+fn create_album_from_media(app: AppHandle, title: String, media_ids: Vec<i64>, cover_color: String) -> Result<i64, String> {
+    let mut conn = open_database(&app)?;
+    insert_album(&mut conn, &title, &media_ids, &cover_color)
+}
+
+fn valid_album_color(color: &str) -> bool {
+    color.len() == 7 && color.starts_with('#') && color[1..].bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn insert_album(conn: &mut Connection, title: &str, media_ids: &[i64], cover_color: &str) -> Result<i64, String> {
     if media_ids.is_empty() {
         return Err("앨범에 담을 항목을 선택해 주세요.".to_string());
     }
@@ -79,35 +90,26 @@ fn create_album_from_media(app: AppHandle, title: String, media_ids: Vec<i64>) -
     if title.is_empty() {
         return Err("앨범 이름을 입력해 주세요.".to_string());
     }
+    if !valid_album_color(cover_color) { return Err("올바른 표지색을 선택해 주세요.".into()); }
 
-    let conn = open_database(&app)?;
-    conn.execute(
-        "INSERT INTO album (title, description, cover_media_id, cover_color) VALUES (?1, '', ?2, '#B9C58E')",
-        params![title, media_ids[0]],
+    let tx = conn.transaction().map_err(|error| error.to_string())?;
+    tx.execute(
+        "INSERT INTO album (title, description, cover_media_id, cover_color, cover_concept) VALUES (?1, '', ?2, ?3, 'mint')",
+        params![title, media_ids[0], cover_color],
     )
     .map_err(|error| format!("앨범을 만들 수 없습니다: {error}"))?;
 
-    let album_id = conn.last_insert_rowid();
+    let album_id = tx.last_insert_rowid();
     for (index, media_id) in media_ids.iter().enumerate() {
-        conn.execute(
+        tx.execute(
             "INSERT INTO album_item (album_id, media_id, sequence) VALUES (?1, ?2, ?3)",
             params![album_id, media_id, index as i64],
         )
         .map_err(|error| format!("앨범 항목을 추가할 수 없습니다: {error}"))?;
     }
 
+    tx.commit().map_err(|error| error.to_string())?;
     Ok(album_id)
-}
-
-#[tauri::command]
-fn update_album_cover_color(app: AppHandle, id: i64, cover_color: String) -> Result<(), String> {
-    let conn = open_database(&app)?;
-    conn.execute(
-        "UPDATE album SET cover_color = ?1 WHERE id = ?2",
-        params![cover_color, id],
-    )
-    .map_err(|error| format!("앨범 표지색을 저장할 수 없습니다: {error}"))?;
-    Ok(())
 }
 
 #[tauri::command]
@@ -124,11 +126,15 @@ fn register_paths(app: AppHandle, paths: Vec<String>) -> Result<Vec<MediaItemDto
 
 #[tauri::command]
 fn update_album(app: AppHandle, id: i64, title: String, cover_color: String, media_ids: Vec<i64>) -> Result<(), String> {
+    let mut conn = open_database(&app)?;
+    save_album(&mut conn, id, &title, &cover_color, &media_ids)
+}
+
+fn save_album(conn: &mut Connection, id: i64, title: &str, cover_color: &str, media_ids: &[i64]) -> Result<(), String> {
     if title.trim().is_empty() { return Err("앨범 제목을 입력해 주세요.".into()); }
-    if cover_color.len() != 7 || !cover_color.starts_with('#') || !cover_color[1..].bytes().all(|c| c.is_ascii_hexdigit()) {
+    if !valid_album_color(cover_color) {
         return Err("올바른 표지색을 선택해 주세요.".into());
     }
-    let mut conn = open_database(&app)?;
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     let count = tx.execute("UPDATE album SET title = ?1, cover_color = ?2, cover_media_id = ?3 WHERE id = ?4", params![title.trim(), cover_color, media_ids.first(), id]).map_err(|e| e.to_string())?;
     if count == 0 { return Err("앨범을 찾을 수 없습니다.".into()); }
@@ -164,6 +170,16 @@ fn update_media_details(
     )
     .map_err(|error| format!("미디어 정보를 저장할 수 없습니다: {error}"))?;
     Ok(())
+}
+
+#[tauri::command]
+fn increment_media_view(app: AppHandle, id: i64) -> Result<i64, String> {
+    let conn = open_database(&app)?;
+    let changed = conn.execute("UPDATE media SET view_count = view_count + 1 WHERE id = ?1", [id])
+        .map_err(|error| format!("조회수를 저장할 수 없습니다: {error}"))?;
+    if changed == 0 { return Err("조회할 미디어를 찾을 수 없습니다.".into()); }
+    conn.query_row("SELECT view_count FROM media WHERE id = ?1", [id], |row| row.get(0))
+        .map_err(|error| format!("조회수를 읽을 수 없습니다: {error}"))
 }
 
 fn open_database(app: &AppHandle) -> Result<Connection, String> {
@@ -206,8 +222,94 @@ fn migrate_database(conn: &Connection) -> Result<(), String> {
     }
 
     normalize_existing_file_paths(conn)?;
+    migrate_album_concept(conn)?;
+    migrate_person_cover(conn)?;
+    migrate_media_view_count(conn)?;
 
     Ok(())
+}
+
+fn migrate_media_view_count(conn: &Connection) -> Result<(), String> {
+    let exists: bool = conn.query_row("SELECT EXISTS(SELECT 1 FROM pragma_table_info('media') WHERE name = 'view_count')", [], |row| row.get(0)).map_err(|e| e.to_string())?;
+    if !exists {
+        conn.execute("ALTER TABLE media ADD COLUMN view_count INTEGER NOT NULL DEFAULT 0", []).map_err(|e| format!("조회수 마이그레이션 실패: {e}"))?;
+    }
+    Ok(())
+}
+
+fn migrate_person_cover(conn: &Connection) -> Result<(), String> {
+    let exists: bool = conn.query_row("SELECT EXISTS(SELECT 1 FROM pragma_table_info('person') WHERE name = 'cover_face_id')", [], |row| row.get(0)).map_err(|e| e.to_string())?;
+    if !exists {
+        conn.execute("ALTER TABLE person ADD COLUMN cover_face_id INTEGER REFERENCES detected_face(id) ON DELETE SET NULL", []).map_err(|e| format!("인물 대표 사진 마이그레이션 실패: {e}"))?;
+    }
+    Ok(())
+}
+
+fn migrate_album_concept(conn: &Connection) -> Result<(), String> {
+    let exists: bool = conn.query_row("SELECT EXISTS(SELECT 1 FROM pragma_table_info('album') WHERE name = 'cover_concept')", [], |row| row.get(0)).map_err(|e| e.to_string())?;
+    if !exists {
+        conn.execute("ALTER TABLE album ADD COLUMN cover_concept TEXT NOT NULL DEFAULT 'mint'", []).map_err(|e| format!("앨범 컨셉 마이그레이션 실패: {e}"))?;
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod album_concept_tests {
+    use super::*;
+
+    #[test]
+    fn legacy_albums_get_mint_without_losing_data() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("CREATE TABLE album (id INTEGER PRIMARY KEY, title TEXT); INSERT INTO album VALUES (1, 'existing');").unwrap();
+        migrate_album_concept(&conn).unwrap();
+        migrate_album_concept(&conn).unwrap();
+        let value: (String, String) = conn.query_row("SELECT title, cover_concept FROM album WHERE id = 1", [], |row| Ok((row.get(0)?, row.get(1)?))).unwrap();
+        assert_eq!(value, ("existing".into(), "mint".into()));
+    }
+
+    #[test]
+    fn legacy_people_gain_an_empty_cover_face_without_losing_names() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("CREATE TABLE person (id INTEGER PRIMARY KEY, name TEXT NOT NULL); CREATE TABLE detected_face (id INTEGER PRIMARY KEY); INSERT INTO person VALUES (1, '가족');").unwrap();
+        migrate_person_cover(&conn).unwrap();
+        migrate_person_cover(&conn).unwrap();
+        let value: (String, Option<i64>) = conn.query_row("SELECT name, cover_face_id FROM person WHERE id = 1", [], |row| Ok((row.get(0)?, row.get(1)?))).unwrap();
+        assert_eq!(value, ("가족".into(), None));
+    }
+
+    #[test]
+    fn legacy_media_gain_view_counts_without_losing_rows() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("CREATE TABLE media (id INTEGER PRIMARY KEY, file_path TEXT NOT NULL); INSERT INTO media VALUES (1, 'existing.jpg');").unwrap();
+        migrate_media_view_count(&conn).unwrap();
+        migrate_media_view_count(&conn).unwrap();
+        let value: (String, i64) = conn.query_row("SELECT file_path, view_count FROM media WHERE id = 1", [], |row| Ok((row.get(0)?, row.get(1)?))).unwrap();
+        assert_eq!(value, ("existing.jpg".into(), 0));
+    }
+
+    #[test]
+    fn album_colors_roundtrip_and_failed_writes_rollback() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+        conn.execute_batch(include_str!("../database/schema.sql")).unwrap();
+        conn.execute("INSERT INTO media(file_path, file_type, size_bytes) VALUES ('original.jpg', 'image', 42)", []).unwrap();
+        for (title, color) in [("brown", "#6A4538"), ("navy", "#2F4058")] {
+            let id = insert_album(&mut conn, title, &[1], color).unwrap();
+            assert_eq!(read_albums(&conn).unwrap().into_iter().find(|album| album.id == id).unwrap().cover_color, color);
+        }
+        save_album(&mut conn, 1, "edited", "#AFC5CF", &[1]).unwrap();
+        assert!(save_album(&mut conn, 1, "bad", "#AFC5CF", &[999]).is_err());
+        assert!(insert_album(&mut conn, "invalid", &[1], "unknown").is_err());
+        assert!(insert_album(&mut conn, "partial", &[1, 999], "#414143").is_err());
+        let albums = read_albums(&conn).unwrap();
+        assert_eq!(albums.len(), 2);
+        let edited = albums.iter().find(|album| album.id == 1).unwrap();
+        assert_eq!(edited.title, "edited");
+        assert_eq!(edited.cover_color, "#AFC5CF");
+        assert_eq!(edited.items.len(), 1);
+        let path: String = conn.query_row("SELECT file_path FROM media WHERE id = 1", [], |row| row.get(0)).unwrap();
+        assert_eq!(path, "original.jpg");
+    }
 }
 
 fn normalize_existing_file_paths(conn: &Connection) -> Result<(), String> {
@@ -288,7 +390,7 @@ fn register_file(conn: &Connection, path: &Path) -> Result<(), String> {
 fn read_media(conn: &Connection) -> Result<Vec<MediaItemDto>, String> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, file_path, file_type, taken_at, width, height, duration, size_bytes, rating, comment, favorite, metadata_status
+            "SELECT id, file_path, file_type, taken_at, width, height, duration, size_bytes, rating, comment, favorite, metadata_status, view_count
              FROM media
              ORDER BY taken_at DESC NULLS LAST, created_at DESC",
         )
@@ -309,6 +411,7 @@ fn read_media(conn: &Connection) -> Result<Vec<MediaItemDto>, String> {
                 comment: row.get(9)?,
                 favorite: row.get::<_, i64>(10)? == 1,
                 metadata_status: row.get(11)?,
+                view_count: row.get(12)?,
             })
         })
         .map_err(|error| format!("목록을 읽을 수 없습니다: {error}"))?;
@@ -360,7 +463,7 @@ fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
 fn read_album_media(conn: &Connection, album_id: i64) -> Result<Vec<MediaItemDto>, String> {
     let mut stmt = conn
         .prepare(
-            "SELECT m.id, m.file_path, m.file_type, m.taken_at, m.width, m.height, m.duration, m.size_bytes, m.rating, m.comment, m.favorite, m.metadata_status
+            "SELECT m.id, m.file_path, m.file_type, m.taken_at, m.width, m.height, m.duration, m.size_bytes, m.rating, m.comment, m.favorite, m.metadata_status, m.view_count
              FROM album_item ai
              JOIN media m ON m.id = ai.media_id
              WHERE ai.album_id = ?1
@@ -383,6 +486,7 @@ fn read_album_media(conn: &Connection, album_id: i64) -> Result<Vec<MediaItemDto
                 comment: row.get(9)?,
                 favorite: row.get::<_, i64>(10)? == 1,
                 metadata_status: row.get(11)?,
+                view_count: row.get(12)?,
             })
         })
         .map_err(|error| format!("앨범 항목을 읽을 수 없습니다: {error}"))?;
@@ -467,15 +571,16 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             list_media,
+            thumbnails::media_thumbnail,
             list_albums,
             clear_registered_media,
             delete_registered_media,
             create_album_from_media,
             update_album,
             delete_albums,
-            update_album_cover_color,
             register_paths,
             update_media_details,
+            increment_media_view,
             faces::list_face_index,
             pets::list_pets,
             pets::save_pet,
@@ -484,6 +589,7 @@ pub fn run() {
             faces::set_faces_excluded,
             faces::save_face_scan,
             faces::rename_face_person,
+            faces::set_person_cover_face,
             faces::move_faces,
             faces::clear_face_index
         ])

@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS media (
   rating INTEGER NOT NULL DEFAULT 0 CHECK (rating BETWEEN 0 AND 5),
   comment TEXT NOT NULL DEFAULT '',
   favorite INTEGER NOT NULL DEFAULT 0,
+  view_count INTEGER NOT NULL DEFAULT 0,
   metadata_status TEXT NOT NULL DEFAULT 'queued',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -32,6 +33,7 @@ CREATE TABLE IF NOT EXISTS album (
   description TEXT NOT NULL DEFAULT '',
   cover_media_id INTEGER REFERENCES media(id),
   cover_color TEXT NOT NULL DEFAULT '#B9C58E',
+  cover_concept TEXT NOT NULL DEFAULT 'mint',
   music_path TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -51,6 +53,7 @@ CREATE TABLE IF NOT EXISTS person (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
   profile_type TEXT NOT NULL DEFAULT 'person',
+  cover_face_id INTEGER REFERENCES detected_face(id) ON DELETE SET NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

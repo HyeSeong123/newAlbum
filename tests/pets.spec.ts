@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
 test('pets collect photos manually and preserve originals', async ({ page }) => {
-  const thumbnail = `data:image/jpeg;base64,${(await readFile('node_modules/@vladmandic/face-api/demo/sample1.jpg')).toString('base64')}`;
+  const thumbnail = `data:image/jpeg;base64,${(await readFile('tests/fixtures/pet-dog.jpg')).toString('base64')}`;
   await page.addInitScript(({ thumbnail }) => {
     type Pet = { id: number; name: string; media_ids: number[]; cover_media_id: number | null };
     let pets: Pet[] = JSON.parse(localStorage.getItem('pet-test') ?? '[]');
@@ -13,6 +13,7 @@ test('pets collect photos manually and preserve originals', async ({ page }) => 
         if (command === 'list_albums') return [];
         if (command === 'list_face_index') return { people: [], faces: [], scanned: [] };
         if (command === 'list_pets') return pets;
+        if (command === 'media_thumbnail') return 'C:/cache/photo.png';
         if (command === 'save_pet') {
           const id = args.id ?? 1;
           pets = [...pets.filter((pet) => pet.id !== id), { id, name: args.name, media_ids: args.mediaIds, cover_media_id: args.coverMediaId }];
@@ -54,6 +55,16 @@ test('pets collect photos manually and preserve originals', async ({ page }) => 
   await expect(page.getByRole('button', { name: '우리 보리 1장', exact: true })).toBeVisible();
   await page.screenshot({ path: `test-results/pet-list-${test.info().project.name}.png` });
   await page.getByRole('button', { name: '우리 보리 1장', exact: true }).click();
+  await page.route('**/src/features/pets/petRecognition.ts*', (route) => route.fulfill({ contentType: 'application/javascript', body: 'export async function describePets() { return [{kind:"dog", vector:[1,0]}]; } export function similarity() { return 0.9; }' }));
+  await page.getByRole('button', { name: '후보 찾기', exact: true }).click();
+  const review = page.getByRole('dialog', { name: '우리 보리 후보 확인' });
+  await review.getByRole('button', { name: '후보 찾기', exact: true }).click();
+  await expect(review.getByText('후보 2장을 찾았습니다.')).toBeVisible();
+  await expect(review.getByRole('button', { name: '선택한 사진 연결 (0)', exact: true })).toBeDisabled();
+  await review.getByRole('button', { name: '후보 선택', exact: true }).first().click();
+  await page.screenshot({ path: `test-results/pet-candidates-${test.info().project.name}.png` });
+  await review.getByRole('button', { name: '선택한 사진 연결 (1)', exact: true }).click();
+  await expect(page.getByRole('button', { name: '사진 상세보기', exact: true })).toHaveCount(2);
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: '등록 삭제', exact: true }).click();
   await expect(page.getByText('아직 등록한 반려동물이 없습니다.')).toBeVisible();

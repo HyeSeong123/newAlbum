@@ -1,11 +1,12 @@
 import { Calendar } from "./features/calendar/Calendar";
 import { PeopleWorkspace } from "./features/people/PeopleWorkspace";
-import { SavedAlbumsView, AlbumFullscreenReader, ALBUM_COVER_COLORS } from "./features/albums/AlbumsView";
+import { SavedAlbumsView, AlbumFullscreenReader } from "./features/albums/AlbumsView";
+import { AlbumCreateModal } from "./features/albums/AlbumCreateModal";
 import { EmptyState, MediaImage, MediaVisual } from "./components/MediaVisual";
 import { useModalBehavior } from "./hooks/useModalBehavior";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRowSelection } from "./hooks/useRowSelection";
-import { CalendarDays, CheckSquare, ChevronLeft, ChevronRight, Clock3, BookOpen, FolderOpen, Heart, Image, LayoutGrid, LoaderCircle, ListTree, Maximize2, MessageSquare, Music, Pencil, Play, Plus, Search, Settings, SlidersHorizontal, Sparkles, Star, Trash2, Upload, Users, X } from "lucide-react";
+import { ArrowUpDown, CalendarDays, CheckSquare, ChevronLeft, ChevronRight, Clock3, BookOpen, Eye, FolderOpen, Heart, Image, LayoutGrid, LoaderCircle, ListTree, Maximize2, MessageSquare, Music, Pencil, Play, Plus, RotateCcw, Search, Settings, SlidersHorizontal, Sparkles, Star, Trash2, Upload, Users, X, ZoomIn, ZoomOut } from "lucide-react";
 import { groupByTakenDate, isSupportedMedia } from "./features/media/mediaService";
 import {
   chooseAndRegisterFiles,
@@ -18,6 +19,7 @@ import {
   loadSavedAlbums,
   saveAlbum,
   deleteAlbums,
+  incrementMediaView,
   saveMediaDetails,
 } from "./services/tauriMediaService";
 import type { MediaItem, SavedAlbum } from "./types/media";
@@ -34,6 +36,8 @@ type MediaComment = {
 type MediaComments = Record<string, MediaComment[]>;
 
 const GALLERY_PAGE_SIZE = 48;
+type LibrarySort = "date-desc" | "date-asc" | "name" | "comments" | "rating" | "views";
+type LibraryMediaType = "all" | "image" | "video" | "audio";
 
 const MEDIA_COMMENT_STORAGE_KEY = "oraedameun.mediaComments";
 
@@ -60,6 +64,7 @@ export function App() {
   const [photoMode, setPhotoMode] = useState<PhotoMode>("grid");
   const [items, setItems] = useState<MediaItem[]>([]);
   const [savedAlbums, setSavedAlbums] = useState<SavedAlbum[]>([]);
+  const [albumDraftItems, setAlbumDraftItems] = useState<MediaItem[] | null>(null);
   const [selected, setSelected] = useState<MediaItem | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
@@ -80,7 +85,11 @@ export function App() {
   }, [items, query]);
 
   const groups = useMemo(() => groupByTakenDate(filtered), [filtered]);
-  const todayMemories = items.filter((item) => item.takenAt?.endsWith("-08-30"));
+  const commentCounts = useMemo(() => Object.fromEntries(items.map((item) => [item.id, getMediaComments(item, mediaComments).length])), [items, mediaComments]);
+  const now = new Date();
+  const currentYear = String(now.getFullYear());
+  const todayMonthDay = `${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const todayMemories = items.filter((item) => item.takenAt?.slice(5) === todayMonthDay && item.takenAt.slice(0, 4) !== currentYear);
   const selectedCount = selectedIds.size;
 
   useEffect(() => {
@@ -147,6 +156,7 @@ export function App() {
         rating: 0,
         comment: "",
         favorite: false,
+        viewCount: 0,
         tags: ["new"],
         thumbnail: "linear-gradient(135deg, #ece0ca 0%, #b8c1a4 50%, #4d5856 100%)",
         metadataStatus: "queued",
@@ -247,7 +257,7 @@ export function App() {
     if (!selected) return;
     const index = filtered.findIndex((item) => item.id === selected.id);
     const next = filtered[(index + direction + filtered.length) % filtered.length];
-    setSelected(next);
+    if (next) viewMedia(next);
   }
 
   function toggleSelectionMode() {
@@ -277,7 +287,14 @@ export function App() {
       toggleMediaSelection(item.id);
       return;
     }
-    setSelected(item);
+    viewMedia(item);
+  }
+
+  function viewMedia(item: MediaItem) {
+    const viewed = { ...item, viewCount: (item.viewCount ?? 0) + 1 };
+    setSelected(viewed);
+    setItems((current) => current.map((entry) => entry.id === item.id ? viewed : entry));
+    if (tauriEnabled) void incrementMediaView(item.id).catch((error) => console.error("조회수를 저장하지 못했습니다.", error));
   }
 
   async function deleteSelectedItems() {
@@ -300,34 +317,34 @@ export function App() {
     }
   }
 
-  async function createAlbumFromSelectedItems() {
-    if (!selectedCount) return;
-    const title = window.prompt("새 앨범 이름을 입력해 주세요.", "새 추억 앨범");
+  async function createAlbumFromSelectedItems(title: string, coverColor: string) {
+    const albumItems = albumDraftItems ?? [];
+    if (!albumItems.length) return;
     if (!title?.trim()) return;
 
     try {
       if (tauriEnabled) {
-        await createAlbumFromMedia(title.trim(), [...selectedIds]);
+        await createAlbumFromMedia(title.trim(), albumItems.map((item) => item.id), coverColor);
         setSavedAlbums(await loadSavedAlbums());
       } else {
-        const albumItems = items.filter((item) => selectedIds.has(item.id));
         setSavedAlbums((current) => [
           {
             id: `local-album-${Date.now()}`,
             title: title.trim(),
             description: "",
             createdAt: new Date().toISOString(),
-            coverColor: ALBUM_COVER_COLORS[0],
+            coverColor,
             items: albumItems,
           },
           ...current,
         ]);
       }
-      setSelectionNotice(`'${title.trim()}' 앨범에 ${selectedCount}개 항목을 담았습니다.`);
+      setSelectionNotice(`'${title.trim()}' 앨범에 ${albumItems.length}개 항목을 담았습니다.`);
       setSelectionMode(false);
       setSelectedIds(new Set());
     } catch (error) {
       console.error("앨범을 만들지 못했습니다.", error);
+      throw error;
     }
   }
 
@@ -352,6 +369,9 @@ export function App() {
             >
               <Icon size={18} />
               <span>{label}</span>
+              {name === "Memories" && todayMemories.length > 0 && (
+                <strong className="navCount" aria-label={`${todayMemories.length}개`}>{todayMemories.length}</strong>
+              )}
             </button>
           ))}
         </nav>
@@ -414,7 +434,8 @@ export function App() {
                 onToggleSelection={toggleMediaSelection}
                 onToggleSelectionMode={toggleSelectionMode}
                 selectedCount={selectedCount}
-                onCreateAlbum={createAlbumFromSelectedItems}
+                commentCounts={commentCounts}
+                onCreateAlbum={() => setAlbumDraftItems(items.filter((item) => selectedIds.has(item.id)))}
                 onDeleteSelected={deleteSelectedItems}
               />
             )}
@@ -427,11 +448,12 @@ export function App() {
             }} />}
             {activeView === "Timeline" && <Timeline groups={groups} onOpen={openMedia} />}
             {activeView === "Memories" && <Memories items={todayMemories} onOpen={openMedia} />}
-            {activeView === "People" && <PeopleWorkspace items={items} onOpen={openMedia} />}
+            {activeView === "People" && <PeopleWorkspace items={items} onOpen={openMedia} onCreateAlbum={setAlbumDraftItems} />}
             {activeView === "Settings" && <SettingsPanel itemCount={items.length} clearing={clearing} onClear={clearAllRegisteredMedia} />}
           </div>
         </section>
         {selectionNotice && <p className="selectionNotice">{selectionNotice}</p>}
+        {albumDraftItems && <AlbumCreateModal items={albumDraftItems} onClose={() => setAlbumDraftItems(null)} onCreate={createAlbumFromSelectedItems} />}
         {selected && (
           <DetailModal
             item={selected}
@@ -461,6 +483,7 @@ function PhotoView({
   onToggleSelection,
   onToggleSelectionMode,
   selectedCount,
+  commentCounts,
   onCreateAlbum,
   onDeleteSelected,
 }: {
@@ -474,6 +497,7 @@ function PhotoView({
   onToggleSelection: (id: string) => void;
   onToggleSelectionMode: () => void;
   selectedCount: number;
+  commentCounts: Record<string, number>;
   onCreateAlbum: () => void;
   onDeleteSelected: () => void;
 }) {
@@ -500,12 +524,13 @@ function PhotoView({
           onToggleSelection={onToggleSelection}
           onToggleSelectionMode={onToggleSelectionMode}
           selectedCount={selectedCount}
+          commentCounts={commentCounts}
           onCreateAlbum={onCreateAlbum}
           onDeleteSelected={onDeleteSelected}
         />
       )}
       {mode === "calendar" && <Calendar items={items} onOpen={onOpen} />}
-      {mode === "album" && <AlbumFullscreenReader title="나의 앨범" items={items} open={true} onOpen={onOpen} onClose={() => setMode("grid")} />}
+      {mode === "album" && <AlbumFullscreenReader title="나의 앨범" items={items} color="#414143" open={true} onOpen={onOpen} onClose={() => setMode("grid")} />}
     </div>
   );
 }
@@ -519,6 +544,7 @@ function Library({
   onToggleSelection,
   onToggleSelectionMode,
   selectedCount,
+  commentCounts,
   onCreateAlbum,
   onDeleteSelected,
 }: {
@@ -530,21 +556,51 @@ function Library({
   onToggleSelection: (id: string) => void;
   onToggleSelectionMode: () => void;
   selectedCount: number;
+  commentCounts: Record<string, number>;
   onCreateAlbum: () => void;
   onDeleteSelected: () => void;
 }) {
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<LibrarySort>("date-desc");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [mediaType, setMediaType] = useState<LibraryMediaType>("all");
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [commentsOnly, setCommentsOnly] = useState(false);
+  const [minimumRating, setMinimumRating] = useState(0);
   const dragSelection = useRowSelection(selectionMode, onToggleSelection, (id) => selectedIds.has(id));
-  const pageCount = Math.max(1, Math.ceil(items.length / GALLERY_PAGE_SIZE));
+  const visibleCollection = useMemo(() => {
+    const result = items.filter((item) => (
+      (mediaType === "all" || item.fileType === mediaType)
+      && (!favoritesOnly || item.favorite)
+      && (!commentsOnly || (commentCounts[item.id] ?? 0) > 0)
+      && item.rating >= minimumRating
+    ));
+    return result.sort((a, b) => {
+      if (sort === "date-desc") return (b.takenAt ?? "").localeCompare(a.takenAt ?? "") || Number(b.id) - Number(a.id);
+      if (sort === "date-asc") return (a.takenAt ?? "9999").localeCompare(b.takenAt ?? "9999") || Number(a.id) - Number(b.id);
+      if (sort === "name") return a.fileName.localeCompare(b.fileName, "ko", { numeric: true });
+      if (sort === "comments") return (commentCounts[b.id] ?? 0) - (commentCounts[a.id] ?? 0) || (b.takenAt ?? "").localeCompare(a.takenAt ?? "");
+      if (sort === "rating") return b.rating - a.rating || (b.takenAt ?? "").localeCompare(a.takenAt ?? "");
+      return (b.viewCount ?? 0) - (a.viewCount ?? 0) || (b.takenAt ?? "").localeCompare(a.takenAt ?? "");
+    });
+  }, [items, mediaType, favoritesOnly, commentsOnly, minimumRating, sort, commentCounts]);
+  const activeFilterCount = Number(mediaType !== "all") + Number(favoritesOnly) + Number(commentsOnly) + Number(minimumRating > 0);
+  const pageCount = Math.max(1, Math.ceil(visibleCollection.length / GALLERY_PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
   const startIndex = (currentPage - 1) * GALLERY_PAGE_SIZE;
-  const visibleItems = items.slice(startIndex, startIndex + GALLERY_PAGE_SIZE);
-  const rangeStart = items.length ? startIndex + 1 : 0;
-  const rangeEnd = Math.min(startIndex + GALLERY_PAGE_SIZE, items.length);
+  const visibleItems = visibleCollection.slice(startIndex, startIndex + GALLERY_PAGE_SIZE);
+  const rangeStart = visibleCollection.length ? startIndex + 1 : 0;
+  const rangeEnd = Math.min(startIndex + GALLERY_PAGE_SIZE, visibleCollection.length);
 
   useEffect(() => {
     setPage((current) => Math.min(current, pageCount));
   }, [pageCount]);
+
+  useEffect(() => { setPage(1); }, [sort, mediaType, favoritesOnly, commentsOnly, minimumRating]);
+
+  function clearFilters() {
+    setMediaType("all"); setFavoritesOnly(false); setCommentsOnly(false); setMinimumRating(0);
+  }
 
   return (
     <>
@@ -554,9 +610,20 @@ function Library({
             {selectionMode ? <X size={17} /> : <CheckSquare size={17} />}
             {selectionMode ? "선택 끝내기" : "사진 선택"}
           </button>
-          <button className="iconText"><SlidersHorizontal size={17} />필터</button>
+          <label className="sortControl"><ArrowUpDown size={17} /><select aria-label="정렬 기준" value={sort} onChange={(event) => setSort(event.target.value as LibrarySort)}>
+            <option value="date-desc">날짜 최신순</option><option value="date-asc">날짜 오래된순</option><option value="comments">댓글 많은순</option><option value="rating">별점 높은순</option><option value="views">조회수 많은순</option><option value="name">이름순</option>
+          </select></label>
+          <button className={activeFilterCount ? "iconText filterActive" : "iconText"} aria-expanded={filtersOpen} aria-controls="libraryFilters" onClick={() => setFiltersOpen(!filtersOpen)}><SlidersHorizontal size={17} />필터{activeFilterCount ? ` ${activeFilterCount}` : ""}</button>
         </div>
       </div>
+      {filtersOpen && <section id="libraryFilters" className="filterPanel" aria-label="사진 필터">
+        <label>종류<select aria-label="미디어 종류" value={mediaType} onChange={(event) => setMediaType(event.target.value as LibraryMediaType)}><option value="all">전체</option><option value="image">사진</option><option value="video">영상</option><option value="audio">음원</option></select></label>
+        <label>최소 별점<select aria-label="최소 별점" value={minimumRating} onChange={(event) => setMinimumRating(Number(event.target.value))}><option value="0">전체</option>{[1, 2, 3, 4, 5].map((score) => <option key={score} value={score}>{score}점 이상</option>)}</select></label>
+        <label className="filterCheck"><input type="checkbox" checked={favoritesOnly} onChange={(event) => setFavoritesOnly(event.target.checked)} />즐겨찾기만</label>
+        <label className="filterCheck"><input type="checkbox" checked={commentsOnly} onChange={(event) => setCommentsOnly(event.target.checked)} />댓글 있는 사진만</label>
+        <span className="filterResult">{visibleCollection.length}장</span>
+        <button className="iconText" disabled={!activeFilterCount} onClick={clearFilters}><X size={16} />초기화</button>
+      </section>}
       {selectionMode && (
         <div className="selectionDock" aria-label={`${selectedCount}장 선택됨`}>
           <div className="selectionActions">
@@ -570,6 +637,7 @@ function Library({
         </div>
       )}
       {!items.length && <EmptyState text="아직 담긴 사진과 영상이 없습니다. 위의 파일 선택 또는 폴더 선택으로 첫 기록을 담아보세요." />}
+      {Boolean(items.length) && !visibleCollection.length && <EmptyState text="조건에 맞는 사진과 영상이 없습니다." />}
       <div
         className={selectionMode ? "galleryGrid selecting" : "galleryGrid"}
         {...dragSelection}
@@ -600,9 +668,9 @@ function Library({
           </button>
         ))}
       </div>
-      {items.length > GALLERY_PAGE_SIZE && (
+      {visibleCollection.length > GALLERY_PAGE_SIZE && (
         <nav className="pagination" aria-label="모아보기 페이지">
-          <span>{rangeStart}-{rangeEnd} / {items.length}장</span>
+          <span>{rangeStart}-{rangeEnd} / {visibleCollection.length}장</span>
           <div>
             <button onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={currentPage === 1}>
               <ChevronLeft size={17} />이전
@@ -630,7 +698,7 @@ function Timeline({ groups, onOpen }: { groups: Record<string, MediaItem[]>; onO
             {items.map((item) => (
               <button key={item.id} className="stripItem" onClick={() => onOpen(item)} style={{ background: item.thumbnail }}>
                 <MediaImage item={item} />
-                <span>{item.comment || "기록 보기"}</span>
+                <span>{item.comment}</span>
               </button>
             ))}
           </div>
@@ -708,7 +776,7 @@ function DetailModal({
   onPrev: () => void;
   onNext: () => void;
 }) {
-  const [zoomed, setZoomed] = useState(false);
+  const [zoomViewerOpen, setZoomViewerOpen] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(true);
   const [commentAuthor, setCommentAuthor] = useState("");
   const [commentContent, setCommentContent] = useState("");
@@ -757,14 +825,12 @@ function DetailModal({
             <Heart size={19} fill={item.favorite ? "currentColor" : "none"} />
           </button>
           <button title="댓글" aria-expanded={commentsOpen} aria-controls="photoComments" onClick={() => setCommentsOpen(!commentsOpen)}><MessageSquare size={19} /></button>
-          <button title={zoomed ? "화면에 맞추기" : "확대"} aria-pressed={zoomed} onClick={() => setZoomed((current) => !current)}>
-            <Maximize2 size={18} />
-          </button>
+          {item.fileType === "image" && <button title="확대 보기" onClick={() => setZoomViewerOpen(true)}><Maximize2 size={18} /></button>}
           <button className="closeButton" title="닫기" onClick={onClose}><X size={18} /></button>
         </div>
         <div className="detailLayout">
           <div className="detailPhotoPane">
-            <MediaVisual item={item} className={zoomed ? "detailStage zoomed" : "detailStage"}>
+            <MediaVisual item={item} original className="detailStage">
               {item.fileType === "video" && <Play size={52} fill="currentColor" />}
               {item.fileType === "audio" && <Music size={52} />}
               <button className="photoNavButton prev" title="이전" onClick={onPrev}><ChevronLeft size={22} /></button>
@@ -775,6 +841,7 @@ function DetailModal({
             <div className="detailInfoStrip">
             <div className="viewerMeta">
               <span><Clock3 size={14} />{item.takenAt ?? "날짜 없음"}</span>
+              <span><Eye size={14} />{item.viewCount ?? 0}회</span>
               <span>{item.width && item.height ? `${item.width} x ${item.height}` : item.duration} · {item.sizeLabel}</span>
             </div>
             <section className="detailSection" aria-label="별점">
@@ -840,6 +907,41 @@ function DetailModal({
               </div>
             </section>}
           </div>
+        </div>
+      </section>
+      {zoomViewerOpen && <PhotoZoomViewer item={item} onClose={() => setZoomViewerOpen(false)} />}
+    </div>
+  );
+}
+
+function PhotoZoomViewer({ item, onClose }: { item: MediaItem; onClose: () => void }) {
+  const [scale, setScale] = useState(1);
+  useModalBehavior(onClose);
+
+  function changeScale(next: number) {
+    setScale(Math.min(4, Math.max(1, Math.round(next * 10) / 10)));
+  }
+
+  return (
+    <div className="photoZoomBackdrop" role="presentation">
+      <section className="photoZoomViewer" role="dialog" aria-modal="true" aria-label="사진 확대 보기">
+        <div className="photoZoomToolbar" aria-label="확대 배율 조절">
+          <button title="축소" onClick={() => changeScale(scale - 0.25)} disabled={scale <= 1}><ZoomOut size={20} /></button>
+          <input aria-label="확대 배율" type="range" min="1" max="4" step="0.1" value={scale} onChange={(event) => changeScale(Number(event.target.value))} />
+          <output>{Math.round(scale * 100)}%</output>
+          <button title="확대" onClick={() => changeScale(scale + 0.25)} disabled={scale >= 4}><ZoomIn size={20} /></button>
+          <button title="100%로 복원" onClick={() => setScale(1)}><RotateCcw size={19} /></button>
+          <button className="photoZoomClose" title="확대 보기 닫기" onClick={onClose}><X size={20} /></button>
+        </div>
+        <div className="photoZoomStage">
+          <button
+            className="photoZoomCanvas"
+            style={{ width: `${scale * 100}%`, height: `${scale * 100}%` }}
+            title={scale < 4 ? "사진 확대" : "최대 배율"}
+            onClick={() => changeScale(scale + 0.5)}
+          >
+            <MediaImage item={item} original />
+          </button>
         </div>
       </section>
     </div>

@@ -2,10 +2,11 @@ import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import type { MediaItem } from '../../types/media';
 
 export interface FaceRow { id: number; media_id: number; person_id: number; thumbnail: string; confirmed: boolean }
-export interface FaceIndex { people: { id: number; name: string }[]; faces: FaceRow[]; scanned: number[] }
+export interface FaceIndex { people: { id: number; name: string; cover_face_id?: number | null }[]; faces: FaceRow[]; scanned: number[] }
 export const emptyFaceIndex: FaceIndex = { people: [], faces: [], scanned: [] };
 export const loadFaceIndex = () => invoke<FaceIndex>('list_face_index');
 export const renamePerson = (id: number, name: string) => invoke('rename_face_person', { id, name });
+export const setPersonCoverFace = (personId: number, faceId: number) => invoke('set_person_cover_face', { personId, faceId });
 export const moveFaces = (ids: number[], target: number | null) => invoke('move_faces', { ids, target });
 export const clearFaceIndex = () => invoke('clear_face_index');
 export interface FaceMatch { face_id: number; person_id: number }

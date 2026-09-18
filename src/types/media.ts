@@ -13,6 +13,7 @@ export interface MediaItem {
   rating: number;
   comment: string;
   favorite: boolean;
+  viewCount: number;
   tags: string[];
   thumbnail: string;
   metadataStatus: "ready" | "queued" | "missing-date";

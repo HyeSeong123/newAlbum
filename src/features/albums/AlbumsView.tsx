@@ -1,13 +1,12 @@
-import { CSSProperties, FormEvent, useEffect, useRef, useState } from "react";
-import { BookCover } from "book-cover-3d";
-import { BookOpen, Check, CheckSquare, ChevronLeft, ChevronRight, Dices, Music, Pencil, Play, Trash2, X } from "lucide-react";
+import { FormEvent, useEffect, useRef, useState, type CSSProperties } from "react";
+import { Check, CheckSquare, ChevronLeft, ChevronRight, Dices, Music, Pencil, Play, Trash2, X } from "lucide-react";
 import type { MediaItem, SavedAlbum } from "../../types/media";
 import { EmptyState, MediaVisual } from "../../components/MediaVisual";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
+import { AlbumColorPicker, AlbumCover } from "./AlbumCover";
 
 type AlbumPage = MediaItem[];
 
-export const ALBUM_COVER_COLORS = ["#B9C58E", "#D8B18F", "#AFC5CF", "#C4B2D8", "#D9C96F", "#9C8069"];
 
 export function SavedAlbumsView({
   albums,
@@ -52,44 +51,22 @@ export function SavedAlbumsView({
       {error && <p role="alert">{error}</p>}
       {!albums.length && <EmptyState text="아직 만든 앨범이 없습니다. 모아보기에서 사진을 선택해 앨범을 만들어보세요." />}
       <div className="savedAlbumGrid">
-        {albums.map((album) => (
-          <article key={album.id} className="savedAlbumCard" style={{ "--album-cover": album.coverColor } as CSSProperties}>
+        {albums.map((album) => {
+          return (
+          <article key={album.id} className="savedAlbumCard">
             <button className="savedAlbumOpen" disabled={busy} aria-pressed={selecting ? chosen.includes(album.id) : undefined} onClick={() => selecting ? setChosen((current) => current.includes(album.id) ? current.filter((id) => id !== album.id) : [...current, album.id]) : setActiveAlbum(album)} aria-label={`${album.title} 앨범 ${selecting ? "선택" : "열기"}`}>
               {selecting && <span className={`albumSelectionMark ${chosen.includes(album.id) ? "checked" : ""}`}>{chosen.includes(album.id) && <Check size={22} strokeWidth={3} />}</span>}
-              <span className="savedAlbumBook">
-                <BookCover
-                  width={236}
-                  height={326}
-                  rotate={32}
-                  rotateHover={24}
-                  perspective={850}
-                  transitionDuration={0.35}
-                  radius={3}
-                  thickness={48}
-                  pagesOffset={5}
-                  bgColor={album.coverColor}
-                  shadowColor="rgba(63, 45, 35, .18)"
-                >
-                  <span className="savedAlbumCoverFace">
-                    <span className="albumCoverSpine" aria-hidden="true" />
-                  <span className="albumCoverText">
-                    <strong>{album.title}</strong>
-                  </span>
-                  <span className="albumCoverWindow">
-                    {album.items[0] ? <MediaVisual item={album.items[0]} /> : <BookOpen size={24} />}
-                  </span>
-                  </span>
-                  <span className="albumPhysicalSpine" aria-hidden="true" />
-                </BookCover>
-              </span>
+              <AlbumCover title={album.title} items={album.items} color={album.coverColor} />
             </button>
           </article>
-        ))}
+          );
+        })}
       </div>
       {activeAlbum && (
         <AlbumFullscreenReader
           title={activeAlbum.title}
           items={activeAlbum.items}
+          color={activeAlbum.coverColor}
           open={true}
           onOpen={onOpen}
           onClose={() => setActiveAlbum(null)}
@@ -122,10 +99,7 @@ function AlbumEditor({ album, onClose, onSave }: { album: SavedAlbum; onClose: (
       <form onSubmit={(event) => void submit(event)}>
         <fieldset disabled={busy}>
           <label className="albumTitleField">제목<input required maxLength={80} value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} /></label>
-          <div className="albumColorOptions" role="group" aria-label="표지 색상">
-            {ALBUM_COVER_COLORS.map((color) => <button key={color} type="button" title={`표지 색상 ${color}`} aria-pressed={draft.coverColor === color} style={{ backgroundColor: color }} onClick={() => setDraft({ ...draft, coverColor: color })}>{draft.coverColor === color && <Check size={20} />}</button>)}
-            <label>직접 선택<input type="color" aria-label="표지 색상 직접 선택" value={draft.coverColor} onChange={(event) => setDraft({ ...draft, coverColor: event.target.value })} /></label>
-          </div>
+          <AlbumColorPicker value={draft.coverColor} onChange={(coverColor) => setDraft({ ...draft, coverColor })} items={draft.items} title={draft.title} />
           <div className="albumActions"><strong>사진 {draft.items.length}장</strong><button type="button" disabled={!chosen.length} onClick={() => { setDraft({ ...draft, items: draft.items.filter((item) => !chosen.includes(item.id)) }); setChosen([]); }}><Trash2 size={17} />앨범에서 삭제{chosen.length > 0 ? ` (${chosen.length})` : ""}</button></div>
           <div className="albumEditPhotos">{draft.items.slice(currentPage * 24, (currentPage + 1) * 24).map((item) => <button type="button" key={item.id} aria-label={`${item.takenAt ?? "날짜 없음"} 사진 선택`} aria-pressed={chosen.includes(item.id)} onClick={() => setChosen((current) => current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id])}>
             <MediaVisual item={item} /><span className={`albumSelectionMark ${chosen.includes(item.id) ? "checked" : ""}`}>{chosen.includes(item.id) && <Check size={22} strokeWidth={3} />}</span>
@@ -143,24 +117,26 @@ function AlbumEditor({ album, onClose, onSave }: { album: SavedAlbum; onClose: (
 export function AlbumFullscreenReader({
   title,
   items,
+  color = "#414143",
   open,
   onOpen,
   onClose,
 }: {
   title: string;
   items: MediaItem[];
+  color?: string;
   open: boolean;
   onOpen: (item: MediaItem) => void;
   onClose: () => void;
 }) {
-  const [pages, setPages] = useState<AlbumPage[]>(() => makeAlbumPages(items));
+  const [pages, setPages] = useState<AlbumPage[]>(() => makeAlbumPages(items, 4));
   const [pageIndex, setPageIndex] = useState(0);
   const [turning, setTurning] = useState<"next" | "prev" | null>(null);
-  const [visibleLeftItems, setVisibleLeftItems] = useState<AlbumPage>(() => splitAlbumPage(pages[0] ?? []).left);
-  const [visibleRightItems, setVisibleRightItems] = useState<AlbumPage>(() => splitAlbumPage(pages[0] ?? []).right);
-  const visibleItemCount = visibleLeftItems.length + visibleRightItems.length;
+  const [turnPhase, setTurnPhase] = useState<"departing" | "arriving" | null>(null);
+  const [visibleItems, setVisibleItems] = useState<AlbumPage>(() => pages[0] ?? []);
   const timers = useRef<number[]>([]);
   const turnLock = useRef(false);
+  const mediaOrderKey = items.map((item) => item.id).join("|");
 
   function cancelTurn() {
     timers.current.forEach(window.clearTimeout);
@@ -174,27 +150,25 @@ export function AlbumFullscreenReader({
 
   useEffect(() => {
     cancelTurn();
-    const nextPages = makeAlbumPages(items);
-    const firstSpread = splitAlbumPage(nextPages[0] ?? []);
+    const nextPages = makeAlbumPages(items, 4);
     setPages(nextPages);
     setPageIndex(0);
     setTurning(null);
-    setVisibleLeftItems(firstSpread.left);
-    setVisibleRightItems(firstSpread.right);
+    setTurnPhase(null);
+    setVisibleItems(nextPages[0] ?? []);
     return cancelTurn;
-  }, [items]);
+  }, [mediaOrderKey]);
 
   useModalBehavior(onClose, { enabled: open, onPrev: () => turnPage(-1), onNext: () => turnPage(1) });
 
   function shuffleAlbum() {
     cancelTurn();
-    const nextPages = makeAlbumPages(items);
-    const firstSpread = splitAlbumPage(nextPages[0] ?? []);
+    const nextPages = makeAlbumPages(items, 4);
     setPages(nextPages);
     setPageIndex(0);
     setTurning(null);
-    setVisibleLeftItems(firstSpread.left);
-    setVisibleRightItems(firstSpread.right);
+    setTurnPhase(null);
+    setVisibleItems(nextPages[0] ?? []);
   }
 
   function turnPage(direction: -1 | 1) {
@@ -203,23 +177,16 @@ export function AlbumFullscreenReader({
     if (nextIndex === pageIndex) return;
     turnLock.current = true;
 
-    const nextSpread = splitAlbumPage(pages[nextIndex] ?? []);
     setTurning(direction > 0 ? "next" : "prev");
-    if (direction > 0) {
-      setVisibleRightItems(nextSpread.right);
-      schedule(() => setVisibleLeftItems(nextSpread.left), 360);
-    } else {
-      setVisibleLeftItems(nextSpread.left);
-      schedule(() => setVisibleRightItems(nextSpread.right), 360);
-    }
-    schedule(() => setPageIndex(nextIndex), 760);
-    schedule(() => { setTurning(null); cancelTurn(); }, 820);
+    setTurnPhase("departing");
+    schedule(() => { setTurnPhase("arriving"); setVisibleItems(pages[nextIndex] ?? []); setPageIndex(nextIndex); }, 300);
+    schedule(() => { setTurnPhase(null); setTurning(null); cancelTurn(); }, 820);
   }
 
   if (!open) return null;
 
   return (
-        <div className="albumFullscreen" role="dialog" aria-modal="true" aria-label="앨범 전체창">
+        <div className="albumFullscreen" style={{ "--album-color": color } as CSSProperties} role="dialog" aria-modal="true" aria-label="앨범 전체창">
           <header className="albumFullscreenHeader">
             <div>
               <h2>{title}</h2>
@@ -231,31 +198,19 @@ export function AlbumFullscreenReader({
           </header>
           {!items.length && <EmptyState text="앨범에 사진이 없습니다." />}
           <div className="albumReadingStage">
-          <div className={`bookSpread immersive layout-${visibleItemCount || 1} ${turning ? `turning-${turning}` : ""}`} aria-label="앨범 책장">
-            <div className="bookPage leftPage">
-              <span className="pageNumber">{pageIndex * 2 + 1}</span>
-              {visibleLeftItems.map((item) => (
-                <button key={item.id} className="albumPhoto" onClick={() => onOpen(item)} aria-label="사진 상세보기">
-                  <MediaVisual item={item}>
-                    {item.fileType === "video" && <Play size={28} fill="currentColor" />}
-                    {item.fileType === "audio" && <Music size={28} />}
-                  </MediaVisual>
-                </button>
-              ))}
+            <div className={`binderStage ${turning ? `turning-${turning}` : ""} ${turning && turnPhase ? `${turnPhase}-${turning}` : ""}`} data-turn-phase={turnPhase ?? undefined} aria-label="양면 포토앨범 책장">
+              <div className="binderBook">
+                <section className="binderPage left">
+                  {visibleItems.slice(0, 2).map((item, index) => <AlbumMountedPhoto key={item.id} item={item} index={index} side="left" onOpen={onOpen} />)}
+                  <span className="binderPageNumber">{pageIndex * 2 + 1}</span>
+                </section>
+                <section className="binderPage right">
+                  {visibleItems.slice(2, 4).map((item, index) => <AlbumMountedPhoto key={item.id} item={item} index={index + 2} side="right" onOpen={onOpen} />)}
+                  <span className="binderPageNumber">{pageIndex * 2 + 2}</span>
+                </section>
+                {turning && <span className={`binderTurnLayer ${turning}`} aria-hidden="true" />}
+              </div>
             </div>
-            <div className="bookPage rightPage">
-              <span className="pageNumber">{pageIndex * 2 + 2}</span>
-              {visibleRightItems.map((item) => (
-                <button key={item.id} className="albumPhoto" onClick={() => onOpen(item)} aria-label="사진 상세보기">
-                  <MediaVisual item={item}>
-                    {item.fileType === "video" && <Play size={28} fill="currentColor" />}
-                    {item.fileType === "audio" && <Music size={28} />}
-                  </MediaVisual>
-                </button>
-              ))}
-            </div>
-            {turning && <span className={`paperTurnLayer ${turning}`} aria-hidden="true" />}
-          </div>
           </div>
           <footer className="albumReaderControls">
             <button onClick={() => turnPage(-1)} disabled={Boolean(turning) || pageIndex === 0} title="이전 책장"><ChevronLeft size={22} /></button>
@@ -266,23 +221,24 @@ export function AlbumFullscreenReader({
   );
 }
 
-function makeAlbumPages(items: MediaItem[]): AlbumPage[] {
+function AlbumMountedPhoto({ item, index, side, onOpen }: { item: MediaItem; index: number; side: "left" | "right"; onOpen: (item: MediaItem) => void }) {
+  return <button data-slot={index} data-side={side} className="albumMountedPhoto" onClick={() => onOpen(item)} aria-label="사진 상세보기">
+    <MediaVisual item={item} original>
+      {item.fileType === "video" && <Play size={28} fill="currentColor" />}
+      {item.fileType === "audio" && <Music size={28} />}
+    </MediaVisual>
+  </button>;
+}
+
+function makeAlbumPages(items: MediaItem[], pageSize: number): AlbumPage[] {
   const shuffled = [...items].sort(() => Math.random() - 0.5);
   const pages: AlbumPage[] = [];
   let index = 0;
   while (index < shuffled.length) {
     const remaining = shuffled.length - index;
-    const count = Math.min(remaining, 4);
+    const count = Math.min(remaining, pageSize);
     pages.push(shuffled.slice(index, index + count));
     index += count;
   }
   return pages.length ? pages : [[]];
-}
-
-function splitAlbumPage(page: AlbumPage): { left: AlbumPage; right: AlbumPage } {
-  const midpoint = Math.ceil(page.length / 2);
-  return {
-    left: page.slice(0, midpoint),
-    right: page.slice(midpoint),
-  };
 }

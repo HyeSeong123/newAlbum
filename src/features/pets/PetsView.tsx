@@ -7,6 +7,8 @@ import { useRowSelection } from '../../hooks/useRowSelection';
 import { isTauriRuntime } from '../../services/tauriMediaService';
 import { deletePet, loadPets, Pet, savePet } from './petService';
 import './pets.css';
+import { PetMatchReview } from './PetMatchReview';
+import { ScanSearch } from 'lucide-react';
 
 export function PetsView({ items, onOpen }: { items: MediaItem[]; onOpen: (item: MediaItem) => void }) {
   const [pets, setPets] = useState<Pet[]>([]);
@@ -16,6 +18,7 @@ export function PetsView({ items, onOpen }: { items: MediaItem[]; onOpen: (item:
   const [active, setActive] = useState<number | null>(null);
   const [editing, setEditing] = useState<Pet | null>(null);
   const [page, setPage] = useState(0);
+  const [reviewing, setReviewing] = useState(false);
   const desktop = isTauriRuntime();
   const photos = items.filter((item) => item.fileType === 'image');
   const pet = pets.find((entry) => entry.id === active);
@@ -41,6 +44,7 @@ export function PetsView({ items, onOpen }: { items: MediaItem[]; onOpen: (item:
     <div className="panelHeader">
       <h2>{pet?.name ?? '반려동물'}</h2>
       <div className="peopleActions">
+        {pet && <button disabled={busy || !linked.length} onClick={() => setReviewing(true)}><ScanSearch size={18} />후보 찾기</button>}
         {pet && <><button title="반려동물 목록" onClick={() => { setActive(null); setPage(0); }}><ArrowLeft size={18} /></button><button disabled={busy} onClick={() => setEditing(pet)}><Pencil size={18} />사진·이름 편집</button><button disabled={busy} onClick={() => void remove()}><Trash2 size={18} />등록 삭제</button></>}
         {!pet && <button disabled={loading || !desktop} onClick={() => setEditing({ id: 0, name: '', cover_media_id: null, media_ids: [] })}><Plus size={18} />반려동물 등록</button>}
       </div>
@@ -57,6 +61,7 @@ export function PetsView({ items, onOpen }: { items: MediaItem[]; onOpen: (item:
     })}</div>
     {pages > 1 && <div className="peopleActions"><button title="이전 페이지" disabled={!currentPage} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={18} /></button><span>{currentPage + 1} / {pages}</span><button title="다음 페이지" disabled={currentPage === pages - 1} onClick={() => setPage(currentPage + 1)}><ChevronRight size={18} /></button></div>}
     {editing && <PetEditor pet={editing} photos={photos} onClose={() => setEditing(null)} onSaved={async (id) => { setPets(await loadPets()); setActive(id); setPage(0); }} />}
+    {reviewing && pet && <PetMatchReview pet={pet} photos={photos} onClose={() => setReviewing(false)} onSaved={async () => { setPets(await loadPets()); }} />}
   </section>;
 }
 

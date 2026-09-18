@@ -19,3 +19,13 @@ tauri = { version = "2", features = ["protocol-asset"] }
 tauri-plugin-dialog = "2"
 rusqlite = { version = "0.32", features = ["bundled"] }
 walkdir = "2"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "gif", "bmp", "tiff"] }
+
+[profile.dev.package.image]
+opt-level = 3
+
+[profile.dev.package.png]
+opt-level = 3
+
+[profile.dev.package.zune-jpeg]
+opt-level = 3

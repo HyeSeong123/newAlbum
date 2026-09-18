@@ -28,7 +28,8 @@ test('redesigned views fit and retain photo workflows', async ({ page }) => {
   await expect(page.locator('.topbar .importActions')).toBeVisible();
   if (test.info().project.name === 'desktop') {
     const nav = await page.locator('.sidebar').boundingBox();
-    expect(nav!.height).toBeLessThan(100);
+    expect(nav!.height).toBe(100);
+    await expect(page.locator('.sidebar .navList button').first()).toHaveCSS('font-size', '16px');
     const tabs = await page.locator('.viewTabs').boundingBox();
     const actions = await page.locator('.collectionTools').boundingBox();
     expect(Math.abs(tabs!.y + tabs!.height / 2 - actions!.y - actions!.height / 2)).toBeLessThan(4);
@@ -65,6 +66,12 @@ test('redesigned views fit and retain photo workflows', async ({ page }) => {
   await capture('detail-focused');
   await page.getByTitle('댓글', { exact: true }).click();
   await page.getByTitle('닫기').click();
+  await page.getByRole('button', { name: '시간순', exact: true }).click();
+  await page.locator('.stripItem').first().hover();
+  await page.waitForTimeout(200);
+  expect(await page.locator('.stripItem').first().evaluate((element) => getComputedStyle(element).transform)).not.toBe('none');
+  await capture('timeline-hover');
+  await page.getByRole('button', { name: '사진보기', exact: true }).click();
   await page.getByRole('tab', { name: '달력보기' }).click();
   await capture('calendar');
   await page.getByRole('button', { name: '일정 등록', exact: true }).click();
@@ -72,17 +79,29 @@ test('redesigned views fit and retain photo workflows', async ({ page }) => {
   await capture('event');
   await page.getByTitle('닫기').click();
   await page.getByRole('tab', { name: '앨범보기' }).click();
+  await page.locator('.albumMountedPhoto .mediaImage').evaluateAll((images: HTMLImageElement[]) => Promise.all(images.map((image) => image.decode())));
   await capture('reader');
-  const book = await page.locator('.bookSpread').boundingBox();
+  const book = await page.locator('.binderStage').boundingBox();
   const pager = await page.locator('.albumReaderControls').boundingBox();
   expect(book!.y + book!.height).toBeLessThan(pager!.y);
   const header = await page.locator('.albumFullscreenHeader').boundingBox();
   const close = await page.locator('.albumFullscreen').getByTitle('닫기').boundingBox();
   expect(close!.y + close!.height).toBeLessThanOrEqual(header!.y + header!.height);
   await page.getByTitle('다음 책장', { exact: true }).click();
+  await expect(page.locator('.binderStage')).toHaveAttribute('data-turn-phase', 'departing');
+  await expect(page.locator('.albumMountedPhoto[data-side="right"]').first()).toHaveCSS('opacity', '0');
+  await page.waitForTimeout(120);
+  await expect(page.locator('.albumMountedPhoto[data-side="left"]').first()).toHaveCSS('opacity', '0');
+  await capture('reader-turn-empty');
+  await page.waitForTimeout(220);
+  await expect(page.locator('.binderStage')).toHaveAttribute('data-turn-phase', 'arriving');
+  await capture('reader-turn-mid');
   await expect(page.locator('.albumPager')).toHaveText('2 / 5 책장');
   await expect(page.getByTitle('이전 책장', { exact: true })).toBeEnabled();
-  await expect(page.locator('.leftPage .pageNumber')).toHaveText('3');
+  await expect(page.locator('.binderPage.left .binderPageNumber')).toHaveText('3');
+  await expect(page.locator('.binderPage.right .binderPageNumber')).toHaveText('4');
+  await page.waitForTimeout(500);
+  await expect(page.locator('.binderTurnLayer')).toHaveCount(0);
   await page.getByTitle('다음 책장', { exact: true }).click();
   await page.getByRole('button', { name: '다시 섞기' }).click();
   await page.waitForTimeout(900);
@@ -96,7 +115,7 @@ test('redesigned views fit and retain photo workflows', async ({ page }) => {
   await page.keyboard.press('ArrowRight');
   await expect(page.locator('.albumPager')).toHaveText('2 / 5 책장');
   await expect(page.getByTitle('이전 책장', { exact: true })).toBeEnabled();
-  await page.locator('.albumPhoto').first().click();
+  await page.locator('.albumMountedPhoto').first().click();
   await expect(page.getByRole('dialog', { name: '사진 상세' })).toBeVisible();
   await page.keyboard.press('ArrowRight');
   await page.waitForTimeout(900);
@@ -107,5 +126,48 @@ test('redesigned views fit and retain photo workflows', async ({ page }) => {
   await page.getByTitle('닫기').click();
   await expect(page.getByRole('tab', { name: '모아보기' })).toHaveAttribute('aria-selected', 'true');
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
+  await expect(page.locator('.frontAlbum')).toHaveCount(9);
+  await page.evaluate(() => document.fonts.load('26px "Album Handwriting"'));
+  const cover = await page.locator('.frontAlbumCover').first().boundingBox();
+  const title = await page.locator('.frontAlbumTitle').first().boundingBox();
+  await expect(page.locator('.frontAlbumCover').first().locator('.frontAlbumWindow')).toHaveCount(1);
+  const windowBox = await page.locator('.frontAlbumWindow').first().boundingBox();
+  expect(windowBox!.x).toBeGreaterThan(cover!.x);
+  expect(windowBox!.y).toBeGreaterThan(cover!.y);
+  expect(windowBox!.x + windowBox!.width).toBeLessThan(cover!.x + cover!.width);
+  expect(windowBox!.y + windowBox!.height).toBeLessThan(title!.y);
+  await expect(page.locator('.frontAlbum').first()).toHaveCSS('transform', 'none');
+  await page.locator('.savedAlbumOpen').first().hover();
+  await expect(page.locator('.frontAlbum').first()).toHaveCSS('animation-name', 'none');
+  await expect(page.locator('.frontAlbum').first()).toHaveCSS('transform', 'none');
+  expect(await page.locator('.frontAlbum').first().evaluate((element) => getComputedStyle(element).filter)).not.toBe('none');
   await capture('albums');
+  await page.getByRole('button', { name: '우리의 봄 앨범 열기', exact: true }).click();
+  await expect(page.locator('.albumFullscreen')).toBeVisible();
+  await expect(page.locator('.bookSpread, .bookPage, .leftPage, .rightPage')).toHaveCount(0);
+  await page.getByTitle('닫기').click();
+});
+
+test('fabric covers use one cover window for every album', async ({ page }) => {
+  await page.addInitScript(() => {
+    const media = Array.from({ length: 4 }, (_, index) => ({ id: index + 1, file_path: `C:/cover-${index}.jpg`, file_type: 'image', taken_at: '2026-09-01', width: 640, height: 480, duration: null, size_bytes: 1000, rating: 0, comment: '', favorite: false, metadata_status: 'ready' }));
+    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
+      convertFileSrc: () => '/favicon.svg',
+      invoke: async (command: string) => {
+        if (command === 'list_media') return media;
+        if (command === 'list_albums') return Array.from({ length: 5 }, (_, count) => ({ id: count + 1, title: '우리 가족이 함께 남긴 소중한 봄날의 추억', description: '', cover_color: count % 2 ? '#334239' : '#AFC5CF', created_at: '2026-09-01', items: media.slice(0, count) }));
+        return [];
+      },
+    } });
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: '내 앨범', exact: true }).click();
+  await expect(page.locator('.frontAlbumCover')).toHaveCount(5);
+  await page.evaluate(() => document.fonts.load('26px "Album Handwriting"'));
+  for (let count = 0; count <= 4; count++) {
+    const album = page.locator('.frontAlbumCover').nth(count);
+    await expect(album.locator('.frontAlbumWindow')).toHaveCount(1);
+    await expect(album.locator('.frontAlbumSpine')).toHaveCount(1);
+  }
+  await page.screenshot({ path: `test-results/fabric-cover-counts-${test.info().project.name}.png` });
 });

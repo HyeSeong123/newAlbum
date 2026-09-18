@@ -133,6 +133,22 @@ button:disabled {
   padding: 0 14px;
 }
 
+.navCount {
+  min-width: 22px;
+  height: 22px;
+  margin-left: auto;
+  padding: 0 7px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  background: var(--primary);
+  font-size: 11px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
 .navList button:hover,
 .viewTabs button:hover,
 .calendarModeTabs button:hover,
@@ -421,7 +437,6 @@ h2 {
 }
 
 .thumb,
-.albumPhoto div,
 .calendarGrid i,
 .stripItem,
 .memoryGrid button {
@@ -667,24 +682,6 @@ h2 {
 .detailStage .mediaImage {
   object-fit: contain;
   background: #2A2521;
-}
-
-.detailStage.zoomed {
-  place-items: start;
-  overflow: auto;
-  cursor: grab;
-}
-
-.detailStage.zoomed .mediaImage {
-  position: relative;
-  inset: auto;
-  width: auto;
-  height: auto;
-  min-width: 145%;
-  min-height: 145%;
-  max-width: none;
-  max-height: none;
-  object-fit: contain;
 }
 
 .photoNavButton {
@@ -948,43 +945,9 @@ textarea {
   min-height: 520px;
 }
 
-.savedAlbumGrid {
-  margin-top: 26px;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 28px 22px;
-  align-items: end;
-}
 
-.savedAlbumCard {
-  min-height: 360px;
-  padding: 4px;
-  border: 0;
-  border-radius: 0;
-  color: var(--text);
-  text-align: center;
-  background: transparent;
-  box-shadow: none;
-  display: flex;
-  align-items: end;
-  justify-content: center;
-}
 
-.savedAlbumOpen {
-  position: relative;
-  width: 100%;
-  min-height: 350px;
-  color: inherit;
-  background: transparent;
-  display: flex;
-  align-items: end;
-  justify-content: center;
-  transition: transform .18s ease;
-}
 
-.savedAlbumOpen:hover {
-  transform: translateY(-4px);
-}
 
 .yearlyCheck { grid-column: 1 / -1; }
 .annualDateFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; min-width: 0; }
@@ -1004,103 +967,19 @@ textarea {
 .albumEditor fieldset { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 24px; }
 .albumTitleField { display: grid; gap: 8px; }
 .albumTitleField input { width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--text); font: inherit; }
-.albumColorOptions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
-.albumColorOptions button { width: 36px; height: 36px; min-height: 0; border-radius: 50%; padding: 0; display: grid; place-items: center; color: #332e2b; }
-.albumColorOptions button[aria-pressed="true"] { outline: 2px solid #332e2b; outline-offset: 3px; }
-.albumColorOptions label { display: flex; align-items: center; gap: 8px; }
-.albumColorOptions input { width: 44px; height: 36px; padding: 2px; }
 .albumEditPhotos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .albumEditPhotos > button { position: relative; aspect-ratio: 1; padding: 0; border: 0; border-radius: 4px; overflow: hidden; }
 .albumEditPhotos > button > div { width: 100%; height: 100%; }
 .albumEditPhotos .mediaImage { width: 100%; height: 100%; object-fit: cover; }
 @media (max-width: 600px) { .albumEditPhotos { grid-template-columns: repeat(2, minmax(0, 1fr)); } .albumEditor form { padding: 16px; } }
 
-.savedAlbumBook {
-  position: relative;
-  width: min(100%, 306px);
-  min-height: 350px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
-.savedAlbumCoverFace {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  border-radius: 2px 8px 8px 2px;
-  overflow: hidden;
-  color: var(--secondary);
-  background:
-    linear-gradient(90deg, rgba(63, 45, 35, .16) 0 1px, rgba(255, 255, 255, .2) 2px 12px, rgba(255, 255, 255, 0) 48px),
-    linear-gradient(180deg, rgba(255, 255, 255, .2), rgba(63, 45, 35, .045)),
-    var(--album-cover, #B9C58E);
-  display: block;
-  box-shadow:
-    inset 11px 0 18px rgba(63, 45, 35, .12),
-    inset -4px 0 10px rgba(255, 255, 255, .22);
-}
 
-.albumCoverSpine {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 34px;
-  border-radius: 2px 0 0 2px;
-  background:
-    linear-gradient(90deg, rgba(63, 45, 35, .2), rgba(255, 255, 255, .2) 44%, rgba(63, 45, 35, .08));
-  box-shadow:
-    inset -8px 0 16px rgba(63, 45, 35, .14),
-    6px 0 10px rgba(63, 45, 35, .08);
-}
 
-.albumCoverText {
-  position: absolute;
-  left: 44px;
-  right: 18px;
-  top: 58px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  align-items: center;
-  text-align: center;
-  line-height: 1.25;
-}
 
-.albumCoverText strong {
-  max-width: 146px;
-  color: rgba(48, 41, 36, .86);
-  font-size: 18px;
-  font-weight: 900;
-  overflow-wrap: anywhere;
-}
 
-.albumCoverWindow {
-  position: absolute;
-  left: calc(50% + 17px);
-  top: 54%;
-  width: 130px;
-  aspect-ratio: 1 / 1;
-  border: 4px solid rgba(255, 255, 255, .94);
-  background: rgba(255, 255, 255, .54);
-  box-shadow: 0 12px 22px rgba(63, 45, 35, .18);
-  transform: translate(-50%, -50%);
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-}
 
-.albumCoverWindow > div {
-  position: absolute;
-  inset: 0;
-}
 
-.albumCoverWindow .mediaImage {
-  object-fit: cover;
-}
 
 .albumFullscreen {
   position: fixed;
@@ -1171,6 +1050,18 @@ textarea {
   align-items: flex-end;
   background: var(--primary);
   box-shadow: var(--shadow);
+}
+
+.stripItem {
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, filter .16s ease;
+}
+
+.stripItem:hover,
+.stripItem:focus-visible {
+  transform: translateY(-3px);
+  border-color: #9aa9bc;
+  box-shadow: 0 12px 28px rgba(20, 32, 47, .16);
+  filter: brightness(1.04);
 }
 
 .stripItem span,
@@ -1292,15 +1183,37 @@ textarea {
   color: var(--secondary);
 }
 
-.dayBadges {
+.dayEvents {
   position: absolute;
   left: 12px;
-  bottom: 10px;
+  top: 38px;
   z-index: 2;
   right: 12px;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 5px;
+  overflow: hidden;
+}
+
+.dayEvents small {
+  min-width: 0;
+}
+
+.dayEvents small > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dayNoteBadge {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  z-index: 3;
+}
+
+.calendarGrid button.hasEvent i {
+  inset: 72px 12px 14px;
 }
 
 .calendarGrid em,
@@ -1705,280 +1618,6 @@ textarea {
   background: var(--surface-soft);
 }
 
-.bookSpread {
-  margin-top: 24px;
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  min-height: 470px;
-  perspective: 1800px;
-  filter: drop-shadow(0 16px 28px rgba(63, 45, 35, .14));
-}
-
-.bookSpread.immersive {
-  max-width: 1320px;
-  min-height: calc(100vh - 216px);
-  margin: 0 auto;
-  filter: drop-shadow(0 30px 52px rgba(20, 14, 10, .42));
-}
-
-.paperTurnLayer {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  z-index: 6;
-  width: 50%;
-  pointer-events: none;
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, .96), rgba(239, 233, 224, .88)),
-    var(--surface);
-  box-shadow: 0 28px 48px rgba(20, 14, 10, .26);
-  backface-visibility: visible;
-  transform-style: preserve-3d;
-}
-
-.paperTurnLayer.next {
-  left: 50%;
-  border-radius: 0 var(--radius-card) var(--radius-card) 0;
-  transform-origin: left center;
-  animation: paperLeafNext .82s cubic-bezier(.2, .62, .18, 1);
-}
-
-.paperTurnLayer.prev {
-  right: 50%;
-  border-radius: var(--radius-card) 0 0 var(--radius-card);
-  transform-origin: right center;
-  animation: paperLeafPrev .82s cubic-bezier(.2, .62, .18, 1);
-}
-
-.bookPage {
-  position: relative;
-  padding: 36px 32px 46px;
-  display: grid;
-  gap: 16px;
-  align-content: center;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  overflow: hidden;
-  backface-visibility: hidden;
-  transform-style: preserve-3d;
-}
-
-.immersive .bookPage {
-  min-height: calc(100vh - 216px);
-  padding: 58px 52px;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: repeat(2, auto);
-  align-content: center;
-  justify-items: center;
-  background:
-    linear-gradient(90deg, rgba(239, 233, 224, .72), transparent 16%, transparent 84%, rgba(239, 233, 224, .68)),
-    var(--surface);
-}
-
-.immersive .leftPage {
-  box-shadow:
-    inset -18px 0 30px rgba(63, 45, 35, .09),
-    -1px 8px 0 #E8DDD2,
-    -2px 15px 0 #D8C8B8,
-    -3px 22px 0 #C9B6A4,
-    -12px 34px 36px rgba(20, 14, 10, .18);
-}
-
-.immersive .rightPage {
-  box-shadow:
-    inset 18px 0 30px rgba(63, 45, 35, .09),
-    1px 8px 0 #E8DDD2,
-    2px 15px 0 #D8C8B8,
-    3px 22px 0 #C9B6A4,
-    12px 34px 36px rgba(20, 14, 10, .18);
-}
-
-.leftPage {
-  border-radius: var(--radius-card) 0 0 var(--radius-card);
-  transform-origin: right center;
-  box-shadow: inset -18px 0 26px rgba(63, 45, 35, .06);
-}
-
-.rightPage {
-  border-radius: 0 var(--radius-card) var(--radius-card) 0;
-  border-left: 1px solid var(--border);
-  box-shadow: inset 18px 0 28px rgba(63, 45, 35, .07);
-  transform-origin: left center;
-}
-
-.turning-next .rightPage {
-  z-index: 1;
-}
-
-.turning-prev .leftPage {
-  z-index: 1;
-}
-
-@keyframes paperLeafNext {
-  0% {
-    opacity: 1;
-    transform: rotateY(0deg);
-    background:
-      linear-gradient(90deg, rgba(255, 255, 255, .98), rgba(239, 233, 224, .88)),
-      var(--surface);
-  }
-  38% {
-    opacity: 1;
-    transform: rotateY(-72deg);
-    background:
-      linear-gradient(90deg, rgba(246, 239, 229, .94), rgba(187, 167, 143, .82)),
-      var(--surface);
-  }
-  64% {
-    opacity: 1;
-    transform: rotateY(-138deg);
-    background:
-      linear-gradient(90deg, rgba(150, 126, 101, .72), rgba(253, 251, 247, .9)),
-      var(--surface);
-  }
-  100% {
-    opacity: 0;
-    transform: rotateY(-180deg);
-  }
-}
-
-@keyframes paperLeafPrev {
-  0% {
-    opacity: 1;
-    transform: rotateY(0deg);
-    background:
-      linear-gradient(270deg, rgba(255, 255, 255, .98), rgba(239, 233, 224, .88)),
-      var(--surface);
-  }
-  38% {
-    opacity: 1;
-    transform: rotateY(72deg);
-    background:
-      linear-gradient(270deg, rgba(246, 239, 229, .94), rgba(187, 167, 143, .82)),
-      var(--surface);
-  }
-  64% {
-    opacity: 1;
-    transform: rotateY(138deg);
-    background:
-      linear-gradient(270deg, rgba(150, 126, 101, .72), rgba(253, 251, 247, .9)),
-      var(--surface);
-  }
-  100% {
-    opacity: 0;
-    transform: rotateY(180deg);
-  }
-}
-
-.pageNumber {
-  position: absolute;
-  bottom: 16px;
-  color: var(--primary);
-  font-size: 13px;
-}
-
-.leftPage .pageNumber {
-  left: 28px;
-}
-
-.rightPage .pageNumber {
-  right: 28px;
-}
-
-.albumPhoto {
-  position: relative;
-  z-index: 1;
-  margin: 0;
-  padding: 12px 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
-  color: inherit;
-  text-align: left;
-  background: var(--surface);
-  box-shadow: var(--shadow);
-  transition: transform .16s ease, box-shadow .16s ease;
-}
-
-.albumPhoto:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 18px 34px rgba(63, 45, 35, .16);
-}
-
-.immersive .bookPage {
-  gap: 24px;
-}
-
-.immersive .albumPhoto {
-  width: min(100%, 500px);
-  padding: 0;
-  border: 2px solid #FFFFFF;
-  border-radius: 4px;
-  overflow: hidden;
-  background: #FFFFFF;
-  box-shadow: 0 14px 28px rgba(63, 45, 35, .14);
-  justify-self: center;
-  align-self: center;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr);
-}
-
-.immersive .albumPhoto div {
-  aspect-ratio: 16 / 9;
-  width: 100%;
-  height: 100%;
-  border: 0;
-  border-radius: 2px;
-  background: #D6D0BF !important;
-}
-
-.albumPhoto div {
-  aspect-ratio: 1 / 1;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-inner);
-  display: grid;
-  place-items: center;
-  color: #FFFFFF;
-  background: var(--surface-soft);
-}
-
-.detailStage > svg,
-.albumPhoto svg {
-  position: relative;
-  z-index: 2;
-  filter: drop-shadow(0 4px 14px rgba(51, 46, 43, .28));
-}
-
-.layout-1 .bookPage {
-  align-content: center;
-}
-
-.layout-3 .bookPage,
-.layout-4 .bookPage {
-  align-content: start;
-}
-
-.immersive.layout-1 .bookPage,
-.immersive.layout-2 .bookPage,
-.immersive.layout-3 .bookPage,
-.immersive.layout-4 .bookPage {
-  align-content: center;
-}
-
-.albumPager {
-  margin: 16px 0 0;
-  color: var(--muted);
-  text-align: center;
-  font-size: 13px;
-}
-
-.albumFullscreen .albumPager {
-  position: relative;
-  z-index: 8;
-  margin: 28px 0 0;
-  color: rgba(255, 255, 255, .76);
-}
-
 .memoryGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -2191,11 +1830,6 @@ textarea {
     border-radius: 16px;
   }
 
-  .detailStage.zoomed .mediaImage {
-    min-width: 180%;
-    min-height: 180%;
-  }
-
   .detailBody {
     padding: 18px;
     overflow: visible;
@@ -2205,19 +1839,8 @@ textarea {
     font-size: 20px;
   }
 
-  .savedAlbumGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 22px 14px;
-  }
 
-  .savedAlbumCard {
-    min-height: 270px;
-    padding: 2px;
-  }
 
-  .savedAlbumBook {
-    width: min(100%, 202px);
-  }
 
   .calendarGrid {
     gap: 5px;
@@ -2251,10 +1874,19 @@ textarea {
     max-height: 92vh;
   }
 
-  .dayBadges {
+  .dayEvents {
     left: 6px;
     right: 6px;
+    top: 30px;
+  }
+
+  .dayNoteBadge {
+    left: 6px;
     bottom: 7px;
+  }
+
+  .calendarGrid button.hasEvent i {
+    inset: 55px 6px 7px;
   }
 
   .calendarGrid em,
@@ -2310,47 +1942,6 @@ textarea {
   .viewTabs button {
     padding: 0 8px;
     font-size: 13px;
-  }
-
-  .bookSpread {
-    grid-template-columns: 1fr;
-    min-height: auto;
-  }
-
-  .albumFullscreen {
-    padding: 16px;
-  }
-
-  .albumFullscreenHeader {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .bookSpread.immersive {
-    min-height: auto;
-  }
-
-  .bookPage {
-    min-height: 320px;
-    border-radius: var(--radius-card);
-  }
-
-  .immersive .bookPage {
-    min-height: 420px;
-    padding: 42px 24px;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: repeat(2, auto);
-    align-content: center;
-  }
-
-  .immersive .albumPhoto {
-    width: min(100%, 380px);
-  }
-
-  .rightPage {
-    border-left: 1px solid var(--border);
-    border-top: 0;
-    box-shadow: inset 0 14px 20px rgba(63, 45, 35, .07);
   }
 
   .dangerPanel {

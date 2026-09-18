@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "node scripts/prepare-face-models.mjs",
-    "prebuild": "node scripts/prepare-face-models.mjs",
+    "predev": "node scripts/prepare-face-models.mjs && node scripts/prepare-pet-models.mjs",
+    "prebuild": "node scripts/prepare-face-models.mjs && node scripts/prepare-pet-models.mjs",
     "dev": "vite --host 127.0.0.1 --port 5173",
     "build": "tsc && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4173",
@@ -16,9 +16,10 @@
   "dependencies": {
     "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/plugin-dialog": "^2.7.3",
+    "@tensorflow-models/coco-ssd": "^2.2.3",
+    "@tensorflow/tfjs": "^4.22.0",
     "@vitejs/plugin-react": "^4.3.4",
     "@vladmandic/face-api": "^1.7.15",
-    "book-cover-3d": "^1.1.2",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

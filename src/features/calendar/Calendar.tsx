@@ -233,21 +233,21 @@ export function Calendar({ items, onOpen }: { items: MediaItem[]; onOpen: (item:
                     <MediaImage item={matches[0]} />
                   </i>
                 )}
-                {(dayNotes[date] || events.length > 0) && (
-                  <span className="dayBadges">
-                    {dayNotes[date] && <em>메모</em>}
+                {events.length > 0 && (
+                  <span className="dayEvents">
                     {events.slice(0, 2).map((event) => {
                       const EventIcon = calendarEventMeta[event.kind].icon;
                       return (
-                        <small key={event.id}>
+                        <small key={event.id} aria-label={`${event.title} ${calendarEventMeta[event.kind].label}`} title={event.title}>
                           <EventIcon size={12} />
-                          {calendarEventMeta[event.kind].label}
+                          <span>{calendarEventMeta[event.kind].label}</span>
                           {event.showDday && <strong>{formatDday(event.date)}</strong>}
                         </small>
                       );
                     })}
                   </span>
                 )}
+                {dayNotes[date] && <em className="dayNoteBadge">메모</em>}
                 {matches.length > 0 && <b>{matches.length}</b>}
               </button>
             );
@@ -375,7 +375,7 @@ function DayDetailModal({
           <div className="dayMainPhoto">
             {mainItem ? (
               <button onClick={() => onOpen(mainItem)} aria-label="사진 상세보기">
-                <MediaVisual item={mainItem}>
+                <MediaVisual item={mainItem} original>
                   {mainItem.fileType === "video" && <Play size={44} fill="currentColor" />}
                   {mainItem.fileType === "audio" && <Music size={44} />}
                 </MediaVisual>

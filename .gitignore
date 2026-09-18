@@ -1,6 +1,7 @@
 # dependencies
 node_modules/
 public/models/faces/
+public/models/pets/
 
 # frontend build output
 dist/

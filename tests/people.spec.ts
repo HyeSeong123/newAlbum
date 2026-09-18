@@ -23,10 +23,51 @@ test('local models detect faces without remote requests', async ({ page, isMobil
   expect(external).toEqual([]);
 });
 
+test('person photos match gallery sizing and create an album from unique originals', async ({ page }) => {
+  await page.addInitScript(() => {
+    const media = [1, 2].map((id) => ({ id, file_path: `C:/person-album-${id}.jpg`, file_type: 'image', taken_at: '2026-09-14', width: 640, height: 480, duration: null, size_bytes: 2000, rating: 0, comment: '', favorite: false, metadata_status: 'ready' }));
+    const faces = [
+      { id: 11, media_id: 1, person_id: 7, thumbnail: '/favicon.svg', confirmed: true },
+      { id: 12, media_id: 1, person_id: 7, thumbnail: '/favicon.svg', confirmed: true },
+      { id: 13, media_id: 2, person_id: 7, thumbnail: '/favicon.svg', confirmed: true },
+    ];
+    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
+      convertFileSrc: () => '/favicon.svg',
+      invoke: async (command: string, args: { mediaIds?: number[] }) => {
+        if (command === 'list_media') return media;
+        if (command === 'list_albums') return [];
+        if (command === 'list_face_index') return { people: [{ id: 7, name: '가족' }], faces, scanned: [1, 2] };
+        if (command === 'create_album_from_media') {
+          document.documentElement.dataset.personAlbumIds = JSON.stringify(args.mediaIds);
+          return 1;
+        }
+        return [];
+      },
+    } });
+  });
+
+  await page.goto('/');
+  const galleryWidth = (await page.locator('.mediaTile').first().boundingBox())!.width;
+  await page.getByRole('button', { name: '인물', exact: true }).click();
+  await page.getByRole('button', { name: '가족 2장', exact: true }).click();
+  const personWidth = (await page.locator('.personMediaGrid .personPhoto').first().boundingBox())!.width;
+  expect(Math.abs(personWidth - galleryWidth)).toBeLessThan(1);
+
+  await page.getByRole('button', { name: '얼굴 선택하기', exact: true }).click();
+  await page.getByRole('button', { name: '얼굴 선택', exact: true }).first().click();
+  await page.getByRole('button', { name: '얼굴 선택', exact: true }).nth(2).click();
+  await page.getByRole('button', { name: '앨범 만들기 (2)', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: '앨범 만들기' })).toBeVisible();
+  await page.getByLabel('제목').fill('가족 사진');
+  await page.getByRole('button', { name: '만들기', exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-person-album-ids', '[1,2]');
+  await page.screenshot({ path: `test-results/person-photo-grid-${test.info().project.name}.png`, fullPage: true });
+});
+
 test('people can be named, split, moved and reopened', async ({ page }) => {
   const thumbnail = `data:image/jpeg;base64,${(await readFile('node_modules/@vladmandic/face-api/demo/sample1.jpg')).toString('base64')}`;
   await page.addInitScript(({ thumbnail }) => {
-    type Index = { people: { id: number; name: string }[]; faces: { id: number; media_id: number; person_id: number; thumbnail: string; confirmed: boolean }[]; scanned: number[]; excluded?: number[] };
+    type Index = { people: { id: number; name: string; cover_face_id?: number | null }[]; faces: { id: number; media_id: number; person_id: number; thumbnail: string; confirmed: boolean }[]; scanned: number[]; excluded?: number[] };
     const initial: Index = { people: [{ id: 1, name: '' }, { id: 2, name: '가족' }], faces: [1, 2, 3].map((id) => ({ id, media_id: id, person_id: id === 3 ? 2 : 1, thumbnail, confirmed: false })), scanned: [1, 2, 3] };
     const state: Index = JSON.parse(localStorage.getItem('face-test-state') || 'null') || initial;
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
@@ -41,6 +82,11 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
         if (command === 'set_faces_excluded') state.excluded = args.excluded ? [...(state.excluded ?? []), ...args.ids] : (state.excluded ?? []).filter((id) => !args.ids.includes(id));
         if (command === 'find_face_matches') return state.faces.filter((face) => !face.confirmed && face.person_id === 1).map((face) => ({ face_id: face.id, person_id: 2 }));
         if (command === 'rename_face_person') state.people.find((person) => person.id === args.id)!.name = args.name.trim();
+        if (command === 'set_person_cover_face') {
+          const person = state.people.find((entry) => entry.id === (args as any).personId)!;
+          if (!state.faces.some((face) => face.id === (args as any).faceId && face.person_id === person.id)) throw new Error('wrong person');
+          person.cover_face_id = (args as any).faceId;
+        }
         if (command === 'move_faces') {
           const id = args.target ?? Math.max(...state.people.map((person) => person.id)) + 1;
           if (args.target === null) state.people.push({ id, name: '' });
@@ -95,6 +141,16 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
   await page.reload();
   await page.getByRole('button', { name: '인물', exact: true }).click();
   await page.getByRole('button', { name: '가족 2장', exact: true }).click();
+  await page.getByRole('button', { name: '대표 사진 변경', exact: true }).click();
+  await page.getByRole('button', { name: '대표 사진으로 설정' }).nth(1).click();
+  await expect(page.locator('.personPhoto').nth(1).locator('.personCoverBadge')).toHaveText('대표');
+  await page.screenshot({ path: `test-results/people-cover-selected-${test.info().project.name}.png`, fullPage: false });
+  await page.getByTitle('인물 목록').click();
+  await expect(page.getByRole('button', { name: '가족 2장', exact: true })).toHaveAttribute('data-cover-face-id', '3');
+  await page.reload();
+  await page.getByRole('button', { name: '인물', exact: true }).click();
+  await expect(page.getByRole('button', { name: '가족 2장', exact: true })).toHaveAttribute('data-cover-face-id', '3');
+  await page.getByRole('button', { name: '가족 2장', exact: true }).click();
   await page.getByRole('button', { name: '사진 상세보기', exact: true }).first().click();
   await expect(page.getByRole('dialog', { name: '사진 상세' })).toBeVisible();
   await page.getByTitle('닫기').click();
@@ -111,6 +167,9 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
   await expect(page.getByRole('heading', { name: '가족', exact: true })).toBeVisible();
   await expect(page.locator('.personPhoto')).toHaveCount(3);
   await page.getByRole('button', { name: '얼굴 모아보기', exact: true }).click();
+  const faceBox = await page.locator('.faceOverviewGrid .personOriginal').first().boundingBox();
+  expect(faceBox!.width).toBeLessThanOrEqual(128);
+  expect(Math.abs(faceBox!.height - faceBox!.width)).toBeLessThan(1);
   await page.getByRole('button', { name: '얼굴 선택하기', exact: true }).click();
   await page.getByRole('button', { name: '얼굴 선택', exact: true }).first().click();
   await page.screenshot({ path: `test-results/people-exclusion-${test.info().project.name}.png` });

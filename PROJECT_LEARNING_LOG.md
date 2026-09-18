@@ -1,5 +1,157 @@
 # 프로젝트 학습 로그
 
+## 앨범별 컨셉 저장과 선택지 정리 (2026-09-13)
+
+앨범 생성의 `window.prompt`를 제목과 표지 미리보기가 있는 모달로 교체했습니다. 생성/수정/목록 모두 `AlbumCover`를 재사용하므로 미리보기와 실제 표지의 배치가 일치합니다. `albumConcepts.ts`에서 에셋과 사진 수를 정의합니다. 최종 선택지는 디자인1(mint), 디자인2(ivory), 디자인3(leather), 디자인4(linen)이며 초록 여행은 제거했습니다. 색상 선택 UI와 전용 CSS도 제거했습니다.
+
+표시 이름 대신 안정적인 식별자를 `album.cover_concept`에 저장합니다. SQLite 마이그레이션은 기존 행을 보존하며 기본값 mint를 추가합니다. 예전 sage 또는 알 수 없는 값은 화면에서 디자인1로 표시합니다. 이전 색상 DB 필드는 호환성을 위해 남기되 UI에서 변경하거나 표지에 적용하지 않습니다.
+
+생성은 표지와 사진 참조를 하나의 트랜잭션으로 저장합니다. 중간 실패 시 전부 되돌려 부분 저장을 방지합니다. 수정도 같은 원칙이며 원본 사진은 이동하거나 삭제하지 않습니다. Rust 테스트는 기존 DB의 반복 마이그레이션, 컨셉 읽기/쓰기, 잘못된 사진 ID의 롤백을 검증합니다. 브라우저 테스트는 Tauri 명령을 모의하여 선택값 전달과 새로고침 후 복원을 검증하며, 실제 DB 검증과 구분합니다.
+
+새 표지 소재는 내장 Imagegen 신규 생성 모드로 만들었습니다. `public/textures/album-ivory-cover.png`, `album-leather-cover.png`, `album-linen-cover.png`에 포함했습니다. 공통 생성 조건은 '정면 4:5 전체 소재, 사진/프레임/문자/주변 배경 없음'입니다. 각각 '아이보리 수제 종이, 양쪽 작은 갈색 압화와 오른쪽 아래 빈 라벨', '체스트넛 가죽, 얇은 음각 테두리와 하단 작은 카메라', '밝은 오트밀 린넨, 오른쪽 아래 작은 식물 드로잉'으로 요청했습니다. 사진은 생성하지 않고 사용자의 실제 미디어를 최대 4/3/1/3장 표시합니다.
+
+## 밝은 민트 표지 (2026-09-13)
+
+천 소재만 밝은 민트색으로 편집하고 뒷표지를 `#A9CEBF`, 소재 아래 기본색을 `#D8EEE5`로 맞췄습니다. 전체 이미지에 CSS 색조 필터를 걸면 지도와 종이까지 변색되므로 내장 Imagegen 편집 모드로 천 영역만 바꿨습니다. 사진, 프레임, 배치와 기능은 그대로입니다.
+
+저장 에셋: `public/textures/album-mint-cover.png`. 원본 소재는 `album-sage-cover.png`로 보존합니다. 편집 프롬프트:
+
+```text
+Edit only the cotton cloth background color of this scrapbook texture asset from dull gray olive sage to a noticeably lighter fresh pastel MINT GREEN, target #C9E7DC with subtle natural fiber shadows. Preserve all existing paper scraps, map, dried flowers, label, stamp and their exact shapes, locations and original cream colors. Keep dimensions/composition, straight-on flat view, texture sharpness unchanged. No new elements, no text, no overall tint on the paper or flowers. Cloth should feel airy, luminous mint, not gray, not yellow-green, not turquoise saturated.
+```
+
+## 기존 표지 스타일 폐기와 참고 색감 통일 (2026-09-13)
+
+이전 결과는 기존 표지색 위에 장식을 합성하여 참고 이미지와 다른 인상을 만들었습니다. 이번에는 천, 지도, 종이, 압화를 하나의 소재 이미지로 새로 제작했습니다. 모든 표지에 같은 회녹색 소재를 사용하고, 인화지는 아이보리색, 글씨는 회갈색, 내지는 따뜻한 종이색으로 맞췄습니다. 사용자 사진 자체에는 색 필터를 적용하지 않습니다.
+
+기존 `album-linen.png`, `album-scrapbook.png`와 이들을 합성하던 CSS, 표지색에 따라 글자색을 계산하던 `coverInk`는 제거했습니다. 과거 로그의 해당 에셋 경로는 변경 이력을 설명하는 기록이며 현재 사용하지 않습니다. 사진·앨범 데이터와 내부 감상 기능은 유지했습니다.
+
+### 색상 설정의 역할 변경
+
+참고 이미지의 표지색을 유지하기 위해 기존 색상 선택은 작은 책갈피 리본에만 적용합니다. 수정 화면 명칭도 '책갈피 색상'으로 바꿨습니다. DB의 `coverColor` 필드는 호환성을 위해 그대로 읽고 쓰므로 기존 저장값을 삭제하거나 DB 마이그레이션하지 않습니다. CSS에서는 `--album-ribbon`으로 역할을 구분합니다.
+
+### 배치와 두께
+
+책등, 앞표지, 내지, 뒷표지, 리본을 같은 부모 안에 배치합니다. 내지가 표지 아래로 약 21px 드러나게 하고 리본 공간을 버튼 아래 여백에 포함해 다음 행과 겹치지 않게 했습니다. 제목은 소재 이미지의 종이 라벨에 맞춰 정렬하고 두 줄까지만 표시합니다. 전체 제목은 버튼의 접근성 이름으로 유지됩니다.
+
+### 새 소재 에셋
+
+내장 Imagegen 신규 생성 모드. 프로젝트 저장 경로는 `public/textures/album-sage-cover.png`입니다. 생성 이미지는 장식과 표지 소재만 포함하고 실제 앨범 사진은 별도 HTML 요소로 표시합니다. 프롬프트:
+
+```text
+Generate a photorealistic flat full-bleed 4:5 portrait scrapbook COVER MATERIAL AND DECORATION asset. Precisely straight-on orthographic, no perspective, no book edges or pages, no surrounding scene. Entire background is soft pale muted gray sage green cotton bookcloth (#c1c5af), subtle fine natural fibers, NOT bright yellow-green, NOT blue, NOT orange. Tactile nostalgic handmade Korean travel memory album. Torn faded vintage map covers upper right corner 32% width 26% height. Soft torn ivory paper at left middle, with tiny dried baby's breath sprig attached on it, confined to leftmost 18%. Small blank ivory vintage luggage label with thin double line outline at left 18%-45%, vertical 68%-78%. Small faded botanical postage stamp near bottom left 33%, vertical 83%. Cream graph paper and a tiny pressed daisy on lower right edge, slender dried stems along rightmost 12%. Broad quiet sage green empty areas must remain at top left, across middle, and lower right for real user photos to be overlaid by code. Bottom left title area empty at x10%-42% y80%-92%. NO photos, NO polaroid frames, NO words or letters anywhere, NO shadows of outside objects, NO artificial grid on cloth. Soft even daylight and believable subtle contact shadows of paper scraps, very refined reference-quality handmade physical material, not vector illustration.
+```
+
+## 스크랩북 표지와 실제 사진 분리 (2026-09-13)
+
+새 참고 이미지에 맞춰 전면 인쇄형 포토북을 천 표지 위에 인화사진을 붙인 스크랩북으로 변경했습니다. 책은 정면을 유지하고 사진만 소폭 회전시킵니다. 목록 표지에만 적용하며 내부 감상 화면의 두 장 배치와 원본 사진은 변경하지 않습니다.
+
+### 데이터와 장식을 분리하는 이유
+
+생성 이미지에 사진까지 넣으면 사용자 사진으로 교체할 수 없습니다. 따라서 Imagegen은 지도 조각, 종이, 압화만 투명 PNG로 만들고 실제 사진은 기존 `MediaVisual`로 표시합니다. 표지에는 이미지 미디어 중 앞의 최대 4장만 사용합니다. 매 렌더마다 무작위로 고르지 않으므로 별점이나 선택 상태가 변해도 표지 사진이 바뀌지 않습니다. 사진이 적으면 중복으로 채우지 않고 수량별 배치를 사용합니다.
+
+### CSS 구성
+
+표지의 `aspect-ratio: 4 / 5`를 기준으로 사진 위치를 백분율로 지정합니다. `data-slot`은 사진 배치 위치를 명시하므로 장식 요소가 추가되어도 `nth-child` 순서에 영향을 받지 않습니다. `data-photo-count`는 0~4장의 배치 차이를 표현합니다. 제목 공간과 사진 영역은 따로 확보하고 긴 제목은 두 줄까지만 표시합니다. 버튼 접근성 이름에는 전체 제목이 유지됩니다.
+
+천 질감, 뒷표지, 내지, 책등은 기존 레이어를 재사용합니다. 지도와 압화는 `pointer-events: none` 및 빈 대체 텍스트로 클릭과 스크린 리더 탐색을 방해하지 않습니다. 새 UI 라이브러리는 추가하지 않았습니다.
+
+### 한글 손글씨와 오프라인 지원
+
+표지 제목에만 [Google Fonts의 Nanum Pen Script](https://github.com/google/fonts/tree/main/ofl/nanumpenscript)를 사용합니다. 파일은 `public/fonts/NanumPenScript-Regular.ttf`, 라이선스는 `public/fonts/NanumPenScript-OFL.txt`에 포함했습니다. 메뉴는 기존 SUIT를 유지합니다. 표지 폰트와 장식은 앱에 포함되므로 런타임 CDN 연결이 필요하지 않습니다.
+
+### 생성 에셋 기록
+
+내장 Imagegen 신규 생성 모드 사용. 저장 경로: `public/textures/album-scrapbook.png`. 기존 `album-linen.png`는 천 질감으로 재사용합니다. 새 에셋 프롬프트:
+
+```text
+Generate a UI texture asset, not a book mockup: flat orthographic full-bleed portrait 4:5 scrapbook decorating layer, with genuinely transparent background. Delicate photorealistic pressed white wildflowers only along lower right edge, a small torn vintage map fragment attached at extreme upper right corner, small torn ivory handmade paper behind middle left region, small pale graph paper fragment lower right. Sparse delicate Korean analog memory scrapbook aesthetic, natural paper fibers and restrained soft contact shadows. Keep most of canvas transparent: center completely empty for real user photos, bottom left empty for a title, top left empty. No photos, no photo frames, no text, no letters, no book, no table, no overall background or fabric. All fragments seen directly from the front, not perspective. Map confined to top right 25% of canvas, flowers confined to rightmost 16% below middle. These are quiet supporting decorations, no large objects.
+```
+
+## 사진 중심 포토북 표지 (2026-09-13)
+
+천 표지 안의 작은 사진 창을 없애고, 책등 12px를 제외한 앞표지 전체를 사진으로 채웠습니다. 색상만 바꾸는 대신 사진과 여백의 비중을 바꾼 구성 변경입니다. 기존 표지색은 책등과 뒷표지에 사용하므로 색상 설정도 유지됩니다.
+
+`position: absolute`와 `inset`으로 사진을 표지에 맞추고 제목을 왼쪽 아래에 겹쳐 배치합니다. 사진을 원본 비율 그대로 모두 보여주는 방식이 아니라 표지에 맞춰 일부 잘라 표시하며, 원본 파일은 변경하지 않습니다. 흰색 제목이 밝은 사진에서도 읽히도록 하단에만 반투명 음영을 두었습니다. 사진 전체에 어두운 필터를 적용하지는 않습니다.
+
+새 라이브러리나 생성 이미지는 필요하지 않습니다. 기존 사진 썸네일과 CSS를 재사용하고 천 질감 이미지 로딩 규칙은 제거했습니다. 정면 구도, 내지/뒷표지 레이어, 선택/수정/삭제 및 내부 책장 넘김은 유지합니다.
+
+검증은 모양에 종속된 과거의 3:4 사진 창 검사 대신, 사진 높이가 표지와 같고 폭은 90% 이상이며 제목이 사진 범위 안에 있는지 검사하도록 바꿨습니다. 이렇게 테스트도 변경된 사용자 경험을 검증해야 합니다.
+
+## 참고 사진 기반 패브릭 표지 재구성 (2026-09-09)
+
+두 번째 참고 사진의 정면 패브릭 표지와 세로 사진 창을 기준으로 구성했습니다. 기존 CSS 격자 질감 대신 Imagegen으로 만든 중성 회색 천 이미지를 `public/textures/album-linen.png`에 포함했습니다. `mix-blend-mode: soft-light`는 천의 밝고 어두운 부분을 사용자 지정 표지색과 섞으므로 색상별 이미지를 따로 만들 필요가 없습니다. 런타임 외부 이미지 요청도 없습니다.
+
+앨범 외형은 HTML/CSS이며 새 라이브러리를 추가하지 않았습니다. 뒷표지, 내지, 앞표지, 좁은 책등을 같은 부모 기준으로 배치해 두께 표현이 따로 움직이지 않게 했습니다. 사진 창은 `aspect-ratio: 3 / 4`, 제목은 아래쪽 16px로 고정해 사진을 먼저 보도록 했습니다. 책장 넘김과 저장된 앨범 데이터는 변경하지 않았습니다.
+
+에셋 생성 모드: 내장 Imagegen, 신규 이미지 생성. 프롬프트: `Create a seamless tileable photorealistic bookbinding linen cloth material texture, square flat orthographic scan, neutral medium gray monochrome, fine natural irregular woven flax fibers, subtle low contrast thread variation, very small weave, no checkerboard grid, no folds, no shading gradient, no objects, no text, no border. This will be a subtle multiply overlay on user-colorable fabric photo album covers in a web app. Only the flat fabric swatch, full bleed edge to edge.`
+
+## 이전 앨범 스타일 완전 분리
+
+라이브러리를 제거해도 공통 CSS에 이전 카드 높이와 배치 규칙이 남으면 새 스타일이 계속 이를 덮어써야 합니다. `styles.css`, `design-system.css`의 앨범 목록 전용 규칙을 삭제하고 `features/albums/albums.css`에서 레이아웃과 표지 스타일을 모두 정의하도록 정리했습니다. 선택·편집·삭제와 책장 넘김에 쓰는 스타일은 기능에 필요하므로 유지했습니다. 현재 정면 표지는 외부 표지 라이브러리 없이 HTML/CSS로 표현합니다.
+
+## 정면 앨범 표지 디자인 (2026-09-09)
+
+### 참고한 실물 제품
+
+[Rosemood Debossed Fabric Photo Books](https://www.rosemood.co.uk/p/fabric-photo-books-debossed-photo-cover/)의 표지 안쪽으로 눌러 넣은 사진 창과 패브릭 소재, [Artifact Uprising Signature Layflat](https://www.artifactuprising.com/stories/signature-layflat)의 사진 창과 두꺼운 내지 구성을 참고했습니다. 판매량 순위를 검증한 것은 아니며, 공개된 실물 제품의 제본·표지 표현을 디자인 참고로 사용했습니다. 해당 업체의 사진이나 로고를 앱에 복제하지 않았습니다.
+
+### 정면인데도 두께가 보이는 이유
+
+사선 원근은 제거하고 뒤표지 → 내지 단면 → 앞표지 순으로 2D 레이어를 겹쳤습니다. 앞표지보다 아래로 6px 내려오는 내지와 10px 내려오는 뒤표지가 깊이 단서가 됩니다. 왼쪽은 넓은 원통형 책등 대신 14px 제본 홈으로 연결하고, 사진 창은 안쪽 그림자로 눌린 느낌을 표현합니다. 외곽 UI 카드를 덧붙이지 않습니다.
+
+표지는 4:5 비율, PC 최대 너비 276px로 고정합니다. 사진 창과 제목은 같은 표지 안에서 배치하며 제목은 아래쪽에 한 번만 표시합니다. 긴 제목은 최대 두 줄로 제한하고 전체 제목은 앨범 버튼의 접근성 이름에 남습니다. 표지 색의 상대 밝기에 따라 제목 잉크색을 밝게/어둡게 바꿉니다. 마우스를 올려도 회전하지 않고 그림자만 변화합니다.
+
+원근 회전용 `book-cover-3d`와 사용하지 않는 표지 CSS를 제거했습니다. 이번 표현은 3D 장면이 아니라 CSS 레이어 기반이며, 앨범 내부 책장 넘김에는 변경이 없습니다. 기존 데이터와 표지 색상 변경·제목 수정·선택 삭제 기능도 유지합니다.
+
+## 메뉴 가독성과 반려동물 후보 검색 (2026-09-08)
+
+### 메뉴와 로딩 배경
+
+100px 메뉴바에 맞춰 메뉴 글씨를 16px, 아이콘을 20px, 버튼 높이를 48px로 조정했습니다. 이미지 로딩 전 배경은 사진 `#ECEEF1`, 영상 `#E5E9ED`, 음원 `#E9EDEB` 단색으로 바꿨습니다. 대체 사진을 넣으면 실제 등록 사진으로 오해할 수 있어 단색을 선택했습니다.
+
+### 탐지와 개체 식별은 다르다
+
+COCO-SSD는 사진에서 개/고양이 영역을 찾아내는 객체 탐지 모델입니다. 이 결과만으로 '우리 반려동물'인지는 알 수 없습니다. 검출 영역을 잘라 MobileNet V1의 분류 직전 특징값 1024개를 추출하고, 등록 사진의 특징과 코사인 유사도를 비교하는 후보 검색을 추가했습니다. 이는 모델 재학습이나 검증된 개체 식별 기술이 아닙니다. 같은 품종의 다른 동물, 조명·자세·배경에 따라 잘못된 후보 또는 누락이 생길 수 있습니다.
+
+탐지는 0.55 이상, 외형 유사도는 0.7 이상을 초기 후보 기준으로 사용합니다. 이 값은 개체 식별 정확도를 검증한 임계값이 아니며, 유사도를 확률처럼 화면에 표시하지 않습니다. 사진에 작게 나온 동물이나 일부만 나온 동물은 놓칠 수 있습니다. 현재 지원 대상은 개와 고양이입니다.
+
+### 안전한 확인 흐름
+
+`인물 → 반려동물 → 등록한 대상 → 후보 찾기`에서 명시적으로 시작합니다. 연결된 사진은 기준, 아직 연결되지 않은 사진은 검색 대상으로 사용합니다. 기준 사진에서 0마리 또는 여러 마리가 검출되면 기준에서 제외합니다. 개와 고양이가 기준에 섞여 있으면 진행을 중단합니다. 후보 사진에 여러 마리가 있는 경우 적어도 하나가 기준과 유사하면 후보에 포함될 수 있습니다.
+
+후보는 유사도 순으로 표시하지만 선택은 모두 해제된 상태로 시작합니다. 사용자가 확인한 사진만 기존 `save_pet` 명령으로 연결하며 원본은 이동하지 않습니다. 잘못 연결한 사진은 사진·이름 편집에서 해제합니다. 진행 표시·중단·닫기·24장 페이지네이션을 제공합니다. 닫으면 현재 한 장의 추론을 마친 뒤 멈춥니다.
+
+### 성능과 로컬 실행
+
+TensorFlow.js와 COCO-SSD를 사용합니다. MobileNet 모델은 TensorFlow.js LayersModel로 불러와 `global_average_pooling2d_1`의 출력을 사용합니다. `scripts/prepare-pet-models.mjs`가 Google 저장소에서 약 35.6MB 모델을 최초 준비하고, 이후에는 로컬 파일을 재사용합니다. 새 PC에서 첫 dev/build 실행에는 모델 다운로드용 인터넷이 필요합니다. 분석 시에는 로컬 썸네일과 로컬 모델만 사용하며 사진을 외부로 보내지 않습니다.
+
+모델과 추론 코드는 후보 찾기를 눌렀을 때 지연 로딩합니다. 640px 썸네일을 사용하고 한 번에 한 사진씩 분석합니다. 앱 실행 중 최대 1024개 사진의 특징을 재사용하며, 앱을 재시작하면 특징은 다시 분석합니다. 저장되는 것은 확정한 사진 연결뿐입니다. 대량 사진의 최초 검색은 시간이 필요하며 실제 사용자 사진에서 속도·개체 정확도는 아직 측정하지 않았습니다.
+
+공식 자료: [COCO-SSD](https://github.com/tensorflow/tfjs-models/tree/master/coco-ssd), [MobileNet](https://github.com/tensorflow/tfjs-models/tree/master/mobilenet). 모델 파일은 Git에서 제외하고 재현용 다운로드 스크립트를 남겼습니다.
+
+## 썸네일 로딩 대기 줄이기 (2026-09-08)
+
+첫 구현은 `open_database`를 사진마다 호출해 스키마 검사·마이그레이션과 전체 경로 정리를 반복했습니다. 썸네일 명령은 등록된 사진을 읽기만 하므로 읽기 전용 SQLite 연결로 바꿨습니다. 초기 DB 생성은 기존 앱 초기화/목록 조회가 담당합니다.
+
+또한 전역 잠금 안에서 캐시를 검사하면 이미 만들어진 사진도 큰 원본의 디코딩이 끝날 때까지 기다립니다. 캐시 존재 검사를 잠금 앞으로 옮겨 이 대기를 제거했습니다. 생성은 ID에 따라 2개 작업 구역으로 나누고, 같은 ID는 같은 잠금을 사용합니다. 잠금을 얻은 뒤 캐시를 다시 확인해 중복 생성도 막습니다.
+
+PNG 저장에는 빠른 압축을 적용하고, 개발 모드에서도 image/png/zune-jpeg만 최적화하여 디코딩·축소 연산 비용을 줄입니다. 첫 재컴파일은 더 오래 걸릴 수 있습니다. 기존 캐시는 계속 재사용하며 삭제하지 않습니다.
+
+화면에서는 동일 사진의 진행 중 요청과 응답을 30초 동안 공유합니다. 최대 512개로 제한해 메모리가 계속 늘지 않도록 했고 실패 요청은 제거하여 재시도가 가능하게 했습니다. 30초 안의 외부 원본 수정은 잠시 이전 썸네일로 보일 수 있습니다. 원본 파일 접근 자체가 느리거나 OneDrive 다운로드가 필요하면 최초 생성 지연은 남을 수 있습니다.
+
+## 고해상도 목록과 썸네일 캐시 (2026-09-08)
+
+작은 카드로 표시해도 원본 JPEG를 그대로 img에 넣으면 브라우저는 원본 해상도로 디코딩합니다. CSS 크기나 lazy loading만으로 이 메모리 비용을 없앨 수 없습니다. 목록에는 긴 변 640px 이하의 별도 이미지를 사용하고, 상세보기·확대·앨범 감상에는 원본을 사용하도록 경로를 분리했습니다.
+
+React의 IntersectionObserver는 화면에서 200px 이내로 접근한 이미지에만 `media_thumbnail` 명령을 보냅니다. Rust는 DB에 등록된 ID로 원본 경로를 조회하며 별도 작업 스레드에서 생성합니다. Mutex로 동시에 한 파일만 디코딩해 초기 메모리 부하를 제한합니다. 화면을 떠나면 응답은 무시하지만 이미 시작한 생성 작업은 캐시를 완성합니다.
+
+`image` 크레이트로 EXIF 회전 정보를 적용한 뒤 축소하여 PNG로 저장합니다. PNG는 투명도를 유지하며 재압축 손실이 없는 대신 JPEG보다 캐시 용량이 클 수 있습니다. API 근거: [image 공식 문서](https://docs.rs/image/latest/image/), [EXIF 방향 처리](https://docs.rs/image/latest/image/metadata/enum.Orientation.html).
+
+앱 캐시 디렉터리의 `thumbnails-v1`에 저장하며 ID·원본 경로 해시·파일 크기·수정시각으로 캐시를 구분합니다. 임시 파일 저장이 끝난 후 이름을 변경해 완성되지 않은 캐시가 노출되지 않도록 합니다. 원본이나 DB를 수정하지 않으며, 기존 등록 사진도 다시 등록할 필요 없이 처음 조회할 때 생성됩니다. 오래된 캐시 자동 청소는 아직 구현하지 않았습니다.
+
+지원하지 않는 이미지 형식이나 생성 오류는 원본 표시로 돌아갑니다. 이 경우에는 목록 성능 개선을 보장할 수 없습니다. 최초 생성 시간과 디스크 캐시 공간이 필요하며 실제 사용자 사진 수천 장의 스크롤 성능은 별도 측정해야 합니다. 새 Tauri 명령을 사용하려면 앱을 재시작해야 합니다.
+
 ## 미확인 그룹에서 직접 제외하기
 
 미확인 얼굴 카드 하나는 여러 사진에서 발견한 얼굴들을 묶은 그룹입니다. 따라서 그룹을 선택하면 그 인물 ID에 연결된 얼굴 ID 전체를 조회해 기존 `set_faces_excluded` 명령으로 제외합니다. 선택한 카드 수와 실제 제외할 얼굴 수가 다를 수 있어 화면과 확인창에는 얼굴 수를 표시합니다. 처리 직전 이름이 여전히 빈 그룹인지 다시 확인하여 등록된 인물은 이 작업의 대상에서 걸러냅니다.
@@ -366,3 +518,89 @@ Tauri의 `update_album` 명령은 제목, 색상, 표지 사진, 사진 순서�
 메뉴 제목과 버튼만으로 동작을 이해할 수 있으면 반복 설명은 사진이 차지할 공간을 줄이고 읽을 내용을 늘립니다. 각 보기의 설명 문구와 상단의 긴 안내를 제거하고, 파일 등록 영역에는 짧은 제목만 남겼습니다. 빈 목록, 진행 상태, 삭제 시 원본 보존 안내는 현재 상태와 결과를 판단하는 데 필요하므로 유지했습니다.
 
 앨범 상단 줄은 `albumCoverRule` 요소와 CSS를 함께 제거했습니다. CSS로 숨기기만 하면 불필요한 DOM과 스타일이 남으므로, 사용하지 않는 장식은 렌더링 구조에서도 지우는 것이 좋습니다.
+
+## 앨범 내부를 컨셉별로 다시 설계한 방법
+
+이번 변경은 기존의 좌우 흰 페이지 구조를 꾸미는 방식이 아니라 `bookSpread`, `bookPage`, `leftPage`, `rightPage`, `albumPhoto` DOM과 CSS를 삭제하고 새 구조로 교체했다.
+
+- `scrapbookStage`: 앨범 종이와 하단 페이지 두께를 함께 배치하는 무대
+- `scrapbookSheet`: 컨셉별 종이 질감 이미지를 표시하는 한 장의 작업면
+- `scrapbookPrint`: 실제 사용자의 사진을 올리는 클릭 가능한 인화 사진
+- `scrapbookTurnLayer`: 다음·이전 이동 중 종이가 회전하는 전환 레이어
+
+| 컨셉 | 참고 이미지 | 내부 구성 | 한 책장 사진 수 |
+| --- | --- | --- | --- |
+| 디자인1 | 두 번째 이미지 | 밝은 민트 여행 스크랩북 | 4장 |
+| 디자인2 | 첫 번째 이미지 | 아이보리 종이 콜라주 | 6장 |
+| 디자인3 | 세 번째 이미지 | 오래된 갈색 가족 앨범 | 6장 |
+| 디자인4 | 네 번째 이미지 | 크림색 양면 카페 앨범 | 7장 |
+
+배경 소재는 Imagegen으로 사진 영역을 비운 종이·테이프·압화 중심의 PNG를 만들었다. 실제 등록 사진을 생성 이미지에 합성하지 않고 React가 별도로 올리므로, 앨범 내용이 바뀌어도 같은 컨셉을 재사용할 수 있다. 파일은 `public/textures/album-inside-design1.png`부터 `album-inside-design4.png`까지 저장했다.
+
+`pagePhotos`를 컨셉 메타데이터에 두어 화면과 페이지 분할 로직이 같은 값을 사용한다. 앨범 상세의 원본 이미지는 화면 진입 즉시 요청하고, 목록 썸네일만 지연 로딩한다. 이렇게 해야 첫 책장이 열린 직후 빈 인화지가 잠깐 보이는 현상을 줄이면서 목록 성능은 유지할 수 있다.
+
+### 모든 컨셉을 양면 4:3 앨범으로 통일
+
+처음에는 디자인1~3이 한 장의 스크랩북 종이처럼 보이고 디자인4만 양면 앨범이었다. 이를 수정해 네 배경 모두 중앙 홈, 좌우 종이 곡률, 바깥 페이지 두께가 포함된 `4:3` 펼침 이미지로 다시 제작했다.
+
+CSS의 `aspect-ratio: 4 / 3`만 바꾸면 화면 높이가 낮을 때 앨범이 잘릴 수 있다. 그래서 너비를 `calc((100dvh - 헤더·하단·여백) * 4 / 3)`로 제한해 가로와 세로 조건을 함께 만족시켰다. 사진 위치도 중앙 50%를 경계로 왼쪽 또는 오른쪽에만 들어가도록 다시 정의했다.
+
+페이지 번호는 한 책장 번호가 아니라 왼쪽·오른쪽 번호를 따로 표시한다. 페이지 전환 레이어도 전체 펼침이 아니라 진행 방향의 절반만 회전하므로 실제 양면 책에서 한 장을 넘기는 구조에 가깝다.
+
+### 페이지 넘김에서 배경과 사진을 분리하는 이유
+
+종이 배경까지 교체하면 검거나 하얀 화면이 끼어 전체 페이지가 새로고침되는 것처럼 보인다. 따라서 컨셉 배경과 책등은 고정하고, 회전하는 빈 종이와 사진 레이어만 시간차로 처리한다. 회전 종이에는 `backface-visibility: hidden`을 적용해 90도를 지난 뒷면이 계속 남지 않게 했다.
+
+검은색 가림막이나 고정된 흰색 종이는 현재 앨범과 다른 재질처럼 보여 제거했다. 종이 배경은 전환 내내 고정하고 사진 레이어만 교체한다. 다음 장은 오른쪽 사진을 즉시 숨기고 100ms 뒤 왼쪽 사진을 숨긴다. 300ms에 다음 사진 데이터로 바꾼 다음 오른쪽 사진은 40ms, 왼쪽 사진은 150ms 뒤 표시한다. 각 페이드는 140ms이며 이전 장은 이 순서를 좌우 반대로 적용한다.
+
+## 인물 대표 썸네일 저장 방식
+
+기존 인물 목록은 각 그룹에서 가장 먼저 조회된 얼굴을 무조건 썸네일로 사용했다. 사용자가 고른 얼굴을 유지하려면 화면 상태만 바꾸는 것으로는 부족하므로 `person.cover_face_id`에 대표로 선택한 `detected_face.id`를 저장한다.
+
+`cover_face_id`는 외래 키다. 외래 키는 다른 테이블의 실제 행을 가리키도록 제한하는 DB 규칙이다. 대표 얼굴을 삭제하면 `ON DELETE SET NULL`에 의해 대표 설정만 자동으로 비워지고 인물 자체는 유지된다. 얼굴을 다른 인물로 옮길 때도 이전 인물의 대표 참조를 먼저 해제해 잘못된 얼굴이 남지 않게 했다.
+
+목록을 읽을 때 선택된 대표 얼굴이 현재 인물에게 속하고 제외되지 않았다면 그 썸네일을 사용한다. 해당 얼굴이 없으면 첫 번째 유효 얼굴을 대신 사용하므로 기존 데이터와도 호환된다. 이전 DB에는 열이 없으므로 앱을 열 때 멱등 마이그레이션으로 `cover_face_id`를 한 번만 추가한다.
+
+## 선택 출처가 여러 화면일 때 앨범 생성 흐름
+
+기존 앨범 생성은 모아보기의 `selectedIds`에 직접 의존해 인물 화면에서 재사용할 수 없었다. 이번에는 모달에 전달할 원본 사진 배열을 `albumDraftItems`로 분리했다. 모아보기와 인물 상세가 각각 선택 결과를 이 배열로 넘기고, 생성 함수는 배열만 보고 같은 Tauri 명령을 호출한다. 기능의 시작 화면과 실제 저장 로직을 분리하면 선택 UI가 늘어나도 저장 코드를 복제하지 않아도 된다.
+
+얼굴 선택값은 `detected_face.id`, 앨범 항목은 `media.id`이므로 그대로 전달하면 잘못된 ID가 저장된다. 선택된 얼굴에서 `media_id`를 `Set`으로 모은 뒤 원본 `MediaItem[]`으로 변환했다. 같은 사진 안의 얼굴이 여러 번 선택되어도 한 사진은 앨범에 한 번만 들어간다. 앨범 생성은 원본 파일 이동이 아니라 기존 미디어 ID를 `album_item`으로 참조하는 방식이다.
+
+앨범 hover는 표지 전체에 `translateY + rotate` 키프레임을 적용해 좌우 흔들림과 떠오르는 강조를 함께 표현했다. 시간순 카드는 짧은 이동, 테두리, 그림자만 사용해 더 차분하게 구분했다. `prefers-reduced-motion` 환경에서는 반복 흔들림을 끄고 위치 강조만 남긴다.
+
+## 정렬·필터와 조회수 저장 방식
+
+정렬과 필터는 원본 `items` 배열을 직접 바꾸지 않고 `useMemo`에서 새로운 목록을 계산한다. 먼저 검색 결과에 미디어 종류, 즐겨찾기, 댓글 유무, 최소 별점 조건을 모두 적용한 다음 정렬한다. 여러 필터를 동시에 선택하면 조건을 `AND`로 결합하므로 모든 조건을 만족하는 사진만 남는다.
+
+정렬 값이 같은 사진은 촬영 날짜를 보조 기준으로 사용한다. 이를 안정적인 정렬 기준이라고 한다. 예를 들어 별점이 같은 사진이 매 렌더링마다 자리를 바꾸지 않아 사용자가 목록의 위치를 기억하기 쉽다. 이름순은 화면에 원본명을 표시하지 않되 내부 파일명을 한국어 로케일과 숫자 인식 옵션으로 비교한다.
+
+댓글은 기존 `media.comment` 한 칸만 세면 실제 댓글 개수와 달라질 수 있다. 따라서 로컬 댓글 목록을 미디어 ID별 개수로 계산해 댓글 많은순과 댓글 있는 사진 필터에 공통 사용한다.
+
+조회수는 상세보기를 열거나 상세에서 이전·다음 사진으로 이동할 때 1씩 증가한다. 프론트엔드는 클릭 즉시 낙관적으로 값을 갱신하고, Tauri 명령은 SQLite의 `view_count = view_count + 1` 연산으로 저장한다. 기존 DB에는 `migrate_media_view_count`가 열의 존재 여부를 먼저 검사한 후 기본값 0으로 추가하므로 기존 사진 행을 잃지 않는다.
+
+## 앨범 컨셉을 색상 기반 제품 구조로 단순화
+
+기존 디자인1~4는 컨셉마다 표지 이미지, 내부 배경 이미지, 사진 수와 배치 규칙이 달랐다. 새 요구사항은 한 종류의 실물 포토앨범을 색상만 바꾸는 구조이므로 `AlbumConcept`와 컨셉 메타데이터를 제거하고 `coverColor` 하나를 디자인 상태의 기준으로 삼았다. 사용자가 고른 색은 React 임시 상태가 아니라 SQLite `album.cover_color`에 저장되어 앱을 다시 실행해도 유지된다.
+
+표지는 별도 이미지나 앨범 라이브러리 없이 CSS로 만들었다. 단색 무광 커버 위에 얕은 책등, 하단 종이 두께, 중앙 사진창을 서로 다른 레이어로 구성한다. 처음 적용한 가로·세로 반복선은 작은 모눈처럼 보여 제거하고, 반복되지 않는 약한 표면 명암만 남겼다. 실제 첫 사진을 창 안에 사용하므로 장식 이미지보다 앨범을 구별하기 쉽고, 표지 파일을 추가 생성하지 않아도 된다. 이전 컨셉용 PNG 9개와 관련 렌더링 코드는 모두 제거했다.
+
+내부는 고정된 `4:3` 양면 링 바인더다. 한 펼침면에 왼쪽 2장, 오른쪽 2장을 배치하고 중앙 금속 레일과 링을 별도 레이어로 둔다. 사진 수가 항상 4장이라 페이지 계산과 전환 시점도 컨셉 분기 없이 한 코드로 관리할 수 있다. 페이지 넘김은 진행 방향 사진을 먼저 비우고 반대쪽을 100ms 뒤 비운 다음, 다음 데이터의 사진을 순차 표시한다.
+
+기존 DB의 `cover_concept` 열은 삭제하지 않았다. SQLite에서 기존 열을 물리적으로 제거하는 마이그레이션은 데이터 손상 위험과 복잡도가 큰 데 비해 얻는 이점이 작기 때문이다. 새 코드에서는 읽거나 노출하지 않고, 오래된 DB의 NOT NULL 제약을 만족시키기 위한 호환 값만 저장한다. UI와 도메인 모델에서는 완전히 제거된 레거시 필드다.
+
+앨범 상세에서 사진을 열면 조회수가 바뀌어 `items` 배열 객체가 새로 만들어진다. 배열 참조 자체를 페이지 초기화 조건으로 쓰면 같은 사진 목록인데도 1쪽으로 돌아간다. 초기화 의존성을 사진 ID 순서 문자열로 좁혀, 사진의 추가·삭제·순서 변경 때만 페이지를 다시 만들고 조회수 같은 메타데이터 변경에는 현재 쪽을 유지하도록 했다.
+
+## 사진 확대 뷰어와 날짜 정보의 우선순위
+
+상세 화면 안에서 이미지 크기만 키우면 댓글과 별점 영역이 계속 남아 감상 공간이 줄어든다. 확대 보기를 별도의 중첩 모달로 분리해 사진과 배율 도구만 렌더링했다. 배율은 `1`부터 `4`까지의 숫자 상태 하나로 관리하며 버튼과 `range` 입력이 같은 변경 함수를 사용한다. 확대된 캔버스의 너비와 높이를 배율만큼 키우고 바깥 영역에 스크롤을 주어 원본의 원하는 부분을 볼 수 있다. 중첩 모달도 `useModalBehavior`를 사용하므로 첫 번째 `Esc`는 확대 화면만 닫고 상세 화면은 유지한다.
+
+지난 추억은 고정 날짜가 아니라 현재 로컬 날짜의 월·일과 `takenAt`을 비교한다. 현재 연도 사진은 제외해 실제 과거 기록만 세고, 결과가 1개 이상일 때만 메뉴 숫자 배지를 표시한다. 내용이 없을 때 `0` 배지를 반복 노출하지 않아 메뉴의 시각적 잡음을 줄였다.
+
+달력 칸은 날짜, 일정, 사진, 메모 순으로 위계를 정했다. 일정은 날짜 바로 아래 상단에 두고 사진 시작 위치를 일정 아래로 내렸다. 모바일의 7열 칸은 텍스트와 D-day를 함께 표시할 폭이 부족하므로 포스트잇 색과 분류 아이콘만 표시하고, 일정 제목은 접근성 이름과 툴팁에 유지한다.
+
+## 모션 없는 앨범 강조와 공용 내부 구조
+
+반복 흔들림은 클릭 가능한 앨범을 눈에 띄게 만들지만 여러 표지가 한 화면에 있을 때 시선이 계속 움직여 피로를 줄 수 있다. hover와 키보드 포커스에서 `transform`과 `animation`을 사용하지 않고 밝기, 채도, 표지 그림자만 짧게 전환하도록 바꿨다. 요소의 위치가 고정되므로 주변 레이아웃도 흔들리지 않는다.
+
+내 앨범과 사진보기의 앨범보기는 모두 `AlbumFullscreenReader`를 사용한다. 중앙 스프링 DOM과 CSS를 이 공용 컴포넌트에서 제거했기 때문에 두 진입 경로가 자동으로 같은 스타일을 사용한다. 금속 레일 대신 2px 중앙선과 좌우 안쪽 그림자로 책의 접힘만 표현하고, 페이지 넘김 로직과 사진 4장 배치는 유지했다.

@@ -14,6 +14,7 @@ interface BackendMediaItem {
   rating: number;
   comment: string;
   favorite: boolean;
+  view_count?: number;
   metadata_status: "ready" | "queued" | "missing-date";
 }
 
@@ -26,10 +27,10 @@ interface BackendAlbum {
   items: BackendMediaItem[];
 }
 
-const gradients: Record<MediaType, string> = {
-  image: "linear-gradient(135deg, #efe0c1 0%, #bac6b5 52%, #6d8f7c 100%)",
-  video: "linear-gradient(135deg, #60747d 0%, #bbc2af 52%, #e5cf96 100%)",
-  audio: "linear-gradient(135deg, #5d5d50 0%, #c9b578 100%)",
+const placeholders: Record<MediaType, string> = {
+  image: "#ECEEF1",
+  video: "#E5E9ED",
+  audio: "#E9EDEB",
 };
 
 export function isTauriRuntime(): boolean {
@@ -65,15 +66,10 @@ export async function deleteRegisteredMedia(ids: string[]): Promise<MediaItem[]>
   return rows.map(toMediaItem);
 }
 
-export async function createAlbumFromMedia(title: string, ids: string[]): Promise<number | null> {
+export async function createAlbumFromMedia(title: string, ids: string[], coverColor: string): Promise<number | null> {
   const mediaIds = ids.filter((id) => /^\d+$/.test(id)).map(Number);
   if (!mediaIds.length) return null;
-  return invoke<number>("create_album_from_media", { title, mediaIds });
-}
-
-export async function updateAlbumCoverColor(id: string, coverColor: string): Promise<void> {
-  if (!/^\d+$/.test(id)) return;
-  await invoke("update_album_cover_color", { id: Number(id), coverColor });
+  return invoke<number>("create_album_from_media", { title, mediaIds, coverColor });
 }
 
 export async function saveAlbum(album: SavedAlbum): Promise<void> {
@@ -111,6 +107,11 @@ export async function saveMediaDetails(item: MediaItem): Promise<void> {
   });
 }
 
+export async function incrementMediaView(id: string): Promise<number> {
+  if (!/^\d+$/.test(id)) return 0;
+  return invoke<number>("increment_media_view", { id: Number(id) });
+}
+
 async function registerSelection(selection: string | string[] | null): Promise<MediaItem[]> {
   if (!selection) return [];
   const paths = Array.isArray(selection) ? selection : [selection];
@@ -133,8 +134,9 @@ function toMediaItem(row: BackendMediaItem): MediaItem {
     rating: row.rating,
     comment: row.comment,
     favorite: row.favorite,
+    viewCount: row.view_count ?? 0,
     tags: [],
-    thumbnail: gradients[row.file_type],
+    thumbnail: placeholders[row.file_type],
     metadataStatus: row.metadata_status,
   };
 }

@@ -1,4 +1,7 @@
 .petsView { display: grid; gap: 24px; }
+.petMatchBody { padding: 24px; display: grid; gap: 20px; }
+.petMatchBody progress { width: 100%; }
+.petMatchNotice { margin: 0; color: var(--muted); font-size: 13px; }
 .petGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 24px 16px; }
 .petPhoto { position: relative; min-width: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; align-items: stretch; background: transparent; color: var(--text); text-align: left; }
 .petPhoto > div { position: relative; width: 100%; aspect-ratio: 1; overflow: hidden; border-radius: 4px; }

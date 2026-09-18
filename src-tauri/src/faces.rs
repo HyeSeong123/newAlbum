@@ -61,7 +61,7 @@ pub struct FaceRow {
 }
 
 #[derive(Serialize)]
-pub struct PersonRow { id: i64, name: String }
+pub struct PersonRow { id: i64, name: String, cover_face_id: Option<i64> }
 
 #[derive(Serialize)]
 pub struct FaceIndex {
@@ -71,8 +71,8 @@ pub struct FaceIndex {
 }
 
 fn read_index(conn: &Connection) -> Result<FaceIndex, String> {
-    let people = conn.prepare("SELECT id, name FROM person WHERE EXISTS (SELECT 1 FROM detected_face WHERE person_id = person.id AND NOT EXISTS (SELECT 1 FROM excluded_face e WHERE e.face_id = detected_face.id)) ORDER BY id")
-        .map_err(|e| e.to_string())?.query_map([], |row| Ok(PersonRow { id: row.get(0)?, name: row.get(1)? }))
+    let people = conn.prepare("SELECT id, name, cover_face_id FROM person WHERE EXISTS (SELECT 1 FROM detected_face WHERE person_id = person.id AND NOT EXISTS (SELECT 1 FROM excluded_face e WHERE e.face_id = detected_face.id)) ORDER BY id")
+        .map_err(|e| e.to_string())?.query_map([], |row| Ok(PersonRow { id: row.get(0)?, name: row.get(1)?, cover_face_id: row.get(2)? }))
         .map_err(|e| e.to_string())?.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())?;
     let faces = conn.prepare("SELECT id, media_id, person_id, thumbnail, confirmed FROM detected_face WHERE NOT EXISTS (SELECT 1 FROM excluded_face e WHERE e.face_id = detected_face.id) ORDER BY id")
         .map_err(|e| e.to_string())?.query_map([], |row| Ok(FaceRow { id: row.get(0)?, media_id: row.get(1)?, person_id: row.get(2)?, thumbnail: row.get(3)?, confirmed: row.get(4)? }))
@@ -137,6 +137,22 @@ pub fn rename_face_person(app: AppHandle, id: i64, name: String) -> Result<(), S
     Ok(())
 }
 
+fn set_cover_face(conn: &Connection, person_id: i64, face_id: i64) -> Result<(), String> {
+    let belongs: bool = conn.query_row(
+        "SELECT EXISTS(SELECT 1 FROM detected_face WHERE id = ?1 AND person_id = ?2 AND NOT EXISTS (SELECT 1 FROM excluded_face WHERE face_id = detected_face.id))",
+        params![face_id, person_id],
+        |row| row.get(0),
+    ).map_err(|e| e.to_string())?;
+    if !belongs { return Err("이 인물에 등록된 얼굴을 선택해 주세요.".into()); }
+    conn.execute("UPDATE person SET cover_face_id = ?1 WHERE id = ?2", params![face_id, person_id]).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn set_person_cover_face(app: AppHandle, person_id: i64, face_id: i64) -> Result<(), String> {
+    set_cover_face(&super::open_database(&app)?, person_id, face_id)
+}
+
 fn reassign(conn: &mut Connection, ids: Vec<i64>, target: Option<i64>) -> Result<(), String> {
     if ids.is_empty() { return Err("얼굴을 선택해 주세요.".into()); }
     let tx = conn.transaction().map_err(|e| e.to_string())?;
@@ -148,6 +164,7 @@ fn reassign(conn: &mut Connection, ids: Vec<i64>, target: Option<i64>) -> Result
         }
     };
     for id in ids {
+        tx.execute("UPDATE person SET cover_face_id = NULL WHERE cover_face_id = ?1", [id]).map_err(|e| e.to_string())?;
         let count = tx.execute("UPDATE detected_face SET person_id = ?1, confirmed = 1 WHERE id = ?2", params![person_id, id]).map_err(|e| e.to_string())?;
         if count == 0 { return Err("얼굴을 찾을 수 없습니다.".into()); }
     }
@@ -268,5 +285,21 @@ mod tests {
         let old = read_index(&conn).unwrap().faces[0].person_id;
         assert!(reassign(&mut conn, vec![1, 9999], None).is_err());
         assert_eq!(read_index(&conn).unwrap().faces[0].person_id, old);
+    }
+
+    #[test]
+    fn person_cover_must_belong_to_the_person_and_clears_when_moved() {
+        let mut conn = database();
+        save_scan(&mut conn, 1, vec![face(0.1)]).unwrap();
+        save_scan(&mut conn, 2, vec![face(0.9)]).unwrap();
+        let index = read_index(&conn).unwrap();
+        let person = index.people[0].id;
+        let own_face = index.faces.iter().find(|face| face.person_id == person).unwrap().id;
+        let other_face = index.faces.iter().find(|face| face.person_id != person).unwrap().id;
+        set_cover_face(&conn, person, own_face).unwrap();
+        assert_eq!(read_index(&conn).unwrap().people.iter().find(|row| row.id == person).unwrap().cover_face_id, Some(own_face));
+        assert!(set_cover_face(&conn, person, other_face).is_err());
+        reassign(&mut conn, vec![own_face], Some(index.people[1].id)).unwrap();
+        assert_eq!(conn.query_row("SELECT cover_face_id FROM person WHERE id = ?1", [person], |row| row.get::<_, Option<i64>>(0)).unwrap(), None);
     }
 }

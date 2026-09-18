@@ -27,12 +27,25 @@
 .faceProgress progress { width: 100%; height: 10px; accent-color: #38775a; }
 .faceError { color: #a32525; }
 .personPhotoGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+.personPhotoGrid.faceOverviewGrid { grid-template-columns: repeat(auto-fill, 128px); gap: 16px; }
+.personPhotoGrid.personMediaGrid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 24px 16px; }
+.faceOverviewGrid .personPhotoMeta { font-size: 12px; overflow-wrap: anywhere; }
+.faceOverviewGrid .personPhotoMeta img { display: none; }
 .personPhoto { position: relative; min-width: 0; }
 .personOriginal { width: 100%; aspect-ratio: 1; padding: 0; border: 0; background: #eef1ef; border-radius: 4px; overflow: hidden; display: block; }
 .personOriginal > img { width: 100%; height: 100%; object-fit: cover; }
+.personMediaGrid .personOriginal { transition: filter .16s ease; }
+.personMediaGrid .personOriginal:hover { filter: brightness(.96); }
+.personOriginal { position: relative; }
+.personOriginal[aria-label="대표 사진으로 설정"] { cursor: pointer; outline: 2px solid transparent; outline-offset: 3px; }
+.personOriginal[aria-label="대표 사진으로 설정"]:hover { outline-color: var(--primary); }
+.personOriginal[aria-pressed="true"] { outline: 3px solid var(--primary); outline-offset: 3px; }
+.personCoverBadge { position: absolute; top: 8px; right: 8px; z-index: 2; padding: 4px 8px; border-radius: 9999px; background: #202124; color: #fff; font-size: 12px; font-weight: 700; }
 .faceCheck { position: absolute; top: 8px; left: 8px; width: 32px; height: 32px; border: 2px solid #fff; border-radius: 50%; background: #43534bb3; color: #fff; padding: 0; display: grid; place-items: center; }
 .faceCheck.checked { background: #28714e; }
 .faceCheck svg { position: static; margin: 0; transform: none; }
 .personPhotoMeta { display: flex; align-items: center; gap: 8px; padding-top: 8px; font-size: 13px; }
 .personPhotoMeta img { width: 36px; height: 36px; object-fit: cover; border-radius: 4px; }
-@media (max-width: 700px) { .personPhotoGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .personGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } .personEditor input { width: 170px; } }
+@media (max-width: 700px) { .personPhotoGrid:not(.personMediaGrid) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .personGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } .personEditor input { width: 170px; } }
+@media (max-width: 720px) { .personPhotoGrid.personMediaGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 10px; } }
+@media (max-width: 480px) { .personPhotoGrid.faceOverviewGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; } }
