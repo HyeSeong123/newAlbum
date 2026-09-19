@@ -36,20 +36,32 @@ test('fabric album colors survive create, edit and reload', async ({ page }) => 
 
   await page.getByRole('button', { name: '브라운 앨범 앨범 열기', exact: true }).click();
   const reader = page.getByRole('dialog', { name: '앨범 전체창' });
-  await expect(reader.locator('.binderPage')).toHaveCount(2);
+  await expect(reader.locator('.albumPaper')).toHaveCount(2);
   await expect(reader.locator('.binderRings')).toHaveCount(0);
-  await expect(reader.locator('.albumMountedPhoto')).toHaveCount(4);
+  await expect(reader.locator('.albumPagePhoto')).toHaveCount(4);
+  await expect(reader.locator('.albumBookBase')).toHaveAttribute('src', /album-open-white/);
+  expect(await reader.locator('.albumHardback').evaluate((element) => getComputedStyle(element, '::before').backgroundColor)).toBe('rgb(255, 255, 255)');
   await expect(reader.locator('.scrapbookStage, .scrapbookSheet, .scrapbookPrint')).toHaveCount(0);
-  const spread = await reader.locator('.binderStage').boundingBox();
-  expect(Math.abs(spread!.width / spread!.height - 4 / 3)).toBeLessThan(.02);
+  const spread = await reader.locator('.albumSpread').boundingBox();
+  const canvas = await reader.locator('.albumHardback').boundingBox();
+  expect(Math.abs(canvas!.width / canvas!.height - 4 / 3)).toBeLessThan(.02);
+  const navigation = await page.locator('.sidebar').boundingBox();
+  const readerBox = await reader.boundingBox();
+  expect(readerBox!.y).toBeCloseTo(navigation!.y + navigation!.height, 0);
+  await expect(page.locator('.sidebar .brand')).toBeVisible();
+  if (test.info().project.name === 'desktop') {
+    expect(spread!.width).toBeGreaterThan(page.viewportSize()!.width * .88);
+  }
   await reader.locator('.mediaImage').evaluateAll((images: HTMLImageElement[]) => Promise.all(images.map((image) => image.decode())));
-  await reader.locator('.binderStage').screenshot({ path: `test-results/binder-inside-${test.info().project.name}.png` });
-  await reader.getByTitle('닫기').click();
+  await reader.locator('.albumSpread').screenshot({ path: `test-results/album-inside-${test.info().project.name}.png` });
+  await page.screenshot({ path: `test-results/album-header-${test.info().project.name}.png` });
+  await page.getByRole('button', { name: '사진보기', exact: true }).click();
+  await expect(reader).toHaveCount(0);
 
   await page.getByRole('button', { name: '사진보기', exact: true }).click();
   await page.getByRole('tab', { name: '앨범보기' }).click();
   const libraryReader = page.getByRole('dialog', { name: '앨범 전체창' });
-  await expect(libraryReader.locator('.binderPage')).toHaveCount(2);
+  await expect(libraryReader.locator('.albumPaper')).toHaveCount(2);
   await expect(libraryReader.locator('.binderRings')).toHaveCount(0);
   await libraryReader.getByTitle('닫기').click();
   await page.getByRole('button', { name: '사진 선택', exact: true }).click();

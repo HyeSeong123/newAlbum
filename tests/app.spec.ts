@@ -171,6 +171,7 @@ test("clicking a media tile opens detail modal", async ({ page }) => {
   await expect(page.getByRole("dialog", { name: "사진 상세" })).toBeVisible();
   await page.locator(".modalBackdrop").click({ position: { x: 8, y: 8 } });
   await expect(page.getByRole("dialog", { name: "사진 상세" })).toBeVisible();
+  await page.getByTitle("댓글", { exact: true }).click();
   await expect(page.getByPlaceholder("작성자")).toHaveValue("");
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowLeft");
@@ -250,7 +251,7 @@ test("created albums are visible from saved albums menu", async ({ page }) => {
   await expect(page.locator("h1", { hasText: "내 앨범" })).toBeVisible();
   await page.getByRole("button", { name: /가족 여행/ }).click();
   await expect(page.getByRole("dialog", { name: "앨범 전체창" })).toBeVisible();
-  await expect(page.locator(".albumFullscreenHeader")).toContainText("가족 여행");
+  await expect(page.locator(".albumJournalHeader")).toContainText("가족 여행");
   await page.getByTitle("닫기").click();
   await page.getByRole("button", { name: "선택", exact: true }).click();
   await page.getByRole("button", { name: "가족 여행 앨범 선택" }).click();
@@ -289,7 +290,7 @@ test("album view opens immersive reader", async ({ page }) => {
 
   await page.getByRole("tab", { name: /앨범보기/ }).click();
   await expect(page.getByRole("dialog", { name: "앨범 전체창" })).toBeVisible();
-  await expect(page.locator(".albumFullscreen .albumPager")).toContainText("책장");
+  await expect(page.locator(".albumJournal .albumPagerActions")).toContainText("펼침");
   await page.getByTitle("닫기").click();
   await expect(page.getByRole("dialog", { name: "앨범 전체창" })).toBeHidden();
   await expect(page.getByRole("tab", { name: "모아보기" })).toHaveAttribute("aria-selected", "true");

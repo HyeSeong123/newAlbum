@@ -172,7 +172,20 @@ export function PeopleView({ items, onOpen, onCreateAlbum }: { items: MediaItem[
       {pages > 1 && <div className="peopleActions"><button disabled={page === 0} onClick={() => group.setPage(page - 1)}>이전</button><span>{page + 1} / {pages}</span><button disabled={page === pages - 1} onClick={() => group.setPage(page + 1)}>다음</button></div>}
       </section>;
       })}
-    </> : <>
+    </> : <div className={`personDetailShell${person && !allFaces ? '' : ' overview'}`}>
+      {person && !allFaces && <aside className="personDirectory" aria-label="이름을 지정한 사람">
+        <h3>이름을 지정한 사람</h3>
+        {index.people.filter((entry) => entry.name.trim()).map((entry) => {
+          const members = index.faces.filter((face) => face.person_id === entry.id);
+          const cover = members.find((face) => face.id === entry.cover_face_id) ?? members[0];
+          return <button key={entry.id} className={entry.id === active ? 'active' : ''} onClick={() => { setActive(entry.id); setName(entry.name); setChosen([]); setSelecting(false); setChoosingCover(false); setFacePage(0); }}>
+            <img src={cover?.thumbnail} alt="" loading="lazy" />
+            <span><strong>{entry.name}</strong><small>사진 {new Set(members.map((face) => face.media_id)).size}장</small></span>
+          </button>;
+        })}
+        <button className="unknownDirectory" onClick={() => { setActive(null); setAllFaces(false); }}><span><strong>미확인 얼굴</strong><small>{index.people.filter((entry) => !entry.name.trim()).length}명</small></span></button>
+      </aside>}
+      <div className="personDetailContent">
       {person && !allFaces && <div className="peopleActions personEditor">
         <button title="인물 목록" onClick={() => { setActive(null); setChosen([]); setChoosingCover(false); }}><ArrowLeft size={18} /></button>
         <form onSubmit={(event) => { event.preventDefault(); void saveName(); }}>
@@ -212,7 +225,8 @@ export function PeopleView({ items, onOpen, onCreateAlbum }: { items: MediaItem[
         </article>;
       })}</div>
       {facePages > 1 && <div className="peopleActions"><button disabled={currentFacePage === 0} onClick={() => setFacePage(currentFacePage - 1)}>이전</button><span>{currentFacePage + 1} / {facePages}</span><button disabled={currentFacePage === facePages - 1} onClick={() => setFacePage(currentFacePage + 1)}>다음</button></div>}
-    </>}
+      </div>
+    </div>}
     {reviewing && <FaceMatchReview index={index} onClose={() => setReviewing(false)} onSaved={async () => { setIndex(await loadFaceIndex()); setChosen([]); }} />}
   </section>;
 }

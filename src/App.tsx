@@ -2,11 +2,12 @@ import { Calendar } from "./features/calendar/Calendar";
 import { PeopleWorkspace } from "./features/people/PeopleWorkspace";
 import { SavedAlbumsView, AlbumFullscreenReader } from "./features/albums/AlbumsView";
 import { AlbumCreateModal } from "./features/albums/AlbumCreateModal";
+import { AlbumCover } from "./features/albums/AlbumCover";
 import { EmptyState, MediaImage, MediaVisual } from "./components/MediaVisual";
 import { useModalBehavior } from "./hooks/useModalBehavior";
-import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRowSelection } from "./hooks/useRowSelection";
-import { ArrowUpDown, CalendarDays, CheckSquare, ChevronLeft, ChevronRight, Clock3, BookOpen, Eye, FolderOpen, Heart, Image, LayoutGrid, LoaderCircle, ListTree, Maximize2, MessageSquare, Music, Pencil, Play, Plus, RotateCcw, Search, Settings, SlidersHorizontal, Sparkles, Star, Trash2, Upload, Users, X, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowUpDown, CalendarDays, CheckSquare, ChevronLeft, ChevronRight, Clock3, Eye, FolderOpen, Heart, Image, Info, LayoutGrid, LoaderCircle, ListTree, Maximize2, Music, Pencil, Play, Plus, RotateCcw, Search, Settings, SlidersHorizontal, Star, Trash2, Upload, X, ZoomIn, ZoomOut } from "lucide-react";
 import { groupByTakenDate, isSupportedMedia } from "./features/media/mediaService";
 import {
   chooseAndRegisterFiles,
@@ -25,7 +26,7 @@ import {
 import type { MediaItem, SavedAlbum } from "./types/media";
 
 type View = "Library" | "Albums" | "Timeline" | "Memories" | "People" | "Settings";
-type PhotoMode = "grid" | "calendar" | "album";
+type PhotoMode = "grid" | "calendar" | "timeline" | "album";
 
 type MediaComment = {
   id: string;
@@ -42,24 +43,35 @@ type LibraryMediaType = "all" | "image" | "video" | "audio";
 const MEDIA_COMMENT_STORAGE_KEY = "oraedameun.mediaComments";
 
 const viewLabels: Record<View, string> = {
-  Library: "사진보기",
+  Library: "사진 기록",
   Albums: "내 앨범",
-  Timeline: "시간순",
-  Memories: "지난 추억",
-  People: "인물",
+  Timeline: "사진 기록",
+  Memories: "추억",
+  People: "사람과 반려동물",
   Settings: "설정",
 };
 
-const navItems: Array<{ name: View; label: string; icon: typeof LayoutGrid }> = [
-  { name: "Library", label: viewLabels.Library, icon: LayoutGrid },
-  { name: "Albums", label: viewLabels.Albums, icon: BookOpen },
-  { name: "Timeline", label: viewLabels.Timeline, icon: ListTree },
-  { name: "Memories", label: viewLabels.Memories, icon: Sparkles },
-  { name: "People", label: viewLabels.People, icon: Users },
-  { name: "Settings", label: viewLabels.Settings, icon: Settings },
+const navItems: Array<{ name: View; label: string; accessibleLabel: string }> = [
+  { name: "Library", label: "사진 기록", accessibleLabel: "사진보기" },
+  { name: "Albums", label: "앨범", accessibleLabel: "내 앨범" },
+  { name: "People", label: "사람과 반려동물", accessibleLabel: "인물" },
+  { name: "Memories", label: "추억", accessibleLabel: "지난 추억" },
 ];
 
 export function App() {
+  const navigationRef = useRef<HTMLElement>(null);
+  const [navigationHeight, setNavigationHeight] = useState(70);
+
+  useLayoutEffect(() => {
+    const navigation = navigationRef.current;
+    if (!navigation) return;
+    const measure = () => setNavigationHeight(navigation.getBoundingClientRect().height);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(navigation);
+    return () => observer.disconnect();
+  }, []);
+
   const [activeView, setActiveView] = useState<View>("Library");
   const [photoMode, setPhotoMode] = useState<PhotoMode>("grid");
   const [items, setItems] = useState<MediaItem[]>([]);
@@ -84,13 +96,17 @@ export function App() {
     });
   }, [items, query]);
 
-  const groups = useMemo(() => groupByTakenDate(filtered), [filtered]);
   const commentCounts = useMemo(() => Object.fromEntries(items.map((item) => [item.id, getMediaComments(item, mediaComments).length])), [items, mediaComments]);
   const now = new Date();
   const currentYear = String(now.getFullYear());
   const todayMonthDay = `${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const todayMemories = items.filter((item) => item.takenAt?.slice(5) === todayMonthDay && item.takenAt.slice(0, 4) !== currentYear);
   const selectedCount = selectedIds.size;
+  const latestTakenMonth = useMemo(() => items.map((item) => item.takenAt).filter(Boolean).sort().at(-1)?.slice(0, 7), [items]);
+  const topbarTitle = activeView === "Library" && latestTakenMonth
+    ? `${Number(latestTakenMonth.slice(0, 4))}년 ${Number(latestTakenMonth.slice(5, 7))}월`
+    : viewLabels[activeView];
+  const topbarCount = activeView === "Albums" ? `${savedAlbums.length}개의 앨범` : `${items.length}개의 기록`;
 
   useEffect(() => {
     if (!tauriEnabled) return;
@@ -349,25 +365,23 @@ export function App() {
   }
 
   return (
-    <main className="app">
-      <header className="sidebar" aria-label="주 메뉴">
+    <main className="app" style={{ "--app-header-height": `${navigationHeight}px` } as CSSProperties}>
+      <header ref={navigationRef} className="sidebar" aria-label="주 메뉴">
         <div className="brand">
-          <div className="brandMark"><Image size={22} /></div>
-          <div>
-            <strong>오래담은</strong>
-          </div>
+          <strong>오래담은</strong>
+          <span>Warm Journal</span>
         </div>
 
         <nav className="navList" aria-label="주 메뉴">
-          {navItems.map(({ name, label, icon: Icon }) => (
+          {navItems.map(({ name, label, accessibleLabel }) => (
             <button
               key={name}
               className={activeView === name ? "active" : ""}
-              onClick={() => setActiveView(name)}
+              onClick={() => { setActiveView(name); setPhotoMode("grid"); }}
               aria-pressed={activeView === name}
-              title={label}
+              aria-label={accessibleLabel}
+              title={accessibleLabel}
             >
-              <Icon size={18} />
               <span>{label}</span>
               {name === "Memories" && todayMemories.length > 0 && (
                 <strong className="navCount" aria-label={`${todayMemories.length}개`}>{todayMemories.length}</strong>
@@ -375,29 +389,26 @@ export function App() {
             </button>
           ))}
         </nav>
-
-        <section className="memoryNote" aria-label="앨범 요약">
-          <strong>{items.length}개의 순간</strong>
-        </section>
+        <button className="globalSettings" aria-label="설정" title="설정" aria-pressed={activeView === "Settings"} onClick={() => setActiveView("Settings")}><Settings size={20} /></button>
       </header>
 
       <section className="workspace">
-        <header className="topbar">
+        <header className={`topbar view-${activeView.toLowerCase()}`}>
           <div>
-            <h1>{viewLabels[activeView]}</h1>
-            <span className="collectionCount">{items.length}개의 기록</span>
+            <h1 aria-label={activeView === "Library" ? "사진보기" : viewLabels[activeView]}>{topbarTitle}</h1>
+            <span className="collectionCount">{topbarCount}</span>
           </div>
           <div className="toolbar">
             <label className="searchBox">
               <Search size={18} />
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="코멘트, 태그 검색" />
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={activeView === "People" ? "이름 검색" : activeView === "Albums" ? "앨범을 검색하세요" : "사진과 추억을 검색하세요"} />
             </label>
             <div className="importActions">
-              <button className="primary" onClick={chooseFiles} disabled={Boolean(importing)}>
-                {importing === "files" ? <LoaderCircle className="spinIcon" size={18} /> : <Upload size={18} />}
-                {importing === "files" ? "파일 등록 중" : "파일 선택"}
+              <button className="primary" onClick={activeView === "Albums" ? () => { setActiveView("Library"); setPhotoMode("grid"); if (!selectionMode) toggleSelectionMode(); } : chooseFiles} disabled={Boolean(importing)}>
+                {importing === "files" ? <LoaderCircle className="spinIcon" size={18} /> : activeView === "Albums" ? <Plus size={18} /> : <Upload size={18} />}
+                {importing === "files" ? "가져오는 중" : activeView === "Albums" ? "새 앨범" : "가져오기"}
               </button>
-              <button onClick={chooseFolder} disabled={Boolean(importing)}>
+              <button className="folderImport" onClick={chooseFolder} disabled={Boolean(importing)}>
                 {importing === "folder" ? <LoaderCircle className="spinIcon" size={18} /> : <FolderOpen size={18} />}
                 {importing === "folder" ? "폴더 등록 중" : "폴더 선택"}
               </button>
@@ -437,16 +448,16 @@ export function App() {
                 commentCounts={commentCounts}
                 onCreateAlbum={() => setAlbumDraftItems(items.filter((item) => selectedIds.has(item.id)))}
                 onDeleteSelected={deleteSelectedItems}
+                albums={savedAlbums}
               />
             )}
-            {activeView === "Albums" && <SavedAlbumsView albums={savedAlbums} onOpen={openMedia} onSave={async (album) => {
+            {activeView === "Albums" && <SavedAlbumsView albums={savedAlbums} query={query} onOpen={openMedia} onSave={async (album) => {
               if (tauriEnabled) await saveAlbum(album);
               setSavedAlbums((current) => current.map((entry) => entry.id === album.id ? album : entry));
             }} onDelete={async (ids) => {
               if (tauriEnabled) await deleteAlbums(ids);
               setSavedAlbums((current) => current.filter((album) => !ids.includes(album.id)));
             }} />}
-            {activeView === "Timeline" && <Timeline groups={groups} onOpen={openMedia} />}
             {activeView === "Memories" && <Memories items={todayMemories} onOpen={openMedia} />}
             {activeView === "People" && <PeopleWorkspace items={items} onOpen={openMedia} onCreateAlbum={setAlbumDraftItems} />}
             {activeView === "Settings" && <SettingsPanel itemCount={items.length} clearing={clearing} onClear={clearAllRegisteredMedia} />}
@@ -486,6 +497,7 @@ function PhotoView({
   commentCounts,
   onCreateAlbum,
   onDeleteSelected,
+  albums,
 }: {
   mode: PhotoMode;
   setMode: (mode: PhotoMode) => void;
@@ -500,23 +512,39 @@ function PhotoView({
   commentCounts: Record<string, number>;
   onCreateAlbum: () => void;
   onDeleteSelected: () => void;
+  albums: SavedAlbum[];
 }) {
+  const monthKeys = useMemo(() => Array.from(new Set(items.map((item) => item.takenAt?.slice(0, 7)).filter((value): value is string => Boolean(value)))).sort().reverse(), [items]);
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const [quickAlbum, setQuickAlbum] = useState<SavedAlbum | null>(null);
+  const activeMonth = selectedMonth && monthKeys.includes(selectedMonth) ? selectedMonth : monthKeys[0] ?? null;
+  const monthItems = selectedMonth ? items.filter((item) => item.takenAt?.startsWith(selectedMonth)) : items;
+  const years = Array.from(new Set(monthKeys.map((month) => month.slice(0, 4))));
   return (
     <div className={`photoWorkspace mode-${mode}`}>
+      {mode === "grid" && <aside className="monthRail" aria-label="촬영 월">
+        {years.map((year) => <section key={year}>
+          <strong>{year}</strong>
+          {monthKeys.filter((month) => month.startsWith(year)).map((month) => <button key={month} className={activeMonth === month ? "active" : ""} onClick={() => setSelectedMonth(month)}>{Number(month.slice(5, 7))}월</button>)}
+        </section>)}
+      </aside>}
       <div className="viewTabs" role="tablist" aria-label="사진 보기 방식">
-        <button role="tab" aria-selected={mode === "grid"} className={mode === "grid" ? "active" : ""} onClick={() => setMode("grid")}>
-          <LayoutGrid size={17} />모아보기
+        <button role="tab" aria-label="모아보기" aria-selected={mode === "grid"} className={mode === "grid" ? "active" : ""} onClick={() => setMode("grid")}>
+          <LayoutGrid size={17} />그리드
         </button>
-        <button role="tab" aria-selected={mode === "calendar"} className={mode === "calendar" ? "active" : ""} onClick={() => setMode("calendar")}>
-          <CalendarDays size={17} />달력보기
+        <button role="tab" aria-label="달력보기" aria-selected={mode === "calendar"} className={mode === "calendar" ? "active" : ""} onClick={() => setMode("calendar")}>
+          <CalendarDays size={17} />달력
         </button>
-        <button role="tab" aria-selected={mode === "album"} className={mode === "album" ? "active" : ""} onClick={() => setMode("album")}>
-          <Image size={17} />앨범보기
+        <button role="tab" aria-label="앨범보기" aria-selected={mode === "album"} className={mode === "album" ? "active" : ""} onClick={() => setMode("album")}>
+          <Image size={17} />전체 앨범
+        </button>
+        <button className="timelineMode" aria-pressed={mode === "timeline"} onClick={() => setMode("timeline")}>
+          <ListTree size={17} />시간순
         </button>
       </div>
-      {mode !== "calendar" && (
+      {mode === "grid" && (
         <Library
-          items={items}
+          items={monthItems}
           selected={selected}
           onOpen={onOpen}
           selectionMode={selectionMode}
@@ -529,8 +557,19 @@ function PhotoView({
           onDeleteSelected={onDeleteSelected}
         />
       )}
+      {mode === "grid" && <aside className="quickAlbums" aria-label="내 앨범 미리보기">
+        <header><h2>내 앨범</h2><button title="앨범 목록 모두 보기" onClick={() => setMode("album")}><Plus size={17} /></button></header>
+        {albums.slice(0, 2).map((album) => <button className="quickAlbum" key={album.id} onClick={() => setQuickAlbum(album)} aria-label={`${album.title} 앨범 열기`}>
+          <AlbumCover title={album.title} items={album.items} color={album.coverColor} />
+          <span>{album.items.length}장의 사진</span>
+        </button>)}
+        {!albums.length && <p>아직 만든 앨범이 없습니다.</p>}
+        {albums.length > 2 && <button className="showAllAlbums" onClick={() => setMode("album")}>모두 보기 <ChevronRight size={16} /></button>}
+      </aside>}
       {mode === "calendar" && <Calendar items={items} onOpen={onOpen} />}
+      {mode === "timeline" && <Timeline groups={groupByTakenDate(items)} onOpen={onOpen} />}
       {mode === "album" && <AlbumFullscreenReader title="나의 앨범" items={items} color="#414143" open={true} onOpen={onOpen} onClose={() => setMode("grid")} />}
+      {quickAlbum && <AlbumFullscreenReader title={quickAlbum.title} items={quickAlbum.items} color={quickAlbum.coverColor} open={true} onOpen={onOpen} onClose={() => setQuickAlbum(null)} />}
     </div>
   );
 }
@@ -567,6 +606,7 @@ function Library({
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [commentsOnly, setCommentsOnly] = useState(false);
   const [minimumRating, setMinimumRating] = useState(0);
+  const [expandedDates, setExpandedDates] = useState<Set<string>>(() => new Set());
   const dragSelection = useRowSelection(selectionMode, onToggleSelection, (id) => selectedIds.has(id));
   const visibleCollection = useMemo(() => {
     const result = items.filter((item) => (
@@ -603,7 +643,7 @@ function Library({
   }
 
   return (
-    <>
+    <section className="libraryView">
       <div className="panelHeader collectionTools">
         <div className="panelActions">
           <button className={selectionMode ? "selectionToggle activeAction" : "selectionToggle"} onClick={onToggleSelectionMode}>
@@ -638,17 +678,22 @@ function Library({
       )}
       {!items.length && <EmptyState text="아직 담긴 사진과 영상이 없습니다. 위의 파일 선택 또는 폴더 선택으로 첫 기록을 담아보세요." />}
       {Boolean(items.length) && !visibleCollection.length && <EmptyState text="조건에 맞는 사진과 영상이 없습니다." />}
-      <div
-        className={selectionMode ? "galleryGrid selecting" : "galleryGrid"}
-        {...dragSelection}
-      >
-        {visibleItems.map((item) => (
+      <div className={selectionMode ? "galleryGrid selecting" : "galleryGrid"} {...dragSelection}>
+        {Object.entries(groupByTakenDate(visibleItems)).map(([date, datedItems], dayIndex) => {
+          const arrangedItems = arrangeJournalItems(datedItems);
+          const expanded = expandedDates.has(date);
+          const displayedItems = expanded ? arrangedItems : arrangedItems.slice(0, 3);
+          return <section className="journalDay" key={date}>
+          <header className="journalDayHeader"><h2>{formatJournalDate(date)}</h2><span>{datedItems.length}장의 기록</span></header>
+          <div className={`journalMosaic count-${Math.min(displayedItems.length, 4)} ${dayIndex > 0 ? "compact" : ""}`}>{displayedItems.map((item, index) => (
           <button
             key={item.id}
             data-media-id={item.id}
             data-selection-id={item.id}
             className={[
               "mediaTile",
+              index === 0 ? "featured" : "",
+              (item.height ?? 0) > (item.width ?? 0) ? "portrait" : "landscape",
               selected?.id === item.id ? "selected" : "",
               selectedIds.has(item.id) ? "multiSelected" : "",
             ].filter(Boolean).join(" ")}
@@ -666,7 +711,13 @@ function Library({
             </MediaVisual>
             <small className="mediaDate">{item.takenAt ?? "날짜 없음"}</small>
           </button>
-        ))}
+          ))}</div>
+          {arrangedItems.length > 3 && <button className="journalMore" aria-expanded={expanded} onClick={() => setExpandedDates((current) => {
+            const next = new Set(current);
+            if (expanded) next.delete(date); else next.add(date);
+            return next;
+          })}>{expanded ? "접기" : `사진 ${arrangedItems.length - 3}장 더보기`}<ChevronRight size={16} /></button>}
+        </section>})}
       </div>
       {visibleCollection.length > GALLERY_PAGE_SIZE && (
         <nav className="pagination" aria-label="모아보기 페이지">
@@ -682,7 +733,7 @@ function Library({
           </div>
         </nav>
       )}
-    </>
+    </section>
   );
 }
 
@@ -777,7 +828,7 @@ function DetailModal({
   onNext: () => void;
 }) {
   const [zoomViewerOpen, setZoomViewerOpen] = useState(false);
-  const [commentsOpen, setCommentsOpen] = useState(true);
+  const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentAuthor, setCommentAuthor] = useState("");
   const [commentContent, setCommentContent] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
@@ -821,11 +872,12 @@ function DetailModal({
       <section className="detailModal photoLightbox" role="dialog" aria-modal="true" aria-labelledby="detailTitle" onClick={(event) => event.stopPropagation()}>
         <div className="detailHeader">
           <strong id="detailTitle">사진 상세</strong>
+          <span className="detailDateTitle">{formatJournalDate(item.takenAt)}</span>
           <button className={item.favorite ? "favorite active" : "favorite"} title="즐겨찾기" aria-pressed={item.favorite} onClick={() => onChange({ favorite: !item.favorite })}>
-            <Heart size={19} fill={item.favorite ? "currentColor" : "none"} />
+            <Heart size={19} fill={item.favorite ? "currentColor" : "none"} /><span>즐겨찾기</span>
           </button>
-          <button title="댓글" aria-expanded={commentsOpen} aria-controls="photoComments" onClick={() => setCommentsOpen(!commentsOpen)}><MessageSquare size={19} /></button>
-          {item.fileType === "image" && <button title="확대 보기" onClick={() => setZoomViewerOpen(true)}><Maximize2 size={18} /></button>}
+          {item.fileType === "image" && <button title="확대 보기" onClick={() => setZoomViewerOpen(true)}><Maximize2 size={18} /><span>확대</span></button>}
+          <button title="댓글" aria-label="정보·기록" aria-expanded={commentsOpen} aria-controls="photoComments" onClick={() => setCommentsOpen(!commentsOpen)}><Info size={19} /><span>정보·기록</span></button>
           <button className="closeButton" title="닫기" onClick={onClose}><X size={18} /></button>
         </div>
         <div className="detailLayout">
@@ -840,6 +892,7 @@ function DetailModal({
           <div className="detailBody">
             <div className="detailInfoStrip">
             <div className="viewerMeta">
+              <strong className="detailFileName">{item.fileName}</strong>
               <span><Clock3 size={14} />{item.takenAt ?? "날짜 없음"}</span>
               <span><Eye size={14} />{item.viewCount ?? 0}회</span>
               <span>{item.width && item.height ? `${item.width} x ${item.height}` : item.duration} · {item.sizeLabel}</span>
@@ -946,6 +999,20 @@ function PhotoZoomViewer({ item, onClose }: { item: MediaItem; onClose: () => vo
       </section>
     </div>
   );
+}
+
+function formatJournalDate(date?: string | null): string {
+  if (!date) return "날짜 없음";
+  const [year, month, day] = date.split("-").map(Number);
+  if (!year || !month || !day) return date;
+  return `${year}년 ${month}월 ${day}일`;
+}
+
+function arrangeJournalItems(items: MediaItem[]): MediaItem[] {
+  if (items.length < 2) return items;
+  const featuredIndex = items.findIndex((item) => item.fileType === "image" && (item.width ?? 0) >= (item.height ?? 1) * 1.15);
+  if (featuredIndex <= 0) return items;
+  return [items[featuredIndex], ...items.slice(0, featuredIndex), ...items.slice(featuredIndex + 1)];
 }
 
 function loadMediaComments(): MediaComments {

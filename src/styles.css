@@ -981,53 +981,6 @@ textarea {
 
 
 
-.albumFullscreen {
-  position: fixed;
-  inset: 0;
-  z-index: 15;
-  padding: 26px 34px 30px;
-  overflow: auto;
-  background: #4C3B2F;
-}
-
-.albumFullscreenHeader {
-  max-width: 1320px;
-  margin: 0 auto 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.albumFullscreenHeader h2 {
-  margin: 0;
-  color: #FFFFFF;
-}
-
-.albumFullscreenHeader .eyebrow {
-  color: #F7D9BA;
-}
-
-.albumFullscreenHeader .iconText {
-  color: #FFFFFF;
-  border-color: rgba(255, 255, 255, .22);
-  background: rgba(255, 255, 255, .12);
-}
-
-.albumFullscreenHeader .closeButton {
-  width: 42px;
-  min-height: 42px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: #FFFFFF;
-  background: rgba(255, 255, 255, .16) !important;
-}
-
-.albumFullscreenHeader .closeButton:hover {
-  background: var(--primary) !important;
-}
-
 .dateGroup {
   margin-bottom: 26px;
 }
