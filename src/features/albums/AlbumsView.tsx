@@ -1,13 +1,13 @@
 import { FormEvent, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { Check, CheckSquare, ChevronLeft, ChevronRight, Images, Maximize, MoreVertical, Music, Pencil, Play, Trash2, X } from "lucide-react";
+import { BookOpen, Check, CheckSquare, ChevronLeft, ChevronRight, FolderOutput, Images, Maximize, Minimize, MoreVertical, Music, Pencil, Play, RotateCcw, Shuffle, Trash2, X } from "lucide-react";
 import type { MediaItem, SavedAlbum } from "../../types/media";
 import { EmptyState, MediaVisual } from "../../components/MediaVisual";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
 import { AlbumColorPicker, AlbumCover } from "./AlbumCover";
-import albumOpenBase from "../../assets/album-open-white.png";
-
-type AlbumPage = MediaItem[];
-
+import { ActionMenu } from "../../components/ActionMenu";
+import { ExportModal } from "../../components/ExportModal";
+import { isPortraitMedia, makeAlbumSpreads, mediaSummary, shuffleAlbumItems } from "../media/journalModel";
+import albumOpenBase from "../../assets/album-open-white-thin.png";
 
 export function SavedAlbumsView({
   albums,
@@ -17,13 +17,15 @@ export function SavedAlbumsView({
   query = "",
 }: {
   albums: SavedAlbum[];
-  onOpen: (item: MediaItem) => void;
+  onOpen: (item: MediaItem, collection?: MediaItem[]) => void;
   onSave: (album: SavedAlbum) => Promise<void>;
   onDelete: (ids: string[]) => Promise<void>;
   query?: string;
 }) {
-  const [activeAlbum, setActiveAlbum] = useState<SavedAlbum | null>(null);
+  const [activeAlbumId, setActiveAlbumId] = useState<string | null>(null);
+  const activeAlbum = albums.find((album) => album.id === activeAlbumId);
   const [editing, setEditing] = useState<SavedAlbum | null>(null);
+  const [exporting, setExporting] = useState<SavedAlbum | null>(null);
   const [selecting, setSelecting] = useState(false);
   const [chosen, setChosen] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -46,7 +48,7 @@ export function SavedAlbumsView({
   return (
     <div className="savedAlbums">
       <div className="panelHeader">
-        <label className="albumSort"><select aria-label="앨범 정렬" value={sort} onChange={(event) => setSort(event.target.value as typeof sort)}><option value="recent">최근 수정순</option><option value="old">오래된 순</option><option value="name">이름순</option></select></label>
+        <label className="albumSort"><select aria-label="앨범 정렬" value={sort} onChange={(event) => setSort(event.target.value as typeof sort)}><option value="recent">최근 만든 순</option><option value="old">오래된 순</option><option value="name">이름순</option></select></label>
         <div className="albumActions">
           {selecting && <>
             <button disabled={chosen.length !== 1 || busy} onClick={() => setEditing(albums.find((album) => album.id === chosen[0]) ?? null)}><Pencil size={17} />수정</button>
@@ -58,15 +60,24 @@ export function SavedAlbumsView({
         </div>
       </div>
       {error && <p role="alert">{error}</p>}
-      {!albums.length && <EmptyState text="아직 만든 앨범이 없습니다. 모아보기에서 사진을 선택해 앨범을 만들어보세요." />}
+      {!albums.length && <EmptyState text="아직 만든 앨범이 없습니다. 새 앨범을 눌러 함께 담을 사진을 골라보세요." />}
+      {albums.length > 0 && !visibleAlbums.length && <EmptyState text="검색한 이름의 앨범이 없습니다." />}
       <div className="savedAlbumGrid">
         {visibleAlbums.map((album) => {
           return (
           <article key={album.id} className="savedAlbumCard">
-            <button className="savedAlbumOpen" disabled={busy} aria-pressed={selecting ? chosen.includes(album.id) : undefined} onClick={() => selecting ? setChosen((current) => current.includes(album.id) ? current.filter((id) => id !== album.id) : [...current, album.id]) : setActiveAlbum(album)} aria-label={`${album.title} 앨범 ${selecting ? "선택" : "열기"}`}>
+            <div className="savedAlbumCover">
+            <button className="savedAlbumOpen" disabled={busy} aria-pressed={selecting ? chosen.includes(album.id) : undefined} onClick={() => selecting ? setChosen((current) => current.includes(album.id) ? current.filter((id) => id !== album.id) : [...current, album.id]) : setActiveAlbumId(album.id)} aria-label={`${album.title} 앨범 ${selecting ? "선택" : "열기"}`}>
               {selecting && <span className={`albumSelectionMark ${chosen.includes(album.id) ? "checked" : ""}`}>{chosen.includes(album.id) && <Check size={22} strokeWidth={3} />}</span>}
               <AlbumCover title={album.title} items={album.items} color={album.coverColor} />
             </button>
+              {!selecting && <ActionMenu label={`${album.title} 앨범 메뉴`} icon={<MoreVertical size={18} />} disabled={busy} actions={[
+                { label: "앨범 열기", icon: <BookOpen size={16} />, onSelect: () => setActiveAlbumId(album.id) },
+                { label: "앨범 수정", icon: <Pencil size={16} />, onSelect: () => setEditing(album) },
+                { label: "내보내기", icon: <FolderOutput size={16} />, disabled: !album.items.length, onSelect: () => setExporting(album) },
+              ]} />}
+            </div>
+            <div className="savedAlbumMeta"><span>{mediaSummary(album.items)}</span></div>
           </article>
           );
         })}
@@ -78,10 +89,12 @@ export function SavedAlbumsView({
           color={activeAlbum.coverColor}
           open={true}
           onOpen={onOpen}
-          onClose={() => setActiveAlbum(null)}
+          onClose={() => setActiveAlbumId(null)}
+          onExport={() => setExporting(activeAlbum)}
         />
       )}
       {editing && <AlbumEditor album={editing} onClose={() => setEditing(null)} onSave={onSave} />}
+      {exporting && <ExportModal title={exporting.title} items={exporting.items} onClose={() => setExporting(null)} />}
     </div>
   );
 }
@@ -123,29 +136,35 @@ function AlbumEditor({ album, onClose, onSave }: { album: SavedAlbum; onClose: (
   </div>;
 }
 
-export function AlbumFullscreenReader({
-  title,
-  items,
-  color = "#414143",
-  open,
-  onOpen,
-  onClose,
-}: {
+export function AlbumFullscreenReader({ title, items, color, open, onOpen, onClose, onExport, backLabel = "내 앨범" }: {
   title: string;
   items: MediaItem[];
   color?: string;
   open: boolean;
-  onOpen: (item: MediaItem) => void;
+  onOpen: (item: MediaItem, collection?: MediaItem[]) => void;
   onClose: () => void;
+  onExport?: () => void;
+  backLabel?: string;
 }) {
-  const [pages, setPages] = useState<AlbumPage[]>(() => makeAlbumPages(items, 4));
+  const [order, setOrder] = useState<string[] | null>(null);
   const [pageIndex, setPageIndex] = useState(0);
   const [turning, setTurning] = useState<"next" | "prev" | null>(null);
   const [turnPhase, setTurnPhase] = useState<"departing" | "arriving" | null>(null);
-  const [visibleItems, setVisibleItems] = useState<AlbumPage>(() => pages[0] ?? []);
+  const [listView, setListView] = useState(false);
+  const [fullscreen, setFullscreen] = useState(Boolean(document.fullscreenElement));
+  const [notice, setNotice] = useState("");
   const timers = useRef<number[]>([]);
   const turnLock = useRef(false);
+  const ownsFullscreen = useRef(false);
   const mediaOrderKey = items.map((item) => item.id).join("|");
+  const orderedItems = useMemo(() => {
+    if (!order) return items;
+    const byId = new Map(items.map((item) => [item.id, item]));
+    return order.flatMap((id) => byId.has(id) ? [byId.get(id)!] : []);
+  }, [items, order]);
+  const pages = useMemo(() => makeAlbumSpreads(orderedItems), [orderedItems]);
+  const currentPage = Math.min(pageIndex, Math.max(0, pages.length - 1));
+  const visibleSpread = pages[currentPage];
 
   function cancelTurn() {
     timers.current.forEach(window.clearTimeout);
@@ -153,117 +172,111 @@ export function AlbumFullscreenReader({
     turnLock.current = false;
   }
 
-  function schedule(action: () => void, delay: number) {
-    timers.current.push(window.setTimeout(action, delay));
-  }
-
   useEffect(() => {
-    cancelTurn();
-    const nextPages = makeAlbumPages(items, 4);
-    setPages(nextPages);
-    setPageIndex(0);
-    setTurning(null);
-    setTurnPhase(null);
-    setVisibleItems(nextPages[0] ?? []);
+    cancelTurn(); setOrder(null); setPageIndex(0); setTurning(null); setTurnPhase(null);
     return cancelTurn;
   }, [mediaOrderKey]);
 
-  useModalBehavior(onClose, { enabled: open, onPrev: () => turnPage(-1), onNext: () => turnPage(1) });
+  useEffect(() => {
+    const syncFullscreen = () => setFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", syncFullscreen);
+    return () => {
+      document.removeEventListener("fullscreenchange", syncFullscreen);
+      if (ownsFullscreen.current && document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    };
+  }, []);
 
-  function shuffleAlbum() {
-    cancelTurn();
-    const nextPages = makeAlbumPages(items, 4);
-    setPages(nextPages);
-    setPageIndex(0);
-    setTurning(null);
-    setTurnPhase(null);
-    setVisibleItems(nextPages[0] ?? []);
+  useModalBehavior(onClose, { enabled: open, onPrev: () => { if (!listView) turnPage(-1); }, onNext: () => { if (!listView) turnPage(1); } });
+
+  function resetOrder(shuffle: boolean) {
+    cancelTurn(); setTurning(null); setTurnPhase(null); setPageIndex(0);
+    setOrder(shuffle ? shuffleAlbumItems(items).map((item) => item.id) : null);
+  }
+
+  function jumpToPage(next: number) {
+    cancelTurn(); setTurning(null); setTurnPhase(null);
+    setPageIndex(Math.min(Math.max(next, 0), Math.max(0, pages.length - 1)));
   }
 
   function turnPage(direction: -1 | 1) {
     if (turnLock.current || !pages.length) return;
-    const nextIndex = Math.min(Math.max(pageIndex + direction, 0), pages.length - 1);
-    if (nextIndex === pageIndex) return;
+    const nextIndex = Math.min(Math.max(currentPage + direction, 0), pages.length - 1);
+    if (nextIndex === currentPage) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { jumpToPage(nextIndex); return; }
     turnLock.current = true;
+    setTurning(direction > 0 ? "next" : "prev"); setTurnPhase("departing");
+    timers.current.push(window.setTimeout(() => { setTurnPhase("arriving"); setPageIndex(nextIndex); }, 230));
+    timers.current.push(window.setTimeout(() => { setTurnPhase(null); setTurning(null); cancelTurn(); }, 620));
+  }
 
-    setTurning(direction > 0 ? "next" : "prev");
-    setTurnPhase("departing");
-    schedule(() => { setTurnPhase("arriving"); setVisibleItems(pages[nextIndex] ?? []); setPageIndex(nextIndex); }, 300);
-    schedule(() => { setTurnPhase(null); setTurning(null); cancelTurn(); }, 820);
+  async function toggleFullscreen() {
+    setNotice("");
+    try {
+      if (document.fullscreenElement) { await document.exitFullscreen(); ownsFullscreen.current = false; }
+      else { await document.documentElement.requestFullscreen(); ownsFullscreen.current = true; }
+    } catch { setNotice("전체화면으로 전환하지 못했습니다. 창 크기를 늘려서 볼 수 있어요."); }
   }
 
   if (!open) return null;
-
-  function enterFullscreen() {
-    void document.documentElement.requestFullscreen?.();
-  }
-
-  return (
-    <div className="albumJournal" style={{ "--album-color": color } as CSSProperties} role="dialog" aria-modal="false" aria-label="앨범 전체창">
-      <header className="albumJournalHeader">
-        <button className="albumJournalBack" onClick={onClose} title="닫기"><ChevronLeft size={24} />내 앨범</button>
-        <div className="albumJournalHeading">
-          <h2>{title}</h2>
-          <span>사진 {items.length}장</span>
+  return <div className={`albumJournal${listView ? " is-list" : ""}`} style={{ "--album-color": color } as CSSProperties} role="dialog" aria-modal="false" aria-label="앨범 전체창">
+    <header className="albumJournalHeader">
+      <button className="albumJournalBack" onClick={onClose} title="닫기"><ChevronLeft size={22} />{backLabel}</button>
+      <div className="albumJournalHeading"><h2>{title}</h2><span>{mediaSummary(items)}</span></div>
+      <div className="albumJournalTools">
+        <button aria-pressed={listView} onClick={() => { cancelTurn(); setTurning(null); setTurnPhase(null); setListView(!listView); }} title={listView ? "책으로 보기" : "사진 목록"}>{listView ? <BookOpen size={18} /> : <Images size={18} />}<span>{listView ? "책으로 보기" : "사진 목록"}</span></button>
+        <button onClick={() => void toggleFullscreen()} disabled={!document.fullscreenEnabled} aria-pressed={fullscreen} title={fullscreen ? "전체화면 종료" : "전체화면"}>{fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}<span>{fullscreen ? "전체화면 종료" : "전체화면"}</span></button>
+        <ActionMenu label="앨범 보기 옵션" icon={<MoreVertical size={19} />} actions={[
+          ...(onExport ? [{ label: "내보내기", icon: <FolderOutput size={16} />, disabled: !items.length, onSelect: onExport }] : []),
+          { label: "사진 순서 섞기", icon: <Shuffle size={16} />, disabled: items.length < 2, onSelect: () => resetOrder(true) },
+          { label: "원래 순서로 보기", icon: <RotateCcw size={16} />, disabled: !order, onSelect: () => resetOrder(false) },
+        ]} />
+      </div>
+    </header>
+    {notice && <p className="albumReaderNotice" role="status">{notice}</p>}
+    {listView ? <section className="albumPhotoList" aria-label={`${title} 사진 목록`}>
+      {!items.length && <EmptyState text="앨범에 담긴 기록이 없습니다." />}
+      {orderedItems.map((item) => <button key={item.id} onClick={() => onOpen(item, orderedItems)} aria-label={`${item.fileName} 상세보기`}><MediaVisual item={item} />
+        <span>{item.takenAt ?? "날짜 없음"}{item.fileType === "video" && <Play size={14} />}{item.fileType === "audio" && <Music size={14} />}</span>
+      </button>)}
+    </section> : <div className="albumJournalCanvas">
+      {!items.length ? <EmptyState text="앨범에 담긴 기록이 없습니다." /> : <div className="albumBookStage">
+      <button className="albumEdgeNav prev" onClick={() => turnPage(-1)} disabled={Boolean(turning) || currentPage === 0} title="이전 책장"><ChevronLeft size={32} /></button>
+      <div className={`albumSpread ${turning ? `turning-${turning}` : ""} ${turning && turnPhase ? `${turnPhase}-${turning}` : ""}`} data-turn-phase={turnPhase ?? undefined} aria-label="양면 포토앨범 책장" aria-busy={Boolean(turning)}>
+        <div className="albumHardback">
+          <img className="albumBookBase" src={albumOpenBase} alt="" aria-hidden="true" />
+          {(["left", "right"] as const).map((side, sideIndex) => {
+            const entries = visibleSpread?.[side] ?? [];
+            const portrait = entries.length === 1 && isPortraitMedia(entries[0]);
+            const caption = entries.find((item) => item.comment.trim())?.comment;
+            const date = entries[0]?.takenAt;
+            return <section key={side} className={`albumPaper ${side}${entries.length === 1 ? " single-photo" : ""}${portrait ? " portrait-photo" : ""}`}>
+              <div className="albumPageImages">{entries.map((item, index) => <AlbumPagePhoto key={item.id} item={item} index={sideIndex * 2 + index} side={side} onOpen={() => onOpen(item, orderedItems)} />)}</div>
+              <div className="albumPageCaption">{caption && <p>{caption}</p>}{date && <time dateTime={date}>{date.replaceAll("-", ".")}</time>}</div>
+              <span className="albumPageNumber">{currentPage * 2 + sideIndex + 1}</span>
+            </section>;
+          })}
+          {turning && <span className={`albumTurningSheet ${turning}`} aria-hidden="true" />}
         </div>
-        <div className="albumJournalTools">
-          <button onClick={onClose}><Images size={20} />사진 목록</button>
-          <button onClick={enterFullscreen}><Maximize size={20} />전체화면</button>
-          <button className="albumJournalMore" onClick={shuffleAlbum} title="사진 다시 섞기"><MoreVertical size={22} /></button>
-        </div>
-      </header>
-
-      <main className="albumJournalCanvas">
-        <button className="albumEdgeNav prev" onClick={() => turnPage(-1)} disabled={Boolean(turning) || pageIndex === 0} title="이전 책장"><ChevronLeft size={38} /></button>
-        {!items.length ? <EmptyState text="앨범에 사진이 없습니다." /> : (
-          <div className={`albumSpread ${turning ? `turning-${turning}` : ""} ${turning && turnPhase ? `${turnPhase}-${turning}` : ""}`} data-turn-phase={turnPhase ?? undefined} aria-label="양면 포토앨범 책장">
-            <div className="albumHardback">
-              <img className="albumBookBase" src={albumOpenBase} alt="" aria-hidden="true" />
-              <section className="albumPaper left">
-                {visibleItems.slice(0, 2).map((item, index) => <AlbumPagePhoto key={item.id} item={item} index={index} side="left" onOpen={onOpen} />)}
-                <span className="albumPageNumber">{pageIndex * 2 + 1}</span>
-              </section>
-              <section className="albumPaper right">
-                {visibleItems.slice(2, 4).map((item, index) => <AlbumPagePhoto key={item.id} item={item} index={index + 2} side="right" onOpen={onOpen} />)}
-                <span className="albumPageNumber">{pageIndex * 2 + 2}</span>
-              </section>
-              {turning && <span className={`albumTurningSheet ${turning}`} aria-hidden="true" />}
-            </div>
-          </div>
-        )}
-        <button className="albumEdgeNav next" onClick={() => turnPage(1)} disabled={Boolean(turning) || pageIndex >= pages.length - 1} title="다음 책장"><ChevronRight size={38} /></button>
-      </main>
-
-      <footer className="albumJournalPager">
-        <div className="albumPagerActions">
-          <button onClick={() => turnPage(-1)} disabled={Boolean(turning) || pageIndex === 0}><ChevronLeft size={18} />이전</button>
-          <p aria-live="polite">{pages.length ? pageIndex + 1 : 0} / {pages.length} 펼침</p>
-          <button onClick={() => turnPage(1)} disabled={Boolean(turning) || pageIndex >= pages.length - 1}>다음<ChevronRight size={18} /></button>
-        </div>
-        <div className="albumProgress" aria-hidden="true"><span style={{ width: `${pages.length ? ((pageIndex + 1) / pages.length) * 100 : 0}%` }} /></div>
-      </footer>
-    </div>
-  );
+      </div>
+      <button className="albumEdgeNav next" onClick={() => turnPage(1)} disabled={Boolean(turning) || currentPage >= pages.length - 1} title="다음 책장"><ChevronRight size={32} /></button>
+      </div>}
+    </div>}
+    {!listView && <footer className="albumJournalPager">
+      <div className="albumPagerActions">
+        <button onClick={() => turnPage(-1)} disabled={Boolean(turning) || currentPage === 0}><ChevronLeft size={17} />이전</button>
+        <p aria-live="polite">{pages.length ? currentPage + 1 : 0} / {pages.length} 펼침</p>
+        <button onClick={() => turnPage(1)} disabled={Boolean(turning) || currentPage >= pages.length - 1}>다음<ChevronRight size={17} /></button>
+      </div>
+      <input className="albumProgress" type="range" aria-label="앨범 책장 이동" aria-valuetext={`${currentPage + 1} / ${pages.length} 펼침`} min={1} max={Math.max(1, pages.length)} value={currentPage + 1} disabled={pages.length < 2} onChange={(event) => jumpToPage(Number(event.target.value) - 1)} />
+    </footer>}
+  </div>;
 }
 
-function AlbumPagePhoto({ item, index, side, onOpen }: { item: MediaItem; index: number; side: "left" | "right"; onOpen: (item: MediaItem) => void }) {
-  return <button data-slot={index} data-side={side} className="albumPagePhoto" onClick={() => onOpen(item)} aria-label="사진 상세보기">
+function AlbumPagePhoto({ item, index, side, onOpen }: { item: MediaItem; index: number; side: "left" | "right"; onOpen: () => void }) {
+  return <button data-slot={index} data-side={side} className="albumPagePhoto" style={isPortraitMedia(item) ? { "--photo-ratio": item.width! / item.height! } as CSSProperties : undefined} onClick={onOpen} aria-label={`${item.fileName} 상세보기`}>
     <MediaVisual item={item} original>
-      {item.fileType === "video" && <Play size={28} fill="currentColor" />}
-      {item.fileType === "audio" && <Music size={28} />}
+      {item.fileType === "video" && <span className="videoDuration"><Play size={12} fill="currentColor" />{item.duration || "영상"}</span>}
+      {item.fileType === "audio" && <Music className="mediaBadge" size={28} />}
     </MediaVisual>
   </button>;
-}
-
-function makeAlbumPages(items: MediaItem[], pageSize: number): AlbumPage[] {
-  const shuffled = [...items].sort(() => Math.random() - 0.5);
-  const pages: AlbumPage[] = [];
-  let index = 0;
-  while (index < shuffled.length) {
-    const remaining = shuffled.length - index;
-    const count = Math.min(remaining, pageSize);
-    pages.push(shuffled.slice(index, index + count));
-    index += count;
-  }
-  return pages.length ? pages : [[]];
 }

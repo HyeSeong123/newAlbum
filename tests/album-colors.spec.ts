@@ -33,18 +33,30 @@ test('fabric album colors survive create, edit and reload', async ({ page }) => 
   await expect(page.locator('.frontAlbumDecoration, .frontAlbumPhoto')).toHaveCount(0);
   await expect(page.locator('.frontAlbumWindow')).toHaveCount(2);
   await expect(page.locator('.frontAlbum').first()).toHaveCSS('--album-color', '#6A4538');
+  await expect(page.locator('.savedAlbumGrid .frontAlbumTone')).toHaveCount(0);
+  const coverBox = await page.locator('.frontAlbum').first().boundingBox();
+  expect(coverBox!.height / coverBox!.width).toBeCloseTo(1.25, 2);
+  await expect(page.locator('.frontAlbumBase').first()).toHaveAttribute('src', /album-front-flat/);
+  await expect(page.locator('.frontAlbumWindow').first()).toHaveCSS('transform', 'none');
+  await expect(page.locator('.frontAlbumTitle').first()).toHaveCSS('transform', 'none');
+  await page.locator('.frontAlbumBase').evaluateAll((images: HTMLImageElement[]) => Promise.all(images.map((image) => image.decode())));
+  await page.screenshot({ path: `test-results/flat-album-covers-${test.info().project.name}.png`, fullPage: true });
+  await page.getByRole('button', { name: '브라운 앨범 앨범 메뉴', exact: true }).click();
+  await page.getByRole('button', { name: '앨범 수정', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: '앨범 수정', exact: true })).toBeVisible();
+  await page.getByRole('dialog', { name: '앨범 수정', exact: true }).getByTitle('닫기').click();
 
   await page.getByRole('button', { name: '브라운 앨범 앨범 열기', exact: true }).click();
   const reader = page.getByRole('dialog', { name: '앨범 전체창' });
   await expect(reader.locator('.albumPaper')).toHaveCount(2);
   await expect(reader.locator('.binderRings')).toHaveCount(0);
   await expect(reader.locator('.albumPagePhoto')).toHaveCount(4);
-  await expect(reader.locator('.albumBookBase')).toHaveAttribute('src', /album-open-white/);
-  expect(await reader.locator('.albumHardback').evaluate((element) => getComputedStyle(element, '::before').backgroundColor)).toBe('rgb(255, 255, 255)');
+  await expect(reader.locator('.albumBookBase')).toHaveAttribute('src', /album-open-white-thin/);
+  await reader.locator('.albumBookBase').evaluate((image: HTMLImageElement) => image.decode());
+  expect(await reader.locator('.albumHardback').evaluate((element) => getComputedStyle(element, '::before').content)).toBe('none');
   await expect(reader.locator('.scrapbookStage, .scrapbookSheet, .scrapbookPrint')).toHaveCount(0);
   const spread = await reader.locator('.albumSpread').boundingBox();
-  const canvas = await reader.locator('.albumHardback').boundingBox();
-  expect(Math.abs(canvas!.width / canvas!.height - 4 / 3)).toBeLessThan(.02);
+  expect(spread!.width / spread!.height).toBeCloseTo(2.4, 2);
   const navigation = await page.locator('.sidebar').boundingBox();
   const readerBox = await reader.boundingBox();
   expect(readerBox!.y).toBeCloseTo(navigation!.y + navigation!.height, 0);
@@ -53,13 +65,57 @@ test('fabric album colors survive create, edit and reload', async ({ page }) => 
     expect(spread!.width).toBeGreaterThan(page.viewportSize()!.width * .88);
   }
   await reader.locator('.mediaImage').evaluateAll((images: HTMLImageElement[]) => Promise.all(images.map((image) => image.decode())));
+  for (const [side, ratio] of [['left', 1.65], ['right', 1.35]] as const) {
+    const photos = reader.locator(`.albumPaper.${side} .albumPagePhoto`);
+    const top = (await photos.nth(0).boundingBox())!;
+    const bottom = (await photos.nth(1).boundingBox())!;
+    expect(top.width).toBeCloseTo(bottom.width, 0);
+    expect(top.height / bottom.height).toBeCloseTo(ratio, 1);
+    await expect(photos.first().locator('.mediaImage')).toHaveCSS('object-fit', 'cover');
+    await expect(photos.first().locator('.mediaImage')).toHaveCSS('object-position', '50% 35%');
+  }
   await reader.locator('.albumSpread').screenshot({ path: `test-results/album-inside-${test.info().project.name}.png` });
   await page.screenshot({ path: `test-results/album-header-${test.info().project.name}.png` });
+  const viewport = page.viewportSize()!;
+  const sizes = test.info().project.name === 'desktop'
+    ? [viewport, { width: 2560, height: 900 }, { width: 1080, height: 720 }]
+    : [viewport];
+  for (const size of sizes) {
+    await page.setViewportSize(size);
+    const book = (await reader.locator('.albumBookStage').boundingBox())!;
+    const base = (await reader.locator('.albumBookBase').boundingBox())!;
+    const prev = (await reader.getByTitle('이전 책장', { exact: true }).boundingBox())!;
+    const next = (await reader.getByTitle('다음 책장', { exact: true }).boundingBox())!;
+    const header = (await reader.locator('.albumJournalHeader').boundingBox())!;
+    const pager = (await reader.locator('.albumJournalPager').boundingBox())!;
+    expect(book.width / book.height).toBeCloseTo(2.4, 2);
+    expect(book.x - prev.x - prev.width).toBeCloseTo(6, 0);
+    expect(next.x - book.x - book.width).toBeCloseTo(6, 0);
+    expect(prev.y + prev.height / 2).toBeCloseTo(book.y + book.height / 2, 0);
+    expect(next.y + next.height / 2).toBeCloseTo(book.y + book.height / 2, 0);
+    expect(base.x + base.width * .027).toBeCloseTo(book.x, 0);
+    expect(base.x + base.width * .973).toBeCloseTo(book.x + book.width, 0);
+    expect(prev.x).toBeGreaterThanOrEqual(0);
+    expect(next.x + next.width).toBeLessThanOrEqual(size.width);
+    expect(book.y).toBeGreaterThanOrEqual(header.y + header.height);
+    expect(book.y + book.height).toBeLessThanOrEqual(pager.y);
+    if (size.width === 2560) {
+      expect(prev.x).toBeGreaterThan(200);
+      expect(next.x + next.width).toBeLessThan(size.width - 200);
+      await page.screenshot({ path: 'test-results/album-book-edge-arrows-ultrawide.png' });
+    }
+  }
+  await page.setViewportSize(viewport);
+  await reader.getByTitle('다음 책장', { exact: true }).click();
+  await expect(reader.locator('.albumPagerActions p')).toHaveText('2 / 2 펼침');
+  await expect(reader.getByTitle('이전 책장', { exact: true })).toBeEnabled();
+  await reader.getByTitle('이전 책장', { exact: true }).click();
+  await expect(reader.locator('.albumPagerActions p')).toHaveText('1 / 2 펼침');
   await page.getByRole('button', { name: '사진보기', exact: true }).click();
   await expect(reader).toHaveCount(0);
 
   await page.getByRole('button', { name: '사진보기', exact: true }).click();
-  await page.getByRole('tab', { name: '앨범보기' }).click();
+  await page.getByRole('tab', { name: '전체 앨범' }).click();
   const libraryReader = page.getByRole('dialog', { name: '앨범 전체창' });
   await expect(libraryReader.locator('.albumPaper')).toHaveCount(2);
   await expect(libraryReader.locator('.binderRings')).toHaveCount(0);
@@ -76,6 +132,7 @@ test('fabric album colors survive create, edit and reload', async ({ page }) => 
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
   const created = page.getByRole('button', { name: '버건디 추억 앨범 열기' }).locator('.frontAlbum');
   await expect(created).toHaveCSS('--album-color', '#8A2E35');
+  await expect(created.locator('.frontAlbumTone')).toHaveCount(0);
 
   await page.getByRole('button', { name: '선택', exact: true }).click();
   await page.getByRole('button', { name: '버건디 추억 앨범 선택' }).click();

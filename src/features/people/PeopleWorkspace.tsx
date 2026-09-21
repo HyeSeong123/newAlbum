@@ -4,7 +4,7 @@ import type { MediaItem } from '../../types/media';
 import { PeopleView } from './PeopleView';
 import { PetsView } from '../pets/PetsView';
 
-export function PeopleWorkspace(props: { items: MediaItem[]; onOpen: (item: MediaItem) => void; onCreateAlbum: (items: MediaItem[]) => void }) {
+export function PeopleWorkspace(props: { items: MediaItem[]; onOpen: (item: MediaItem, collection?: MediaItem[]) => void; query?: string; onCreateAlbum: (items: MediaItem[]) => void }) {
   const [tab, setTab] = useState(0);
   const [petsVisited, setPetsVisited] = useState(false);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);

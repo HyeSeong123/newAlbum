@@ -97,6 +97,26 @@ export async function chooseAndRegisterFolder(): Promise<MediaItem[]> {
   return registerSelection(selected);
 }
 
+export interface MediaExportResult {
+  directory: string;
+  copied: number;
+}
+
+export async function chooseExportDestination(): Promise<string | null> {
+  const selected = await open({
+    multiple: false,
+    directory: true,
+    title: "내보낼 위치 선택",
+  });
+  if (!selected) return null;
+  return Array.isArray(selected) ? selected[0] ?? null : selected;
+}
+
+export async function exportMediaGroup(items: MediaItem[], destinationRoot: string, folderName: string): Promise<MediaExportResult> {
+  const sourcePaths = [...new Set(items.map((item) => item.filePath).filter(Boolean))];
+  return invoke<MediaExportResult>("export_media_group", { sourcePaths, destinationRoot, folderName });
+}
+
 export async function saveMediaDetails(item: MediaItem): Promise<void> {
   if (!/^\d+$/.test(item.id)) return;
   await invoke("update_media_details", {

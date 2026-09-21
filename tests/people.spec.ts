@@ -166,7 +166,7 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
   await page.getByRole('button', { name: '합치기', exact: true }).click();
   await expect(page.getByRole('heading', { name: '가족', exact: true })).toBeVisible();
   await expect(page.locator('.personPhoto')).toHaveCount(3);
-  await page.getByRole('button', { name: '얼굴 모아보기', exact: true }).click();
+  await page.getByRole('button', { name: '얼굴 그리드', exact: true }).click();
   const faceBox = await page.locator('.faceOverviewGrid .personOriginal').first().boundingBox();
   expect(faceBox!.width).toBeLessThanOrEqual(128);
   expect(Math.abs(faceBox!.height - faceBox!.width)).toBeLessThan(1);

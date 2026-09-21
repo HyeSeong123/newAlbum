@@ -16,6 +16,8 @@ export interface MediaItem {
   viewCount: number;
   tags: string[];
   thumbnail: string;
+  /** Session-only URL for files selected in the browser preview. */
+  previewUrl?: string;
   metadataStatus: "ready" | "queued" | "missing-date";
 }
 
