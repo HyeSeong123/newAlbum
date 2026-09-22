@@ -8,9 +8,9 @@ import { ExportModal } from "./components/ExportModal";
 import { EmptyState, getMediaSource, MediaImage, MediaVisual } from "./components/MediaVisual";
 import { MediaPlayback } from "./components/MediaPlayback";
 import { useModalBehavior } from "./hooks/useModalBehavior";
-import { ChangeEvent, FormEvent, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { ChangeEvent, FormEvent, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useRowSelection } from "./hooks/useRowSelection";
-import { ArrowUpDown, CalendarDays, CheckSquare, ChevronDown, ChevronLeft, ChevronRight, FolderOpen, Heart, Image, LayoutGrid, LoaderCircle, MessageCircle, Minus, Music, Pencil, Play, Plus, RotateCcw, Search, Settings, SlidersHorizontal, Star, Trash2, Upload, X, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowUpDown, CalendarDays, CheckSquare, ChevronDown, ChevronLeft, ChevronRight, FolderOpen, Heart, Image, LayoutGrid, LoaderCircle, MessageCircle, Minus, Music, Play, Plus, RotateCcw, Search, Settings, SlidersHorizontal, Star, Trash2, Upload, X, ZoomIn, ZoomOut } from "lucide-react";
 import { getMediaType, groupByTakenDate, isSupportedMedia, MEDIA_FILE_ACCEPT } from "./features/media/mediaService";
 import { arrangeJournalItems, filterJournalMonth, formatJournalDate, journalMonthTitle, mediaSummary, resolveJournalMonth, syncAlbumMedia } from "./features/media/journalModel";
 import { PhotoDateNavigation } from "./features/media/PhotoDateNavigation";
@@ -569,17 +569,20 @@ function PhotoView({
     { mode: "calendar" as const, label: "달력", Icon: CalendarDays },
     { mode: "album" as const, label: "전체 앨범", Icon: Image },
   ];
-  return <div className={`photoWorkspace mode-${mode}`}>
-    {mode === "grid" && <PhotoDateNavigation items={allItems} activeMonth={activeMonth} onChange={onMonthChange} />}
-    <div className="viewTabs" role="tablist" aria-label="사진 보기 방식">
+  const viewTabs = <div className="viewTabs" role="tablist" aria-label="사진 보기 방식">
       {tabs.map((tab, index) => <button key={tab.mode} ref={(node) => { tabRefs.current[index] = node; }} id={`photo-tab-${tab.mode}`} role="tab" aria-selected={mode === tab.mode} aria-controls={`photo-panel-${tab.mode}`} tabIndex={mode === tab.mode ? 0 : -1} className={mode === tab.mode ? "active" : ""} onClick={() => setMode(tab.mode)} onKeyDown={(event) => {
         if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
         event.preventDefault();
         const next = event.key === "Home" ? 0 : event.key === "End" ? 2 : (index + (event.key === "ArrowRight" ? 1 : 2)) % 3;
-        setMode(tabs[next].mode); tabRefs.current[next]?.focus();
+        setMode(tabs[next].mode);
+        requestAnimationFrame(() => tabRefs.current[next]?.focus());
       }}><tab.Icon size={16} />{tab.label}</button>)}
-    </div>
+    </div>;
+  return <div className={`photoWorkspace mode-${mode}`}>
+    {mode === "grid" && <PhotoDateNavigation items={allItems} activeMonth={activeMonth} onChange={onMonthChange} />}
+    {mode !== "grid" && viewTabs}
     {mode === "grid" && <Library
+      viewTabs={viewTabs}
       items={monthItems} selected={selected} onOpen={onOpen} selectionMode={selectionMode}
       selectedIds={selectedIds} onToggleSelection={onToggleSelection}
       onToggleSelectionMode={onToggleSelectionMode} selectedCount={selectedCount}
@@ -603,6 +606,7 @@ function PhotoView({
 }
 
 function Library({
+  viewTabs,
   items,
   selected,
   onOpen,
@@ -617,6 +621,7 @@ function Library({
   scopeKey,
   emptyText,
 }: {
+  viewTabs: ReactNode;
   items: MediaItem[];
   selected: MediaItem | null;
   onOpen: (item: MediaItem, collection?: MediaItem[]) => void;
@@ -676,8 +681,9 @@ function Library({
   }
 
   return (
-    <section className="libraryView" id="photo-panel-grid" role="tabpanel" aria-labelledby="photo-tab-grid">
+    <div className="libraryView">
       <div className="panelHeader collectionTools">
+        {viewTabs}
         <div className="panelActions">
           <button className={selectionMode ? "selectionToggle activeAction" : "selectionToggle"} aria-pressed={selectionMode} onClick={onToggleSelectionMode}>
             {selectionMode ? <X size={17} /> : <CheckSquare size={17} />}
@@ -689,6 +695,7 @@ function Library({
           <button className={activeFilterCount ? "iconText filterActive" : "iconText"} aria-expanded={filtersOpen} aria-controls="libraryFilters" onClick={() => setFiltersOpen(!filtersOpen)}><SlidersHorizontal size={17} />필터{activeFilterCount ? ` ${activeFilterCount}` : ""}</button>
         </div>
       </div>
+      <section id="photo-panel-grid" role="tabpanel" aria-labelledby="photo-tab-grid">
       {filtersOpen && <section id="libraryFilters" className="filterPanel" aria-label="사진 필터">
         <label>종류<select aria-label="미디어 종류" value={mediaType} onChange={(event) => setMediaType(event.target.value as LibraryMediaType)}><option value="all">전체</option><option value="image">사진</option><option value="video">영상</option><option value="audio">음원</option></select></label>
         <label>최소 별점<select aria-label="최소 별점" value={minimumRating} onChange={(event) => setMinimumRating(Number(event.target.value))}><option value="0">전체</option>{[1, 2, 3, 4, 5].map((score) => <option key={score} value={score}>{score}점 이상</option>)}</select></label>
@@ -770,7 +777,8 @@ function Library({
           </div>
         </nav>
       )}
-    </section>
+      </section>
+    </div>
   );
 }
 

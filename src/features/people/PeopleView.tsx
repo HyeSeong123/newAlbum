@@ -149,15 +149,21 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
   return <section className="peopleView">
     <div className="panelHeader">
       <h2>{showUnknownFaces ? '미확인 얼굴' : allFaces ? '얼굴 모아보기' : person ? person.name.trim() || '미확인 얼굴' : '인물'}</h2>
-      <div className="peopleActions">
-        <button disabled={blocked} onClick={() => openFaceView(allFaces ? 'people' : 'all')}><Users size={18} />{allFaces ? '인물별 보기' : '얼굴 모아보기'}</button>
-        {!person && !showFaceThumbnails && <button disabled={blocked || !index.faces.length} onClick={() => { openFaceView('all'); setSelecting(true); }}><Check size={18} />얼굴 선택하기</button>}
-        <button disabled={blocked || !desktop || !index.people.some((entry) => entry.name.trim())} onClick={() => setReviewing(true)}><RefreshCw size={18} />미확인 얼굴 다시 비교</button>
-        {running ? <button onClick={() => { stop.current = true; setStatus('현재 사진을 마치고 중단합니다.'); }}><Pause size={18} />중단</button> : <button disabled={blocked || !desktop || !remaining.length} onClick={() => void start()}><Play size={18} />{index.scanned.length ? '이어서 분석' : '얼굴 찾기'}</button>}
-        <button title="분석 정보 새로고침" disabled={blocked || !desktop} onClick={() => void edit(async () => {})}><RefreshCw size={18} /></button>
-        <button title="얼굴 분석 정보 지우기" disabled={blocked || !desktop || !index.scanned.length} onClick={() => {
-          if (window.confirm('인물 이름, 얼굴 분석 정보와 제외 설정을 모두 지울까요? 원본 사진은 유지됩니다.')) void edit(async () => { await clearFaceIndex(); openFaceView('people'); setLastExcluded([]); });
-        }}><Trash2 size={18} /></button>
+      <div className="peopleActions peopleToolbar">
+        <div className="toolbarGroup" role="group" aria-label="인물 보기">
+          <button disabled={blocked} onClick={() => openFaceView(allFaces ? 'people' : 'all')}><Users size={18} />{allFaces ? '인물별 보기' : '얼굴 모아보기'}</button>
+          {!person && !showFaceThumbnails && <button disabled={blocked || !index.faces.length} onClick={() => { openFaceView('all'); setSelecting(true); }}><Check size={18} />얼굴 선택하기</button>}
+        </div>
+        <div className="toolbarGroup" role="group" aria-label="얼굴 분석">
+          <button disabled={blocked || !desktop || !index.people.some((entry) => entry.name.trim())} onClick={() => setReviewing(true)}><RefreshCw size={18} />미확인 얼굴 다시 비교</button>
+          {running ? <button onClick={() => { stop.current = true; setStatus('현재 사진을 마치고 중단합니다.'); }}><Pause size={18} />중단</button> : <button className="primaryControl" disabled={blocked || !desktop || !remaining.length} onClick={() => void start()}><Play size={18} />{index.scanned.length ? '이어서 분석' : '얼굴 찾기'}</button>}
+        </div>
+        <div className="toolbarGroup" role="group" aria-label="분석 정보 관리">
+          <button className="toolbarIcon" title="분석 정보 새로고침" disabled={blocked || !desktop} onClick={() => void edit(async () => {})}><RefreshCw size={18} /></button>
+          <button className="toolbarIcon" title="얼굴 분석 정보 지우기" disabled={blocked || !desktop || !index.scanned.length} onClick={() => {
+            if (window.confirm('인물 이름, 얼굴 분석 정보와 제외 설정을 모두 지울까요? 원본 사진은 유지됩니다.')) void edit(async () => { await clearFaceIndex(); openFaceView('people'); setLastExcluded([]); });
+          }}><Trash2 size={18} /></button>
+        </div>
       </div>
     </div>
     {!desktop && <p role="status">얼굴 찾기는 오래담은 데스크톱 앱에서 사용할 수 있습니다.</p>}

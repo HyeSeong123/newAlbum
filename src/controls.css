@@ -1,0 +1,134 @@
+/* Shared menu controls. Media tiles, date cells and photo-viewer tools keep
+   their own sizing; only toolbar controls use these compact dimensions. */
+:root {
+  --control-height: 36px;
+  --control-gap: 8px;
+  --control-radius: 6px;
+}
+
+.topbar .toolbar,
+.collectionTools .panelActions,
+.albumActions,
+.peopleActions,
+.toolbarGroup,
+.calendarNavigation,
+.calendarPanel .monthControls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--control-gap);
+}
+
+.viewTabs button,
+.photoWorkspace.mode-calendar > .viewTabs button,
+.collectionTools .panelActions > button,
+.albumActions button,
+.peopleActions button,
+.calendarPanel .monthControls button,
+.topbar .importActions > button,
+.topbar .importActions .actionMenuTrigger {
+  min-height: var(--control-height);
+  height: var(--control-height);
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: var(--control-radius);
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.collectionTools .sortControl,
+.albumSort select,
+.peopleActions input,
+.peopleActions select,
+.calendarPanel .monthPicker select,
+.topbar .searchBox {
+  height: var(--control-height);
+  min-height: var(--control-height);
+  border-radius: var(--control-radius);
+  font-size: 13px;
+}
+
+.peopleActions input,
+.peopleActions select { padding-block: 0; }
+.collectionTools .sortControl { padding: 0 10px; gap: 6px; }
+.collectionTools .sortControl select { font-size: 13px; }
+.topbar .importActions .actionMenuTrigger { width: 32px; min-width: 32px; padding: 0; }
+.peopleActions .toolbarIcon { width: var(--control-height); padding: 0; }
+.peopleActions button svg,
+.collectionTools button svg,
+.albumActions button svg { flex-shrink: 0; }
+
+.peopleActions .primaryControl {
+  color: #fff;
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.peopleActions .primaryControl:hover:not(:disabled) {
+  color: #fff;
+  background: #6c714c;
+  border-color: #6c714c;
+}
+.peopleActions button:hover:not(:disabled):not(.primaryControl) {
+  background: var(--surface-soft);
+  border-color: var(--primary);
+}
+
+/* Tabs and collection actions share normal flow so they wrap without overlap. */
+.mode-grid .libraryView > .collectionTools {
+  position: static;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--control-gap) 16px;
+  margin: 0 0 16px;
+}
+.collectionTools > .viewTabs { width: max-content; max-width: 100%; margin: 0; flex-shrink: 0; }
+.collectionTools .panelActions { width: auto; margin-left: auto; }
+.collectionTools .viewTabs button { padding-inline: 14px; color: #585b52; }
+.collectionTools .viewTabs button.active { color: #fff; background: var(--primary); }
+.collectionTools .panelActions > button,
+.collectionTools .sortControl { border: 1px solid var(--border); }
+
+.savedAlbums > .panelHeader {
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--control-gap) 16px;
+  margin-bottom: 16px;
+}
+.savedAlbums > .panelHeader > .albumActions { margin-left: auto; }
+.peopleView > .panelHeader,
+.petsView > .panelHeader { align-items: center; flex-wrap: wrap; gap: var(--control-gap) 16px; }
+.peopleView > .panelHeader > .peopleActions,
+.petsView > .panelHeader > .peopleActions { margin-left: auto; justify-content: flex-end; }
+.peopleActions.peopleToolbar { gap: 16px; }
+
+.calendarPanel .panelHeader { grid-template-columns: auto auto minmax(0, 1fr); gap: 16px; }
+.calendarPanel .monthControls { justify-content: flex-end; }
+.calendarNavigation { flex-wrap: nowrap; }
+.calendarPanel .monthControls > .primaryControl { margin-left: 8px; }
+
+@media (max-width: 1100px) {
+  .calendarPanel .panelHeader { grid-template-columns: 1fr auto; }
+  .calendarPanel .monthControls { grid-column: 1 / -1; }
+}
+
+@media (max-width: 760px) {
+  .collectionTools > .viewTabs { width: 100%; }
+  .collectionTools .panelActions { width: 100%; justify-content: flex-end; }
+  .collectionTools .sortControl { flex: 1; min-width: 0; }
+  .collectionTools .sortControl select { width: 100%; min-width: 0; }
+  .peopleView > .panelHeader > .peopleActions,
+  .petsView > .panelHeader > .peopleActions { width: 100%; margin-left: 0; justify-content: flex-start; }
+  .peopleActions.peopleToolbar { gap: var(--control-gap) 16px; }
+  .calendarPanel .monthControls { justify-content: flex-start; }
+  .calendarPanel .monthControls > .primaryControl { margin-left: 0; }
+  .topbar .toolbar,
+  .workspace:has(.photoWorkspace.mode-grid) .topbar .toolbar { gap: var(--control-gap); }
+}

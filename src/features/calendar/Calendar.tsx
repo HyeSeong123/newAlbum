@@ -209,13 +209,15 @@ export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; 
             </select>
           </label>
         </div>
-        <div className="monthControls" aria-label="달 이동">
+        <div className="monthControls" aria-label="달력 작업">
+          <div className="calendarNavigation" role="group" aria-label="달 이동">
+            <button onClick={() => moveMonth(-1)} title="이전 달"><ChevronLeft size={17} />이전 달</button>
+            <button onClick={() => { setCalendarViewMode("month"); setVisibleMonth(today.slice(0, 7)); }}>오늘</button>
+            <button onClick={() => moveMonth(1)} title="다음 달">다음 달<ChevronRight size={17} /></button>
+          </div>
           <button className="primaryControl" onClick={() => setEventModalOpen(true)}>
             <Plus size={17} />일정 등록
           </button>
-          <button onClick={() => moveMonth(-1)} title="이전 달"><ChevronLeft size={17} />이전 달</button>
-          <button onClick={() => moveMonth(1)} title="다음 달">다음 달<ChevronRight size={17} /></button>
-          <button onClick={() => { setCalendarViewMode("month"); setVisibleMonth(today.slice(0, 7)); }}>오늘</button>
         </div>
       </div>
       <div className="calendarModeTabs" role="tablist" aria-label="달력 보기 방식">

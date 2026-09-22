@@ -46,9 +46,10 @@ export function PetsView({ items, onOpen, query = "" }: { items: MediaItem[]; qu
     <div className="panelHeader">
       <h2>{pet?.name ?? '반려동물'}</h2>
       <div className="peopleActions">
+        {pet && <button className="toolbarIcon" title="반려동물 목록" onClick={() => { setActive(null); setPage(0); }}><ArrowLeft size={18} /></button>}
         {pet && <button disabled={busy || !linked.length} onClick={() => setReviewing(true)}><ScanSearch size={18} />후보 찾기</button>}
-        {pet && <><button title="반려동물 목록" onClick={() => { setActive(null); setPage(0); }}><ArrowLeft size={18} /></button><button disabled={busy} onClick={() => setEditing(pet)}><Pencil size={18} />사진·이름 편집</button><button disabled={busy} onClick={() => void remove()}><Trash2 size={18} />등록 삭제</button></>}
-        {!pet && <button disabled={loading || !desktop} onClick={() => setEditing({ id: 0, name: '', cover_media_id: null, media_ids: [] })}><Plus size={18} />반려동물 등록</button>}
+        {pet && <><button disabled={busy} onClick={() => setEditing(pet)}><Pencil size={18} />사진·이름 편집</button><button disabled={busy} onClick={() => void remove()}><Trash2 size={18} />등록 삭제</button></>}
+        {!pet && <button className="primaryControl" disabled={loading || !desktop} onClick={() => setEditing({ id: 0, name: '', cover_media_id: null, media_ids: [] })}><Plus size={18} />반려동물 등록</button>}
       </div>
     </div>
     {!desktop && <p role="status">반려동물 등록은 데스크톱 앱에서 사용할 수 있습니다.</p>}

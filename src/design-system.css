@@ -447,8 +447,7 @@ h3 { font-size: 15px; }
 .workspace:has(.photoWorkspace.mode-grid) .topbar .importActions { grid-column: 3; grid-row: 1; justify-self: start; margin-left: 26px; }
 .photoWorkspace.mode-grid { position: relative; display: grid; grid-template-columns: 166px minmax(0, 1fr) 236px; grid-template-rows: auto minmax(0, 1fr); column-gap: 32px; align-items: start; }
 .photoWorkspace.mode-grid > .monthRail { grid-column: 1; grid-row: 1 / 3; }
-.photoWorkspace.mode-grid > .viewTabs { grid-column: 2; grid-row: 1; justify-self: start; margin: 0; }
-.photoWorkspace.mode-grid > .libraryView { grid-column: 2; grid-row: 2; min-width: 0; }
+.photoWorkspace.mode-grid > .libraryView { grid-column: 2; grid-row: 1 / 3; min-width: 0; }
 .photoWorkspace.mode-grid > .quickAlbums { grid-column: 3; grid-row: 1 / 3; }
 .monthRail { position: sticky; top: calc(var(--app-header-height, 70px) + 36px); display: flex; flex-direction: column; min-width: 0; height: calc(100dvh - var(--app-header-height, 70px) - 72px); margin-top: -70px; padding-right: 12px; border-right: 1px solid var(--border); }
 .monthRail button { position: relative; width: 100%; min-height: 36px; padding: 0 9px; display: flex; align-items: center; gap: 10px; border-radius: 3px; color: #55584f; background: transparent; text-align: left; font-size: 13px; font-weight: 450; }
@@ -467,7 +466,6 @@ h3 { font-size: 15px; }
 .monthRailCount { margin-left: auto; color: var(--muted); font-size: 12px; font-weight: 400; font-variant-numeric: tabular-nums; }
 .monthRailFooter { flex: none; padding-top: 14px; margin-top: 16px; border-top: 1px solid var(--border); }
 .libraryView { position: relative; container-type: inline-size; }
-.mode-grid .libraryView > .collectionTools { position: absolute; right: 0; top: -38px; }
 .collectionTools .panelActions { gap: 4px; }
 .collectionTools button, .sortControl { min-height: 32px; padding-inline: 9px; border-color: transparent; background: transparent; color: #6b6e63; font-size: 12px; }
 .sortControl { gap: 4px; }
@@ -576,7 +574,6 @@ h3 { font-size: 15px; }
 .exportComplete button { margin-top: 8px; min-width: 96px; }
 @media (max-width: 520px) { .exportModal form { padding: 20px; } .exportPathField { grid-template-columns: minmax(0, 1fr); } .exportPathField button { justify-self: start; } }
 .photoLightboxBackdrop { z-index: 120; }
-@container (max-width: 700px) { .mode-grid .libraryView > .collectionTools { position: static; margin-top: 12px; } }
 @media (max-width: 1100px) {
   .sidebar { padding-inline: 24px; grid-template-columns: 1fr auto auto; gap: 20px; }
   .sidebar .brand span { display: none; }
@@ -612,7 +609,6 @@ h3 { font-size: 15px; }
   .monthRailMonths button { padding-inline: 10px; gap: 10px; }
   .viewTabs button { min-height: 36px; padding-inline: 16px; }
   .photoWorkspace > .viewTabs { width: max-content; max-width: 100%; }
-  .mode-grid .libraryView > .collectionTools { position: static; margin-top: 12px; }
   .photoWorkspace .galleryGrid { margin-top: 22px; }
   .journalDayHeader { gap: 6px 12px; }
   .journalDayHeader h2 { font-size: 16px; }
