@@ -1,0 +1,28 @@
+[[permission]]
+identifier = "album-library"
+description = "Allow the main album window to use the existing photo, album, face and pet commands."
+commands.allow = [
+  "list_media",
+  "media_thumbnail",
+  "list_albums",
+  "clear_registered_media",
+  "delete_registered_media",
+  "create_album_from_media",
+  "update_album",
+  "delete_albums",
+  "export_media_group",
+  "register_paths",
+  "update_media_details",
+  "increment_media_view",
+  "list_face_index",
+  "list_pets",
+  "save_pet",
+  "delete_pet",
+  "find_face_matches",
+  "set_faces_excluded",
+  "save_face_scan",
+  "rename_face_person",
+  "set_person_cover_face",
+  "move_faces",
+  "clear_face_index",
+]
