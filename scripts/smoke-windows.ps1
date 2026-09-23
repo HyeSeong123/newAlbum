@@ -43,7 +43,9 @@ try {
     # Use the documented machine policy for this app only, and restore it below.
     # https://learn.microsoft.com/microsoft-edge/webview2/concepts/security
     if ($env:GITHUB_ACTIONS -eq 'true') {
-        New-Item -Path $debugPolicyPath -Force | Out-Null
+        if (-not (Test-Path $debugPolicyPath)) {
+            New-Item -Path $debugPolicyPath -Force | Out-Null
+        }
         $appIdentifier = (Get-Content 'src-tauri/tauri.conf.json' -Raw | ConvertFrom-Json).identifier
         foreach ($name in @($binary.Name, $appIdentifier)) {
             $key = Get-Item $debugPolicyPath
