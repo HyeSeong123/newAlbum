@@ -13,6 +13,8 @@ $diagnostics = Join-Path (Get-Location) 'test-results/desktop-smoke'
 New-Item -ItemType Directory -Force -Path $diagnostics | Out-Null
 $env:ORAEDAMEUN_STARTUP_LOG = Join-Path $diagnostics 'startup.log'
 $application = $null
+$debugPolicyPath = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments'
+$debugPolicyBackup = @{}
 function Wait-LocalApp {
     $lastError = 'No response received'
     for ($attempt = 0; $attempt -lt 30; $attempt++) {
@@ -37,6 +39,23 @@ function Close-LocalApp {
     }
 }
 try {
+    # WebView2 150+ ignores environment overrides on elevated CI runners.
+    # Use the documented machine policy for this app only, and restore it below.
+    # https://learn.microsoft.com/microsoft-edge/webview2/concepts/security
+    if ($env:GITHUB_ACTIONS -eq 'true') {
+        New-Item -Path $debugPolicyPath -Force | Out-Null
+        $appIdentifier = (Get-Content 'src-tauri/tauri.conf.json' -Raw | ConvertFrom-Json).identifier
+        foreach ($name in @($binary.Name, $appIdentifier)) {
+            $key = Get-Item $debugPolicyPath
+            $exists = $key.GetValueNames() -contains $name
+            $debugPolicyBackup[$name] = @{ Exists = $exists; Value = $null; Kind = 'String' }
+            if ($exists) {
+                $debugPolicyBackup[$name].Value = $key.GetValue($name)
+                $debugPolicyBackup[$name].Kind = $key.GetValueKind($name).ToString()
+            }
+            New-ItemProperty -Path $debugPolicyPath -Name $name -PropertyType String -Value '--remote-debugging-port=9222 --remote-debugging-address=127.0.0.1' -Force | Out-Null
+        }
+    }
     $application = Start-Process -FilePath $binary.FullName -PassThru
     Wait-LocalApp
     Write-Host 'Installed app opened its local server and WebView2.'
@@ -57,6 +76,14 @@ try {
         Format-Table -AutoSize | Out-String | Tee-Object -FilePath (Join-Path $diagnostics 'ports.log') | Write-Host
     if (Test-Path $env:ORAEDAMEUN_STARTUP_LOG) { Get-Content $env:ORAEDAMEUN_STARTUP_LOG | Write-Host }
     if ($application -and -not $application.HasExited) { Stop-Process -Id $application.Id -Force -ErrorAction SilentlyContinue }
+    foreach ($name in $debugPolicyBackup.Keys) {
+        $previous = $debugPolicyBackup[$name]
+        if ($previous.Exists) {
+            New-ItemProperty -Path $debugPolicyPath -Name $name -PropertyType $previous.Kind -Value $previous.Value -Force | Out-Null
+        } else {
+            Remove-ItemProperty -Path $debugPolicyPath -Name $name -ErrorAction SilentlyContinue
+        }
+    }
     Remove-Item Env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -ErrorAction SilentlyContinue
     Remove-Item Env:ORAEDAMEUN_STARTUP_LOG -ErrorAction SilentlyContinue
 }
