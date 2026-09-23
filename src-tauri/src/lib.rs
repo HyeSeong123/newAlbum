@@ -866,6 +866,8 @@ fn civil_from_days(days_since_epoch: i64) -> Option<String> {
 }
 
 pub fn run() {
+    #[cfg(feature = "custom-protocol")]
+    localhost::trace("application starting");
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
             if let Some(window) = app.get_webview_window("main") {
@@ -876,6 +878,8 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            #[cfg(feature = "custom-protocol")]
+            localhost::trace("application setup");
             #[cfg(feature = "custom-protocol")]
             {
                 use tauri_plugin_dialog::DialogExt;
@@ -897,10 +901,14 @@ pub fn run() {
             #[cfg(feature = "custom-protocol")]
             { window_config.url = tauri::WebviewUrl::External(localhost::ORIGIN.parse()?); }
             // Native storage/dialog commands are available only to this app's origin.
+            #[cfg(feature = "custom-protocol")]
+            localhost::trace("creating main webview");
             tauri::WebviewWindowBuilder::from_config(app, &window_config)?
                 .on_navigation(|url| url.scheme() == "http"
                     && url.host_str() == Some("127.0.0.1") && url.port() == Some(5173))
                 .build()?;
+            #[cfg(feature = "custom-protocol")]
+            localhost::trace("main webview created");
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

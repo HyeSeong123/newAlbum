@@ -9,16 +9,21 @@ if (-not $binary) { throw 'Installed application executable is missing.' }
 
 # Enable CDP only in this CI process to exercise the real WebView2/native bridge.
 $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = '--remote-debugging-port=9222'
+$diagnostics = Join-Path (Get-Location) 'test-results/desktop-smoke'
+New-Item -ItemType Directory -Force -Path $diagnostics | Out-Null
+$env:ORAEDAMEUN_STARTUP_LOG = Join-Path $diagnostics 'startup.log'
 $application = $null
 function Wait-LocalApp {
     $lastError = 'No response received'
-    for ($attempt = 0; $attempt -lt 60; $attempt++) {
+    for ($attempt = 0; $attempt -lt 30; $attempt++) {
         if ($application.HasExited) { throw 'Desktop app exited before becoming ready.' }
+        $stage = 'HTTP frontend on port 5173'
         try {
-            $response = Invoke-WebRequest 'http://127.0.0.1:5173/' -TimeoutSec 2
-            $debugger = Invoke-WebRequest 'http://127.0.0.1:9222/json/version' -TimeoutSec 2
+            $response = Invoke-WebRequest 'http://127.0.0.1:5173/' -NoProxy -TimeoutSec 2
+            $stage = 'WebView2 debugger on port 9222'
+            $debugger = Invoke-WebRequest 'http://127.0.0.1:9222/json/version' -NoProxy -TimeoutSec 2
             if ($response.StatusCode -eq 200 -and $response.Content -match 'id="root"' -and $debugger.StatusCode -eq 200) { return }
-        } catch { $lastError = $_.Exception.Message }
+        } catch { $lastError = "$stage : $($_.Exception.Message)" }
         Start-Sleep -Seconds 1
     }
     throw "Packaged app did not start its local server and webview: $lastError"
@@ -48,6 +53,10 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'App persistence check failed after restart.' }
     Close-LocalApp
 } finally {
+    Get-NetTCPConnection -LocalPort 5173,9222 -ErrorAction SilentlyContinue |
+        Format-Table -AutoSize | Out-String | Tee-Object -FilePath (Join-Path $diagnostics 'ports.log') | Write-Host
+    if (Test-Path $env:ORAEDAMEUN_STARTUP_LOG) { Get-Content $env:ORAEDAMEUN_STARTUP_LOG | Write-Host }
     if ($application -and -not $application.HasExited) { Stop-Process -Id $application.Id -Force -ErrorAction SilentlyContinue }
     Remove-Item Env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -ErrorAction SilentlyContinue
+    Remove-Item Env:ORAEDAMEUN_STARTUP_LOG -ErrorAction SilentlyContinue
 }

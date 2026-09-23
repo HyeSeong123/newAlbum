@@ -6,11 +6,21 @@ use std::{
     sync::{atomic::{AtomicBool, Ordering}, Arc},
     thread,
 };
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 use tiny_http::{Header, Method, Request, Response, Server, StatusCode};
 
 pub const ADDRESS: &str = "127.0.0.1:5173";
 pub const ORIGIN: &str = "http://127.0.0.1:5173";
+
+// Opt-in startup diagnostics used by the installed-app CI check.
+pub fn trace(message: &str) {
+    use std::io::Write;
+    if let Some(path) = std::env::var_os("ORAEDAMEUN_STARTUP_LOG") {
+        if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+            let _ = writeln!(file, "{message}");
+        }
+    }
+}
 
 pub struct LocalServer {
     server: Arc<Server>,
@@ -21,6 +31,7 @@ impl LocalServer {
     pub fn start(app: &AppHandle) -> io::Result<Self> {
         // Keep the bound socket: a port probe followed by a second bind races.
         let listener = TcpListener::bind(ADDRESS)?;
+        trace("localhost socket bound");
         let server = Arc::new(Server::from_listener(listener, None).map_err(io::Error::other)?);
         let stopped = Arc::new(AtomicBool::new(false));
         let worker_server = server.clone();
@@ -29,6 +40,7 @@ impl LocalServer {
         thread::Builder::new().name("album-localhost".into()).spawn(move || {
             while !worker_stopped.load(Ordering::Acquire) {
                 let Ok(request) = worker_server.recv() else { break };
+                trace(&format!("request {} {}", request.method(), request.url()));
                 if worker_stopped.load(Ordering::Acquire) { break; }
                 if let Err(status) = validate_request(&request) {
                     let _ = request.respond(Response::empty(StatusCode(status)));
@@ -36,7 +48,10 @@ impl LocalServer {
                 }
                 let path = request.url().split('?').next().unwrap_or("/");
                 let path = if path == "/" { "/index.html" } else { path };
-                if let Some(asset) = assets.get(path.to_owned()) {
+                // The server always uses HTTP. Avoid querying the webview map
+                // while the main thread is still creating its first webview.
+                if let Some(asset) = assets.get_for_scheme(path.to_owned(), false) {
+                    trace("embedded asset resolved");
                     let mut response = Response::from_data(asset.bytes);
                     for (name, value) in [
                         ("Content-Type", asset.mime_type.as_str()),
@@ -51,7 +66,8 @@ impl LocalServer {
                         if let Ok(header) = Header::from_bytes("Content-Security-Policy", csp) { response.add_header(header); }
                     }
                     // A disconnected webview must not terminate the server.
-                    let _ = request.respond(response);
+                    let result = request.respond(response);
+                    trace(&format!("response complete: {result:?}"));
                 } else {
                     let _ = request.respond(Response::empty(StatusCode(404)));
                 }
