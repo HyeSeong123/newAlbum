@@ -3,6 +3,7 @@
   "identifier": "default",
   "description": "Default desktop permissions",
   "windows": ["main"],
+  "remote": { "urls": ["http://127.0.0.1:5173/*"] },
   "permissions": [
     "core:default",
     "dialog:default",

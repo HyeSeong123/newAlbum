@@ -1,0 +1,51 @@
+$ErrorActionPreference = 'Stop'
+$installer = Get-ChildItem 'src-tauri/target/release/bundle/nsis/*-setup.exe' | Select-Object -First 1
+if (-not $installer) { throw 'Windows installer was not generated.' }
+$installDirectory = Join-Path $env:RUNNER_TEMP 'OraedameunSmoke'
+$setup = Start-Process -FilePath $installer.FullName -ArgumentList "/S /D=$installDirectory" -Wait -PassThru
+if ($setup.ExitCode -ne 0) { throw "Installer failed: $($setup.ExitCode)" }
+$binary = Get-ChildItem $installDirectory -Filter '*.exe' | Where-Object { $_.Name -notmatch 'uninstall' } | Select-Object -First 1
+if (-not $binary) { throw 'Installed application executable is missing.' }
+
+# Enable CDP only in this CI process to exercise the real WebView2/native bridge.
+$env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = '--remote-debugging-port=9222'
+$application = $null
+function Wait-LocalApp {
+    for ($attempt = 0; $attempt -lt 60; $attempt++) {
+        if ($application.HasExited) { throw 'Desktop app exited before becoming ready.' }
+        try {
+            $response = Invoke-WebRequest 'http://127.0.0.1:5173/' -TimeoutSec 2
+            $debugger = Invoke-WebRequest 'http://127.0.0.1:9222/json/version' -TimeoutSec 2
+            if ($response.StatusCode -eq 200 -and $response.Content -match 'id="root"' -and $debugger.StatusCode -eq 200) { return }
+        } catch { }
+        Start-Sleep -Seconds 1
+    }
+    throw 'Packaged app did not start its local server and webview.'
+}
+function Close-LocalApp {
+    $application.Refresh()
+    if (-not $application.CloseMainWindow()) { throw 'Desktop window was not created.' }
+    if (-not $application.WaitForExit(15000)) { throw 'Desktop app did not exit when its window closed.' }
+    if (Get-NetTCPConnection -LocalAddress 127.0.0.1 -LocalPort 5173 -State Listen -ErrorAction SilentlyContinue) {
+        throw 'Local server remained running after app exit.'
+    }
+}
+try {
+    $application = Start-Process -FilePath $binary.FullName -PassThru
+    Wait-LocalApp
+    $listeners = @(Get-NetTCPConnection -LocalPort 5173 -State Listen)
+    if ($listeners.Count -ne 1 -or $listeners[0].LocalAddress -ne '127.0.0.1') { throw 'Server is not restricted to loopback.' }
+    $second = Start-Process -FilePath $binary.FullName -PassThru
+    if (-not $second.WaitForExit(10000)) { Stop-Process -Id $second.Id -Force; throw 'Second app instance did not exit.' }
+    node scripts/smoke-desktop.mjs
+    if ($LASTEXITCODE -ne 0) { throw 'Packaged native bridge check failed.' }
+    Close-LocalApp
+    $application = Start-Process -FilePath $binary.FullName -PassThru
+    Wait-LocalApp
+    node scripts/smoke-desktop.mjs --restarted
+    if ($LASTEXITCODE -ne 0) { throw 'App persistence check failed after restart.' }
+    Close-LocalApp
+} finally {
+    if ($application -and -not $application.HasExited) { Stop-Process -Id $application.Id -Force -ErrorAction SilentlyContinue }
+    Remove-Item Env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -ErrorAction SilentlyContinue
+}

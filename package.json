@@ -11,6 +11,7 @@
     "preview": "vite preview --host 127.0.0.1 --port 4173",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
+    "package:windows": "tauri build --bundles nsis",
     "test:e2e": "playwright test",
     "test:unit": "node --test tests/journal-model.test.mjs tests/media-playback.test.mjs"
   },

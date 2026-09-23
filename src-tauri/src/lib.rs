@@ -12,6 +12,8 @@ use walkdir::WalkDir;
 mod faces;
 mod pets;
 mod thumbnails;
+#[cfg(any(feature = "custom-protocol", test))]
+mod localhost;
 
 #[derive(Serialize)]
 struct MediaItemDto {
@@ -864,8 +866,43 @@ fn civil_from_days(days_since_epoch: i64) -> Option<String> {
 }
 
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_dialog::init())
+        .setup(|app| {
+            #[cfg(feature = "custom-protocol")]
+            {
+                use tauri_plugin_dialog::DialogExt;
+                match localhost::LocalServer::start(app.handle()) {
+                    Ok(server) => { app.manage(server); }
+                    Err(error) => {
+                        let message = if error.kind() == io::ErrorKind::AddrInUse {
+                            "127.0.0.1:5173 포트를 다른 프로그램이 사용하고 있습니다. 개발 서버 또는 해당 프로그램을 종료한 뒤 오래담은을 다시 실행해 주세요.".to_owned()
+                        } else {
+                            format!("로컬 서버를 시작하지 못했습니다.\n{error}")
+                        };
+                        app.dialog().message(&message).title("오래담은 실행 안내")
+                            .kind(tauri_plugin_dialog::MessageDialogKind::Error).blocking_show();
+                        return Err(Box::new(io::Error::new(error.kind(), message)));
+                    }
+                }
+            }
+            let mut window_config = app.config().app.windows[0].clone();
+            #[cfg(feature = "custom-protocol")]
+            { window_config.url = tauri::WebviewUrl::External(localhost::ORIGIN.parse()?); }
+            // Native storage/dialog commands are available only to this app's origin.
+            tauri::WebviewWindowBuilder::from_config(app, &window_config)?
+                .on_navigation(|url| url.scheme() == "http"
+                    && url.host_str() == Some("127.0.0.1") && url.port() == Some(5173))
+                .build()?;
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             list_media,
             thumbnails::media_thumbnail,
@@ -891,6 +928,14 @@ pub fn run() {
             faces::move_faces,
             faces::clear_face_index
         ])
-        .run(tauri::generate_context!())
+        .build(tauri::generate_context!())
         .expect("failed to run app");
+    app.run(|app, event| {
+        #[cfg(feature = "custom-protocol")]
+        if let tauri::RunEvent::Exit = event {
+            if let Some(server) = app.try_state::<localhost::LocalServer>() { server.stop(); }
+        }
+        #[cfg(not(feature = "custom-protocol"))]
+        let _ = (app, event);
+    });
 }
