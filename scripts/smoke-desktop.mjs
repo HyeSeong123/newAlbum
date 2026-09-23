@@ -6,6 +6,8 @@ import { resolve } from 'node:path';
 const browser = await chromium.connectOverCDP('http://127.0.0.1:9222', { timeout: 30000 });
 try {
   const context = browser.contexts()[0];
+  context.setDefaultTimeout(30000);
+  context.setDefaultNavigationTimeout(30000);
   const page = context.pages()[0] ?? await context.waitForEvent('page', { timeout: 30000 });
   await page.waitForURL('http://127.0.0.1:5173/**');
   await page.waitForFunction(() => Boolean(window.__TAURI_INTERNALS__?.invoke));
@@ -21,7 +23,7 @@ try {
       const media = await invoke('list_media');
       const thumbnail = await invoke('media_thumbnail', { id: media[0].id });
       const image = new Image();
-      image.src = window.__TAURI_INTERNALS__.convertFileSrc(thumbnail);
+      image.src = window.__TAURI_INTERNALS__.convertFileSrc(thumbnail, 'asset');
       await image.decode();
       if (!image.naturalWidth) throw new Error('Native media protocol failed');
       localStorage.setItem('installer-smoke', 'persisted');

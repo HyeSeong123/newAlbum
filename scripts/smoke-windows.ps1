@@ -11,16 +11,17 @@ if (-not $binary) { throw 'Installed application executable is missing.' }
 $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = '--remote-debugging-port=9222'
 $application = $null
 function Wait-LocalApp {
+    $lastError = 'No response received'
     for ($attempt = 0; $attempt -lt 60; $attempt++) {
         if ($application.HasExited) { throw 'Desktop app exited before becoming ready.' }
         try {
             $response = Invoke-WebRequest 'http://127.0.0.1:5173/' -TimeoutSec 2
             $debugger = Invoke-WebRequest 'http://127.0.0.1:9222/json/version' -TimeoutSec 2
             if ($response.StatusCode -eq 200 -and $response.Content -match 'id="root"' -and $debugger.StatusCode -eq 200) { return }
-        } catch { }
+        } catch { $lastError = $_.Exception.Message }
         Start-Sleep -Seconds 1
     }
-    throw 'Packaged app did not start its local server and webview.'
+    throw "Packaged app did not start its local server and webview: $lastError"
 }
 function Close-LocalApp {
     $application.Refresh()
@@ -33,6 +34,7 @@ function Close-LocalApp {
 try {
     $application = Start-Process -FilePath $binary.FullName -PassThru
     Wait-LocalApp
+    Write-Host 'Installed app opened its local server and WebView2.'
     $listeners = @(Get-NetTCPConnection -LocalPort 5173 -State Listen)
     if ($listeners.Count -ne 1 -or $listeners[0].LocalAddress -ne '127.0.0.1') { throw 'Server is not restricted to loopback.' }
     $second = Start-Process -FilePath $binary.FullName -PassThru
