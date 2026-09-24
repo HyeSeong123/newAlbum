@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, BookPlus, Check, FolderOutput, Image as ImageIcon, LoaderCircle, Pause, Play, RefreshCw, Scissors, Trash2, Users, X } from 'lucide-react';
 import type { MediaItem } from '../../types/media';
 import { isTauriRuntime } from '../../services/tauriMediaService';
@@ -8,6 +8,7 @@ import { useRowSelection } from '../../hooks/useRowSelection';
 import './people.css';
 import { FaceMatchReview } from './FaceMatchReview';
 import { ExportModal } from '../../components/ExportModal';
+import { EMPTY_FACES, indexFaces, mediaForFaces } from './peopleModel';
 
 export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items: MediaItem[]; query?: string; onOpen: (item: MediaItem, collection?: MediaItem[]) => void; onCreateAlbum: (items: MediaItem[]) => void }) {
   const [index, setIndex] = useState<FaceIndex>(emptyFaceIndex);
@@ -36,36 +37,42 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
   const stop = useRef(false);
   const locked = useRef(false);
   const desktop = isTauriRuntime();
-  const photos = items.filter((item) => item.fileType === 'image');
-  const remaining = photos.filter((item) => !index.scanned.includes(Number(item.id)));
-  const person = index.people.find((entry) => entry.id === active);
+  const photos = useMemo(() => items.filter((item) => item.fileType === 'image'), [items]);
+  const mediaById = useMemo(() => new Map(items.map((item) => [Number(item.id), item])), [items]);
+  const lookup = useMemo(() => indexFaces(index), [index]);
+  const remaining = useMemo(() => photos.filter((item) => !lookup.scanned.has(Number(item.id))), [photos, lookup]);
+  const person = active === null ? undefined : lookup.peopleById.get(active);
   const allFaces = faceView === 'all';
   const showUnknownFaces = faceView === 'unknown';
   const showFaceThumbnails = allFaces || showUnknownFaces;
-  const unnamedPersonIds = new Set(index.people.filter((entry) => !entry.name.trim()).map((entry) => entry.id));
-  const unidentifiedFaces = index.faces.filter((face) => unnamedPersonIds.has(face.person_id));
-  const faces = allFaces ? index.faces : showUnknownFaces ? unidentifiedFaces : index.faces.filter((face) => face.person_id === active);
+  const unidentifiedFaces = lookup.unidentified;
+  const personFaces = active === null ? EMPTY_FACES : lookup.byPerson.get(active) ?? EMPTY_FACES;
+  const faces = allFaces ? index.faces : showUnknownFaces ? unidentifiedFaces : personFaces;
+  const faceItems = useMemo(() => mediaForFaces(items, faces), [items, faces]);
   const showDirectory = !allFaces && (Boolean(person) || showUnknownFaces);
   const facePages = Math.max(1, Math.ceil(faces.length / 24));
   const currentFacePage = Math.min(facePage, facePages - 1);
-  const matchingPeople = index.people.filter((entry) => (entry.name.trim() || "미확인 얼굴").toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
+  const search = query.trim().toLocaleLowerCase();
+  const matchingPeople = useMemo(() => index.people.filter((entry) => (entry.name.trim() || "미확인 얼굴").toLocaleLowerCase().includes(search)), [index.people, search]);
   useEffect(() => { setPersonPage(0); setUnknownPage(0); openFaceView('people'); }, [query]);
   const personGroups = [
     { title: '등록된 인물', people: matchingPeople.filter((entry) => entry.name.trim()), page: personPage, setPage: setPersonPage },
     { title: '미확인 얼굴', people: matchingPeople.filter((entry) => !entry.name.trim()), page: unknownPage, setPage: setUnknownPage },
   ];
   const blocked = running || saving || loading;
-  const unknownFaceIds = index.faces.filter((face) => unknownChosen.includes(face.person_id) && index.people.some((entry) => entry.id === face.person_id && !entry.name.trim())).map((face) => face.id);
+  const unknownFaceIds = useMemo(() => {
+    const selectedPeople = new Set(unknownChosen);
+    return unidentifiedFaces.filter((face) => selectedPeople.has(face.person_id)).map((face) => face.id);
+  }, [unidentifiedFaces, unknownChosen]);
+  const chosenSet = useMemo(() => new Set(chosen), [chosen]);
   const toggleFace = (id: string) => setChosen((current) => current.includes(Number(id)) ? current.filter((entry) => entry !== Number(id)) : [...current, Number(id)]);
-  const dragSelection = useRowSelection(selecting && !blocked, toggleFace, (id) => chosen.includes(Number(id)));
+  const dragSelection = useRowSelection(selecting && !blocked, toggleFace, (id) => chosenSet.has(Number(id)));
   const trimmedName = name.trim();
   const sameNamePeople = trimmedName
     ? index.people.filter((entry) => entry.id !== active && entry.name.trim() === trimmedName)
     : [];
-  const chosenMediaIds = new Set(index.faces.filter((face) => chosen.includes(face.id)).map((face) => face.media_id));
-  const chosenAlbumItems = items.filter((item) => chosenMediaIds.has(Number(item.id)));
-  const personMediaIds = new Set(index.faces.filter((face) => face.person_id === person?.id).map((face) => face.media_id));
-  const personItems = items.filter((item) => personMediaIds.has(Number(item.id)));
+  const chosenAlbumItems = useMemo(() => mediaForFaces(items, index.faces.filter((face) => chosenSet.has(face.id))), [items, index.faces, chosenSet]);
+  const personItems = useMemo(() => mediaForFaces(items, personFaces), [items, personFaces]);
 
   function openFaceView(view: 'people' | 'all' | 'unknown', selectedPerson?: FaceIndex['people'][number]) {
     setFaceView(view);
@@ -189,7 +196,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
         </div>}</div>
         {!loading && !group.people.length && <p>{query ? '검색한 이름의 인물이 없습니다.' : group.title === '등록된 인물' ? '이름을 등록한 인물이 없습니다.' : '미확인 얼굴이 없습니다.'}</p>}
       <div className="personGrid">{group.people.slice(page * 24, (page + 1) * 24).map((entry) => {
-        const members = index.faces.filter((face) => face.person_id === entry.id);
+        const members = lookup.byPerson.get(entry.id) ?? EMPTY_FACES;
         const selectable = !entry.name.trim() && selectingUnknown;
         const cover = members.find((face) => face.id === entry.cover_face_id) ?? members[0];
         return <button className="personTile" key={entry.id} data-cover-face-id={cover?.id} disabled={selectable && blocked} aria-pressed={selectable ? unknownChosen.includes(entry.id) : undefined} onClick={() => {
@@ -208,7 +215,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
       {showDirectory && <aside className="personDirectory" aria-label="이름을 지정한 사람">
         <h3>이름을 지정한 사람</h3>
         {matchingPeople.filter((entry) => entry.name.trim()).map((entry) => {
-          const members = index.faces.filter((face) => face.person_id === entry.id);
+          const members = lookup.byPerson.get(entry.id) ?? EMPTY_FACES;
           const cover = members.find((face) => face.id === entry.cover_face_id) ?? members[0];
           return <button key={entry.id} className={entry.id === active ? 'active' : ''} aria-pressed={entry.id === active} onClick={() => openFaceView('people', entry)}>
             <img src={cover?.thumbnail} alt="" loading="lazy" />
@@ -246,12 +253,12 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
       </div>}
       {!faces.length && <div className="emptyState"><Users size={30} /><p>{showUnknownFaces ? '미확인 얼굴이 없습니다.' : '표시할 얼굴이 없습니다.'}</p></div>}
       <div className={`personPhotoGrid${showFaceThumbnails ? ' faceOverviewGrid' : person ? ' personMediaGrid' : ''}${selecting ? ' selecting' : ''}`} {...dragSelection}>{faces.slice(currentFacePage * 24, (currentFacePage + 1) * 24).map((face) => {
-        const item = items.find((entry) => Number(entry.id) === face.media_id);
+        const item = mediaById.get(face.media_id);
         return <article key={face.id} className="personPhoto" data-selection-id={face.id}>
           <button className="personOriginal" disabled={choosingCover ? blocked : selecting ? blocked : !item} onClick={() => {
             if (choosingCover && person) { void edit(() => setPersonCoverFace(person.id, face.id)).then(() => { if (alive.current) setChoosingCover(false); }); }
             else if (selecting) toggleFace(String(face.id));
-            else if (item) onOpen(item, items.filter((entry) => faces.some((face) => face.media_id === Number(entry.id))));
+            else if (item) onOpen(item, faceItems);
           }} aria-label={choosingCover ? '대표 사진으로 설정' : selecting ? '얼굴 선택' : '사진 상세보기'} aria-pressed={choosingCover ? person?.cover_face_id === face.id : selecting ? chosen.includes(face.id) : undefined}>
             {!showFaceThumbnails && item ? <MediaImage item={item} /> : <img src={face.thumbnail} alt="" loading="lazy" decoding="async" draggable={false} />}
           </button>

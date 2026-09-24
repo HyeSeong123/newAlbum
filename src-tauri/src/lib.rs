@@ -1,7 +1,7 @@
 use rusqlite::{params, Connection};
 use serde::Serialize;
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     fs,
     io::{self, Read},
     path::{Path, PathBuf},
@@ -559,6 +559,30 @@ mod album_concept_tests {
     }
 
     #[test]
+    fn batched_album_reads_keep_empty_albums_order_and_current_media_details() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(include_str!("../database/schema.sql")).unwrap();
+        assert!(read_albums(&conn).unwrap().is_empty());
+        conn.execute_batch(
+            "INSERT INTO media(id, file_path, file_type, size_bytes, taken_at, rating, comment, favorite, view_count)
+             VALUES (1, 'first.jpg', 'image', 100, '2026-09-24', 5, 'current caption', 1, 9),
+                    (2, 'second.jpg', 'image', 200, NULL, 0, '', 0, 0);
+             INSERT INTO album(id, title, created_at) VALUES (1, 'older', '2025-01-01'), (2, 'newer', '2026-01-01'), (3, 'empty', '2026-01-01');
+             INSERT INTO album_item(album_id, media_id, sequence) VALUES (1, 1, 9), (1, 2, 2), (2, 1, 0);"
+        ).unwrap();
+        let albums = read_albums(&conn).unwrap();
+        assert_eq!(albums.iter().map(|album| album.id).collect::<Vec<_>>(), vec![3, 2, 1]);
+        assert!(albums[0].items.is_empty());
+        assert_eq!(albums[2].items.iter().map(|item| item.id).collect::<Vec<_>>(), vec![2, 1]);
+        let media = read_media(&conn).unwrap();
+        assert_eq!(serde_json::to_value(&albums[1].items[0]).unwrap(), serde_json::to_value(&media[0]).unwrap());
+        assert_eq!(serde_json::to_value(&albums[2].items[1]).unwrap(), serde_json::to_value(&media[0]).unwrap());
+        assert_eq!(albums[1].items[0].comment, "current caption");
+        assert_eq!(albums[1].items[0].view_count, 9);
+        assert!(albums[1].items[0].favorite);
+    }
+
+    #[test]
     fn grouped_export_copies_files_and_keeps_duplicate_names() {
         let nonce = std::time::SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -686,6 +710,24 @@ fn register_file(conn: &Connection, path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+fn media_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MediaItemDto> {
+    Ok(MediaItemDto {
+        id: row.get(0)?,
+        file_path: row.get(1)?,
+        file_type: row.get(2)?,
+        taken_at: row.get(3)?,
+        width: row.get(4)?,
+        height: row.get(5)?,
+        duration: row.get(6)?,
+        size_bytes: row.get(7)?,
+        rating: row.get(8)?,
+        comment: row.get(9)?,
+        favorite: row.get::<_, i64>(10)? == 1,
+        metadata_status: row.get(11)?,
+        view_count: row.get(12)?,
+    })
+}
+
 fn read_media(conn: &Connection) -> Result<Vec<MediaItemDto>, String> {
     let mut stmt = conn
         .prepare(
@@ -696,23 +738,7 @@ fn read_media(conn: &Connection) -> Result<Vec<MediaItemDto>, String> {
         .map_err(|error| format!("목록을 준비할 수 없습니다: {error}"))?;
 
     let rows = stmt
-        .query_map([], |row| {
-            Ok(MediaItemDto {
-                id: row.get(0)?,
-                file_path: row.get(1)?,
-                file_type: row.get(2)?,
-                taken_at: row.get(3)?,
-                width: row.get(4)?,
-                height: row.get(5)?,
-                duration: row.get(6)?,
-                size_bytes: row.get(7)?,
-                rating: row.get(8)?,
-                comment: row.get(9)?,
-                favorite: row.get::<_, i64>(10)? == 1,
-                metadata_status: row.get(11)?,
-                view_count: row.get(12)?,
-            })
-        })
+        .query_map([], media_from_row)
         .map_err(|error| format!("목록을 읽을 수 없습니다: {error}"))?;
 
     rows.collect::<Result<Vec<_>, _>>()
@@ -730,68 +756,48 @@ fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
 
     let album_rows = stmt
         .query_map([], |row| {
-            Ok((
-                row.get::<_, i64>(0)?,
-                row.get::<_, String>(1)?,
-                row.get::<_, String>(2)?,
-                row.get::<_, String>(3)?,
-                row.get::<_, String>(4)?,
-            ))
+            Ok(AlbumDto {
+                id: row.get(0)?,
+                title: row.get(1)?,
+                description: row.get(2)?,
+                cover_color: row.get(3)?,
+                created_at: row.get(4)?,
+                items: Vec::new(),
+            })
         })
         .map_err(|error| format!("앨범 목록을 읽을 수 없습니다: {error}"))?;
 
-    let albums = album_rows
+    let mut albums = album_rows
         .collect::<Result<Vec<_>, _>>()
         .map_err(|error| format!("앨범 목록을 변환할 수 없습니다: {error}"))?;
 
-    let mut result = Vec::new();
-    for (id, title, description, cover_color, created_at) in albums {
-        result.push(AlbumDto {
-            id,
-            title,
-            description,
-            cover_color,
-            created_at,
-            items: read_album_media(conn, id)?,
-        });
+    if albums.is_empty() {
+        return Ok(albums);
     }
-
-    Ok(result)
-}
-
-fn read_album_media(conn: &Connection, album_id: i64) -> Result<Vec<MediaItemDto>, String> {
+    let positions: HashMap<_, _> = albums.iter().enumerate().map(|(index, album)| (album.id, index)).collect();
+    // Load all memberships once instead of issuing one photo query per album.
     let mut stmt = conn
         .prepare(
-            "SELECT m.id, m.file_path, m.file_type, m.taken_at, m.width, m.height, m.duration, m.size_bytes, m.rating, m.comment, m.favorite, m.metadata_status, m.view_count
+            "SELECT m.id, m.file_path, m.file_type, m.taken_at, m.width, m.height, m.duration, m.size_bytes, m.rating, m.comment, m.favorite, m.metadata_status, m.view_count, ai.album_id
              FROM album_item ai
              JOIN media m ON m.id = ai.media_id
-             WHERE ai.album_id = ?1
-             ORDER BY ai.sequence ASC",
+             ORDER BY ai.album_id, ai.sequence ASC",
         )
         .map_err(|error| format!("앨범 항목을 준비할 수 없습니다: {error}"))?;
 
     let rows = stmt
-        .query_map(params![album_id], |row| {
-            Ok(MediaItemDto {
-                id: row.get(0)?,
-                file_path: row.get(1)?,
-                file_type: row.get(2)?,
-                taken_at: row.get(3)?,
-                width: row.get(4)?,
-                height: row.get(5)?,
-                duration: row.get(6)?,
-                size_bytes: row.get(7)?,
-                rating: row.get(8)?,
-                comment: row.get(9)?,
-                favorite: row.get::<_, i64>(10)? == 1,
-                metadata_status: row.get(11)?,
-                view_count: row.get(12)?,
-            })
+        .query_map([], |row| {
+            Ok((row.get::<_, i64>(13)?, media_from_row(row)?))
         })
         .map_err(|error| format!("앨범 항목을 읽을 수 없습니다: {error}"))?;
 
-    rows.collect::<Result<Vec<_>, _>>()
-        .map_err(|error| format!("앨범 항목을 변환할 수 없습니다: {error}"))
+    for row in rows {
+        let (album_id, item) = row.map_err(|error| format!("앨범 항목을 변환할 수 없습니다: {error}"))?;
+        if let Some(&position) = positions.get(&album_id) {
+            albums[position].items.push(item);
+        }
+    }
+    Ok(albums)
 }
 
 fn is_supported_file(path: &Path) -> bool {
@@ -897,9 +903,13 @@ pub fn run() {
                     }
                 }
             }
-            let mut window_config = app.config().app.windows[0].clone();
+            let window_config = app.config().app.windows[0].clone();
             #[cfg(feature = "custom-protocol")]
-            { window_config.url = tauri::WebviewUrl::External(localhost::ORIGIN.parse()?); }
+            let window_config = {
+                let mut config = window_config;
+                config.url = tauri::WebviewUrl::External(localhost::ORIGIN.parse()?);
+                config
+            };
             // Native storage/dialog commands are available only to this app's origin.
             #[cfg(feature = "custom-protocol")]
             localhost::trace("creating main webview");

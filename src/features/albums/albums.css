@@ -90,7 +90,6 @@
 .albumJournalHeading span { display: block; margin-top: 6px; color: #777970; font-size: 13px; }
 .albumJournalTools { justify-self: end; display: flex; align-items: center; gap: 14px; }
 .albumJournalTools button { min-height: 42px; padding: 0 9px; display: inline-flex; align-items: center; gap: 8px; border-radius: 4px; font-size: 14px; }
-.albumJournalTools .albumJournalMore { width: 42px; padding: 0; justify-content: center; }
 
 .albumJournalCanvas {
   min-height: 0;
@@ -99,7 +98,7 @@
   padding: 8px 48px 20px;
 }
 .albumBookStage {
-  --spread-ratio: 2.4;
+  --spread-ratio: 2.2;
   position: relative;
   width: min(100%, calc((100dvh - var(--app-header-height, 70px) - 174px) * var(--spread-ratio)));
   aspect-ratio: var(--spread-ratio);
@@ -145,22 +144,19 @@
   bottom: 15%;
   width: 44.7%;
   min-width: 0;
-  padding: 3.2% 3.4% 2.6%;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-  align-items: stretch;
-  gap: 1.3%;
+  padding: 1.5% 3.4% 2%;
   overflow: visible;
   border: 0;
   background: transparent;
 }
 .albumPaper.left { left: 4.2%; }
 .albumPaper.right { right: 4.2%; }
-.albumPagePhoto { position: relative; z-index: 2; width: 100%; height: 100%; min-height: 0; padding: 0; overflow: hidden; border: 0; border-radius: 0; background: #e5e4de; box-shadow: none; transition: filter .16s ease, box-shadow .16s ease; }
-.albumPagePhoto > div { width: 100%; height: 100%; overflow: hidden; }
+.albumPagePhoto { position: relative; z-index: 2; display: block; width: 100%; height: auto; aspect-ratio: var(--photo-ratio); min-height: 0; padding: 0; overflow: hidden; border: 0; border-radius: 0; background: #e5e4de; box-shadow: none; transition: filter .16s ease, box-shadow .16s ease; }
+.albumPagePhoto > div { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }
 .albumPagePhoto .mediaImage { object-fit: contain; object-position: center; }
 .albumPagePhoto:has(.mediaImage), .albumPagePhoto:has(.mediaImage) > div { background: transparent !important; }
 .albumPagePhoto:hover .mediaImage { filter: brightness(.97); }
+.albumPagePhoto:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 .albumPageNumber { position: absolute; bottom: 1%; color: #85847d; font-size: 11px; font-variant-numeric: tabular-nums; }
 .albumPaper.left .albumPageNumber { left: 6%; }
 .albumPaper.right .albumPageNumber { right: 6%; }
@@ -171,10 +167,10 @@
 @keyframes journalTurnPrev { 0% { opacity: 1; transform: rotateY(0); } 50% { box-shadow: 24px 0 34px #29271f42; } 100% { opacity: 0; transform: rotateY(180deg); } }
 @keyframes journalPhotoClear { to { opacity: 0; } }
 @keyframes journalPhotoReveal { from { opacity: 0; } to { opacity: 1; } }
-.albumSpread.departing-next .albumPagePhoto[data-side="right"], .albumSpread.departing-prev .albumPagePhoto[data-side="left"] { opacity: 0; }
-.albumSpread.departing-next .albumPagePhoto[data-side="left"], .albumSpread.departing-prev .albumPagePhoto[data-side="right"] { animation: journalPhotoClear .01s .1s forwards; }
-.albumSpread.arriving-next .albumPagePhoto[data-side="right"], .albumSpread.arriving-prev .albumPagePhoto[data-side="left"] { animation: journalPhotoReveal .12s .02s ease-out both; }
-.albumSpread.arriving-next .albumPagePhoto[data-side="left"], .albumSpread.arriving-prev .albumPagePhoto[data-side="right"] { animation: journalPhotoReveal .12s .11s ease-out both; }
+.albumSpread.departing-next .albumPhotoEntry[data-side="right"], .albumSpread.departing-prev .albumPhotoEntry[data-side="left"] { opacity: 0; }
+.albumSpread.departing-next .albumPhotoEntry[data-side="left"], .albumSpread.departing-prev .albumPhotoEntry[data-side="right"] { animation: journalPhotoClear .01s .1s forwards; }
+.albumSpread.arriving-next .albumPhotoEntry[data-side="right"], .albumSpread.arriving-prev .albumPhotoEntry[data-side="left"] { animation: journalPhotoReveal .12s .02s ease-out both; }
+.albumSpread.arriving-next .albumPhotoEntry[data-side="left"], .albumSpread.arriving-prev .albumPhotoEntry[data-side="right"] { animation: journalPhotoReveal .12s .11s ease-out both; }
 
 .albumJournalPager { display: grid; place-items: center; align-content: center; gap: 12px; }
 .albumPagerActions { display: flex; align-items: center; justify-content: center; gap: 26px; }
@@ -197,20 +193,27 @@
   .albumEdgeNav { width: 34px; }
   .albumEdgeNav svg { width: 26px; }
   .albumBookStage { width: min(100%, calc((100dvh - var(--app-header-height, 70px) - 156px) * var(--spread-ratio))); }
-  .albumPaper { padding: 3.2% 3.4% 5%; gap: 4%; }
+  .albumPaper { padding: 1.5% 2.2% 4%; }
   .albumProgress { width: min(300px, 70vw); }
 }
 
-.albumPageImages { min-height: 0; display: grid; grid-template-rows: minmax(0, 1.65fr) minmax(0, 1fr); gap: 2.8%; }
-.albumPaper.right .albumPageImages { grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr); }
-.albumPaper.single-photo .albumPageImages { grid-template-rows: minmax(0, 1fr); }
-.albumPaper.portrait-photo .albumPageImages { display: flex; justify-content: center; }
-.albumPaper.portrait-photo .albumPagePhoto { flex: none; width: auto; max-width: 100%; aspect-ratio: var(--photo-ratio); background: transparent; }
-.albumPaper.portrait-photo .mediaImage { object-fit: contain; object-position: center; }
-.albumPageCaption { min-height: 2.6cqw; color: #787a70; font-size: clamp(9px, .96cqw, 13px); line-height: 1.45; }
-.albumPageCaption p { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; margin: 0; overflow: hidden; overflow-wrap: anywhere; }
-.albumPageCaption time { display: block; font-size: .95em; }
-.albumPageNumber { bottom: 1.4%; font-size: clamp(8px, .82cqw, 11px); }
+.albumPageImages {
+  --caption-line: 20px;
+  --caption-gap: 6px;
+  --photo-gap: 16px;
+  width: 100%; height: 100%; min-height: 0;
+  container-type: size;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--photo-gap);
+}
+.albumPhotoEntry {
+  /* Equal print widths, fitted by the sum of the original heights plus each caption. */
+  width: min(100cqw, max(0px, calc((100cqh - var(--caption-line) * var(--caption-lines-total) - var(--caption-gap) * var(--caption-count) - var(--photo-gap) * var(--photo-gap-count)) / var(--page-height-factor))));
+  flex: none; min-width: 0; margin: 0;
+}
+.albumPageCaption { position: relative; left: 50%; transform: translateX(-50%); width: max-content; min-width: 100%; max-width: 100cqw; margin-top: var(--caption-gap); color: #393c36; font-size: 13px; line-height: var(--caption-line); text-align: center; }
+.albumPageCaption p { height: var(--caption-line); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.albumPageCaption time { display: block; height: var(--caption-line); overflow: hidden; text-overflow: ellipsis; color: #858680; font-size: 12px; white-space: nowrap; }
+.albumPageNumber { bottom: 1.4%; font-size: 11px; }
 .albumJournalTools .actionMenuPanel button { width: 100%; justify-content: flex-start; min-height: 34px; font-size: 12px; }
 .albumReaderNotice { position: absolute; z-index: 3; top: 76px; left: 50%; transform: translateX(-50%); padding: 10px 16px; border: 1px solid var(--border); border-radius: 5px; color: var(--muted); background: var(--surface); font-size: 12px; }
 .albumJournal.is-list { grid-template-rows: 76px minmax(0, 1fr); }
@@ -230,9 +233,9 @@
   .albumJournalTools button > span { display: none; }
   .albumJournalTools .actionMenuPanel button { width: 100%; }
   .albumJournal.is-list { grid-template-rows: 72px minmax(0, 1fr); }
-  .albumPaper { padding-bottom: 3.5%; gap: 1%; }
-  .albumPageCaption { min-height: 3cqw; font-size: 8px; }
-  .albumPageCaption p { display: none; }
+  .albumPageImages { --caption-line: 12px; --caption-gap: 3px; --photo-gap: 8px; }
+  .albumPageCaption, .albumPageCaption time { font-size: 9px; }
+  .albumPageNumber { bottom: 0; font-size: 9px; }
   .albumPhotoList { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 520px) { .savedAlbumGrid { grid-template-columns: minmax(0, 1fr); gap: 24px; } .savedAlbumOpen { padding: 0; } .frontAlbum { width: min(100%, 330px); } }

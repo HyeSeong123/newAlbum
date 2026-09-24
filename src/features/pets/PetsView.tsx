@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, LoaderCircle, PawPrint, Pencil, Plus, Trash2, X } from 'lucide-react';
 import type { MediaItem } from '../../types/media';
 import { MediaVisual } from '../../components/MediaVisual';
@@ -9,6 +9,7 @@ import { deletePet, loadPets, Pet, savePet } from './petService';
 import './pets.css';
 import { PetMatchReview } from './PetMatchReview';
 import { ScanSearch } from 'lucide-react';
+import { petCovers, petPhotos } from './petModel';
 
 export function PetsView({ items, onOpen, query = "" }: { items: MediaItem[]; query?: string; onOpen: (item: MediaItem, collection?: MediaItem[]) => void }) {
   const [pets, setPets] = useState<Pet[]>([]);
@@ -20,11 +21,13 @@ export function PetsView({ items, onOpen, query = "" }: { items: MediaItem[]; qu
   const [page, setPage] = useState(0);
   const [reviewing, setReviewing] = useState(false);
   const desktop = isTauriRuntime();
-  const photos = items.filter((item) => item.fileType === 'image');
+  const photos = useMemo(() => items.filter((item) => item.fileType === 'image'), [items]);
+  const covers = useMemo(() => petCovers(photos, pets), [photos, pets]);
   const pet = pets.find((entry) => entry.id === active);
-  const matchingPets = pets.filter((entry) => entry.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
+  const search = query.trim().toLocaleLowerCase();
+  const matchingPets = useMemo(() => pets.filter((entry) => entry.name.toLocaleLowerCase().includes(search)), [pets, search]);
   useEffect(() => { setPage(0); setActive(null); }, [query]);
-  const linked = pet ? photos.filter((item) => pet.media_ids.includes(Number(item.id))) : [];
+  const linked = useMemo(() => petPhotos(photos, pet), [photos, pet]);
   const pages = Math.max(1, Math.ceil((pet ? linked.length : matchingPets.length) / 24));
   const currentPage = Math.min(page, pages - 1);
   useEffect(() => {
@@ -57,7 +60,7 @@ export function PetsView({ items, onOpen, query = "" }: { items: MediaItem[]; qu
     {error && <p role="alert">{error}</p>}
     {!loading && !(pet ? linked.length : matchingPets.length) && <div className="emptyState"><PawPrint size={30} /><p>{pet ? '아직 연결한 사진이 없습니다.' : query ? '검색한 이름의 반려동물이 없습니다.' : '아직 등록한 반려동물이 없습니다.'}</p></div>}
     <div className="petGrid">{pet ? linked.slice(currentPage * 24, (currentPage + 1) * 24).map((item) => <button key={item.id} className="petPhoto" aria-label="사진 상세보기" onClick={() => onOpen(item, linked)}><MediaVisual item={item} /><span>{item.takenAt ?? '날짜 없음'}</span></button>) : matchingPets.slice(currentPage * 24, (currentPage + 1) * 24).map((entry) => {
-      const cover = photos.find((item) => Number(item.id) === entry.cover_media_id) ?? photos.find((item) => entry.media_ids.includes(Number(item.id)));
+      const cover = covers.get(entry.id);
       return <button className="petPhoto" key={entry.id} onClick={() => { setActive(entry.id); setPage(0); }}>
         {cover ? <MediaVisual item={cover} /> : <div className="petPlaceholder"><PawPrint size={48} /></div>}<strong>{entry.name}</strong><span>{entry.media_ids.length}장</span>
       </button>;

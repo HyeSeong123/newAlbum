@@ -23,7 +23,7 @@
 
 body { background: var(--bg); }
 * { letter-spacing: 0; }
-h1, h2, h3, .brand strong, .dateGroup h2, .detailHeader strong {
+h1, h2, h3, .brand strong, .detailHeader strong {
   font-family: "SUIT", "Segoe UI", system-ui, sans-serif;
   color: var(--text);
 }
@@ -41,15 +41,12 @@ button:disabled { opacity: .45; }
   gap: 44px; border: 0; background: var(--nav-bg); backdrop-filter: none; color: var(--nav-ink);
 }
 .brand { gap: 10px; padding: 0 12px; }
-.brandMark { width: 32px; height: 32px; flex-shrink: 0; background: transparent; color: var(--nav-ink); border-radius: 0; box-shadow: none; }
 .brand strong { font-size: 24px; font-weight: 800; color: var(--nav-ink); white-space: nowrap; }
 .navList { gap: 6px; }
 .navList button { min-height: 44px; border-radius: 6px; padding: 0 14px; color: #a9abb3; font-weight: 600; gap: 12px; }
 .navList button:hover { color: #fff; background: #24262b; }
 .navList button.active { background: var(--nav-surface); color: #fff; box-shadow: inset 3px 0 #82b9ff; }
 .navList button:last-child { margin-top: 20px; border-top: 1px solid #34363b; border-radius: 0; padding-top: 8px; }
-.memoryNote { border: 0; border-top: 1px solid #34363b; padding: 20px 12px 0; background: transparent; border-radius: 0; box-shadow: none; }
-.memoryNote strong { font-size: 13px; font-weight: 500; color: #a9abb3; }
 .workspace { padding: 32px 36px 40px; min-width: 0; }
 .topbar { min-height: 44px; margin-bottom: 24px; align-items: center; flex-direction: row; }
 .searchBox { width: 300px; height: 40px; min-height: 40px; padding: 0 12px; background: #f0f1f3; border: 1px solid transparent; border-radius: 6px; box-shadow: none; }
@@ -106,15 +103,14 @@ button:disabled { opacity: .45; }
 .dayNoteBadge { color: #176c47 !important; background: #e8f5ed !important; }
 .recordedDayGrid button { border-radius: 6px; box-shadow: none; background: #fff; }
 .modalBackdrop { background: #10121699; backdrop-filter: blur(8px); padding: 24px; }
-.detailModal, .dayModal, .eventModal, .albumEditor { border: 1px solid #dedfe3; border-radius: 8px; box-shadow: var(--shadow-strong); }
-.detailHeader, .dayModalHeader, .eventModalHeader { background: #fff; border-color: var(--border); padding: 16px 20px; }
+.detailModal, .eventModal, .albumEditor { border: 1px solid #dedfe3; border-radius: 8px; box-shadow: var(--shadow-strong); }
+.detailHeader, .eventModalHeader { background: #fff; border-color: var(--border); padding: 16px 20px; }
 .detailHeader strong { font-size: 17px; font-weight: 750; }
 .closeButton { color: #fff !important; background: #292b30 !important; border-color: #292b30 !important; box-shadow: none; border-radius: 6px; }
 .closeButton:hover { background: #454851 !important; border-color: #454851 !important; }
 .detailPhotoPane, .detailStage, .detailStage .mediaImage { background: #17181b; }
 .detailStage { border-radius: 0; border: 0; box-shadow: none; }
 .detailBody { padding: 24px; }
-.viewerMeta h3 { font-size: 20px; font-weight: 700; }
 .rating button { border-radius: 6px; background: #f2f3f5; color: #946916; }
 .rating button:hover { background: #fff0cb; }
 .photoNavButton { display: grid; place-items: center; border-radius: 50%; background: #202228c9; box-shadow: none; }
@@ -122,7 +118,6 @@ button:disabled { opacity: .45; }
 .commentItem { background: #f6f7f9; border: 0; border-radius: 6px; padding: 14px; }
 .commentForm button { border-radius: 6px; background: var(--secondary); }
 .commentForm input:focus, .commentForm textarea:focus { outline-color: #0066cc55; }
-.daySchedule { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .eventItem { border-radius: 6px; background: #f6f7f9; }
 .eventIcon { background: #e8effc; color: #2860af; border-radius: 6px; }
 .eventItem.birthday .eventIcon { background: #fff0f2; color: #b03162; }
@@ -130,8 +125,6 @@ button:disabled { opacity: .45; }
 .eventItem.memorial .eventIcon { background: #e9efed; color: #425e52; }
 .scheduleForm .ddayCheck { border: 0; background: #f3f4f6; border-radius: 6px; }
 .scheduleForm button[type="submit"] { border-radius: 6px; background: var(--secondary); }
-.dayMainPhoto { background: #17181b; border-radius: 4px; }
-.dayPhotoList button { border-radius: 4px; }
 .albumSelectionMark, .faceCheck { box-shadow: none; }
 .albumActions button[type="submit"] { background: var(--secondary); }
 .peopleView { gap: 24px; }
@@ -146,7 +139,6 @@ button:disabled { opacity: .45; }
 .settingsPanel { max-width: 780px; }
 .settingsPanel > label { background: transparent; border-radius: 0; border-bottom: 1px solid var(--border); }
 .memoryGrid button { border-radius: 4px; box-shadow: none; }
-.dateGroup h2 { font-size: 20px; }
 @media (min-width: 1700px) { .galleryGrid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
 @media (max-width: 1150px) {
   .app { grid-template-columns: 184px minmax(0, 1fr); }
@@ -166,7 +158,6 @@ button:disabled { opacity: .45; }
   .navList button { flex: 0 0 auto; min-height: 44px; padding: 0 12px; gap: 7px; font-size: 13px; }
   .navList button:last-child { margin: 0; border: 0; padding: 0 12px; border-radius: 6px; }
   .navList button.active { box-shadow: none; background: #35373e; }
-  .memoryNote { display: none; }
   .workspace { padding: 24px 20px 32px; }
   .topbar { margin-bottom: 20px; }
   h1 { font-size: 26px; }
@@ -177,7 +168,7 @@ button:disabled { opacity: .45; }
   .modalBackdrop { padding: 12px; }
   .detailPhotoPane { padding: 12px; }
   .detailStage { min-height: 320px; }
-  .detailModal, .dayModal { width: 100%; max-height: calc(100dvh - 24px); }
+  .detailModal { width: 100%; max-height: calc(100dvh - 24px); }
 }
 @media (max-width: 520px) {
   .topbar { flex-wrap: wrap; gap: 12px; text-align: left; }
@@ -234,7 +225,6 @@ button:disabled { opacity: .45; }
 .sidebar .navList button svg { width: 20px; height: 20px; }
 .sidebar .navList button.active { box-shadow: none; background: #34363d; }
 .sidebar .navList button:last-child { margin: 0; padding: 0 14px; border: 0; border-radius: 6px; }
-.sidebar .memoryNote { margin: 0 0 0 auto; padding: 0; border: 0; white-space: nowrap; }
 .workspace { padding: 28px 32px 40px; }
 .topbar { padding-bottom: 24px; margin-bottom: 24px; border-bottom: 1px solid var(--border); gap: 24px; }
 .topbar > div:first-child { display: flex; align-items: baseline; gap: 14px; }
@@ -274,10 +264,7 @@ button:disabled { opacity: .45; }
 .photoLightbox .detailPhotoPane { padding: 12px 56px; min-height: 0; }
 .photoLightbox .detailStage { min-height: 0; height: 100%; }
 .photoLightbox .detailBody { padding: 0; max-height: 38dvh; overflow-y: auto; background: #fff; }
-.detailInfoStrip { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 10px 32px; border-bottom: 1px solid var(--border); }
-.photoLightbox .viewerMeta { margin: 0; display: flex; flex-wrap: wrap; gap: 8px 24px; }
 .detailFileName { flex-basis: 100%; min-width: 0; overflow-wrap: anywhere; font-size: 14px; font-weight: 600; }
-.detailInfoStrip .detailSection { margin: 0; display: flex; align-items: center; gap: 12px; }
 .photoLightbox .rating { gap: 2px; }
 .photoLightbox .rating button { width: 34px; min-height: 34px; background: transparent; }
 .photoLightbox .commentBox { margin: 0; padding: 16px 32px 20px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 12px 32px; }
@@ -304,7 +291,6 @@ button:disabled { opacity: .45; }
 @media (max-width: 1100px) {
   .sidebar { gap: 24px; padding: 0 24px; }
   .sidebar .navList button { padding: 0 10px; }
-  .sidebar .memoryNote { display: none; }
   .topbar .searchBox { width: 220px; }
   .topbar > div:first-child { display: block; }
   .photoLightbox .commentForm { grid-template-columns: 100px minmax(0, 1fr); }
@@ -336,8 +322,6 @@ button:disabled { opacity: .45; }
   .photoLightbox .detailHeader button { width: 36px; min-height: 38px; }
   .photoLightbox .detailPhotoPane { padding: 8px; }
   .photoLightbox .detailBody { max-height: 48dvh; }
-  .detailInfoStrip { padding: 8px 16px; gap: 8px; flex-wrap: wrap; }
-  .photoLightbox .viewerMeta { gap: 6px 12px; }
   .photoLightbox .commentBox { padding: 12px 16px 16px; grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .photoLightbox .commentForm { grid-template-columns: 90px minmax(0, 1fr) auto; gap: 8px; }
   .photoLightbox .commentForm input, .photoLightbox .commentForm textarea { min-height: 52px; height: 52px; padding: 8px; }
@@ -370,7 +354,7 @@ button:disabled { opacity: .45; }
 .personDetailContent .personMediaGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 10px; }
 .personDetailShell:not(.overview) .personDetailContent .personOriginal { aspect-ratio: 4 / 3; border-radius: 2px; }
 .personDetailShell:not(.overview) .personOriginal .mediaImage { object-position: center 20%; }
-.view-people .importActions, .view-albums .folderImport { display: none; }
+.view-people .importActions { display: none; }
 
 @media (max-width: 820px) {
   .personDetailShell { display: block; }
@@ -548,8 +532,6 @@ h3 { font-size: 15px; }
 .photoLightbox .photoNavButton { color: #676c5f; background: #f8f7f3c9; }
 .photoLightbox .photoNavButton:hover { color: var(--text); background: var(--surface-soft); }
 .photoLightbox .detailBody { max-height: 34dvh; background: var(--bg); border-top: 1px solid var(--border); }
-.detailInfoStrip { padding: 10px 5vw; }
-.photoLightbox .viewerMeta { color: var(--muted); font-size: 12px; gap: 6px 16px; }
 .photoLightbox .commentBox { padding-inline: 5vw; background: var(--surface); }
 .photoLightbox .rating button { color: #8a805a; }
 .modalBackdrop { z-index: 110; }
@@ -623,7 +605,6 @@ h3 { font-size: 15px; }
   .photoLightbox .detailHeader button span, .photoLightbox .detailDateTitle { display: none; }
   .photoLightbox .detailHeader .detailBack { min-width: 34px; margin-right: auto; }
   .photoLightbox .detailPhotoPane { padding: 12px; }
-  .detailInfoStrip { gap: 12px; padding: 12px 18px; flex-wrap: wrap; }
   .photoLightbox .commentBox { padding: 16px 18px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0s !important; animation-duration: 0s !important; } }

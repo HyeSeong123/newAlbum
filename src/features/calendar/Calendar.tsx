@@ -1,30 +1,18 @@
+import {
+  type DayNotes, type CalendarEventKind, type CalendarEvent, type CalendarEvents,
+  DAY_NOTE_STORAGE_KEY, DAY_COVER_STORAGE_KEY,
+  loadDayNotes, loadStringMap, saveStringMap, loadCalendarEvents, saveCalendarEvents,
+  formatDateKo, localDateKey, formatMediaCount, formatDday,
+  calendarYears, monthCells, indexCalendarEvents, eventsOnDate,
+} from "./calendarModel";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Cake, CalendarDays, CalendarCheck, ChevronLeft, ChevronRight, Flower, Gift, Image, Music, Play, Plus, Trash2, X } from "lucide-react";
 import type { MediaItem } from "../../types/media";
 import { MediaVisual, MediaImage, EmptyState } from "../../components/MediaVisual";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
-
-type DayNotes = Record<string, string>;
+import { journalMonths } from "../media/journalModel";
 
 type CalendarViewMode = "month" | "recorded";
-
-type CalendarEventKind = "birthday" | "anniversary" | "memorial" | "appointment";
-
-type CalendarEvent = {
-  id: string;
-  date: string;
-  title: string;
-  kind: CalendarEventKind;
-  showDday: boolean;
-  yearly?: boolean;
-};
-
-type CalendarEvents = Record<string, CalendarEvent[]>;
-
-const DAY_NOTE_STORAGE_KEY = "oraedameun.dayNotes";
-const DAY_COVER_STORAGE_KEY = "oraedameun.dayCovers";
-
-const CALENDAR_EVENT_STORAGE_KEY = "oraedameun.calendarEvents";
 
 const MONTH_LABELS = Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, "0"));
 
@@ -36,16 +24,9 @@ const calendarEventMeta: Record<CalendarEventKind, { label: string; icon: typeof
 };
 
 export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; onOpen: (item: MediaItem) => void; initialMonth?: string }) {
-  const availableMonths = useMemo(() => {
-    return Array.from(new Set(items.flatMap((item) => (item.takenAt ? [item.takenAt.slice(0, 7)] : [])))).sort().reverse();
-  }, [items]);
-  const monthCalendarYears = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    const mediaYears = items.flatMap((item) => (item.takenAt ? [Number(item.takenAt.slice(0, 4))] : []));
-    const minYear = Math.min(1900, currentYear - 20, ...mediaYears);
-    const maxYear = Math.max(currentYear + 10, ...mediaYears);
-    return Array.from({ length: maxYear - minYear + 1 }, (_, index) => String(maxYear - index));
-  }, [items]);
+  const availableMonths = useMemo(() => journalMonths(items), [items]);
+  const currentYear = new Date().getFullYear();
+  const monthCalendarYears = useMemo(() => calendarYears(items, currentYear), [items, currentYear]);
   const recordedYears = useMemo(() => {
     return Array.from(new Set(availableMonths.map((monthLabel) => monthLabel.slice(0, 4)))).sort().reverse();
   }, [availableMonths]);
@@ -56,17 +37,12 @@ export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; 
   const [dayNotes, setDayNotes] = useState<DayNotes>(() => loadDayNotes());
   const [dayCovers, setDayCovers] = useState<Record<string, string>>(() => loadStringMap(DAY_COVER_STORAGE_KEY));
   const [dayEvents, setDayEvents] = useState<CalendarEvents>(() => loadCalendarEvents());
+  const eventIndex = useMemo(() => indexCalendarEvents(dayEvents), [dayEvents]);
   const [calendarViewMode, setCalendarViewMode] = useState<CalendarViewMode>("month");
   const [selectedYear, selectedMonth] = visibleMonth.split("-");
   const year = Number(selectedYear);
   const month = Number(selectedMonth);
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const firstDay = new Date(year, month - 1, 1).getDay();
-  const calendarCells = [
-    ...Array.from({ length: firstDay }, (_, index) => ({ kind: "blank" as const, id: `blank-${index}` })),
-    ...Array.from({ length: daysInMonth }, (_, index) => ({ kind: "day" as const, day: index + 1, id: `day-${index + 1}` })),
-    ...Array.from({ length: (7 - (firstDay + daysInMonth) % 7) % 7 }, (_, index) => ({ kind: "blank" as const, id: `end-${index}` })),
-  ];
+  const calendarCells = useMemo(() => monthCells(year, month), [year, month]);
   const yearOptions = calendarViewMode === "recorded" && recordedYears.length ? recordedYears : monthCalendarYears;
   const monthOptions = calendarViewMode === "recorded"
     ? availableMonths.filter((monthLabel) => monthLabel.startsWith(`${selectedYear}-`)).map((monthLabel) => monthLabel.slice(5, 7))
@@ -82,9 +58,7 @@ export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; 
     return grouped;
   }, [items]);
   const selectedDayItems = selectedDate ? itemsByDate.get(selectedDate) ?? [] : [];
-  const recordedDates = useMemo(() => {
-    return Array.from(new Set(items.flatMap((item) => (item.takenAt ? [item.takenAt] : [])))).sort().reverse();
-  }, [items]);
+  const recordedDates = useMemo(() => [...itemsByDate.keys()].sort().reverse(), [itemsByDate]);
   const visibleRecordedDates = recordedDates.filter((date) => date.startsWith(visibleMonth));
 
   useEffect(() => {
@@ -236,13 +210,13 @@ export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; 
           {["일", "월", "화", "수", "목", "금", "토"].map((label, index) => (
             <span className={`weekday ${index === 0 ? "sunday" : index === 6 ? "saturday" : ""}`} key={label}>{label}</span>
           ))}
-          {calendarCells.map((cell) => {
+          {calendarCells.map((cell, cellIndex) => {
             if (cell.kind === "blank") return <span className="emptyDay" key={cell.id} />;
             const date = `${visibleMonth}-${String(cell.day).padStart(2, "0")}`;
             const matches = itemsByDate.get(date) ?? [];
             const cover = matches.find((item) => item.id === dayCovers[date]) ?? matches[0];
-            const events = eventsOnDate(dayEvents, date);
-            const weekday = (firstDay + cell.day - 1) % 7;
+            const events = eventsOnDate(eventIndex, date);
+            const weekday = cellIndex % 7;
             return (
               <button
                 key={cell.id}
@@ -307,7 +281,7 @@ export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; 
           date={selectedDate}
           note={dayNotes[selectedDate] ?? ""}
           items={selectedDayItems}
-          events={eventsOnDate(dayEvents, selectedDate)}
+          events={eventsOnDate(eventIndex, selectedDate)}
           onNoteChange={(note) => updateDayNote(selectedDate, note)}
           coverId={dayCovers[selectedDate] ?? ""}
           onCoverChange={(itemId) => updateDayCover(selectedDate, itemId)}
@@ -610,78 +584,4 @@ function CalendarEventModal({
       </section>
     </div>
   );
-}
-
-export function loadDayNotes(): DayNotes {
-  return loadStringMap(DAY_NOTE_STORAGE_KEY);
-}
-
-function loadStringMap(key: string): Record<string, string> {
-  try {
-    const value: unknown = JSON.parse(window.localStorage.getItem(key) ?? "{}");
-    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-    return Object.fromEntries(Object.entries(value).filter(([, entry]) => typeof entry === "string"));
-  } catch {
-    return {};
-  }
-}
-
-function saveStringMap(key: string, values: Record<string, string>): boolean {
-  try {
-    window.localStorage.setItem(key, JSON.stringify(values));
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function eventsOnDate(events: CalendarEvents, date: string): CalendarEvent[] {
-  return Object.values(events).flat().filter((event) => event.yearly
-    ? event.date.slice(-5) === date.slice(5)
-    : event.date === date
-  ).map((event) => ({ ...event, date }));
-}
-
-function loadCalendarEvents(): CalendarEvents {
-  try {
-    const raw = window.localStorage.getItem(CALENDAR_EVENT_STORAGE_KEY);
-    return raw ? JSON.parse(raw) as CalendarEvents : {};
-  } catch {
-    return {};
-  }
-}
-
-function saveCalendarEvents(events: CalendarEvents) {
-  try {
-    window.localStorage.setItem(CALENDAR_EVENT_STORAGE_KEY, JSON.stringify(events));
-  } catch {
-    // 일정 저장 실패는 사진 보기 흐름을 막지 않는다.
-  }
-}
-
-function formatDateKo(date: string): string {
-  const [year, month, day] = date.split("-");
-  return `${year}년 ${Number(month)}월 ${Number(day)}일`;
-}
-
-function localDateKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
-
-function formatMediaCount(items: MediaItem[]): string {
-  const photos = items.filter((item) => item.fileType === "image").length;
-  const videos = items.filter((item) => item.fileType === "video").length;
-  const audio = items.length - photos - videos;
-  return [photos || !items.length ? `사진 ${photos}장` : "", videos ? `영상 ${videos}개` : "", audio ? `음성 ${audio}개` : ""].filter(Boolean).join(" · ");
-}
-
-function formatDday(date: string): string {
-  const today = new Date();
-  const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const [year, month, day] = date.split("-").map(Number);
-  const targetDate = new Date(year, month - 1, day);
-  const diffDays = Math.round((targetDate.getTime() - todayDate.getTime()) / 86400000);
-
-  if (diffDays === 0) return "D-day";
-  return diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
 }

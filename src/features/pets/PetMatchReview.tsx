@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronLeft, ChevronRight, LoaderCircle, Pause, Play, X } from 'lucide-react';
 import { convertFileSrc, invoke } from '@tauri-apps/api/core';
+import { normalizeLocalFilePath } from '../media/mediaSource';
 import { MediaVisual } from '../../components/MediaVisual';
 import { useModalBehavior } from '../../hooks/useModalBehavior';
 import type { MediaItem } from '../../types/media';
@@ -33,8 +34,7 @@ export function PetMatchReview({ pet, photos, onClose, onSaved }: { pet: Pet; ph
       const describe = async (item: MediaItem) => {
         const path = await invoke<string>('media_thumbnail', { id: Number(item.id) });
         if (!path) throw new Error('썸네일을 준비하지 못했습니다. 앱을 다시 실행해 주세요.');
-        const normalized = path.startsWith('\\\\?\\UNC\\') ? `\\\\${path.slice(8)}` : path.startsWith('\\\\?\\') ? path.slice(4) : path;
-        return describePets(convertFileSrc(normalized));
+        return describePets(convertFileSrc(normalizeLocalFilePath(path)));
       };
       const features: PetFeature[] = [];
       let done = 0, failed = 0, skipped = 0;

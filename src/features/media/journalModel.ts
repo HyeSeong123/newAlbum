@@ -56,28 +56,40 @@ export function arrangeJournalItems(items: MediaItem[]): MediaItem[] {
   return [items[featuredIndex], ...items.slice(0, featuredIndex), ...items.slice(featuredIndex + 1)];
 }
 
-export function makeAlbumPages<T>(items: T[], pageSize = 4): T[][] {
-  if (!Number.isInteger(pageSize) || pageSize < 1) throw new RangeError("pageSize must be a positive integer");
-  return Array.from({ length: Math.ceil(items.length / pageSize) }, (_, index) => items.slice(index * pageSize, (index + 1) * pageSize));
-}
-
 export function isPortraitMedia(item: MediaItem): boolean {
   const { width, height } = item;
   return item.fileType !== "audio" && typeof width === "number" && typeof height === "number"
     && Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > width;
 }
 
-export function makeAlbumSpreads(items: MediaItem[]): { left: MediaItem[]; right: MediaItem[] }[] {
-  const leaves: MediaItem[][] = [];
+export function albumPhotoRatio(item: MediaItem): number {
+  const { width, height } = item;
+  return item.fileType !== "audio" && typeof width === "number" && typeof height === "number"
+    && Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0
+    ? width / height : 3 / 2;
+}
+
+export function makeAlbumSpreads(items: MediaItem[], seed = 0): { left: MediaItem[]; right: MediaItem[] }[] {
+  const spreads: { left: MediaItem[]; right: MediaItem[] }[] = [];
+  let state = seed >>> 0;
   for (let index = 0; index < items.length;) {
-    const entries = [items[index++]];
-    // A portrait owns a leaf; only consecutive non-portraits share one.
-    if (!isPortraitMedia(entries[0]) && index < items.length && !isPortraitMedia(items[index])) {
-      entries.push(items[index++]);
+    const next = items.slice(index, index + 3);
+    const canPairLeft = next.length === 3 && !isPortraitMedia(next[0]) && !isPortraitMedia(next[1]);
+    const canPairRight = next.length === 3 && !isPortraitMedia(next[1]) && !isPortraitMedia(next[2]);
+    const maxCount = canPairLeft || canPairRight ? 3 : Math.min(2, next.length);
+    // Reuse the opening's seed so paging and metadata edits keep the same composition.
+    state = (Math.imul(1664525, state) + 1013904223) >>> 0;
+    const count = 1 + Math.floor((state / 0x100000000) * maxCount);
+    const entries = next.slice(0, count);
+    if (count === 3) {
+      const pairLeft = canPairLeft && (!canPairRight || spreads.length % 2 === 1);
+      spreads.push({ left: entries.slice(0, pairLeft ? 2 : 1), right: entries.slice(pairLeft ? 2 : 1) });
+    } else {
+      spreads.push({ left: entries.slice(0, 1), right: entries.slice(1) });
     }
-    leaves.push(entries);
+    index += count;
   }
-  return makeAlbumPages(leaves, 2).map(([left, right = []]) => ({ left, right }));
+  return spreads;
 }
 
 export function shuffleAlbumItems<T>(items: T[], random = Math.random): T[] {

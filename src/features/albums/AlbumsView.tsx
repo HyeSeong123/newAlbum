@@ -6,7 +6,7 @@ import { useModalBehavior } from "../../hooks/useModalBehavior";
 import { AlbumColorPicker, AlbumCover } from "./AlbumCover";
 import { ActionMenu } from "../../components/ActionMenu";
 import { ExportModal } from "../../components/ExportModal";
-import { isPortraitMedia, makeAlbumSpreads, mediaSummary, shuffleAlbumItems } from "../media/journalModel";
+import { albumPhotoRatio, isPortraitMedia, makeAlbumSpreads, mediaSummary, shuffleAlbumItems } from "../media/journalModel";
 import albumOpenBase from "../../assets/album-open-white-thin.png";
 
 export function SavedAlbumsView({
@@ -150,7 +150,8 @@ export function AlbumFullscreenReader({ title, items, color, open, onOpen, onClo
   const [pageIndex, setPageIndex] = useState(0);
   const [turning, setTurning] = useState<"next" | "prev" | null>(null);
   const [turnPhase, setTurnPhase] = useState<"departing" | "arriving" | null>(null);
-  const [listView, setListView] = useState(true);
+  const [listView, setListView] = useState(false);
+  const [layoutSeed] = useState(() => Math.floor(Math.random() * 0x100000000));
   const [fullscreen, setFullscreen] = useState(Boolean(document.fullscreenElement));
   const [notice, setNotice] = useState("");
   const timers = useRef<number[]>([]);
@@ -162,7 +163,7 @@ export function AlbumFullscreenReader({ title, items, color, open, onOpen, onClo
     const byId = new Map(items.map((item) => [item.id, item]));
     return order.flatMap((id) => byId.has(id) ? [byId.get(id)!] : []);
   }, [items, order]);
-  const pages = useMemo(() => makeAlbumSpreads(orderedItems), [orderedItems]);
+  const pages = useMemo(() => makeAlbumSpreads(orderedItems, layoutSeed), [orderedItems, layoutSeed]);
   const currentPage = Math.min(pageIndex, Math.max(0, pages.length - 1));
   const visibleSpread = pages[currentPage];
 
@@ -248,12 +249,15 @@ export function AlbumFullscreenReader({ title, items, color, open, onOpen, onClo
           {(["left", "right"] as const).map((side, sideIndex) => {
             const entries = visibleSpread?.[side] ?? [];
             const portrait = entries.length === 1 && isPortraitMedia(entries[0]);
-            const caption = entries.find((item) => item.comment.trim())?.comment;
-            const date = entries[0]?.takenAt;
+            const layout = {
+              "--page-height-factor": entries.reduce((sum, item) => sum + 1 / albumPhotoRatio(item), 0) || 1,
+              "--caption-lines-total": entries.reduce((sum, item) => sum + Number(Boolean(item.comment.trim())) + Number(Boolean(item.takenAt)), 0),
+              "--caption-count": entries.filter((item) => item.comment.trim() || item.takenAt).length,
+              "--photo-gap-count": Math.max(0, entries.length - 1),
+            } as CSSProperties;
             return <section key={side} className={`albumPaper ${side}${entries.length === 1 ? " single-photo" : ""}${portrait ? " portrait-photo" : ""}`}>
-              <div className="albumPageImages">{entries.map((item, index) => <AlbumPagePhoto key={item.id} item={item} index={sideIndex * 2 + index} side={side} onOpen={() => onOpen(item, orderedItems)} />)}</div>
-              <div className="albumPageCaption">{caption && <p>{caption}</p>}{date && <time dateTime={date}>{date.replaceAll("-", ".")}</time>}</div>
-              <span className="albumPageNumber">{currentPage * 2 + sideIndex + 1}</span>
+              <div className="albumPageImages" style={layout}>{entries.map((item, index) => <AlbumPagePhoto key={item.id} item={item} index={sideIndex * 2 + index} side={side} onOpen={() => onOpen(item, orderedItems)} />)}</div>
+              <span className="albumPageNumber">{String(currentPage * 2 + sideIndex + 1).padStart(2, "0")}</span>
             </section>;
           })}
           {turning && <span className={`albumTurningSheet ${turning}`} aria-hidden="true" />}
@@ -274,11 +278,19 @@ export function AlbumFullscreenReader({ title, items, color, open, onOpen, onClo
 }
 
 function AlbumPagePhoto({ item, index, side, onOpen }: { item: MediaItem; index: number; side: "left" | "right"; onOpen: () => void }) {
-  return <button data-slot={index} data-side={side} className="albumPagePhoto" style={isPortraitMedia(item) ? { "--photo-ratio": item.width! / item.height! } as CSSProperties : undefined} onClick={onOpen} aria-label={`${item.fileName} 상세보기`}>
-    <MediaVisual item={item} original>
-      {item.fileType === "video" && <span className="videoDuration"><Play size={12} fill="currentColor" />{item.duration || "영상"}</span>}
-      {item.fileType === "audio" && <Music className="mediaBadge" size={28} />}
-    </MediaVisual>
-  </button>;
+  const caption = item.comment.trim();
+  const date = item.takenAt?.slice(0, 10);
+  return <figure className="albumPhotoEntry" data-side={side} style={{ "--photo-ratio": albumPhotoRatio(item) } as CSSProperties}>
+    <button data-slot={index} data-side={side} className="albumPagePhoto" onClick={onOpen} aria-label={`${item.fileName} 상세보기`}>
+      <MediaVisual item={item} original>
+        {item.fileType === "video" && <span className="videoDuration"><Play size={12} fill="currentColor" />{item.duration || "영상"}</span>}
+        {item.fileType === "audio" && <Music className="mediaBadge" size={28} />}
+      </MediaVisual>
+    </button>
+    {(caption || date) && <figcaption className="albumPageCaption">
+      {caption && <p title={caption}>{caption}</p>}
+      {date && <time dateTime={date}>{date.replaceAll("-", ".")}</time>}
+    </figcaption>}
+  </figure>;
 }
 

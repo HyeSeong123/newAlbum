@@ -21,6 +21,7 @@ test('album overview and photo tools preserve the full frame and editing workflo
   await page.goto('/');
   await page.locator('.navList').getByRole('button', { name: '내 앨범', exact: true }).click();
   await page.getByRole('button', { name: '가을의 기록 앨범 열기', exact: true }).click();
+  await page.getByRole('button', { name: '사진 목록', exact: true }).click();
   await expect(page.locator('.albumPhotoList > button')).toHaveCount(2);
   for (const image of await page.locator('.albumPhotoList .mediaImage').all()) {
     await expect(image).toHaveCSS('object-fit', 'contain');
