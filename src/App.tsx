@@ -855,6 +855,7 @@ function DetailModal({
   const dialogRef = useRef<HTMLElement>(null);
   const photoViewportRef = useRef<HTMLDivElement>(null);
   const zoomTriggerRef = useRef<HTMLButtonElement>(null);
+  const commentInputRef = useRef<HTMLTextAreaElement>(null);
   const previousZoom = useRef(100);
   const photoDrag = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
   const [commentAuthor, setCommentAuthor] = useState("");
@@ -940,36 +941,19 @@ function DetailModal({
         }
       }}>
         <header className="detailHeader">
-          <button className="detailBack" onClick={onClose} aria-label="사진 기록으로 돌아가기"><ChevronLeft size={20} /><span id="detailTitle">사진 기록</span></button>
+          <button className="detailBack" onClick={onClose} aria-label="이전 화면으로 돌아가기"><ChevronLeft size={20} /><span id="detailTitle">돌아가기</span></button>
           <span className="detailDateTitle">{formatJournalDate(item.takenAt)}</span>
           <button className="detailClose" title="닫기" onClick={onClose}><X size={18} /><span>닫기</span></button>
         </header>
         <div className="detailLayout">
-          <aside className="photoInformation" aria-label="사진 정보">
-            <h2>{item.fileType === "image" ? "사진 정보" : item.fileType === "video" ? "영상 정보" : "음성 정보"}</h2>
-            <p className="detailFileName">{item.fileName}</p>
-            <button className={item.favorite ? "detailFavorite active" : "detailFavorite"} title="즐겨찾기" aria-pressed={item.favorite} onClick={() => onChange({ favorite: !item.favorite })}>
-              <Heart size={24} fill={item.favorite ? "currentColor" : "none"} /><span>즐겨찾기</span>
-            </button>
-            <section className="detailRating" aria-label="별점">
-              <h3>별점</h3>
-              <div className="rating">
-                {[1, 2, 3, 4, 5].map((score) => (
-                  <button key={score} onClick={() => onChange({ rating: score })} title={`${score}점`} aria-pressed={item.rating === score}>
-                    <Star size={28} fill={score <= item.rating ? "currentColor" : "none"} />
-                  </button>
-                ))}
-              </div>
-            </section>
-            <dl className="photoMetadata">
-              <div><dt>촬영일</dt><dd>{item.takenAt?.replaceAll("-", ".") ?? "날짜 없음"}</dd></div>
-              <div><dt>해상도</dt><dd>{item.width && item.height ? `${item.width} × ${item.height}` : "-"}</dd></div>
-              {item.fileType !== "image" && <div><dt>재생 시간</dt><dd>{item.duration || "-"}</dd></div>}
-              <div><dt>파일 크기</dt><dd>{item.sizeLabel}</dd></div>
-              <div><dt>조회 수</dt><dd>{item.viewCount ?? 0}회</dd></div>
-            </dl>
-          </aside>
           <div className="detailPhotoPane">
+            <div className="detailPhotoActions" aria-label="사진 도구">
+              <button className={item.favorite ? "detailFavorite active" : "detailFavorite"} title="즐겨찾기" aria-pressed={item.favorite} onClick={() => onChange({ favorite: !item.favorite })}>
+                <Heart size={18} fill={item.favorite ? "currentColor" : "none"} /><span>즐겨찾기</span>
+              </button>
+              <button onClick={() => { commentInputRef.current?.focus(); commentInputRef.current?.scrollIntoView({ block: "nearest" }); }}><MessageCircle size={18} /><span>댓글 {comments.length}</span></button>
+              {item.fileType === "image" && <button ref={zoomTriggerRef} className="detailExpand" title="확대 보기" onClick={() => setZoomViewerOpen(true)}><ZoomIn size={18} /><span>확대 보기</span></button>}
+            </div>
             <div className="detailStage">
               {item.fileType === "image" ? <>
                 <div
@@ -999,7 +983,6 @@ function DetailModal({
                     <MediaImage item={item} original />
                   </div>
                 </div>
-                <button ref={zoomTriggerRef} className="detailExpand" title="확대 보기" onClick={() => setZoomViewerOpen(true)}><ZoomIn size={21} /><span>확대 보기</span></button>
               </> : <MediaPlayback key={`${item.id}:${item.filePath}:${item.previewUrl ?? ""}`} kind={item.fileType} fileName={item.fileName} source={getMediaSource(item)} />}
               <button className="photoNavButton prev" title="이전" onClick={onPrev}><ChevronLeft size={22} /></button>
               <button className="photoNavButton next" title="다음" onClick={onNext}><ChevronRight size={22} /></button>
@@ -1009,61 +992,84 @@ function DetailModal({
               <input aria-label="사진 배율" type="range" min="25" max="400" step="25" value={photoZoom} onChange={(event) => changePhotoZoom(Number(event.target.value))} />
               <output aria-live="polite">{photoZoom}%</output>
               <button title="확대" aria-label="확대" disabled={photoZoom >= 400} onClick={() => changePhotoZoom(photoZoom + 25)}><Plus size={22} /></button>
-              <button className="detailZoomReset" title="100%로 복원" onClick={() => setPhotoZoom(100)}><RotateCcw size={20} /><span>복원</span></button>
+              <button className="detailZoomReset" title="사진 전체에 맞추기" onClick={() => setPhotoZoom(100)}><RotateCcw size={18} /><span>화면에 맞춤</span></button>
             </div>}
           </div>
-          <aside className="detailBody" aria-label="댓글">
-            <section id="photoComments" className="commentBox">
-              <h2><MessageCircle size={25} /><span>댓글 {comments.length}</span></h2>
-              <div className="commentList">
-                {!comments.length && <p>아직 남긴 댓글이 없습니다.</p>}
-                {comments.map((comment) => (
-                  <article key={comment.id} className="commentItem">
-                    {editingCommentId === comment.id ? (
-                      <form className="commentEditForm" onSubmit={submitEditedComment}>
-                        <label>
-                          <span>작성자</span>
-                          <input value={editingAuthor} onChange={(event) => setEditingAuthor(event.target.value)} placeholder="이름" />
-                        </label>
-                        <label>
-                          <span>내용</span>
-                          <textarea value={editingContent} onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setEditingContent(event.target.value)} placeholder="이 사진에 대한 이야기를 남겨보세요." />
-                        </label>
-                        <div className="commentEditActions">
-                          <button type="submit" disabled={!editingAuthor.trim() || !editingContent.trim()}><CheckSquare size={16} />저장</button>
-                          <button type="button" onClick={cancelEditComment}><X size={16} />취소</button>
-                        </div>
-                      </form>
-                    ) : (
-                      <>
-                        <span className="commentAvatar" aria-hidden="true">{Array.from(comment.author.trim())[0] || "나"}</span>
-                        <div className="commentItemHeading">
-                          <strong>{comment.author}</strong>
-                          {comment.createdAt && <time dateTime={comment.createdAt}>{formatDateTimeKo(comment.createdAt)}</time>}
-                          <div className="commentActions">
-                            <button title="댓글 수정" onClick={() => startEditComment(comment)}>수정</button>
-                            <button title="댓글 삭제" onClick={() => onDeleteComment(comment.id)}>삭제</button>
+          <div className="detailSidebar">
+            <aside className="photoInformation" aria-label="사진 정보">
+              <h2>{item.fileType === "image" ? "사진 정보" : item.fileType === "video" ? "영상 정보" : "음성 정보"}</h2>
+              <p className="detailFileName">{item.fileName}</p>
+              <section className="detailRating" aria-label="별점">
+                <h3>별점</h3>
+                <div className="rating">
+                  {[1, 2, 3, 4, 5].map((score) => (
+                    <button key={score} onClick={() => onChange({ rating: score })} title={`${score}점`} aria-pressed={item.rating === score}>
+                      <Star size={28} fill={score <= item.rating ? "currentColor" : "none"} />
+                    </button>
+                  ))}
+                </div>
+              </section>
+              <dl className="photoMetadata">
+                <div><dt>촬영일</dt><dd>{item.takenAt?.replaceAll("-", ".") ?? "날짜 없음"}</dd></div>
+                <div><dt>해상도</dt><dd>{item.width && item.height ? `${item.width} × ${item.height}` : "-"}</dd></div>
+                {item.fileType !== "image" && <div><dt>재생 시간</dt><dd>{item.duration || "-"}</dd></div>}
+                <div><dt>파일 크기</dt><dd>{item.sizeLabel}</dd></div>
+                <div><dt>조회 수</dt><dd>{item.viewCount ?? 0}회</dd></div>
+              </dl>
+            </aside>
+            <aside className="detailBody" aria-label="댓글">
+              <section id="photoComments" className="commentBox">
+                <h2><MessageCircle size={25} /><span>댓글 {comments.length}</span></h2>
+                <div className="commentList">
+                  {!comments.length && <p>아직 남긴 댓글이 없습니다.</p>}
+                  {comments.map((comment) => (
+                    <article key={comment.id} className="commentItem">
+                      {editingCommentId === comment.id ? (
+                        <form className="commentEditForm" onSubmit={submitEditedComment}>
+                          <label>
+                            <span>작성자</span>
+                            <input value={editingAuthor} onChange={(event) => setEditingAuthor(event.target.value)} placeholder="이름" />
+                          </label>
+                          <label>
+                            <span>내용</span>
+                            <textarea value={editingContent} onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setEditingContent(event.target.value)} placeholder="이 사진에 대한 이야기를 남겨보세요." />
+                          </label>
+                          <div className="commentEditActions">
+                            <button type="submit" disabled={!editingAuthor.trim() || !editingContent.trim()}><CheckSquare size={16} />저장</button>
+                            <button type="button" onClick={cancelEditComment}><X size={16} />취소</button>
                           </div>
-                        </div>
-                        <p>{comment.content}</p>
-                      </>
-                    )}
-                  </article>
-                ))}
-              </div>
-              <form className="commentForm" onSubmit={submitComment}>
-                <label>
-                  <span>작성자</span>
-                  <input value={commentAuthor} onChange={(event) => setCommentAuthor(event.target.value)} placeholder="이름" />
-                </label>
-                <label>
-                  <span>내용</span>
-                  <textarea value={commentContent} onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setCommentContent(event.target.value)} placeholder="이 사진에 대한 이야기를 남겨보세요." />
-                </label>
-                <button type="submit" disabled={!commentAuthor.trim() || !commentContent.trim()}>댓글 등록</button>
-              </form>
-            </section>
-          </aside>
+                        </form>
+                      ) : (
+                        <>
+                          <span className="commentAvatar" aria-hidden="true">{Array.from(comment.author.trim())[0] || "나"}</span>
+                          <div className="commentItemHeading">
+                            <strong>{comment.author}</strong>
+                            {comment.createdAt && <time dateTime={comment.createdAt}>{formatDateTimeKo(comment.createdAt)}</time>}
+                            <div className="commentActions">
+                              <button title="댓글 수정" onClick={() => startEditComment(comment)}>수정</button>
+                              <button title="댓글 삭제" onClick={() => onDeleteComment(comment.id)}>삭제</button>
+                            </div>
+                          </div>
+                          <p>{comment.content}</p>
+                        </>
+                      )}
+                    </article>
+                  ))}
+                </div>
+                <form className="commentForm" onSubmit={submitComment}>
+                  <label>
+                    <span>작성자</span>
+                    <input value={commentAuthor} onChange={(event) => setCommentAuthor(event.target.value)} placeholder="이름" />
+                  </label>
+                  <label>
+                    <span>내용</span>
+                    <textarea ref={commentInputRef} value={commentContent} onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setCommentContent(event.target.value)} placeholder="이 사진에 대한 이야기를 남겨보세요." />
+                  </label>
+                  <button type="submit" disabled={!commentAuthor.trim() || !commentContent.trim()}>댓글 등록</button>
+                </form>
+              </section>
+            </aside>
+          </div>
         </div>
       </section>
       {zoomViewerOpen && <PhotoZoomViewer item={item} onClose={() => { setZoomViewerOpen(false); requestAnimationFrame(() => zoomTriggerRef.current?.focus()); }} />}
@@ -1138,3 +1144,4 @@ function formatDateTimeKo(value: string): string {
   if (Number.isNaN(date.getTime())) return "";
   return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}.${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
+

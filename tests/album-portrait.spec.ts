@@ -29,6 +29,9 @@ test('mixed orientations use portrait leaves without losing photos or page navig
   await expect(page.locator('.quickAlbum .frontAlbumTone')).toHaveCount(0);
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
   await page.getByRole('button', { name: '세로와 가로 앨범 열기', exact: true }).click();
+  await expect(page.locator('.albumPhotoList > button')).toHaveCount(8);
+  await expect(page.locator('.albumPhotoList .mediaImage').first()).toHaveCSS('object-fit', 'contain');
+  await page.getByTitle('책으로 보기', { exact: true }).click();
   const left = page.locator('.albumPaper.left');
   const right = page.locator('.albumPaper.right');
   const pageLabel = page.locator('.albumPagerActions p');
@@ -84,3 +87,4 @@ test('mixed orientations use portrait leaves without losing photos or page navig
   const shuffled = await page.locator('.albumPhotoList > button').evaluateAll((buttons) => buttons.map((button) => button.getAttribute('aria-label')).sort());
   expect(shuffled).toEqual(Array.from({ length: 8 }, (_, index) => `orientation-${index + 1}.jpg 상세보기`));
 });
+

@@ -6,6 +6,7 @@ import "./design-system.css";
 import "./features/albums/albums.css";
 import "./features/calendar/calendar.css";
 import "./controls.css";
+import "./features/media/photo-detail.css";
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

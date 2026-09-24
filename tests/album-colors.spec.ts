@@ -48,6 +48,8 @@ test('fabric album colors survive create, edit and reload', async ({ page }) => 
 
   await page.getByRole('button', { name: '브라운 앨범 앨범 열기', exact: true }).click();
   const reader = page.getByRole('dialog', { name: '앨범 전체창' });
+  await expect(reader.locator('.albumPhotoList > button')).toHaveCount(8);
+  await reader.getByTitle('책으로 보기', { exact: true }).click();
   await expect(reader.locator('.albumPaper')).toHaveCount(2);
   await expect(reader.locator('.binderRings')).toHaveCount(0);
   await expect(reader.locator('.albumPagePhoto')).toHaveCount(4);
@@ -71,8 +73,8 @@ test('fabric album colors survive create, edit and reload', async ({ page }) => 
     const bottom = (await photos.nth(1).boundingBox())!;
     expect(top.width).toBeCloseTo(bottom.width, 0);
     expect(top.height / bottom.height).toBeCloseTo(ratio, 1);
-    await expect(photos.first().locator('.mediaImage')).toHaveCSS('object-fit', 'cover');
-    await expect(photos.first().locator('.mediaImage')).toHaveCSS('object-position', '50% 35%');
+    await expect(photos.first().locator('.mediaImage')).toHaveCSS('object-fit', 'contain');
+    await expect(photos.first().locator('.mediaImage')).toHaveCSS('object-position', '50% 50%');
   }
   await reader.locator('.albumSpread').screenshot({ path: `test-results/album-inside-${test.info().project.name}.png` });
   await page.screenshot({ path: `test-results/album-header-${test.info().project.name}.png` });
@@ -117,6 +119,7 @@ test('fabric album colors survive create, edit and reload', async ({ page }) => 
   await page.getByRole('button', { name: '사진보기', exact: true }).click();
   await page.getByRole('tab', { name: '전체 앨범' }).click();
   const libraryReader = page.getByRole('dialog', { name: '앨범 전체창' });
+  await libraryReader.getByTitle('책으로 보기', { exact: true }).click();
   await expect(libraryReader.locator('.albumPaper')).toHaveCount(2);
   await expect(libraryReader.locator('.binderRings')).toHaveCount(0);
   await libraryReader.getByTitle('닫기').click();
@@ -144,3 +147,4 @@ test('fabric album colors survive create, edit and reload', async ({ page }) => 
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
   await expect(page.getByRole('button', { name: '버건디 추억 앨범 열기' }).locator('.frontAlbum')).toHaveCSS('--album-color', '#D8DDCB');
 });
+

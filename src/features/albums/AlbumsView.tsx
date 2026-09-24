@@ -150,7 +150,7 @@ export function AlbumFullscreenReader({ title, items, color, open, onOpen, onClo
   const [pageIndex, setPageIndex] = useState(0);
   const [turning, setTurning] = useState<"next" | "prev" | null>(null);
   const [turnPhase, setTurnPhase] = useState<"departing" | "arriving" | null>(null);
-  const [listView, setListView] = useState(false);
+  const [listView, setListView] = useState(true);
   const [fullscreen, setFullscreen] = useState(Boolean(document.fullscreenElement));
   const [notice, setNotice] = useState("");
   const timers = useRef<number[]>([]);
@@ -223,7 +223,7 @@ export function AlbumFullscreenReader({ title, items, color, open, onOpen, onClo
       <button className="albumJournalBack" onClick={onClose} title="닫기"><ChevronLeft size={22} />{backLabel}</button>
       <div className="albumJournalHeading"><h2>{title}</h2><span>{mediaSummary(items)}</span></div>
       <div className="albumJournalTools">
-        <button aria-pressed={listView} onClick={() => { cancelTurn(); setTurning(null); setTurnPhase(null); setListView(!listView); }} title={listView ? "책으로 보기" : "사진 목록"}>{listView ? <BookOpen size={18} /> : <Images size={18} />}<span>{listView ? "책으로 보기" : "사진 목록"}</span></button>
+        <button aria-pressed={listView} onClick={() => { cancelTurn(); setTurning(null); setTurnPhase(null); setListView(!listView); }} aria-label={listView ? "책으로 보기" : "사진 목록"} title={listView ? "책으로 보기" : "사진 목록"}>{listView ? <BookOpen size={18} /> : <Images size={18} />}<span>{listView ? "책으로 보기" : "사진 목록"}</span></button>
         <button onClick={() => void toggleFullscreen()} disabled={!document.fullscreenEnabled} aria-pressed={fullscreen} title={fullscreen ? "전체화면 종료" : "전체화면"}>{fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}<span>{fullscreen ? "전체화면 종료" : "전체화면"}</span></button>
         <ActionMenu label="앨범 보기 옵션" icon={<MoreVertical size={19} />} actions={[
           ...(onExport ? [{ label: "내보내기", icon: <FolderOutput size={16} />, disabled: !items.length, onSelect: onExport }] : []),
@@ -236,6 +236,7 @@ export function AlbumFullscreenReader({ title, items, color, open, onOpen, onClo
     {listView ? <section className="albumPhotoList" aria-label={`${title} 사진 목록`}>
       {!items.length && <EmptyState text="앨범에 담긴 기록이 없습니다." />}
       {orderedItems.map((item) => <button key={item.id} onClick={() => onOpen(item, orderedItems)} aria-label={`${item.fileName} 상세보기`}><MediaVisual item={item} />
+        <strong className="albumPhotoName">{item.fileName}</strong>
         <span>{item.takenAt ?? "날짜 없음"}{item.fileType === "video" && <Play size={14} />}{item.fileType === "audio" && <Music size={14} />}</span>
       </button>)}
     </section> : <div className="albumJournalCanvas">
@@ -280,3 +281,4 @@ function AlbumPagePhoto({ item, index, side, onOpen }: { item: MediaItem; index:
     </MediaVisual>
   </button>;
 }
+
