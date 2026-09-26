@@ -49,6 +49,23 @@ CREATE TABLE IF NOT EXISTS album_item (
   UNIQUE(album_id, sequence)
 );
 
+-- Keep album covers valid before the media and its album entries are removed.
+-- This also applies to existing databases when the schema is loaded again.
+CREATE TRIGGER IF NOT EXISTS update_album_cover_before_media_delete
+BEFORE DELETE ON media
+FOR EACH ROW
+BEGIN
+  UPDATE album
+  SET cover_media_id = (
+    SELECT media_id
+    FROM album_item
+    WHERE album_id = album.id AND media_id <> OLD.id
+    ORDER BY sequence
+    LIMIT 1
+  )
+  WHERE cover_media_id = OLD.id;
+END;
+
 CREATE TABLE IF NOT EXISTS person (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,

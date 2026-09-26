@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, LoaderCircle, PawPrint, Pencil, Plus, Trash2, X } from 'lucide-react';
 import type { MediaItem } from '../../types/media';
 import { MediaVisual } from '../../components/MediaVisual';
@@ -9,8 +9,9 @@ import { deletePet, loadPets, Pet, savePet } from './petService';
 import './pets.css';
 import { PetMatchReview } from './PetMatchReview';
 import { ScanSearch } from 'lucide-react';
+import { petCovers, petPhotos } from './petModel';
 
-export function PetsView({ items, onOpen }: { items: MediaItem[]; onOpen: (item: MediaItem) => void }) {
+export function PetsView({ items, onOpen, query = "" }: { items: MediaItem[]; query?: string; onOpen: (item: MediaItem, collection?: MediaItem[]) => void }) {
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -20,10 +21,14 @@ export function PetsView({ items, onOpen }: { items: MediaItem[]; onOpen: (item:
   const [page, setPage] = useState(0);
   const [reviewing, setReviewing] = useState(false);
   const desktop = isTauriRuntime();
-  const photos = items.filter((item) => item.fileType === 'image');
+  const photos = useMemo(() => items.filter((item) => item.fileType === 'image'), [items]);
+  const covers = useMemo(() => petCovers(photos, pets), [photos, pets]);
   const pet = pets.find((entry) => entry.id === active);
-  const linked = pet ? photos.filter((item) => pet.media_ids.includes(Number(item.id))) : [];
-  const pages = Math.max(1, Math.ceil((pet ? linked.length : pets.length) / 24));
+  const search = query.trim().toLocaleLowerCase();
+  const matchingPets = useMemo(() => pets.filter((entry) => entry.name.toLocaleLowerCase().includes(search)), [pets, search]);
+  useEffect(() => { setPage(0); setActive(null); }, [query]);
+  const linked = useMemo(() => petPhotos(photos, pet), [photos, pet]);
+  const pages = Math.max(1, Math.ceil((pet ? linked.length : matchingPets.length) / 24));
   const currentPage = Math.min(page, pages - 1);
   useEffect(() => {
     let alive = true;
@@ -44,17 +49,18 @@ export function PetsView({ items, onOpen }: { items: MediaItem[]; onOpen: (item:
     <div className="panelHeader">
       <h2>{pet?.name ?? '반려동물'}</h2>
       <div className="peopleActions">
+        {pet && <button className="toolbarIcon" title="반려동물 목록" onClick={() => { setActive(null); setPage(0); }}><ArrowLeft size={18} /></button>}
         {pet && <button disabled={busy || !linked.length} onClick={() => setReviewing(true)}><ScanSearch size={18} />후보 찾기</button>}
-        {pet && <><button title="반려동물 목록" onClick={() => { setActive(null); setPage(0); }}><ArrowLeft size={18} /></button><button disabled={busy} onClick={() => setEditing(pet)}><Pencil size={18} />사진·이름 편집</button><button disabled={busy} onClick={() => void remove()}><Trash2 size={18} />등록 삭제</button></>}
-        {!pet && <button disabled={loading || !desktop} onClick={() => setEditing({ id: 0, name: '', cover_media_id: null, media_ids: [] })}><Plus size={18} />반려동물 등록</button>}
+        {pet && <><button disabled={busy} onClick={() => setEditing(pet)}><Pencil size={18} />사진·이름 편집</button><button disabled={busy} onClick={() => void remove()}><Trash2 size={18} />등록 삭제</button></>}
+        {!pet && <button className="primaryControl" disabled={loading || !desktop} onClick={() => setEditing({ id: 0, name: '', cover_media_id: null, media_ids: [] })}><Plus size={18} />반려동물 등록</button>}
       </div>
     </div>
     {!desktop && <p role="status">반려동물 등록은 데스크톱 앱에서 사용할 수 있습니다.</p>}
     {loading && <p role="status"><LoaderCircle className="spinIcon" size={18} />불러오는 중</p>}
     {error && <p role="alert">{error}</p>}
-    {!loading && !(pet ? linked.length : pets.length) && <div className="emptyState"><PawPrint size={30} /><p>{pet ? '아직 연결한 사진이 없습니다.' : '아직 등록한 반려동물이 없습니다.'}</p></div>}
-    <div className="petGrid">{pet ? linked.slice(currentPage * 24, (currentPage + 1) * 24).map((item) => <button key={item.id} className="petPhoto" aria-label="사진 상세보기" onClick={() => onOpen(item)}><MediaVisual item={item} /><span>{item.takenAt ?? '날짜 없음'}</span></button>) : pets.slice(currentPage * 24, (currentPage + 1) * 24).map((entry) => {
-      const cover = photos.find((item) => Number(item.id) === entry.cover_media_id) ?? photos.find((item) => entry.media_ids.includes(Number(item.id)));
+    {!loading && !(pet ? linked.length : matchingPets.length) && <div className="emptyState"><PawPrint size={30} /><p>{pet ? '아직 연결한 사진이 없습니다.' : query ? '검색한 이름의 반려동물이 없습니다.' : '아직 등록한 반려동물이 없습니다.'}</p></div>}
+    <div className="petGrid">{pet ? linked.slice(currentPage * 24, (currentPage + 1) * 24).map((item) => <button key={item.id} className="petPhoto" aria-label="사진 상세보기" onClick={() => onOpen(item, linked)}><MediaVisual item={item} /><span>{item.takenAt ?? '날짜 없음'}</span></button>) : matchingPets.slice(currentPage * 24, (currentPage + 1) * 24).map((entry) => {
+      const cover = covers.get(entry.id);
       return <button className="petPhoto" key={entry.id} onClick={() => { setActive(entry.id); setPage(0); }}>
         {cover ? <MediaVisual item={cover} /> : <div className="petPlaceholder"><PawPrint size={48} /></div>}<strong>{entry.name}</strong><span>{entry.media_ids.length}장</span>
       </button>;

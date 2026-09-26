@@ -20,7 +20,7 @@ test("past memories count appears in the menu", async ({ page }) => {
 
 test("annual events use month and day and persist across years", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("tab", { name: "달력보기" }).click();
+  await page.getByRole("tab", { name: "달력" }).click();
   await page.getByRole("button", { name: "일정 등록", exact: true }).click();
   const form = page.getByRole("dialog", { name: "일정 등록" });
   await form.getByLabel("매년 반복").check();
@@ -35,7 +35,7 @@ test("annual events use month and day and persist across years", async ({ page }
   await page.screenshot({ path: `test-results/annual-event-${test.info().project.name}.png` });
   await form.getByRole("button", { name: "일정 추가" }).click();
   await page.reload();
-  await page.getByRole("tab", { name: "달력보기" }).click();
+  await page.getByRole("tab", { name: "달력" }).click();
   await page.locator(".monthPicker").getByLabel("연도").selectOption("2028");
   await page.locator(".monthPicker select").nth(1).selectOption("09");
   const eventCell = page.locator(".calendarGrid .hasEvent");
@@ -61,9 +61,9 @@ test("annual events use month and day and persist across years", async ({ page }
 test("empty library flow works", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "사진보기" })).toBeVisible();
-  await expect(page.getByText("아직 담긴 사진과 영상이 없습니다.")).toBeVisible();
+  await expect(page.getByText("가져오기로 첫 사진과 영상을 담아보세요.")).toBeVisible();
 
-  await page.getByRole("tab", { name: /달력보기/ }).click();
+  await page.getByRole("tab", { name: /달력/ }).click();
   await expect(page.locator(".calendarGrid")).toBeVisible();
   await page.locator(".calendarGrid button").first().click();
   await expect(page.getByRole("dialog", { name: /\d{4}-\d{2}-\d{2} 기록/ })).toBeVisible();
@@ -82,10 +82,10 @@ test("empty library flow works", async ({ page }) => {
   await expect(page.getByText(/생일 · D/)).toBeVisible();
   await page.getByTitle("닫기").click();
 
-  await page.getByRole("tab", { name: /앨범보기/ }).click();
+  await page.getByRole("tab", { name: /전체 앨범/ }).click();
   await expect(page.getByRole("dialog", { name: "앨범 전체창" })).toBeVisible();
   await page.getByTitle("닫기").click();
-  await expect(page.getByRole("tab", { name: "모아보기" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "그리드" })).toHaveAttribute("aria-selected", "true");
 });
 
 test("gallery sorting, combined filters and persistent view counts work", async ({ page }) => {
@@ -115,6 +115,7 @@ test("gallery sorting, combined filters and persistent view counts work", async 
     } });
   });
   await page.goto('/');
+  await page.getByRole("button", { name: "모든 기록", exact: true }).click();
   const order = () => page.locator('.mediaTile').evaluateAll((tiles) => tiles.map((tile) => tile.getAttribute('data-media-id')));
   await expect.poll(order).toEqual(['1', '3', '2']);
   await page.getByLabel('정렬 기준').selectOption('name');
@@ -148,7 +149,7 @@ test("mobile nav is usable", async ({ page, isMobile }) => {
   if (isMobile) {
     await expect(page.getByRole("navigation", { name: "주 메뉴" })).toBeVisible();
     await page.getByRole("button", { name: /사진보기/ }).click();
-    await page.getByRole("tab", { name: /앨범보기/ }).click();
+    await page.getByRole("tab", { name: /전체 앨범/ }).click();
     await expect(page.getByRole("dialog", { name: "앨범 전체창" })).toBeVisible();
   }
 });
@@ -171,7 +172,7 @@ test("clicking a media tile opens detail modal", async ({ page }) => {
   await expect(page.getByRole("dialog", { name: "사진 상세" })).toBeVisible();
   await page.locator(".modalBackdrop").click({ position: { x: 8, y: 8 } });
   await expect(page.getByRole("dialog", { name: "사진 상세" })).toBeVisible();
-  await expect(page.getByPlaceholder("작성자")).toHaveValue("");
+  await expect(page.locator('.commentForm').getByLabel('작성자')).toHaveValue("");
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowLeft");
   await page.getByTitle("확대 보기").click();
@@ -187,15 +188,15 @@ test("clicking a media tile opens detail modal", async ({ page }) => {
   await zoomViewer.getByTitle("확대 보기 닫기").click();
   await expect(zoomViewer).toBeHidden();
   await page.getByTitle("5점").click();
-  await page.getByPlaceholder("작성자").fill("나");
-  await page.getByPlaceholder("내용 입력").fill("상세 모달에서 작성");
-  await page.getByRole("button", { name: "확인" }).click();
+  await page.locator('.commentForm').getByLabel('작성자').fill("나");
+  await page.locator('.commentForm').getByLabel('내용').fill("상세 모달에서 작성");
+  await page.getByRole("button", { name: "댓글 등록", exact: true }).click();
   await expect(page.locator(".commentItem")).toContainText("나");
   await expect(page.locator(".commentItem")).toContainText("상세 모달에서 작성");
-  await expect(page.locator("#detailTitle")).toHaveText("사진 상세");
+  await expect(page.getByRole('button', { name: '이전 화면으로 돌아가기' })).toBeVisible();
   await page.getByTitle("댓글 수정").click();
-  await page.locator(".commentEditForm").getByPlaceholder("작성자").fill("가족");
-  await page.locator(".commentEditForm").getByPlaceholder("내용 입력").fill("수정된 댓글");
+  await page.locator(".commentEditForm").getByLabel('작성자').fill("가족");
+  await page.locator(".commentEditForm").getByLabel('내용').fill("수정된 댓글");
   await page.getByRole("button", { name: "저장" }).click();
   await expect(page.locator(".commentItem")).toContainText("가족");
   await expect(page.locator(".commentItem")).toContainText("수정된 댓글");
@@ -218,7 +219,7 @@ test("selection mode supports selected actions", async ({ page }) => {
   await page.locator(".galleryGrid .mediaTile").nth(1).click();
   await expect(page.locator(".galleryGrid .mediaTile").nth(0)).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator(".galleryGrid .mediaTile").nth(1)).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByRole("button", { name: /앨범 만들기/ })).toBeEnabled();
+  await expect(page.locator('.selectionDock').getByRole("button", { name: '앨범 만들기', exact: true })).toBeEnabled();
 
   page.once("dialog", async (dialog) => {
     expect(dialog.message()).toContain("원본 파일은 삭제되지 않습니다");
@@ -226,7 +227,7 @@ test("selection mode supports selected actions", async ({ page }) => {
   });
   await page.getByRole("button", { name: "삭제" }).click();
   await expect(page.getByText("2개 항목을 등록 목록에서 지웠습니다.")).toBeVisible();
-  await expect(page.getByText("아직 담긴 사진과 영상이 없습니다.")).toBeVisible();
+  await expect(page.getByText("가져오기로 첫 사진과 영상을 담아보세요.")).toBeVisible();
 });
 
 test("created albums are visible from saved albums menu", async ({ page }) => {
@@ -239,7 +240,7 @@ test("created albums are visible from saved albums menu", async ({ page }) => {
   await page.getByRole("button", { name: "사진 선택", exact: true }).click();
   await page.locator(".galleryGrid .mediaTile").nth(0).click();
   await page.locator(".galleryGrid .mediaTile").nth(1).click();
-  await page.getByRole("button", { name: /앨범 만들기/ }).click();
+  await page.locator('.selectionDock').getByRole("button", { name: '앨범 만들기', exact: true }).click();
   const creator = page.getByRole("dialog", { name: "앨범 만들기", exact: true });
   await creator.getByLabel("제목", { exact: true }).fill("가족 여행");
   await creator.getByRole("button", { name: "차콜 색상", exact: true }).click();
@@ -248,9 +249,9 @@ test("created albums are visible from saved albums menu", async ({ page }) => {
   await expect(creator).toBeHidden();
   await page.getByRole("button", { name: "내 앨범" }).click();
   await expect(page.locator("h1", { hasText: "내 앨범" })).toBeVisible();
-  await page.getByRole("button", { name: /가족 여행/ }).click();
+  await page.getByRole("button", { name: "가족 여행 앨범 열기", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "앨범 전체창" })).toBeVisible();
-  await expect(page.locator(".albumFullscreenHeader")).toContainText("가족 여행");
+  await expect(page.locator(".albumJournalHeader")).toContainText("가족 여행");
   await page.getByTitle("닫기").click();
   await page.getByRole("button", { name: "선택", exact: true }).click();
   await page.getByRole("button", { name: "가족 여행 앨범 선택" }).click();
@@ -287,14 +288,14 @@ test("album view opens immersive reader", async ({ page }) => {
     "tests/fixtures/test-photo-2.jpg",
   ]);
 
-  await page.getByRole("tab", { name: /앨범보기/ }).click();
+  await page.getByRole("tab", { name: /전체 앨범/ }).click();
   await expect(page.getByRole("dialog", { name: "앨범 전체창" })).toBeVisible();
-  await expect(page.locator(".albumFullscreen .albumPager")).toContainText("책장");
+  await expect(page.locator(".albumJournal .albumPagerActions")).toContainText("펼침");
   await page.getByTitle("닫기").click();
   await expect(page.getByRole("dialog", { name: "앨범 전체창" })).toBeHidden();
-  await expect(page.getByRole("tab", { name: "모아보기" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "그리드" })).toHaveAttribute("aria-selected", "true");
   await expect(page.locator(".galleryGrid .mediaTile")).toHaveCount(2);
-  await page.getByRole("tab", { name: "앨범보기" }).click();
+  await page.getByRole("tab", { name: "전체 앨범" }).click();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("tab", { name: "모아보기" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "그리드" })).toHaveAttribute("aria-selected", "true");
 });

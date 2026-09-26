@@ -4,7 +4,7 @@ import type { MediaItem } from '../../types/media';
 import { PeopleView } from './PeopleView';
 import { PetsView } from '../pets/PetsView';
 
-export function PeopleWorkspace(props: { items: MediaItem[]; onOpen: (item: MediaItem) => void; onCreateAlbum: (items: MediaItem[]) => void }) {
+export function PeopleWorkspace(props: { items: MediaItem[]; onOpen: (item: MediaItem, collection?: MediaItem[]) => void; query?: string; onCreateAlbum: (items: MediaItem[]) => void }) {
   const [tab, setTab] = useState(0);
   const [petsVisited, setPetsVisited] = useState(false);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
@@ -12,7 +12,7 @@ export function PeopleWorkspace(props: { items: MediaItem[]; onOpen: (item: Medi
     setTab(next);
     if (next === 1) setPetsVisited(true);
   }
-  return <section>
+  return <section className="peopleWorkspace">
     <div className="viewTabs" role="tablist" aria-label="인물 분류">
       {[{ label: '사람', Icon: Users }, { label: '반려동물', Icon: PawPrint }].map(({ label, Icon }, index) =>
         <button key={label} ref={(node) => { buttons.current[index] = node; }} id={`people-tab-${index}`} role="tab" aria-selected={tab === index} aria-controls={`people-panel-${index}`} tabIndex={tab === index ? 0 : -1} className={tab === index ? 'active' : ''} onClick={() => select(index)} onKeyDown={(event) => {

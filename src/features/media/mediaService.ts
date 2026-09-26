@@ -1,25 +1,20 @@
-import type { MediaItem } from "../../types/media";
+import type { MediaItem, MediaType } from "../../types/media";
 
-const supportedExtensions = new Set([
-  "jpg",
-  "jpeg",
-  "png",
-  "webp",
-  "heic",
-  "mp4",
-  "mov",
-  "avi",
-  "mkv",
-  "webm",
-  "mp3",
-  "wav",
-  "flac",
-  "m4a",
-]);
+const mediaTypes: Record<string, MediaType> = {
+  jpg: "image", jpeg: "image", png: "image", webp: "image", heic: "image",
+  mp4: "video", mov: "video", avi: "video", mkv: "video", webm: "video",
+  mp3: "audio", wav: "audio", flac: "audio", m4a: "audio",
+};
+
+export const MEDIA_FILE_ACCEPT = Object.keys(mediaTypes).map((extension) => `.${extension}`).join(",");
+
+export function getMediaType(fileName: string): MediaType | null {
+  const extension = fileName.match(/\.([^.]+)$/)?.[1].toLowerCase();
+  return extension && Object.hasOwn(mediaTypes, extension) ? mediaTypes[extension] : null;
+}
 
 export function isSupportedMedia(fileName: string): boolean {
-  const extension = fileName.split(".").pop()?.toLowerCase();
-  return Boolean(extension && supportedExtensions.has(extension));
+  return getMediaType(fileName) !== null;
 }
 
 export function groupByTakenDate(items: MediaItem[]) {

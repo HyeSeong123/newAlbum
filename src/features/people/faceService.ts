@@ -1,5 +1,6 @@
 import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import type { MediaItem } from '../../types/media';
+import { normalizeLocalFilePath } from '../media/mediaSource';
 
 export interface FaceRow { id: number; media_id: number; person_id: number; thumbnail: string; confirmed: boolean }
 export interface FaceIndex { people: { id: number; name: string; cover_face_id?: number | null }[]; faces: FaceRow[]; scanned: number[] }
@@ -27,9 +28,8 @@ export function loadFaceEngine() {
   return engine;
 }
 
-export function localPhotoUrl(path: string) {
-  const normalized = path.startsWith('\\\\?\\UNC\\') ? `\\\\${path.slice(8)}` : path.startsWith('\\\\?\\') ? path.slice(4) : path;
-  return convertFileSrc(normalized);
+function localPhotoUrl(path: string) {
+  return convertFileSrc(normalizeLocalFilePath(path));
 }
 
 let detectionQueue: Promise<unknown> = Promise.resolve();

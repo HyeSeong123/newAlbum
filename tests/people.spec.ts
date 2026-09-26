@@ -23,7 +23,7 @@ test('local models detect faces without remote requests', async ({ page, isMobil
   expect(external).toEqual([]);
 });
 
-test('person photos match gallery sizing and create an album from unique originals', async ({ page }) => {
+test('person photos form an even grid and create an album from unique originals', async ({ page }) => {
   await page.addInitScript(() => {
     const media = [1, 2].map((id) => ({ id, file_path: `C:/person-album-${id}.jpg`, file_type: 'image', taken_at: '2026-09-14', width: 640, height: 480, duration: null, size_bytes: 2000, rating: 0, comment: '', favorite: false, metadata_status: 'ready' }));
     const faces = [
@@ -47,11 +47,13 @@ test('person photos match gallery sizing and create an album from unique origina
   });
 
   await page.goto('/');
-  const galleryWidth = (await page.locator('.mediaTile').first().boundingBox())!.width;
   await page.getByRole('button', { name: '인물', exact: true }).click();
   await page.getByRole('button', { name: '가족 2장', exact: true }).click();
-  const personWidth = (await page.locator('.personMediaGrid .personPhoto').first().boundingBox())!.width;
-  expect(Math.abs(personWidth - galleryWidth)).toBeLessThan(1);
+  const widths = await page.locator('.personMediaGrid .personPhoto').evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().width));
+  expect(widths).toHaveLength(3);
+  expect(Math.max(...widths) - Math.min(...widths)).toBeLessThan(1);
+  expect(Math.min(...widths)).toBeGreaterThan(100);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
 
   await page.getByRole('button', { name: '얼굴 선택하기', exact: true }).click();
   await page.getByRole('button', { name: '얼굴 선택', exact: true }).first().click();
@@ -252,7 +254,8 @@ test('analysis stops after current photo and retries failed photos', async ({ pa
       invoke: async (command: string, args: { mediaId: number; faces: { thumbnail: string }[] }) => {
         if (command === 'list_media') return [1, 2].map((id) => ({ id, file_path: `C:/test/${id}.jpg`, file_type: 'image', taken_at: '2026-09-06', size_bytes: 2000, rating: 0, comment: '', favorite: false, metadata_status: 'ready' }));
         if (command === 'list_albums') return [];
-        if (command === 'list_face_index') return state;
+        // Tauri serializes command results; each invocation returns a fresh snapshot.
+        if (command === 'list_face_index') return structuredClone(state);
         if (command === 'save_face_scan') {
           saves.push(args.mediaId);
           document.documentElement.dataset.faceSaves = JSON.stringify(saves);

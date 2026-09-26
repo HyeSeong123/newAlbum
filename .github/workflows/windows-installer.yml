@@ -1,0 +1,84 @@
+name: Windows installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/warm-journal-v2, master]
+    paths:
+      - 'src/**'
+      - 'src-tauri/**'
+      - 'public/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'package*.json'
+      - 'vite.config.ts'
+      - 'tsconfig.json'
+      - 'index.html'
+      - '.github/workflows/windows-installer.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-installer-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  installer:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - name: Prepare Rust
+        run: rustup toolchain install stable --profile minimal
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          cache-on-failure: true
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Run frontend unit tests
+        run: npm run test:unit
+      - name: Build frontend and bundle local models
+        run: npm run build
+      - name: Test Rust storage and local server
+        run: cargo test --manifest-path src-tauri/Cargo.toml --lib --locked --features custom-protocol
+      - name: Build Windows setup executable
+        run: npm run package:windows -- --ci -- --locked
+      - name: Install and test the packaged app
+        shell: pwsh
+        run: ./scripts/smoke-windows.ps1
+      - name: Collect installer
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path installer-output | Out-Null
+          Copy-Item src-tauri/target/release/bundle/nsis/*-setup.exe installer-output/
+          Copy-Item docs/windows-install.md installer-output/README.md
+          Get-ChildItem installer-output/*-setup.exe | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash
+            "$hash  $($_.Name)" | Add-Content installer-output/SHA256SUMS.txt
+          }
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v7
+        with:
+          name: oraedameun-windows-x64-${{ github.run_number }}
+          path: installer-output/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+      - name: Upload startup diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-startup-diagnostics-${{ github.run_number }}
+          path: test-results/desktop-smoke/
+          if-no-files-found: ignore
+          retention-days: 7

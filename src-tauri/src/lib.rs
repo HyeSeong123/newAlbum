@@ -1,6 +1,7 @@
 use rusqlite::{params, Connection};
 use serde::Serialize;
 use std::{
+    collections::HashMap,
     fs,
     io::{self, Read},
     path::{Path, PathBuf},
@@ -8,9 +9,15 @@ use std::{
 };
 use tauri::{AppHandle, Manager};
 use walkdir::WalkDir;
+mod export;
+use export::{export_media_files, ExportResultDto};
+#[cfg(test)]
+use export::valid_export_folder_name;
 mod faces;
 mod pets;
 mod thumbnails;
+#[cfg(any(feature = "custom-protocol", test))]
+mod localhost;
 
 #[derive(Serialize)]
 struct MediaItemDto {
@@ -72,16 +79,28 @@ fn delete_registered_media(app: AppHandle, ids: Vec<i64>) -> Result<Vec<MediaIte
 }
 
 #[tauri::command]
-fn create_album_from_media(app: AppHandle, title: String, media_ids: Vec<i64>, cover_color: String) -> Result<i64, String> {
+fn create_album_from_media(
+    app: AppHandle,
+    title: String,
+    media_ids: Vec<i64>,
+    cover_color: String,
+) -> Result<i64, String> {
     let mut conn = open_database(&app)?;
     insert_album(&mut conn, &title, &media_ids, &cover_color)
 }
 
 fn valid_album_color(color: &str) -> bool {
-    color.len() == 7 && color.starts_with('#') && color[1..].bytes().all(|byte| byte.is_ascii_hexdigit())
+    color.len() == 7
+        && color.starts_with('#')
+        && color[1..].bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
-fn insert_album(conn: &mut Connection, title: &str, media_ids: &[i64], cover_color: &str) -> Result<i64, String> {
+fn insert_album(
+    conn: &mut Connection,
+    title: &str,
+    media_ids: &[i64],
+    cover_color: &str,
+) -> Result<i64, String> {
     if media_ids.is_empty() {
         return Err("앨범에 담을 항목을 선택해 주세요.".to_string());
     }
@@ -90,7 +109,9 @@ fn insert_album(conn: &mut Connection, title: &str, media_ids: &[i64], cover_col
     if title.is_empty() {
         return Err("앨범 이름을 입력해 주세요.".to_string());
     }
-    if !valid_album_color(cover_color) { return Err("올바른 표지색을 선택해 주세요.".into()); }
+    if !valid_album_color(cover_color) {
+        return Err("올바른 표지색을 선택해 주세요.".into());
+    }
 
     let tx = conn.transaction().map_err(|error| error.to_string())?;
     tx.execute(
@@ -125,22 +146,48 @@ fn register_paths(app: AppHandle, paths: Vec<String>) -> Result<Vec<MediaItemDto
 }
 
 #[tauri::command]
-fn update_album(app: AppHandle, id: i64, title: String, cover_color: String, media_ids: Vec<i64>) -> Result<(), String> {
+fn update_album(
+    app: AppHandle,
+    id: i64,
+    title: String,
+    cover_color: String,
+    media_ids: Vec<i64>,
+) -> Result<(), String> {
     let mut conn = open_database(&app)?;
     save_album(&mut conn, id, &title, &cover_color, &media_ids)
 }
 
-fn save_album(conn: &mut Connection, id: i64, title: &str, cover_color: &str, media_ids: &[i64]) -> Result<(), String> {
-    if title.trim().is_empty() { return Err("앨범 제목을 입력해 주세요.".into()); }
+fn save_album(
+    conn: &mut Connection,
+    id: i64,
+    title: &str,
+    cover_color: &str,
+    media_ids: &[i64],
+) -> Result<(), String> {
+    if title.trim().is_empty() {
+        return Err("앨범 제목을 입력해 주세요.".into());
+    }
     if !valid_album_color(cover_color) {
         return Err("올바른 표지색을 선택해 주세요.".into());
     }
     let tx = conn.transaction().map_err(|e| e.to_string())?;
-    let count = tx.execute("UPDATE album SET title = ?1, cover_color = ?2, cover_media_id = ?3 WHERE id = ?4", params![title.trim(), cover_color, media_ids.first(), id]).map_err(|e| e.to_string())?;
-    if count == 0 { return Err("앨범을 찾을 수 없습니다.".into()); }
-    tx.execute("DELETE FROM album_item WHERE album_id = ?1", params![id]).map_err(|e| e.to_string())?;
+    let count = tx
+        .execute(
+            "UPDATE album SET title = ?1, cover_color = ?2, cover_media_id = ?3 WHERE id = ?4",
+            params![title.trim(), cover_color, media_ids.first(), id],
+        )
+        .map_err(|e| e.to_string())?;
+    if count == 0 {
+        return Err("앨범을 찾을 수 없습니다.".into());
+    }
+    tx.execute("DELETE FROM album_item WHERE album_id = ?1", params![id])
+        .map_err(|e| e.to_string())?;
     for (index, media_id) in media_ids.iter().enumerate() {
-        tx.execute("INSERT INTO album_item (album_id, media_id, sequence) VALUES (?1, ?2, ?3)", params![id, media_id, index as i64]).map_err(|e| e.to_string())?;
+        tx.execute(
+            "INSERT INTO album_item (album_id, media_id, sequence) VALUES (?1, ?2, ?3)",
+            params![id, media_id, index as i64],
+        )
+        .map_err(|e| e.to_string())?;
     }
     tx.commit().map_err(|e| e.to_string())
 }
@@ -150,10 +197,25 @@ fn delete_albums(app: AppHandle, ids: Vec<i64>) -> Result<(), String> {
     let mut conn = open_database(&app)?;
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     for id in ids {
-        tx.execute("DELETE FROM album WHERE id = ?1", params![id]).map_err(|e| e.to_string())?;
+        tx.execute("DELETE FROM album WHERE id = ?1", params![id])
+            .map_err(|e| e.to_string())?;
     }
     tx.commit().map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+fn export_media_group(
+    source_paths: Vec<String>,
+    destination_root: String,
+    folder_name: String,
+) -> Result<ExportResultDto, String> {
+    let sources = source_paths
+        .into_iter()
+        .map(PathBuf::from)
+        .collect::<Vec<_>>();
+    export_media_files(&sources, Path::new(&destination_root), &folder_name)
+}
+
 
 #[tauri::command]
 fn update_media_details(
@@ -166,7 +228,12 @@ fn update_media_details(
     let conn = open_database(&app)?;
     conn.execute(
         "UPDATE media SET rating = ?1, comment = ?2, favorite = ?3 WHERE id = ?4",
-        params![rating.clamp(0, 5), comment, if favorite { 1 } else { 0 }, id],
+        params![
+            rating.clamp(0, 5),
+            comment,
+            if favorite { 1 } else { 0 },
+            id
+        ],
     )
     .map_err(|error| format!("미디어 정보를 저장할 수 없습니다: {error}"))?;
     Ok(())
@@ -175,11 +242,19 @@ fn update_media_details(
 #[tauri::command]
 fn increment_media_view(app: AppHandle, id: i64) -> Result<i64, String> {
     let conn = open_database(&app)?;
-    let changed = conn.execute("UPDATE media SET view_count = view_count + 1 WHERE id = ?1", [id])
+    let changed = conn
+        .execute(
+            "UPDATE media SET view_count = view_count + 1 WHERE id = ?1",
+            [id],
+        )
         .map_err(|error| format!("조회수를 저장할 수 없습니다: {error}"))?;
-    if changed == 0 { return Err("조회할 미디어를 찾을 수 없습니다.".into()); }
-    conn.query_row("SELECT view_count FROM media WHERE id = ?1", [id], |row| row.get(0))
-        .map_err(|error| format!("조회수를 읽을 수 없습니다: {error}"))
+    if changed == 0 {
+        return Err("조회할 미디어를 찾을 수 없습니다.".into());
+    }
+    conn.query_row("SELECT view_count FROM media WHERE id = ?1", [id], |row| {
+        row.get(0)
+    })
+    .map_err(|error| format!("조회수를 읽을 수 없습니다: {error}"))
 }
 
 fn open_database(app: &AppHandle) -> Result<Connection, String> {
@@ -191,7 +266,8 @@ fn open_database(app: &AppHandle) -> Result<Connection, String> {
         .map_err(|error| format!("앱 데이터 폴더를 만들 수 없습니다: {error}"))?;
 
     let db_path = app_dir.join("album.sqlite");
-    let conn = Connection::open(db_path).map_err(|error| format!("DB를 열 수 없습니다: {error}"))?;
+    let conn =
+        Connection::open(db_path).map_err(|error| format!("DB를 열 수 없습니다: {error}"))?;
     conn.execute_batch("PRAGMA foreign_keys = ON;")
         .map_err(|error| format!("DB 설정을 적용할 수 없습니다: {error}"))?;
     conn.execute_batch(include_str!("../database/schema.sql"))
@@ -215,7 +291,10 @@ fn migrate_database(conn: &Connection) -> Result<(), String> {
     )
     .map_err(|error| format!("중복 방지 인덱스를 만들 수 없습니다: {error}"))?;
 
-    match conn.execute("ALTER TABLE album ADD COLUMN cover_color TEXT NOT NULL DEFAULT '#B9C58E'", []) {
+    match conn.execute(
+        "ALTER TABLE album ADD COLUMN cover_color TEXT NOT NULL DEFAULT '#B9C58E'",
+        [],
+    ) {
         Ok(_) => {}
         Err(error) if error.to_string().contains("duplicate column name") => {}
         Err(error) => return Err(format!("앨범 마이그레이션을 적용할 수 없습니다: {error}")),
@@ -230,15 +309,31 @@ fn migrate_database(conn: &Connection) -> Result<(), String> {
 }
 
 fn migrate_media_view_count(conn: &Connection) -> Result<(), String> {
-    let exists: bool = conn.query_row("SELECT EXISTS(SELECT 1 FROM pragma_table_info('media') WHERE name = 'view_count')", [], |row| row.get(0)).map_err(|e| e.to_string())?;
+    let exists: bool = conn
+        .query_row(
+            "SELECT EXISTS(SELECT 1 FROM pragma_table_info('media') WHERE name = 'view_count')",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| e.to_string())?;
     if !exists {
-        conn.execute("ALTER TABLE media ADD COLUMN view_count INTEGER NOT NULL DEFAULT 0", []).map_err(|e| format!("조회수 마이그레이션 실패: {e}"))?;
+        conn.execute(
+            "ALTER TABLE media ADD COLUMN view_count INTEGER NOT NULL DEFAULT 0",
+            [],
+        )
+        .map_err(|e| format!("조회수 마이그레이션 실패: {e}"))?;
     }
     Ok(())
 }
 
 fn migrate_person_cover(conn: &Connection) -> Result<(), String> {
-    let exists: bool = conn.query_row("SELECT EXISTS(SELECT 1 FROM pragma_table_info('person') WHERE name = 'cover_face_id')", [], |row| row.get(0)).map_err(|e| e.to_string())?;
+    let exists: bool = conn
+        .query_row(
+            "SELECT EXISTS(SELECT 1 FROM pragma_table_info('person') WHERE name = 'cover_face_id')",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| e.to_string())?;
     if !exists {
         conn.execute("ALTER TABLE person ADD COLUMN cover_face_id INTEGER REFERENCES detected_face(id) ON DELETE SET NULL", []).map_err(|e| format!("인물 대표 사진 마이그레이션 실패: {e}"))?;
     }
@@ -246,9 +341,19 @@ fn migrate_person_cover(conn: &Connection) -> Result<(), String> {
 }
 
 fn migrate_album_concept(conn: &Connection) -> Result<(), String> {
-    let exists: bool = conn.query_row("SELECT EXISTS(SELECT 1 FROM pragma_table_info('album') WHERE name = 'cover_concept')", [], |row| row.get(0)).map_err(|e| e.to_string())?;
+    let exists: bool = conn
+        .query_row(
+            "SELECT EXISTS(SELECT 1 FROM pragma_table_info('album') WHERE name = 'cover_concept')",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| e.to_string())?;
     if !exists {
-        conn.execute("ALTER TABLE album ADD COLUMN cover_concept TEXT NOT NULL DEFAULT 'mint'", []).map_err(|e| format!("앨범 컨셉 마이그레이션 실패: {e}"))?;
+        conn.execute(
+            "ALTER TABLE album ADD COLUMN cover_concept TEXT NOT NULL DEFAULT 'mint'",
+            [],
+        )
+        .map_err(|e| format!("앨범 컨셉 마이그레이션 실패: {e}"))?;
     }
     Ok(())
 }
@@ -263,7 +368,13 @@ mod album_concept_tests {
         conn.execute_batch("CREATE TABLE album (id INTEGER PRIMARY KEY, title TEXT); INSERT INTO album VALUES (1, 'existing');").unwrap();
         migrate_album_concept(&conn).unwrap();
         migrate_album_concept(&conn).unwrap();
-        let value: (String, String) = conn.query_row("SELECT title, cover_concept FROM album WHERE id = 1", [], |row| Ok((row.get(0)?, row.get(1)?))).unwrap();
+        let value: (String, String) = conn
+            .query_row(
+                "SELECT title, cover_concept FROM album WHERE id = 1",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap();
         assert_eq!(value, ("existing".into(), "mint".into()));
     }
 
@@ -273,7 +384,13 @@ mod album_concept_tests {
         conn.execute_batch("CREATE TABLE person (id INTEGER PRIMARY KEY, name TEXT NOT NULL); CREATE TABLE detected_face (id INTEGER PRIMARY KEY); INSERT INTO person VALUES (1, '가족');").unwrap();
         migrate_person_cover(&conn).unwrap();
         migrate_person_cover(&conn).unwrap();
-        let value: (String, Option<i64>) = conn.query_row("SELECT name, cover_face_id FROM person WHERE id = 1", [], |row| Ok((row.get(0)?, row.get(1)?))).unwrap();
+        let value: (String, Option<i64>) = conn
+            .query_row(
+                "SELECT name, cover_face_id FROM person WHERE id = 1",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap();
         assert_eq!(value, ("가족".into(), None));
     }
 
@@ -283,7 +400,13 @@ mod album_concept_tests {
         conn.execute_batch("CREATE TABLE media (id INTEGER PRIMARY KEY, file_path TEXT NOT NULL); INSERT INTO media VALUES (1, 'existing.jpg');").unwrap();
         migrate_media_view_count(&conn).unwrap();
         migrate_media_view_count(&conn).unwrap();
-        let value: (String, i64) = conn.query_row("SELECT file_path, view_count FROM media WHERE id = 1", [], |row| Ok((row.get(0)?, row.get(1)?))).unwrap();
+        let value: (String, i64) = conn
+            .query_row(
+                "SELECT file_path, view_count FROM media WHERE id = 1",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap();
         assert_eq!(value, ("existing.jpg".into(), 0));
     }
 
@@ -291,11 +414,20 @@ mod album_concept_tests {
     fn album_colors_roundtrip_and_failed_writes_rollback() {
         let mut conn = Connection::open_in_memory().unwrap();
         conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
-        conn.execute_batch(include_str!("../database/schema.sql")).unwrap();
+        conn.execute_batch(include_str!("../database/schema.sql"))
+            .unwrap();
         conn.execute("INSERT INTO media(file_path, file_type, size_bytes) VALUES ('original.jpg', 'image', 42)", []).unwrap();
         for (title, color) in [("brown", "#6A4538"), ("navy", "#2F4058")] {
             let id = insert_album(&mut conn, title, &[1], color).unwrap();
-            assert_eq!(read_albums(&conn).unwrap().into_iter().find(|album| album.id == id).unwrap().cover_color, color);
+            assert_eq!(
+                read_albums(&conn)
+                    .unwrap()
+                    .into_iter()
+                    .find(|album| album.id == id)
+                    .unwrap()
+                    .cover_color,
+                color
+            );
         }
         save_album(&mut conn, 1, "edited", "#AFC5CF", &[1]).unwrap();
         assert!(save_album(&mut conn, 1, "bad", "#AFC5CF", &[999]).is_err());
@@ -307,8 +439,83 @@ mod album_concept_tests {
         assert_eq!(edited.title, "edited");
         assert_eq!(edited.cover_color, "#AFC5CF");
         assert_eq!(edited.items.len(), 1);
-        let path: String = conn.query_row("SELECT file_path FROM media WHERE id = 1", [], |row| row.get(0)).unwrap();
+        let path: String = conn
+            .query_row("SELECT file_path FROM media WHERE id = 1", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
         assert_eq!(path, "original.jpg");
+    }
+
+    #[test]
+    fn batched_album_reads_keep_empty_albums_order_and_current_media_details() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(include_str!("../database/schema.sql")).unwrap();
+        assert!(read_albums(&conn).unwrap().is_empty());
+        conn.execute_batch(
+            "INSERT INTO media(id, file_path, file_type, size_bytes, taken_at, rating, comment, favorite, view_count)
+             VALUES (1, 'first.jpg', 'image', 100, '2026-09-24', 5, 'current caption', 1, 9),
+                    (2, 'second.jpg', 'image', 200, NULL, 0, '', 0, 0);
+             INSERT INTO album(id, title, created_at) VALUES (1, 'older', '2025-01-01'), (2, 'newer', '2026-01-01'), (3, 'empty', '2026-01-01');
+             INSERT INTO album_item(album_id, media_id, sequence) VALUES (1, 1, 9), (1, 2, 2), (2, 1, 0);"
+        ).unwrap();
+        let albums = read_albums(&conn).unwrap();
+        assert_eq!(albums.iter().map(|album| album.id).collect::<Vec<_>>(), vec![3, 2, 1]);
+        assert!(albums[0].items.is_empty());
+        assert_eq!(albums[2].items.iter().map(|item| item.id).collect::<Vec<_>>(), vec![2, 1]);
+        let media = read_media(&conn).unwrap();
+        assert_eq!(serde_json::to_value(&albums[1].items[0]).unwrap(), serde_json::to_value(&media[0]).unwrap());
+        assert_eq!(serde_json::to_value(&albums[2].items[1]).unwrap(), serde_json::to_value(&media[0]).unwrap());
+        assert_eq!(albums[1].items[0].comment, "current caption");
+        assert_eq!(albums[1].items[0].view_count, 9);
+        assert!(albums[1].items[0].favorite);
+    }
+
+    #[test]
+    fn grouped_export_copies_files_and_keeps_duplicate_names() {
+        let nonce = std::time::SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let test_root =
+            std::env::temp_dir().join(format!("oraedameun-export-{}-{nonce}", std::process::id()));
+        let first = test_root.join("first");
+        let second = test_root.join("second");
+        let output = test_root.join("output");
+        fs::create_dir_all(&first).unwrap();
+        fs::create_dir_all(&second).unwrap();
+        fs::create_dir_all(&output).unwrap();
+        let first_photo = first.join("photo.jpg");
+        let second_photo = second.join("photo.jpg");
+        fs::write(&first_photo, b"first").unwrap();
+        fs::write(&second_photo, b"second").unwrap();
+
+        let result = export_media_files(
+            &[first_photo.clone(), second_photo, first_photo],
+            &output,
+            "가족 앨범",
+        )
+        .unwrap();
+        let exported = output.join("가족 앨범");
+        assert_eq!(result.copied, 2);
+        assert_eq!(fs::read(exported.join("photo.jpg")).unwrap(), b"first");
+        assert_eq!(fs::read(exported.join("photo (2).jpg")).unwrap(), b"second");
+        assert!(export_media_files(&[], &output, "가족 앨범").is_err());
+        fs::remove_dir_all(&test_root).unwrap();
+    }
+
+    #[test]
+    fn grouped_export_rejects_unsafe_folder_names() {
+        for name in ["", "..", "bad/name", "CON", "photo. "] {
+            assert!(
+                valid_export_folder_name(name).is_err(),
+                "{name} should be rejected"
+            );
+        }
+        assert_eq!(
+            valid_export_folder_name("지은의 사진").unwrap(),
+            "지은의 사진"
+        );
     }
 }
 
@@ -317,7 +524,9 @@ fn normalize_existing_file_paths(conn: &Connection) -> Result<(), String> {
         .prepare("SELECT id, file_path FROM media")
         .map_err(|error| format!("경로 정리 목록을 준비할 수 없습니다: {error}"))?;
     let rows = stmt
-        .query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?)))
+        .query_map([], |row| {
+            Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
+        })
         .map_err(|error| format!("경로 정리 목록을 읽을 수 없습니다: {error}"))?;
 
     let paths = rows
@@ -364,11 +573,14 @@ fn collect_supported_files(paths: Vec<String>) -> Result<Vec<PathBuf>, String> {
 }
 
 fn register_file(conn: &Connection, path: &Path) -> Result<(), String> {
-    let metadata = fs::metadata(path).map_err(|error| format!("파일 정보를 읽을 수 없습니다: {error}"))?;
-    let file_path = normalize_file_path(&path.canonicalize().unwrap_or_else(|_| path.to_path_buf()));
+    let metadata =
+        fs::metadata(path).map_err(|error| format!("파일 정보를 읽을 수 없습니다: {error}"))?;
+    let file_path =
+        normalize_file_path(&path.canonicalize().unwrap_or_else(|_| path.to_path_buf()));
     let file_type = media_type(path).ok_or_else(|| "지원하지 않는 파일 형식입니다.".to_string())?;
     let taken_at = modified_date(&metadata);
-    let content_hash = file_hash(path).map_err(|error| format!("파일 해시를 계산할 수 없습니다: {error}"))?;
+    let content_hash =
+        file_hash(path).map_err(|error| format!("파일 해시를 계산할 수 없습니다: {error}"))?;
 
     conn.execute(
         "INSERT INTO media (file_path, content_hash, file_type, taken_at, size_bytes, rating, comment, favorite, metadata_status)
@@ -387,6 +599,24 @@ fn register_file(conn: &Connection, path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+fn media_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MediaItemDto> {
+    Ok(MediaItemDto {
+        id: row.get(0)?,
+        file_path: row.get(1)?,
+        file_type: row.get(2)?,
+        taken_at: row.get(3)?,
+        width: row.get(4)?,
+        height: row.get(5)?,
+        duration: row.get(6)?,
+        size_bytes: row.get(7)?,
+        rating: row.get(8)?,
+        comment: row.get(9)?,
+        favorite: row.get::<_, i64>(10)? == 1,
+        metadata_status: row.get(11)?,
+        view_count: row.get(12)?,
+    })
+}
+
 fn read_media(conn: &Connection) -> Result<Vec<MediaItemDto>, String> {
     let mut stmt = conn
         .prepare(
@@ -397,23 +627,7 @@ fn read_media(conn: &Connection) -> Result<Vec<MediaItemDto>, String> {
         .map_err(|error| format!("목록을 준비할 수 없습니다: {error}"))?;
 
     let rows = stmt
-        .query_map([], |row| {
-            Ok(MediaItemDto {
-                id: row.get(0)?,
-                file_path: row.get(1)?,
-                file_type: row.get(2)?,
-                taken_at: row.get(3)?,
-                width: row.get(4)?,
-                height: row.get(5)?,
-                duration: row.get(6)?,
-                size_bytes: row.get(7)?,
-                rating: row.get(8)?,
-                comment: row.get(9)?,
-                favorite: row.get::<_, i64>(10)? == 1,
-                metadata_status: row.get(11)?,
-                view_count: row.get(12)?,
-            })
-        })
+        .query_map([], media_from_row)
         .map_err(|error| format!("목록을 읽을 수 없습니다: {error}"))?;
 
     rows.collect::<Result<Vec<_>, _>>()
@@ -431,68 +645,48 @@ fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
 
     let album_rows = stmt
         .query_map([], |row| {
-            Ok((
-                row.get::<_, i64>(0)?,
-                row.get::<_, String>(1)?,
-                row.get::<_, String>(2)?,
-                row.get::<_, String>(3)?,
-                row.get::<_, String>(4)?,
-            ))
+            Ok(AlbumDto {
+                id: row.get(0)?,
+                title: row.get(1)?,
+                description: row.get(2)?,
+                cover_color: row.get(3)?,
+                created_at: row.get(4)?,
+                items: Vec::new(),
+            })
         })
         .map_err(|error| format!("앨범 목록을 읽을 수 없습니다: {error}"))?;
 
-    let albums = album_rows
+    let mut albums = album_rows
         .collect::<Result<Vec<_>, _>>()
         .map_err(|error| format!("앨범 목록을 변환할 수 없습니다: {error}"))?;
 
-    let mut result = Vec::new();
-    for (id, title, description, cover_color, created_at) in albums {
-        result.push(AlbumDto {
-            id,
-            title,
-            description,
-            cover_color,
-            created_at,
-            items: read_album_media(conn, id)?,
-        });
+    if albums.is_empty() {
+        return Ok(albums);
     }
-
-    Ok(result)
-}
-
-fn read_album_media(conn: &Connection, album_id: i64) -> Result<Vec<MediaItemDto>, String> {
+    let positions: HashMap<_, _> = albums.iter().enumerate().map(|(index, album)| (album.id, index)).collect();
+    // Load all memberships once instead of issuing one photo query per album.
     let mut stmt = conn
         .prepare(
-            "SELECT m.id, m.file_path, m.file_type, m.taken_at, m.width, m.height, m.duration, m.size_bytes, m.rating, m.comment, m.favorite, m.metadata_status, m.view_count
+            "SELECT m.id, m.file_path, m.file_type, m.taken_at, m.width, m.height, m.duration, m.size_bytes, m.rating, m.comment, m.favorite, m.metadata_status, m.view_count, ai.album_id
              FROM album_item ai
              JOIN media m ON m.id = ai.media_id
-             WHERE ai.album_id = ?1
-             ORDER BY ai.sequence ASC",
+             ORDER BY ai.album_id, ai.sequence ASC",
         )
         .map_err(|error| format!("앨범 항목을 준비할 수 없습니다: {error}"))?;
 
     let rows = stmt
-        .query_map(params![album_id], |row| {
-            Ok(MediaItemDto {
-                id: row.get(0)?,
-                file_path: row.get(1)?,
-                file_type: row.get(2)?,
-                taken_at: row.get(3)?,
-                width: row.get(4)?,
-                height: row.get(5)?,
-                duration: row.get(6)?,
-                size_bytes: row.get(7)?,
-                rating: row.get(8)?,
-                comment: row.get(9)?,
-                favorite: row.get::<_, i64>(10)? == 1,
-                metadata_status: row.get(11)?,
-                view_count: row.get(12)?,
-            })
+        .query_map([], |row| {
+            Ok((row.get::<_, i64>(13)?, media_from_row(row)?))
         })
         .map_err(|error| format!("앨범 항목을 읽을 수 없습니다: {error}"))?;
 
-    rows.collect::<Result<Vec<_>, _>>()
-        .map_err(|error| format!("앨범 항목을 변환할 수 없습니다: {error}"))
+    for row in rows {
+        let (album_id, item) = row.map_err(|error| format!("앨범 항목을 변환할 수 없습니다: {error}"))?;
+        if let Some(&position) = positions.get(&album_id) {
+            albums[position].items.push(item);
+        }
+    }
+    Ok(albums)
 }
 
 fn is_supported_file(path: &Path) -> bool {
@@ -567,8 +761,55 @@ fn civil_from_days(days_since_epoch: i64) -> Option<String> {
 }
 
 pub fn run() {
-    tauri::Builder::default()
+    #[cfg(feature = "custom-protocol")]
+    localhost::trace("application starting");
+    let app = tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_dialog::init())
+        .setup(|app| {
+            #[cfg(feature = "custom-protocol")]
+            localhost::trace("application setup");
+            #[cfg(feature = "custom-protocol")]
+            {
+                use tauri_plugin_dialog::DialogExt;
+                match localhost::LocalServer::start(app.handle()) {
+                    Ok(server) => { app.manage(server); }
+                    Err(error) => {
+                        let message = if error.kind() == io::ErrorKind::AddrInUse {
+                            "127.0.0.1:5173 포트를 다른 프로그램이 사용하고 있습니다. 개발 서버 또는 해당 프로그램을 종료한 뒤 오래담은을 다시 실행해 주세요.".to_owned()
+                        } else {
+                            format!("로컬 서버를 시작하지 못했습니다.\n{error}")
+                        };
+                        app.dialog().message(&message).title("오래담은 실행 안내")
+                            .kind(tauri_plugin_dialog::MessageDialogKind::Error).blocking_show();
+                        return Err(Box::new(io::Error::new(error.kind(), message)));
+                    }
+                }
+            }
+            let window_config = app.config().app.windows[0].clone();
+            #[cfg(feature = "custom-protocol")]
+            let window_config = {
+                let mut config = window_config;
+                config.url = tauri::WebviewUrl::External(localhost::ORIGIN.parse()?);
+                config
+            };
+            // Native storage/dialog commands are available only to this app's origin.
+            #[cfg(feature = "custom-protocol")]
+            localhost::trace("creating main webview");
+            tauri::WebviewWindowBuilder::from_config(app, &window_config)?
+                .on_navigation(|url| url.scheme() == "http"
+                    && url.host_str() == Some("127.0.0.1") && url.port() == Some(5173))
+                .build()?;
+            #[cfg(feature = "custom-protocol")]
+            localhost::trace("main webview created");
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             list_media,
             thumbnails::media_thumbnail,
@@ -578,6 +819,7 @@ pub fn run() {
             create_album_from_media,
             update_album,
             delete_albums,
+            export_media_group,
             register_paths,
             update_media_details,
             increment_media_view,
@@ -593,6 +835,14 @@ pub fn run() {
             faces::move_faces,
             faces::clear_face_index
         ])
-        .run(tauri::generate_context!())
+        .build(tauri::generate_context!())
         .expect("failed to run app");
+    app.run(|app, event| {
+        #[cfg(feature = "custom-protocol")]
+        if let tauri::RunEvent::Exit = event {
+            if let Some(server) = app.try_state::<localhost::LocalServer>() { server.stop(); }
+        }
+        #[cfg(not(feature = "custom-protocol"))]
+        let _ = (app, event);
+    });
 }
