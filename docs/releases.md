@@ -1,6 +1,6 @@
 # 버전 관리와 직접 패키징
 
-현재 GitHub Actions의 **Windows validation**은 버전 일치 검사, TypeScript 빌드, 프런트엔드 단위 테스트, Playwright 화면 테스트와 Rust 저장소 테스트만 실행합니다. 사용자 요청에 따라 설치 파일 생성·업로드·자동 릴리스 초안 생성을 하지 않습니다.
+현재 GitHub Actions의 **Source validation**은 Linux에서 버전 일치 검사, TypeScript 빌드, 프런트엔드 단위 테스트와 Playwright 브라우저 화면 테스트만 실행합니다. Windows 실행 파일 관련 테스트는 실행하지 않습니다. 사용자 요청에 따라 설치 파일 생성·업로드·자동 릴리스 초안 생성을 하지 않습니다.
 
 ## 코드 수정 반영
 

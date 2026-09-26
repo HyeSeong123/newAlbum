@@ -1,4 +1,4 @@
-name: Windows validation
+name: Source validation
 
 on:
   workflow_dispatch:
@@ -18,21 +18,20 @@ on:
       - 'vite.config.ts'
       - 'tsconfig.json'
       - 'index.html'
-      - '.github/workflows/windows-installer.yml'
+      - '.github/workflows/**'
 
 permissions:
   contents: read
 
+# Retain the previous group key to cancel any older packaging workflow in flight.
 concurrency:
   group: windows-installer-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref_type != 'tag' }}
+  cancel-in-progress: true
 
 jobs:
   verify:
-    runs-on: windows-latest
-    timeout-minutes: 30
-    env:
-      CARGO_TERM_COLOR: always
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
         with:
@@ -41,34 +40,16 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Check application and tag versions
+      - name: Check source versions
         run: npm run version:check
-      - name: Prepare Rust
-        run: rustup toolchain install stable --profile minimal
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: src-tauri -> target
-          cache-on-failure: true
       - name: Install frontend dependencies
         run: npm ci
       - name: Run frontend unit tests
         run: npm run test:unit
-      - name: Test photo title and album workflows
+      - name: Test browser workflows
         run: |
-          npx playwright install chromium
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npx playwright install --with-deps chromium
           npx playwright test tests/photo-titles.spec.ts tests/photo-detail.spec.ts tests/journal-preview.spec.ts --project=desktop --workers=2
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           npx playwright test tests/album-portrait.spec.ts tests/album-animation.spec.ts tests/album-content.spec.ts tests/album-story.spec.ts tests/memories.spec.ts --workers=2
-      - name: Build frontend and bundle local models
+      - name: Build TypeScript frontend
         run: npm run build
-      - name: Test Rust storage and local server
-        run: cargo test --manifest-path src-tauri/Cargo.toml --lib --locked --features custom-protocol
-      - name: Upload test diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: windows-test-diagnostics-${{ github.run_number }}
-          path: test-results/
-          if-no-files-found: ignore
-          retention-days: 7

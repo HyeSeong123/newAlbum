@@ -55,7 +55,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       console.log(await checkVersion(root, tag));
     } else {
       const version = await bumpVersion(root, command);
-      console.log(`버전을 ${version}(으)로 맞췄습니다. 변경사항을 커밋한 뒤 v${version} 태그를 푸시하면 설치 파일을 빌드합니다.`);
+      console.log(`버전을 ${version}(으)로 맞췄습니다. 변경된 소스와 버전 파일을 커밋하세요. 설치 파일은 자동 생성하지 않습니다.`);
     }
   } catch (error) {
     console.error(error.message);
