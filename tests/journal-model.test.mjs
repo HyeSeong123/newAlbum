@@ -96,12 +96,43 @@ test('mixed orientations retain their saved order with two photos per leaf', () 
   assert.deepEqual(makeAlbumSpreads([]), []);
 });
 
-test('all-portrait albums pair photos and support a single final photo', () => {
+test('short portrait albums balance their final spread without an empty leaf', () => {
   const items = Array.from({ length: 5 }, (_, index) => photo(String(index), null, { width: 500, height: 900 }));
   const spreads = makeAlbumSpreads(items);
-  assert.deepEqual(spreads.map(({ left, right }) => [left.length, right.length]), [[2, 2], [1, 0]]);
+  assert.deepEqual(spreads.map(({ left, right }) => [left.length, right.length]), [[3, 2]]);
   assert.deepEqual(spreads.flatMap(({ left, right }) => [...left, ...right]), items);
   assert.deepEqual(makeAlbumSpreads([items[0]])[0], { left: [items[0]], right: [] });
+});
+
+test('portrait leaves hold up to four photos with stable uncropped grid layouts', () => {
+  for (let count = 1; count <= 25; count++) {
+    const items = Array.from({ length: count }, (_, index) => photo(String(index), null, { width: 600, height: 900 }));
+    const spreads = makeAlbumSpreads(items);
+    assert.deepEqual(spreads.flatMap(({ left, right }) => [...left, ...right]), items);
+    assert.deepEqual(makeAlbumSpreads(items), spreads);
+    assert.equal(spreads.length, Math.ceil(count / 8));
+    assert.ok(spreads.slice(0, -1).every(({ left, right }) => left.length === 4 && right.length === 4));
+    for (const leaf of spreads.flatMap(({ left, right }) => [left, right])) {
+      assert.ok(leaf.length <= 4);
+      if (leaf.length > 2) assert.equal(albumLeafLayout(leaf), 'grid');
+    }
+    if (count % 8 >= 3) assert.ok(spreads.at(-1).right.length > 0);
+  }
+});
+
+test('all orientation combinations preserve order without empty intermediate leaves', () => {
+  for (let mask = 0; mask < 1024; mask++) {
+    const items = Array.from({ length: 10 }, (_, index) => photo(String(index), null, {
+      width: mask & (1 << index) ? 600 : 1200, height: 900,
+    }));
+    const spreads = makeAlbumSpreads(items);
+    assert.deepEqual(spreads.flatMap(({ left, right }) => [...left, ...right]), items);
+    assert.ok(spreads.slice(0, -1).every(({ left, right }) => left.length >= 2 && right.length >= 2));
+    for (const leaf of spreads.flatMap(({ left, right }) => [left, right])) {
+      assert.ok(leaf.length <= 4);
+      if (leaf.length > 2) assert.ok(leaf.every(isPortraitMedia));
+    }
+  }
 });
 
 test('landscape, square and unknown dimensions always use four photos per full spread', () => {
@@ -117,15 +148,19 @@ test('landscape, square and unknown dimensions always use four photos per full s
   assert.deepEqual(makeAlbumSpreads(items).flatMap(({ left, right }) => [...left, ...right]), items);
 });
 
-test('pairing is stable across reopening, caption edits and orientation metadata updates', () => {
+test('grouping is stable across reopening and caption edits while new dimensions retain every photo', () => {
   const items = Array.from({ length: 100 }, (_, index) => photo(String(index), null, { width: 900, height: 600 }));
   const spreads = makeAlbumSpreads(items);
   const ids = (pages) => pages.map(({ left, right }) => [left.map((item) => item.id), right.map((item) => item.id)]);
   assert.equal(spreads.length, 25);
   assert.ok(spreads.every(({ left, right }) => left.length === 2 && right.length === 2));
   assert.deepEqual(ids(makeAlbumSpreads(items)), ids(spreads));
-  const updated = items.map((item, index) => ({ ...item, comment: 'New caption', rating: 5, favorite: true, width: index % 2 ? 400 : null, height: 1600 }));
+  const updated = items.map((item) => ({ ...item, comment: 'New caption', rating: 5, favorite: true }));
   assert.deepEqual(ids(makeAlbumSpreads(updated)), ids(spreads));
+  const portraits = updated.map((item) => ({ ...item, width: 600, height: 900 }));
+  const regrouped = makeAlbumSpreads(portraits);
+  assert.equal(regrouped.length, 13);
+  assert.deepEqual(regrouped.flatMap(({ left, right }) => [...left, ...right]), portraits);
   assert.deepEqual(spreads.flatMap(({ left, right }) => [...left, ...right]), items);
 });
 

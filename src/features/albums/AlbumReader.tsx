@@ -60,7 +60,7 @@ export function AlbumFullscreenReader({ title, items, color, open, onOpen, onClo
             const entries = visibleSpread?.[side] ?? [];
             const portrait = entries.length === 1 && isPortraitMedia(entries[0]);
             return <section key={side} className={`albumPaper ${side}${entries.length === 1 ? " single-photo" : ""}${portrait ? " portrait-photo" : ""}`}>
-              <div className={`albumPageImages albumLeafLayout layout-${albumLeafLayout(entries)}`}>{entries.map((item, index) => <AlbumPagePhoto key={item.id} item={item} index={sideIndex * 2 + index} side={side} turning={Boolean(turning)} onOpen={() => onOpen(item, orderedItems)} />)}</div>
+              <div className={`albumPageImages albumLeafLayout layout-${albumLeafLayout(entries)}`}>{entries.map((item, index) => <AlbumPagePhoto key={item.id} item={item} index={sideIndex * 4 + index} side={side} turning={Boolean(turning)} onOpen={() => onOpen(item, orderedItems)} />)}</div>
               <span className="albumPageNumber">{String(currentPage * 2 + sideIndex + 1).padStart(2, "0")}</span>
             </section>;
           })}

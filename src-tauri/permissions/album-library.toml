@@ -11,6 +11,7 @@ commands.allow = [
   "update_album",
   "delete_albums",
   "export_media_group",
+  "download_media",
   "register_paths",
   "update_media_details",
   "update_media_title",

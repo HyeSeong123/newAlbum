@@ -10,7 +10,7 @@ use std::{
 use tauri::{AppHandle, Manager};
 use walkdir::WalkDir;
 mod export;
-use export::{export_media_files, ExportResultDto};
+use export::{copy_media_file, export_media_files, ExportResultDto};
 #[cfg(test)]
 use export::valid_export_folder_name;
 mod faces;
@@ -215,6 +215,18 @@ fn export_media_group(
         .map(PathBuf::from)
         .collect::<Vec<_>>();
     export_media_files(&sources, Path::new(&destination_root), &folder_name)
+}
+
+#[tauri::command]
+async fn download_media(app: AppHandle, id: i64, destination: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let conn = open_database(&app)?;
+        let source: String = conn.query_row(
+            "SELECT file_path FROM media WHERE id = ?1 AND file_type = 'image'",
+            [id], |row| row.get(0),
+        ).map_err(|_| "다운로드할 원본 사진을 찾을 수 없습니다.".to_owned())?;
+        copy_media_file(Path::new(&source), Path::new(&destination))
+    }).await.map_err(|error| format!("사진 저장을 완료하지 못했습니다: {error}"))?
 }
 
 
@@ -891,6 +903,7 @@ pub fn run() {
             update_album,
             delete_albums,
             export_media_group,
+            download_media,
             register_paths,
             update_media_details,
             update_media_title,

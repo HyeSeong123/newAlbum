@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type FormEvent, type CSSProperties } from "react";
-import { CheckSquare, ChevronLeft, ChevronRight, Heart, MessageCircle, Minus, Plus, RotateCcw, Star, X, ZoomIn, ZoomOut } from "lucide-react";
+import { CheckSquare, ChevronLeft, ChevronRight, Download, Heart, MessageCircle, Minus, Plus, RotateCcw, Star, X, ZoomIn, ZoomOut } from "lucide-react";
 import type { MediaItem } from "../../types/media";
 import type { MediaComment } from "./mediaComments";
 import { getMediaSource, MediaImage } from "../../components/MediaVisual";
 import { MediaPlayback } from "../../components/MediaPlayback";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
 import { formatJournalDate } from "./journalModel";
+import { useMediaDownload } from "./useMediaDownload";
 
 export function DetailModal({
   item,
@@ -45,6 +46,7 @@ export function DetailModal({
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingAuthor, setEditingAuthor] = useState("");
   const [editingContent, setEditingContent] = useState("");
+  const mediaDownload = useMediaDownload(item);
   useModalBehavior(onClose, { onPrev, onNext });
 
   useEffect(() => {
@@ -133,6 +135,9 @@ export function DetailModal({
               </button>
               <button onClick={() => { commentInputRef.current?.focus(); commentInputRef.current?.scrollIntoView({ block: "nearest" }); }}><MessageCircle size={18} /><span>댓글 {comments.length}</span></button>
               {item.fileType === "image" && <button ref={zoomTriggerRef} className="detailExpand" title="확대 보기" onClick={() => setZoomViewerOpen(true)}><ZoomIn size={18} /><span>확대 보기</span></button>}
+              {item.fileType === "image" && <button title="원본 다운로드" aria-label="원본 다운로드" disabled={mediaDownload.busy || !mediaDownload.available} onClick={() => void mediaDownload.download()}><Download size={18} /><span>{mediaDownload.busy ? "저장 중" : "다운로드"}</span></button>}
+              {mediaDownload.error && <p className="detailDownloadFeedback" role="alert">{mediaDownload.error}</p>}
+              {mediaDownload.notice && <p className="detailDownloadFeedback" role="status">{mediaDownload.notice}</p>}
             </div>
             <div className="detailStage">
               {item.fileType === "image" ? <>

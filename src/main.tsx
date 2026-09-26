@@ -7,6 +7,7 @@ import "./features/albums/albums.css";
 import "./features/calendar/calendar.css";
 import "./controls.css";
 import "./features/media/photo-detail.css";
+import "./components/media-visual.css";
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

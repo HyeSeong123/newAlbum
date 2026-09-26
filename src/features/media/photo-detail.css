@@ -1,6 +1,8 @@
 /* A stable viewing area beside a scrollable information and comments panel. */
 .photoInspector .detailLayout { grid-template-columns: minmax(0, 1fr) 340px; grid-template-rows: minmax(0, 1fr); }
 .photoInspector .detailPhotoPane { padding: 16px 24px; grid-template-rows: auto minmax(0, 1fr) auto; gap: 16px; }
+.detailDownloadFeedback { flex-basis: 100%; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.detailDownloadFeedback[role="alert"] { color: var(--danger); }
 .photoInspector .detailPhotoActions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .photoInspector .detailPhotoActions button,
 .photoInspector .detailZoomControls button { min-height: 38px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--border); border-radius: 6px; color: #53584b; background: var(--surface); font-size: 13px; white-space: nowrap; }

@@ -1,4 +1,4 @@
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import type { MediaItem, MediaType, SavedAlbum } from "../types/media";
 
@@ -116,6 +116,29 @@ export async function chooseExportDestination(): Promise<string | null> {
 export async function exportMediaGroup(items: MediaItem[], destinationRoot: string, folderName: string): Promise<MediaExportResult> {
   const sourcePaths = [...new Set(items.map((item) => item.filePath).filter(Boolean))];
   return invoke<MediaExportResult>("export_media_group", { sourcePaths, destinationRoot, folderName });
+}
+
+export async function downloadMedia(item: MediaItem): Promise<boolean> {
+  if (item.previewUrl) {
+    const link = document.createElement("a");
+    link.href = item.previewUrl;
+    link.download = item.fileName;
+    document.body.append(link);
+    try { link.click(); } finally { link.remove(); }
+    return true;
+  }
+  if (!isTauriRuntime() || !/^\d+$/.test(item.id) || !item.filePath) {
+    throw new Error("다운로드할 원본 파일을 찾을 수 없습니다.");
+  }
+  const extension = item.fileName.split(".").pop();
+  const destination = await save({
+    title: "원본 사진 저장",
+    defaultPath: item.fileName,
+    ...(extension && extension !== item.fileName ? { filters: [{ name: "원본 사진", extensions: [extension] }] } : {}),
+  });
+  if (!destination) return false;
+  await invoke("download_media", { id: Number(item.id), destination });
+  return true;
 }
 
 export async function saveMediaDetails(item: MediaItem): Promise<void> {

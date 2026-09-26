@@ -75,13 +75,30 @@ export function uniqueAlbumItems(items: MediaItem[]): MediaItem[] {
 
 export function makeAlbumSpreads(items: MediaItem[]): { left: MediaItem[]; right: MediaItem[] }[] {
   const spreads: { left: MediaItem[]; right: MediaItem[] }[] = [];
-  for (let index = 0; index < items.length; index += 4) {
-    spreads.push({ left: items.slice(index, index + 2), right: items.slice(index + 2, index + 4) });
+  let index = 0;
+  function takeLeaf(): MediaItem[] {
+    let count = Math.min(2, items.length - index);
+    if (count === 2 && isPortraitMedia(items[index]) && isPortraitMedia(items[index + 1])) {
+      while (count < 4 && index + count < items.length && isPortraitMedia(items[index + count])) count++;
+    }
+    const leaf = items.slice(index, index + count);
+    index += count;
+    return leaf;
+  }
+  while (index < items.length) {
+    const left = takeLeaf();
+    const right = takeLeaf();
+    // Balance a short final spread without reordering or duplicating its photos.
+    while (index === items.length && right.length < 2 && left.length > 2) {
+      right.unshift(left.pop()!);
+    }
+    spreads.push({ left, right });
   }
   return spreads;
 }
 
-export function albumLeafLayout(items: MediaItem[]): "single" | "rows" | "columns" {
+export function albumLeafLayout(items: MediaItem[]): "single" | "rows" | "columns" | "grid" {
+  if (items.length > 2) return "grid";
   if (items.length < 2) return "single";
   return items.some(({ fileType, width, height }) => fileType !== "audio"
     && typeof width === "number" && typeof height === "number"

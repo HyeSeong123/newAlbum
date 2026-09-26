@@ -191,6 +191,23 @@ in this pass; the user's actual library and packaged app were not tested.
   TypeScript and production build passed. Desktop/mobile screenshots checked.
   Existing port 5173 server reused; native user-library testing not included.
 
+## Uncropped Lists And Downloads (2026-09-27)
+
+- `MediaVisual` defaults to centered `contain` on the album overview's neutral
+  background. Full-photo lists share this behavior; album covers opt into
+  `cover`, while face crops remain specific to face selection.
+- Standalone calendar previews and dated-day thumbnails also use `contain`.
+  Album overview columns now start at 280 px instead of 220 px on desktop.
+- `useMediaDownload` owns the download lock and photo-specific feedback.
+  Browser imports download their original Blob; desktop downloads use the save
+  dialog and `download_media`, copying the registered source by ID off the UI
+  thread. Selecting the original path is rejected.
+- Validation: 52 unit tests, 20 Rust tests and production build passed. The
+  affected browser cases passed after correcting a missing fixture cover color
+  and the background expectation; one mobile calendar scroll check passed on
+  rerun. Desktop/mobile captures inspected. Native save-dialog interaction on
+  the user's library was not exercised.
+
 ## Further Work
 
 1. Consolidate overlapping *live* styles only with before/after visual comparisons.
