@@ -59,6 +59,6 @@ export function MediaImage({ item, original = false }: { item: MediaItem; origin
   return <img ref={ref} className="mediaImage" src={src} style={src ? undefined : { opacity: 0 }} alt="" loading={original ? "eager" : "lazy"} decoding="async" draggable={false} onError={() => { if (src !== source) setThumbnail({ key, src: source }); }} />;
 }
 
-export function getMediaSource(item: MediaItem): string | null {
+export function getMediaSource(item: Pick<MediaItem, "filePath" | "previewUrl">): string | null {
   return resolveMediaSource(item, isTauriRuntime() ? convertFileSrc : undefined);
 }

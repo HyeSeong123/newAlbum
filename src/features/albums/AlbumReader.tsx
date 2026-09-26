@@ -1,16 +1,20 @@
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { BookOpen, ChevronLeft, ChevronRight, FolderOutput, Images, Maximize, Minimize, MoreVertical, Music, Play, RotateCcw, Shuffle } from "lucide-react";
-import type { MediaItem } from "../../types/media";
+import type { AlbumContent, MediaItem } from "../../types/media";
+import { AlbumWrittenPage } from "./chapter/AlbumWrittenPage";
 import { EmptyState, MediaVisual } from "../../components/MediaVisual";
 import { ActionMenu } from "../../components/ActionMenu";
 import { albumLeafLayout, isLandscapeMedia, isPortraitMedia, mediaSummary } from "../media/journalModel";
 import { useAlbumReader } from "./useAlbumReader";
 import { ALBUM_TURN_TIMING } from "./albumAnimation";
 import albumOpenBase from "../../assets/album-open-white-thin.png";
+import { AlbumStoryPlayer } from "./story-player/AlbumStoryPlayer";
 
-export function AlbumFullscreenReader({ title, items, color, open, onOpen, onClose, onExport, backLabel = "내 앨범" }: {
+export function AlbumFullscreenReader({ title, items, contents, musicPath, color, open, onOpen, onClose, onExport, backLabel = "내 앨범" }: {
   title: string;
   items: MediaItem[];
+  contents?: AlbumContent[];
+  musicPath?: string;
   color?: string;
   open: boolean;
   onOpen: (item: MediaItem, collection?: MediaItem[]) => void;
@@ -18,10 +22,12 @@ export function AlbumFullscreenReader({ title, items, color, open, onOpen, onClo
   onExport?: () => void;
   backLabel?: string;
 }) {
+  const [story, setStory] = useState(false);
   const { order, orderedItems, pages, currentPage, visibleSpread, turning, turningLeaves, turnPhase, listView,
-    fullscreen, notice, resetOrder, jumpToPage, turnPage, toggleFullscreen, toggleListView } = useAlbumReader(items, open, onClose);
+    fullscreen, notice, resetOrder, jumpToPage, turnPage, toggleFullscreen, toggleListView } = useAlbumReader(items, open && !story, onClose, contents);
 
   if (!open) return null;
+  if (story) return <AlbumStoryPlayer title={title} items={items} contents={contents} musicPath={musicPath} onClose={() => setStory(false)} />;
   return <div className={`albumJournal${listView ? " is-list" : ""}`} style={{
     "--album-color": color,
     "--album-turn-duration": `${ALBUM_TURN_TIMING.motion}ms`,
@@ -34,11 +40,12 @@ export function AlbumFullscreenReader({ title, items, color, open, onOpen, onClo
       <button className="albumJournalBack" onClick={onClose} title="닫기"><ChevronLeft size={22} />{backLabel}</button>
       <div className="albumJournalHeading"><h2>{title}</h2><span>{mediaSummary(orderedItems)}{!listView && " · 세로 4장 / 가로 2장"}</span></div>
       <div className="albumJournalTools">
+        <button onClick={() => setStory(true)} aria-label="스토리로 보기" title="스토리로 보기"><Play size={18} /><span>스토리로 보기</span></button>
         <button aria-pressed={listView} onClick={toggleListView} aria-label={listView ? "책으로 보기" : "사진 목록"} title={listView ? "책으로 보기" : "사진 목록"}>{listView ? <BookOpen size={18} /> : <Images size={18} />}<span>{listView ? "책으로 보기" : "사진 목록"}</span></button>
         <button onClick={() => void toggleFullscreen()} disabled={!document.fullscreenEnabled} aria-pressed={fullscreen} title={fullscreen ? "전체화면 종료" : "전체화면"}>{fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}<span>{fullscreen ? "전체화면 종료" : "전체화면"}</span></button>
         <ActionMenu label="앨범 보기 옵션" icon={<MoreVertical size={19} />} actions={[
           ...(onExport ? [{ label: "내보내기", icon: <FolderOutput size={16} />, disabled: !items.length, onSelect: onExport }] : []),
-          { label: "사진 순서 섞기", icon: <Shuffle size={16} />, disabled: orderedItems.length < 2, onSelect: () => resetOrder(true) },
+          { label: "사진 순서 섞기", icon: <Shuffle size={16} />, disabled: orderedItems.length < 2 || contents?.some(entry => !entry.mediaId), onSelect: () => resetOrder(true) },
           { label: "원래 순서로 보기", icon: <RotateCcw size={16} />, disabled: !order, onSelect: () => resetOrder(false) },
         ]} />
       </div>
@@ -51,25 +58,26 @@ export function AlbumFullscreenReader({ title, items, color, open, onOpen, onClo
         <span>{item.takenAt ?? "날짜 없음"}{item.fileType === "video" && <Play size={14} />}{item.fileType === "audio" && <Music size={14} />}</span>
       </button>)}
     </section> : <div className="albumJournalCanvas">
-      {!items.length ? <EmptyState text="앨범에 담긴 기록이 없습니다." /> : <div className="albumBookStage">
+      {!pages.length ? <EmptyState text="앨범에 담긴 기록이 없습니다." /> : <div className="albumBookStage">
       <button className="albumEdgeNav prev" onClick={() => turnPage(-1)} disabled={Boolean(turning) || currentPage === 0} title="이전 책장"><ChevronLeft size={32} /></button>
       <div className={`albumSpread ${turning ? `turning-${turning}` : ""} ${turning && turnPhase ? `${turnPhase}-${turning}` : ""}`} data-turn-phase={turnPhase ?? undefined} aria-label="양면 포토앨범 책장" aria-busy={Boolean(turning)}>
         <div className="albumHardback">
           <img className="albumBookBase" src={albumOpenBase} alt="" aria-hidden="true" />
           {(["left", "right"] as const).map((side, sideIndex) => {
             const entries = visibleSpread?.[side] ?? [];
+            const written = visibleSpread?.[`${side}Page`];
             const portrait = entries.length === 1 && isPortraitMedia(entries[0]);
             const landscape = entries.length > 0 && entries.every(isLandscapeMedia);
             return <section key={side} className={`albumPaper ${side}${entries.length === 1 ? " single-photo" : ""}${portrait ? " portrait-photo" : ""}${landscape ? " landscape-page" : ""}`}>
-              <div className={`albumPageImages albumLeafLayout layout-${albumLeafLayout(entries)}`}>{entries.map((item, index) => <AlbumPagePhoto key={item.id} item={item} index={sideIndex * 4 + index} side={side} turning={Boolean(turning)} onOpen={() => onOpen(item, orderedItems)} />)}</div>
+              {written ? <div className="albumPhotoEntry" data-side={side}><AlbumWrittenPage page={written} /></div> : <div className={`albumPageImages albumLeafLayout layout-${albumLeafLayout(entries)}`}>{entries.map((item, index) => <AlbumPagePhoto key={item.id} item={item} index={sideIndex * 4 + index} side={side} turning={Boolean(turning)} onOpen={() => onOpen(item, orderedItems)} />)}</div>}
               <span className="albumPageNumber">{String(currentPage * 2 + sideIndex + 1).padStart(2, "0")}</span>
             </section>;
           })}
           {turning && turningLeaves && <div className={`albumTurnLayer ${turning}`} aria-hidden="true" inert>
             <span className="albumTurnShadow" />
             <div className="albumTurningSheet">
-              <AlbumTurningFace face="front" side={turning === "next" ? "right" : "left"} items={turningLeaves.front} />
-              <AlbumTurningFace face="back" side={turning === "next" ? "left" : "right"} items={turningLeaves.back} />
+              <AlbumTurningFace face="front" side={turning === "next" ? "right" : "left"} items={turningLeaves.front} page={turningLeaves.frontPage} />
+              <AlbumTurningFace face="back" side={turning === "next" ? "left" : "right"} items={turningLeaves.back} page={turningLeaves.backPage} />
             </div>
           </div>}
         </div>
@@ -97,14 +105,15 @@ function AlbumPagePhoto({ item, index, side, turning, onOpen }: { item: MediaIte
   </figure>;
 }
 
-function AlbumTurningFace({ face, side, items }: { face: "front" | "back"; side: "left" | "right"; items: MediaItem[] }) {
+function AlbumTurningFace({ face, side, items, page }: { face: "front" | "back"; side: "left" | "right"; items: MediaItem[]; page?: AlbumContent }) {
   return <div className={`albumTurnFace ${face} ${side}${items.length > 0 && items.every(isLandscapeMedia) ? " landscape-page" : ""}`}>
+    {page ? <div className="albumTurnImages albumLeafLayout layout-single"><AlbumWrittenPage page={page} /></div> :
     <div className={`albumTurnImages albumLeafLayout layout-${albumLeafLayout(items)}`}>
       {items.map(item => <figure key={item.id} className="albumTurnPrint" data-turn-media-id={item.id}>
         <div className="albumTurnPhoto"><AlbumPhotoVisual item={item} /></div>
         <AlbumPhotoCaption item={item} className="albumTurnCaption" />
       </figure>)}
-    </div>
+    </div>}
   </div>;
 }
 

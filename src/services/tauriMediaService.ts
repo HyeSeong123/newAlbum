@@ -1,6 +1,12 @@
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
-import type { MediaItem, MediaType, SavedAlbum } from "../types/media";
+import type { AlbumContent, MediaItem, MediaType, SavedAlbum } from "../types/media";
+import { albumContents } from "../features/albums/albumContent";
+
+interface BackendContent {
+  id: string; kind: AlbumContent["kind"]; media_id: number | null; title: string; body: string;
+  display_duration: number; transition_type: AlbumContent["transitionType"]; comment_visible: boolean;
+}
 
 interface BackendMediaItem {
   id: number;
@@ -26,6 +32,8 @@ interface BackendAlbum {
   cover_color: string;
   created_at: string;
   items: BackendMediaItem[];
+  contents?: BackendContent[];
+  music_path?: string | null;
 }
 
 const placeholders: Record<MediaType, string> = {
@@ -52,6 +60,12 @@ export async function loadSavedAlbums(): Promise<SavedAlbum[]> {
     coverColor: row.cover_color,
     createdAt: row.created_at,
     items: row.items.map(toMediaItem),
+    musicPath: row.music_path ?? undefined,
+    contents: row.contents?.map(entry => ({
+      id: entry.id, kind: entry.kind, mediaId: entry.media_id == null ? undefined : String(entry.media_id),
+      title: entry.title, body: entry.body, displayDuration: entry.display_duration,
+      transitionType: entry.transition_type, commentVisible: entry.comment_visible,
+    })),
   }));
 }
 
@@ -74,11 +88,25 @@ export async function createAlbumFromMedia(title: string, ids: string[], coverCo
 }
 
 export async function saveAlbum(album: SavedAlbum): Promise<void> {
-  await invoke("update_album", { id: Number(album.id), title: album.title, coverColor: album.coverColor, mediaIds: album.items.map((item) => Number(item.id)) });
+  await invoke("update_album", { id: Number(album.id), title: album.title, coverColor: album.coverColor,
+    musicPath: album.musicPath ?? "",
+    mediaIds: album.items.map((item) => Number(item.id)),
+    contents: albumContents(album).map(entry => ({
+      id: entry.id, kind: entry.kind, media_id: entry.mediaId ? Number(entry.mediaId) : null,
+      title: entry.title, body: entry.body, display_duration: entry.displayDuration,
+      transition_type: entry.transitionType, comment_visible: entry.commentVisible,
+    })),
+  });
 }
 
 export async function deleteAlbums(ids: string[]): Promise<void> {
   await invoke("delete_albums", { ids: ids.map(Number) });
+}
+
+export async function chooseAlbumMusic(): Promise<string | null> {
+  const selected = await open({ multiple:false, directory:false, title:"앨범 배경 음악",
+    filters:[{ name:"음악", extensions:["mp3", "wav", "ogg", "m4a", "flac"] }] });
+  return Array.isArray(selected) ? selected[0] ?? null : selected;
 }
 
 export async function chooseAndRegisterFiles(): Promise<MediaItem[]> {

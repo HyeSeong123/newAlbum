@@ -1,12 +1,15 @@
 import { useRef, useState, type FormEvent } from "react";
 import { Check, ChevronLeft, ChevronRight, Trash2, X } from "lucide-react";
-import type { SavedAlbum } from "../../types/media";
+import type { AlbumContent, SavedAlbum } from "../../types/media";
 import { MediaVisual } from "../../components/MediaVisual";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
 import { AlbumColorPicker } from "./AlbumCover";
+import { albumContents } from "./albumContent";
+import { AlbumContentEditor } from "./chapter/AlbumContentEditor";
+import { AlbumMusicSettings } from "./story-player/StorySettings";
 
 export function AlbumEditor({ album, onClose, onSave }: { album: SavedAlbum; onClose: () => void; onSave: (album: SavedAlbum) => Promise<void> }) {
-  const [draft, setDraft] = useState(album);
+  const [draft, setDraft] = useState(() => ({ ...album, contents: albumContents(album) }));
   const [chosen, setChosen] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -18,6 +21,9 @@ export function AlbumEditor({ album, onClose, onSave }: { album: SavedAlbum; onC
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (saving.current || !draft.title.trim()) return;
+    if (draft.contents.some(entry => !entry.mediaId && !entry.title.trim() && (entry.kind === "CHAPTER" || !entry.body.trim()))) {
+      setError("챕터에는 제목을, 글 페이지에는 제목이나 본문을 입력해 주세요."); return;
+    }
     saving.current = true;
     setBusy(true); setError("");
     try { await onSave({ ...draft, title: draft.title.trim() }); onClose(); }
@@ -26,8 +32,12 @@ export function AlbumEditor({ album, onClose, onSave }: { album: SavedAlbum; onC
   }
   function removeChosen() {
     const removed = new Set(chosen);
-    setDraft((current) => ({ ...current, items: current.items.filter((item) => !removed.has(item.id)) }));
+    setDraft((current) => ({ ...current, items: current.items.filter((item) => !removed.has(item.id)), contents: current.contents.filter(entry => !entry.mediaId || !removed.has(entry.mediaId)) }));
     setChosen([]);
+  }
+  function changeContents(contents: AlbumContent[]) {
+    const byId = new Map(draft.items.map(item => [item.id, item]));
+    setDraft({ ...draft, contents, items: contents.flatMap(entry => entry.mediaId && byId.has(entry.mediaId) ? [byId.get(entry.mediaId)!] : []) });
   }
   return <div className="modalBackdrop">
     <section className="albumEditor" role="dialog" aria-modal="true" aria-labelledby="albumEditorTitle">
@@ -36,6 +46,8 @@ export function AlbumEditor({ album, onClose, onSave }: { album: SavedAlbum; onC
         <fieldset disabled={busy}>
           <label className="albumTitleField">제목<input required maxLength={80} value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} /></label>
           <AlbumColorPicker value={draft.coverColor} onChange={(coverColor) => setDraft({ ...draft, coverColor })} items={draft.items} title={draft.title} />
+          <AlbumContentEditor contents={draft.contents} items={draft.items} onChange={changeContents} />
+          <AlbumMusicSettings path={draft.musicPath} onChange={musicPath => setDraft({ ...draft, musicPath })} />
           <div className="albumActions"><strong>사진 {draft.items.length}장</strong><button type="button" disabled={!chosen.length} onClick={removeChosen}><Trash2 size={17} />앨범에서 삭제{chosen.length > 0 ? ` (${chosen.length})` : ""}</button></div>
           <div className="albumEditPhotos">{draft.items.slice(currentPage * 24, (currentPage + 1) * 24).map((item) => <button type="button" key={item.id} aria-label={`${item.takenAt ?? "날짜 없음"} 사진 선택`} aria-pressed={chosen.includes(item.id)} onClick={() => setChosen((current) => current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id])}>
             <MediaVisual item={item} /><span className={`albumSelectionMark ${chosen.includes(item.id) ? "checked" : ""}`}>{chosen.includes(item.id) && <Check size={22} strokeWidth={3} />}</span>
