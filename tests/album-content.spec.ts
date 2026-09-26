@@ -1,5 +1,12 @@
 import { expect, test } from '@playwright/test';
 
+test.afterEach(async ({ page }, info) => {
+  if (info.status !== info.expectedStatus) {
+    console.log('Album failure DOM:', await page.locator('.albumEditor').innerHTML().catch(() => 'No editor'));
+    console.log('Saved album:', await page.evaluate(() => localStorage.getItem('album-content-test')));
+  }
+});
+
 test.beforeEach(async ({ page }) => {
   await page.route('**/chapter-photo-*.jpg', route => route.fulfill({ contentType:'image/svg+xml', body:'<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><rect width="900" height="600" fill="#9fae90"/></svg>' }));
   await page.addInitScript(() => {
