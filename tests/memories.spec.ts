@@ -1,0 +1,24 @@
+import { expect, test } from '@playwright/test';
+import { installRecordFixture } from './record-fixture';
+test('memories switch between today and month and open the same records in story mode', async ({ page }) => {
+  await installRecordFixture(page);
+  await page.goto('/');
+  await page.getByRole('button',{ name:'지난 추억',exact:true }).click();
+  await expect(page.locator('.memoryGroupCard')).toHaveCount(2);
+  await expect(page.getByRole('button',{ name:/^3년 전 오늘/ })).toContainText('사진 2장');
+  await page.getByRole('button',{ name:'몇 년 전 이번 달',exact:true }).click();
+  const month = page.getByRole('button',{ name:/^3년 전 이번 달/ });
+  await expect(month).toContainText('사진 2장 · 영상 1개');
+  await month.click();
+  await expect(page.locator('.recordMediaGrid>button')).toHaveCount(3);
+  await page.getByRole('button',{ name:'첫 가을 상세보기',exact:true }).click();
+  await expect(page.getByRole('dialog',{ name:'사진 상세' })).toBeVisible();
+  await page.getByRole('dialog',{ name:'사진 상세' }).getByTitle('닫기',{ exact:true }).click();
+  await page.getByRole('button',{ name:'함께 감상',exact:true }).click();
+  await page.getByRole('button',{ name:'스토리로 보기',exact:true }).click();
+  await expect(page.getByRole('dialog',{ name:'앨범 스토리' })).toBeVisible();
+  await page.getByRole('button',{ name:'스토리 종료',exact:true }).click();
+  await page.getByRole('dialog',{ name:'앨범 전체창' }).getByTitle('닫기',{ exact:true }).click();
+  await page.getByRole('button',{ name:'추억 목록',exact:true }).click();
+  await expect(page.locator('.memoryGroupCard')).toHaveCount(2);
+});

@@ -65,8 +65,10 @@ jobs:
       - name: Test photo title and album workflows
         run: |
           npx playwright install chromium
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           npx playwright test tests/photo-titles.spec.ts tests/photo-detail.spec.ts tests/journal-preview.spec.ts --project=desktop --workers=2
-          npx playwright test tests/album-portrait.spec.ts tests/album-animation.spec.ts tests/album-content.spec.ts tests/album-story.spec.ts --workers=2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npx playwright test tests/album-portrait.spec.ts tests/album-animation.spec.ts tests/album-content.spec.ts tests/album-story.spec.ts tests/memories.spec.ts --workers=2
       - name: Build frontend and bundle local models
         run: npm run build
       - name: Test Rust storage and local server

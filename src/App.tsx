@@ -7,13 +7,14 @@ import { DetailModal } from "./features/media/PhotoDetail";
 import { Memories } from "./features/memories/Memories";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { getMediaComments } from "./features/media/mediaComments";
-import { searchMedia, anniversaryMemories } from "./features/media/collectionModel";
+import { searchMedia } from "./features/media/collectionModel";
+import { memoryGroups } from "./features/memories/memoriesModel";
 import { localDateKey } from "./features/calendar/calendarModel";
 import { PeopleWorkspace } from "./features/people/PeopleWorkspace";
 import { SavedAlbumsView } from "./features/albums/AlbumsView";
 import { AlbumCreateModal } from "./features/albums/AlbumCreateModal";
 import { ActionMenu } from "./components/ActionMenu";
-import { ChangeEvent, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { ChangeEvent, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { ChevronDown, FolderOpen, LoaderCircle, Plus, Search, Settings, Upload, X } from "lucide-react";
 import { MEDIA_FILE_ACCEPT } from "./features/media/mediaService";
 import { filterJournalMonth, journalMonthTitle, resolveJournalMonth } from "./features/media/journalModel";
@@ -67,9 +68,14 @@ export function App() {
 
   const filtered = useMemo(() => searchMedia(items, query), [items, query]);
 
-  const today = localDateKey(new Date());
-  const todayMemories = useMemo(() => anniversaryMemories(items, today), [items, today]);
-  const visibleMemories = useMemo(() => anniversaryMemories(filtered, today), [filtered, today]);
+  const [today, setToday] = useState(() => localDateKey(new Date()));
+  useEffect(() => {
+    const update = () => setToday(localDateKey(new Date()));
+    const timer = window.setInterval(update, 60_000);
+    window.addEventListener("focus", update);
+    return () => { clearInterval(timer); window.removeEventListener("focus", update); };
+  }, []);
+  const todayMemories = useMemo(() => memoryGroups(items, today, "today").flatMap(group => group.items), [items, today]);
   const selectedCount = selectedIds.size;
   const activeMonth = useMemo(() => resolveJournalMonth(selectedMonth, items), [selectedMonth, items]);
   const monthItems = useMemo(() => filterJournalMonth(filtered, activeMonth), [filtered, activeMonth]);
@@ -225,7 +231,7 @@ export function App() {
               />
             )}
             {activeView === "Albums" && <SavedAlbumsView albums={savedAlbums} query={query} onOpen={openViewer} onSave={library.saveAlbum} onDelete={library.deleteAlbums} />}
-            {activeView === "Memories" && <Memories items={visibleMemories} onOpen={(item) => openViewer(item, visibleMemories)} />}
+            {activeView === "Memories" && <Memories key={query} items={filtered} today={today} onOpen={openViewer} />}
             {activeView === "People" && <PeopleWorkspace items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} />}
             {activeView === "Settings" && <SettingsPanel itemCount={items.length} clearing={clearing} onClear={clearAllRegisteredMedia} />}
           </div>
