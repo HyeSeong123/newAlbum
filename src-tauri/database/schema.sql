@@ -51,6 +51,19 @@ CREATE TABLE IF NOT EXISTS album_item (
 );
 
 -- Keep album covers valid before the media and its album entries are removed.
+-- Written pages share album_item's sequence space; old media rows remain intact.
+CREATE TABLE IF NOT EXISTS album_page (
+  id TEXT PRIMARY KEY,
+  album_id INTEGER NOT NULL REFERENCES album(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK(kind IN ('CHAPTER', 'TEXT')),
+  title TEXT NOT NULL DEFAULT '',
+  body TEXT NOT NULL DEFAULT '',
+  sequence INTEGER NOT NULL,
+  display_duration REAL NOT NULL DEFAULT 5,
+  transition_type TEXT NOT NULL DEFAULT 'fade',
+  UNIQUE(album_id, sequence)
+);
+
 -- This also applies to existing databases when the schema is loaded again.
 CREATE TRIGGER IF NOT EXISTS update_album_cover_before_media_delete
 BEFORE DELETE ON media

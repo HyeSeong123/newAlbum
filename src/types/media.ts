@@ -30,4 +30,17 @@ export interface SavedAlbum {
   createdAt: string;
   coverColor: string;
   items: MediaItem[];
+  contents?: AlbumContent[];
+}
+
+export type AlbumContentKind = "PHOTO" | "VIDEO" | "AUDIO" | "CHAPTER" | "TEXT";
+export interface AlbumContent {
+  id: string;
+  kind: AlbumContentKind;
+  mediaId?: string;
+  title: string;
+  body: string;
+  displayDuration: number;
+  transitionType: "fade" | "slide" | "zoom";
+  commentVisible: boolean;
 }

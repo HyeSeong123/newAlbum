@@ -92,6 +92,7 @@ export function SavedAlbumsView({
         <AlbumFullscreenReader
           title={activeAlbum.title}
           items={activeAlbum.items}
+          contents={activeAlbum.contents}
           color={activeAlbum.coverColor}
           open={true}
           onOpen={onOpen}
@@ -104,4 +105,3 @@ export function SavedAlbumsView({
     </div>
   );
 }
-

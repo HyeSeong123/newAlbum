@@ -17,6 +17,7 @@ mod faces;
 mod pets;
 mod thumbnails;
 mod media_dimensions;
+mod album_content;
 #[cfg(any(feature = "custom-protocol", test))]
 mod localhost;
 
@@ -46,6 +47,7 @@ struct AlbumDto {
     cover_color: String,
     created_at: String,
     items: Vec<MediaItemDto>,
+    contents: Vec<album_content::Content>,
 }
 
 #[tauri::command]
@@ -156,8 +158,12 @@ fn update_album(
     title: String,
     cover_color: String,
     media_ids: Vec<i64>,
+    contents: Option<Vec<album_content::Content>>,
 ) -> Result<(), String> {
     let mut conn = open_database(&app)?;
+    if let Some(contents) = contents {
+        return album_content::save(&mut conn, id, &title, &cover_color, &contents);
+    }
     save_album(&mut conn, id, &title, &cover_color, &media_ids)
 }
 
@@ -743,6 +749,7 @@ fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
                 cover_color: row.get(3)?,
                 created_at: row.get(4)?,
                 items: Vec::new(),
+                contents: Vec::new(),
             })
         })
         .map_err(|error| format!("앨범 목록을 읽을 수 없습니다: {error}"))?;
@@ -777,6 +784,8 @@ fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
             albums[position].items.push(item);
         }
     }
+    let mut contents = album_content::load(conn)?;
+    for album in &mut albums { album.contents = contents.remove(&album.id).unwrap_or_default(); }
     Ok(albums)
 }
 

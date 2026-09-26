@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { MediaItem } from "../../types/media";
-import { makeAlbumSpreads, shuffleAlbumItems, uniqueAlbumItems } from "../media/journalModel";
+import type { AlbumContent, MediaItem } from "../../types/media";
+import { shuffleAlbumItems, uniqueAlbumItems } from "../media/journalModel";
+import { makeBookSpreads } from "./albumContent";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
 import { ALBUM_TURN_TIMING } from "./albumAnimation";
 
-export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () => void) {
+export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () => void, contents?: AlbumContent[]) {
   const [order, setOrder] = useState<string[] | null>(null);
   const [pageIndex, setPageIndex] = useState(0);
   const [turn, setTurn] = useState<{ direction: "next" | "prev"; from: number; to: number } | null>(null);
@@ -24,17 +25,20 @@ export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () =>
     const shuffled = order.flatMap((id) => byId.has(id) ? [byId.get(id)!] : []);
     return shuffled.length === albumItems.length ? shuffled : albumItems;
   }, [albumItems, order]);
-  const pages = useMemo(() => makeAlbumSpreads(orderedItems), [orderedItems]);
-  const pageLayoutKey = JSON.stringify(pages.map(({ left, right }) => [left.map(item => item.id), right.map(item => item.id)]));
+  const pages = useMemo(() => makeBookSpreads(orderedItems, contents), [orderedItems, contents]);
+  const pageLayoutKey = JSON.stringify(pages.map(({ left, right, leftPage, rightPage }) => [left.map(item => item.id), right.map(item => item.id), leftPage?.id, rightPage?.id]));
   const currentPage = Math.min(pageIndex, Math.max(0, pages.length - 1));
   const oppositeSide = turn?.direction === "next" ? "left" : "right";
   // Keep the opposite print in place until the turning leaf is almost flat.
   const visibleSpread = turn && turnPhase !== "settling" && pages[currentPage] ? {
     ...pages[currentPage], [oppositeSide]: pages[turn.from]?.[oppositeSide] ?? [],
+    [`${oppositeSide}Page`]: pages[turn.from]?.[`${oppositeSide}Page`],
   } : pages[currentPage];
   const turningLeaves = turn ? {
     front: pages[turn.from]?.[turn.direction === "next" ? "right" : "left"] ?? [],
     back: pages[turn.to]?.[oppositeSide] ?? [],
+    frontPage: pages[turn.from]?.[turn.direction === "next" ? "rightPage" : "leftPage"],
+    backPage: pages[turn.to]?.[`${oppositeSide}Page`],
   } : null;
 
   function cancelTurn() {

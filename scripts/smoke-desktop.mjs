@@ -18,6 +18,7 @@ try {
     assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_media')).length), 1);
     assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_media'))[0].title), '설치 후에도 남아 있는 제목');
     assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_albums'))[0].items[0].title), '설치 후에도 남아 있는 제목');
+    assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_albums'))[0].contents[0].kind), 'CHAPTER');
   } else {
     const count = await page.evaluate(async (path) => {
       const invoke = window.__TAURI_INTERNALS__.invoke;
@@ -26,6 +27,11 @@ try {
       if (!(media[0].width > 0 && media[0].height > 0)) throw new Error('Imported image dimensions were not persisted');
       await invoke('update_media_title', { id: media[0].id, title: '설치 후에도 남아 있는 제목' });
       await invoke('create_album_from_media', { title: '제목 저장 확인', mediaIds: [media[0].id], coverColor: '#D8DDCB' });
+      const album = (await invoke('list_albums'))[0];
+      await invoke('update_album', { id:album.id, title:album.title, coverColor:album.cover_color, mediaIds:[media[0].id], contents:[
+        { id:'smoke-chapter', kind:'CHAPTER', media_id:null, title:'첫 번째 기록', body:'기존 앨범에서 시작', display_duration:5, transition_type:'fade', comment_visible:true },
+        ...album.contents,
+      ] });
       const thumbnail = await invoke('media_thumbnail', { id: media[0].id });
       const image = new Image();
       image.src = window.__TAURI_INTERNALS__.convertFileSrc(thumbnail, 'asset');
