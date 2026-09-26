@@ -100,14 +100,14 @@ test('portrait grids keep four uncropped photos per leaf through turns, detail a
   expect(await ids()).toEqual(['1', '2', '3', '4', '5', '6', '7', '8']);
   await reader.getByTitle('닫기', { exact: true }).click();
   await page.getByRole('button', { name: '세로 다섯 장 앨범 열기', exact: true }).click();
-  await expect(reader.locator('.albumPaper.left .albumPagePhoto')).toHaveCount(3);
-  await expect(reader.locator('.albumPaper.right .albumPagePhoto')).toHaveCount(2);
+  await expect(reader.locator('.albumPaper.left .albumPagePhoto')).toHaveCount(4);
+  await expect(reader.locator('.albumPaper.right .albumPagePhoto')).toHaveCount(1);
   expect(await ids()).toEqual(['1', '2', '3', '4', '5']);
   await expect(reader.locator('.albumPagerActions p')).toHaveText('1 / 1 펼침');
   for (const photo of await photos.all()) await expectUncroppedPhoto(photo);
 });
 
-test('mixed orientations use two uncropped photos per leaf without losing photos or page navigation', async ({ page }) => {
+test('mixed orientations group four portraits and two landscapes without losing photos or page navigation', async ({ page }) => {
   await page.route('**/orientation-*.jpg', (route) => {
     const id = Number(route.request().url().match(/orientation-(\d+)/)![1]);
     if ([1, 5, 6, 7].includes(id)) {
@@ -144,14 +144,14 @@ test('mixed orientations use two uncropped photos per leaf without losing photos
   const pageLabel = page.locator('.albumPagerActions p');
   const titles = (side: typeof left) => side.locator('.albumPagePhoto').evaluateAll((buttons) => buttons.map((button) => button.getAttribute('aria-label')));
   await expect(pageLabel).toHaveText('1 / 2 펼침');
-  await expect(left.locator('.albumPageImages')).toHaveClass(/layout-columns/);
+  await expect(left.locator('.albumPageImages')).toHaveClass(/layout-grid/);
   await expect(right.locator('.albumPageImages')).toHaveClass(/layout-rows/);
-  await expect(left.locator('.albumPagePhoto')).toHaveCount(2);
+  await expect(left.locator('.albumPagePhoto')).toHaveCount(4);
   await expect(right.locator('.albumPagePhoto')).toHaveCount(2);
-  expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-2.jpg 상세보기']);
-  expect(await titles(right)).toEqual(['orientation-3.jpg 상세보기', 'orientation-4.jpg 상세보기']);
+  expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-5.jpg 상세보기', 'orientation-6.jpg 상세보기', 'orientation-7.jpg 상세보기']);
+  expect(await titles(right)).toEqual(['orientation-2.jpg 상세보기', 'orientation-3.jpg 상세보기']);
   await expect(page.locator('.albumPageCaption p')).toHaveText(['천천히 남겨둔 순간', '바다를 따라 걷던 오후', '잠시 쉬어간 곳']);
-  await expect(page.locator('.albumPageCaption time')).toHaveText(Array(4).fill('2026.09.20'));
+  await expect(page.locator('.albumPageCaption time')).toHaveText(Array(6).fill('2026.09.20'));
   await page.locator('.albumBookBase, .albumPagePhoto img').evaluateAll((images: HTMLImageElement[]) => Promise.all(images.map((image) => image.decode())));
   for (const photo of await page.locator('.albumPagePhoto').all()) await expectUncroppedPhoto(photo);
   for (const side of [left, right]) {
@@ -184,8 +184,8 @@ test('mixed orientations use two uncropped photos per leaf without losing photos
   await expect(right.locator('.albumPhotoEntry').first()).toHaveCSS('opacity', '0');
   await page.clock.runFor(ALBUM_TURN_TIMING.swap);
   await expect(page.locator('.albumSpread')).toHaveAttribute('data-turn-phase', 'arriving');
-  expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-2.jpg 상세보기']);
-  expect(await titles(right)).toEqual(['orientation-7.jpg 상세보기', 'orientation-8.jpg 상세보기']);
+  expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-5.jpg 상세보기', 'orientation-6.jpg 상세보기', 'orientation-7.jpg 상세보기']);
+  expect(await titles(right)).toEqual([]);
   await expect(left).not.toHaveClass(/portrait-photo/);
   await page.clock.runFor(ALBUM_TURN_TIMING.duration - ALBUM_TURN_TIMING.swap);
   await page.clock.resume();
@@ -195,8 +195,8 @@ test('mixed orientations use two uncropped photos per leaf without losing photos
   await page.keyboard.press('ArrowRight');
   await expect(page.getByTitle('이전 책장', { exact: true })).toBeEnabled();
   await expect(pageLabel).toHaveText('2 / 2 펼침');
-  expect(await titles(left)).toEqual(['orientation-5.jpg 상세보기', 'orientation-6.jpg 상세보기']);
-  expect(await titles(right)).toEqual(['orientation-7.jpg 상세보기', 'orientation-8.jpg 상세보기']);
+  expect(await titles(left)).toEqual(['orientation-4.jpg 상세보기', 'orientation-8.jpg 상세보기']);
+  expect(await titles(right)).toEqual([]);
   await expect(page.getByTitle('다음 책장', { exact: true })).toBeDisabled();
   const allPhotos: (string | null)[] = [];
   const counts = new Set<number>();
@@ -208,8 +208,8 @@ test('mixed orientations use two uncropped photos per leaf without losing photos
     allPhotos.push(...photos);
     for (const photo of await page.locator('.albumPagePhoto').all()) await expectUncroppedPhoto(photo);
   }
-  expect(allPhotos).toEqual(Array.from({ length: 8 }, (_, index) => `orientation-${index + 1}.jpg 상세보기`));
-  expect([...counts]).toEqual([4]);
+  expect(allPhotos).toEqual([1, 5, 6, 7, 2, 3, 4, 8].map(id => `orientation-${id}.jpg 상세보기`));
+  expect([...counts]).toEqual([6, 2]);
   await page.getByLabel('앨범 책장 이동').fill('1');
   await left.locator('.albumPagePhoto').first().click();
   const detail = page.getByRole('dialog', { name: '사진 상세', exact: true });
@@ -224,15 +224,15 @@ test('mixed orientations use two uncropped photos per leaf without losing photos
   await expect(page.getByRole('dialog', { name: '앨범 전체창', exact: true })).toBeVisible();
   await expect(pageLabel).toHaveText('1 / 2 펼침');
   await expect(left.locator('.albumPageCaption p').first()).toHaveText('천천히 남겨둔 순간');
-  expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-2.jpg 상세보기']);
-  expect(await titles(right)).toEqual(['orientation-3.jpg 상세보기', 'orientation-4.jpg 상세보기']);
+  expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-5.jpg 상세보기', 'orientation-6.jpg 상세보기', 'orientation-7.jpg 상세보기']);
+  expect(await titles(right)).toEqual(['orientation-2.jpg 상세보기', 'orientation-3.jpg 상세보기']);
   await page.getByTitle('사진 목록', { exact: true }).click();
   await expect(page.locator('.albumPhotoList > button')).toHaveCount(8);
   await expect(page.locator('.albumPhotoList .mediaImage').first()).toHaveCSS('object-fit', 'contain');
   await page.getByTitle('책으로 보기', { exact: true }).click();
   await expect(pageLabel).toHaveText('1 / 2 펼침');
-  expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-2.jpg 상세보기']);
-  expect(await titles(right)).toEqual(['orientation-3.jpg 상세보기', 'orientation-4.jpg 상세보기']);
+  expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-5.jpg 상세보기', 'orientation-6.jpg 상세보기', 'orientation-7.jpg 상세보기']);
+  expect(await titles(right)).toEqual(['orientation-2.jpg 상세보기', 'orientation-3.jpg 상세보기']);
   await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
   await page.getByTitle('다음 책장', { exact: true }).click();
   await page.getByLabel('앨범 책장 이동').fill('2');

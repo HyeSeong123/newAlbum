@@ -32,7 +32,7 @@ export function AlbumFullscreenReader({ title, items, color, open, onOpen, onClo
   } as CSSProperties} role="dialog" aria-modal="false" aria-label="앨범 전체창">
     <header className="albumJournalHeader">
       <button className="albumJournalBack" onClick={onClose} title="닫기"><ChevronLeft size={22} />{backLabel}</button>
-      <div className="albumJournalHeading"><h2>{title}</h2><span>{mediaSummary(orderedItems)}</span></div>
+      <div className="albumJournalHeading"><h2>{title}</h2><span>{mediaSummary(orderedItems)}{!listView && " · 세로 4장 / 가로 2장"}</span></div>
       <div className="albumJournalTools">
         <button aria-pressed={listView} onClick={toggleListView} aria-label={listView ? "책으로 보기" : "사진 목록"} title={listView ? "책으로 보기" : "사진 목록"}>{listView ? <BookOpen size={18} /> : <Images size={18} />}<span>{listView ? "책으로 보기" : "사진 목록"}</span></button>
         <button onClick={() => void toggleFullscreen()} disabled={!document.fullscreenEnabled} aria-pressed={fullscreen} title={fullscreen ? "전체화면 종료" : "전체화면"}>{fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}<span>{fullscreen ? "전체화면 종료" : "전체화면"}</span></button>

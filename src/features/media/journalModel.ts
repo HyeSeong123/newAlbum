@@ -74,24 +74,25 @@ export function uniqueAlbumItems(items: MediaItem[]): MediaItem[] {
 }
 
 export function makeAlbumSpreads(items: MediaItem[]): { left: MediaItem[]; right: MediaItem[] }[] {
+  // Collect matching ratios even when portrait and landscape records alternate.
+  // Only the reader's presentation changes; saved membership/order is untouched.
+  const groups = [false, true].map((portrait) => items
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => isPortraitMedia(item) === portrait));
+  const offsets = [0, 0];
   const spreads: { left: MediaItem[]; right: MediaItem[] }[] = [];
-  let index = 0;
   function takeLeaf(): MediaItem[] {
-    let count = Math.min(2, items.length - index);
-    if (count === 2 && isPortraitMedia(items[index]) && isPortraitMedia(items[index + 1])) {
-      while (count < 4 && index + count < items.length && isPortraitMedia(items[index + count])) count++;
-    }
-    const leaf = items.slice(index, index + count);
-    index += count;
+    const first = groups[0][offsets[0]]?.index ?? Infinity;
+    const second = groups[1][offsets[1]]?.index ?? Infinity;
+    const group = second < first ? 1 : 0;
+    const capacity = group === 1 ? 4 : 2;
+    const leaf = groups[group].slice(offsets[group], offsets[group] + capacity).map(({ item }) => item);
+    offsets[group] += leaf.length;
     return leaf;
   }
-  while (index < items.length) {
+  while (offsets[0] + offsets[1] < items.length) {
     const left = takeLeaf();
     const right = takeLeaf();
-    // Balance a short final spread without reordering or duplicating its photos.
-    while (index === items.length && right.length < 2 && left.length > 2) {
-      right.unshift(left.pop()!);
-    }
     spreads.push({ left, right });
   }
   return spreads;

@@ -65,7 +65,8 @@ jobs:
       - name: Test photo title and album workflows
         run: |
           npx playwright install chromium
-          npx playwright test tests/photo-titles.spec.ts tests/photo-detail.spec.ts tests/album-portrait.spec.ts tests/journal-preview.spec.ts --project=desktop --workers=2
+          npx playwright test tests/photo-titles.spec.ts tests/photo-detail.spec.ts tests/journal-preview.spec.ts --project=desktop --workers=2
+          npx playwright test tests/album-portrait.spec.ts tests/album-animation.spec.ts --workers=2
       - name: Build frontend and bundle local models
         run: npm run build
       - name: Test Rust storage and local server
