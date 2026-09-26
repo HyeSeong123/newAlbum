@@ -3,6 +3,8 @@ export type MediaType = "image" | "video" | "audio";
 export interface MediaItem {
   id: string;
   fileName: string;
+  /** User-written title; absent on records from older app versions. */
+  title?: string;
   filePath: string;
   fileType: MediaType;
   takenAt: string | null;

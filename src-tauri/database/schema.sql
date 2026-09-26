@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS media (
   size_bytes INTEGER NOT NULL,
   rating INTEGER NOT NULL DEFAULT 0 CHECK (rating BETWEEN 0 AND 5),
   comment TEXT NOT NULL DEFAULT '',
+  title TEXT NOT NULL DEFAULT '',
   favorite INTEGER NOT NULL DEFAULT 0,
   view_count INTEGER NOT NULL DEFAULT 0,
   metadata_status TEXT NOT NULL DEFAULT 'queued',

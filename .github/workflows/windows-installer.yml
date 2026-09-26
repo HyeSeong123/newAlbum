@@ -2,14 +2,18 @@ name: Windows installer
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [feature/warm-journal-v2, master]
   push:
     branches: [feature/warm-journal-v2, master]
+    tags: ['v*']
     paths:
       - 'src/**'
       - 'src-tauri/**'
       - 'public/**'
       - 'scripts/**'
       - 'tests/**'
+      - 'docs/**'
       - 'package*.json'
       - 'vite.config.ts'
       - 'tsconfig.json'
@@ -21,7 +25,7 @@ permissions:
 
 concurrency:
   group: windows-installer-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
 
 jobs:
   installer:
@@ -29,6 +33,9 @@ jobs:
     timeout-minutes: 60
     env:
       CARGO_TERM_COLOR: always
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      artifact: ${{ steps.version.outputs.artifact }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -37,6 +44,14 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - name: Check application and tag versions
+        id: version
+        shell: pwsh
+        run: |
+          $version = node scripts/version.mjs --check
+          if ($LASTEXITCODE -ne 0) { throw 'Application version check failed.' }
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "artifact=oraedameun-windows-x64-$version-${{ github.run_number }}-${{ github.run_attempt }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
       - name: Prepare Rust
         run: rustup toolchain install stable --profile minimal
       - uses: Swatinem/rust-cache@v2
@@ -47,6 +62,10 @@ jobs:
         run: npm ci
       - name: Run frontend unit tests
         run: npm run test:unit
+      - name: Test photo title and album workflows
+        run: |
+          npx playwright install chromium
+          npx playwright test tests/photo-titles.spec.ts tests/photo-detail.spec.ts tests/album-portrait.spec.ts tests/journal-preview.spec.ts --project=desktop --workers=2
       - name: Build frontend and bundle local models
         run: npm run build
       - name: Test Rust storage and local server
@@ -62,6 +81,13 @@ jobs:
           New-Item -ItemType Directory -Force -Path installer-output | Out-Null
           Copy-Item src-tauri/target/release/bundle/nsis/*-setup.exe installer-output/
           Copy-Item docs/windows-install.md installer-output/README.md
+          Copy-Item docs/releases.md installer-output/RELEASES.md
+          @{
+            version = '${{ steps.version.outputs.version }}'
+            commit = '${{ github.sha }}'
+            ref = '${{ github.ref }}'
+            run = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          } | ConvertTo-Json | Set-Content installer-output/build-info.json -Encoding utf8
           Get-ChildItem installer-output/*-setup.exe | ForEach-Object {
             $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash
             "$hash  $($_.Name)" | Add-Content installer-output/SHA256SUMS.txt
@@ -69,7 +95,7 @@ jobs:
       - name: Upload Windows installer
         uses: actions/upload-artifact@v7
         with:
-          name: oraedameun-windows-x64-${{ github.run_number }}
+          name: ${{ steps.version.outputs.artifact }}
           path: installer-output/
           if-no-files-found: error
           retention-days: 30
@@ -82,3 +108,31 @@ jobs:
           path: test-results/desktop-smoke/
           if-no-files-found: ignore
           retention-days: 7
+
+  release:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: installer
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: ${{ needs.installer.outputs.artifact }}
+          path: installer-output
+      - name: Save versioned installer to a draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          APP_VERSION: ${{ needs.installer.outputs.version }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --json isDraft > release.json 2>/dev/null; then
+            node -e "if (!JSON.parse(require('fs').readFileSync('release.json', 'utf8')).isDraft) { throw new Error('Published releases cannot be overwritten. Create a new version.'); }"
+            gh release upload "$RELEASE_TAG" installer-output/* --clobber
+          else
+            gh release create "$RELEASE_TAG" installer-output/* \
+              --verify-tag --draft --title "오래담은 $APP_VERSION" --generate-notes
+          fi

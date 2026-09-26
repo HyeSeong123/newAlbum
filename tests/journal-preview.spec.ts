@@ -98,7 +98,7 @@ test('month navigation and album shortcuts keep their own scope', async ({ page 
 
 test('album reader preserves order and supports list, scrubber and nested photo navigation', async ({ page }) => {
   await page.addInitScript(() => {
-    const media = Array.from({ length: 9 }, (_, i) => ({ id: i + 1, file_path: `C:/record-${i + 1}.jpg`, file_type: 'image', taken_at: '2026-09-12', width: 640, height: 480, size_bytes: 1000, rating: 0, comment: i === 0 ? '바람이 좋았던 날' : '', favorite: false, metadata_status: 'ready' }));
+    const media = Array.from({ length: 9 }, (_, i) => ({ id: i + 1, file_path: `C:/record-${i + 1}.jpg`, file_type: 'image', taken_at: '2026-09-12', width: 640, height: 480, size_bytes: 1000, rating: 0, comment: '', title: i === 0 ? '바람이 좋았던 날' : '', favorite: false, metadata_status: 'ready' }));
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: () => '/favicon.svg',
       invoke: async (command: string) => command === 'list_media' ? media : [],
@@ -173,6 +173,9 @@ for (const entry of ['saved albums', 'journal shortcut']) {
     await detail.locator('.commentForm').getByLabel('작성자').fill('나');
     await detail.locator('.commentForm').getByLabel('내용').fill('바람이 좋았던 날');
     await detail.getByRole('button', { name: '댓글 등록', exact: true }).click();
+    await detail.getByRole('textbox', { name: '사진 제목', exact: true }).fill('바람이 좋았던 날');
+    await detail.getByRole('button', { name: '사진 제목 저장', exact: true }).click();
+    await expect(detail.locator('.photoTitleForm').getByRole('status')).toHaveText('제목을 저장했습니다.');
     await detail.getByTitle('닫기', { exact: true }).click();
 
     await expect(reader.locator('.albumPagerActions p')).toHaveText(spreadLabel);

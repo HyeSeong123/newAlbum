@@ -47,7 +47,7 @@ export function AlbumFullscreenReader({ title, items, color, open, onOpen, onClo
     {listView ? <section className="albumPhotoList" aria-label={`${title} 사진 목록`}>
       {!items.length && <EmptyState text="앨범에 담긴 기록이 없습니다." />}
       {orderedItems.map((item) => <button key={item.id} onClick={() => onOpen(item, orderedItems)} aria-label={`${item.fileName} 상세보기`}><MediaVisual item={item} />
-        <strong className="albumPhotoName">{item.fileName}</strong>
+        <strong className="albumPhotoName">{item.title?.trim() || item.fileName}</strong>
         <span>{item.takenAt ?? "날짜 없음"}{item.fileType === "video" && <Play size={14} />}{item.fileType === "audio" && <Music size={14} />}</span>
       </button>)}
     </section> : <div className="albumJournalCanvas">
@@ -115,7 +115,7 @@ function AlbumPhotoVisual({ item }: { item: MediaItem }) {
 }
 
 function AlbumPhotoCaption({ item, className }: { item: MediaItem; className: string }) {
-  const caption = item.comment.trim();
+  const caption = item.title?.trim();
   const date = item.takenAt?.slice(0, 10);
   return caption || date ? <figcaption className={className}>
     {caption && <p title={caption}>{caption}</p>}
