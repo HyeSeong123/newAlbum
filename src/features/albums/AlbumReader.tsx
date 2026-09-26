@@ -3,7 +3,7 @@ import { BookOpen, ChevronLeft, ChevronRight, FolderOutput, Images, Maximize, Mi
 import type { MediaItem } from "../../types/media";
 import { EmptyState, MediaVisual } from "../../components/MediaVisual";
 import { ActionMenu } from "../../components/ActionMenu";
-import { albumLeafLayout, isPortraitMedia, mediaSummary } from "../media/journalModel";
+import { albumLeafLayout, isLandscapeMedia, isPortraitMedia, mediaSummary } from "../media/journalModel";
 import { useAlbumReader } from "./useAlbumReader";
 import { ALBUM_TURN_TIMING } from "./albumAnimation";
 import albumOpenBase from "../../assets/album-open-white-thin.png";
@@ -59,7 +59,8 @@ export function AlbumFullscreenReader({ title, items, color, open, onOpen, onClo
           {(["left", "right"] as const).map((side, sideIndex) => {
             const entries = visibleSpread?.[side] ?? [];
             const portrait = entries.length === 1 && isPortraitMedia(entries[0]);
-            return <section key={side} className={`albumPaper ${side}${entries.length === 1 ? " single-photo" : ""}${portrait ? " portrait-photo" : ""}`}>
+            const landscape = entries.length > 0 && entries.every(isLandscapeMedia);
+            return <section key={side} className={`albumPaper ${side}${entries.length === 1 ? " single-photo" : ""}${portrait ? " portrait-photo" : ""}${landscape ? " landscape-page" : ""}`}>
               <div className={`albumPageImages albumLeafLayout layout-${albumLeafLayout(entries)}`}>{entries.map((item, index) => <AlbumPagePhoto key={item.id} item={item} index={sideIndex * 4 + index} side={side} turning={Boolean(turning)} onOpen={() => onOpen(item, orderedItems)} />)}</div>
               <span className="albumPageNumber">{String(currentPage * 2 + sideIndex + 1).padStart(2, "0")}</span>
             </section>;
@@ -97,7 +98,7 @@ function AlbumPagePhoto({ item, index, side, turning, onOpen }: { item: MediaIte
 }
 
 function AlbumTurningFace({ face, side, items }: { face: "front" | "back"; side: "left" | "right"; items: MediaItem[] }) {
-  return <div className={`albumTurnFace ${face} ${side}`}>
+  return <div className={`albumTurnFace ${face} ${side}${items.length > 0 && items.every(isLandscapeMedia) ? " landscape-page" : ""}`}>
     <div className={`albumTurnImages albumLeafLayout layout-${albumLeafLayout(items)}`}>
       {items.map(item => <figure key={item.id} className="albumTurnPrint" data-turn-media-id={item.id}>
         <div className="albumTurnPhoto"><AlbumPhotoVisual item={item} /></div>

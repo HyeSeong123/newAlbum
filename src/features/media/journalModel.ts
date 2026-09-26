@@ -62,6 +62,12 @@ export function isPortraitMedia(item: MediaItem): boolean {
     && Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > width;
 }
 
+export function isLandscapeMedia(item: MediaItem): boolean {
+  const { width, height } = item;
+  return item.fileType !== "audio" && typeof width === "number" && typeof height === "number"
+    && Number.isFinite(width) && Number.isFinite(height) && height > 0 && width > height;
+}
+
 export function uniqueAlbumItems(items: MediaItem[]): MediaItem[] {
   const ids = new Set<string>();
   const paths = new Set<string>();
