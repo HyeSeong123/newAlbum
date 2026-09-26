@@ -48,6 +48,7 @@ struct AlbumDto {
     created_at: String,
     items: Vec<MediaItemDto>,
     contents: Vec<album_content::Content>,
+    music_path: Option<String>,
 }
 
 #[tauri::command]
@@ -159,10 +160,11 @@ fn update_album(
     cover_color: String,
     media_ids: Vec<i64>,
     contents: Option<Vec<album_content::Content>>,
+    music_path: Option<String>,
 ) -> Result<(), String> {
     let mut conn = open_database(&app)?;
     if let Some(contents) = contents {
-        return album_content::save(&mut conn, id, &title, &cover_color, &contents);
+        return album_content::save_with_music(&mut conn, id, &title, &cover_color, &contents, music_path.as_deref());
     }
     save_album(&mut conn, id, &title, &cover_color, &media_ids)
 }
@@ -734,7 +736,7 @@ fn read_media(conn: &Connection) -> Result<Vec<MediaItemDto>, String> {
 fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, title, description, cover_color, created_at
+            "SELECT id, title, description, cover_color, created_at, music_path
              FROM album
              ORDER BY created_at DESC, id DESC",
         )
@@ -750,6 +752,7 @@ fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
                 created_at: row.get(4)?,
                 items: Vec::new(),
                 contents: Vec::new(),
+                music_path: row.get(5)?,
             })
         })
         .map_err(|error| format!("앨범 목록을 읽을 수 없습니다: {error}"))?;

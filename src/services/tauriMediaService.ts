@@ -33,6 +33,7 @@ interface BackendAlbum {
   created_at: string;
   items: BackendMediaItem[];
   contents?: BackendContent[];
+  music_path?: string | null;
 }
 
 const placeholders: Record<MediaType, string> = {
@@ -59,6 +60,7 @@ export async function loadSavedAlbums(): Promise<SavedAlbum[]> {
     coverColor: row.cover_color,
     createdAt: row.created_at,
     items: row.items.map(toMediaItem),
+    musicPath: row.music_path ?? undefined,
     contents: row.contents?.map(entry => ({
       id: entry.id, kind: entry.kind, mediaId: entry.media_id == null ? undefined : String(entry.media_id),
       title: entry.title, body: entry.body, displayDuration: entry.display_duration,
@@ -87,6 +89,7 @@ export async function createAlbumFromMedia(title: string, ids: string[], coverCo
 
 export async function saveAlbum(album: SavedAlbum): Promise<void> {
   await invoke("update_album", { id: Number(album.id), title: album.title, coverColor: album.coverColor,
+    musicPath: album.musicPath ?? "",
     mediaIds: album.items.map((item) => Number(item.id)),
     contents: albumContents(album).map(entry => ({
       id: entry.id, kind: entry.kind, media_id: entry.mediaId ? Number(entry.mediaId) : null,
@@ -98,6 +101,12 @@ export async function saveAlbum(album: SavedAlbum): Promise<void> {
 
 export async function deleteAlbums(ids: string[]): Promise<void> {
   await invoke("delete_albums", { ids: ids.map(Number) });
+}
+
+export async function chooseAlbumMusic(): Promise<string | null> {
+  const selected = await open({ multiple:false, directory:false, title:"앨범 배경 음악",
+    filters:[{ name:"음악", extensions:["mp3", "wav", "ogg", "m4a", "flac"] }] });
+  return Array.isArray(selected) ? selected[0] ?? null : selected;
 }
 
 export async function chooseAndRegisterFiles(): Promise<MediaItem[]> {

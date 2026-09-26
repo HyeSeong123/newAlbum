@@ -17,7 +17,7 @@ pub struct Content {
 pub fn load(conn: &Connection) -> Result<HashMap<i64, Vec<Content>>, String> {
     let mut stmt = conn.prepare("SELECT ai.album_id, 'media-' || ai.id,
         CASE m.file_type WHEN 'image' THEN 'PHOTO' WHEN 'video' THEN 'VIDEO' ELSE 'AUDIO' END,
-        ai.media_id, '', '', COALESCE(ai.display_duration, 5), ai.transition_type, ai.comment_visible, ai.sequence
+        ai.media_id, '', '', COALESCE(ai.display_duration, 5), COALESCE(ai.transition_type, 'fade'), COALESCE(ai.comment_visible, 1), ai.sequence
         FROM album_item ai JOIN media m ON m.id = ai.media_id
         UNION ALL SELECT album_id, id, kind, NULL, title, body, display_duration, transition_type, 1, sequence
         FROM album_page ORDER BY 1, 10").map_err(|e| e.to_string())?;
@@ -31,6 +31,13 @@ pub fn load(conn: &Connection) -> Result<HashMap<i64, Vec<Content>>, String> {
 }
 
 pub fn save(conn: &mut Connection, id: i64, title: &str, color: &str, contents: &[Content]) -> Result<(), String> {
+    save_with_music(conn, id, title, color, contents, None)
+}
+
+pub fn save_with_music(conn: &mut Connection, id: i64, title: &str, color: &str, contents: &[Content], music: Option<&str>) -> Result<(), String> {
+    if music.is_some_and(|path| path.len() > 4096 || path.contains('\0')) {
+        return Err("음악 파일 경로를 확인해 주세요.".into());
+    }
     if title.trim().is_empty() || title.chars().count() > 80 || !crate::valid_album_color(color) {
         return Err("앨범 제목과 표지색을 확인해 주세요.".into());
     }
@@ -58,8 +65,9 @@ pub fn save(conn: &mut Connection, id: i64, title: &str, color: &str, contents: 
     }
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     let cover = contents.iter().find_map(|entry| entry.media_id);
-    let count = tx.execute("UPDATE album SET title = ?1, cover_color = ?2, cover_media_id = ?3 WHERE id = ?4",
-        params![title.trim(), color, cover, id]).map_err(|e| e.to_string())?;
+    let count = tx.execute("UPDATE album SET title = ?1, cover_color = ?2, cover_media_id = ?3,
+        music_path = CASE WHEN ?5 IS NULL THEN music_path ELSE NULLIF(?5, '') END WHERE id = ?4",
+        params![title.trim(), color, cover, id, music]).map_err(|e| e.to_string())?;
     if count == 0 { return Err("앨범을 찾을 수 없습니다.".into()); }
     tx.execute("DELETE FROM album_item WHERE album_id = ?1", [id]).map_err(|e| e.to_string())?;
     tx.execute("DELETE FROM album_page WHERE album_id = ?1", [id]).map_err(|e| e.to_string())?;
@@ -107,6 +115,12 @@ mod tests {
         assert!(save(&mut conn, album, "손상되면 안 됨", "#D8DDCB", &invalid).is_err());
         assert_eq!(crate::read_albums(&conn).unwrap()[0].title, "기존 앨범");
         assert_eq!(load(&conn).unwrap()[&album].len(), 4);
+        let second = crate::insert_album(&mut conn, "다른 앨범", &[2], "#D8DDCB").unwrap();
+        assert!(save(&mut conn, second, "롤백 확인", "#D8DDCB", &contents).is_err());
+        let second_title: String = conn.query_row("SELECT title FROM album WHERE id=?1", [second], |r| r.get(0)).unwrap();
+        assert_eq!(second_title, "다른 앨범");
+        assert_eq!(load(&conn).unwrap()[&second][0].media_id, Some(2));
+        conn.execute("DELETE FROM album WHERE id=?1", [second]).unwrap();
         let text = Content { id:"text-1".into(), kind:"TEXT".into(), media_id:None, title:String::new(), body:"여행 마지막 날.\n가장 기억에 남는다.".into(), display_duration:8.0, transition_type:"fade".into(), comment_visible:true };
         save(&mut conn, album, "글만 있는 앨범", "#D8DDCB", &[text.clone()]).unwrap();
         let loaded = crate::read_albums(&conn).unwrap();
@@ -117,5 +131,19 @@ mod tests {
         save(&mut conn, album, "비운 앨범", "#D8DDCB", &[]).unwrap();
         assert!(!load(&conn).unwrap().contains_key(&album));
         assert_eq!(conn.query_row("SELECT COUNT(*) FROM media", [], |r| r.get::<_, i64>(0)).unwrap(), 3);
+        let mut settings = contents;
+        settings[0].display_duration = 3.5;
+        settings[0].transition_type = "zoom".into();
+        settings[0].comment_visible = false;
+        save_with_music(&mut conn, album, "스토리", "#D8DDCB", &settings, Some("C:/music/추억.wav")).unwrap();
+        let loaded = crate::read_albums(&conn).unwrap();
+        assert_eq!(loaded[0].music_path.as_deref(), Some("C:/music/추억.wav"));
+        assert_eq!(loaded[0].contents[0].display_duration, 3.5);
+        assert_eq!(loaded[0].contents[0].transition_type, "zoom");
+        assert!(!loaded[0].contents[0].comment_visible);
+        save(&mut conn, album, "음악 유지", "#D8DDCB", &settings).unwrap();
+        assert_eq!(crate::read_albums(&conn).unwrap()[0].music_path.as_deref(), Some("C:/music/추억.wav"));
+        save_with_music(&mut conn, album, "음악 제거", "#D8DDCB", &settings, Some("")).unwrap();
+        assert!(crate::read_albums(&conn).unwrap()[0].music_path.is_none());
     }
 }

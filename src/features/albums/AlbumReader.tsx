@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { BookOpen, ChevronLeft, ChevronRight, FolderOutput, Images, Maximize, Minimize, MoreVertical, Music, Play, RotateCcw, Shuffle } from "lucide-react";
 import type { AlbumContent, MediaItem } from "../../types/media";
 import { AlbumWrittenPage } from "./chapter/AlbumWrittenPage";
@@ -8,11 +8,13 @@ import { albumLeafLayout, isLandscapeMedia, isPortraitMedia, mediaSummary } from
 import { useAlbumReader } from "./useAlbumReader";
 import { ALBUM_TURN_TIMING } from "./albumAnimation";
 import albumOpenBase from "../../assets/album-open-white-thin.png";
+import { AlbumStoryPlayer } from "./story-player/AlbumStoryPlayer";
 
-export function AlbumFullscreenReader({ title, items, contents, color, open, onOpen, onClose, onExport, backLabel = "내 앨범" }: {
+export function AlbumFullscreenReader({ title, items, contents, musicPath, color, open, onOpen, onClose, onExport, backLabel = "내 앨범" }: {
   title: string;
   items: MediaItem[];
   contents?: AlbumContent[];
+  musicPath?: string;
   color?: string;
   open: boolean;
   onOpen: (item: MediaItem, collection?: MediaItem[]) => void;
@@ -20,10 +22,12 @@ export function AlbumFullscreenReader({ title, items, contents, color, open, onO
   onExport?: () => void;
   backLabel?: string;
 }) {
+  const [story, setStory] = useState(false);
   const { order, orderedItems, pages, currentPage, visibleSpread, turning, turningLeaves, turnPhase, listView,
-    fullscreen, notice, resetOrder, jumpToPage, turnPage, toggleFullscreen, toggleListView } = useAlbumReader(items, open, onClose, contents);
+    fullscreen, notice, resetOrder, jumpToPage, turnPage, toggleFullscreen, toggleListView } = useAlbumReader(items, open && !story, onClose, contents);
 
   if (!open) return null;
+  if (story) return <AlbumStoryPlayer title={title} items={items} contents={contents} musicPath={musicPath} onClose={() => setStory(false)} />;
   return <div className={`albumJournal${listView ? " is-list" : ""}`} style={{
     "--album-color": color,
     "--album-turn-duration": `${ALBUM_TURN_TIMING.motion}ms`,
@@ -36,6 +40,7 @@ export function AlbumFullscreenReader({ title, items, contents, color, open, onO
       <button className="albumJournalBack" onClick={onClose} title="닫기"><ChevronLeft size={22} />{backLabel}</button>
       <div className="albumJournalHeading"><h2>{title}</h2><span>{mediaSummary(orderedItems)}{!listView && " · 세로 4장 / 가로 2장"}</span></div>
       <div className="albumJournalTools">
+        <button onClick={() => setStory(true)} aria-label="스토리로 보기" title="스토리로 보기"><Play size={18} /><span>스토리로 보기</span></button>
         <button aria-pressed={listView} onClick={toggleListView} aria-label={listView ? "책으로 보기" : "사진 목록"} title={listView ? "책으로 보기" : "사진 목록"}>{listView ? <BookOpen size={18} /> : <Images size={18} />}<span>{listView ? "책으로 보기" : "사진 목록"}</span></button>
         <button onClick={() => void toggleFullscreen()} disabled={!document.fullscreenEnabled} aria-pressed={fullscreen} title={fullscreen ? "전체화면 종료" : "전체화면"}>{fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}<span>{fullscreen ? "전체화면 종료" : "전체화면"}</span></button>
         <ActionMenu label="앨범 보기 옵션" icon={<MoreVertical size={19} />} actions={[

@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { AlbumContent, MediaItem } from "../../../types/media";
 import { moveContent, writtenPage } from "../albumContent";
 import "./written-page.css";
+import { StoryItemSettings } from "../story-player/StorySettings";
 
 export function AlbumContentEditor({ contents, items, onChange }: {
   contents: AlbumContent[]; items: MediaItem[]; onChange: (entries: AlbumContent[]) => void;
@@ -36,6 +37,7 @@ export function AlbumContentEditor({ contents, items, onChange }: {
             <div><label htmlFor={`page-title-${entry.id}`}>{entry.kind === "CHAPTER" ? "챕터 제목" : "글 제목"}</label><input id={`page-title-${entry.id}`} required={entry.kind === "CHAPTER"} maxLength={120} value={entry.title} onChange={event => edit(index, { title: event.target.value })} /></div>
             <div><label htmlFor={`page-body-${entry.id}`}>{entry.kind === "CHAPTER" ? "부제목 또는 설명" : "본문"}</label><textarea id={`page-body-${entry.id}`} required={entry.kind === "TEXT" && !entry.title.trim()} maxLength={4000} value={entry.body} onChange={event => edit(index, { body: event.target.value })} /></div>
           </>}
+          <StoryItemSettings entry={entry} onChange={patch => edit(index, patch)} />
           <div className="albumContentRowActions">
             <button type="button" aria-label={`${index + 1}번 항목 위로`} disabled={index === 0} onClick={() => { onChange(moveContent(contents, index, index - 1)); setOffset(Math.floor((index - 1) / 20) * 20); }}>위로</button>
             <button type="button" aria-label={`${index + 1}번 항목 아래로`} disabled={index === contents.length - 1} onClick={() => { onChange(moveContent(contents, index, index + 1)); setOffset(Math.floor((index + 1) / 20) * 20); }}>아래로</button>

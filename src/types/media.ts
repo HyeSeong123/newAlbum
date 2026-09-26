@@ -31,6 +31,7 @@ export interface SavedAlbum {
   coverColor: string;
   items: MediaItem[];
   contents?: AlbumContent[];
+  musicPath?: string;
 }
 
 export type AlbumContentKind = "PHOTO" | "VIDEO" | "AUDIO" | "CHAPTER" | "TEXT";

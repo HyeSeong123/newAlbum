@@ -93,6 +93,7 @@ export function SavedAlbumsView({
           title={activeAlbum.title}
           items={activeAlbum.items}
           contents={activeAlbum.contents}
+          musicPath={activeAlbum.musicPath}
           color={activeAlbum.coverColor}
           open={true}
           onOpen={onOpen}

@@ -1,6 +1,6 @@
 import { chromium } from '@playwright/test';
 import assert from 'node:assert/strict';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const browser = await chromium.connectOverCDP('http://127.0.0.1:9222', { timeout: 30000 });
@@ -20,8 +20,15 @@ try {
     assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_albums'))[0].items[0].title), '설치 후에도 남아 있는 제목');
     assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_albums'))[0].contents[0].kind), 'CHAPTER');
     assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_albums'))[0].contents[2].body), '여행 마지막 날.\n가장 기억에 남는다.');
+    assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_albums'))[0].music_path.endsWith('smoke-music.wav')), true);
+    assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_albums'))[0].contents[1].display_duration), 3);
   } else {
-    const count = await page.evaluate(async (path) => {
+    const wav = Buffer.alloc(44 + 16000); wav.write('RIFF'); wav.writeUInt32LE(wav.length - 8,4); wav.write('WAVEfmt ',8);
+    wav.writeUInt32LE(16,16); wav.writeUInt16LE(1,20); wav.writeUInt16LE(1,22); wav.writeUInt32LE(8000,24);
+    wav.writeUInt32LE(16000,28); wav.writeUInt16LE(2,32); wav.writeUInt16LE(16,34); wav.write('data',36); wav.writeUInt32LE(16000,40);
+    const musicPath = resolve('test-results/desktop-smoke/smoke-music.wav');
+    await writeFile(musicPath, wav);
+    const count = await page.evaluate(async ({ path, musicPath }) => {
       const invoke = window.__TAURI_INTERNALS__.invoke;
       await invoke('register_paths', { paths: [path] });
       const media = await invoke('list_media');
@@ -29,9 +36,9 @@ try {
       await invoke('update_media_title', { id: media[0].id, title: '설치 후에도 남아 있는 제목' });
       await invoke('create_album_from_media', { title: '제목 저장 확인', mediaIds: [media[0].id], coverColor: '#D8DDCB' });
       const album = (await invoke('list_albums'))[0];
-      await invoke('update_album', { id:album.id, title:album.title, coverColor:album.cover_color, mediaIds:[media[0].id], contents:[
+      await invoke('update_album', { id:album.id, title:album.title, coverColor:album.cover_color, musicPath, mediaIds:[media[0].id], contents:[
         { id:'smoke-chapter', kind:'CHAPTER', media_id:null, title:'첫 번째 기록', body:'기존 앨범에서 시작', display_duration:5, transition_type:'fade', comment_visible:true },
-        ...album.contents,
+        ...album.contents.map(entry => ({ ...entry, display_duration:3, transition_type:'zoom', comment_visible:false })),
         { id:'smoke-text', kind:'TEXT', media_id:null, title:'마지막 날', body:'여행 마지막 날.\n가장 기억에 남는다.', display_duration:8, transition_type:'fade', comment_visible:true },
       ] });
       const thumbnail = await invoke('media_thumbnail', { id: media[0].id });
@@ -41,11 +48,20 @@ try {
       if (!image.naturalWidth) throw new Error('Native media protocol failed');
       localStorage.setItem('installer-smoke', 'persisted');
       return media.length;
-    }, resolve('tests/fixtures/pet-dog.jpg'));
+    }, { path:resolve('tests/fixtures/pet-dog.jpg'), musicPath });
     assert.equal(count, 1);
   }
   await page.reload();
   await page.locator('.app').waitFor();
+  await page.getByRole('button', { name:'내 앨범', exact:true }).click();
+  await page.getByRole('button', { name:'제목 저장 확인 앨범 열기', exact:true }).click();
+  await page.getByRole('button', { name:'스토리로 보기', exact:true }).click();
+  await page.getByRole('button', { name:'재생', exact:true }).click();
+  await page.waitForFunction(() => {
+    const music = document.querySelector('.storyMusic');
+    return music && music.readyState >= 2 && !music.paused;
+  });
+  await page.getByRole('button', { name:'스토리 종료', exact:true }).click();
   await page.screenshot({ path: `test-results/desktop-smoke/${process.argv.includes('--restarted') ? 'restarted' : 'installed'}.png` });
   console.log('Packaged webview, native commands, SQLite, thumbnails and persistence: OK');
 } finally {
