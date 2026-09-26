@@ -12,9 +12,9 @@ export function AlbumContentEditor({ contents, items, onChange }: {
   const labels = new Map(items.map(item => [item.id, item.title || item.fileName]));
   const label = (entry: AlbumContent) => entry.mediaId ? labels.get(entry.mediaId) ?? "미디어" : entry.title || "제목 없음";
   const edit = (index: number, patch: Partial<AlbumContent>) => onChange(contents.map((entry, i) => i === index ? { ...entry, ...patch } : entry));
-  function add() {
+  function add(kind: "CHAPTER" | "TEXT") {
     const at = Math.min(position, contents.length);
-    onChange([...contents.slice(0, at), writtenPage("CHAPTER"), ...contents.slice(at)]);
+    onChange([...contents.slice(0, at), writtenPage(kind), ...contents.slice(at)]);
     setOffset(Math.floor(at / 20) * 20); setPosition(at + 1);
   }
   return <section className="albumContentEditor" aria-label="앨범 구성">
@@ -24,7 +24,8 @@ export function AlbumContentEditor({ contents, items, onChange }: {
         <option value={0}>맨 앞</option>
         {contents.map((entry, i) => <option key={entry.id} value={i + 1}>{i + 1}. {label(entry)} 뒤</option>)}
       </select></label>
-      <button type="button" onClick={add}>챕터 추가</button>
+      <button type="button" onClick={() => add("CHAPTER")}>챕터 추가</button>
+      <button type="button" onClick={() => add("TEXT")}>글 페이지 추가</button>
     </div>
     <ol className="albumContentRows" start={start + 1}>
       {contents.slice(start, start + 20).map((entry, localIndex) => {
@@ -32,8 +33,8 @@ export function AlbumContentEditor({ contents, items, onChange }: {
         return <li key={entry.id} className={`albumContentRow kind-${entry.kind.toLowerCase()}`} data-content-id={entry.id}>
           <strong>{index + 1}. {entry.kind === "CHAPTER" ? "챕터" : entry.kind === "TEXT" ? "글 페이지" : label(entry)}</strong>
           {!entry.mediaId && <>
-            <label>챕터 제목<input required maxLength={120} value={entry.title} onChange={event => edit(index, { title: event.target.value })} /></label>
-            <label>부제목 또는 설명<textarea maxLength={4000} value={entry.body} onChange={event => edit(index, { body: event.target.value })} /></label>
+            <label>{entry.kind === "CHAPTER" ? "챕터 제목" : "글 제목"}<input required={entry.kind === "CHAPTER"} maxLength={120} value={entry.title} onChange={event => edit(index, { title: event.target.value })} /></label>
+            <label>{entry.kind === "CHAPTER" ? "부제목 또는 설명" : "본문"}<textarea required={entry.kind === "TEXT" && !entry.title.trim()} maxLength={4000} value={entry.body} onChange={event => edit(index, { body: event.target.value })} /></label>
           </>}
           <div className="albumContentRowActions">
             <button type="button" aria-label={`${index + 1}번 항목 위로`} disabled={index === 0} onClick={() => { onChange(moveContent(contents, index, index - 1)); setOffset(Math.floor((index - 1) / 20) * 20); }}>위로</button>

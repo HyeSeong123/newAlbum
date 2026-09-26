@@ -32,3 +32,11 @@ test('moving and removing contents preserves the surviving order and missing med
   assert.deepEqual(albumContents({ items: [], contents: entries }), [chapter]);
   assert.equal(makeBookSpreads([], [chapter])[0].leftPage, chapter);
 });
+test('text pages retain multiline body, positions and written-only albums', () => {
+  const text = { ...chapter, id:'text-1', kind:'TEXT', title:'마지막 날', body:'첫 줄\n둘째 줄' };
+  const entries = [...albumContents({ items:photos }).slice(0, 1), text, chapter];
+  const pages = makeBookSpreads(photos, entries);
+  assert.equal(pages[0].rightPage.body, '첫 줄\n둘째 줄');
+  assert.equal(pages[1].leftPage.kind, 'CHAPTER');
+  assert.equal(makeBookSpreads([], [text])[0].leftPage, text);
+});

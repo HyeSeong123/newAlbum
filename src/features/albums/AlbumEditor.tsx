@@ -20,6 +20,9 @@ export function AlbumEditor({ album, onClose, onSave }: { album: SavedAlbum; onC
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (saving.current || !draft.title.trim()) return;
+    if (draft.contents.some(entry => !entry.mediaId && !entry.title.trim() && (entry.kind === "CHAPTER" || !entry.body.trim()))) {
+      setError("챕터에는 제목을, 글 페이지에는 제목이나 본문을 입력해 주세요."); return;
+    }
     saving.current = true;
     setBusy(true); setError("");
     try { await onSave({ ...draft, title: draft.title.trim() }); onClose(); }

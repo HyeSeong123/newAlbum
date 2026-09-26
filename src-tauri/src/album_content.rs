@@ -43,8 +43,8 @@ pub fn save(conn: &mut Connection, id: i64, title: &str, color: &str, contents: 
         }
         match entry.kind.as_str() {
             "CHAPTER" | "TEXT" => {
-                if entry.media_id.is_some() || (entry.kind == "CHAPTER" && entry.title.trim().is_empty()) {
-                    return Err("챕터 제목을 입력해 주세요.".into());
+                if entry.media_id.is_some() || (entry.title.trim().is_empty() && (entry.kind == "CHAPTER" || entry.body.trim().is_empty())) {
+                    return Err("챕터 제목 또는 글 페이지 내용을 입력해 주세요.".into());
                 }
             }
             "PHOTO" | "VIDEO" | "AUDIO" => {
@@ -107,5 +107,15 @@ mod tests {
         assert!(save(&mut conn, album, "손상되면 안 됨", "#D8DDCB", &invalid).is_err());
         assert_eq!(crate::read_albums(&conn).unwrap()[0].title, "기존 앨범");
         assert_eq!(load(&conn).unwrap()[&album].len(), 4);
+        let text = Content { id:"text-1".into(), kind:"TEXT".into(), media_id:None, title:String::new(), body:"여행 마지막 날.\n가장 기억에 남는다.".into(), display_duration:8.0, transition_type:"fade".into(), comment_visible:true };
+        save(&mut conn, album, "글만 있는 앨범", "#D8DDCB", &[text.clone()]).unwrap();
+        let loaded = crate::read_albums(&conn).unwrap();
+        assert!(loaded[0].items.is_empty());
+        assert_eq!(loaded[0].contents[0].body, text.body);
+        let mut empty = text; empty.body = "  ".into();
+        assert!(save(&mut conn, album, "빈 글", "#D8DDCB", &[empty]).is_err());
+        save(&mut conn, album, "비운 앨범", "#D8DDCB", &[]).unwrap();
+        assert!(!load(&conn).unwrap().contains_key(&album));
+        assert_eq!(conn.query_row("SELECT COUNT(*) FROM media", [], |r| r.get::<_, i64>(0)).unwrap(), 3);
     }
 }
