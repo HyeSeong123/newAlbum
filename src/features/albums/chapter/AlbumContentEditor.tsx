@@ -33,8 +33,8 @@ export function AlbumContentEditor({ contents, items, onChange }: {
         return <li key={entry.id} className={`albumContentRow kind-${entry.kind.toLowerCase()}`} data-content-id={entry.id}>
           <strong>{index + 1}. {entry.kind === "CHAPTER" ? "챕터" : entry.kind === "TEXT" ? "글 페이지" : label(entry)}</strong>
           {!entry.mediaId && <>
-            <label>{entry.kind === "CHAPTER" ? "챕터 제목" : "글 제목"}<input required={entry.kind === "CHAPTER"} maxLength={120} value={entry.title} onChange={event => edit(index, { title: event.target.value })} /></label>
-            <label>{entry.kind === "CHAPTER" ? "부제목 또는 설명" : "본문"}<textarea required={entry.kind === "TEXT" && !entry.title.trim()} maxLength={4000} value={entry.body} onChange={event => edit(index, { body: event.target.value })} /></label>
+            <div><label htmlFor={`page-title-${entry.id}`}>{entry.kind === "CHAPTER" ? "챕터 제목" : "글 제목"}</label><input id={`page-title-${entry.id}`} required={entry.kind === "CHAPTER"} maxLength={120} value={entry.title} onChange={event => edit(index, { title: event.target.value })} /></div>
+            <div><label htmlFor={`page-body-${entry.id}`}>{entry.kind === "CHAPTER" ? "부제목 또는 설명" : "본문"}</label><textarea id={`page-body-${entry.id}`} required={entry.kind === "TEXT" && !entry.title.trim()} maxLength={4000} value={entry.body} onChange={event => edit(index, { body: event.target.value })} /></div>
           </>}
           <div className="albumContentRowActions">
             <button type="button" aria-label={`${index + 1}번 항목 위로`} disabled={index === 0} onClick={() => { onChange(moveContent(contents, index, index - 1)); setOffset(Math.floor((index - 1) / 20) * 20); }}>위로</button>
