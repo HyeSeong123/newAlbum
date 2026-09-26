@@ -16,6 +16,7 @@ use export::valid_export_folder_name;
 mod faces;
 mod pets;
 mod thumbnails;
+mod media_dimensions;
 #[cfg(any(feature = "custom-protocol", test))]
 mod localhost;
 
@@ -48,9 +49,11 @@ struct AlbumDto {
 }
 
 #[tauri::command]
-fn list_media(app: AppHandle) -> Result<Vec<MediaItemDto>, String> {
-    let conn = open_database(&app)?;
-    read_media(&conn)
+async fn list_media(app: AppHandle) -> Result<Vec<MediaItemDto>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let conn = open_database(&app)?;
+        read_media(&conn)
+    }).await.map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
@@ -661,20 +664,24 @@ fn register_file(conn: &Connection, path: &Path) -> Result<(), String> {
         normalize_file_path(&path.canonicalize().unwrap_or_else(|_| path.to_path_buf()));
     let file_type = media_type(path).ok_or_else(|| "지원하지 않는 파일 형식입니다.".to_string())?;
     let taken_at = modified_date(&metadata);
+    let dimensions = if file_type == "image" { media_dimensions::read(path) } else { None };
     let content_hash =
         file_hash(path).map_err(|error| format!("파일 해시를 계산할 수 없습니다: {error}"))?;
 
     conn.execute(
-        "INSERT INTO media (file_path, content_hash, file_type, taken_at, size_bytes, rating, comment, favorite, metadata_status)
-         VALUES (?1, ?2, ?3, ?4, ?5, 0, '', 0, 'ready')
+        "INSERT INTO media (file_path, content_hash, file_type, taken_at, size_bytes, width, height, rating, comment, favorite, metadata_status)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, '', 0, 'ready')
          ON CONFLICT(file_path) DO UPDATE SET
            file_type = excluded.file_type,
            content_hash = COALESCE(media.content_hash, excluded.content_hash),
            taken_at = COALESCE(media.taken_at, excluded.taken_at),
            size_bytes = excluded.size_bytes,
+           width = COALESCE(excluded.width, media.width),
+           height = COALESCE(excluded.height, media.height),
            metadata_status = 'ready'
          ON CONFLICT(content_hash) DO NOTHING",
-        params![file_path, content_hash, file_type, taken_at, metadata.len() as i64],
+        params![file_path, content_hash, file_type, taken_at, metadata.len() as i64,
+            dimensions.map(|value| value.0), dimensions.map(|value| value.1)],
     )
     .map_err(|error| format!("파일을 등록할 수 없습니다: {error}"))?;
 
@@ -701,6 +708,7 @@ fn media_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MediaItemDto> {
 }
 
 fn read_media(conn: &Connection) -> Result<Vec<MediaItemDto>, String> {
+    media_dimensions::backfill(conn)?;
     let mut stmt = conn
         .prepare(
             "SELECT id, file_path, file_type, taken_at, width, height, duration, size_bytes, rating, comment, favorite, metadata_status, view_count, title
