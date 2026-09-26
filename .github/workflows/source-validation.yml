@@ -50,6 +50,6 @@ jobs:
         run: |
           npx playwright install --with-deps chromium
           npx playwright test tests/photo-titles.spec.ts tests/photo-detail.spec.ts tests/journal-preview.spec.ts --project=desktop --workers=2
-          npx playwright test tests/album-portrait.spec.ts tests/album-animation.spec.ts tests/album-content.spec.ts tests/album-story.spec.ts tests/memories.spec.ts --workers=2
+          npx playwright test tests/album-portrait.spec.ts tests/album-animation.spec.ts tests/album-content.spec.ts tests/album-story.spec.ts tests/memories.spec.ts tests/timeline.spec.ts --workers=2
       - name: Build TypeScript frontend
         run: npm run build
