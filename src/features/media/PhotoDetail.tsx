@@ -12,6 +12,7 @@ export function DetailModal({
   comments,
   commentError,
   onChange,
+  onSaveTitle,
   onAddComment,
   onUpdateComment,
   onDeleteComment,
@@ -23,6 +24,7 @@ export function DetailModal({
   comments: MediaComment[];
   commentError?: string;
   onChange: (patch: Partial<MediaItem>) => void;
+  onSaveTitle: (id: string, title: string) => Promise<void>;
   onAddComment: (author: string, content: string) => boolean;
   onUpdateComment: (commentId: string, author: string, content: string) => boolean;
   onDeleteComment: (commentId: string) => void;
@@ -177,6 +179,7 @@ export function DetailModal({
             <aside className="photoInformation" aria-label="사진 정보">
               <h2>{item.fileType === "image" ? "사진 정보" : item.fileType === "video" ? "영상 정보" : "음성 정보"}</h2>
               <p className="detailFileName">{item.fileName}</p>
+              <PhotoTitleEditor key={item.id} item={item} onSave={onSaveTitle} />
               <section className="detailRating" aria-label="별점">
                 <h3>별점</h3>
                 <div className="rating">
@@ -254,6 +257,42 @@ export function DetailModal({
       {zoomViewerOpen && <PhotoZoomViewer item={item} onClose={() => { setZoomViewerOpen(false); requestAnimationFrame(() => zoomTriggerRef.current?.focus()); }} />}
     </div>
   );
+}
+
+function PhotoTitleEditor({ item, onSave }: { item: MediaItem; onSave: (id: string, title: string) => Promise<void> }) {
+  const [draft, setDraft] = useState(item.title ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const busy = useRef(false);
+  useEffect(() => { setDraft(item.title ?? ""); }, [item.title]);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (busy.current) return;
+    busy.current = true;
+    setSaving(true); setError(""); setNotice("");
+    try {
+      await onSave(item.id, draft.trim());
+      setDraft(draft.trim());
+      setNotice("제목을 저장했습니다.");
+    } catch {
+      setError("제목을 저장하지 못했습니다. 다시 저장해 주세요.");
+    } finally { busy.current = false; setSaving(false); }
+  }
+
+  return <form className="photoTitleForm" onSubmit={(event) => void submit(event)}>
+    <label htmlFor="photoTitleInput">제목</label>
+    <div className="photoTitleControls">
+      <input id="photoTitleInput" aria-label="사진 제목" type="text" maxLength={120} value={draft} disabled={saving}
+        placeholder="이 순간에 제목을 붙여보세요"
+        onKeyDown={(event) => { if (event.key === "Enter" && event.nativeEvent.isComposing) event.preventDefault(); }}
+        onChange={(event) => { setDraft(event.target.value); setError(""); setNotice(""); }} />
+      <button type="submit" disabled={saving || draft.trim() === (item.title ?? "")} aria-label="사진 제목 저장">{saving ? "저장 중" : "저장"}</button>
+    </div>
+    {error && <p className="photoTitleError" role="alert">{error}</p>}
+    {notice && <p role="status">{notice}</p>}
+  </form>;
 }
 
 function PhotoZoomViewer({ item, onClose }: { item: MediaItem; onClose: () => void }) {

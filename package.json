@@ -1,6 +1,6 @@
 {
   "name": "local-album-manager",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,8 +12,12 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build --features custom-protocol",
     "package:windows": "tauri build --features custom-protocol --bundles nsis",
+    "version:patch": "node scripts/version.mjs patch",
+    "version:minor": "node scripts/version.mjs minor",
+    "version:major": "node scripts/version.mjs major",
+    "version:check": "node scripts/version.mjs --check",
     "test:e2e": "playwright test",
-    "test:unit": "node --test tests/journal-model.test.mjs tests/media-playback.test.mjs tests/feature-models.test.mjs tests/mutations.test.mjs"
+    "test:unit": "node --test tests/journal-model.test.mjs tests/media-playback.test.mjs tests/feature-models.test.mjs tests/mutations.test.mjs tests/version.test.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.1",

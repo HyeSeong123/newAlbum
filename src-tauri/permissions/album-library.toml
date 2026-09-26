@@ -13,6 +13,7 @@ commands.allow = [
   "export_media_group",
   "register_paths",
   "update_media_details",
+  "update_media_title",
   "increment_media_view",
   "list_face_index",
   "list_pets",

@@ -36,7 +36,7 @@ export function selectMediaCollection(items: MediaItem[], options: CollectionOpt
 export function searchMedia(items: MediaItem[], query: string): MediaItem[] {
   if (!query) return items;
   const needle = query.toLowerCase();
-  return items.filter((item) => `${item.fileName} ${item.comment} ${item.tags.join(" ")}`.toLowerCase().includes(needle));
+  return items.filter((item) => `${item.title ?? ""} ${item.fileName} ${item.comment} ${item.tags.join(" ")}`.toLowerCase().includes(needle));
 }
 
 export function anniversaryMemories(items: MediaItem[], today: string): MediaItem[] {

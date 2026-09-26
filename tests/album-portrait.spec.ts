@@ -33,7 +33,7 @@ test('mixed orientations use two uncropped photos per leaf without losing photos
       const portrait = [1, 5, 6, 7].includes(id);
       return { id, file_path: `C:/orientation-${id}.jpg`, file_type: 'image', taken_at: '2026-09-20',
         width: portrait ? 600 : 1920, height: portrait ? 900 : 1280, duration: null, size_bytes: 1000,
-        rating: 0, comment: id <= 3 ? ['천천히 남겨둔 순간', '바다를 따라 걷던 오후', '잠시 쉬어간 곳'][index] : '', favorite: false, view_count: 0, metadata_status: 'ready' };
+        rating: 0, comment: '', title: id <= 3 ? ['천천히 남겨둔 순간', '바다를 따라 걷던 오후', '잠시 쉬어간 곳'][index] : '', favorite: false, view_count: 0, metadata_status: 'ready' };
     });
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: (path: string) => `/${path.split('/').pop()}`,
@@ -134,7 +134,7 @@ test('mixed orientations use two uncropped photos per leaf without losing photos
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: '앨범 전체창', exact: true })).toBeVisible();
   await expect(pageLabel).toHaveText('1 / 2 펼침');
-  await expect(left.locator('.albumPageCaption p').first()).toHaveText('다시 보아도 좋은 순간');
+  await expect(left.locator('.albumPageCaption p').first()).toHaveText('천천히 남겨둔 순간');
   expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-2.jpg 상세보기']);
   expect(await titles(right)).toEqual(['orientation-3.jpg 상세보기', 'orientation-4.jpg 상세보기']);
   await page.getByTitle('사진 목록', { exact: true }).click();
@@ -204,7 +204,7 @@ test('empty, single and extreme-ratio albums fit both book leaves', async ({ pag
     Math.random = () => 1234 / 0x100000000;
     const media = [[2400, 400], [800, 800], [null, null]].map(([width, height], index) => ({
       id: index + 1, file_path: `C:/ratio-${index + 1}.jpg`, file_type: 'image', taken_at: index ? '2026-09-12' : null,
-      width, height, size_bytes: 1024, rating: 0, comment: index === 1 ? '종이 너비를 넘을 만큼 긴 설명도 사진과 날짜를 밀어내지 않습니다.'.repeat(3) : '',
+      width, height, size_bytes: 1024, rating: 0, comment: '', title: index === 1 ? '종이 너비를 넘을 만큼 긴 제목도 사진과 날짜를 밀어내지 않습니다.'.repeat(3) : '',
       favorite: false, metadata_status: 'ready',
     }));
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
@@ -252,4 +252,3 @@ test('empty, single and extreme-ratio albums fit both book leaves', async ({ pag
     await reader.getByTitle('닫기', { exact: true }).click();
   }
 });
-

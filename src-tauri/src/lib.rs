@@ -31,6 +31,7 @@ struct MediaItemDto {
     size_bytes: i64,
     rating: i64,
     comment: String,
+    title: String,
     favorite: bool,
     view_count: i64,
     metadata_status: String,
@@ -257,6 +258,26 @@ fn increment_media_view(app: AppHandle, id: i64) -> Result<i64, String> {
     .map_err(|error| format!("조회수를 읽을 수 없습니다: {error}"))
 }
 
+#[tauri::command]
+fn update_media_title(app: AppHandle, id: i64, title: String) -> Result<(), String> {
+    let conn = open_database(&app)?;
+    save_media_title(&conn, id, &title)
+}
+
+fn save_media_title(conn: &Connection, id: i64, title: &str) -> Result<(), String> {
+    let title = title.trim();
+    // Match the browser input's UTF-16 maxlength, including emoji.
+    if title.encode_utf16().count() > 120 {
+        return Err("제목은 120자 이내로 입력해 주세요.".into());
+    }
+    let changed = conn.execute("UPDATE media SET title = ?1 WHERE id = ?2", params![title, id])
+        .map_err(|error| format!("제목을 저장할 수 없습니다: {error}"))?;
+    if changed == 0 {
+        return Err("저장할 사진을 찾을 수 없습니다.".into());
+    }
+    Ok(())
+}
+
 fn open_database(app: &AppHandle) -> Result<Connection, String> {
     let app_dir = app
         .path()
@@ -304,7 +325,20 @@ fn migrate_database(conn: &Connection) -> Result<(), String> {
     migrate_album_concept(conn)?;
     migrate_person_cover(conn)?;
     migrate_media_view_count(conn)?;
+    migrate_media_title(conn)?;
 
+    Ok(())
+}
+
+fn migrate_media_title(conn: &Connection) -> Result<(), String> {
+    let exists: bool = conn.query_row(
+        "SELECT EXISTS(SELECT 1 FROM pragma_table_info('media') WHERE name = 'title')",
+        [], |row| row.get(0),
+    ).map_err(|error| error.to_string())?;
+    if !exists {
+        conn.execute("ALTER TABLE media ADD COLUMN title TEXT NOT NULL DEFAULT ''", [])
+            .map_err(|error| format!("사진 제목 마이그레이션 실패: {error}"))?;
+    }
     Ok(())
 }
 
@@ -361,6 +395,42 @@ fn migrate_album_concept(conn: &Connection) -> Result<(), String> {
 #[cfg(test)]
 mod album_concept_tests {
     use super::*;
+
+    #[test]
+    fn legacy_media_titles_migrate_without_changing_existing_metadata() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("CREATE TABLE media (id INTEGER PRIMARY KEY, file_path TEXT, comment TEXT, rating INTEGER, favorite INTEGER);
+            INSERT INTO media VALUES (1, 'original.jpg', '기존 댓글', 4, 1);").unwrap();
+        migrate_media_title(&conn).unwrap();
+        migrate_media_title(&conn).unwrap();
+        let value: String = conn.query_row("SELECT title FROM media WHERE id = 1", [], |row| row.get(0)).unwrap();
+        assert_eq!(value, "");
+        save_media_title(&conn, 1, "  바람이 좋았던 날  ").unwrap();
+        migrate_media_title(&conn).unwrap();
+        let value: (String, String, String, i64, i64) = conn.query_row(
+            "SELECT title, file_path, comment, rating, favorite FROM media WHERE id = 1", [],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?)),
+        ).unwrap();
+        assert_eq!(value, ("바람이 좋았던 날".into(), "original.jpg".into(), "기존 댓글".into(), 4, 1));
+    }
+
+    #[test]
+    fn titles_roundtrip_to_all_albums_and_support_clear_and_validation() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(include_str!("../database/schema.sql")).unwrap();
+        conn.execute("INSERT INTO media(file_path, file_type, size_bytes) VALUES ('photo.jpg', 'image', 42)", []).unwrap();
+        insert_album(&mut conn, "첫 앨범", &[1], "#D8DDCB").unwrap();
+        insert_album(&mut conn, "둘째 앨범", &[1], "#D8DDCB").unwrap();
+        save_media_title(&conn, 1, "같은 사진의 제목 🌿").unwrap();
+        assert_eq!(read_media(&conn).unwrap()[0].title, "같은 사진의 제목 🌿");
+        assert!(read_albums(&conn).unwrap().iter().all(|album| album.items[0].title == "같은 사진의 제목 🌿"));
+        assert!(save_media_title(&conn, 1, &"가".repeat(121)).is_err());
+        assert!(save_media_title(&conn, 1, &"🌿".repeat(61)).is_err());
+        assert!(save_media_title(&conn, 999, "없는 사진").is_err());
+        assert_eq!(read_media(&conn).unwrap()[0].title, "같은 사진의 제목 🌿");
+        save_media_title(&conn, 1, "  ").unwrap();
+        assert_eq!(read_media(&conn).unwrap()[0].title, "");
+    }
 
     #[test]
     fn legacy_albums_get_mint_without_losing_data() {
@@ -614,13 +684,14 @@ fn media_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MediaItemDto> {
         favorite: row.get::<_, i64>(10)? == 1,
         metadata_status: row.get(11)?,
         view_count: row.get(12)?,
+        title: row.get(13)?,
     })
 }
 
 fn read_media(conn: &Connection) -> Result<Vec<MediaItemDto>, String> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, file_path, file_type, taken_at, width, height, duration, size_bytes, rating, comment, favorite, metadata_status, view_count
+            "SELECT id, file_path, file_type, taken_at, width, height, duration, size_bytes, rating, comment, favorite, metadata_status, view_count, title
              FROM media
              ORDER BY taken_at DESC NULLS LAST, created_at DESC",
         )
@@ -667,7 +738,7 @@ fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
     // Load all memberships once instead of issuing one photo query per album.
     let mut stmt = conn
         .prepare(
-            "SELECT m.id, m.file_path, m.file_type, m.taken_at, m.width, m.height, m.duration, m.size_bytes, m.rating, m.comment, m.favorite, m.metadata_status, m.view_count, ai.album_id
+            "SELECT m.id, m.file_path, m.file_type, m.taken_at, m.width, m.height, m.duration, m.size_bytes, m.rating, m.comment, m.favorite, m.metadata_status, m.view_count, m.title, ai.album_id
              FROM album_item ai
              JOIN media m ON m.id = ai.media_id
              ORDER BY ai.album_id, ai.sequence ASC",
@@ -676,7 +747,7 @@ fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
 
     let rows = stmt
         .query_map([], |row| {
-            Ok((row.get::<_, i64>(13)?, media_from_row(row)?))
+            Ok((row.get::<_, i64>(14)?, media_from_row(row)?))
         })
         .map_err(|error| format!("앨범 항목을 읽을 수 없습니다: {error}"))?;
 
@@ -822,6 +893,7 @@ pub fn run() {
             export_media_group,
             register_paths,
             update_media_details,
+            update_media_title,
             increment_media_view,
             faces::list_face_index,
             pets::list_pets,

@@ -77,8 +77,8 @@ test('failed browser batches release the object URLs already allocated', () => {
 });
 
 test('refreshing imported media retains edits but accepts fresh metadata and new records', () => {
-  const old = { id: '1', rating: 4, comment: 'edited', favorite: true, viewCount: 7, width: 10 };
-  const registered = [{ ...old, rating: 0, comment: '', favorite: false, viewCount: 1, width: 400 }, { id: '2' }];
+  const old = { id: '1', title: '저장한 제목', rating: 4, comment: 'edited', favorite: true, viewCount: 7, width: 10 };
+  const registered = [{ ...old, title: '', rating: 0, comment: '', favorite: false, viewCount: 1, width: 400 }, { id: '2' }];
   const refreshed = retainMediaEdits(registered, [old]);
   assert.deepEqual(refreshed[0], { ...old, width: 400 });
   assert.strictEqual(refreshed[1], registered[1]);

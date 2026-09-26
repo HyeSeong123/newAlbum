@@ -5,6 +5,7 @@ import type { MediaItem, MediaType, SavedAlbum } from "../types/media";
 interface BackendMediaItem {
   id: number;
   file_path: string;
+  title?: string;
   file_type: MediaType;
   taken_at: string | null;
   width: number | null;
@@ -127,6 +128,11 @@ export async function saveMediaDetails(item: MediaItem): Promise<void> {
   });
 }
 
+export async function saveMediaTitle(id: string, title: string): Promise<void> {
+  if (!/^\d+$/.test(id)) throw new Error("저장할 사진을 찾을 수 없습니다.");
+  await invoke("update_media_title", { id: Number(id), title });
+}
+
 export async function incrementMediaView(id: string): Promise<number> {
   if (!/^\d+$/.test(id)) return 0;
   return invoke<number>("increment_media_view", { id: Number(id) });
@@ -144,6 +150,7 @@ function toMediaItem(row: BackendMediaItem): MediaItem {
   return {
     id: String(row.id),
     fileName,
+    title: row.title ?? "",
     filePath: row.file_path,
     fileType: row.file_type,
     takenAt: row.taken_at,
