@@ -62,34 +62,31 @@ export function isPortraitMedia(item: MediaItem): boolean {
     && Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > width;
 }
 
-export function albumPhotoRatio(item: MediaItem): number {
-  const { width, height } = item;
-  return item.fileType !== "audio" && typeof width === "number" && typeof height === "number"
-    && Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0
-    ? width / height : 3 / 2;
+export function uniqueAlbumItems(items: MediaItem[]): MediaItem[] {
+  const ids = new Set<string>();
+  const paths = new Set<string>();
+  return items.filter((item) => {
+    if (ids.has(item.id) || (item.filePath && paths.has(item.filePath))) return false;
+    ids.add(item.id);
+    if (item.filePath) paths.add(item.filePath);
+    return true;
+  });
 }
 
-export function makeAlbumSpreads(items: MediaItem[], seed = 0): { left: MediaItem[]; right: MediaItem[] }[] {
+export function makeAlbumSpreads(items: MediaItem[]): { left: MediaItem[]; right: MediaItem[] }[] {
   const spreads: { left: MediaItem[]; right: MediaItem[] }[] = [];
-  let state = seed >>> 0;
-  for (let index = 0; index < items.length;) {
-    const next = items.slice(index, index + 3);
-    const canPairLeft = next.length === 3 && !isPortraitMedia(next[0]) && !isPortraitMedia(next[1]);
-    const canPairRight = next.length === 3 && !isPortraitMedia(next[1]) && !isPortraitMedia(next[2]);
-    const maxCount = canPairLeft || canPairRight ? 3 : Math.min(2, next.length);
-    // Reuse the opening's seed so paging and metadata edits keep the same composition.
-    state = (Math.imul(1664525, state) + 1013904223) >>> 0;
-    const count = 1 + Math.floor((state / 0x100000000) * maxCount);
-    const entries = next.slice(0, count);
-    if (count === 3) {
-      const pairLeft = canPairLeft && (!canPairRight || spreads.length % 2 === 1);
-      spreads.push({ left: entries.slice(0, pairLeft ? 2 : 1), right: entries.slice(pairLeft ? 2 : 1) });
-    } else {
-      spreads.push({ left: entries.slice(0, 1), right: entries.slice(1) });
-    }
-    index += count;
+  for (let index = 0; index < items.length; index += 4) {
+    spreads.push({ left: items.slice(index, index + 2), right: items.slice(index + 2, index + 4) });
   }
   return spreads;
+}
+
+export function albumLeafLayout(items: MediaItem[]): "single" | "rows" | "columns" {
+  if (items.length < 2) return "single";
+  return items.some(({ fileType, width, height }) => fileType !== "audio"
+    && typeof width === "number" && typeof height === "number"
+    && Number.isFinite(width) && Number.isFinite(height) && width > 0 && height >= width)
+    ? "columns" : "rows";
 }
 
 export function shuffleAlbumItems<T>(items: T[], random = Math.random): T[] {

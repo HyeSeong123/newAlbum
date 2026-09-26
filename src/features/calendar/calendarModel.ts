@@ -15,6 +15,22 @@ export type CalendarEvent = {
 
 export type CalendarEvents = Record<string, CalendarEvent[]>;
 
+export const MONTH_LABELS = Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, "0"));
+
+export function updateCalendarEvent(events: CalendarEvents, id: string, update: (event: CalendarEvent) => CalendarEvent | null): CalendarEvents {
+  for (const [date, entries] of Object.entries(events)) {
+    const index = entries.findIndex((entry) => entry.id === id);
+    if (index < 0) continue;
+    const replacement = update(entries[index]);
+    const remaining = entries.flatMap((entry, entryIndex) => entryIndex === index ? replacement ? [replacement] : [] : [entry]);
+    const next = { ...events };
+    if (remaining.length) next[date] = remaining;
+    else delete next[date];
+    return next;
+  }
+  return events;
+}
+
 export const DAY_NOTE_STORAGE_KEY = "oraedameun.dayNotes";
 
 export const DAY_COVER_STORAGE_KEY = "oraedameun.dayCovers";
@@ -115,8 +131,9 @@ function isCalendarEvent(value: unknown): value is CalendarEvent {
 export function saveCalendarEvents(events: CalendarEvents) {
   try {
     window.localStorage.setItem(CALENDAR_EVENT_STORAGE_KEY, JSON.stringify(events));
+    return true;
   } catch {
-    // 일정 저장 실패는 사진 보기 흐름을 막지 않는다.
+    return false;
   }
 }
 

@@ -10,6 +10,7 @@ import { formatJournalDate } from "./journalModel";
 export function DetailModal({
   item,
   comments,
+  commentError,
   onChange,
   onAddComment,
   onUpdateComment,
@@ -20,9 +21,10 @@ export function DetailModal({
 }: {
   item: MediaItem;
   comments: MediaComment[];
+  commentError?: string;
   onChange: (patch: Partial<MediaItem>) => void;
-  onAddComment: (author: string, content: string) => void;
-  onUpdateComment: (commentId: string, author: string, content: string) => void;
+  onAddComment: (author: string, content: string) => boolean;
+  onUpdateComment: (commentId: string, author: string, content: string) => boolean;
   onDeleteComment: (commentId: string) => void;
   onClose: () => void;
   onPrev: () => void;
@@ -79,8 +81,7 @@ export function DetailModal({
     const author = commentAuthor.trim();
     const content = commentContent.trim();
     if (!author || !content) return;
-    onAddComment(author, content);
-    setCommentContent("");
+    if (onAddComment(author, content)) setCommentContent("");
   }
 
   function startEditComment(comment: MediaComment) {
@@ -101,8 +102,7 @@ export function DetailModal({
     const author = editingAuthor.trim();
     const content = editingContent.trim();
     if (!author || !content) return;
-    onUpdateComment(editingCommentId, author, content);
-    cancelEditComment();
+    if (onUpdateComment(editingCommentId, author, content)) cancelEditComment();
   }
 
   return (
@@ -197,6 +197,7 @@ export function DetailModal({
             </aside>
             <aside className="detailBody" aria-label="댓글">
               <section id="photoComments" className="commentBox">
+                {commentError && <p role="alert">{commentError}</p>}
                 <h2><MessageCircle size={25} /><span>댓글 {comments.length}</span></h2>
                 <div className="commentList">
                   {!comments.length && <p>아직 남긴 댓글이 없습니다.</p>}
@@ -294,4 +295,3 @@ function formatDateTimeKo(value: string): string {
   if (Number.isNaN(date.getTime())) return "";
   return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}.${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
-

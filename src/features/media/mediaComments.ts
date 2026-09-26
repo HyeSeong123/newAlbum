@@ -30,9 +30,17 @@ function isMediaComment(value: unknown): value is MediaComment {
 export function saveMediaComments(comments: MediaComments) {
   try {
     window.localStorage.setItem(MEDIA_COMMENT_STORAGE_KEY, JSON.stringify(comments));
+    return true;
   } catch {
-    // 댓글 저장 실패는 사진 보기 흐름을 막지 않는다.
+    return false;
   }
+}
+
+export function replaceMediaComments(comments: MediaComments, itemId: string, entries: MediaComment[]): MediaComments {
+  const next = { ...comments };
+  if (entries.length) next[itemId] = entries;
+  else delete next[itemId];
+  return next;
 }
 
 export function getMediaComments(item: MediaItem, comments: MediaComments): MediaComment[] {

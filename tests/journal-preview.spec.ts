@@ -113,11 +113,11 @@ test('album reader preserves order and supports list, scrubber and nested photo 
   await expect(reader.locator('.albumPageCaption').first()).toContainText('바람이 좋았던 날');
   const slider = reader.getByRole('slider', { name: '앨범 책장 이동' });
   const total = Number(await slider.getAttribute('max'));
-  expect(total).toBeGreaterThanOrEqual(3);
+  expect(total).toBe(3);
   await slider.fill(String(total));
   await expect(reader.locator('.albumPagerActions p')).toHaveText(`${total} / ${total} 펼침`);
-  expect(await reader.locator('.albumPagePhoto').count()).toBeGreaterThanOrEqual(1);
-  expect(await reader.locator('.albumPagePhoto').count()).toBeLessThanOrEqual(3);
+  await expect(reader.locator('.albumPagePhoto')).toHaveCount(1);
+  await expect(reader.locator('.albumPaper.right .albumPagePhoto')).toHaveCount(0);
   await expect(reader.getByRole('button', { name: 'record-9.jpg 상세보기' })).toBeVisible();
   await reader.getByRole('button', { name: '사진 목록', exact: true }).click();
   await expect(reader.locator('.albumPhotoList > button')).toHaveCount(9);

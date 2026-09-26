@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { ALBUM_TURN_TIMING } from '../src/features/albums/albumAnimation';
 
 test('redesigned views fit and retain photo workflows', async ({ page }) => {
   await page.route('**/design-photo-*.jpg', (route) => {
@@ -81,17 +82,17 @@ test('redesigned views fit and retain photo workflows', async ({ page }) => {
   expect(close!.y + close!.height).toBeLessThanOrEqual(header!.y + header!.height);
   // Keep application timers still while screenshots capture the intermediate pages.
   await page.clock.install();
-  await page.clock.pauseAt(new Date());
+  await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
   await page.getByTitle('다음 책장', { exact: true }).click();
   await expect(page.locator('.albumSpread')).toHaveAttribute('data-turn-phase', 'departing');
   await expect(page.locator('.albumPhotoEntry[data-side="right"]').first()).toHaveCSS('opacity', '0');
-  await page.waitForTimeout(120);
-  await expect(page.locator('.albumPhotoEntry[data-side="left"]').first()).toHaveCSS('opacity', '0');
-  await capture('reader-turn-empty');
-  await page.clock.runFor(300);
+  await expect(page.locator('.albumPhotoEntry[data-side="left"]').first()).toHaveCSS('opacity', '1');
+  await expect(page.locator('.albumTurnFace')).toHaveCount(2);
+  await capture('reader-turn-start');
+  await page.clock.runFor(ALBUM_TURN_TIMING.swap);
   await expect(page.locator('.albumSpread')).toHaveAttribute('data-turn-phase', 'arriving');
   await capture('reader-turn-mid');
-  await page.clock.runFor(520);
+  await page.clock.runFor(ALBUM_TURN_TIMING.duration - ALBUM_TURN_TIMING.swap);
   await page.clock.resume();
   await expect(page.locator('.albumPagerActions p')).toHaveText(`2 / ${totalPages} 펼침`);
   await expect(page.getByTitle('이전 책장', { exact: true })).toBeEnabled();
@@ -102,7 +103,7 @@ test('redesigned views fit and retain photo workflows', async ({ page }) => {
   await page.getByTitle('다음 책장', { exact: true }).click();
   await page.getByRole('button', { name: '앨범 보기 옵션' }).click();
   await page.getByRole('button', { name: '사진 순서 섞기' }).click();
-  await page.waitForTimeout(900);
+  await page.waitForTimeout(ALBUM_TURN_TIMING.duration + 100);
   await expect(page.locator('.albumPagerActions p')).toHaveText(`1 / ${totalPages} 펼침`);
   await page.keyboard.press('ArrowRight');
   await expect(page.locator('.albumPagerActions p')).toHaveText(`2 / ${totalPages} 펼침`);
