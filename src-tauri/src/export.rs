@@ -12,6 +12,18 @@ pub(super) struct ExportResultDto {
     pub(super) copied: usize,
 }
 
+pub(super) fn copy_media_file(source: &Path, destination: &Path) -> Result<(), String> {
+    let original = source.canonicalize().map_err(|error| format!("원본 파일을 찾을 수 없습니다: {error}"))?;
+    if !original.is_file() {
+        return Err("원본 사진 파일을 찾을 수 없습니다.".into());
+    }
+    if destination.canonicalize().is_ok_and(|target| target == original) {
+        return Err("원본과 다른 저장 위치를 선택해 주세요.".into());
+    }
+    fs::copy(&original, destination).map_err(|error| format!("사진을 저장할 수 없습니다: {error}"))?;
+    Ok(())
+}
+
 pub(super) fn export_media_files(
     source_paths: &[PathBuf],
     destination_root: &Path,
@@ -120,4 +132,34 @@ fn unique_export_path(directory: &Path, file_name: &std::ffi::OsStr) -> PathBuf 
         }
     }
     unreachable!()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn single_download_preserves_original_bytes_and_rejects_source_overwrite() {
+        let nonce = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
+        let root = std::env::temp_dir().join(format!("album-download-{}-{nonce}", std::process::id()));
+        fs::create_dir_all(&root).unwrap();
+        let source = root.join("original.jpg");
+        let destination = root.join("download.jpg");
+        let bytes = b"original image data, unchanged by download";
+        fs::write(&source, bytes).unwrap();
+        copy_media_file(&source, &destination).unwrap();
+        assert_eq!(fs::read(&destination).unwrap(), bytes);
+        assert_eq!(fs::read(&source).unwrap(), bytes);
+        assert!(copy_media_file(&source, &source).is_err());
+        assert_eq!(fs::read(&source).unwrap(), bytes);
+        fs::write(&destination, b"previous destination").unwrap();
+        copy_media_file(&source, &destination).unwrap();
+        assert_eq!(fs::read(&destination).unwrap(), bytes);
+        assert!(copy_media_file(&root.join("missing.jpg"), &destination).is_err());
+        assert_eq!(fs::read(&destination).unwrap(), bytes);
+        assert!(copy_media_file(&source, &root.join("missing-folder/photo.jpg")).is_err());
+        assert!(copy_media_file(&root, &destination).is_err());
+        fs::remove_dir_all(root).unwrap();
+    }
 }

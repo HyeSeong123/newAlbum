@@ -55,9 +55,10 @@ test('all optimized comparators match the previous implementation on mixed recor
 });
 
 test('search includes names, captions and tags without changing whitespace semantics', () => {
-  const items = [photo(1, { fileName: 'Jeju.JPG' }), photo(2, { comment: '가족 여행' }), photo(3, { tags: ['SEA'] })];
+  const items = [photo(1, { fileName: 'Jeju.JPG', title: '바람이 불던 오후' }), photo(2, { comment: '가족 여행' }), photo(3, { tags: ['SEA'] })];
   assert.strictEqual(searchMedia(items, ''), items);
   assert.deepEqual(ids(searchMedia(items, 'jeju')), ['1']);
+  assert.deepEqual(ids(searchMedia(items, '바람이')), ['1']);
   assert.deepEqual(ids(searchMedia(items, '가족')), ['2']);
   assert.deepEqual(ids(searchMedia(items, 'sea')), ['3']);
   assert.deepEqual(searchMedia(items, ' absent '), []);

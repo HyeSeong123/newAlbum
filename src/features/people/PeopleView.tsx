@@ -3,7 +3,7 @@ import { ArrowLeft, BookPlus, Check, FolderOutput, Image as ImageIcon, LoaderCir
 import type { MediaItem } from '../../types/media';
 import { isTauriRuntime } from '../../services/tauriMediaService';
 import { clearFaceIndex, emptyFaceIndex, FaceIndex, loadFaceEngine, loadFaceIndex, moveFaces, renamePerson, scanPhoto, setFacesExcluded, setPersonCoverFace } from './faceService';
-import { MediaImage } from '../../components/MediaVisual';
+import { MediaVisual } from '../../components/MediaVisual';
 import { useRowSelection } from '../../hooks/useRowSelection';
 import './people.css';
 import { FaceMatchReview } from './FaceMatchReview';
@@ -260,7 +260,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
             else if (selecting) toggleFace(String(face.id));
             else if (item) onOpen(item, faceItems);
           }} aria-label={choosingCover ? '대표 사진으로 설정' : selecting ? '얼굴 선택' : '사진 상세보기'} aria-pressed={choosingCover ? person?.cover_face_id === face.id : selecting ? chosen.includes(face.id) : undefined}>
-            {!showFaceThumbnails && item ? <MediaImage item={item} /> : <img src={face.thumbnail} alt="" loading="lazy" decoding="async" draggable={false} />}
+            {!showFaceThumbnails && item ? <MediaVisual item={item} /> : <img src={face.thumbnail} alt="" loading="lazy" decoding="async" draggable={false} />}
           </button>
           {person?.cover_face_id === face.id && <span className="personCoverBadge">대표</span>}
           {selecting && <span className={`faceCheck ${chosen.includes(face.id) ? 'checked' : ''}`} aria-hidden="true">{chosen.includes(face.id) && <Check size={22} strokeWidth={3} />}</span>}

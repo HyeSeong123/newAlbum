@@ -125,6 +125,17 @@ export function useMediaLibrary() {
       .catch(() => setError("조회수를 저장하지 못했습니다."));
   }
 
+  async function saveTitle(id: string, value: string) {
+    const title = value.trim();
+    if (title.length > 120) throw new Error("제목은 120자 이내로 입력해 주세요.");
+    await write.current(id, async () => {
+      if (desktop) await api.saveMediaTitle(id, title);
+      // Publish only after persistence succeeds, using the latest media state.
+      // A title-only write cannot overwrite a concurrent rating or comment edit.
+      patchMedia(id, { title }, false);
+    });
+  }
+
   async function removeMedia(ids?: Set<string>): Promise<boolean> {
     if (locked.current) return false;
     locked.current = true;
@@ -179,5 +190,5 @@ export function useMediaLibrary() {
   }
 
   return { items: state.items, itemsById, albums, importing, clearing, error, fileInput, folderInput,
-    chooseFiles, chooseFolder, handleFiles, patchMedia, recordView, removeMedia, createAlbum, saveAlbum, deleteAlbums };
+    chooseFiles, chooseFolder, handleFiles, patchMedia, saveTitle, recordView, removeMedia, createAlbum, saveAlbum, deleteAlbums };
 }

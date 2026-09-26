@@ -27,9 +27,9 @@ export function EmptyState({ text }: { text: string }) {
   );
 }
 
-export function MediaVisual({ item, className, children, original = false }: { item: MediaItem; className?: string; children?: ReactNode; original?: boolean }) {
+export function MediaVisual({ item, className, children, original = false, fit = "contain" }: { item: MediaItem; className?: string; children?: ReactNode; original?: boolean; fit?: "contain" | "cover" }) {
   return (
-    <div className={className} style={{ background: item.thumbnail }}>
+    <div className={`mediaVisual fit-${fit}${className ? ` ${className}` : ""}`} style={{ background: fit === "contain" ? "#eeede7" : item.thumbnail }}>
       <MediaImage item={item} original={original} />
       {children}
     </div>

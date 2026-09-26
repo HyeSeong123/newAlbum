@@ -21,7 +21,7 @@ export function AlbumCover({ title, items, color = DEFAULT_ALBUM_COLOR, showColo
     <img className="frontAlbumBase" src={albumClosedBase} alt="" aria-hidden="true" draggable={false} />
     {showColor && <span className="frontAlbumTone" aria-hidden="true" />}
       <span className="frontAlbumWindow">
-        {cover ? <MediaVisual item={cover} /> : <BookOpen size={34} aria-hidden="true" />}
+        {cover ? <MediaVisual item={cover} fit="cover" /> : <BookOpen size={34} aria-hidden="true" />}
       </span>
       <strong className="frontAlbumTitle"><span>{title}</span></strong>
   </span>;

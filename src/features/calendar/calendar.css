@@ -65,7 +65,7 @@
   border-radius: 2px;
   color: white;
 }
-.calendarPanel .calendarGrid i .mediaImage { object-fit: cover; object-position: center 30%; }
+.calendarPanel .calendarGrid i .mediaImage { object-fit: contain; object-position: center; }
 .calendarPanel .calendarGrid .dayEvents { position: static; flex: none; gap: 3px; }
 .calendarPanel .calendarGrid .dayEvents small { min-height: 18px; padding: 1px 4px; border-radius: 2px; font-size: 10px; font-weight: 500; color: #5c6349; background: #e8ebdb; box-shadow: none; }
 .calendarPanel .calendarGrid .dayEvents strong { font-size: 9px; }
@@ -113,7 +113,7 @@
 .calendarThumbnails button { position: relative; display: block; min-width: 0; width: 100%; aspect-ratio: 1; padding: 2px; overflow: hidden; border: 1px solid #deded8; border-radius: 4px; background: transparent; }
 .calendarThumbnails button.active { padding: 1px; border: 2px solid var(--primary); }
 .calendarThumbnails button > div { position: relative; display: grid; place-items: center; width: 100%; height: 100%; overflow: hidden; border-radius: 2px; }
-.calendarThumbnails .mediaImage { object-fit: cover; object-position: center 30%; }
+.calendarThumbnails .mediaImage { object-fit: contain; object-position: center; }
 .calendarThumbnails button:hover { border-color: var(--primary); }
 .calendarCoverBadge { position: absolute; left: 4px; bottom: 4px; padding: 3px 7px; border-radius: 12px; color: white; background: var(--primary); font-size: 10px; font-weight: 600; }
 .calendarStripArrow { width: 34px; height: 34px; }

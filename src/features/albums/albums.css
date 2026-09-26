@@ -242,6 +242,7 @@
 }
 .albumLeafLayout.layout-rows { grid-template-rows: repeat(2, minmax(0, 1fr)); }
 .albumLeafLayout.layout-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.albumLeafLayout.layout-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
 .albumPhotoEntry, .albumTurnPrint {
   width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0;
   display: grid; grid-template-rows: minmax(0, 1fr) auto;
@@ -250,6 +251,17 @@
 .albumPageCaption p, .albumTurnCaption p { height: var(--caption-line); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .albumPageCaption time, .albumTurnCaption time { display: block; height: var(--caption-line); overflow: hidden; text-overflow: ellipsis; color: #858680; font-size: 12px; white-space: nowrap; }
 .albumPageNumber { bottom: 1.4%; font-size: 11px; }
+/* Landscape prints need extra height as well as width to grow with object-fit: contain.
+   Turning padding uses the same book-relative distances divided by sheet width (45.8%). */
+.albumPaper.landscape-page { padding: 1% 2% 1.5%; }
+.albumTurnFace.landscape-page.right { padding: 2.1834% 4.3668% 3.2751% 6.7686%; }
+.albumTurnFace.landscape-page.left { padding: 2.1834% 6.7686% 3.2751% 4.3668%; }
+.landscape-page .albumLeafLayout { gap: 10px; }
+.landscape-page :is(.albumPageCaption, .albumTurnCaption) {
+  display: flex; align-items: baseline; justify-content: center; gap: 8px; margin-top: 4px;
+}
+.landscape-page :is(.albumPageCaption, .albumTurnCaption) p { min-width: 0; }
+.landscape-page :is(.albumPageCaption, .albumTurnCaption) time { flex-shrink: 0; }
 .albumJournalTools .actionMenuPanel button { width: 100%; justify-content: flex-start; min-height: 34px; font-size: 12px; }
 .albumReaderNotice { position: absolute; z-index: 3; top: 76px; left: 50%; transform: translateX(-50%); padding: 10px 16px; border: 1px solid var(--border); border-radius: 5px; color: var(--muted); background: var(--surface); font-size: 12px; }
 .albumJournal.is-list { grid-template-rows: 76px minmax(0, 1fr); }
@@ -274,6 +286,10 @@
   .albumPageCaption, .albumPageCaption time, .albumTurnCaption, .albumTurnCaption time { font-size: 9px; }
   .albumTurnFace.right { padding: 3.2751% 4.8035% 8.7336% 7.2052%; }
   .albumTurnFace.left { padding: 3.2751% 7.2052% 8.7336% 4.8035%; }
+  .albumTurnFace.landscape-page.right { padding: 2.1834% 4.3668% 3.2751% 6.7686%; }
+  .albumTurnFace.landscape-page.left { padding: 2.1834% 6.7686% 3.2751% 4.3668%; }
+  .landscape-page .albumLeafLayout { gap: 6px; }
+  .landscape-page :is(.albumPageCaption, .albumTurnCaption) { gap: 4px; margin-top: 3px; }
   .albumPageNumber { bottom: 0; font-size: 9px; }
   .albumPhotoList { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -286,7 +302,7 @@
 
 
 /* Keep the full frame visible in both the overview and book view. */
-.albumPhotoList { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 28px 20px; padding: 20px clamp(20px, 4vw, 64px) 40px; }
+.albumPhotoList { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 28px 20px; padding: 20px clamp(20px, 4vw, 64px) 40px; }
 .albumPhotoList > button { min-width: 0; align-content: start; border-radius: 8px; }
 .albumPhotoList > button > div { aspect-ratio: 4 / 3; border-radius: 6px; background: #eeede7 !important; }
 .albumPhotoList .mediaImage { width: 100%; height: 100%; object-fit: contain; object-position: center; }
@@ -294,5 +310,5 @@
 .albumPhotoList > button:hover > div { outline: 1px solid var(--primary); outline-offset: 3px; }
 .albumPhotoList > button:focus-visible { outline: 2px solid var(--primary); outline-offset: 5px; }
 @media (max-width: 760px) {
-  .albumPhotoList { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; padding: 16px; }
+  .albumPhotoList { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; padding: 12px; }
 }

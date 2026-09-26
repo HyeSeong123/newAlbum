@@ -165,7 +165,7 @@ export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; 
                   </span>
                 )}
                 {cover && (
-                  <i style={{ background: cover.thumbnail }} data-media-id={cover.id}>
+                  <i style={{ background: "#eeede7" }} data-media-id={cover.id}>
                     <MediaImage item={cover} />
                     {cover.fileType === "video" && <Play size={18} />}
                     {cover.fileType === "audio" && <Music size={18} />}
@@ -190,7 +190,7 @@ export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; 
                 <span>{formatDateKo(date)}</span>
                 <strong>{matches.length}장</strong>
                 {cover && (
-                  <i style={{ background: cover.thumbnail }} data-media-id={cover.id}>
+                  <i style={{ background: "#eeede7" }} data-media-id={cover.id}>
                     <MediaImage item={cover} />
                   </i>
                 )}

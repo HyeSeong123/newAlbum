@@ -62,6 +62,12 @@ export function isPortraitMedia(item: MediaItem): boolean {
     && Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > width;
 }
 
+export function isLandscapeMedia(item: MediaItem): boolean {
+  const { width, height } = item;
+  return item.fileType !== "audio" && typeof width === "number" && typeof height === "number"
+    && Number.isFinite(width) && Number.isFinite(height) && height > 0 && width > height;
+}
+
 export function uniqueAlbumItems(items: MediaItem[]): MediaItem[] {
   const ids = new Set<string>();
   const paths = new Set<string>();
@@ -74,14 +80,32 @@ export function uniqueAlbumItems(items: MediaItem[]): MediaItem[] {
 }
 
 export function makeAlbumSpreads(items: MediaItem[]): { left: MediaItem[]; right: MediaItem[] }[] {
+  // Collect matching ratios even when portrait and landscape records alternate.
+  // Only the reader's presentation changes; saved membership/order is untouched.
+  const groups = [false, true].map((portrait) => items
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => isPortraitMedia(item) === portrait));
+  const offsets = [0, 0];
   const spreads: { left: MediaItem[]; right: MediaItem[] }[] = [];
-  for (let index = 0; index < items.length; index += 4) {
-    spreads.push({ left: items.slice(index, index + 2), right: items.slice(index + 2, index + 4) });
+  function takeLeaf(): MediaItem[] {
+    const first = groups[0][offsets[0]]?.index ?? Infinity;
+    const second = groups[1][offsets[1]]?.index ?? Infinity;
+    const group = second < first ? 1 : 0;
+    const capacity = group === 1 ? 4 : 2;
+    const leaf = groups[group].slice(offsets[group], offsets[group] + capacity).map(({ item }) => item);
+    offsets[group] += leaf.length;
+    return leaf;
+  }
+  while (offsets[0] + offsets[1] < items.length) {
+    const left = takeLeaf();
+    const right = takeLeaf();
+    spreads.push({ left, right });
   }
   return spreads;
 }
 
-export function albumLeafLayout(items: MediaItem[]): "single" | "rows" | "columns" {
+export function albumLeafLayout(items: MediaItem[]): "single" | "rows" | "columns" | "grid" {
+  if (items.length > 2) return "grid";
   if (items.length < 2) return "single";
   return items.some(({ fileType, width, height }) => fileType !== "audio"
     && typeof width === "number" && typeof height === "number"

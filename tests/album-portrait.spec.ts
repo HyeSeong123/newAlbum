@@ -18,7 +18,96 @@ async function expectUncroppedPhoto(photo: Locator) {
   expect(imageBox.height).toBeCloseTo(box.height, 0);
 }
 
-test('mixed orientations use two uncropped photos per leaf without losing photos or page navigation', async ({ page }) => {
+test('portrait grids keep four uncropped photos per leaf through turns, detail and reopening', async ({ page }) => {
+  await page.route('**/portrait-grid-*.jpg', route => route.fulfill({
+    contentType: 'image/svg+xml',
+    body: '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900"><rect width="600" height="900" fill="#52957e"/><rect x="12" y="12" width="576" height="876" fill="none" stroke="#eac173" stroke-width="24"/></svg>',
+  }));
+  await page.addInitScript(() => {
+    const media = Array.from({ length: 17 }, (_, index) => ({
+      id: index + 1, file_path: `C:/portrait-grid-${index + 1}.jpg`, file_type: 'image',
+      taken_at: '2026-09-27', width: 600, height: 900, size_bytes: 1000, rating: 0, comment: '',
+      title: `세로 사진 ${index + 1}`, favorite: false,
+    }));
+    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
+      convertFileSrc: (path: string) => '/' + path.split('/').pop(),
+      invoke: async (command: string) => command === 'list_media' ? media : command === 'list_albums' ? [
+        { id: 1, title: '세로 네 장', description: '', created_at: '2026-09-27', items: media },
+        { id: 2, title: '세로 다섯 장', description: '', created_at: '2026-09-27', items: media.slice(0, 5) },
+      ] : [],
+    } });
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: '내 앨범', exact: true }).click();
+  await page.getByRole('button', { name: '세로 네 장 앨범 열기', exact: true }).click();
+  const reader = page.getByRole('dialog', { name: '앨범 전체창', exact: true });
+  const photos = reader.locator('.albumPagePhoto');
+  const ids = () => photos.evaluateAll(elements => elements.map(element => element.getAttribute('data-media-id')));
+  await expect(reader.locator('.albumPagerActions p')).toHaveText('1 / 3 펼침');
+  await expect(photos).toHaveCount(8);
+  for (const side of await reader.locator('.albumPaper').all()) {
+    await expect(side.locator('.albumPageImages')).toHaveClass(/layout-grid/);
+    await expect(side.locator('.albumPagePhoto')).toHaveCount(4);
+    const bounds = (await side.locator('.albumPageImages').boundingBox())!;
+    const boxes = [];
+    for (const entry of await side.locator('.albumPhotoEntry').all()) {
+      await expectUncroppedPhoto(entry.locator('.albumPagePhoto'));
+      const box = (await entry.boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(bounds.x - 1);
+      expect(box.y).toBeGreaterThanOrEqual(bounds.y - 1);
+      expect(box.x + box.width).toBeLessThanOrEqual(bounds.x + bounds.width + 1);
+      expect(box.y + box.height).toBeLessThanOrEqual(bounds.y + bounds.height + 1);
+      const photoBox = (await entry.locator('.albumPagePhoto').boundingBox())!;
+      const captionBox = (await entry.locator('.albumPageCaption').boundingBox())!;
+      expect(captionBox.y).toBeGreaterThanOrEqual(photoBox.y + photoBox.height - 1);
+      boxes.push(box);
+    }
+    expect(boxes[0].y).toBeCloseTo(boxes[1].y, 0);
+    expect(boxes[2].y).toBeCloseTo(boxes[3].y, 0);
+    expect(boxes[0].x + boxes[0].width).toBeLessThanOrEqual(boxes[1].x);
+    expect(boxes[0].y + boxes[0].height).toBeLessThanOrEqual(boxes[2].y);
+  }
+  const slots = await photos.evaluateAll(elements => elements.map(element => element.getAttribute('data-slot')));
+  expect(new Set(slots).size).toBe(8);
+  await reader.locator('.albumBookBase').evaluate((image: HTMLImageElement) => image.decode());
+  await page.screenshot({ path: `test-results/album-portrait-grid-${test.info().project.name}.png` });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.clock.install();
+  await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
+  await reader.getByTitle('다음 책장', { exact: true }).click();
+  for (const face of ['front', 'back']) {
+    await expect(reader.locator(`.albumTurnFace.${face} .albumTurnImages`)).toHaveClass(/layout-grid/);
+    await expect(reader.locator(`.albumTurnFace.${face} .albumTurnPrint`)).toHaveCount(4);
+  }
+  expect(await reader.locator('.albumTurnFace.front [data-turn-media-id]').evaluateAll(elements => elements.map(element => element.getAttribute('data-turn-media-id')))).toEqual(['5', '6', '7', '8']);
+  expect(await reader.locator('.albumTurnFace.back [data-turn-media-id]').evaluateAll(elements => elements.map(element => element.getAttribute('data-turn-media-id')))).toEqual(['9', '10', '11', '12']);
+  await page.clock.runFor(ALBUM_TURN_TIMING.duration);
+  await page.clock.resume();
+  expect(await ids()).toEqual(['9', '10', '11', '12', '13', '14', '15', '16']);
+  const seen: (string | null)[] = [];
+  for (let spread = 1; spread <= 3; spread++) {
+    await reader.getByLabel('앨범 책장 이동').fill(String(spread));
+    seen.push(...await ids());
+  }
+  expect(seen).toEqual(Array.from({ length: 17 }, (_, index) => String(index + 1)));
+  await reader.getByLabel('앨범 책장 이동').fill('1');
+  await photos.nth(3).click();
+  await expect(page.getByRole('dialog', { name: '사진 상세', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(photos).toHaveCount(8);
+  await reader.getByTitle('닫기', { exact: true }).click();
+  await page.getByRole('button', { name: '세로 네 장 앨범 열기', exact: true }).click();
+  expect(await ids()).toEqual(['1', '2', '3', '4', '5', '6', '7', '8']);
+  await reader.getByTitle('닫기', { exact: true }).click();
+  await page.getByRole('button', { name: '세로 다섯 장 앨범 열기', exact: true }).click();
+  await expect(reader.locator('.albumPaper.left .albumPagePhoto')).toHaveCount(4);
+  await expect(reader.locator('.albumPaper.right .albumPagePhoto')).toHaveCount(1);
+  expect(await ids()).toEqual(['1', '2', '3', '4', '5']);
+  await expect(reader.locator('.albumPagerActions p')).toHaveText('1 / 1 펼침');
+  for (const photo of await photos.all()) await expectUncroppedPhoto(photo);
+});
+
+test('mixed orientations group four portraits and two landscapes without losing photos or page navigation', async ({ page }) => {
   await page.route('**/orientation-*.jpg', (route) => {
     const id = Number(route.request().url().match(/orientation-(\d+)/)![1]);
     if ([1, 5, 6, 7].includes(id)) {
@@ -33,7 +122,7 @@ test('mixed orientations use two uncropped photos per leaf without losing photos
       const portrait = [1, 5, 6, 7].includes(id);
       return { id, file_path: `C:/orientation-${id}.jpg`, file_type: 'image', taken_at: '2026-09-20',
         width: portrait ? 600 : 1920, height: portrait ? 900 : 1280, duration: null, size_bytes: 1000,
-        rating: 0, comment: id <= 3 ? ['천천히 남겨둔 순간', '바다를 따라 걷던 오후', '잠시 쉬어간 곳'][index] : '', favorite: false, view_count: 0, metadata_status: 'ready' };
+        rating: 0, comment: '', title: id <= 3 ? ['천천히 남겨둔 순간', '바다를 따라 걷던 오후', '잠시 쉬어간 곳'][index] : '', favorite: false, view_count: 0, metadata_status: 'ready' };
     });
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: (path: string) => `/${path.split('/').pop()}`,
@@ -55,14 +144,14 @@ test('mixed orientations use two uncropped photos per leaf without losing photos
   const pageLabel = page.locator('.albumPagerActions p');
   const titles = (side: typeof left) => side.locator('.albumPagePhoto').evaluateAll((buttons) => buttons.map((button) => button.getAttribute('aria-label')));
   await expect(pageLabel).toHaveText('1 / 2 펼침');
-  await expect(left.locator('.albumPageImages')).toHaveClass(/layout-columns/);
+  await expect(left.locator('.albumPageImages')).toHaveClass(/layout-grid/);
   await expect(right.locator('.albumPageImages')).toHaveClass(/layout-rows/);
-  await expect(left.locator('.albumPagePhoto')).toHaveCount(2);
+  await expect(left.locator('.albumPagePhoto')).toHaveCount(4);
   await expect(right.locator('.albumPagePhoto')).toHaveCount(2);
-  expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-2.jpg 상세보기']);
-  expect(await titles(right)).toEqual(['orientation-3.jpg 상세보기', 'orientation-4.jpg 상세보기']);
+  expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-5.jpg 상세보기', 'orientation-6.jpg 상세보기', 'orientation-7.jpg 상세보기']);
+  expect(await titles(right)).toEqual(['orientation-2.jpg 상세보기', 'orientation-3.jpg 상세보기']);
   await expect(page.locator('.albumPageCaption p')).toHaveText(['천천히 남겨둔 순간', '바다를 따라 걷던 오후', '잠시 쉬어간 곳']);
-  await expect(page.locator('.albumPageCaption time')).toHaveText(Array(4).fill('2026.09.20'));
+  await expect(page.locator('.albumPageCaption time')).toHaveText(Array(6).fill('2026.09.20'));
   await page.locator('.albumBookBase, .albumPagePhoto img').evaluateAll((images: HTMLImageElement[]) => Promise.all(images.map((image) => image.decode())));
   for (const photo of await page.locator('.albumPagePhoto').all()) await expectUncroppedPhoto(photo);
   for (const side of [left, right]) {
@@ -95,8 +184,8 @@ test('mixed orientations use two uncropped photos per leaf without losing photos
   await expect(right.locator('.albumPhotoEntry').first()).toHaveCSS('opacity', '0');
   await page.clock.runFor(ALBUM_TURN_TIMING.swap);
   await expect(page.locator('.albumSpread')).toHaveAttribute('data-turn-phase', 'arriving');
-  expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-2.jpg 상세보기']);
-  expect(await titles(right)).toEqual(['orientation-7.jpg 상세보기', 'orientation-8.jpg 상세보기']);
+  expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-5.jpg 상세보기', 'orientation-6.jpg 상세보기', 'orientation-7.jpg 상세보기']);
+  expect(await titles(right)).toEqual([]);
   await expect(left).not.toHaveClass(/portrait-photo/);
   await page.clock.runFor(ALBUM_TURN_TIMING.duration - ALBUM_TURN_TIMING.swap);
   await page.clock.resume();
@@ -106,8 +195,8 @@ test('mixed orientations use two uncropped photos per leaf without losing photos
   await page.keyboard.press('ArrowRight');
   await expect(page.getByTitle('이전 책장', { exact: true })).toBeEnabled();
   await expect(pageLabel).toHaveText('2 / 2 펼침');
-  expect(await titles(left)).toEqual(['orientation-5.jpg 상세보기', 'orientation-6.jpg 상세보기']);
-  expect(await titles(right)).toEqual(['orientation-7.jpg 상세보기', 'orientation-8.jpg 상세보기']);
+  expect(await titles(left)).toEqual(['orientation-4.jpg 상세보기', 'orientation-8.jpg 상세보기']);
+  expect(await titles(right)).toEqual([]);
   await expect(page.getByTitle('다음 책장', { exact: true })).toBeDisabled();
   const allPhotos: (string | null)[] = [];
   const counts = new Set<number>();
@@ -119,8 +208,8 @@ test('mixed orientations use two uncropped photos per leaf without losing photos
     allPhotos.push(...photos);
     for (const photo of await page.locator('.albumPagePhoto').all()) await expectUncroppedPhoto(photo);
   }
-  expect(allPhotos).toEqual(Array.from({ length: 8 }, (_, index) => `orientation-${index + 1}.jpg 상세보기`));
-  expect([...counts]).toEqual([4]);
+  expect(allPhotos).toEqual([1, 5, 6, 7, 2, 3, 4, 8].map(id => `orientation-${id}.jpg 상세보기`));
+  expect([...counts]).toEqual([6, 2]);
   await page.getByLabel('앨범 책장 이동').fill('1');
   await left.locator('.albumPagePhoto').first().click();
   const detail = page.getByRole('dialog', { name: '사진 상세', exact: true });
@@ -134,16 +223,16 @@ test('mixed orientations use two uncropped photos per leaf without losing photos
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: '앨범 전체창', exact: true })).toBeVisible();
   await expect(pageLabel).toHaveText('1 / 2 펼침');
-  await expect(left.locator('.albumPageCaption p').first()).toHaveText('다시 보아도 좋은 순간');
-  expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-2.jpg 상세보기']);
-  expect(await titles(right)).toEqual(['orientation-3.jpg 상세보기', 'orientation-4.jpg 상세보기']);
+  await expect(left.locator('.albumPageCaption p').first()).toHaveText('천천히 남겨둔 순간');
+  expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-5.jpg 상세보기', 'orientation-6.jpg 상세보기', 'orientation-7.jpg 상세보기']);
+  expect(await titles(right)).toEqual(['orientation-2.jpg 상세보기', 'orientation-3.jpg 상세보기']);
   await page.getByTitle('사진 목록', { exact: true }).click();
   await expect(page.locator('.albumPhotoList > button')).toHaveCount(8);
   await expect(page.locator('.albumPhotoList .mediaImage').first()).toHaveCSS('object-fit', 'contain');
   await page.getByTitle('책으로 보기', { exact: true }).click();
   await expect(pageLabel).toHaveText('1 / 2 펼침');
-  expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-2.jpg 상세보기']);
-  expect(await titles(right)).toEqual(['orientation-3.jpg 상세보기', 'orientation-4.jpg 상세보기']);
+  expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-5.jpg 상세보기', 'orientation-6.jpg 상세보기', 'orientation-7.jpg 상세보기']);
+  expect(await titles(right)).toEqual(['orientation-2.jpg 상세보기', 'orientation-3.jpg 상세보기']);
   await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
   await page.getByTitle('다음 책장', { exact: true }).click();
   await page.getByLabel('앨범 책장 이동').fill('2');
@@ -204,7 +293,7 @@ test('empty, single and extreme-ratio albums fit both book leaves', async ({ pag
     Math.random = () => 1234 / 0x100000000;
     const media = [[2400, 400], [800, 800], [null, null]].map(([width, height], index) => ({
       id: index + 1, file_path: `C:/ratio-${index + 1}.jpg`, file_type: 'image', taken_at: index ? '2026-09-12' : null,
-      width, height, size_bytes: 1024, rating: 0, comment: index === 1 ? '종이 너비를 넘을 만큼 긴 설명도 사진과 날짜를 밀어내지 않습니다.'.repeat(3) : '',
+      width, height, size_bytes: 1024, rating: 0, comment: '', title: index === 1 ? '종이 너비를 넘을 만큼 긴 제목도 사진과 날짜를 밀어내지 않습니다.'.repeat(3) : '',
       favorite: false, metadata_status: 'ready',
     }));
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
@@ -252,4 +341,3 @@ test('empty, single and extreme-ratio albums fit both book leaves', async ({ pag
     await reader.getByTitle('닫기', { exact: true }).click();
   }
 });
-

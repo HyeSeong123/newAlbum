@@ -238,6 +238,7 @@ export function App() {
             item={selected}
             comments={getMediaComments(selected, mediaComments)}
             onChange={updateSelected}
+            onSaveTitle={library.saveTitle}
             onAddComment={(author, content) => comments.add(selected, author, content)}
             commentError={comments.error}
             onUpdateComment={(id, author, content) => comments.edit(selected, id, author, content)}
@@ -251,4 +252,3 @@ export function App() {
     </main>
   );
 }
-

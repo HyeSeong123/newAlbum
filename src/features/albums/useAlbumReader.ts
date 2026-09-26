@@ -25,6 +25,7 @@ export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () =>
     return shuffled.length === albumItems.length ? shuffled : albumItems;
   }, [albumItems, order]);
   const pages = useMemo(() => makeAlbumSpreads(orderedItems), [orderedItems]);
+  const pageLayoutKey = JSON.stringify(pages.map(({ left, right }) => [left.map(item => item.id), right.map(item => item.id)]));
   const currentPage = Math.min(pageIndex, Math.max(0, pages.length - 1));
   const oppositeSide = turn?.direction === "next" ? "left" : "right";
   // Keep the opposite print in place until the turning leaf is almost flat.
@@ -46,6 +47,11 @@ export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () =>
     cancelTurn(); setOrder(null); setPageIndex(0); setTurn(null); setTurnPhase(null);
     return cancelTurn;
   }, [mediaOrderKey]);
+
+  // Late dimension metadata can regroup pages. Never finish a turn against the old grouping.
+  useEffect(() => {
+    cancelTurn(); setPageIndex(0); setTurn(null); setTurnPhase(null);
+  }, [pageLayoutKey]);
 
   useEffect(() => {
     const syncFullscreen = () => setFullscreen(Boolean(document.fullscreenElement));

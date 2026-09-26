@@ -84,24 +84,66 @@ test('explicit shuffle does not mutate saved items or lose duplicate-looking pho
   assert.deepEqual(source, ['a', 'b', 'c', 'd', 'e']);
 });
 
-test('mixed orientations retain their saved order with two photos per leaf', () => {
+test('interleaved portraits fill a four-photo leaf and landscapes fill two-photo leaves', () => {
   const dimensions = [[600, 900], [900, 600], [900, 600], [900, 600], [600, 900], [600, 900], [600, 900], [900, 600]];
   const items = dimensions.map(([width, height], index) => photo(String(index + 1), null, { width, height }));
   const spreads = makeAlbumSpreads(items);
   assert.deepEqual(spreads.map(({ left, right }) => [left.map((item) => item.id), right.map((item) => item.id)]), [
-    [['1', '2'], ['3', '4']], [['5', '6'], ['7', '8']],
+    [['1', '5', '6', '7'], ['2', '3']], [['4', '8'], []],
   ]);
-  assert.deepEqual(spreads.flatMap(({ left, right }) => [...left, ...right]), items);
-  assert.deepEqual(spreads.flatMap(({ left, right }) => [albumLeafLayout(left), albumLeafLayout(right)]), ['columns', 'rows', 'columns', 'columns']);
+  assert.deepEqual(items.map(item => item.id), ['1', '2', '3', '4', '5', '6', '7', '8']);
+  assert.deepEqual(spreads.flatMap(({ left, right }) => [albumLeafLayout(left), albumLeafLayout(right)]), ['grid', 'rows', 'rows', 'single']);
   assert.deepEqual(makeAlbumSpreads([]), []);
 });
 
-test('all-portrait albums pair photos and support a single final photo', () => {
+test('short portrait albums never split a full four-photo leaf to balance the spread', () => {
   const items = Array.from({ length: 5 }, (_, index) => photo(String(index), null, { width: 500, height: 900 }));
   const spreads = makeAlbumSpreads(items);
-  assert.deepEqual(spreads.map(({ left, right }) => [left.length, right.length]), [[2, 2], [1, 0]]);
+  assert.deepEqual(spreads.map(({ left, right }) => [left.length, right.length]), [[4, 1]]);
+  assert.deepEqual(makeAlbumSpreads(items.slice(0, 4)).map(({ left, right }) => [left.length, right.length]), [[4, 0]]);
   assert.deepEqual(spreads.flatMap(({ left, right }) => [...left, ...right]), items);
   assert.deepEqual(makeAlbumSpreads([items[0]])[0], { left: [items[0]], right: [] });
+});
+
+test('portrait leaves hold up to four photos with stable uncropped grid layouts', () => {
+  for (let count = 1; count <= 25; count++) {
+    const items = Array.from({ length: count }, (_, index) => photo(String(index), null, { width: 600, height: 900 }));
+    const spreads = makeAlbumSpreads(items);
+    assert.deepEqual(spreads.flatMap(({ left, right }) => [...left, ...right]), items);
+    assert.deepEqual(makeAlbumSpreads(items), spreads);
+    assert.equal(spreads.length, Math.ceil(count / 8));
+    assert.ok(spreads.slice(0, -1).every(({ left, right }) => left.length === 4 && right.length === 4));
+    for (const leaf of spreads.flatMap(({ left, right }) => [left, right])) {
+      assert.ok(leaf.length <= 4);
+      if (leaf.length > 2) assert.equal(albumLeafLayout(leaf), 'grid');
+    }
+    const leaves = spreads.flatMap(({ left, right }) => [left, right]).filter(leaf => leaf.length);
+    assert.ok(leaves.slice(0, -1).every(leaf => leaf.length === 4));
+  }
+});
+
+test('all orientation combinations keep category order, full leaves and exactly-once membership', () => {
+  for (let mask = 0; mask < 1024; mask++) {
+    const items = Array.from({ length: 10 }, (_, index) => photo(String(index), null, {
+      width: mask & (1 << index) ? 600 : 1200, height: 900,
+    }));
+    const spreads = makeAlbumSpreads(items);
+    const leaves = spreads.flatMap(({ left, right }) => [left, right]).filter(leaf => leaf.length);
+    const actual = leaves.flat();
+    assert.equal(new Set(actual.map(item => item.id)).size, items.length);
+    assert.equal(actual.length, items.length);
+    assert.ok(spreads.slice(0, -1).every(({ left, right }) => left.length && right.length));
+    for (const portrait of [false, true]) {
+      assert.deepEqual(actual.filter(item => isPortraitMedia(item) === portrait), items.filter(item => isPortraitMedia(item) === portrait));
+      const group = leaves.filter(leaf => isPortraitMedia(leaf[0]) === portrait);
+      assert.ok(group.slice(0, -1).every(leaf => leaf.length === (portrait ? 4 : 2)));
+    }
+    for (const leaf of leaves) {
+      const portrait = isPortraitMedia(leaf[0]);
+      assert.ok(leaf.length <= (portrait ? 4 : 2));
+      assert.ok(leaf.every(item => isPortraitMedia(item) === portrait));
+    }
+  }
 });
 
 test('landscape, square and unknown dimensions always use four photos per full spread', () => {
@@ -117,24 +159,32 @@ test('landscape, square and unknown dimensions always use four photos per full s
   assert.deepEqual(makeAlbumSpreads(items).flatMap(({ left, right }) => [...left, ...right]), items);
 });
 
-test('pairing is stable across reopening, caption edits and orientation metadata updates', () => {
+test('grouping is stable across reopening and caption edits while new dimensions retain every photo', () => {
   const items = Array.from({ length: 100 }, (_, index) => photo(String(index), null, { width: 900, height: 600 }));
   const spreads = makeAlbumSpreads(items);
   const ids = (pages) => pages.map(({ left, right }) => [left.map((item) => item.id), right.map((item) => item.id)]);
   assert.equal(spreads.length, 25);
   assert.ok(spreads.every(({ left, right }) => left.length === 2 && right.length === 2));
   assert.deepEqual(ids(makeAlbumSpreads(items)), ids(spreads));
-  const updated = items.map((item, index) => ({ ...item, comment: 'New caption', rating: 5, favorite: true, width: index % 2 ? 400 : null, height: 1600 }));
+  const updated = items.map((item) => ({ ...item, comment: 'New caption', rating: 5, favorite: true }));
   assert.deepEqual(ids(makeAlbumSpreads(updated)), ids(spreads));
+  const portraits = updated.map((item) => ({ ...item, width: 600, height: 900 }));
+  const regrouped = makeAlbumSpreads(portraits);
+  assert.equal(regrouped.length, 13);
+  assert.deepEqual(regrouped.flatMap(({ left, right }) => [...left, ...right]), portraits);
   assert.deepEqual(spreads.flatMap(({ left, right }) => [...left, ...right]), items);
 });
 
-test('all mixed three-photo orientation combinations keep a pair and a single on the same spread', () => {
+test('all three-photo orientation combinations fit one spread without mixing portrait leaves', () => {
   for (let mask = 0; mask < 8; mask++) {
     const items = Array.from({ length: 3 }, (_, index) => photo(String(index), null, { width: mask & (1 << index) ? 400 : 900, height: 600 }));
     const spreads = makeAlbumSpreads(items);
-    assert.deepEqual(spreads.flatMap(({ left, right }) => [...left, ...right]), items);
-    assert.deepEqual(spreads.map(({ left, right }) => [left.length, right.length]), [[2, 1]]);
+    const actual = spreads.flatMap(({ left, right }) => [...left, ...right]);
+    assert.deepEqual(actual.map(item => item.id).sort(), items.map(item => item.id));
+    assert.equal(spreads.length, 1);
+    for (const leaf of [spreads[0].left, spreads[0].right]) {
+      assert.ok(leaf.every(item => isPortraitMedia(item) === isPortraitMedia(leaf[0])));
+    }
   }
 });
 

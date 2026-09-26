@@ -18,7 +18,7 @@ test('list requests thumbnail while detail keeps original', async ({ page }) => 
   }, { image });
   await page.goto('/');
   await expect(page.locator('.mediaTile .thumb')).toHaveCSS('background-image', 'none');
-  await expect(page.locator('.mediaTile .thumb')).toHaveCSS('background-color', 'rgb(236, 238, 241)');
+  await expect(page.locator('.mediaTile .thumb')).toHaveCSS('background-color', 'rgb(238, 237, 231)');
   await expect.poll(() => page.evaluate(() => typeof (window as unknown as { releaseThumbnail?: () => void }).releaseThumbnail)).toBe('function');
   await page.screenshot({ path: `test-results/placeholder-${test.info().project.name}.png` });
   await page.evaluate(() => (window as unknown as { releaseThumbnail: () => void }).releaseThumbnail());

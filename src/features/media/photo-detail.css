@@ -1,6 +1,8 @@
 /* A stable viewing area beside a scrollable information and comments panel. */
 .photoInspector .detailLayout { grid-template-columns: minmax(0, 1fr) 340px; grid-template-rows: minmax(0, 1fr); }
 .photoInspector .detailPhotoPane { padding: 16px 24px; grid-template-rows: auto minmax(0, 1fr) auto; gap: 16px; }
+.detailDownloadFeedback { flex-basis: 100%; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.detailDownloadFeedback[role="alert"] { color: var(--danger); }
 .photoInspector .detailPhotoActions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .photoInspector .detailPhotoActions button,
 .photoInspector .detailZoomControls button { min-height: 38px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--border); border-radius: 6px; color: #53584b; background: var(--surface); font-size: 13px; white-space: nowrap; }
@@ -25,6 +27,13 @@
 .photoInspector h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; font-size: 16px; font-weight: 650; }
 .photoInspector h2 svg { width: 19px; height: 19px; }
 .photoInspector .detailFileName { margin: 0 0 20px; color: var(--muted); font-size: 12px; font-weight: 400; line-height: 1.6; }
+.photoTitleForm { display: grid; gap: 8px; margin-bottom: 20px; }
+.photoTitleForm > label { color: var(--muted); font-size: 12px; }
+.photoTitleControls { display: flex; gap: 8px; min-width: 0; }
+.photoTitleControls input { flex: 1; min-width: 0; width: 100%; height: 38px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); font-size: 13px; }
+.photoTitleControls button { flex-shrink: 0; min-height: 38px; padding: 0 12px; border-radius: 6px; background: var(--primary); color: white; font-size: 12px; }
+.photoTitleForm > p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.photoTitleForm > .photoTitleError { color: var(--danger); }
 .photoInspector .detailRating { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
 .photoInspector .detailRating h3 { margin: 0; font-size: 12px; font-weight: 500; color: var(--muted); }
 .photoInspector .rating button { width: 32px; min-height: 32px; padding: 4px; border: 0; }

@@ -16,11 +16,16 @@ try {
   if (process.argv.includes('--restarted')) {
     assert.equal(await page.evaluate(() => localStorage.getItem('installer-smoke')), 'persisted');
     assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_media')).length), 1);
+    assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_media'))[0].title), '설치 후에도 남아 있는 제목');
+    assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_albums'))[0].items[0].title), '설치 후에도 남아 있는 제목');
   } else {
     const count = await page.evaluate(async (path) => {
       const invoke = window.__TAURI_INTERNALS__.invoke;
       await invoke('register_paths', { paths: [path] });
       const media = await invoke('list_media');
+      if (!(media[0].width > 0 && media[0].height > 0)) throw new Error('Imported image dimensions were not persisted');
+      await invoke('update_media_title', { id: media[0].id, title: '설치 후에도 남아 있는 제목' });
+      await invoke('create_album_from_media', { title: '제목 저장 확인', mediaIds: [media[0].id], coverColor: '#D8DDCB' });
       const thumbnail = await invoke('media_thumbnail', { id: media[0].id });
       const image = new Image();
       image.src = window.__TAURI_INTERNALS__.convertFileSrc(thumbnail, 'asset');

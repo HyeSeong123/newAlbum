@@ -1,10 +1,11 @@
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import type { MediaItem, MediaType, SavedAlbum } from "../types/media";
 
 interface BackendMediaItem {
   id: number;
   file_path: string;
+  title?: string;
   file_type: MediaType;
   taken_at: string | null;
   width: number | null;
@@ -117,6 +118,29 @@ export async function exportMediaGroup(items: MediaItem[], destinationRoot: stri
   return invoke<MediaExportResult>("export_media_group", { sourcePaths, destinationRoot, folderName });
 }
 
+export async function downloadMedia(item: MediaItem): Promise<boolean> {
+  if (item.previewUrl) {
+    const link = document.createElement("a");
+    link.href = item.previewUrl;
+    link.download = item.fileName;
+    document.body.append(link);
+    try { link.click(); } finally { link.remove(); }
+    return true;
+  }
+  if (!isTauriRuntime() || !/^\d+$/.test(item.id) || !item.filePath) {
+    throw new Error("다운로드할 원본 파일을 찾을 수 없습니다.");
+  }
+  const extension = item.fileName.split(".").pop();
+  const destination = await save({
+    title: "원본 사진 저장",
+    defaultPath: item.fileName,
+    ...(extension && extension !== item.fileName ? { filters: [{ name: "원본 사진", extensions: [extension] }] } : {}),
+  });
+  if (!destination) return false;
+  await invoke("download_media", { id: Number(item.id), destination });
+  return true;
+}
+
 export async function saveMediaDetails(item: MediaItem): Promise<void> {
   if (!/^\d+$/.test(item.id)) return;
   await invoke("update_media_details", {
@@ -125,6 +149,11 @@ export async function saveMediaDetails(item: MediaItem): Promise<void> {
     comment: item.comment,
     favorite: item.favorite,
   });
+}
+
+export async function saveMediaTitle(id: string, title: string): Promise<void> {
+  if (!/^\d+$/.test(id)) throw new Error("저장할 사진을 찾을 수 없습니다.");
+  await invoke("update_media_title", { id: Number(id), title });
 }
 
 export async function incrementMediaView(id: string): Promise<number> {
@@ -144,6 +173,7 @@ function toMediaItem(row: BackendMediaItem): MediaItem {
   return {
     id: String(row.id),
     fileName,
+    title: row.title ?? "",
     filePath: row.file_path,
     fileType: row.file_type,
     takenAt: row.taken_at,
