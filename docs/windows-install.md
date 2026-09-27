@@ -14,9 +14,9 @@ Node.js, npm, Rust, VS Code를 설치하거나 터미널 명령을 입력할 필
 
 ## 설치 파일 준비
 
-테스트용 Windows 파일은 GitHub의 **Releases**에서 최신 'Windows 미리보기'를 선택해 받으세요. `-setup.exe`는 설치 파일이고 `-portable.exe`는 단독 실행 파일입니다. 단독 실행 파일을 쓰는 PC에는 WebView2가 설치돼 있어야 합니다. 함께 제공되는 `SHA256SUMS.txt`로 파일 무결성을 확인할 수 있습니다.
+테스트용 Windows 파일은 GitHub 저장소의 **Actions → Windows preview package → 최신 성공 실행 → Artifacts**에서 `Oraedameun-Windows-0.3.0`을 받아 압축을 푸세요. `-setup.exe`는 설치 파일이고 `-portable.exe`는 단독 실행 파일입니다. 단독 실행 파일을 쓰는 PC에는 WebView2가 설치돼 있어야 합니다. 함께 제공되는 `SHA256SUMS.txt`로 파일 무결성을 확인할 수 있습니다. 아티팩트는 업로드 후 90일간 보관됩니다.
 
-미리보기 파일은 Windows 빌드 후 설치·실행·데이터 저장·재시작 검증을 통과해야 게시됩니다. GitHub Actions의 **Windows preview package** 수동 실행으로 새 빌드를 만들 수 있습니다. 이 자동 검증은 사용자의 실제 PC에서 수동 설치하는 시험을 대체하지 않습니다.
+미리보기 파일은 Windows 빌드 후 설치·실행·데이터 저장·재시작 및 단독 실행파일 검증을 통과해야 업로드됩니다. GitHub Actions의 **Windows preview package** 수동 실행으로 새 빌드를 만들 수 있습니다. 이 자동 검증은 사용자의 실제 PC에서 수동 설치하는 시험을 대체하지 않습니다.
 
 기존 앱 업데이트 시 앱을 종료한 다음 새 설치 파일을 실행하세요. 버전 올리기와 직접 패키징 절차는 [버전별 배포 안내](releases.md)를 참고하세요.
 

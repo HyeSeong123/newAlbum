@@ -73,6 +73,11 @@ try {
     node scripts/smoke-desktop.mjs --restarted
     if ($LASTEXITCODE -ne 0) { throw 'App persistence check failed after restart.' }
     Close-LocalApp
+    $application = Start-Process -FilePath (Resolve-Path 'src-tauri/target/release/oraedameun.exe') -PassThru
+    Wait-LocalApp
+    node scripts/smoke-desktop.mjs --restarted
+    if ($LASTEXITCODE -ne 0) { throw 'Standalone executable check failed.' }
+    Close-LocalApp
 } finally {
     Get-NetTCPConnection -LocalPort 5173,9222 -ErrorAction SilentlyContinue |
         Format-Table -AutoSize | Out-String | Tee-Object -FilePath (Join-Path $diagnostics 'ports.log') | Write-Host
