@@ -102,7 +102,7 @@ export function AlbumContentEditor({ contents, items, onChange, selectedId, onSe
           </div>
           {active.mediaId ? <p className="albumEntryHint"><Image size={17} />사진의 제목과 설명은 사진 상세 화면에서 수정할 수 있습니다. 이곳에서는 순서와 스토리 설정을 바꿀 수 있어요.</p> : <div className="albumWritingFields">
             <label htmlFor={`page-title-${active.id}`}>{active.kind === "CHAPTER" ? "챕터 제목" : "감상문 제목"}<input id={`page-title-${active.id}`} maxLength={120} value={active.title} placeholder={active.kind === "CHAPTER" ? "예: 첫 번째 여행" : "예: 오래 기억하고 싶은 하루"} onChange={event => edit({ title: event.target.value })} /></label>
-            <label htmlFor={`page-body-${active.id}`}>{active.kind === "CHAPTER" ? "부제목 또는 설명" : "감상문 내용"}<textarea id={`page-body-${active.id}`} maxLength={4000} value={active.body} placeholder={active.kind === "CHAPTER" ? "이 장면을 소개하는 짧은 글을 적어보세요." : "이때 느꼈던 마음과 기억을 편하게 적어보세요."} onChange={event => edit({ body: event.target.value })} /></label>
+            <label htmlFor={`page-body-${active.id}`}>{active.kind === "CHAPTER" ? "부제목 또는 설명" : "감상문 내용"}<textarea id={`page-body-${active.id}`} aria-label={active.kind === "CHAPTER" ? "부제목 또는 설명" : "감상문 내용"} maxLength={4000} value={active.body} placeholder={active.kind === "CHAPTER" ? "이 장면을 소개하는 짧은 글을 적어보세요." : "이때 느꼈던 마음과 기억을 편하게 적어보세요."} onChange={event => edit({ body: event.target.value })} /></label>
             <small className="albumWritingCount">{active.body.length} / 4,000자</small>
           </div>}
           <StoryItemSettings key={active.id} entry={active} onChange={edit} />

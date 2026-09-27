@@ -13,6 +13,7 @@ export async function installRecordFixture(page: Page) {
     Object.defineProperty(window,'__TAURI_INTERNALS__',{ value:{ convertFileSrc:(path:string) => '/'+path.split('/').pop(), invoke:async (command:string) => {
       if (command === 'list_media') return media;
       if (command === 'list_albums') return [];
+      if (command === 'location_overview') return { total:media.length, analyzed:media.length, pending:0, failed:0, unclassified:media.length, regions:[] };
       if (command === 'increment_media_view') return 1;
       return [];
     } } });
