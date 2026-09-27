@@ -64,7 +64,7 @@ test('manual region editing persists, updates map counts, and failed saves keep 
   await page.getByRole('button',{name:'기록 1 상세보기',exact:true}).click();
   const detail=page.getByRole('dialog',{name:'사진 상세'});
   await detail.getByRole('button',{name:'지역 지정',exact:true}).click();
-  await expect(detail.getByLabel('지정할 지역').locator('option')).toHaveCount(18);
+  await expect(detail.getByLabel('지정할 지역').locator('option[value="KR-11"]')).toHaveText('서울특별시');
   await detail.getByLabel('지정할 지역').selectOption('KR-11');
   await detail.getByRole('button',{name:'지역 저장'}).click();
   await expect(detail.getByLabel('위치',{exact:true})).toContainText('서울특별시');

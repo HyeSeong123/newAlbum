@@ -6,6 +6,12 @@ on:
     branches: [feature/warm-journal-v2]
     paths:
       - '.github/workflows/windows-preview.yml'
+      - 'src/**'
+      - 'src-tauri/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'package-lock.json'
 
 permissions:
   contents: write
