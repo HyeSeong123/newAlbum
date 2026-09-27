@@ -24,6 +24,7 @@ tauri-plugin-single-instance = "=2.4.5"
 tiny_http = "=0.12.0"
 rusqlite = { version = "0.32", features = ["bundled"] }
 walkdir = "2"
+nom-exif = "=3.8.0"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "gif", "bmp", "tiff"] }
 
 [profile.dev.package.image]

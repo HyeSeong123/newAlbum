@@ -21,6 +21,11 @@ export interface MediaItem {
   /** Session-only URL for files selected in the browser preview. */
   previewUrl?: string;
   metadataStatus: "ready" | "queued" | "missing-date";
+  latitude?: number;
+  longitude?: number;
+  regionCode?: string;
+  regionName?: string;
+  locationStatus?: "queued" | "ready" | "no-gps" | "outside-korea" | "failed";
 }
 
 export interface SavedAlbum {

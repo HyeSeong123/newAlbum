@@ -5,6 +5,7 @@ import { useMediaSelection } from "./features/media/useMediaSelection";
 import { useMediaComments } from "./features/media/useMediaComments";
 import { DetailModal } from "./features/media/PhotoDetail";
 import { Memories } from "./features/memories/Memories";
+import { MemoryMap } from "./features/map/MemoryMap";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { getMediaComments } from "./features/media/mediaComments";
 import { searchMedia } from "./features/media/collectionModel";
@@ -20,12 +21,13 @@ import { MEDIA_FILE_ACCEPT } from "./features/media/mediaService";
 import { filterJournalMonth, journalMonthTitle, resolveJournalMonth } from "./features/media/journalModel";
 import type { MediaItem } from "./types/media";
 
-type View = "Library" | "Albums" | "Memories" | "People" | "Settings";
+type View = "Library" | "Albums" | "Memories" | "Map" | "People" | "Settings";
 
 const viewLabels: Record<View, string> = {
   Library: "사진 기록",
   Albums: "내 앨범",
   Memories: "추억",
+  Map: "추억 지도",
   People: "사람과 반려동물",
   Settings: "설정",
 };
@@ -35,6 +37,7 @@ const navItems: Array<{ name: View; label: string; accessibleLabel: string }> = 
   { name: "Albums", label: "앨범", accessibleLabel: "내 앨범" },
   { name: "People", label: "사람과 반려동물", accessibleLabel: "인물" },
   { name: "Memories", label: "추억", accessibleLabel: "지난 추억" },
+  { name: "Map", label: "추억 지도", accessibleLabel: "추억 지도" },
 ];
 
 export function App() {
@@ -232,6 +235,7 @@ export function App() {
             )}
             {activeView === "Albums" && <SavedAlbumsView albums={savedAlbums} query={query} onOpen={openViewer} onSave={library.saveAlbum} onDelete={library.deleteAlbums} />}
             {activeView === "Memories" && <Memories key={query} items={filtered} today={today} onOpen={openViewer} />}
+            {activeView === "Map" && <MemoryMap items={items} onOpen={openViewer} />}
             {activeView === "People" && <PeopleWorkspace items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} />}
             {activeView === "Settings" && <SettingsPanel itemCount={items.length} clearing={clearing} onClear={clearAllRegisteredMedia} />}
           </div>

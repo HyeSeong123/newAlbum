@@ -23,6 +23,11 @@ interface BackendMediaItem {
   favorite: boolean;
   view_count?: number;
   metadata_status: "ready" | "queued" | "missing-date";
+  latitude?: number | null;
+  longitude?: number | null;
+  region_code?: string | null;
+  region_name?: string | null;
+  location_status?: "queued" | "ready" | "no-gps" | "outside-korea" | "failed";
 }
 
 interface BackendAlbum {
@@ -67,6 +72,26 @@ export async function loadSavedAlbums(): Promise<SavedAlbum[]> {
       transitionType: entry.transition_type, commentVisible: entry.comment_visible,
     })),
   }));
+}
+
+export interface RegionCount { code: string; name: string; photos: number; videos: number }
+export interface LocationOverview {
+  total: number; analyzed: number; pending: number; failed: number; unclassified: number;
+  regions: RegionCount[];
+}
+
+export async function loadLocationOverview(): Promise<LocationOverview> {
+  return invoke<LocationOverview>("location_overview");
+}
+export async function analyzeLocationBatch(): Promise<LocationOverview> {
+  return invoke<LocationOverview>("analyze_locations");
+}
+export async function queueFailedLocations(): Promise<LocationOverview> {
+  return invoke<LocationOverview>("queue_failed_locations");
+}
+export async function loadRegionMedia(regionCode: string, offset: number, limit = 48): Promise<MediaItem[]> {
+  const rows = await invoke<BackendMediaItem[]>("list_region_media", { regionCode, offset, limit });
+  return rows.map(toMediaItem);
 }
 
 export async function clearRegisteredMedia(): Promise<MediaItem[]> {
@@ -216,6 +241,11 @@ function toMediaItem(row: BackendMediaItem): MediaItem {
     tags: [],
     thumbnail: placeholders[row.file_type],
     metadataStatus: row.metadata_status,
+    latitude: row.latitude ?? undefined,
+    longitude: row.longitude ?? undefined,
+    regionCode: row.region_code ?? undefined,
+    regionName: row.region_name ?? undefined,
+    locationStatus: row.location_status ?? "queued",
   };
 }
 
