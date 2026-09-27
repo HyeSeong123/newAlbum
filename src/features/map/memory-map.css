@@ -7,6 +7,9 @@
 .memoryMapStats div { display: grid; gap: 5px; }
 .memoryMapStats strong { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }
 .memoryMapStats span { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.memoryMapIntroActions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 14px; }
+.memoryMapAutoButton { min-height: 38px; padding: 0 13px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--primary); border-radius: 5px; background: var(--primary); color: #fff; font-size: 12px; white-space: nowrap; }
+.memoryMapAutoButton:disabled { opacity: .5; cursor: default; }
 .memoryMapLayout { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 18px; align-items: start; }
 .memoryMapPaper, .memoryMapPlaces, .memoryMapGallery { border: 1px solid var(--border); border-radius: var(--radius-card); background: #fffdfa; }
 .memoryMapPaper { min-width: 0; padding: 24px 28px 15px; }
@@ -42,6 +45,7 @@
 .memoryMapAnalysis button, .memoryMapAll, .memoryMapPager button { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 12px; border: 1px solid var(--border); border-radius: 9999px; background: var(--surface); color: var(--text); font-size: 12px; }
 .memoryMapAnalysis button:hover:not(:disabled), .memoryMapAll:hover, .memoryMapPager button:hover:not(:disabled) { background: var(--surface-soft); }
 .memoryMapAnalysis button:disabled { opacity: .55; }
+.memoryMapAnalysisFailure { color: var(--danger); font-size: 12px; }
 .memoryMapGallery { padding: 24px 28px 30px; }
 .memoryMapGallery > header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 22px; }
 .memoryMapGallery h3 { margin: 7px 0 4px; font-size: 21px; font-weight: 650; }
@@ -52,7 +56,7 @@
 .memoryMapAlert { margin: 0; padding: 10px 14px; border: 1px solid #e9c4b7; border-radius: 5px; color: #9a4b38; background: #fff7f2; font-size: 12px; }
 .view-map .toolbar { display: none; }
 @media(max-width:1000px) { .memoryMapLayout { grid-template-columns: minmax(0,1fr) 280px; } .memoryMapPaper { padding: 18px; } .memoryMapPlaces { padding: 16px; } }
-@media(max-width:760px) { .memoryMapLayout { grid-template-columns: 1fr; } .memoryMapIntro { flex-wrap: wrap; padding: 22px; } .memoryMapStats { width: 100%; padding: 14px 0 0; border-left: 0; border-top: 1px solid var(--border); } .memoryMapPaper { padding: 18px; } .memoryMapShape { max-height: 430px; } .memoryMapGallery { padding: 18px; } }
+@media(max-width:760px) { .memoryMapLayout { grid-template-columns: 1fr; } .memoryMapIntro { flex-wrap: wrap; padding: 22px; } .memoryMapIntroActions { width: 100%; justify-content: space-between; } .memoryMapStats { padding: 14px 0 0; border-left: 0; border-top: 1px solid var(--border); } .memoryMapPaper { padding: 18px; } .memoryMapShape { max-height: 430px; } .memoryMapGallery { padding: 18px; } }
 @media(max-width:380px) { .memoryMapStats { gap: 14px; } .memoryMapIntro h2 { font-size: 20px; } .memoryMapPlaces { padding: 14px; } }
 
 .memoryMapGallery h3 { scroll-margin-top: calc(var(--app-header-height, 80px) + 24px); }

@@ -61,7 +61,7 @@ fn existing_library_survives_migration_reopen_and_read_only_fast_path() {
 #[test]
 fn failed_upgrade_rolls_back_columns_and_version_then_can_retry() {
     let mut conn = Connection::open_in_memory().unwrap();
-    let legacy = include_str!("../database/schema.sql")
+    let legacy = include_str!("../database/schema.sql").replace("\r\n", "\n")
         .replacen("  title TEXT NOT NULL DEFAULT '',\n", "", 1)
         .replace("  view_count INTEGER NOT NULL DEFAULT 0,\n", "")
         .replace("  latitude REAL,\n", "").replace("  longitude REAL,\n", "")

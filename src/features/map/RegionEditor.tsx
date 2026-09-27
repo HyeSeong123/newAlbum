@@ -2,10 +2,10 @@ import { useState } from "react";
 import { REGION_NAMES } from "./regions";
 import "./region-editor.css";
 
-export function RegionEditor({ current, source, count = 1, onSave }: {
-  current?: string; source?: string; count?: number; onSave: (code: string) => Promise<void>;
+export function RegionEditor({ current, source, count = 1, initiallyEditing = false, onSave }: {
+  current?: string; source?: string; count?: number; initiallyEditing?: boolean; onSave: (code: string) => Promise<void>;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(initiallyEditing);
   const [code, setCode] = useState(current ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
