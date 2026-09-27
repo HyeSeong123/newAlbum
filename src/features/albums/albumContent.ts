@@ -15,6 +15,13 @@ export function writtenPage(kind: "CHAPTER" | "TEXT"): AlbumContent {
   return { id: crypto.randomUUID(), kind, title: "", body: "", displayDuration: 5, transitionType: "fade", commentVisible: true };
 }
 
+export function albumListContents(items: MediaItem[], contents?: AlbumContent[], diariesOnly = false): AlbumContent[] {
+  // Written albums retain their saved sequence; photo-only albums retain shuffle order.
+  const hasWrittenPages = contents?.some(entry => entry.kind === "TEXT" || entry.kind === "CHAPTER");
+  const entries = albumContents({ items, contents: hasWrittenPages ? contents : undefined });
+  return diariesOnly ? entries.filter(entry => entry.kind === "TEXT") : entries;
+}
+
 export function moveContent(entries: AlbumContent[], index: number, target: number): AlbumContent[] {
   if (target < 0 || target >= entries.length || index < 0 || index >= entries.length) return entries;
   const result = [...entries];

@@ -3,6 +3,12 @@ identifier = "album-library"
 description = "Allow the main album window to use the existing photo, album, face and pet commands."
 commands.allow = [
   "list_media",
+  "location_overview",
+  "analyze_locations",
+  "queue_failed_locations",
+  "list_region_media",
+  "region_media_page",
+  "assign_media_region",
   "media_thumbnail",
   "list_albums",
   "clear_registered_media",

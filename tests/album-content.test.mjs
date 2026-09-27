@@ -1,9 +1,22 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { modelUrl } from './model-loader.mjs';
-const { albumContents, makeBookSpreads, moveContent } = await import(await modelUrl('features/albums/albumContent.ts'));
+const { albumContents, albumListContents, makeBookSpreads, moveContent } = await import(await modelUrl('features/albums/albumContent.ts'));
 const photos = Array.from({ length: 8 }, (_, i) => ({ id: String(i + 1), fileType: 'image', width: 600, height: 900 }));
 const chapter = { id: 'chapter-1', kind: 'CHAPTER', title: '제주로 가는 길', body: 'DAY 1', displayDuration: 5, transitionType: 'fade', commentVisible: true };
+
+test('diary list selects only text pages in saved order and never changes album contents', () => {
+  const first = { ...chapter, id: 'text-1', kind: 'TEXT', title: '첫날', body: '첫 줄\n둘째 줄' };
+  const last = { ...first, id: 'text-2', title: '마지막 날' };
+  const contents = [chapter, ...albumContents({ items: photos }), first, last];
+  assert.deepEqual(albumListContents(photos, contents, true), [first, last]);
+  assert.deepEqual(albumListContents(photos, contents), contents);
+  assert.equal(contents.length, 11);
+  assert.deepEqual(albumListContents([], [first], true), [first]);
+  assert.deepEqual(albumListContents(photos, undefined, true), []);
+  const reversed = [...photos].reverse();
+  assert.deepEqual(albumListContents(reversed, albumContents({ items: photos })).map(entry => entry.mediaId), reversed.map(item => item.id));
+});
 
 test('legacy albums produce media contents in saved order without mutating data', () => {
   const album = { items: photos };

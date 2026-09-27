@@ -1,0 +1,56 @@
+.memoryMap { display: grid; gap: 22px; color: var(--text); }
+.memoryMapIntro { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 26px 32px; border: 1px solid var(--border); border-radius: var(--radius-card); background: #faf4ec; }
+.memoryMapEyebrow { display: inline-flex; align-items: center; gap: 6px; color: var(--primary); font-size: 12px; font-weight: 700; letter-spacing: .02em; }
+.memoryMapIntro h2 { margin: 8px 0; font-size: 24px; font-weight: 650; }
+.memoryMapIntro p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.memoryMapStats { flex: none; display: flex; gap: 22px; padding-left: 22px; border-left: 1px solid var(--border); }
+.memoryMapStats div { display: grid; gap: 5px; }
+.memoryMapStats strong { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.memoryMapStats span { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.memoryMapLayout { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 18px; align-items: start; }
+.memoryMapPaper, .memoryMapPlaces, .memoryMapGallery { border: 1px solid var(--border); border-radius: var(--radius-card); background: #fffdfa; }
+.memoryMapPaper { min-width: 0; padding: 24px 28px 15px; }
+.memoryMapPaperHead, .memoryMapPlacesHead { display: flex; align-items: end; justify-content: space-between; gap: 12px; }
+.memoryMapPaperHead h3 { margin: 5px 0 0; font-size: 18px; font-weight: 650; }
+.memoryMapPaperHead > span, .memoryMapPlacesHead span { color: var(--muted); font-size: 12px; }
+.memoryMapShape { display: block; width: 100%; max-width: 570px; height: auto; max-height: 490px; margin: 10px auto 0; overflow: visible; }
+.memoryMapRegion { fill: #eee7de; stroke: #fffdfa; stroke-width: 1.8; vector-effect: non-scaling-stroke; cursor: pointer; transition: fill .16s ease; }
+.memoryMapRegion.has-records { fill: #dcbaa0; }
+.memoryMapRegion.hovered, .memoryMapRegion:hover { fill: #c9895e; }
+.memoryMapRegion.selected { fill: var(--primary); stroke: #87502e; stroke-width: 2.5; }
+.memoryMapRegion:focus-visible { outline: none; stroke: #724229; stroke-width: 4; }
+.memoryMapHover { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; min-height: 48px; padding: 9px 12px; border-radius: 12px; background: #faf3eb; font-size: 13px; }
+.memoryMapHover strong { margin-right: auto; }
+.memoryMapHover span { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); }
+.memoryMapCredit { margin: 11px 0 0; color: var(--muted); font-size: 11px; text-align: right; }
+.memoryMapCredit a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.memoryMapPlaces { padding: 22px; }
+.memoryMapPlacesHead { margin-bottom: 14px; }
+.memoryMapPlacesHead h3 { margin: 0; font-size: 16px; font-weight: 650; }
+.memoryMapPlaceList { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.memoryMapPlaceList button, .memoryMapUnclassified { min-width: 0; min-height: 37px; display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 0 10px; border: 1px solid transparent; border-radius: 9px; background: #f8f3ec; color: #786a5e; font-size: 12px; text-align: left; }
+.memoryMapPlaceList button.has-records { color: var(--text); background: #f2e3d5; }
+.memoryMapPlaceList button:hover, .memoryMapUnclassified:hover { border-color: var(--primary); }
+.memoryMapPlaceList button[aria-pressed="true"], .memoryMapUnclassified[aria-pressed="true"] { color: #fff; background: var(--primary); }
+.memoryMapPlaceList strong, .memoryMapUnclassified strong { font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 650; }
+.memoryMapUnclassified { width: 100%; margin-top: 16px; border-top: 1px solid var(--border); color: var(--text); }
+.memoryMapUnclassified span { margin-right: auto; }
+.memoryMapAnalysis { display: grid; gap: 10px; margin-top: 19px; padding-top: 18px; border-top: 1px solid var(--border); }
+.memoryMapAnalysisHeader { display: flex; justify-content: space-between; font-size: 12px; }
+.memoryMapAnalysisHeader span { color: var(--muted); font-variant-numeric: tabular-nums; }
+.memoryMapAnalysis progress { width: 100%; height: 8px; accent-color: var(--primary); }
+.memoryMapAnalysis button, .memoryMapAll, .memoryMapPager button { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 12px; border: 1px solid var(--border); border-radius: 9999px; background: var(--surface); color: var(--text); font-size: 12px; }
+.memoryMapAnalysis button:hover:not(:disabled), .memoryMapAll:hover, .memoryMapPager button:hover:not(:disabled) { background: var(--surface-soft); }
+.memoryMapAnalysis button:disabled { opacity: .55; }
+.memoryMapGallery { padding: 24px 28px 30px; }
+.memoryMapGallery > header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 22px; }
+.memoryMapGallery h3 { margin: 7px 0 4px; font-size: 21px; font-weight: 650; }
+.memoryMapGallery p { margin: 0; color: var(--muted); font-size: 12px; }
+.memoryMapMonth { margin-bottom: 24px; }
+.memoryMapMonth h4 { margin: 0 0 13px; padding-bottom: 8px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 650; }
+.memoryMapPager { display: flex; align-items: center; justify-content: center; gap: 15px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.memoryMapAlert { margin: 0; padding: 10px 14px; border: 1px solid #e9c4b7; border-radius: 5px; color: #9a4b38; background: #fff7f2; font-size: 12px; }
+.view-map .toolbar { display: none; }
+@media(max-width:1000px) { .memoryMapLayout { grid-template-columns: minmax(0,1fr) 280px; } .memoryMapPaper { padding: 18px; } .memoryMapPlaces { padding: 16px; } }
+@media(max-width:760px) { .memoryMapLayout { grid-template-columns: 1fr; } .memoryMapIntro { flex-wrap: wrap; padding: 22px; } .memoryMapStats { width: 100%; padding: 14px 0 0; border-left: 0; border-top: 1px solid var(--border); } .memoryMapPaper { padding: 18px; } .memoryMapShape { max-height: 430px; } .memoryMapGallery { padding: 18px; } }
+@media(max-width:380px) { .memoryMapStats { gap: 14px; } .memoryMapIntro h2 { font-size: 20px; } .memoryMapPlaces { padding: 14px; } }

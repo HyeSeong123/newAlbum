@@ -132,3 +132,8 @@
   .topbar .toolbar,
   .workspace:has(.photoWorkspace.mode-grid) .topbar .toolbar { gap: var(--control-gap); }
 }
+
+@media(max-width:600px){
+  .photoWorkspace .viewTabs,.photoWorkspace .collectionTools>.viewTabs{display:flex;width:100%;max-width:100%;}
+  .photoWorkspace .viewTabs button,.photoWorkspace .collectionTools .viewTabs button{flex:1;min-width:0;padding-inline:6px;font-size:11px;gap:4px;white-space:nowrap;}
+}

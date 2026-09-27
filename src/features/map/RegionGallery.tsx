@@ -1,0 +1,77 @@
+import { useEffect, useMemo, useState } from "react";
+import type { MediaItem } from "../../types/media";
+import { EmptyState } from "../../components/MediaVisual";
+import { RecordMediaGrid } from "../media/RecordMediaGrid";
+import { useMediaSelection } from "../media/useMediaSelection";
+import { isTauriRuntime, loadRegionPage, type RegionFilters, type RegionPage } from "../../services/tauriMediaService";
+import { RegionEditor } from "./RegionEditor";
+import { REGION_NAMES } from "./regions";
+import { browserRegionPage, groupByMonth, orderRegionMedia, REGION_ALBUM_LIMIT } from "./memoryMapModel";
+
+export function RegionGallery({ code, items, revision, summary, onOpen, onClose, onAssignRegion, onCreateAlbum }: {
+  code: string; items: MediaItem[]; revision: number; summary: string;
+  onOpen: (item: MediaItem, collection: MediaItem[]) => void; onClose: () => void;
+  onAssignRegion: (ids: string[], code: string) => Promise<void>;
+  onCreateAlbum: (items: MediaItem[], title?: string) => void;
+}) {
+  const [filters, setFilters] = useState<RegionFilters>({ fileType: "all", year: "", oldest: false });
+  const [page, setPage] = useState(0);
+  const [result, setResult] = useState<RegionPage>({ items: [], total: 0, years: [] });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const byId = useMemo(() => new Map(items.map(item => [item.id, item])), [items]);
+  const selection = useMediaSelection(byId);
+  const desktop = isTauriRuntime();
+  useEffect(() => {
+    let disposed = false;
+    setLoading(true); setError("");
+    const request = desktop ? loadRegionPage(code, page * 48, filters) : Promise.resolve(browserRegionPage(items, code, page * 48, filters));
+    void request.then(value => {
+      if (disposed) return;
+      const last = Math.max(0, Math.ceil(value.total / 48) - 1);
+      if (page > last) { setPage(last); return; }
+      setResult(value);
+    }).catch(() => { if (!disposed) { setResult({ items: [], total: 0, years: [] }); setError("지역 사진을 불러오지 못했습니다."); } })
+      .finally(() => { if (!disposed) setLoading(false); });
+    return () => { disposed = true; };
+  }, [code, desktop, filters, items, page, revision]);
+  function filter(patch: Partial<RegionFilters>) {
+    setFilters(current => ({ ...current, ...patch })); setPage(0); selection.reset(); setNotice("");
+  }
+  function createAlbum() {
+    const selected = selection.enabled ? orderRegionMedia(items.filter(item => selection.ids.has(item.id)), filters.oldest) : result.items;
+    if (!selection.enabled && result.total > REGION_ALBUM_LIMIT) {
+      selection.reset(true); setNotice("기록이 많아요. 앨범에 담을 사진과 영상을 선택해 주세요. 페이지를 넘겨서도 선택할 수 있어요."); return;
+    }
+    if (selected.length) onCreateAlbum(selected);
+  }
+  const pages = Math.max(1, Math.ceil(result.total / 48));
+  const groups = groupByMonth(result.items);
+  return <section className="memoryMapGallery" aria-label={`${code === "unclassified" ? "지역 미분류" : REGION_NAMES[code]} 기록`}>
+    <header><div><span className="memoryMapEyebrow">장소가 간직한 순간</span><h3>{code === "unclassified" ? "지역 미분류" : REGION_NAMES[code]}</h3><p>{summary}</p></div>
+      <button className="memoryMapAll" onClick={onClose}>전체 지도 보기</button></header>
+    <div className="regionGalleryTools">
+      <label>종류<select aria-label="기록 종류" value={filters.fileType} onChange={event => filter({ fileType: event.target.value as RegionFilters["fileType"] })}>
+        <option value="all">전체</option><option value="image">사진</option><option value="video">영상</option></select></label>
+      <label>연도<select aria-label="기록 연도" value={filters.year} onChange={event => filter({ year: event.target.value })}>
+        <option value="">전체 연도</option>{result.years.map(year => <option key={year} value={year}>{year}</option>)}</select></label>
+      <label>정렬<select aria-label="기록 정렬" value={filters.oldest ? "oldest" : "newest"} onChange={event => filter({ oldest: event.target.value === "oldest" })}>
+        <option value="newest">최신순</option><option value="oldest">오래된순</option></select></label>
+      <button onClick={() => { selection.reset(!selection.enabled); setNotice(""); }}>{selection.enabled ? "선택 취소" : "선택"}</button>
+      <button disabled={loading || Boolean(error) || (selection.enabled ? !selection.ids.size : !result.total)} onClick={createAlbum}>앨범 만들기</button>
+    </div>
+    {selection.enabled && <><p role="status">{selection.ids.size}개 선택 · 필터를 바꾸면 선택이 초기화됩니다.</p>
+      <RegionEditor key={`${code}-${filters.fileType}-${filters.year}`} count={selection.ids.size} onSave={async region => {
+        await onAssignRegion([...selection.ids], region); selection.clear(); setNotice("선택한 기록의 지역을 저장했습니다.");
+      }} /></>}
+    {notice && <p role="status">{notice}</p>}{error && <p role="alert">{error}</p>}
+    <p aria-live="polite">필터 결과 {result.total}개</p>
+    {loading ? <p role="status">사진을 불러오는 중이에요.</p> : result.items.length ? groups.map(group => <div className="memoryMapMonth" key={group.month}>
+      <h4>{/^\d{4}-\d{2}$/.test(group.month) ? `${group.month.slice(0,4)}년 ${Number(group.month.slice(5))}월` : group.month}</h4>
+      <RecordMediaGrid items={group.items} onOpen={item => onOpen(item, result.items)} selectedIds={selection.ids} onToggle={selection.enabled ? selection.toggle : undefined} />
+    </div>) : !error && <EmptyState text="조건에 맞는 사진과 영상이 아직 없어요." />}
+    {pages > 1 && <nav className="memoryMapPager" aria-label="지역 사진 페이지"><button disabled={loading || page === 0} onClick={() => setPage(page - 1)}>이전</button>
+      <span>{page + 1} / {pages}</span><button disabled={loading || page >= pages - 1} onClick={() => setPage(page + 1)}>다음</button></nav>}
+  </section>;
+}

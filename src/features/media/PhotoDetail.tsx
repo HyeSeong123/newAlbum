@@ -7,6 +7,7 @@ import { MediaPlayback } from "../../components/MediaPlayback";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
 import { formatJournalDate } from "./journalModel";
 import { useMediaDownload } from "./useMediaDownload";
+import { RegionEditor } from "../map/RegionEditor";
 
 export function DetailModal({
   item,
@@ -14,6 +15,7 @@ export function DetailModal({
   commentError,
   onChange,
   onSaveTitle,
+  onAssignRegion,
   onAddComment,
   onUpdateComment,
   onDeleteComment,
@@ -26,6 +28,7 @@ export function DetailModal({
   commentError?: string;
   onChange: (patch: Partial<MediaItem>) => void;
   onSaveTitle: (id: string, title: string) => Promise<void>;
+  onAssignRegion: (ids: string[], region: string) => Promise<void>;
   onAddComment: (author: string, content: string) => boolean;
   onUpdateComment: (commentId: string, author: string, content: string) => boolean;
   onDeleteComment: (commentId: string) => void;
@@ -113,7 +116,7 @@ export function DetailModal({
     <div className="modalBackdrop photoLightboxBackdrop" role="presentation">
       <section ref={dialogRef} className="detailModal photoLightbox photoInspector" role="dialog" aria-modal="true" aria-label="사진 상세" tabIndex={-1} inert={zoomViewerOpen} onKeyDown={(event) => {
         if (event.key !== "Tab") return;
-        const controls = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input, textarea, video[controls], audio[controls]') ?? []);
+        const controls = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input, select, textarea, video[controls], audio[controls]') ?? []);
         const first = controls[0];
         const last = controls.at(-1);
         if (event.shiftKey && (document.activeElement === first || document.activeElement === dialogRef.current)) {
@@ -185,6 +188,7 @@ export function DetailModal({
               <h2>{item.fileType === "image" ? "사진 정보" : item.fileType === "video" ? "영상 정보" : "음성 정보"}</h2>
               <p className="detailFileName">{item.fileName}</p>
               <PhotoTitleEditor key={item.id} item={item} onSave={onSaveTitle} />
+              {item.fileType !== "audio" && <RegionEditor key={`region-${item.id}`} current={item.regionCode} source={item.locationSource} onSave={code => onAssignRegion([item.id], code)} />}
               <section className="detailRating" aria-label="별점">
                 <h3>별점</h3>
                 <div className="rating">

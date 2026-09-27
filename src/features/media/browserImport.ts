@@ -29,6 +29,6 @@ export function retainMediaEdits(registered: MediaItem[], current: MediaItem[]):
   const byId = new Map(current.map((item) => [item.id, item]));
   return registered.map((item) => {
     const edited = byId.get(item.id);
-    return edited ? { ...item, ...(edited.title !== undefined ? { title: edited.title } : {}), rating: edited.rating, comment: edited.comment, favorite: edited.favorite, viewCount: edited.viewCount } : item;
+    return edited ? { ...item, ...(edited.locationSource === "manual" ? { regionCode: edited.regionCode, regionName: edited.regionName, locationSource: edited.locationSource, locationStatus: edited.locationStatus } : {}), ...(edited.title !== undefined ? { title: edited.title } : {}), rating: edited.rating, comment: edited.comment, favorite: edited.favorite, viewCount: edited.viewCount } : item;
   });
 }

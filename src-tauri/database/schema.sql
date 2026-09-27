@@ -14,6 +14,12 @@ CREATE TABLE IF NOT EXISTS media (
   favorite INTEGER NOT NULL DEFAULT 0,
   view_count INTEGER NOT NULL DEFAULT 0,
   metadata_status TEXT NOT NULL DEFAULT 'queued',
+  latitude REAL,
+  longitude REAL,
+  region_code TEXT,
+  region_name TEXT,
+  location_status TEXT NOT NULL DEFAULT 'queued',
+  location_source TEXT NOT NULL DEFAULT 'gps',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

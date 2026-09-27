@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { CalendarDays, ChevronRight, Image, LayoutGrid, Plus } from "lucide-react";
+import { CalendarDays, ChevronRight, History, Image, LayoutGrid, Plus } from "lucide-react";
 import type { MediaItem, SavedAlbum } from "../../types/media";
 import { Library } from "./LibraryView";
 import { PhotoDateNavigation } from "./PhotoDateNavigation";
@@ -8,8 +8,9 @@ import { Calendar } from "../calendar/Calendar";
 import { AlbumFullscreenReader } from "../albums/AlbumReader";
 import { AlbumCover } from "../albums/AlbumCover";
 import { ExportModal } from "../../components/ExportModal";
+import { TimelineView } from "../timeline/TimelineView";
 
-export type PhotoMode = "grid" | "calendar" | "album";
+export type PhotoMode = "grid" | "calendar" | "album" | "timeline";
 
 export function PhotoView({
   mode, setMode, items, allItems, activeMonth, onMonthChange, selected, onOpen,
@@ -48,12 +49,13 @@ export function PhotoView({
     { mode: "grid" as const, label: "그리드", Icon: LayoutGrid },
     { mode: "calendar" as const, label: "달력", Icon: CalendarDays },
     { mode: "album" as const, label: "전체 앨범", Icon: Image },
+    { mode: "timeline" as const, label: "타임라인", Icon: History },
   ];
   const viewTabs = <div className="viewTabs" role="tablist" aria-label="사진 보기 방식">
       {tabs.map((tab, index) => <button key={tab.mode} ref={(node) => { tabRefs.current[index] = node; }} id={`photo-tab-${tab.mode}`} role="tab" aria-selected={mode === tab.mode} aria-controls={`photo-panel-${tab.mode}`} tabIndex={mode === tab.mode ? 0 : -1} className={mode === tab.mode ? "active" : ""} onClick={() => setMode(tab.mode)} onKeyDown={(event) => {
         if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
         event.preventDefault();
-        const next = event.key === "Home" ? 0 : event.key === "End" ? 2 : (index + (event.key === "ArrowRight" ? 1 : 2)) % 3;
+        const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length;
         setMode(tabs[next].mode);
         requestAnimationFrame(() => tabRefs.current[next]?.focus());
       }}><tab.Icon size={16} />{tab.label}</button>)}
@@ -68,6 +70,7 @@ export function PhotoView({
       onToggleSelectionMode={onToggleSelectionMode} selectedCount={selectedCount}
       commentCounts={commentCounts} onCreateAlbum={onCreateAlbum} onDeleteSelected={onDeleteSelected}
       scopeKey={scopeKey} emptyText={allItems.length ? "조건에 맞는 기록이 없습니다. 다른 월을 선택하거나 검색을 바꿔보세요." : "가져오기로 첫 사진과 영상을 담아보세요."}
+      onDateSearch={() => onMonthChange("all")}
     />}
     {mode === "grid" && <aside className="quickAlbums" aria-label="내 앨범 미리보기">
       <header><h2>내 앨범</h2><button title="새 앨범" onClick={onNewAlbum}><Plus size={17} /></button></header>
@@ -79,6 +82,7 @@ export function PhotoView({
       {albums.length > 0 && <button className="showAllAlbums" onClick={onShowAlbums}>모두 보기 <ChevronRight size={16} /></button>}
     </aside>}
     {mode === "calendar" && <div className="calendarTabPanel" id="photo-panel-calendar" role="tabpanel" aria-labelledby="photo-tab-calendar"><Calendar items={items} initialMonth={/^\d{4}-\d{2}$/.test(activeMonth) ? activeMonth : undefined} onOpen={(item) => onViewMedia(item, items)} /></div>}
+    {mode === "timeline" && <div id="photo-panel-timeline" role="tabpanel" aria-labelledby="photo-tab-timeline"><TimelineView key={scopeKey} items={items} onOpen={onViewMedia} /></div>}
     {mode === "album" && <div id="photo-panel-album" role="tabpanel" aria-labelledby="photo-tab-album"><AlbumFullscreenReader title="모든 기록" items={items} open={true} backLabel="사진 기록" onOpen={onViewMedia} onClose={() => setMode("grid")} /></div>}
     {quickAlbum && <AlbumFullscreenReader title={quickAlbum.title} items={quickAlbum.items} contents={quickAlbum.contents} musicPath={quickAlbum.musicPath} color={quickAlbum.coverColor} open={true} backLabel="사진 기록" onOpen={onViewMedia} onClose={() => { setQuickAlbumId(null); setExportingQuickAlbum(false); }} onExport={() => setExportingQuickAlbum(true)} />}
     {quickAlbum && exportingQuickAlbum && <ExportModal title={quickAlbum.title} items={quickAlbum.items} onClose={() => setExportingQuickAlbum(false)} />}

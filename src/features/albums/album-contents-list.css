@@ -1,0 +1,17 @@
+.albumContentsList { min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.albumListFilters { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 14px clamp(20px, 4vw, 64px); border-bottom: 1px solid var(--border); }
+.albumListFilters button { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 7px 14px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); color: var(--text); font-size: 13px; }
+.albumListFilters button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: #fff; }
+.albumListFilters button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.albumListCount { margin-left: auto; font-size: 12px; color: var(--muted); }
+.albumContentsList .albumPhotoList { flex: 1; min-height: 0; align-items: start; }
+.albumContentsList .albumListWritten { min-width: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
+.albumListWritten .albumWrittenPage { height: auto; min-height: 180px; padding: 24px; overflow: visible; }
+.albumListWritten .albumWrittenPage h3 { font-size: 18px; margin: 12px 0; }
+.albumListWritten .albumWrittenPage p { font-size: 14px; line-height: 1.9; }
+.albumContentsList .albumPhotoList.diaries-only { grid-template-columns: minmax(0, 760px); justify-content: center; }
+@media (max-width: 760px) {
+  .albumListFilters { padding: 12px; }
+  .albumContentsList .albumListWritten { grid-column: 1 / -1; }
+  .albumListWritten .albumWrittenPage { padding: 20px; }
+}

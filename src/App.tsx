@@ -4,16 +4,17 @@ import { useMediaViewer } from "./features/media/useMediaViewer";
 import { useMediaSelection } from "./features/media/useMediaSelection";
 import { useMediaComments } from "./features/media/useMediaComments";
 import { DetailModal } from "./features/media/PhotoDetail";
-import { Memories } from "./features/memories/Memories";
+import { MemoriesWorkspace } from "./features/memories/MemoriesWorkspace";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { getMediaComments } from "./features/media/mediaComments";
-import { searchMedia, anniversaryMemories } from "./features/media/collectionModel";
+import { searchMedia } from "./features/media/collectionModel";
+import { memoryGroups } from "./features/memories/memoriesModel";
 import { localDateKey } from "./features/calendar/calendarModel";
 import { PeopleWorkspace } from "./features/people/PeopleWorkspace";
 import { SavedAlbumsView } from "./features/albums/AlbumsView";
 import { AlbumCreateModal } from "./features/albums/AlbumCreateModal";
 import { ActionMenu } from "./components/ActionMenu";
-import { ChangeEvent, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { ChangeEvent, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { ChevronDown, FolderOpen, LoaderCircle, Plus, Search, Settings, Upload, X } from "lucide-react";
 import { MEDIA_FILE_ACCEPT } from "./features/media/mediaService";
 import { filterJournalMonth, journalMonthTitle, resolveJournalMonth } from "./features/media/journalModel";
@@ -62,14 +63,20 @@ export function App() {
   const comments = useMediaComments(items, library.patchMedia);
   const { comments: mediaComments, counts: commentCounts } = comments;
   const [albumDraftItems, setAlbumDraftItems] = useState<MediaItem[] | null>(null);
+  const [albumDraftTitle, setAlbumDraftTitle] = useState("");
   const [query, setQuery] = useState("");
   const [selectionNotice, setSelectionNotice] = useState("");
 
   const filtered = useMemo(() => searchMedia(items, query), [items, query]);
 
-  const today = localDateKey(new Date());
-  const todayMemories = useMemo(() => anniversaryMemories(items, today), [items, today]);
-  const visibleMemories = useMemo(() => anniversaryMemories(filtered, today), [filtered, today]);
+  const [today, setToday] = useState(() => localDateKey(new Date()));
+  useEffect(() => {
+    const update = () => setToday(localDateKey(new Date()));
+    const timer = window.setInterval(update, 60_000);
+    window.addEventListener("focus", update);
+    return () => { clearInterval(timer); window.removeEventListener("focus", update); };
+  }, []);
+  const todayMemories = useMemo(() => memoryGroups(items, today, "today").flatMap(group => group.items), [items, today]);
   const selectedCount = selectedIds.size;
   const activeMonth = useMemo(() => resolveJournalMonth(selectedMonth, items), [selectedMonth, items]);
   const monthItems = useMemo(() => filterJournalMonth(filtered, activeMonth), [filtered, activeMonth]);
@@ -125,6 +132,7 @@ export function App() {
     const albumItems = albumDraftItems ?? [];
     if (!albumItems.length || !title.trim()) return;
     await library.createAlbum(title.trim(), coverColor, albumItems);
+    navigate("Albums");
     setSelectionNotice(`'${title.trim()}' 앨범에 ${albumItems.length}개 항목을 담았습니다.`);
     selection.reset();
   }
@@ -225,20 +233,23 @@ export function App() {
               />
             )}
             {activeView === "Albums" && <SavedAlbumsView albums={savedAlbums} query={query} onOpen={openViewer} onSave={library.saveAlbum} onDelete={library.deleteAlbums} />}
-            {activeView === "Memories" && <Memories items={visibleMemories} onOpen={(item) => openViewer(item, visibleMemories)} />}
+            {activeView === "Memories" && <MemoriesWorkspace items={filtered} allItems={items} today={today} onOpen={openViewer}
+              onAssignRegion={library.assignRegion} onLocationsAnalyzed={library.refreshLocations}
+              onCreateAlbum={(records, title = "") => { setAlbumDraftItems(records); setAlbumDraftTitle(title); }} />}
             {activeView === "People" && <PeopleWorkspace items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} />}
             {activeView === "Settings" && <SettingsPanel itemCount={items.length} clearing={clearing} onClear={clearAllRegisteredMedia} />}
           </div>
         </section>
         {library.error && <p className="selectionNotice" role="alert">{library.error}</p>}
         {selectionNotice && <p className="selectionNotice" role="status">{selectionNotice}</p>}
-        {albumDraftItems && <AlbumCreateModal items={albumDraftItems} onClose={() => setAlbumDraftItems(null)} onCreate={createAlbumFromSelectedItems} />}
+        {albumDraftItems && <AlbumCreateModal items={albumDraftItems} initialTitle={albumDraftTitle} onClose={() => { setAlbumDraftItems(null); setAlbumDraftTitle(""); }} onCreate={createAlbumFromSelectedItems} />}
         {selected && (
           <DetailModal
             item={selected}
             comments={getMediaComments(selected, mediaComments)}
             onChange={updateSelected}
             onSaveTitle={library.saveTitle}
+            onAssignRegion={library.assignRegion}
             onAddComment={(author, content) => comments.add(selected, author, content)}
             commentError={comments.error}
             onUpdateComment={(id, author, content) => comments.edit(selected, id, author, content)}

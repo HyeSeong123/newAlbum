@@ -7,6 +7,7 @@ import { loadDayNotes } from "../calendar/calendarModel";
 import { groupByTakenDate } from "./mediaService";
 import { arrangeJournalItems, formatJournalDate, mediaSummary } from "./journalModel";
 import { selectMediaCollection, type LibrarySort, type LibraryMediaType } from "./collectionModel";
+import { TakenDateFilter } from "./TakenDateFilter";
 
 const GALLERY_PAGE_SIZE = 48;
 
@@ -25,6 +26,7 @@ export function Library({
   onDeleteSelected,
   scopeKey,
   emptyText,
+  onDateSearch,
 }: {
   viewTabs: ReactNode;
   items: MediaItem[];
@@ -40,6 +42,7 @@ export function Library({
   onDeleteSelected: () => void;
   scopeKey: string;
   emptyText: string;
+  onDateSearch: () => void;
 }) {
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<LibrarySort>("date-desc");
@@ -48,13 +51,15 @@ export function Library({
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [commentsOnly, setCommentsOnly] = useState(false);
   const [minimumRating, setMinimumRating] = useState(0);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [expandedDates, setExpandedDates] = useState<Set<string>>(() => new Set());
   const [dayNotes] = useState(loadDayNotes);
   const dragSelection = useRowSelection(selectionMode, onToggleSelection, (id) => selectedIds.has(id));
   const visibleCollection = useMemo(() => selectMediaCollection(items, {
-    mediaType, favoritesOnly, commentsOnly, minimumRating, sort,
-  }, commentCounts), [items, mediaType, favoritesOnly, commentsOnly, minimumRating, sort, commentCounts]);
-  const activeFilterCount = Number(mediaType !== "all") + Number(favoritesOnly) + Number(commentsOnly) + Number(minimumRating > 0);
+    mediaType, favoritesOnly, commentsOnly, minimumRating, sort, startDate, endDate,
+  }, commentCounts), [items, mediaType, favoritesOnly, commentsOnly, minimumRating, sort, startDate, endDate, commentCounts]);
+  const activeFilterCount = Number(mediaType !== "all") + Number(favoritesOnly) + Number(commentsOnly) + Number(minimumRating > 0) + Number(Boolean(startDate || endDate));
   const pageCount = Math.max(1, Math.ceil(visibleCollection.length / GALLERY_PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
   const startIndex = (currentPage - 1) * GALLERY_PAGE_SIZE;
@@ -66,10 +71,11 @@ export function Library({
     setPage((current) => Math.min(current, pageCount));
   }, [pageCount]);
 
-  useEffect(() => { setPage(1); setExpandedDates(new Set()); }, [sort, mediaType, favoritesOnly, commentsOnly, minimumRating, scopeKey]);
+  useEffect(() => { setPage(1); setExpandedDates(new Set()); }, [sort, mediaType, favoritesOnly, commentsOnly, minimumRating, startDate, endDate, scopeKey]);
 
   function clearFilters() {
     setMediaType("all"); setFavoritesOnly(false); setCommentsOnly(false); setMinimumRating(0);
+    setStartDate(""); setEndDate("");
   }
 
   return (
@@ -88,6 +94,9 @@ export function Library({
         </div>
       </div>
       <section id="photo-panel-grid" role="tabpanel" aria-labelledby="photo-tab-grid">
+      <TakenDateFilter startDate={startDate} endDate={endDate} onChange={(start, end) => {
+        setStartDate(start); setEndDate(end); onDateSearch();
+      }} />
       {filtersOpen && <section id="libraryFilters" className="filterPanel" aria-label="사진 필터">
         <label>종류<select aria-label="미디어 종류" value={mediaType} onChange={(event) => setMediaType(event.target.value as LibraryMediaType)}><option value="all">전체</option><option value="image">사진</option><option value="video">영상</option><option value="audio">음원</option></select></label>
         <label>최소 별점<select aria-label="최소 별점" value={minimumRating} onChange={(event) => setMinimumRating(Number(event.target.value))}><option value="0">전체</option>{[1, 2, 3, 4, 5].map((score) => <option key={score} value={score}>{score}점 이상</option>)}</select></label>

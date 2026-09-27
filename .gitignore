@@ -27,3 +27,15 @@ screenshots/
 *.log
 .DS_Store
 Thumbs.db
+
+# Windows binaries and installer output are never committed
+installer-output/
+*.exe
+*.msi
+*.msix
+*.appx
+*.dll
+
+# Python test cache
+__pycache__/
+*.pyc

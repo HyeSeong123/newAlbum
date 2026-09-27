@@ -4,8 +4,8 @@ import type { MediaItem } from "../../types/media";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
 import { AlbumColorPicker, DEFAULT_ALBUM_COLOR } from "./AlbumCover";
 
-export function AlbumCreateModal({ items, onClose, onCreate }: { items: MediaItem[]; onClose: () => void; onCreate: (title: string, color: string) => Promise<void> }) {
-  const [title, setTitle] = useState("");
+export function AlbumCreateModal({ items, initialTitle = "", onClose, onCreate }: { items: MediaItem[]; initialTitle?: string; onClose: () => void; onCreate: (title: string, color: string) => Promise<void> }) {
+  const [title, setTitle] = useState(initialTitle);
   const [color, setColor] = useState(DEFAULT_ALBUM_COLOR);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -24,6 +24,7 @@ export function AlbumCreateModal({ items, onClose, onCreate }: { items: MediaIte
       <form onSubmit={(event) => void submit(event)}>
         <fieldset disabled={busy}>
           <label className="albumTitleField">제목<input autoFocus required maxLength={80} value={title} onChange={(event) => setTitle(event.target.value)} /></label>
+          <p>{items.length}개의 기록을 앨범에 담습니다.</p>
           <AlbumColorPicker value={color} onChange={setColor} items={items} title={title || "나의 추억"} />
           {error && <p role="alert">{error}</p>}
           <div className="albumActions"><button type="button" onClick={onClose}>취소</button><button type="submit" disabled={!title.trim() || !items.length}>{busy ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}{busy ? "만드는 중" : "만들기"}</button></div>

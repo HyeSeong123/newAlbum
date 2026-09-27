@@ -1,0 +1,15 @@
+.takenDateFilter { margin: 0 0 18px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
+.takenDateControls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.takenDateTitle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
+.takenDateControls label { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; }
+.takenDateControls input { box-sizing: border-box; min-width: 0; width: 145px; min-height: 34px; padding: 5px 7px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); font: inherit; }
+.takenDateControls input:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.takenDateHint, .takenDateError { margin: 8px 0 0; font-size: 11px; line-height: 1.6; color: var(--muted); }
+.takenDateError { color: #9b4237; }
+@media (max-width: 760px) {
+  .takenDateControls { gap: 8px; }
+  .takenDateTitle { width: 100%; }
+  .takenDateControls label { display: grid; flex: 1; gap: 4px; min-width: 0; }
+  .takenDateControls input { width: 100%; }
+  .takenDateSeparator { padding-top: 18px; }
+}

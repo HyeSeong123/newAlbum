@@ -3,13 +3,19 @@ import type { MediaItem, SavedAlbum } from "../../types/media";
 /** Album membership keeps its saved order; media details come from the current library. */
 export function syncAlbumMedia(albums: SavedAlbum[], items: MediaItem[], mediaLoaded = true): SavedAlbum[] {
   const byId = new Map(items.map((item) => [item.id, item]));
-  return albums.map((album) => ({
-    ...album,
-    items: album.items.flatMap((item) => {
-      const current = byId.get(item.id);
-      return current ? [current] : mediaLoaded ? [] : [item];
-    }),
-  }));
+  let changed = false;
+  const synced = albums.map((album) => {
+    let next: MediaItem[] | undefined;
+    album.items.forEach((item, index) => {
+      const current = byId.get(item.id) ?? (mediaLoaded ? undefined : item);
+      if (current !== item && !next) next = album.items.slice(0, index);
+      if (next && current) next.push(current);
+    });
+    if (!next) return album;
+    changed = true;
+    return { ...album, items: next };
+  });
+  return changed ? synced : albums;
 }
 
 export function journalMonths(items: MediaItem[]): string[] {

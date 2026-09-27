@@ -98,6 +98,14 @@ test('album pairs retain the latest captions without changing the source objects
   assert.deepEqual(makeAlbumSpreads([]), []);
 });
 
+test('a stale import response cannot undo a manual region saved while importing', () => {
+  const edited = { id:'1', locationSource:'manual', locationStatus:'ready', regionCode:'KR-49', regionName:'제주특별자치도', latitude:37.5, longitude:127 };
+  const response = { ...edited, locationSource:'gps', regionCode:'KR-11', regionName:'서울특별시', width:600 };
+  const [merged] = retainMediaEdits([response], [edited]);
+  assert.equal(merged.regionCode,'KR-49'); assert.equal(merged.locationSource,'manual');
+  assert.equal(merged.latitude,37.5); assert.equal(merged.width,600); assert.equal(response.regionCode,'KR-11');
+});
+
 test('comment replacement removes empty buckets and preserves unrelated comments', () => {
   const original = { a: [{ id: 'first' }], b: [{ id: 'second' }] };
   const updated = replaceMediaComments(original, 'a', []);

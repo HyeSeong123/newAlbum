@@ -1,4 +1,4 @@
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, OptionalExtension};
 use serde::Serialize;
 use std::{
     collections::HashMap,
@@ -17,7 +17,9 @@ mod faces;
 mod pets;
 mod thumbnails;
 mod media_dimensions;
+mod location;
 mod album_content;
+mod database;
 #[cfg(any(feature = "custom-protocol", test))]
 mod localhost;
 
@@ -37,6 +39,12 @@ struct MediaItemDto {
     favorite: bool,
     view_count: i64,
     metadata_status: String,
+    latitude: Option<f64>,
+    longitude: Option<f64>,
+    region_code: Option<String>,
+    region_name: Option<String>,
+    location_status: String,
+    location_source: String,
 }
 
 #[derive(Serialize)]
@@ -55,34 +63,86 @@ struct AlbumDto {
 async fn list_media(app: AppHandle) -> Result<Vec<MediaItemDto>, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let conn = open_database(&app)?;
+        // Legacy image headers are read only when loading the library, never
+        // as a side effect of a delete/import response or a metadata write.
+        media_dimensions::backfill(&conn)?;
         read_media(&conn)
     }).await.map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-fn list_albums(app: AppHandle) -> Result<Vec<AlbumDto>, String> {
-    let conn = open_database(&app)?;
-    read_albums(&conn)
+async fn location_overview(app: AppHandle) -> Result<location::Overview, String> {
+    tauri::async_runtime::spawn_blocking(move || location::overview(&open_database(&app)?))
+        .await.map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
-fn clear_registered_media(app: AppHandle) -> Result<Vec<MediaItemDto>, String> {
-    let conn = open_database(&app)?;
-    conn.execute("DELETE FROM media", [])
-        .map_err(|error| format!("등록 목록을 비울 수 없습니다: {error}"))?;
-    read_media(&conn)
+async fn analyze_locations(app: AppHandle) -> Result<location::Overview, String> {
+    // Small batches keep the UI responsive and show progress between calls.
+    tauri::async_runtime::spawn_blocking(move || location::analyze_batch(&open_database(&app)?, 24))
+        .await.map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
-fn delete_registered_media(app: AppHandle, ids: Vec<i64>) -> Result<Vec<MediaItemDto>, String> {
-    let conn = open_database(&app)?;
+async fn queue_failed_locations(app: AppHandle) -> Result<location::Overview, String> {
+    tauri::async_runtime::spawn_blocking(move || location::queue_failed(&open_database(&app)?))
+        .await.map_err(|error| error.to_string())?
+}
 
-    for id in ids {
-        conn.execute("DELETE FROM media WHERE id = ?1", params![id])
-            .map_err(|error| format!("선택한 항목을 삭제할 수 없습니다: {error}"))?;
-    }
+#[tauri::command]
+async fn list_region_media(app: AppHandle, region_code: String, offset: i64, limit: i64) -> Result<Vec<MediaItemDto>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        if region_code != "unclassified" && !location::REGIONS.iter().any(|(code,_)| *code == region_code) {
+            return Err("존재하지 않는 지역입니다.".into());
+        }
+        let conn = open_database(&app)?;
+        let filter = if region_code == "unclassified" { location::UNCLASSIFIED_FILTER_SQL } else { location::REGION_FILTER_SQL };
+        let mut stmt = conn.prepare(&format!("SELECT {MEDIA_COLUMNS} FROM media
+            WHERE {filter} ORDER BY taken_at DESC NULLS LAST, id DESC LIMIT ?2 OFFSET ?3"))
+            .map_err(|error| error.to_string())?;
+        let rows = stmt.query_map(params![region_code, limit.clamp(1, 48), offset.max(0)], media_from_row)
+            .map_err(|error| error.to_string())?;
+        rows.collect::<Result<Vec<_>,_>>().map_err(|error| error.to_string())
+    }).await.map_err(|error| error.to_string())?
+}
 
-    read_media(&conn)
+#[tauri::command]
+async fn region_media_page(app: AppHandle, region_code: String, offset: i64, file_type: String, year: String, oldest: bool) -> Result<location::RegionPage, String> {
+    tauri::async_runtime::spawn_blocking(move || location::region_page(&open_database(&app)?, &region_code, offset, &file_type, &year, oldest))
+        .await.map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn assign_media_region(app: AppHandle, ids: Vec<i64>, region_code: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || location::assign_region(&open_database(&app)?, &ids, &region_code))
+        .await.map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn list_albums(app: AppHandle) -> Result<Vec<AlbumDto>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let conn = open_database(&app)?;
+        read_albums(&conn)
+    }).await.map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn clear_registered_media(app: AppHandle) -> Result<Vec<MediaItemDto>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let conn = open_database(&app)?;
+        conn.execute("DELETE FROM media", [])
+            .map_err(|error| format!("등록 목록을 비울 수 없습니다: {error}"))?;
+        read_media(&conn)
+    }).await.map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn delete_registered_media(app: AppHandle, ids: Vec<i64>) -> Result<Vec<MediaItemDto>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut conn = open_database(&app)?;
+        database::delete_media(&mut conn, &ids)?;
+        read_media(&conn)
+    }).await.map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
@@ -141,15 +201,15 @@ fn insert_album(
 }
 
 #[tauri::command]
-fn register_paths(app: AppHandle, paths: Vec<String>) -> Result<Vec<MediaItemDto>, String> {
-    let conn = open_database(&app)?;
-    let files = collect_supported_files(paths)?;
-
-    for file in files {
-        register_file(&conn, &file)?;
-    }
-
-    read_media(&conn)
+async fn register_paths(app: AppHandle, paths: Vec<String>) -> Result<Vec<MediaItemDto>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let conn = open_database(&app)?;
+        let files = collect_supported_files(paths)?;
+        for file in files {
+            register_file(&conn, &file)?;
+        }
+        read_media(&conn)
+    }).await.map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
@@ -310,13 +370,9 @@ fn open_database(app: &AppHandle) -> Result<Connection, String> {
         .map_err(|error| format!("앱 데이터 폴더를 만들 수 없습니다: {error}"))?;
 
     let db_path = app_dir.join("album.sqlite");
-    let conn =
+    let mut conn =
         Connection::open(db_path).map_err(|error| format!("DB를 열 수 없습니다: {error}"))?;
-    conn.execute_batch("PRAGMA foreign_keys = ON;")
-        .map_err(|error| format!("DB 설정을 적용할 수 없습니다: {error}"))?;
-    conn.execute_batch(include_str!("../database/schema.sql"))
-        .map_err(|error| format!("DB 스키마를 적용할 수 없습니다: {error}"))?;
-    migrate_database(&conn)?;
+    database::initialize(&mut conn)?;
     Ok(conn)
 }
 
@@ -349,6 +405,7 @@ fn migrate_database(conn: &Connection) -> Result<(), String> {
     migrate_person_cover(conn)?;
     migrate_media_view_count(conn)?;
     migrate_media_title(conn)?;
+    location::migrate(conn)?;
 
     Ok(())
 }
@@ -673,12 +730,21 @@ fn register_file(conn: &Connection, path: &Path) -> Result<(), String> {
     let file_type = media_type(path).ok_or_else(|| "지원하지 않는 파일 형식입니다.".to_string())?;
     let taken_at = modified_date(&metadata);
     let dimensions = if file_type == "image" { media_dimensions::read(path) } else { None };
+    // Re-registering an unchanged library entry must not repeat its EXIF scan.
+    let location_status = conn.query_row(
+        "SELECT CASE WHEN location_source='manual' THEN 'ready' ELSE location_status END FROM media WHERE file_path = ?1", [&file_path], |row| row.get::<_, String>(0),
+    ).optional().map_err(|error| error.to_string())?;
+    let location = if location_status.as_deref().is_some_and(|status| status != "queued") {
+        None
+    } else {
+        Some(location::analyze_path(path, file_type))
+    };
     let content_hash =
         file_hash(path).map_err(|error| format!("파일 해시를 계산할 수 없습니다: {error}"))?;
 
     conn.execute(
-        "INSERT INTO media (file_path, content_hash, file_type, taken_at, size_bytes, width, height, rating, comment, favorite, metadata_status)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, '', 0, 'ready')
+        "INSERT INTO media (file_path, content_hash, file_type, taken_at, size_bytes, width, height, rating, comment, favorite, metadata_status, latitude, longitude, region_code, region_name, location_status)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, '', 0, 'ready', ?8, ?9, ?10, ?11, ?12)
          ON CONFLICT(file_path) DO UPDATE SET
            file_type = excluded.file_type,
            content_hash = COALESCE(media.content_hash, excluded.content_hash),
@@ -686,10 +752,20 @@ fn register_file(conn: &Connection, path: &Path) -> Result<(), String> {
            size_bytes = excluded.size_bytes,
            width = COALESCE(excluded.width, media.width),
            height = COALESCE(excluded.height, media.height),
-           metadata_status = 'ready'
+           metadata_status = 'ready',
+           latitude = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.latitude ELSE media.latitude END,
+           longitude = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.longitude ELSE media.longitude END,
+           region_code = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.region_code ELSE media.region_code END,
+           region_name = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.region_name ELSE media.region_name END,
+           location_status = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.location_status ELSE media.location_status END
          ON CONFLICT(content_hash) DO NOTHING",
         params![file_path, content_hash, file_type, taken_at, metadata.len() as i64,
-            dimensions.map(|value| value.0), dimensions.map(|value| value.1)],
+            dimensions.map(|value| value.0), dimensions.map(|value| value.1),
+            location.as_ref().and_then(|value| value.latitude),
+            location.as_ref().and_then(|value| value.longitude),
+            location.as_ref().and_then(|value| value.region_code.as_deref()),
+            location.as_ref().and_then(|value| value.region_name.as_deref()),
+            location.as_ref().map_or("queued", |value| value.status)],
     )
     .map_err(|error| format!("파일을 등록할 수 없습니다: {error}"))?;
 
@@ -712,17 +788,20 @@ fn media_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MediaItemDto> {
         metadata_status: row.get(11)?,
         view_count: row.get(12)?,
         title: row.get(13)?,
+        latitude: row.get(14)?,
+        longitude: row.get(15)?,
+        region_code: row.get(16)?,
+        region_name: row.get(17)?,
+        location_status: row.get(18)?,
+        location_source: row.get(19)?,
     })
 }
 
+const MEDIA_COLUMNS: &str = "id, file_path, file_type, taken_at, width, height, duration, size_bytes, rating, comment, favorite, metadata_status, view_count, title, latitude, longitude, region_code, region_name, location_status, location_source";
+
 fn read_media(conn: &Connection) -> Result<Vec<MediaItemDto>, String> {
-    media_dimensions::backfill(conn)?;
     let mut stmt = conn
-        .prepare(
-            "SELECT id, file_path, file_type, taken_at, width, height, duration, size_bytes, rating, comment, favorite, metadata_status, view_count, title
-             FROM media
-             ORDER BY taken_at DESC NULLS LAST, created_at DESC",
-        )
+        .prepare(&format!("SELECT {MEDIA_COLUMNS} FROM media ORDER BY taken_at DESC NULLS LAST, created_at DESC"))
         .map_err(|error| format!("목록을 준비할 수 없습니다: {error}"))?;
 
     let rows = stmt
@@ -768,7 +847,7 @@ fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
     // Load all memberships once instead of issuing one photo query per album.
     let mut stmt = conn
         .prepare(
-            "SELECT m.id, m.file_path, m.file_type, m.taken_at, m.width, m.height, m.duration, m.size_bytes, m.rating, m.comment, m.favorite, m.metadata_status, m.view_count, m.title, ai.album_id
+            "SELECT m.id, m.file_path, m.file_type, m.taken_at, m.width, m.height, m.duration, m.size_bytes, m.rating, m.comment, m.favorite, m.metadata_status, m.view_count, m.title, m.latitude, m.longitude, m.region_code, m.region_name, m.location_status, m.location_source, ai.album_id
              FROM album_item ai
              JOIN media m ON m.id = ai.media_id
              ORDER BY ai.album_id, ai.sequence ASC",
@@ -777,7 +856,7 @@ fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
 
     let rows = stmt
         .query_map([], |row| {
-            Ok((row.get::<_, i64>(14)?, media_from_row(row)?))
+            Ok((row.get::<_, i64>(20)?, media_from_row(row)?))
         })
         .map_err(|error| format!("앨범 항목을 읽을 수 없습니다: {error}"))?;
 
@@ -915,6 +994,12 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             list_media,
+            location_overview,
+            analyze_locations,
+            queue_failed_locations,
+            list_region_media,
+            region_media_page,
+            assign_media_region,
             thumbnails::media_thumbnail,
             list_albums,
             clear_registered_media,

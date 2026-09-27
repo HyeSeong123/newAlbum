@@ -4,6 +4,7 @@ import * as api from "../../services/tauriMediaService";
 import { createKeyedTaskQueue } from "../../services/keyedTaskQueue";
 import { browserImportItems, retainMediaEdits } from "./browserImport";
 import { syncAlbumMedia } from "./journalModel";
+import { REGION_NAMES } from "../map/regions";
 
 type LibraryState = { items: MediaItem[]; albums: SavedAlbum[]; loaded: boolean };
 
@@ -136,6 +137,44 @@ export function useMediaLibrary() {
     });
   }
 
+  async function assignRegion(ids: string[], regionCode: string) {
+    if (!REGION_NAMES[regionCode] || !ids.length) throw new Error("지역과 기록을 선택해 주세요.");
+    await write.current("locations", async () => {
+      if (desktop) await api.assignMediaRegion(ids, regionCode);
+      const selected = new Set(ids);
+      const patch: Partial<MediaItem> = { regionCode, regionName: REGION_NAMES[regionCode], locationSource: "manual", locationStatus: "ready" };
+      const update = (item: MediaItem) => selected.has(item.id) ? { ...item, ...patch } : item;
+      if (!current.current.loaded) {
+        // Albums can open before the initial library query finishes. Keep its
+        // response valid and merge this edit when it arrives.
+        for (const id of ids) pendingMediaEdits.current.set(id, { ...pendingMediaEdits.current.get(id), ...patch });
+        publish({ albums: current.current.albums.map(album => ({ ...album, items: album.items.map(update) })) });
+      } else {
+        mediaRevision.current++;
+        publish({ items: current.current.items.map(update) });
+      }
+    });
+  }
+
+  async function refreshLocations() {
+    if (!desktop) return;
+    await write.current("locations", async () => {
+      const records = new Map((await api.loadRegisteredMedia()).map(item => [item.id, item]));
+      mediaRevision.current++;
+      if (!current.current.loaded) {
+        publish({ items: [...records.values()].map(item => ({ ...item, ...pendingMediaEdits.current.get(item.id) })), loaded: true });
+        pendingMediaEdits.current.clear();
+        return;
+      }
+      publish({ items: current.current.items.map(item => {
+        const location = records.get(item.id);
+        return location ? { ...item, latitude: location.latitude, longitude: location.longitude,
+          regionCode: location.regionCode, regionName: location.regionName,
+          locationSource: location.locationSource, locationStatus: location.locationStatus } : item;
+      }) });
+    });
+  }
+
   async function removeMedia(ids?: Set<string>): Promise<boolean> {
     if (locked.current) return false;
     locked.current = true;
@@ -190,5 +229,5 @@ export function useMediaLibrary() {
   }
 
   return { items: state.items, itemsById, albums, importing, clearing, error, fileInput, folderInput,
-    chooseFiles, chooseFolder, handleFiles, patchMedia, saveTitle, recordView, removeMedia, createAlbum, saveAlbum, deleteAlbums };
+    chooseFiles, chooseFolder, handleFiles, patchMedia, saveTitle, assignRegion, refreshLocations, recordView, removeMedia, createAlbum, saveAlbum, deleteAlbums };
 }

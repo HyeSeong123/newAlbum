@@ -14,6 +14,24 @@ const {
 const photo = (id, takenAt, extra = {}) => ({ id, takenAt, fileType: 'image', ...extra });
 const records = [photo('may', '2026-05-12'), photo('sep', '2026-09-12'), photo('unknown', null), photo('last-year', '2025-09-12')];
 
+test('album synchronization shares unchanged objects and only replaces affected memberships', () => {
+  const one = photo('1', null), two = photo('2', null), outside = photo('3', null);
+  const albums = [{ id: 'a', items: [one] }, { id: 'b', items: [two] }, { id: 'empty', items: [] }];
+  assert.strictEqual(syncAlbumMedia(albums, [one, two, outside]), albums);
+  assert.strictEqual(syncAlbumMedia(albums, [one, two, { ...outside, rating: 5 }]), albums);
+  assert.strictEqual(syncAlbumMedia(albums, [], false), albums);
+  const updated = { ...one, viewCount: 10 };
+  const result = syncAlbumMedia(albums, [updated, two]);
+  assert.notStrictEqual(result, albums);
+  assert.strictEqual(result[0].items[0], updated);
+  assert.strictEqual(result[1], albums[1]);
+  assert.strictEqual(result[2], albums[2]);
+  assert.strictEqual(albums[0].items[0], one);
+  const removed = syncAlbumMedia(albums, [two]);
+  assert.deepEqual(removed[0].items, []);
+  assert.strictEqual(removed[1], albums[1]);
+});
+
 test('initial month, active rail and title describe the same collection', () => {
   const month = resolveJournalMonth(null, records);
   assert.equal(month, '2026-09');

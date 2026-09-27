@@ -1,5 +1,6 @@
 use rusqlite::{params, Connection};
 use serde::Serialize;
+use std::collections::HashMap;
 use tauri::AppHandle;
 
 #[derive(Serialize)]
@@ -31,14 +32,17 @@ fn read_pets(conn: &Connection) -> Result<Vec<Pet>, String> {
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| e.to_string())?;
     let mut statement = conn
-        .prepare("SELECT media_id FROM pet_media WHERE pet_id = ?1 ORDER BY media_id")
+        .prepare("SELECT pet_id, media_id FROM pet_media ORDER BY pet_id, media_id")
         .map_err(|e| e.to_string())?;
+    let rows = statement.query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?)))
+        .map_err(|e| e.to_string())?;
+    let mut memberships: HashMap<i64, Vec<i64>> = HashMap::new();
+    for row in rows {
+        let (pet, media) = row.map_err(|e| e.to_string())?;
+        memberships.entry(pet).or_default().push(media);
+    }
     for pet in &mut pets {
-        pet.media_ids = statement
-            .query_map([pet.id], |r| r.get(0))
-            .map_err(|e| e.to_string())?
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|e| e.to_string())?;
+        pet.media_ids = memberships.remove(&pet.id).unwrap_or_default();
     }
     Ok(pets)
 }
@@ -132,6 +136,18 @@ pub fn delete_pet(app: AppHandle, id: i64) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn batched_memberships_keep_pet_order_media_order_and_empty_pets() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        crate::database::initialize(&mut conn).unwrap();
+        conn.execute_batch("INSERT INTO media(id,file_path,file_type,size_bytes) VALUES(1,'a','image',1),(2,'b','image',1),(3,'c','image',1);
+            INSERT INTO pet(id,name) VALUES(2,'둘'),(1,'하나'),(3,'아직 없음');
+            INSERT INTO pet_media VALUES(2,3),(1,2),(1,1),(2,1);").unwrap();
+        let pets = read_pets(&conn).unwrap();
+        assert_eq!(pets.iter().map(|p| p.id).collect::<Vec<_>>(), vec![1,2,3]);
+        assert_eq!(pets.iter().map(|p| p.media_ids.clone()).collect::<Vec<_>>(), vec![vec![1,2],vec![1,3],vec![]]);
+    }
+
     #[test]
     fn manual_links_preserve_originals_and_rollback_invalid_edits() {
         let mut conn = Connection::open_in_memory().unwrap();
