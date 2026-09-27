@@ -78,7 +78,12 @@ export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLoca
       <div className="memoryMapIntroText"><span className="memoryMapEyebrow"><Compass size={16} />나의 추억 지도</span>
         <h2>사진이 남긴 곳, 다시 펼쳐보기</h2>
         <p>{initialLoading ? "사진에 담긴 지역 정보를 확인하고 있어요." : `17개 지역 중 ${covered}개 지역에 기록이 있어요. 지도에서 지역을 골라 그날의 사진을 만나보세요.`}</p></div>
-      {!initialLoading && <div className="memoryMapStats"><div><strong>{located.toLocaleString()}</strong><span>위치가 있는 기록</span></div><div><strong>{shown.unclassified.toLocaleString()}</strong><span>지역 미분류</span></div></div>}
+      {!initialLoading && <div className="memoryMapIntroActions">
+        <div className="memoryMapStats"><div><strong>{located.toLocaleString()}</strong><span>위치가 있는 기록</span></div><div><strong>{shown.unclassified.toLocaleString()}</strong><span>지역 미분류</span></div></div>
+        <button className="memoryMapAutoButton" disabled={!desktop || busy || (shown.pending === 0 && shown.failed === 0)}
+          title={!desktop ? "자동 조회는 데스크톱 앱에서 사용할 수 있어요" : shown.pending === 0 && shown.failed === 0 ? "새로 조회할 기록이 없습니다" : undefined}
+          onClick={() => void analyze(shown.pending === 0 && shown.failed > 0)}><RefreshCw size={16} className={busy ? "spinIcon" : ""} />{busy ? "조회 중" : "지역 자동 조회"}</button>
+      </div>}
     </section>
     {overviewError && <div className="memoryMapAlert" role="alert">{overviewError}
       <button disabled={busy} onClick={() => { setOverviewError(""); setRefresh(value => value + 1); }}>지도 다시 불러오기</button>
@@ -118,12 +123,11 @@ export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLoca
         <button className="memoryMapUnclassified" aria-pressed={selected === "unclassified"} onClick={event => select("unclassified", event.currentTarget)}>
           <MapPin size={16} /><span>지역 미분류</span><strong>{shown.unclassified.toLocaleString()}</strong>
         </button>
-        {desktop && (shown.pending > 0 || shown.failed > 0 || busy) && <div className="memoryMapAnalysis">
+        <div className="memoryMapAnalysis">
           <div className="memoryMapAnalysisHeader"><strong>위치 정보 분석</strong><span aria-live="polite">{shown.analyzed.toLocaleString()} / {shown.total.toLocaleString()}</span></div>
           <progress aria-label="위치 정보 분석 진행" value={shown.analyzed} max={Math.max(1, shown.total)} />
-          {shown.pending > 0 && <button disabled={busy} onClick={() => void analyze(false)}><RefreshCw size={15} className={busy ? "spinIcon" : ""} />{busy ? "분석 중" : "위치 정보 분석"}</button>}
-          {shown.pending === 0 && shown.failed > 0 && <button disabled={busy} onClick={() => void analyze(true)}><RefreshCw size={15} />분석 실패 {shown.failed}개 다시 시도</button>}
-        </div>}
+          {shown.failed > 0 && <span className="memoryMapAnalysisFailure">조회 실패 {shown.failed}개{shown.pending === 0 ? " · 다시 누르면 재시도" : ""}</span>}
+        </div>
       </aside>
     </section>}
     {selected && <RegionGallery key={selected} code={selected} focusVersion={focusVersion} items={items} revision={shown.analyzed}

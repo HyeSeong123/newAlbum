@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ArrowUpDown, CheckSquare, ChevronLeft, ChevronRight, Heart, Music, Play, Plus, SlidersHorizontal, Trash2, X } from "lucide-react";
+import { ArrowUpDown, CheckSquare, ChevronLeft, ChevronRight, Heart, MapPin, Music, Play, Plus, SlidersHorizontal, Trash2, X } from "lucide-react";
 import type { MediaItem } from "../../types/media";
 import { EmptyState, MediaVisual } from "../../components/MediaVisual";
 import { useRowSelection } from "../../hooks/useRowSelection";
@@ -8,6 +8,7 @@ import { groupByTakenDate } from "./mediaService";
 import { arrangeJournalItems, formatJournalDate, mediaSummary } from "./journalModel";
 import { selectMediaCollection, type LibrarySort, type LibraryMediaType } from "./collectionModel";
 import { TakenDateFilter } from "./TakenDateFilter";
+import { RegionEditor } from "../map/RegionEditor";
 
 const GALLERY_PAGE_SIZE = 48;
 
@@ -24,6 +25,7 @@ export function Library({
   commentCounts,
   onCreateAlbum,
   onDeleteSelected,
+  onAssignRegion,
   scopeKey,
   emptyText,
   onDateSearch,
@@ -40,6 +42,7 @@ export function Library({
   commentCounts: Record<string, number>;
   onCreateAlbum: () => void;
   onDeleteSelected: () => void;
+  onAssignRegion: (ids: string[], code: string) => Promise<void>;
   scopeKey: string;
   emptyText: string;
   onDateSearch: () => void;
@@ -47,6 +50,7 @@ export function Library({
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<LibrarySort>("date-desc");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [bulkRegionOpen, setBulkRegionOpen] = useState(false);
   const [mediaType, setMediaType] = useState<LibraryMediaType>("all");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [commentsOnly, setCommentsOnly] = useState(false);
@@ -66,6 +70,7 @@ export function Library({
   const visibleItems = visibleCollection.slice(startIndex, startIndex + GALLERY_PAGE_SIZE);
   const rangeStart = visibleCollection.length ? startIndex + 1 : 0;
   const rangeEnd = Math.min(startIndex + GALLERY_PAGE_SIZE, visibleCollection.length);
+  const locationIds = items.filter(item => item.fileType !== "audio" && selectedIds.has(item.id)).map(item => item.id);
 
   useEffect(() => {
     setPage((current) => Math.min(current, pageCount));
@@ -83,7 +88,7 @@ export function Library({
       <div className="panelHeader collectionTools">
         {viewTabs}
         <div className="panelActions">
-          <button className={selectionMode ? "selectionToggle activeAction" : "selectionToggle"} aria-pressed={selectionMode} onClick={onToggleSelectionMode}>
+          <button className={selectionMode ? "selectionToggle activeAction" : "selectionToggle"} aria-pressed={selectionMode} onClick={() => { setBulkRegionOpen(false); onToggleSelectionMode(); }}>
             {selectionMode ? <X size={17} /> : <CheckSquare size={17} />}
             {selectionMode ? "선택 끝내기" : "사진 선택"}
           </button>
@@ -112,12 +117,18 @@ export function Library({
             <button className="iconText" onClick={onCreateAlbum} disabled={!selectedCount}>
               <Plus size={17} />앨범 만들기
             </button>
+            <button className="iconText" aria-expanded={bulkRegionOpen} aria-controls="libraryBulkRegion" onClick={() => setBulkRegionOpen(value => !value)} disabled={!locationIds.length}>
+              <MapPin size={17} />지역 일괄 수정
+            </button>
             <button className="dangerButton" onClick={onDeleteSelected} disabled={!selectedCount}>
               <Trash2 size={17} />삭제
             </button>
           </div>
         </div>
       )}
+      {selectionMode && bulkRegionOpen && <div id="libraryBulkRegion" className="libraryBulkRegion">
+        <RegionEditor count={locationIds.length} initiallyEditing onSave={code => onAssignRegion(locationIds, code)} />
+      </div>}
       {!items.length && <EmptyState text={emptyText} />}
       {Boolean(items.length) && !visibleCollection.length && <EmptyState text="조건에 맞는 사진과 영상이 없습니다." />}
       <div className={selectionMode ? "galleryGrid selecting" : "galleryGrid"} {...dragSelection}>

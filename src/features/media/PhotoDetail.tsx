@@ -201,6 +201,7 @@ export function DetailModal({
               </section>
               <dl className="photoMetadata">
                 <div><dt>촬영일</dt><dd>{item.takenAt?.replaceAll("-", ".") ?? "날짜 없음"}</dd></div>
+                {item.latitude != null && item.longitude != null && <div><dt>원본 GPS</dt><dd>{item.latitude.toFixed(5)}, {item.longitude.toFixed(5)}</dd></div>}
                 <div><dt>해상도</dt><dd>{item.width && item.height ? `${item.width} × ${item.height}` : "-"}</dd></div>
                 {item.fileType !== "image" && <div><dt>재생 시간</dt><dd>{item.duration || "-"}</dd></div>}
                 <div><dt>파일 크기</dt><dd>{item.sizeLabel}</dd></div>

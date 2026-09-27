@@ -30,6 +30,7 @@ pub fn load(conn: &Connection) -> Result<HashMap<i64, Vec<Content>>, String> {
     Ok(albums)
 }
 
+#[cfg(test)]
 pub fn save(conn: &mut Connection, id: i64, title: &str, color: &str, contents: &[Content]) -> Result<(), String> {
     save_with_music(conn, id, title, color, contents, None)
 }
