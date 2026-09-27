@@ -26,7 +26,7 @@
 .albumOutlineItem:hover, .albumOutlineItem[aria-current="true"] { background: var(--surface-soft); }
 .albumOutlineItem[aria-current="true"] { box-shadow: inset 3px 0 var(--primary); }
 .albumOutlineNumber { min-width: 22px; color: var(--muted); font-size: 12px; text-align: center; }
-.albumOutlineThumb { width: 44px; height: 44px; flex: 0 0 44px; display: grid; place-items: center; overflow: hidden; border-radius: 6px; color: var(--primary); background: #e9e3d7; }
+.albumOutlineThumb { position: relative; width: 44px; height: 44px; flex: 0 0 44px; display: grid; place-items: center; overflow: hidden; border-radius: 6px; color: var(--primary); background: #e9e3d7; }
 .albumOutlineThumb > div { width: 100%; height: 100%; }
 .albumOutlineThumb .mediaImage { width: 100%; height: 100%; object-fit: cover; }
 .albumOutlineText { min-width: 0; display: grid; gap: 3px; }
