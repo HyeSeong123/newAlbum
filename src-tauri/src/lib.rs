@@ -19,6 +19,7 @@ mod thumbnails;
 mod media_dimensions;
 mod location;
 mod album_content;
+mod database;
 #[cfg(any(feature = "custom-protocol", test))]
 mod localhost;
 
@@ -61,6 +62,9 @@ struct AlbumDto {
 async fn list_media(app: AppHandle) -> Result<Vec<MediaItemDto>, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let conn = open_database(&app)?;
+        // Legacy image headers are read only when loading the library, never
+        // as a side effect of a delete/import response or a metadata write.
+        media_dimensions::backfill(&conn)?;
         read_media(&conn)
     }).await.map_err(|e| e.to_string())?
 }
@@ -102,29 +106,30 @@ async fn list_region_media(app: AppHandle, region_code: String, offset: i64, lim
 }
 
 #[tauri::command]
-fn list_albums(app: AppHandle) -> Result<Vec<AlbumDto>, String> {
-    let conn = open_database(&app)?;
-    read_albums(&conn)
+async fn list_albums(app: AppHandle) -> Result<Vec<AlbumDto>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let conn = open_database(&app)?;
+        read_albums(&conn)
+    }).await.map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
-fn clear_registered_media(app: AppHandle) -> Result<Vec<MediaItemDto>, String> {
-    let conn = open_database(&app)?;
-    conn.execute("DELETE FROM media", [])
-        .map_err(|error| format!("등록 목록을 비울 수 없습니다: {error}"))?;
-    read_media(&conn)
+async fn clear_registered_media(app: AppHandle) -> Result<Vec<MediaItemDto>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let conn = open_database(&app)?;
+        conn.execute("DELETE FROM media", [])
+            .map_err(|error| format!("등록 목록을 비울 수 없습니다: {error}"))?;
+        read_media(&conn)
+    }).await.map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
-fn delete_registered_media(app: AppHandle, ids: Vec<i64>) -> Result<Vec<MediaItemDto>, String> {
-    let conn = open_database(&app)?;
-
-    for id in ids {
-        conn.execute("DELETE FROM media WHERE id = ?1", params![id])
-            .map_err(|error| format!("선택한 항목을 삭제할 수 없습니다: {error}"))?;
-    }
-
-    read_media(&conn)
+async fn delete_registered_media(app: AppHandle, ids: Vec<i64>) -> Result<Vec<MediaItemDto>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut conn = open_database(&app)?;
+        database::delete_media(&mut conn, &ids)?;
+        read_media(&conn)
+    }).await.map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
@@ -183,15 +188,15 @@ fn insert_album(
 }
 
 #[tauri::command]
-fn register_paths(app: AppHandle, paths: Vec<String>) -> Result<Vec<MediaItemDto>, String> {
-    let conn = open_database(&app)?;
-    let files = collect_supported_files(paths)?;
-
-    for file in files {
-        register_file(&conn, &file)?;
-    }
-
-    read_media(&conn)
+async fn register_paths(app: AppHandle, paths: Vec<String>) -> Result<Vec<MediaItemDto>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let conn = open_database(&app)?;
+        let files = collect_supported_files(paths)?;
+        for file in files {
+            register_file(&conn, &file)?;
+        }
+        read_media(&conn)
+    }).await.map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
@@ -352,13 +357,9 @@ fn open_database(app: &AppHandle) -> Result<Connection, String> {
         .map_err(|error| format!("앱 데이터 폴더를 만들 수 없습니다: {error}"))?;
 
     let db_path = app_dir.join("album.sqlite");
-    let conn =
+    let mut conn =
         Connection::open(db_path).map_err(|error| format!("DB를 열 수 없습니다: {error}"))?;
-    conn.execute_batch("PRAGMA foreign_keys = ON;")
-        .map_err(|error| format!("DB 설정을 적용할 수 없습니다: {error}"))?;
-    conn.execute_batch(include_str!("../database/schema.sql"))
-        .map_err(|error| format!("DB 스키마를 적용할 수 없습니다: {error}"))?;
-    migrate_database(&conn)?;
+    database::initialize(&mut conn)?;
     Ok(conn)
 }
 
@@ -785,7 +786,6 @@ fn media_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MediaItemDto> {
 const MEDIA_COLUMNS: &str = "id, file_path, file_type, taken_at, width, height, duration, size_bytes, rating, comment, favorite, metadata_status, view_count, title, latitude, longitude, region_code, region_name, location_status";
 
 fn read_media(conn: &Connection) -> Result<Vec<MediaItemDto>, String> {
-    media_dimensions::backfill(conn)?;
     let mut stmt = conn
         .prepare(&format!("SELECT {MEDIA_COLUMNS} FROM media ORDER BY taken_at DESC NULLS LAST, created_at DESC"))
         .map_err(|error| format!("목록을 준비할 수 없습니다: {error}"))?;

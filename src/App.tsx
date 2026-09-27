@@ -5,7 +5,6 @@ import { useMediaSelection } from "./features/media/useMediaSelection";
 import { useMediaComments } from "./features/media/useMediaComments";
 import { DetailModal } from "./features/media/PhotoDetail";
 import { Memories } from "./features/memories/Memories";
-import { MemoryMap } from "./features/map/MemoryMap";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { getMediaComments } from "./features/media/mediaComments";
 import { searchMedia } from "./features/media/collectionModel";
@@ -15,13 +14,15 @@ import { PeopleWorkspace } from "./features/people/PeopleWorkspace";
 import { SavedAlbumsView } from "./features/albums/AlbumsView";
 import { AlbumCreateModal } from "./features/albums/AlbumCreateModal";
 import { ActionMenu } from "./components/ActionMenu";
-import { ChangeEvent, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { ChangeEvent, lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { ChevronDown, FolderOpen, LoaderCircle, Plus, Search, Settings, Upload, X } from "lucide-react";
 import { MEDIA_FILE_ACCEPT } from "./features/media/mediaService";
 import { filterJournalMonth, journalMonthTitle, resolveJournalMonth } from "./features/media/journalModel";
 import type { MediaItem } from "./types/media";
 
 type View = "Library" | "Albums" | "Memories" | "Map" | "People" | "Settings";
+
+const MemoryMap = lazy(() => import("./features/map/MemoryMap").then(module => ({ default: module.MemoryMap })));
 
 const viewLabels: Record<View, string> = {
   Library: "사진 기록",
@@ -235,7 +236,7 @@ export function App() {
             )}
             {activeView === "Albums" && <SavedAlbumsView albums={savedAlbums} query={query} onOpen={openViewer} onSave={library.saveAlbum} onDelete={library.deleteAlbums} />}
             {activeView === "Memories" && <Memories key={query} items={filtered} today={today} onOpen={openViewer} />}
-            {activeView === "Map" && <MemoryMap items={items} onOpen={openViewer} />}
+            {activeView === "Map" && <Suspense fallback={<p role="status">추억 지도를 펼치는 중이에요.</p>}><MemoryMap items={items} onOpen={openViewer} /></Suspense>}
             {activeView === "People" && <PeopleWorkspace items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} />}
             {activeView === "Settings" && <SettingsPanel itemCount={items.length} clearing={clearing} onClear={clearAllRegisteredMedia} />}
           </div>

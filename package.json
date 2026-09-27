@@ -17,7 +17,7 @@
     "version:major": "node scripts/version.mjs major",
     "version:check": "node scripts/version.mjs --check",
     "test:e2e": "playwright test",
-    "test:unit": "node --test tests/journal-model.test.mjs tests/media-playback.test.mjs tests/feature-models.test.mjs tests/mutations.test.mjs tests/version.test.mjs tests/album-content.test.mjs tests/story-model.test.mjs tests/memories-model.test.mjs tests/timeline-model.test.mjs"
+    "test:unit": "node --test tests/journal-model.test.mjs tests/media-playback.test.mjs tests/feature-models.test.mjs tests/mutations.test.mjs tests/version.test.mjs tests/album-content.test.mjs tests/story-model.test.mjs tests/memories-model.test.mjs tests/timeline-model.test.mjs tests/memory-map-model.test.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.1",

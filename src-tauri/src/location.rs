@@ -264,6 +264,7 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
     Ok(())
 }
 
+#[cfg(test)]
 pub fn save(conn: &Connection, id: i64, result: &LocationResult) -> Result<(), String> {
     conn.execute("UPDATE media SET latitude=?1, longitude=?2, region_code=?3, region_name=?4, location_status=?5 WHERE id=?6",
         params![result.latitude, result.longitude, result.region_code, result.region_name, result.status, id])
@@ -291,9 +292,22 @@ pub fn analyze_batch(conn: &Connection, batch_size: i64) -> Result<Overview, Str
         .collect::<Result<Vec<_>, _>>()
         .map_err(|error| error.to_string())?;
     drop(stmt);
-    for (id, file_path, file_type) in files {
-        // An unreadable file changes only its own location status.
-        save(conn, id, &analyze_path(Path::new(&file_path), &file_type))?;
+    // Perform file I/O before taking a write lock. Commit the small batch once.
+    let results: Vec<_> = files.into_iter().map(|(id, path, kind)|
+        (id, analyze_path(Path::new(&path), &kind))).collect();
+    if !results.is_empty() {
+        let tx = conn.unchecked_transaction().map_err(|error| error.to_string())?;
+        {
+            let mut update = tx.prepare("UPDATE media SET latitude=?1, longitude=?2, region_code=?3,
+                region_name=?4, location_status=?5 WHERE id=?6 AND location_status='queued'")
+                .map_err(|error| error.to_string())?;
+            for (id, result) in results {
+                // A concurrent import/analysis may already have completed this row.
+                update.execute(params![result.latitude, result.longitude, result.region_code,
+                    result.region_name, result.status, id]).map_err(|error| error.to_string())?;
+            }
+        }
+        tx.commit().map_err(|error| error.to_string())?;
     }
     overview(conn)
 }
@@ -369,6 +383,20 @@ mod tests {
         fs,
         time::{SystemTime, UNIX_EPOCH},
     };
+
+    #[test]
+    fn database_failure_rolls_back_the_whole_analysis_batch_and_allows_retry() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        crate::database::initialize(&mut conn).unwrap();
+        conn.execute_batch("INSERT INTO media(id,file_path,file_type,size_bytes) VALUES(1,'missing-a.jpg','image',1),(2,'missing-b.jpg','image',1);
+            CREATE TRIGGER fail_location BEFORE UPDATE OF location_status ON media WHEN OLD.id=2 BEGIN SELECT RAISE(ABORT,'test rollback'); END;").unwrap();
+        assert!(analyze_batch(&conn,24).is_err());
+        assert_eq!(overview(&conn).unwrap().pending,2);
+        conn.execute("DROP TRIGGER fail_location", []).unwrap();
+        let result = analyze_batch(&conn,24).unwrap();
+        assert_eq!(result.pending,0);
+        assert_eq!(result.failed,2);
+    }
 
     fn temp_path(extension: &str) -> std::path::PathBuf {
         let nonce = SystemTime::now()

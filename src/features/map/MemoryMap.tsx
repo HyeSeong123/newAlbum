@@ -4,10 +4,12 @@ import type { MediaItem } from "../../types/media";
 import { EmptyState } from "../../components/MediaVisual";
 import { RecordMediaGrid } from "../media/RecordMediaGrid";
 import { analyzeLocationBatch, isTauriRuntime, loadLocationOverview, loadRegionMedia, queueFailedLocations, type LocationOverview } from "../../services/tauriMediaService";
-import { MAP_REGIONS, REGION_LABELS, REGION_NAMES, groupByMonth, totalFor } from "./regionModel";
+import { MAP_REGIONS, REGION_LABELS, REGION_NAMES, totalFor } from "./regionModel";
+import { browserLocationOverview, groupByMonth } from "./memoryMapModel";
 import "./memory-map.css";
 
 const PAGE_SIZE = 48;
+const EMPTY_OVERVIEW = browserLocationOverview([], REGION_NAMES);
 
 export function MemoryMap({ items, onOpen }: { items: MediaItem[]; onOpen: (item: MediaItem, collection: MediaItem[]) => void }) {
   const [overview, setOverview] = useState<LocationOverview | null>(null);
@@ -21,29 +23,20 @@ export function MemoryMap({ items, onOpen }: { items: MediaItem[]; onOpen: (item
   const running = useRef(false);
   const alive = useRef(true);
   const desktop = isTauriRuntime();
-  const fallback = useMemo<LocationOverview>(() => {
-    const mappable = items.filter(item => item.fileType === "image" || item.fileType === "video");
-    const regions = MAP_REGIONS.map(region => ({
-      code: region.code, name: region.name,
-      photos: mappable.filter(item => item.regionCode === region.code && item.fileType === "image").length,
-      videos: mappable.filter(item => item.regionCode === region.code && item.fileType === "video").length,
-    }));
-    return { total: mappable.length, analyzed: mappable.length, pending: 0, failed: 0,
-      unclassified: mappable.filter(item => !item.regionCode).length, regions };
-  }, [items]);
+  const fallback = useMemo(() => desktop ? EMPTY_OVERVIEW : browserLocationOverview(items, REGION_NAMES), [desktop, items]);
 
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   useEffect(() => {
-    if (!desktop) { setOverview(fallback); return; }
+    if (!desktop) return;
     let disposed = false;
     void loadLocationOverview().then(value => { if (!disposed) { setOverview(value); setError(""); } })
       .catch(() => { if (!disposed) setError("위치 정보를 불러오지 못했습니다."); });
     return () => { disposed = true; };
-  }, [desktop, fallback.total]);
+  }, [desktop, items.length]);
 
   useEffect(() => {
     if (!selected) return;
-    if (!desktop) { setPageItems(items.filter(item => item.fileType !== "audio" && (selected === "unclassified" ? !item.regionCode : item.regionCode === selected)).slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)); return; }
+    if (!desktop) { setPageItems(items.filter(item => item.fileType !== "audio" && (selected === "unclassified" ? !item.regionCode || !REGION_NAMES[item.regionCode] : item.regionCode === selected)).slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)); return; }
     let disposed = false;
     setLoading(true);
     void loadRegionMedia(selected, page * PAGE_SIZE).then(records => { if (!disposed) { setPageItems(records); setError(""); } })
@@ -70,14 +63,14 @@ export function MemoryMap({ items, onOpen }: { items: MediaItem[]; onOpen: (item
 
   function select(code: string | null) { setSelected(code); setHovered(null); setPage(0); setPageItems([]); }
 
-  const shown = overview ?? fallback;
+  const shown = desktop ? overview ?? EMPTY_OVERVIEW : fallback;
   const covered = shown.regions.filter(region => region.photos + region.videos > 0).length;
   const located = shown.regions.reduce((sum, region) => sum + region.photos + region.videos, 0);
   const count = selected === "unclassified" ? shown.unclassified : selected ? totalFor(shown, selected) : 0;
   const activeRegion = hovered ?? selected;
   const summary = MAP_REGIONS.find(region => region.code === activeRegion);
   const summaryCount = shown.regions.find(region => region.code === activeRegion);
-  const groups = groupByMonth(pageItems);
+  const groups = useMemo(() => groupByMonth(pageItems), [pageItems]);
   const pages = Math.ceil(count / PAGE_SIZE);
 
   return <div className="memoryMap">

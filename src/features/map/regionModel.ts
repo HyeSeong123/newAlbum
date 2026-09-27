@@ -37,12 +37,3 @@ export function totalFor(overview: LocationOverview | null, code: string): numbe
   const region = overview?.regions.find(entry => entry.code === code);
   return (region?.photos ?? 0) + (region?.videos ?? 0);
 }
-
-export function groupByMonth<T extends { takenAt: string | null }>(items: T[]): Array<{ month: string; items: T[] }> {
-  const groups = new Map<string, T[]>();
-  for (const item of items) {
-    const month = item.takenAt?.slice(0, 7) ?? "날짜 없음";
-    groups.set(month, [...(groups.get(month) ?? []), item]);
-  }
-  return [...groups].map(([month, entries]) => ({ month, items: entries }));
-}
