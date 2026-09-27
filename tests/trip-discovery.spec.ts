@@ -38,6 +38,11 @@ test('travel candidates separate visits, show counts and open the existing photo
   const card=page.locator('.tripCard').filter({hasText:'2026-08-12 ~ 2026-08-13'});
   await expect(card).toContainText('사진 2장 · 영상 1개');
   await expect(card.locator('img')).toBeVisible();
+  const coverBox=await card.locator('.mediaVisual').boundingBox();
+  const imageBox=await card.locator('img').boundingBox();
+  expect(imageBox!.x).toBeGreaterThanOrEqual(coverBox!.x);
+  expect(imageBox!.y).toBeGreaterThanOrEqual(coverBox!.y);
+  expect(imageBox!.y+imageBox!.height).toBeLessThanOrEqual(coverBox!.y+coverBox!.height+1);
   await card.getByRole('button',{name:'기록 보기'}).click();
   const records=page.getByRole('region',{name:'여행 기록 목록'});
   await expect(records.locator('.recordMediaGrid > button')).toHaveCount(3);
