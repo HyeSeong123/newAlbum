@@ -7,6 +7,8 @@ commands.allow = [
   "analyze_locations",
   "queue_failed_locations",
   "list_region_media",
+  "region_media_page",
+  "assign_media_region",
   "media_thumbnail",
   "list_albums",
   "clear_registered_media",

@@ -1,19 +1,8 @@
 import type { LocationOverview } from "../../services/tauriMediaService";
 import geography from "../../../data/korea-adm1.geojson?raw";
 
-export const REGION_LABELS: Record<string, string> = {
-  "KR-11": "서울", "KR-26": "부산", "KR-27": "대구", "KR-28": "인천", "KR-29": "광주",
-  "KR-30": "대전", "KR-31": "울산", "KR-41": "경기", "KR-42": "강원", "KR-43": "충북",
-  "KR-44": "충남", "KR-45": "전북", "KR-46": "전남", "KR-47": "경북", "KR-48": "경남",
-  "KR-49": "제주", "KR-50": "세종",
-};
-export const REGION_NAMES: Record<string, string> = {
-  "KR-11": "서울특별시", "KR-26": "부산광역시", "KR-27": "대구광역시", "KR-28": "인천광역시",
-  "KR-29": "광주광역시", "KR-30": "대전광역시", "KR-31": "울산광역시", "KR-41": "경기도",
-  "KR-42": "강원특별자치도", "KR-43": "충청북도", "KR-44": "충청남도", "KR-45": "전북특별자치도",
-  "KR-46": "전라남도", "KR-47": "경상북도", "KR-48": "경상남도", "KR-49": "제주특별자치도",
-  "KR-50": "세종특별자치시",
-};
+import { REGION_NAMES } from "./regions";
+export { REGION_NAMES, REGION_LABELS } from "./regions";
 
 type Point = [number, number];
 type Polygon = Point[][];

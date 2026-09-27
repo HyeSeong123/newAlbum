@@ -1,24 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Compass, Image, MapPin, RefreshCw, Video } from "lucide-react";
+import { Compass, Image, MapPin, RefreshCw, Video } from "lucide-react";
 import type { MediaItem } from "../../types/media";
-import { EmptyState } from "../../components/MediaVisual";
-import { RecordMediaGrid } from "../media/RecordMediaGrid";
-import { analyzeLocationBatch, isTauriRuntime, loadLocationOverview, loadRegionMedia, queueFailedLocations, type LocationOverview } from "../../services/tauriMediaService";
+import { RegionGallery } from "./RegionGallery";
+import { analyzeLocationBatch, isTauriRuntime, loadLocationOverview, queueFailedLocations, type LocationOverview } from "../../services/tauriMediaService";
 import { MAP_REGIONS, REGION_LABELS, REGION_NAMES, totalFor } from "./regionModel";
-import { browserLocationOverview, groupByMonth } from "./memoryMapModel";
+import { browserLocationOverview } from "./memoryMapModel";
 import "./memory-map.css";
 
-const PAGE_SIZE = 48;
 const EMPTY_OVERVIEW = browserLocationOverview([], REGION_NAMES);
 
-export function MemoryMap({ items, onOpen }: { items: MediaItem[]; onOpen: (item: MediaItem, collection: MediaItem[]) => void }) {
+export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLocationsAnalyzed }: {
+  items: MediaItem[]; onOpen: (item: MediaItem, collection: MediaItem[]) => void;
+  onAssignRegion: (ids: string[], code: string) => Promise<void>;
+  onCreateAlbum: (items: MediaItem[], title?: string) => void;
+  onLocationsAnalyzed: () => Promise<void>;
+}) {
   const [overview, setOverview] = useState<LocationOverview | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
-  const [page, setPage] = useState(0);
-  const [pageItems, setPageItems] = useState<MediaItem[]>([]);
   const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const running = useRef(false);
   const alive = useRef(true);
@@ -32,18 +32,7 @@ export function MemoryMap({ items, onOpen }: { items: MediaItem[]; onOpen: (item
     void loadLocationOverview().then(value => { if (!disposed) { setOverview(value); setError(""); } })
       .catch(() => { if (!disposed) setError("위치 정보를 불러오지 못했습니다."); });
     return () => { disposed = true; };
-  }, [desktop, items.length]);
-
-  useEffect(() => {
-    if (!selected) return;
-    if (!desktop) { setPageItems(items.filter(item => item.fileType !== "audio" && (selected === "unclassified" ? !item.regionCode || !REGION_NAMES[item.regionCode] : item.regionCode === selected)).slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)); return; }
-    let disposed = false;
-    setLoading(true);
-    void loadRegionMedia(selected, page * PAGE_SIZE).then(records => { if (!disposed) { setPageItems(records); setError(""); } })
-      .catch(() => { if (!disposed) setError("지역 사진을 불러오지 못했습니다."); })
-      .finally(() => { if (!disposed) setLoading(false); });
-    return () => { disposed = true; };
-  }, [desktop, items, overview?.analyzed, page, selected]);
+  }, [desktop, items]);
 
   async function analyze(retry: boolean) {
     if (!desktop || running.current) return;
@@ -57,21 +46,19 @@ export function MemoryMap({ items, onOpen }: { items: MediaItem[]; onOpen: (item
         if (alive.current) setOverview(progress);
         if (progress.pending >= previous) throw new Error("진행 상태가 갱신되지 않았습니다.");
       }
+      await onLocationsAnalyzed();
     } catch { if (alive.current) setError("일부 파일의 위치를 분석하지 못했습니다. 다시 시도해 주세요."); }
     finally { running.current = false; if (alive.current) setBusy(false); }
   }
 
-  function select(code: string | null) { setSelected(code); setHovered(null); setPage(0); setPageItems([]); }
+  function select(code: string | null) { setSelected(code); setHovered(null); }
 
   const shown = desktop ? overview ?? EMPTY_OVERVIEW : fallback;
   const covered = shown.regions.filter(region => region.photos + region.videos > 0).length;
   const located = shown.regions.reduce((sum, region) => sum + region.photos + region.videos, 0);
-  const count = selected === "unclassified" ? shown.unclassified : selected ? totalFor(shown, selected) : 0;
   const activeRegion = hovered ?? selected;
   const summary = MAP_REGIONS.find(region => region.code === activeRegion);
   const summaryCount = shown.regions.find(region => region.code === activeRegion);
-  const groups = useMemo(() => groupByMonth(pageItems), [pageItems]);
-  const pages = Math.ceil(count / PAGE_SIZE);
 
   return <div className="memoryMap">
     <section className="memoryMapIntro" aria-label="추억 지도 요약">
@@ -122,18 +109,8 @@ export function MemoryMap({ items, onOpen }: { items: MediaItem[]; onOpen: (item
         </div>}
       </aside>
     </section>
-    {selected && <section className="memoryMapGallery" aria-label={`${selected === "unclassified" ? "지역 미분류" : REGION_NAMES[selected]} 기록`}>
-      <header><div><span className="memoryMapEyebrow">장소가 간직한 순간</span><h3>{selected === "unclassified" ? "지역 미분류" : REGION_NAMES[selected]}</h3>
-        <p>{selected === "unclassified" ? "GPS가 없거나 위치를 확인할 수 없는 기록이에요." : `${shown.regions.find(region => region.code === selected)?.photos ?? 0}장의 사진 · ${shown.regions.find(region => region.code === selected)?.videos ?? 0}개의 영상`}</p></div>
-        <button className="memoryMapAll" onClick={() => select(null)}>전체 지도 보기</button></header>
-      {loading ? <p role="status">사진을 불러오는 중이에요.</p> : pageItems.length ? groups.map(group => <div className="memoryMapMonth" key={group.month}>
-        <h4>{/^\d{4}-\d{2}$/.test(group.month) ? `${group.month.slice(0,4)}년 ${Number(group.month.slice(5))}월` : group.month}</h4>
-        <RecordMediaGrid items={group.items} onOpen={item => onOpen(item, pageItems)} />
-      </div>) : <EmptyState text="이 지역에 담긴 사진과 영상이 아직 없어요." />}
-      {pages > 1 && <nav className="memoryMapPager" aria-label="지역 사진 페이지">
-        <button disabled={page === 0} onClick={() => setPage(current => current - 1)}><ChevronLeft size={17} />이전</button>
-        <span>{page + 1} / {pages}</span><button disabled={page >= pages - 1} onClick={() => setPage(current => current + 1)}>다음<ChevronRight size={17} /></button>
-      </nav>}
-    </section>}
+    {selected && <RegionGallery key={selected} code={selected} items={items} revision={shown.analyzed}
+      summary={selected === "unclassified" ? "GPS가 없거나 위치를 확인할 수 없는 기록이에요. 직접 지역을 지정할 수 있어요." : `${shown.regions.find(region => region.code === selected)?.photos ?? 0}장의 사진 · ${shown.regions.find(region => region.code === selected)?.videos ?? 0}개의 영상`}
+      onOpen={onOpen} onClose={() => select(null)} onAssignRegion={onAssignRegion} onCreateAlbum={onCreateAlbum} />}
   </div>;
 }

@@ -23,6 +23,7 @@ interface BackendMediaItem {
   favorite: boolean;
   view_count?: number;
   metadata_status: "ready" | "queued" | "missing-date";
+  location_source?: "gps" | "manual";
   latitude?: number | null;
   longitude?: number | null;
   region_code?: string | null;
@@ -92,6 +93,17 @@ export async function queueFailedLocations(): Promise<LocationOverview> {
 export async function loadRegionMedia(regionCode: string, offset: number, limit = 48): Promise<MediaItem[]> {
   const rows = await invoke<BackendMediaItem[]>("list_region_media", { regionCode, offset, limit });
   return rows.map(toMediaItem);
+}
+
+export interface RegionFilters { fileType: "all" | "image" | "video"; year: string; oldest: boolean }
+export interface RegionPage { items: MediaItem[]; total: number; years: string[] }
+export async function loadRegionPage(regionCode: string, offset: number, filters: RegionFilters): Promise<RegionPage> {
+  const page = await invoke<{ items: BackendMediaItem[]; total: number; years: string[] }>("region_media_page", { regionCode, offset, ...filters });
+  return { ...page, items: page.items.map(toMediaItem) };
+}
+export async function assignMediaRegion(ids: string[], regionCode: string): Promise<void> {
+  if (!ids.length || ids.some(id => !/^\d+$/.test(id))) throw new Error("올바르지 않은 기록입니다.");
+  await invoke("assign_media_region", { ids: ids.map(Number), regionCode });
 }
 
 export async function clearRegisteredMedia(): Promise<MediaItem[]> {
@@ -246,6 +258,7 @@ function toMediaItem(row: BackendMediaItem): MediaItem {
     regionCode: row.region_code ?? undefined,
     regionName: row.region_name ?? undefined,
     locationStatus: row.location_status ?? "queued",
+    locationSource: row.location_source ?? "gps",
   };
 }
 

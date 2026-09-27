@@ -4,6 +4,7 @@ import * as api from "../../services/tauriMediaService";
 import { createKeyedTaskQueue } from "../../services/keyedTaskQueue";
 import { browserImportItems, retainMediaEdits } from "./browserImport";
 import { syncAlbumMedia } from "./journalModel";
+import { REGION_NAMES } from "../map/regions";
 
 type LibraryState = { items: MediaItem[]; albums: SavedAlbum[]; loaded: boolean };
 
@@ -136,6 +137,32 @@ export function useMediaLibrary() {
     });
   }
 
+  async function assignRegion(ids: string[], regionCode: string) {
+    if (!REGION_NAMES[regionCode] || !ids.length) throw new Error("지역과 기록을 선택해 주세요.");
+    await write.current("locations", async () => {
+      if (desktop) await api.assignMediaRegion(ids, regionCode);
+      const selected = new Set(ids);
+      mediaRevision.current++;
+      publish({ items: current.current.items.map(item => selected.has(item.id) ? {
+        ...item, regionCode, regionName: REGION_NAMES[regionCode], locationSource: "manual", locationStatus: "ready",
+      } : item) });
+    });
+  }
+
+  async function refreshLocations() {
+    if (!desktop) return;
+    await write.current("locations", async () => {
+      const records = new Map((await api.loadRegisteredMedia()).map(item => [item.id, item]));
+      mediaRevision.current++;
+      publish({ items: current.current.items.map(item => {
+        const location = records.get(item.id);
+        return location ? { ...item, latitude: location.latitude, longitude: location.longitude,
+          regionCode: location.regionCode, regionName: location.regionName,
+          locationSource: location.locationSource, locationStatus: location.locationStatus } : item;
+      }) });
+    });
+  }
+
   async function removeMedia(ids?: Set<string>): Promise<boolean> {
     if (locked.current) return false;
     locked.current = true;
@@ -190,5 +217,5 @@ export function useMediaLibrary() {
   }
 
   return { items: state.items, itemsById, albums, importing, clearing, error, fileInput, folderInput,
-    chooseFiles, chooseFolder, handleFiles, patchMedia, saveTitle, recordView, removeMedia, createAlbum, saveAlbum, deleteAlbums };
+    chooseFiles, chooseFolder, handleFiles, patchMedia, saveTitle, assignRegion, refreshLocations, recordView, removeMedia, createAlbum, saveAlbum, deleteAlbums };
 }

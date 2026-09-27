@@ -1,0 +1,9 @@
+.regionEditor { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:14px 0; }
+.regionEditor label { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.regionEditor small { display:block; color:#727565; margin-top:4px; }
+.regionEditor button,.regionEditor select,.regionGalleryTools button,.regionGalleryTools select { background:#fffdf8; color:#414539; border:1px solid #d8dacd; border-radius:8px; padding:8px 12px; font:inherit; max-width:100%; }
+.regionEditor button:disabled,.regionGalleryTools button:disabled { opacity:.5; }
+.regionGalleryTools { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:18px 0; }
+.regionGalleryTools label { display:flex; align-items:center; gap:6px; }
+.recordMediaGrid button[aria-pressed=true] { outline:3px solid #758464; outline-offset:2px; }
+.recordSelectionMark { color:#526242; font-weight:700; }

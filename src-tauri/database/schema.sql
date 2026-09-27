@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS media (
   region_code TEXT,
   region_name TEXT,
   location_status TEXT NOT NULL DEFAULT 'queued',
+  location_source TEXT NOT NULL DEFAULT 'gps',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

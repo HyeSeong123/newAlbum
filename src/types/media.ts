@@ -21,6 +21,7 @@ export interface MediaItem {
   /** Session-only URL for files selected in the browser preview. */
   previewUrl?: string;
   metadataStatus: "ready" | "queued" | "missing-date";
+  locationSource?: "gps" | "manual";
   latitude?: number;
   longitude?: number;
   regionCode?: string;

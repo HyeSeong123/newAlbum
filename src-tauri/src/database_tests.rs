@@ -147,3 +147,30 @@ fn list_and_reverse_relationship_queries_use_indexes() {
         assert!(!plan.contains("TEMP B-TREE"), "{plan}");
     }
 }
+
+#[test]
+fn version_one_database_upgrades_and_persists_manual_regions_on_reopen() {
+    let path = temp_db();
+    let mut conn = Connection::open(&path).unwrap();
+    let legacy = include_str!("../database/schema.sql").replace("  location_source TEXT NOT NULL DEFAULT 'gps',\n", "");
+    conn.execute_batch(&legacy).unwrap();
+    conn.execute_batch("PRAGMA user_version=1;
+        INSERT INTO media(id,file_path,file_type,size_bytes,region_code,region_name,location_status) VALUES(1,'a.jpg','image',1,'KR-11','서울특별시','ready');
+        INSERT INTO album(id,title) VALUES(1,'기존 앨범');
+        INSERT INTO album_item(album_id,media_id,sequence) VALUES(1,1,0);
+        INSERT INTO album_page(id,album_id,kind,title,body,sequence) VALUES('chapter',1,'CHAPTER','시작','첫 여행',1);").unwrap();
+    initialize(&mut conn).unwrap();
+    assert_eq!(conn.query_row("SELECT location_source FROM media", [], |r| r.get::<_,String>(0)).unwrap(), "gps");
+    crate::location::assign_region(&conn,&[1],"KR-49").unwrap();
+    let saved = snapshot(&conn);
+    drop(conn);
+    let mut reopened = Connection::open(&path).unwrap();
+    initialize(&mut reopened).unwrap();
+    assert_eq!(snapshot(&reopened), saved);
+    let albums = crate::read_albums(&reopened).unwrap();
+    assert_eq!(albums[0].items[0].region_code.as_deref(),Some("KR-49"));
+    assert_eq!(albums[0].items[0].location_source,"manual");
+    assert_eq!(albums[0].contents.len(),2);
+    drop(reopened);
+    fs::remove_file(path).unwrap();
+}

@@ -25,10 +25,10 @@ test.beforeEach(async ({ page }) => {
         if (command === 'list_albums') return [];
         if (command === 'location_overview') return summary();
         if (command === 'analyze_locations') { analyzed = true; return summary(); }
-        if (command === 'list_region_media') return media.filter(entry =>
+        if (command === 'region_media_page') { const records = media.filter(entry =>
           args.regionCode === 'unclassified' ? entry.location_status === 'no-gps' :
             entry.region_code === args.regionCode || (analyzed && entry.id === 4 && args.regionCode === 'KR-49'))
-          .slice(args.offset ?? 0, (args.offset ?? 0) + (args.limit ?? 48));
+          ; return { items: records.slice(args.offset ?? 0, (args.offset ?? 0) + 48), total: records.length, years: ['2026'] }; }
         if (command === 'media_thumbnail') return `C:/map-photo-${args.id}.jpg`;
         if (command === 'increment_media_view') return 1;
         return [];
@@ -36,7 +36,8 @@ test.beforeEach(async ({ page }) => {
     } });
   });
   await page.goto('/');
-  await page.locator('.navList').getByRole('button', { name: '추억 지도' }).click();
+  await page.locator('.navList').getByRole('button', { name: '지난 추억' }).click();
+  await page.getByRole('group', { name: '추억 보기' }).getByRole('button', { name: '추억 지도' }).click();
 });
 
 test('province counts, region gallery, unclassified list and existing detail stay connected', async ({ page }) => {

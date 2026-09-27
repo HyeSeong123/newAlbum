@@ -3,7 +3,7 @@ use std::time::Duration;
 
 // Versions before this migration used user_version = 0 (including existing installs).
 // Future schema changes must increment this and add an ordered migration here.
-const VERSION: i64 = 1;
+const VERSION: i64 = 2;
 
 fn version(conn: &Connection) -> Result<i64, String> {
     conn.query_row("PRAGMA user_version", [], |row| row.get(0))
@@ -36,8 +36,9 @@ pub fn initialize(conn: &mut Connection) -> Result<(), String> {
         super::migrate_database(&tx)?;
         tx.execute_batch(include_str!("../database/performance-indexes.sql"))
             .map_err(|error| format!("DB 인덱스를 적용할 수 없습니다: {error}"))?;
-        tx.pragma_update(None, "user_version", VERSION).map_err(|error| error.to_string())?;
     }
+    if current < 2 { super::location::migrate(&tx)?; }
+    tx.pragma_update(None, "user_version", VERSION).map_err(|error| error.to_string())?;
     tx.commit().map_err(|error| error.to_string())
 }
 

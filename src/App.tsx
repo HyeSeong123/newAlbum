@@ -4,7 +4,7 @@ import { useMediaViewer } from "./features/media/useMediaViewer";
 import { useMediaSelection } from "./features/media/useMediaSelection";
 import { useMediaComments } from "./features/media/useMediaComments";
 import { DetailModal } from "./features/media/PhotoDetail";
-import { Memories } from "./features/memories/Memories";
+import { MemoriesWorkspace } from "./features/memories/MemoriesWorkspace";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { getMediaComments } from "./features/media/mediaComments";
 import { searchMedia } from "./features/media/collectionModel";
@@ -14,21 +14,18 @@ import { PeopleWorkspace } from "./features/people/PeopleWorkspace";
 import { SavedAlbumsView } from "./features/albums/AlbumsView";
 import { AlbumCreateModal } from "./features/albums/AlbumCreateModal";
 import { ActionMenu } from "./components/ActionMenu";
-import { ChangeEvent, lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { ChangeEvent, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { ChevronDown, FolderOpen, LoaderCircle, Plus, Search, Settings, Upload, X } from "lucide-react";
 import { MEDIA_FILE_ACCEPT } from "./features/media/mediaService";
 import { filterJournalMonth, journalMonthTitle, resolveJournalMonth } from "./features/media/journalModel";
 import type { MediaItem } from "./types/media";
 
-type View = "Library" | "Albums" | "Memories" | "Map" | "People" | "Settings";
-
-const MemoryMap = lazy(() => import("./features/map/MemoryMap").then(module => ({ default: module.MemoryMap })));
+type View = "Library" | "Albums" | "Memories" | "People" | "Settings";
 
 const viewLabels: Record<View, string> = {
   Library: "사진 기록",
   Albums: "내 앨범",
   Memories: "추억",
-  Map: "추억 지도",
   People: "사람과 반려동물",
   Settings: "설정",
 };
@@ -38,7 +35,6 @@ const navItems: Array<{ name: View; label: string; accessibleLabel: string }> = 
   { name: "Albums", label: "앨범", accessibleLabel: "내 앨범" },
   { name: "People", label: "사람과 반려동물", accessibleLabel: "인물" },
   { name: "Memories", label: "추억", accessibleLabel: "지난 추억" },
-  { name: "Map", label: "추억 지도", accessibleLabel: "추억 지도" },
 ];
 
 export function App() {
@@ -67,6 +63,7 @@ export function App() {
   const comments = useMediaComments(items, library.patchMedia);
   const { comments: mediaComments, counts: commentCounts } = comments;
   const [albumDraftItems, setAlbumDraftItems] = useState<MediaItem[] | null>(null);
+  const [albumDraftTitle, setAlbumDraftTitle] = useState("");
   const [query, setQuery] = useState("");
   const [selectionNotice, setSelectionNotice] = useState("");
 
@@ -135,6 +132,7 @@ export function App() {
     const albumItems = albumDraftItems ?? [];
     if (!albumItems.length || !title.trim()) return;
     await library.createAlbum(title.trim(), coverColor, albumItems);
+    navigate("Albums");
     setSelectionNotice(`'${title.trim()}' 앨범에 ${albumItems.length}개 항목을 담았습니다.`);
     selection.reset();
   }
@@ -235,21 +233,23 @@ export function App() {
               />
             )}
             {activeView === "Albums" && <SavedAlbumsView albums={savedAlbums} query={query} onOpen={openViewer} onSave={library.saveAlbum} onDelete={library.deleteAlbums} />}
-            {activeView === "Memories" && <Memories key={query} items={filtered} today={today} onOpen={openViewer} />}
-            {activeView === "Map" && <Suspense fallback={<p role="status">추억 지도를 펼치는 중이에요.</p>}><MemoryMap items={items} onOpen={openViewer} /></Suspense>}
+            {activeView === "Memories" && <MemoriesWorkspace items={filtered} allItems={items} today={today} onOpen={openViewer}
+              onAssignRegion={library.assignRegion} onLocationsAnalyzed={library.refreshLocations}
+              onCreateAlbum={(records, title = "") => { setAlbumDraftItems(records); setAlbumDraftTitle(title); }} />}
             {activeView === "People" && <PeopleWorkspace items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} />}
             {activeView === "Settings" && <SettingsPanel itemCount={items.length} clearing={clearing} onClear={clearAllRegisteredMedia} />}
           </div>
         </section>
         {library.error && <p className="selectionNotice" role="alert">{library.error}</p>}
         {selectionNotice && <p className="selectionNotice" role="status">{selectionNotice}</p>}
-        {albumDraftItems && <AlbumCreateModal items={albumDraftItems} onClose={() => setAlbumDraftItems(null)} onCreate={createAlbumFromSelectedItems} />}
+        {albumDraftItems && <AlbumCreateModal items={albumDraftItems} initialTitle={albumDraftTitle} onClose={() => { setAlbumDraftItems(null); setAlbumDraftTitle(""); }} onCreate={createAlbumFromSelectedItems} />}
         {selected && (
           <DetailModal
             item={selected}
             comments={getMediaComments(selected, mediaComments)}
             onChange={updateSelected}
             onSaveTitle={library.saveTitle}
+            onAssignRegion={library.assignRegion}
             onAddComment={(author, content) => comments.add(selected, author, content)}
             commentError={comments.error}
             onUpdateComment={(id, author, content) => comments.edit(selected, id, author, content)}

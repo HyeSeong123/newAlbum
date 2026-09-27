@@ -47,6 +47,9 @@ jobs:
           rustup toolchain install stable --profile minimal
       - name: Prepare local test icon
         run: /usr/bin/python3 -c "from PIL import Image; Image.open('src-tauri/icons/icon.ico').convert('RGBA').save('src-tauri/icons/icon.png')"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
       - name: Run Rust storage and media tests
         run: cargo test --manifest-path src-tauri/Cargo.toml --lib --locked -j 2
       - name: Test legacy album storage
@@ -72,8 +75,8 @@ jobs:
       - name: Test browser workflows
         run: |
           npx playwright install --with-deps chromium
-          npx playwright test tests/photo-titles.spec.ts tests/photo-detail.spec.ts tests/journal-preview.spec.ts tests/memory-map.spec.ts --project=desktop --workers=2
-          npx playwright test tests/memory-map.spec.ts --project=mobile --workers=1
+          npx playwright test tests/photo-titles.spec.ts tests/photo-detail.spec.ts tests/journal-preview.spec.ts tests/memory-map.spec.ts tests/memory-map-v2.spec.ts --project=desktop --workers=2
+          npx playwright test tests/memory-map.spec.ts tests/memory-map-v2.spec.ts --project=mobile --workers=1
           npx playwright test tests/search-diary.spec.ts --workers=2
           npx playwright test tests/album-portrait.spec.ts tests/album-animation.spec.ts tests/album-content.spec.ts tests/album-story.spec.ts tests/memories.spec.ts tests/timeline.spec.ts --workers=2
       - name: Build TypeScript frontend

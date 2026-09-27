@@ -242,6 +242,7 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
         ("region_code", "TEXT"),
         ("region_name", "TEXT"),
         ("location_status", "TEXT NOT NULL DEFAULT 'queued'"),
+        ("location_source", "TEXT NOT NULL DEFAULT 'gps'"),
     ] {
         let exists: bool = conn
             .query_row(
@@ -276,7 +277,7 @@ pub fn analyze_batch(conn: &Connection, batch_size: i64) -> Result<Overview, Str
     let mut stmt = conn
         .prepare(
             "SELECT id, file_path, file_type FROM media
-             WHERE file_type IN ('image','video') AND location_status='queued'
+             WHERE file_type IN ('image','video') AND location_status='queued' AND location_source!='manual'
              ORDER BY id LIMIT ?1",
         )
         .map_err(|error| error.to_string())?;
@@ -299,7 +300,7 @@ pub fn analyze_batch(conn: &Connection, batch_size: i64) -> Result<Overview, Str
         let tx = conn.unchecked_transaction().map_err(|error| error.to_string())?;
         {
             let mut update = tx.prepare("UPDATE media SET latitude=?1, longitude=?2, region_code=?3,
-                region_name=?4, location_status=?5 WHERE id=?6 AND location_status='queued'")
+                region_name=?4, location_status=?5 WHERE id=?6 AND location_status='queued' AND location_source!='manual'")
                 .map_err(|error| error.to_string())?;
             for (id, result) in results {
                 // A concurrent import/analysis may already have completed this row.
@@ -314,11 +315,62 @@ pub fn analyze_batch(conn: &Connection, batch_size: i64) -> Result<Overview, Str
 
 pub fn queue_failed(conn: &Connection) -> Result<Overview, String> {
     conn.execute(
-        "UPDATE media SET location_status='queued' WHERE location_status='failed' AND file_type IN ('image','video')",
+        "UPDATE media SET location_status='queued' WHERE location_status='failed' AND location_source!='manual' AND file_type IN ('image','video')",
         [],
     )
     .map_err(|error| error.to_string())?;
     overview(conn)
+}
+
+// A single transaction prevents partial bulk edits. Coordinates are retained as
+// original metadata; only the app's region classification is overridden.
+pub fn assign_region(conn: &Connection, ids: &[i64], code: &str) -> Result<(), String> {
+    let name = REGIONS.iter().find(|(region, _)| *region == code)
+        .map(|(_, name)| *name).ok_or("존재하지 않는 지역입니다.")?;
+    if ids.is_empty() { return Err("지역을 지정할 기록을 선택해 주세요.".into()); }
+    let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
+    for id in ids {
+        let count = tx.execute("UPDATE media SET region_code=?1, region_name=?2,
+            location_source='manual', location_status='ready' WHERE id=?3 AND file_type IN ('image','video')",
+            params![code, name, id]).map_err(|e| e.to_string())?;
+        if count != 1 { return Err("선택한 사진이나 영상을 찾을 수 없습니다. 목록을 새로 열어 주세요.".into()); }
+    }
+    tx.commit().map_err(|e| e.to_string())
+}
+
+#[derive(Serialize)]
+pub struct RegionPage {
+    pub items: Vec<super::MediaItemDto>,
+    pub total: i64,
+    pub years: Vec<String>,
+}
+
+pub fn region_page(conn: &Connection, code: &str, offset: i64, kind: &str, year: &str, oldest: bool) -> Result<RegionPage, String> {
+    if code != "unclassified" && !REGIONS.iter().any(|(region, _)| *region == code) {
+        return Err("존재하지 않는 지역입니다.".into());
+    }
+    if !["all", "image", "video"].contains(&kind) || (!year.is_empty() && (year.len() != 4 || !year.bytes().all(|c| c.is_ascii_digit()))) {
+        return Err("필터가 올바르지 않습니다.".into());
+    }
+    let scope = if code == "unclassified" { UNCLASSIFIED_FILTER_SQL } else { REGION_FILTER_SQL };
+    let predicate = format!("{scope} AND (?2='all' OR file_type=?2) AND (?3='' OR (taken_at >= ?3 || '-01-01' AND taken_at < ?4 || '-01-01'))");
+    let next_year = year.parse::<i64>().unwrap_or(0) + 1;
+    // Read count, years and the bounded page from one consistent snapshot.
+    let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
+    let total = tx.query_row(&format!("SELECT COUNT(*) FROM media WHERE {predicate}"), params![code, kind, year, next_year.to_string()], |row| row.get(0)).map_err(|e| e.to_string())?;
+    let years = {
+        let mut stmt = tx.prepare(&format!("SELECT DISTINCT substr(taken_at,1,4) FROM media WHERE {scope} AND taken_at GLOB '[0-9][0-9][0-9][0-9]-*' ORDER BY 1 DESC")).map_err(|e| e.to_string())?;
+        let rows = stmt.query_map([code], |row| row.get(0)).map_err(|e| e.to_string())?;
+        rows.collect::<Result<Vec<String>,_>>().map_err(|e| e.to_string())?
+    };
+    let direction = if oldest { "ASC" } else { "DESC" };
+    let items = {
+        let mut stmt = tx.prepare(&format!("SELECT {} FROM media WHERE {predicate} ORDER BY taken_at {direction} NULLS LAST, id {direction} LIMIT 48 OFFSET ?5", super::MEDIA_COLUMNS)).map_err(|e| e.to_string())?;
+        let rows = stmt.query_map(params![code, kind, year, next_year.to_string(), offset.max(0)], super::media_from_row).map_err(|e| e.to_string())?;
+        rows.collect::<Result<Vec<_>,_>>().map_err(|e| e.to_string())?
+    };
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(RegionPage { items, total, years })
 }
 
 #[derive(Serialize)]
@@ -396,6 +448,22 @@ mod tests {
         let result = analyze_batch(&conn,24).unwrap();
         assert_eq!(result.pending,0);
         assert_eq!(result.failed,2);
+    }
+
+    #[test]
+    fn manual_region_survives_reimport_without_changing_exif() {
+        let path = temp_path("jpg");
+        let bytes = gps_jpeg();
+        fs::write(&path, &bytes).unwrap();
+        let mut conn = Connection::open_in_memory().unwrap();
+        crate::database::initialize(&mut conn).unwrap();
+        crate::register_file(&conn, &path).unwrap();
+        let id = conn.query_row("SELECT id FROM media", [], |r| r.get(0)).unwrap();
+        assign_region(&conn, &[id], "KR-49").unwrap();
+        crate::register_file(&conn, &path).unwrap();
+        assert_eq!(conn.query_row("SELECT region_code FROM media", [], |r| r.get::<_, String>(0)).unwrap(), "KR-49");
+        assert_eq!(fs::read(&path).unwrap(), bytes);
+        fs::remove_file(path).unwrap();
     }
 
     fn temp_path(extension: &str) -> std::path::PathBuf {
@@ -681,3 +749,7 @@ mod tests {
         assert_eq!(overview(&conn).unwrap().regions[0].photos, 1);
     }
 }
+
+#[cfg(test)]
+#[path = "location_v2_tests.rs"]
+mod v2_tests;

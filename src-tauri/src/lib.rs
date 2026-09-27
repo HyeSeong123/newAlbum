@@ -44,6 +44,7 @@ struct MediaItemDto {
     region_code: Option<String>,
     region_name: Option<String>,
     location_status: String,
+    location_source: String,
 }
 
 #[derive(Serialize)]
@@ -103,6 +104,18 @@ async fn list_region_media(app: AppHandle, region_code: String, offset: i64, lim
             .map_err(|error| error.to_string())?;
         rows.collect::<Result<Vec<_>,_>>().map_err(|error| error.to_string())
     }).await.map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn region_media_page(app: AppHandle, region_code: String, offset: i64, file_type: String, year: String, oldest: bool) -> Result<location::RegionPage, String> {
+    tauri::async_runtime::spawn_blocking(move || location::region_page(&open_database(&app)?, &region_code, offset, &file_type, &year, oldest))
+        .await.map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn assign_media_region(app: AppHandle, ids: Vec<i64>, region_code: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || location::assign_region(&open_database(&app)?, &ids, &region_code))
+        .await.map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
@@ -719,7 +732,7 @@ fn register_file(conn: &Connection, path: &Path) -> Result<(), String> {
     let dimensions = if file_type == "image" { media_dimensions::read(path) } else { None };
     // Re-registering an unchanged library entry must not repeat its EXIF scan.
     let location_status = conn.query_row(
-        "SELECT location_status FROM media WHERE file_path = ?1", [&file_path], |row| row.get::<_, String>(0),
+        "SELECT CASE WHEN location_source='manual' THEN 'ready' ELSE location_status END FROM media WHERE file_path = ?1", [&file_path], |row| row.get::<_, String>(0),
     ).optional().map_err(|error| error.to_string())?;
     let location = if location_status.as_deref().is_some_and(|status| status != "queued") {
         None
@@ -740,11 +753,11 @@ fn register_file(conn: &Connection, path: &Path) -> Result<(), String> {
            width = COALESCE(excluded.width, media.width),
            height = COALESCE(excluded.height, media.height),
            metadata_status = 'ready',
-           latitude = CASE WHEN media.location_status = 'queued' THEN excluded.latitude ELSE media.latitude END,
-           longitude = CASE WHEN media.location_status = 'queued' THEN excluded.longitude ELSE media.longitude END,
-           region_code = CASE WHEN media.location_status = 'queued' THEN excluded.region_code ELSE media.region_code END,
-           region_name = CASE WHEN media.location_status = 'queued' THEN excluded.region_name ELSE media.region_name END,
-           location_status = CASE WHEN media.location_status = 'queued' THEN excluded.location_status ELSE media.location_status END
+           latitude = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.latitude ELSE media.latitude END,
+           longitude = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.longitude ELSE media.longitude END,
+           region_code = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.region_code ELSE media.region_code END,
+           region_name = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.region_name ELSE media.region_name END,
+           location_status = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.location_status ELSE media.location_status END
          ON CONFLICT(content_hash) DO NOTHING",
         params![file_path, content_hash, file_type, taken_at, metadata.len() as i64,
             dimensions.map(|value| value.0), dimensions.map(|value| value.1),
@@ -780,10 +793,11 @@ fn media_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MediaItemDto> {
         region_code: row.get(16)?,
         region_name: row.get(17)?,
         location_status: row.get(18)?,
+        location_source: row.get(19)?,
     })
 }
 
-const MEDIA_COLUMNS: &str = "id, file_path, file_type, taken_at, width, height, duration, size_bytes, rating, comment, favorite, metadata_status, view_count, title, latitude, longitude, region_code, region_name, location_status";
+const MEDIA_COLUMNS: &str = "id, file_path, file_type, taken_at, width, height, duration, size_bytes, rating, comment, favorite, metadata_status, view_count, title, latitude, longitude, region_code, region_name, location_status, location_source";
 
 fn read_media(conn: &Connection) -> Result<Vec<MediaItemDto>, String> {
     let mut stmt = conn
@@ -833,7 +847,7 @@ fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
     // Load all memberships once instead of issuing one photo query per album.
     let mut stmt = conn
         .prepare(
-            "SELECT m.id, m.file_path, m.file_type, m.taken_at, m.width, m.height, m.duration, m.size_bytes, m.rating, m.comment, m.favorite, m.metadata_status, m.view_count, m.title, m.latitude, m.longitude, m.region_code, m.region_name, m.location_status, ai.album_id
+            "SELECT m.id, m.file_path, m.file_type, m.taken_at, m.width, m.height, m.duration, m.size_bytes, m.rating, m.comment, m.favorite, m.metadata_status, m.view_count, m.title, m.latitude, m.longitude, m.region_code, m.region_name, m.location_status, m.location_source, ai.album_id
              FROM album_item ai
              JOIN media m ON m.id = ai.media_id
              ORDER BY ai.album_id, ai.sequence ASC",
@@ -842,7 +856,7 @@ fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
 
     let rows = stmt
         .query_map([], |row| {
-            Ok((row.get::<_, i64>(19)?, media_from_row(row)?))
+            Ok((row.get::<_, i64>(20)?, media_from_row(row)?))
         })
         .map_err(|error| format!("앨범 항목을 읽을 수 없습니다: {error}"))?;
 
@@ -984,6 +998,8 @@ pub fn run() {
             analyze_locations,
             queue_failed_locations,
             list_region_media,
+            region_media_page,
+            assign_media_region,
             thumbnails::media_thumbnail,
             list_albums,
             clear_registered_media,
