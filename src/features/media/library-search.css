@@ -1,0 +1,52 @@
+/* Search controls stay in one place; selection begins below the result count. */
+.librarySearchPanel {
+  display: grid;
+  gap: 16px;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.librarySearchHead,
+.librarySearchHead > div,
+.librarySearchActions,
+.libraryResultsBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.librarySearchHead { justify-content: space-between; flex-wrap: wrap; gap: 12px 20px; }
+.librarySearchHead h2 { margin: 0; font-size: 16px; }
+.librarySearchHead span { color: var(--muted); font-size: 12px; }
+.librarySearchActions { margin-left: auto; }
+.librarySearchActions button,
+.libraryResultsBar button { min-height: 38px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); white-space: nowrap; font-size: 13px; }
+.librarySearchActions .filterActive,
+.libraryResultsBar .activeAction { border-color: var(--primary); background: var(--primary); color: #fff; }
+.librarySearchActions button:disabled { opacity: .45; }
+.librarySearchBasics { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px 16px; }
+.librarySearchBasics .libraryKeywordSearch { flex: 1 1 205px; width: auto; min-width: 180px; min-height: 38px; margin: 0; }
+.libraryKeywordSearch input { min-width: 0; width: 100%; }
+.librarySearchBasics .takenDateFilter { flex: 2 1 390px; min-width: 0; margin: 0; padding: 0; border: 0; background: transparent; }
+.librarySearchBasics .takenDateControls { gap: 8px; }
+.librarySearchBasics .takenDateControls input { width: min(140px, 100%); min-height: 38px; background: var(--surface); }
+.librarySearchBasics .takenDateTitle { white-space: nowrap; }
+.librarySearchBasics .takenDateHint { display: none; }
+.librarySearchBasics .takenDateFilter[data-active="true"] .takenDateHint,
+.librarySearchBasics .takenDateFilter:focus-within .takenDateHint { display: block; }
+.librarySearchBasics .sortControl { flex: 0 0 auto; min-height: 38px; margin-left: auto; border-color: var(--border); background: var(--surface); }
+.librarySearchPanel .filterPanel { margin: 0; padding: 15px 0 0; border: 0; border-top: 1px solid var(--border); border-radius: 0; background: transparent; }
+.libraryResultsBar { justify-content: space-between; flex-wrap: wrap; margin-top: 16px; padding: 0 2px 12px; border-bottom: 1px solid var(--border); }
+.libraryResultsBar strong { font-size: 13px; font-weight: 650; }
+.libraryResultsBar button { margin-left: auto; }
+.libraryView .selectionDock { flex-wrap: wrap; padding: 12px; border-radius: 8px; background: var(--surface-soft); }
+.libraryView .selectionDock > button { min-height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
+@media (max-width: 760px) {
+  .librarySearchPanel { padding: 16px; }
+  .librarySearchHead > div:first-child { flex-wrap: wrap; }
+  .librarySearchBasics .libraryKeywordSearch,
+  .librarySearchBasics .takenDateFilter { flex-basis: 100%; }
+  .librarySearchBasics .sortControl { margin-left: 0; }
+  .librarySearchBasics .takenDateControls label { flex: 1 1 110px; }
+  .librarySearchBasics .takenDateControls input { width: 100%; }
+}

@@ -18,7 +18,7 @@ export function PhotoView({
   mode, setMode, items, allItems, activeMonth, onMonthChange, selected, onOpen,
   selectionMode, selectedIds, onToggleSelection, onSelectAll, onToggleSelectionMode,
   selectedCount, commentCounts, onCreateAlbum, onCreateAlbumFromMap, onDeleteSelected, albums,
-  onShowAlbums, onNewAlbum, onViewMedia, onAssignRegion, onLocationsAnalyzed, scopeKey,
+  onShowAlbums, onNewAlbum, onViewMedia, onAssignRegion, onLocationsAnalyzed, scopeKey, query, onQueryChange,
 }: {
   mode: PhotoMode;
   setMode: (mode: PhotoMode) => void;
@@ -45,6 +45,8 @@ export function PhotoView({
   onAssignRegion: (ids: string[], code: string, district?: string, country?: string, city?: string) => Promise<void>;
   onLocationsAnalyzed: () => Promise<void>;
   scopeKey: string;
+  query: string;
+  onQueryChange: (value: string) => void;
 }) {
   const [quickAlbumId, setQuickAlbumId] = useState<string | null>(null);
   const [exportingQuickAlbum, setExportingQuickAlbum] = useState(false);
@@ -77,6 +79,7 @@ export function PhotoView({
       onToggleSelectionMode={onToggleSelectionMode} selectedCount={selectedCount}
       commentCounts={commentCounts} onCreateAlbum={onCreateAlbum} onDeleteSelected={onDeleteSelected}
       onAssignRegion={onAssignRegion}
+      query={query} onQueryChange={onQueryChange}
       scopeKey={scopeKey} emptyText={allItems.length ? "조건에 맞는 기록이 없습니다. 다른 월을 선택하거나 검색을 바꿔보세요." : "가져오기로 첫 사진과 영상을 담아보세요."}
       onDateSearch={() => onMonthChange("all")}
     />}

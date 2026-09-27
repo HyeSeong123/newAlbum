@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ArrowUpDown, CheckSquare, ChevronLeft, ChevronRight, Heart, MapPin, Music, Play, Plus, SlidersHorizontal, Trash2, X } from "lucide-react";
+import { ArrowUpDown, CheckSquare, ChevronLeft, ChevronRight, Heart, MapPin, Music, Play, Plus, Search, SlidersHorizontal, Trash2, X } from "lucide-react";
 import type { MediaItem } from "../../types/media";
 import { EmptyState, MediaVisual } from "../../components/MediaVisual";
 import { useRowSelection } from "../../hooks/useRowSelection";
@@ -9,6 +9,7 @@ import { arrangeJournalItems, formatJournalDate, mediaSummary } from "./journalM
 import { selectMediaCollection, type LibrarySort, type LibraryMediaType } from "./collectionModel";
 import { TakenDateFilter } from "./TakenDateFilter";
 import { RegionEditor } from "../map/RegionEditor";
+import "./library-search.css";
 
 const GALLERY_PAGE_SIZE = 48;
 
@@ -30,6 +31,8 @@ export function Library({
   scopeKey,
   emptyText,
   onDateSearch,
+  query,
+  onQueryChange,
 }: {
   viewTabs: ReactNode;
   items: MediaItem[];
@@ -48,6 +51,8 @@ export function Library({
   scopeKey: string;
   emptyText: string;
   onDateSearch: () => void;
+  query: string;
+  onQueryChange: (value: string) => void;
 }) {
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<LibrarySort>("date-desc");
@@ -65,7 +70,8 @@ export function Library({
   const visibleCollection = useMemo(() => selectMediaCollection(items, {
     mediaType, favoritesOnly, commentsOnly, minimumRating, sort, startDate, endDate,
   }, commentCounts), [items, mediaType, favoritesOnly, commentsOnly, minimumRating, sort, startDate, endDate, commentCounts]);
-  const activeFilterCount = Number(mediaType !== "all") + Number(favoritesOnly) + Number(commentsOnly) + Number(minimumRating > 0) + Number(Boolean(startDate || endDate));
+  const advancedFilterCount = Number(mediaType !== "all") + Number(favoritesOnly) + Number(commentsOnly) + Number(minimumRating > 0);
+  const activeFilterCount = advancedFilterCount + Number(Boolean(startDate || endDate));
   const pageCount = Math.max(1, Math.ceil(visibleCollection.length / GALLERY_PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
   const startIndex = (currentPage - 1) * GALLERY_PAGE_SIZE;
@@ -82,36 +88,41 @@ export function Library({
 
   function clearFilters() {
     setMediaType("all"); setFavoritesOnly(false); setCommentsOnly(false); setMinimumRating(0);
-    setStartDate(""); setEndDate("");
+    setStartDate(""); setEndDate(""); setSort("date-desc");
+    if (query) onQueryChange("");
   }
 
   return (
     <div className="libraryView">
       <div className="panelHeader collectionTools">
         {viewTabs}
-        <div className="panelActions">
-          <button className={selectionMode ? "selectionToggle activeAction" : "selectionToggle"} aria-pressed={selectionMode} onClick={() => { setBulkRegionOpen(false); onToggleSelectionMode(); }}>
-            {selectionMode ? <X size={17} /> : <CheckSquare size={17} />}
-            {selectionMode ? "선택 끝내기" : "사진 선택"}
-          </button>
+      </div>
+      <section id="photo-panel-grid" role="tabpanel" aria-labelledby="photo-tab-grid">
+      <section className="librarySearchPanel" aria-label="사진 검색 조건">
+        <div className="librarySearchHead">
+          <div><h2>검색 조건</h2><span>{activeFilterCount + Number(Boolean(query.trim())) ? `${activeFilterCount + Number(Boolean(query.trim()))}개 조건 적용 중` : "원하는 기록을 찾아보세요"}</span></div>
+          <div className="librarySearchActions">
+            <button className={filtersOpen || advancedFilterCount ? "iconText filterActive" : "iconText"} aria-expanded={filtersOpen} aria-controls="libraryFilters" onClick={() => setFiltersOpen(!filtersOpen)}><SlidersHorizontal size={17} />필터{advancedFilterCount ? ` ${advancedFilterCount}` : ""}</button>
+            <button className="iconText" title="검색 조건 전체 초기화" disabled={!activeFilterCount && !query && sort === "date-desc"} onClick={clearFilters}><X size={16} />초기화</button>
+          </div>
+        </div>
+        <div className="librarySearchBasics">
+          <label className="searchBox libraryKeywordSearch"><Search size={18} /><input aria-label="사진과 추억 검색" value={query} onChange={event => onQueryChange(event.target.value)} placeholder="제목·파일명·설명 검색" />{query && <button className="searchClear" aria-label="검색 지우기" onClick={() => onQueryChange("")}><X size={15} /></button>}</label>
+          <TakenDateFilter startDate={startDate} endDate={endDate} onChange={(start, end) => {
+        setStartDate(start); setEndDate(end); onDateSearch();
+          }} />
           <label className="sortControl"><ArrowUpDown size={17} /><select aria-label="정렬 기준" value={sort} onChange={(event) => setSort(event.target.value as LibrarySort)}>
             <option value="date-desc">날짜 최신순</option><option value="date-asc">날짜 오래된순</option><option value="comments">댓글 많은순</option><option value="rating">별점 높은순</option><option value="views">조회수 많은순</option><option value="name">이름순</option>
           </select></label>
-          <button className={activeFilterCount ? "iconText filterActive" : "iconText"} aria-expanded={filtersOpen} aria-controls="libraryFilters" onClick={() => setFiltersOpen(!filtersOpen)}><SlidersHorizontal size={17} />필터{activeFilterCount ? ` ${activeFilterCount}` : ""}</button>
         </div>
-      </div>
-      <section id="photo-panel-grid" role="tabpanel" aria-labelledby="photo-tab-grid">
-      <TakenDateFilter startDate={startDate} endDate={endDate} onChange={(start, end) => {
-        setStartDate(start); setEndDate(end); onDateSearch();
-      }} />
       {filtersOpen && <section id="libraryFilters" className="filterPanel" aria-label="사진 필터">
         <label>종류<select aria-label="미디어 종류" value={mediaType} onChange={(event) => setMediaType(event.target.value as LibraryMediaType)}><option value="all">전체</option><option value="image">사진</option><option value="video">영상</option><option value="audio">음원</option></select></label>
         <label>최소 별점<select aria-label="최소 별점" value={minimumRating} onChange={(event) => setMinimumRating(Number(event.target.value))}><option value="0">전체</option>{[1, 2, 3, 4, 5].map((score) => <option key={score} value={score}>{score}점 이상</option>)}</select></label>
         <label className="filterCheck"><input type="checkbox" checked={favoritesOnly} onChange={(event) => setFavoritesOnly(event.target.checked)} />즐겨찾기만</label>
         <label className="filterCheck"><input type="checkbox" checked={commentsOnly} onChange={(event) => setCommentsOnly(event.target.checked)} />댓글 있는 사진만</label>
-        <span className="filterResult">{visibleCollection.length}장</span>
-        <button className="iconText" disabled={!activeFilterCount} onClick={clearFilters}><X size={16} />초기화</button>
       </section>}
+      </section>
+      <div className="libraryResultsBar"><strong aria-live="polite">검색 결과 {visibleCollection.length}개</strong><button className={selectionMode ? "selectionToggle activeAction" : "selectionToggle"} aria-pressed={selectionMode} onClick={() => { setBulkRegionOpen(false); onToggleSelectionMode(); }}><CheckSquare size={17} />{selectionMode ? "선택 끝내기" : "사진 선택"}</button></div>
       {selectionMode && (
         <div className="selectionDock" aria-label={`${selectedCount}장 선택됨`}>
           <strong aria-live="polite">{selectedCount}개 선택</strong>

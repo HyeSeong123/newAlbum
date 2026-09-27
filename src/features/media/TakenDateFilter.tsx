@@ -8,7 +8,7 @@ export function TakenDateFilter({ startDate, endDate, onChange }: {
 }) {
   const error = dateRangeError(startDate, endDate);
   const active = Boolean(startDate || endDate);
-  return <section className="takenDateFilter" aria-label="촬영일 기간 검색">
+  return <section className="takenDateFilter" aria-label="촬영일 기간 검색" data-active={active}>
     <div className="takenDateControls">
       <span className="takenDateTitle"><CalendarDays size={16} />촬영일</span>
       <label>시작일<input type="date" aria-label="촬영 시작일" value={startDate} aria-invalid={Boolean(error)} aria-describedby="takenDateHelp" onChange={event => onChange(event.target.value, endDate)} /></label>
