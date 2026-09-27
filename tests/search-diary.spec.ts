@@ -42,7 +42,7 @@ test('date search crosses months, combines with text and favorites, validates an
   await expect(page.locator('.mediaTile')).toHaveCount(1);
   await page.getByRole('button', { name: '검색 지우기' }).click();
   await expect(page.locator('.mediaTile')).toHaveCount(2);
-  await page.getByRole('button', { name: '필터 1', exact: true }).click();
+  await page.getByRole('button', { name: '필터', exact: true }).click();
   await page.getByLabel('즐겨찾기만', { exact: true }).check();
   await expect(page.locator('.mediaTile')).toHaveCount(1);
   await page.getByRole('button', { name: '초기화', exact: true }).click();
