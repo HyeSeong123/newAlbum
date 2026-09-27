@@ -9,7 +9,7 @@ async function loadModel(path) {
   return import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
 }
 
-const { selectMediaCollection, searchMedia, anniversaryMemories } = await loadModel('media/collectionModel.ts');
+const { selectMediaCollection, searchMedia, anniversaryMemories, dateRangeError } = await loadModel('media/collectionModel.ts');
 const calendar = await loadModel('calendar/calendarModel.ts');
 const comments = await loadModel('media/mediaComments.ts');
 const { indexFaces, mediaForFaces } = await loadModel('people/peopleModel.ts');
@@ -17,6 +17,28 @@ const { petPhotos, petCovers } = await loadModel('pets/petModel.ts');
 const photo = (id, extra = {}) => ({ id: String(id), fileType: 'image', fileName: `사진 ${id}.jpg`, comment: '', tags: [], takenAt: null, rating: 0, favorite: false, ...extra });
 const defaults = { sort: 'date-desc', mediaType: 'all', favoritesOnly: false, commentsOnly: false, minimumRating: 0 };
 const ids = (items) => items.map((item) => item.id);
+
+test('taken date range includes both endpoints and supports open bounds without timezone conversion', () => {
+  const items = [photo(1, { takenAt: '2026-05-31' }), photo(2, { takenAt: '2026-06-01', favorite: true }),
+    photo(3, { takenAt: '2026-06-30T23:59:59-07:00' }), photo(4, { takenAt: '2026-07-01' }), photo(5)];
+  const select = patch => ids(selectMediaCollection(items, { ...defaults, ...patch }, {}));
+  assert.deepEqual(select({ startDate: '2026-06-01', endDate: '2026-06-30' }), ['3', '2']);
+  assert.deepEqual(select({ startDate: '2026-06-01' }), ['4', '3', '2']);
+  assert.deepEqual(select({ endDate: '2026-06-01' }), ['2', '1']);
+  assert.deepEqual(select({ startDate: '2026-06-01', endDate: '2026-06-01', favoritesOnly: true }), ['2']);
+  assert.deepEqual(select({ startDate: '', endDate: '' }), ['4', '3', '2', '1', '5']);
+  assert.deepEqual(ids(items), ['1', '2', '3', '4', '5']);
+});
+
+test('invalid or reversed ranges show validation errors and do not silently search everything', () => {
+  for (const [startDate, endDate] of [['2026-07-01', '2026-06-01'], ['2026-02-30', ''], ['', '2026-13-01']]) {
+    assert.ok(dateRangeError(startDate, endDate));
+    assert.deepEqual(selectMediaCollection([photo(1, { takenAt: '2026-06-01' })], { ...defaults, startDate, endDate }, {}), []);
+  }
+  assert.equal(dateRangeError('2024-02-29', '2024-02-29'), '');
+  assert.ok(dateRangeError('2025-02-29', ''));
+  assert.deepEqual(selectMediaCollection([photo(1, { takenAt: '2026-02-30' })], { ...defaults, endDate: '2026-03-01' }, {}), []);
+});
 
 test('collection sorting preserves numeric ties, undated placement and source order', () => {
   const items = [photo(2, { takenAt: '2026-09-12' }), photo(10, { takenAt: '2026-09-12' }), photo(1), photo(3, { takenAt: '2025-09-12' })];

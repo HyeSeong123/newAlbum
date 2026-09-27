@@ -9,6 +9,7 @@ import { useAlbumReader } from "./useAlbumReader";
 import { ALBUM_TURN_TIMING } from "./albumAnimation";
 import albumOpenBase from "../../assets/album-open-white-thin.png";
 import { AlbumStoryPlayer } from "./story-player/AlbumStoryPlayer";
+import { AlbumContentsList } from "./AlbumContentsList";
 
 export function AlbumFullscreenReader({ title, items, contents, musicPath, color, open, onOpen, onClose, onExport, backLabel = "내 앨범" }: {
   title: string;
@@ -23,6 +24,8 @@ export function AlbumFullscreenReader({ title, items, contents, musicPath, color
   backLabel?: string;
 }) {
   const [story, setStory] = useState(false);
+  const diaryCount = contents?.filter(entry => entry.kind === "TEXT").length ?? 0;
+  const chapterCount = contents?.filter(entry => entry.kind === "CHAPTER").length ?? 0;
   const { order, orderedItems, pages, currentPage, visibleSpread, turning, turningLeaves, turnPhase, listView,
     fullscreen, notice, resetOrder, jumpToPage, turnPage, toggleFullscreen, toggleListView } = useAlbumReader(items, open && !story, onClose, contents);
 
@@ -38,7 +41,9 @@ export function AlbumFullscreenReader({ title, items, contents, musicPath, color
   } as CSSProperties} role="dialog" aria-modal="false" aria-label="앨범 전체창">
     <header className="albumJournalHeader">
       <button className="albumJournalBack" onClick={onClose} title="닫기"><ChevronLeft size={22} />{backLabel}</button>
-      <div className="albumJournalHeading"><h2>{title}</h2><span>{mediaSummary(orderedItems)}{!listView && " · 세로 4장 / 가로 2장"}</span></div>
+      <div className="albumJournalHeading"><h2>{title}</h2><span>{[
+        orderedItems.length ? mediaSummary(orderedItems) : "", diaryCount ? `일기 ${diaryCount}편` : "", chapterCount ? `챕터 ${chapterCount}개` : "",
+      ].filter(Boolean).join(" · ") || "기록 없음"}{!listView && orderedItems.length > 0 && " · 세로 4장 / 가로 2장"}</span></div>
       <div className="albumJournalTools">
         <button onClick={() => setStory(true)} aria-label="스토리로 보기" title="스토리로 보기"><Play size={18} /><span>스토리로 보기</span></button>
         <button aria-pressed={listView} onClick={toggleListView} aria-label={listView ? "책으로 보기" : "사진 목록"} title={listView ? "책으로 보기" : "사진 목록"}>{listView ? <BookOpen size={18} /> : <Images size={18} />}<span>{listView ? "책으로 보기" : "사진 목록"}</span></button>
@@ -51,13 +56,7 @@ export function AlbumFullscreenReader({ title, items, contents, musicPath, color
       </div>
     </header>
     {notice && <p className="albumReaderNotice" role="status">{notice}</p>}
-    {listView ? <section className="albumPhotoList" aria-label={`${title} 사진 목록`}>
-      {!items.length && <EmptyState text="앨범에 담긴 기록이 없습니다." />}
-      {orderedItems.map((item) => <button key={item.id} onClick={() => onOpen(item, orderedItems)} aria-label={`${item.fileName} 상세보기`}><MediaVisual item={item} />
-        <strong className="albumPhotoName">{item.title?.trim() || item.fileName}</strong>
-        <span>{item.takenAt ?? "날짜 없음"}{item.fileType === "video" && <Play size={14} />}{item.fileType === "audio" && <Music size={14} />}</span>
-      </button>)}
-    </section> : <div className="albumJournalCanvas">
+    {listView ? <AlbumContentsList title={title} items={orderedItems} contents={contents} onOpen={onOpen} /> : <div className="albumJournalCanvas">
       {!pages.length ? <EmptyState text="앨범에 담긴 기록이 없습니다." /> : <div className="albumBookStage">
       <button className="albumEdgeNav prev" onClick={() => turnPage(-1)} disabled={Boolean(turning) || currentPage === 0} title="이전 책장"><ChevronLeft size={32} /></button>
       <div className={`albumSpread ${turning ? `turning-${turning}` : ""} ${turning && turnPhase ? `${turnPhase}-${turning}` : ""}`} data-turn-phase={turnPhase ?? undefined} aria-label="양면 포토앨범 책장" aria-busy={Boolean(turning)}>

@@ -9,18 +9,37 @@ export type CollectionOptions = {
   favoritesOnly: boolean;
   commentsOnly: boolean;
   minimumRating: number;
+  startDate?: string;
+  endDate?: string;
 };
+
+function validDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return year > 0 && month >= 1 && month <= 12 && day >= 1 && day <= days[month - 1];
+}
+
+export function dateRangeError(startDate = "", endDate = ""): string {
+  if ((startDate && !validDate(startDate)) || (endDate && !validDate(endDate))) return "올바른 날짜를 입력해 주세요.";
+  return startDate && endDate && startDate > endDate ? "종료일은 시작일과 같거나 이후여야 해요." : "";
+}
 
 const idCollator = new Intl.Collator(undefined, { numeric: true });
 const nameCollator = new Intl.Collator("ko", { numeric: true });
 
 export function selectMediaCollection(items: MediaItem[], options: CollectionOptions, commentCounts: Record<string, number>): MediaItem[] {
-  const { sort, mediaType, favoritesOnly, commentsOnly, minimumRating } = options;
+  const { sort, mediaType, favoritesOnly, commentsOnly, minimumRating, startDate = "", endDate = "" } = options;
+  if (dateRangeError(startDate, endDate)) return [];
   const result = items.filter((item) => (
     (mediaType === "all" || item.fileType === mediaType)
     && (!favoritesOnly || item.favorite)
     && (!commentsOnly || (commentCounts[item.id] ?? 0) > 0)
     && item.rating >= minimumRating
+    && (!(startDate || endDate) || (Boolean(item.takenAt) && validDate(item.takenAt!.slice(0, 10))
+      && (!startDate || item.takenAt!.slice(0, 10) >= startDate)
+      && (!endDate || item.takenAt!.slice(0, 10) <= endDate)))
   ));
   return result.sort((a, b) => {
     if (sort === "date-asc") return (a.takenAt ?? "9999").localeCompare(b.takenAt ?? "9999") || idCollator.compare(a.id, b.id);
