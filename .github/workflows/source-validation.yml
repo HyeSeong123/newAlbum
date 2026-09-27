@@ -77,7 +77,7 @@ jobs:
           npx playwright install --with-deps chromium
           npx playwright test tests/photo-titles.spec.ts tests/photo-detail.spec.ts tests/journal-preview.spec.ts tests/memory-map.spec.ts tests/memory-map-v2.spec.ts --project=desktop --workers=2
           npx playwright test tests/memory-map.spec.ts tests/memory-map-v2.spec.ts --project=mobile --workers=1
-          npx playwright test tests/search-diary.spec.ts --workers=2
+          npx playwright test tests/search-diary.spec.ts tests/trip-discovery.spec.ts --workers=2
           npx playwright test tests/album-portrait.spec.ts tests/album-animation.spec.ts tests/album-content.spec.ts tests/album-story.spec.ts tests/memories.spec.ts tests/timeline.spec.ts --workers=2
       - name: Build TypeScript frontend
         run: npm run build

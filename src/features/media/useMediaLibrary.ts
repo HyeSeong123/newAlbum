@@ -142,10 +142,17 @@ export function useMediaLibrary() {
     await write.current("locations", async () => {
       if (desktop) await api.assignMediaRegion(ids, regionCode);
       const selected = new Set(ids);
-      mediaRevision.current++;
-      publish({ items: current.current.items.map(item => selected.has(item.id) ? {
-        ...item, regionCode, regionName: REGION_NAMES[regionCode], locationSource: "manual", locationStatus: "ready",
-      } : item) });
+      const patch: Partial<MediaItem> = { regionCode, regionName: REGION_NAMES[regionCode], locationSource: "manual", locationStatus: "ready" };
+      const update = (item: MediaItem) => selected.has(item.id) ? { ...item, ...patch } : item;
+      if (!current.current.loaded) {
+        // Albums can open before the initial library query finishes. Keep its
+        // response valid and merge this edit when it arrives.
+        for (const id of ids) pendingMediaEdits.current.set(id, { ...pendingMediaEdits.current.get(id), ...patch });
+        publish({ albums: current.current.albums.map(album => ({ ...album, items: album.items.map(update) })) });
+      } else {
+        mediaRevision.current++;
+        publish({ items: current.current.items.map(update) });
+      }
     });
   }
 
@@ -154,6 +161,11 @@ export function useMediaLibrary() {
     await write.current("locations", async () => {
       const records = new Map((await api.loadRegisteredMedia()).map(item => [item.id, item]));
       mediaRevision.current++;
+      if (!current.current.loaded) {
+        publish({ items: [...records.values()].map(item => ({ ...item, ...pendingMediaEdits.current.get(item.id) })), loaded: true });
+        pendingMediaEdits.current.clear();
+        return;
+      }
       publish({ items: current.current.items.map(item => {
         const location = records.get(item.id);
         return location ? { ...item, latitude: location.latitude, longitude: location.longitude,

@@ -13,11 +13,16 @@ test.beforeEach(async ({ page }) => {
       location_source:'gps', location_status:!large && index<2 ? 'no-gps':'ready',
       width:480,height:360,size_bytes:123,rating:0,favorite:false,comment:'',metadata_status:'ready',
     }));
-    const albums: unknown[] = [];
+    const slow = location.search.includes('slow-library');
+    const albums: unknown[] = slow ? [{id:1,title:'기존 앨범',cover_color:'#D8DDCB',created_at:'2026-09-27',description:'',items:structuredClone(media)}] : [];
     Object.defineProperty(window,'__TAURI_INTERNALS__',{value:{
       convertFileSrc:(path:string)=>'/'+path.split('/').pop(),
       invoke:async(command:string,args:any={})=> {
-        if(command==='list_media') return media;
+        if(command==='list_media') {
+          const snapshot = structuredClone(media);
+          if(slow) await new Promise(resolve=>window.addEventListener('release-library',resolve,{once:true}));
+          return snapshot;
+        }
         if(command==='list_albums') return albums;
         if(command==='media_thumbnail') return `C:/region-photo-${args.id}.jpg`;
         if(command==='increment_media_view') return 1;
@@ -141,6 +146,21 @@ test('large region requires selection, retains choices across pages and clears o
   expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth+1)).toBe(true);
 });
 
+test('a small filtered region opens an editable album draft without saving automatically',async({page})=>{
+  await map(page); await page.locator('.memoryMapPlaceList button').filter({hasText:'제주'}).click();
+  const gallery=page.locator('.memoryMapGallery');
+  await gallery.getByLabel('기록 연도').selectOption('2025');
+  await expect(gallery).toContainText('필터 결과 4개');
+  await gallery.getByRole('button',{name:'앨범 만들기'}).click();
+  const modal=page.getByRole('dialog',{name:'앨범 만들기'});
+  await expect(modal).toContainText('4개의 기록');
+  expect(await page.evaluate(()=>localStorage.getItem('created-region-album'))).toBeNull();
+  await modal.getByLabel('제목',{exact:true}).fill('지역 전체 기록');
+  await modal.getByRole('button',{name:'만들기',exact:true}).click();
+  await expect(modal).toHaveCount(0);
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('created-region-album')!).mediaIds)).toEqual([7,6,5,3]);
+});
+
 test('memories timeline opens dates and reuses photo detail',async({page})=>{
   await page.goto('/'); await page.getByRole('button',{name:'지난 추억',exact:true}).click();
   await page.getByRole('group',{name:'추억 보기'}).getByRole('button',{name:'우리의 기록'}).click();
@@ -149,4 +169,28 @@ test('memories timeline opens dates and reuses photo detail',async({page})=>{
   await expect(page.getByLabel('날짜별 기록')).toBeVisible();
   await page.locator('.recordMediaGrid > button').first().click();
   await expect(page.getByRole('dialog',{name:'사진 상세'})).toBeVisible();
+});
+
+test('region edit from an existing album survives the delayed initial library response',async({page})=>{
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.goto('/?slow-library');
+  await page.getByRole('button',{name:'내 앨범',exact:true}).click();
+  await page.getByRole('button',{name:'기존 앨범 앨범 열기',exact:true}).click();
+  await page.locator('[data-media-id="1"].albumPagePhoto').click();
+  const detail=page.getByRole('dialog',{name:'사진 상세'});
+  await detail.getByRole('button',{name:'지역 지정',exact:true}).click();
+  await detail.getByLabel('지정할 지역').selectOption('KR-11');
+  await detail.getByRole('button',{name:'지역 저장'}).click();
+  await expect(detail.getByText('직접 지정')).toBeVisible();
+  await page.evaluate(()=>window.dispatchEvent(new Event('release-library')));
+  await expect(page.locator('.collectionCount')).toHaveText('1개의 앨범');
+  await expect(detail.getByLabel('위치',{exact:true})).toContainText('서울특별시');
+  await detail.getByTitle('닫기',{exact:true}).click();
+  await page.getByRole('dialog',{name:'앨범 전체창'}).getByTitle('닫기',{exact:true}).click();
+  await page.getByRole('button',{name:'지난 추억',exact:true}).click();
+  await expect(page.locator('.collectionCount')).toHaveText('8개의 기록');
+  await page.getByRole('group',{name:'추억 보기'}).getByRole('button',{name:'추억 지도'}).click();
+  await page.locator('.memoryMapPlaceList button').filter({hasText:'서울'}).click();
+  await page.getByRole('button',{name:'기록 1 상세보기',exact:true}).click();
+  await expect(detail.getByText('직접 지정')).toBeVisible();
 });
