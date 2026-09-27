@@ -41,8 +41,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('province counts, region gallery, unclassified list and existing detail stay connected', async ({ page }) => {
-  await expect(page.locator('.memoryMapRegion')).toHaveCount(17);
-  await expect(page.getByText('17개 지역 중 2개 지역에 기록이 있어요.')).toBeVisible();
+  await expect(page.locator('.memoryMapRegion')).toHaveCount(16);
+  await expect(page.getByText('16개 지역 중 2개 지역에 기록이 있어요.')).toBeVisible();
   await expect(page.locator('.memoryMapGallery')).toHaveCount(0);
   await page.locator('.memoryMapRegion[aria-label^="제주특별자치도"]').click();
   await expect(page.locator('.memoryMapGallery')).toContainText('제주특별자치도');

@@ -23,7 +23,7 @@ fn manual_assignment_overrides_gps_preserves_coordinates_and_is_atomic() {
     assert!(assign_region(&conn, &[1,4], "KR-26").is_err());
     assert!(assign_region(&conn, &[1], "not-a-region").is_err());
     assert!(assign_region(&conn, &[], "KR-11").is_err());
-    assert_eq!(region_page(&conn,"KR-49",0,"all","",false).unwrap().total, 3);
+    assert_eq!(region_page(&conn,"KR-49",0,"all","",false,"").unwrap().total, 3);
 }
 
 #[test]
@@ -42,21 +42,34 @@ fn manual_values_survive_failed_retry_and_even_a_stale_queued_status() {
 #[test]
 fn region_queries_filter_year_type_sort_and_bound_pages_without_file_io() {
     let conn = fixture();
-    assert_eq!(region_page(&conn,"unclassified",0,"all","",false).unwrap().total,2);
+    assert_eq!(region_page(&conn,"unclassified",0,"all","",false,"").unwrap().total,2);
     assign_region(&conn, &[1,2,3,5], "KR-49").unwrap();
-    let page = region_page(&conn,"KR-49",0,"all","",false).unwrap();
+    let page = region_page(&conn,"KR-49",0,"all","",false,"").unwrap();
     assert_eq!(page.years, vec!["2026","2025"]);
     assert_eq!(page.items.iter().map(|m| m.id).collect::<Vec<_>>(), vec![2,3,1,5]);
-    let page = region_page(&conn,"KR-49",0,"all","2025",true).unwrap();
+    let page = region_page(&conn,"KR-49",0,"all","2025",true,"").unwrap();
     assert_eq!(page.items.iter().map(|m| m.id).collect::<Vec<_>>(), vec![1,3]);
-    assert_eq!(region_page(&conn,"KR-49",0,"video","2025",true).unwrap().items[0].id,3);
-    assert_eq!(region_page(&conn,"KR-49",0,"image","2025",false).unwrap().total,1);
-    assert_eq!(region_page(&conn,"KR-49",0,"all","2024",false).unwrap().total,0);
-    assert!(region_page(&conn,"KR-49",0,"all","2025 OR 1",false).is_err());
-    assert!(region_page(&conn,"KR-49",0,"audio","",false).is_err());
+    assert_eq!(region_page(&conn,"KR-49",0,"video","2025",true,"").unwrap().items[0].id,3);
+    assert_eq!(region_page(&conn,"KR-49",0,"image","2025",false,"").unwrap().total,1);
+    assert_eq!(region_page(&conn,"KR-49",0,"all","2024",false,"").unwrap().total,0);
+    assert!(region_page(&conn,"KR-49",0,"all","2025 OR 1",false,"").is_err());
+    assert!(region_page(&conn,"KR-49",0,"audio","",false,"").is_err());
     for id in 6..106 { conn.execute("INSERT INTO media(id,file_path,file_type,size_bytes,location_status,region_code) VALUES(?1,?2,'image',1,'ready','KR-49')", params![id,format!("{id}.jpg")]).unwrap(); }
-    let a = region_page(&conn,"KR-49",0,"all","",false).unwrap();
-    let b = region_page(&conn,"KR-49",48,"all","",false).unwrap();
+    let a = region_page(&conn,"KR-49",0,"all","",false,"").unwrap();
+    let b = region_page(&conn,"KR-49",48,"all","",false,"").unwrap();
     assert_eq!(a.total,104); assert_eq!(a.items.len(),48); assert_eq!(b.items.len(),48);
     assert!(!a.items.iter().any(|left| b.items.iter().any(|right| left.id==right.id)));
+}
+
+#[test]
+fn overseas_and_district_assignment_filter_independently() {
+    let conn = fixture();
+    assign_place(&conn, &[1], "KR-46", Some("담양군"), None, None).unwrap();
+    assign_place(&conn, &[2], "KR-46", None, None, None).unwrap();
+    assign_place(&conn, &[3], "overseas", None, Some("일본"), Some("교토")).unwrap();
+    assert_eq!(region_page(&conn, "KR-46", 0, "all", "", false, "담양군").unwrap().items[0].id, 1);
+    assert_eq!(region_page(&conn, "KR-46", 0, "all", "", false, "__unset__").unwrap().items[0].id, 2);
+    assert_eq!(region_page(&conn, "overseas", 0, "all", "", false, "").unwrap().total, 1);
+    assert!(assign_place(&conn, &[2], "overseas", None, Some(""), Some("교토")).is_err());
+    assert_eq!(region_page(&conn, "KR-46", 0, "all", "", false, "").unwrap().total, 2);
 }

@@ -20,6 +20,9 @@ CREATE TABLE IF NOT EXISTS media (
   region_name TEXT,
   location_status TEXT NOT NULL DEFAULT 'queued',
   location_source TEXT NOT NULL DEFAULT 'gps',
+  district TEXT,
+  country TEXT,
+  city TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -44,6 +47,17 @@ CREATE TABLE IF NOT EXISTS album (
   music_path TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS diary (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  entry_date TEXT NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL DEFAULT '',
+  mood TEXT NOT NULL,
+  weather TEXT NOT NULL,
+  album_id INTEGER REFERENCES album(id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_diary_date ON diary(entry_date DESC, id DESC);
 
 CREATE TABLE IF NOT EXISTS album_item (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

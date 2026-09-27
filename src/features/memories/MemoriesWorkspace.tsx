@@ -10,7 +10,7 @@ const sections = { rediscover: "다시 만난 추억", timeline: "우리의 기�
 export function MemoriesWorkspace({ items, allItems, today, onOpen, onAssignRegion, onCreateAlbum, onLocationsAnalyzed }: {
   items: MediaItem[]; allItems: MediaItem[]; today: string;
   onOpen: (item: MediaItem, collection?: MediaItem[]) => void;
-  onAssignRegion: (ids: string[], code: string) => Promise<void>;
+  onAssignRegion: (ids: string[], code: string, district?: string, country?: string, city?: string) => Promise<void>;
   onCreateAlbum: (items: MediaItem[], title?: string) => void;
   onLocationsAnalyzed: () => Promise<void>;
 }) {

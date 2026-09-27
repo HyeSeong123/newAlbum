@@ -28,7 +28,7 @@ export function DetailModal({
   commentError?: string;
   onChange: (patch: Partial<MediaItem>) => void;
   onSaveTitle: (id: string, title: string) => Promise<void>;
-  onAssignRegion: (ids: string[], region: string) => Promise<void>;
+  onAssignRegion: (ids: string[], region: string, district?: string, country?: string, city?: string) => Promise<void>;
   onAddComment: (author: string, content: string) => boolean;
   onUpdateComment: (commentId: string, author: string, content: string) => boolean;
   onDeleteComment: (commentId: string) => void;
@@ -133,12 +133,15 @@ export function DetailModal({
         <div className="detailLayout">
           <div className="detailPhotoPane">
             <div className="detailPhotoActions" aria-label="사진 도구">
+              <strong className="detailActionTitle">사진 작업</strong>
+              <div className="detailActionButtons">
               <button className={item.favorite ? "detailFavorite active" : "detailFavorite"} title="즐겨찾기" aria-pressed={item.favorite} onClick={() => onChange({ favorite: !item.favorite })}>
                 <Heart size={18} fill={item.favorite ? "currentColor" : "none"} /><span>즐겨찾기</span>
               </button>
               <button onClick={() => { commentInputRef.current?.focus(); commentInputRef.current?.scrollIntoView({ block: "nearest" }); }}><MessageCircle size={18} /><span>댓글 {comments.length}</span></button>
               {item.fileType === "image" && <button ref={zoomTriggerRef} className="detailExpand" title="확대 보기" onClick={() => setZoomViewerOpen(true)}><ZoomIn size={18} /><span>확대 보기</span></button>}
               {item.fileType === "image" && <button title="원본 다운로드" aria-label="원본 다운로드" disabled={mediaDownload.busy || !mediaDownload.available} onClick={() => void mediaDownload.download()}><Download size={18} /><span>{mediaDownload.busy ? "저장 중" : "다운로드"}</span></button>}
+              </div>
               {mediaDownload.error && <p className="detailDownloadFeedback" role="alert">{mediaDownload.error}</p>}
               {mediaDownload.notice && <p className="detailDownloadFeedback" role="status">{mediaDownload.notice}</p>}
             </div>
@@ -188,7 +191,7 @@ export function DetailModal({
               <h2>{item.fileType === "image" ? "사진 정보" : item.fileType === "video" ? "영상 정보" : "음성 정보"}</h2>
               <p className="detailFileName">{item.fileName}</p>
               <PhotoTitleEditor key={item.id} item={item} onSave={onSaveTitle} />
-              {item.fileType !== "audio" && <RegionEditor key={`region-${item.id}`} current={item.regionCode} source={item.locationSource} onSave={code => onAssignRegion([item.id], code)} />}
+              {item.fileType !== "audio" && <RegionEditor key={`region-${item.id}`} current={item.regionCode} district={item.district} country={item.country} city={item.city} source={item.locationSource} onSave={(code, district, country, city) => onAssignRegion([item.id], code, district, country, city)} />}
               <section className="detailRating" aria-label="별점">
                 <h3>별점</h3>
                 <div className="rating">

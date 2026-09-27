@@ -26,6 +26,9 @@ export interface MediaItem {
   longitude?: number;
   regionCode?: string;
   regionName?: string;
+  district?: string;
+  country?: string;
+  city?: string;
   locationStatus?: "queued" | "ready" | "no-gps" | "outside-korea" | "failed";
 }
 

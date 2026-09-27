@@ -1661,3 +1661,16 @@ textarea {
     flex-direction: column;
   }
 }
+/* A persistent reading-size option, including controls and modal text. */
+.app.largeLayout { font-size:18px; }
+.app.largeLayout .workspace { padding:clamp(24px,3vw,48px); }
+.app.largeLayout .sidebar button,.app.largeLayout .topbar button,.app.largeLayout .topbar input,
+.app.largeLayout .mainPanel button,.app.largeLayout .mainPanel select,.app.largeLayout .mainPanel input,
+.app.largeLayout .mainPanel textarea { font-size: max(1rem, 16px); min-height:44px; }
+.app.largeLayout .mainPanel p,.app.largeLayout .mainPanel small,.app.largeLayout .mainPanel label { font-size: max(1rem, 16px); line-height:1.6; }
+.app.largeLayout .topbar h1 { font-size:clamp(30px,3vw,42px); }
+.app.largeLayout .calendarPanel .calendarGrid .dayNumber { font-size:18px; }
+.app.largeLayout .calendarPanel .calendarGrid .dayEvents small,.app.largeLayout .calendarPanel .calendarGrid b { font-size:14px; }
+.layoutToggle { margin-left:auto; white-space:nowrap; padding:10px 14px; border:1px solid #bbb; border-radius:8px; }
+.importAlbumDialog { display:grid; gap:20px; width:min(490px,100%); padding:30px; border-radius:16px; background:#fffdf8; }
+.importAlbumDialog label { display:grid; gap:10px; }.importAlbumDialog input { padding:12px; font:inherit; }.importAlbumDialog div { display:flex; justify-content:flex-end; gap:12px; }

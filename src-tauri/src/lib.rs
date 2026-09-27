@@ -20,6 +20,7 @@ mod media_dimensions;
 mod location;
 mod album_content;
 mod database;
+mod diary;
 #[cfg(any(feature = "custom-protocol", test))]
 mod localhost;
 
@@ -45,6 +46,9 @@ struct MediaItemDto {
     region_name: Option<String>,
     location_status: String,
     location_source: String,
+    district: Option<String>,
+    country: Option<String>,
+    city: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -57,6 +61,23 @@ struct AlbumDto {
     items: Vec<MediaItemDto>,
     contents: Vec<album_content::Content>,
     music_path: Option<String>,
+}
+
+#[tauri::command]
+async fn list_diary(app: AppHandle) -> Result<Vec<diary::Entry>, String> {
+    tauri::async_runtime::spawn_blocking(move || diary::list(&open_database(&app)?)).await.map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn save_diary(app: AppHandle, entry: diary::Entry) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || diary::save(&open_database(&app)?, entry)).await.map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn assign_diary_album(app: AppHandle, ids: Vec<i64>, album_id: Option<i64>) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || diary::assign(&mut open_database(&app)?, ids, album_id)).await.map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn delete_diary(app: AppHandle, id: i64) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || diary::delete(&open_database(&app)?, id)).await.map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
@@ -92,7 +113,7 @@ async fn queue_failed_locations(app: AppHandle) -> Result<location::Overview, St
 #[tauri::command]
 async fn list_region_media(app: AppHandle, region_code: String, offset: i64, limit: i64) -> Result<Vec<MediaItemDto>, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        if region_code != "unclassified" && !location::REGIONS.iter().any(|(code,_)| *code == region_code) {
+        if region_code != "unclassified" && region_code != "overseas" && !location::REGIONS.iter().any(|(code,_)| *code == region_code) {
             return Err("존재하지 않는 지역입니다.".into());
         }
         let conn = open_database(&app)?;
@@ -107,14 +128,14 @@ async fn list_region_media(app: AppHandle, region_code: String, offset: i64, lim
 }
 
 #[tauri::command]
-async fn region_media_page(app: AppHandle, region_code: String, offset: i64, file_type: String, year: String, oldest: bool) -> Result<location::RegionPage, String> {
-    tauri::async_runtime::spawn_blocking(move || location::region_page(&open_database(&app)?, &region_code, offset, &file_type, &year, oldest))
+async fn region_media_page(app: AppHandle, region_code: String, offset: i64, file_type: String, year: String, oldest: bool, district: String) -> Result<location::RegionPage, String> {
+    tauri::async_runtime::spawn_blocking(move || location::region_page(&open_database(&app)?, &region_code, offset, &file_type, &year, oldest, &district))
         .await.map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
-async fn assign_media_region(app: AppHandle, ids: Vec<i64>, region_code: String) -> Result<(), String> {
-    tauri::async_runtime::spawn_blocking(move || location::assign_region(&open_database(&app)?, &ids, &region_code))
+async fn assign_media_region(app: AppHandle, ids: Vec<i64>, region_code: String, district: Option<String>, country: Option<String>, city: Option<String>) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || location::assign_place(&open_database(&app)?, &ids, &region_code, district.as_deref(), country.as_deref(), city.as_deref()))
         .await.map_err(|error| error.to_string())?
 }
 
@@ -794,10 +815,11 @@ fn media_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MediaItemDto> {
         region_name: row.get(17)?,
         location_status: row.get(18)?,
         location_source: row.get(19)?,
+        district: row.get(20)?, country: row.get(21)?, city: row.get(22)?,
     })
 }
 
-const MEDIA_COLUMNS: &str = "id, file_path, file_type, taken_at, width, height, duration, size_bytes, rating, comment, favorite, metadata_status, view_count, title, latitude, longitude, region_code, region_name, location_status, location_source";
+const MEDIA_COLUMNS: &str = "id, file_path, file_type, taken_at, width, height, duration, size_bytes, rating, comment, favorite, metadata_status, view_count, title, latitude, longitude, region_code, region_name, location_status, location_source, district, country, city";
 
 fn read_media(conn: &Connection) -> Result<Vec<MediaItemDto>, String> {
     let mut stmt = conn
@@ -847,7 +869,7 @@ fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
     // Load all memberships once instead of issuing one photo query per album.
     let mut stmt = conn
         .prepare(
-            "SELECT m.id, m.file_path, m.file_type, m.taken_at, m.width, m.height, m.duration, m.size_bytes, m.rating, m.comment, m.favorite, m.metadata_status, m.view_count, m.title, m.latitude, m.longitude, m.region_code, m.region_name, m.location_status, m.location_source, ai.album_id
+            "SELECT m.id, m.file_path, m.file_type, m.taken_at, m.width, m.height, m.duration, m.size_bytes, m.rating, m.comment, m.favorite, m.metadata_status, m.view_count, m.title, m.latitude, m.longitude, m.region_code, m.region_name, m.location_status, m.location_source, m.district, m.country, m.city, ai.album_id
              FROM album_item ai
              JOIN media m ON m.id = ai.media_id
              ORDER BY ai.album_id, ai.sequence ASC",
@@ -856,7 +878,7 @@ fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
 
     let rows = stmt
         .query_map([], |row| {
-            Ok((row.get::<_, i64>(20)?, media_from_row(row)?))
+            Ok((row.get::<_, i64>(23)?, media_from_row(row)?))
         })
         .map_err(|error| format!("앨범 항목을 읽을 수 없습니다: {error}"))?;
 
@@ -993,6 +1015,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            list_diary, save_diary, assign_diary_album, delete_diary,
             list_media,
             location_overview,
             analyze_locations,

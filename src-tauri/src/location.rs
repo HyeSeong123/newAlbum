@@ -71,7 +71,7 @@ pub const REGIONS: [(&str, &str); 17] = [
     ("KR-43", "충청북도"),
     ("KR-44", "충청남도"),
     ("KR-45", "전북특별자치도"),
-    ("KR-46", "전라남도"),
+    ("KR-46", "전남광주통합특별시"),
     ("KR-47", "경상북도"),
     ("KR-48", "경상남도"),
     ("KR-49", "제주특별자치도"),
@@ -170,6 +170,7 @@ pub fn resolve_region(latitude: f64, longitude: f64) -> Option<(&'static str, &'
                     .skip(1)
                     .any(|hole| ring_contains(hole, longitude, latitude))
         }) {
+            if region.code == "KR-29" { return Some(("KR-46", "전남광주통합특별시")); }
             return Some((
                 REGIONS
                     .iter()
@@ -243,6 +244,9 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
         ("region_name", "TEXT"),
         ("location_status", "TEXT NOT NULL DEFAULT 'queued'"),
         ("location_source", "TEXT NOT NULL DEFAULT 'gps'"),
+        ("district", "TEXT"),
+        ("country", "TEXT"),
+        ("city", "TEXT"),
     ] {
         let exists: bool = conn
             .query_row(
@@ -259,6 +263,8 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
             .map_err(|error| format!("위치 정보 마이그레이션 실패: {error}"))?;
         }
     }
+    conn.execute("UPDATE media SET region_code='KR-46', region_name='전남광주통합특별시' WHERE region_code='KR-29'", []).map_err(|e| e.to_string())?;
+    conn.execute("UPDATE media SET region_name='전남광주통합특별시' WHERE region_code='KR-46' AND region_name!='전남광주통합특별시'", []).map_err(|e| e.to_string())?;
     conn.execute_batch("CREATE INDEX IF NOT EXISTS idx_media_location ON media(region_code, taken_at DESC, id DESC) WHERE file_type IN ('image', 'video');
         CREATE INDEX IF NOT EXISTS idx_media_location_status ON media(location_status) WHERE file_type IN ('image', 'video');")
         .map_err(|error| format!("위치 정보 인덱스 생성 실패: {error}"))?;
@@ -338,6 +344,25 @@ pub fn assign_region(conn: &Connection, ids: &[i64], code: &str) -> Result<(), S
     tx.commit().map_err(|e| e.to_string())
 }
 
+pub fn assign_place(conn: &Connection, ids: &[i64], code: &str, district: Option<&str>, country: Option<&str>, city: Option<&str>) -> Result<(), String> {
+    if ids.is_empty() { return Err("기록을 선택해 주세요.".into()); }
+    let overseas = code == "overseas";
+    let name = if overseas { "해외" } else { REGIONS.iter().find(|(key,_)| *key == code && code != "KR-29").map(|(_,name)| *name).ok_or("지역을 선택해 주세요.")? };
+    let district = district.unwrap_or("").trim();
+    let country = country.unwrap_or("").trim();
+    let city = city.unwrap_or("").trim();
+    if district.chars().count() > 60 || country.chars().count() > 80 || city.chars().count() > 80 ||
+        (overseas && (country.is_empty() || city.is_empty())) { return Err("지역 입력을 확인해 주세요.".into()); }
+    let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
+    for id in ids {
+        let count = tx.execute("UPDATE media SET region_code=?1, region_name=?2, district=?3, country=?4, city=?5,
+            location_source='manual', location_status='ready' WHERE id=?6 AND file_type IN ('image','video')",
+            params![code, name, if overseas { "" } else { district }, if overseas { country } else { "" }, if overseas { city } else { "" }, id]).map_err(|e| e.to_string())?;
+        if count != 1 { return Err("기록을 찾지 못했습니다.".into()); }
+    }
+    tx.commit().map_err(|e| e.to_string())
+}
+
 #[derive(Serialize)]
 pub struct RegionPage {
     pub items: Vec<super::MediaItemDto>,
@@ -345,19 +370,19 @@ pub struct RegionPage {
     pub years: Vec<String>,
 }
 
-pub fn region_page(conn: &Connection, code: &str, offset: i64, kind: &str, year: &str, oldest: bool) -> Result<RegionPage, String> {
-    if code != "unclassified" && !REGIONS.iter().any(|(region, _)| *region == code) {
+pub fn region_page(conn: &Connection, code: &str, offset: i64, kind: &str, year: &str, oldest: bool, district: &str) -> Result<RegionPage, String> {
+    if code != "unclassified" && code != "overseas" && !REGIONS.iter().any(|(region, _)| *region == code) {
         return Err("존재하지 않는 지역입니다.".into());
     }
     if !["all", "image", "video"].contains(&kind) || (!year.is_empty() && (year.len() != 4 || !year.bytes().all(|c| c.is_ascii_digit()))) {
         return Err("필터가 올바르지 않습니다.".into());
     }
     let scope = if code == "unclassified" { UNCLASSIFIED_FILTER_SQL } else { REGION_FILTER_SQL };
-    let predicate = format!("{scope} AND (?2='all' OR file_type=?2) AND (?3='' OR (taken_at >= ?3 || '-01-01' AND taken_at < ?4 || '-01-01'))");
+    let predicate = format!("{scope} AND (?2='all' OR file_type=?2) AND (?3='' OR (taken_at >= ?3 || '-01-01' AND taken_at < ?4 || '-01-01')) AND (?5='' OR (?5='__unset__' AND COALESCE(district,'')='') OR COALESCE(district,'')=?5)");
     let next_year = year.parse::<i64>().unwrap_or(0) + 1;
     // Read count, years and the bounded page from one consistent snapshot.
     let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
-    let total = tx.query_row(&format!("SELECT COUNT(*) FROM media WHERE {predicate}"), params![code, kind, year, next_year.to_string()], |row| row.get(0)).map_err(|e| e.to_string())?;
+    let total = tx.query_row(&format!("SELECT COUNT(*) FROM media WHERE {predicate}"), params![code, kind, year, next_year.to_string(), district], |row| row.get(0)).map_err(|e| e.to_string())?;
     let years = {
         let mut stmt = tx.prepare(&format!("SELECT DISTINCT substr(taken_at,1,4) FROM media WHERE {scope} AND taken_at GLOB '[0-9][0-9][0-9][0-9]-*' ORDER BY 1 DESC")).map_err(|e| e.to_string())?;
         let rows = stmt.query_map([code], |row| row.get(0)).map_err(|e| e.to_string())?;
@@ -365,8 +390,8 @@ pub fn region_page(conn: &Connection, code: &str, offset: i64, kind: &str, year:
     };
     let direction = if oldest { "ASC" } else { "DESC" };
     let items = {
-        let mut stmt = tx.prepare(&format!("SELECT {} FROM media WHERE {predicate} ORDER BY taken_at {direction} NULLS LAST, id {direction} LIMIT 48 OFFSET ?5", super::MEDIA_COLUMNS)).map_err(|e| e.to_string())?;
-        let rows = stmt.query_map(params![code, kind, year, next_year.to_string(), offset.max(0)], super::media_from_row).map_err(|e| e.to_string())?;
+        let mut stmt = tx.prepare(&format!("SELECT {} FROM media WHERE {predicate} ORDER BY taken_at {direction} NULLS LAST, id {direction} LIMIT 48 OFFSET ?6", super::MEDIA_COLUMNS)).map_err(|e| e.to_string())?;
+        let rows = stmt.query_map(params![code, kind, year, next_year.to_string(), district, offset.max(0)], super::media_from_row).map_err(|e| e.to_string())?;
         rows.collect::<Result<Vec<_>,_>>().map_err(|e| e.to_string())?
     };
     tx.commit().map_err(|e| e.to_string())?;

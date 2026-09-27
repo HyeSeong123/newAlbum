@@ -11,10 +11,10 @@ import { browserRegionPage, groupByMonth, orderRegionMedia, REGION_ALBUM_LIMIT }
 export function RegionGallery({ code, items, revision, focusVersion, summary, onOpen, onClose, onAssignRegion, onCreateAlbum }: {
   code: string; items: MediaItem[]; revision: number; focusVersion: number; summary: string;
   onOpen: (item: MediaItem, collection: MediaItem[]) => void; onClose: () => void;
-  onAssignRegion: (ids: string[], code: string) => Promise<void>;
+  onAssignRegion: (ids: string[], code: string, district?: string, country?: string, city?: string) => Promise<void>;
   onCreateAlbum: (items: MediaItem[], title?: string) => void;
 }) {
-  const [filters, setFilters] = useState<RegionFilters>({ fileType: "all", year: "", oldest: false });
+  const [filters, setFilters] = useState<RegionFilters>({ fileType: "all", year: "", oldest: false, district: "" });
   const [page, setPage] = useState(0);
   const [result, setResult] = useState<RegionPage>({ items: [], total: 0, years: [] });
   const [loading, setLoading] = useState(true);
@@ -56,28 +56,32 @@ export function RegionGallery({ code, items, revision, focusVersion, summary, on
   const groups = useMemo(() => groupByMonth(result.items), [result.items]);
   const pageIds = result.items.map(item => item.id);
   const allPageSelected = pageIds.length > 0 && pageIds.every(id => selection.ids.has(id));
-  const filtered = filters.fileType !== "all" || filters.year !== "" || filters.oldest;
-  return <section className="memoryMapGallery" aria-label={`${code === "unclassified" ? "지역 미분류" : REGION_NAMES[code]} 기록`}>
-    <header><div><span className="memoryMapEyebrow">장소가 간직한 순간</span><h3 ref={heading} tabIndex={-1}>{code === "unclassified" ? "지역 미분류" : REGION_NAMES[code]}</h3><p>{summary}</p></div>
+  const districts = useMemo(() => [...new Set(items.filter(item => item.regionCode === code).map(item => item.district || "__unset__"))].sort((a,b) => a.localeCompare(b,"ko")), [items,code]);
+  const filtered = filters.fileType !== "all" || filters.year !== "" || filters.oldest || Boolean(filters.district);
+  return <section className="memoryMapGallery" aria-label={`${code === "unclassified" ? "지역 미분류" : code === "overseas" ? "해외 지역" : REGION_NAMES[code]} 기록`}>
+    <header><div><span className="memoryMapEyebrow">장소가 간직한 순간</span><h3 ref={heading} tabIndex={-1}>{code === "unclassified" ? "지역 미분류" : code === "overseas" ? "해외 지역" : REGION_NAMES[code]}</h3><p>{summary}</p></div>
       <button className="memoryMapAll" onClick={onClose}>전체 지도 보기</button></header>
-    <div className="regionGalleryTools">
+    <div className="regionGalleryToolbar"><div className="regionGalleryTools regionGalleryFilters">
       <label>종류<select aria-label="기록 종류" value={filters.fileType} onChange={event => filter({ fileType: event.target.value as RegionFilters["fileType"] })}>
         <option value="all">전체</option><option value="image">사진</option><option value="video">영상</option></select></label>
       <label>연도<select aria-label="기록 연도" value={filters.year} onChange={event => filter({ year: event.target.value })}>
         <option value="">전체 연도</option>{result.years.map(year => <option key={year} value={year}>{year}</option>)}</select></label>
+      {code !== "unclassified" && code !== "overseas" && <label>시·군·구<select aria-label="시군구 필터" value={filters.district} onChange={event => filter({ district: event.target.value })}>
+        <option value="">전체 시·군·구</option>{districts.map(name => <option key={name} value={name}>{name === "__unset__" ? "지역 미지정" : name}</option>)}</select></label>}
       <label>정렬<select aria-label="기록 정렬" value={filters.oldest ? "oldest" : "newest"} onChange={event => filter({ oldest: event.target.value === "oldest" })}>
         <option value="newest">최신순</option><option value="oldest">오래된순</option></select></label>
-      {filtered && <button onClick={() => filter({ fileType: "all", year: "", oldest: false })}>필터 초기화</button>}
-      <button aria-pressed={selection.enabled} onClick={() => { selection.reset(!selection.enabled); setNotice(""); }}>{selection.enabled ? "선택 취소" : "선택"}</button>
-      <button disabled={loading || Boolean(error) || (selection.enabled ? !selection.ids.size : !result.total)} onClick={createAlbum}>앨범 만들기</button>
-    </div>
+      {filtered && <button onClick={() => filter({ fileType: "all", year: "", oldest: false, district: "" })}>필터 초기화</button>}
+    </div><div className="regionGalleryTools regionGalleryActions">
+      <button aria-pressed={selection.enabled} onClick={() => { selection.reset(!selection.enabled); setNotice(""); }}>{selection.enabled ? "선택 끝내기" : "사진 선택"}</button>
+      <button className="primaryControl" disabled={loading || Boolean(error) || (selection.enabled ? !selection.ids.size : !result.total)} onClick={createAlbum}>앨범 만들기</button>
+    </div></div>
     {selection.enabled && <><div className="regionGalleryTools regionGallerySelection">
       <p role="status">{selection.ids.size}개 선택 · 페이지를 넘겨도 유지돼요. 필터를 바꾸면 초기화됩니다.</p>
       <button disabled={loading || Boolean(error) || !pageIds.length} onClick={() => selection.toggleMany(pageIds)}>{allPageSelected ? "이 페이지 선택 해제" : "이 페이지 전체 선택"}</button>
       <button disabled={!selection.ids.size} onClick={selection.clear}>선택 모두 해제</button>
     </div>
-      <RegionEditor key={`${code}-${filters.fileType}-${filters.year}`} count={selection.ids.size} onSave={async region => {
-        await onAssignRegion([...selection.ids], region); selection.clear(); setNotice("선택한 기록의 지역을 저장했습니다.");
+      <RegionEditor key={`${code}-${filters.fileType}-${filters.year}`} count={selection.ids.size} onSave={async (region, district, country, city) => {
+        await onAssignRegion([...selection.ids], region, district, country, city); selection.clear(); setNotice("선택한 기록의 지역을 저장했습니다.");
       }} /></>}
     {notice && <p role="status">{notice}</p>}{error && <div className="memoryMapAlert" role="alert">{error}<button onClick={() => setRefresh(value => value + 1)}>사진 다시 불러오기</button></div>}
     {!loading && !error && <p aria-live="polite">필터 결과 {result.total}개{result.total > 0 && ` · ${page * 48 + 1}–${page * 48 + result.items.length}번째 기록`}</p>}

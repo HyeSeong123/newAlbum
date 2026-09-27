@@ -28,6 +28,7 @@ interface BackendMediaItem {
   longitude?: number | null;
   region_code?: string | null;
   region_name?: string | null;
+  district?: string | null; country?: string | null; city?: string | null;
   location_status?: "queued" | "ready" | "no-gps" | "outside-korea" | "failed";
 }
 
@@ -95,15 +96,15 @@ export async function loadRegionMedia(regionCode: string, offset: number, limit 
   return rows.map(toMediaItem);
 }
 
-export interface RegionFilters { fileType: "all" | "image" | "video"; year: string; oldest: boolean }
+export interface RegionFilters { fileType: "all" | "image" | "video"; year: string; oldest: boolean; district: string }
 export interface RegionPage { items: MediaItem[]; total: number; years: string[] }
 export async function loadRegionPage(regionCode: string, offset: number, filters: RegionFilters): Promise<RegionPage> {
   const page = await invoke<{ items: BackendMediaItem[]; total: number; years: string[] }>("region_media_page", { regionCode, offset, ...filters });
   return { ...page, items: page.items.map(toMediaItem) };
 }
-export async function assignMediaRegion(ids: string[], regionCode: string): Promise<void> {
+export async function assignMediaRegion(ids: string[], regionCode: string, district = "", country = "", city = ""): Promise<void> {
   if (!ids.length || ids.some(id => !/^\d+$/.test(id))) throw new Error("올바르지 않은 기록입니다.");
-  await invoke("assign_media_region", { ids: ids.map(Number), regionCode });
+  await invoke("assign_media_region", { ids: ids.map(Number), regionCode, district, country, city });
 }
 
 export async function clearRegisteredMedia(): Promise<MediaItem[]> {
@@ -257,6 +258,7 @@ function toMediaItem(row: BackendMediaItem): MediaItem {
     longitude: row.longitude ?? undefined,
     regionCode: row.region_code ?? undefined,
     regionName: row.region_name ?? undefined,
+    district: row.district ?? undefined, country: row.country ?? undefined, city: row.city ?? undefined,
     locationStatus: row.location_status ?? "queued",
     locationSource: row.location_source ?? "gps",
   };
@@ -272,3 +274,9 @@ function formatDuration(seconds: number): string {
   const rest = Math.floor(seconds % 60);
   return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
 }
+
+export interface BackendDiaryEntry { id: number; date: string; title: string; body: string; mood: string; weather: string; album_id: number | null }
+export const listDiary = () => invoke<BackendDiaryEntry[]>("list_diary");
+export const saveDiary = (entry: BackendDiaryEntry) => invoke<void>("save_diary", { entry });
+export const assignDiaryAlbum = (ids: number[], albumId: number | null) => invoke<void>("assign_diary_album", { ids, albumId });
+export const deleteDiary = (id: number) => invoke<void>("delete_diary", { id });

@@ -20,6 +20,7 @@ export function Library({
   selectionMode,
   selectedIds,
   onToggleSelection,
+  onSelectAll,
   onToggleSelectionMode,
   selectedCount,
   commentCounts,
@@ -37,12 +38,13 @@ export function Library({
   selectionMode: boolean;
   selectedIds: Set<string>;
   onToggleSelection: (id: string) => void;
+  onSelectAll: (ids: string[]) => void;
   onToggleSelectionMode: () => void;
   selectedCount: number;
   commentCounts: Record<string, number>;
   onCreateAlbum: () => void;
   onDeleteSelected: () => void;
-  onAssignRegion: (ids: string[], code: string) => Promise<void>;
+  onAssignRegion: (ids: string[], code: string, district?: string, country?: string, city?: string) => Promise<void>;
   scopeKey: string;
   emptyText: string;
   onDateSearch: () => void;
@@ -113,6 +115,7 @@ export function Library({
       {selectionMode && (
         <div className="selectionDock" aria-label={`${selectedCount}장 선택됨`}>
           <strong aria-live="polite">{selectedCount}개 선택</strong>
+          <button onClick={() => onSelectAll(visibleCollection.map(item => item.id))} disabled={!visibleCollection.length}>{visibleCollection.length && visibleCollection.every(item => selectedIds.has(item.id)) ? "현재 결과 선택 해제" : `현재 결과 전체 선택 (${visibleCollection.length}개)`}</button>
           <div className="selectionActions">
             <button className="iconText" onClick={onCreateAlbum} disabled={!selectedCount}>
               <Plus size={17} />앨범 만들기
@@ -127,7 +130,7 @@ export function Library({
         </div>
       )}
       {selectionMode && bulkRegionOpen && <div id="libraryBulkRegion" className="libraryBulkRegion">
-        <RegionEditor count={locationIds.length} initiallyEditing onSave={code => onAssignRegion(locationIds, code)} />
+        <RegionEditor count={locationIds.length} initiallyEditing onSave={(code, district, country, city) => onAssignRegion(locationIds, code, district, country, city)} />
       </div>}
       {!items.length && <EmptyState text={emptyText} />}
       {Boolean(items.length) && !visibleCollection.length && <EmptyState text="조건에 맞는 사진과 영상이 없습니다." />}

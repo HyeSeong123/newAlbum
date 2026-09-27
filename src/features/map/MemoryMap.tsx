@@ -11,7 +11,7 @@ const EMPTY_OVERVIEW = browserLocationOverview([], REGION_NAMES);
 
 export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLocationsAnalyzed }: {
   items: MediaItem[]; onOpen: (item: MediaItem, collection: MediaItem[]) => void;
-  onAssignRegion: (ids: string[], code: string) => Promise<void>;
+  onAssignRegion: (ids: string[], code: string, district?: string, country?: string, city?: string) => Promise<void>;
   onCreateAlbum: (items: MediaItem[], title?: string) => void;
   onLocationsAnalyzed: () => Promise<void>;
 }) {
@@ -67,7 +67,7 @@ export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLoca
   const initialLoading = desktop && !overview;
 
   const shown = desktop ? overview ?? EMPTY_OVERVIEW : fallback;
-  const covered = shown.regions.filter(region => region.photos + region.videos > 0).length;
+  const covered = shown.regions.filter(region => REGION_NAMES[region.code] && region.photos + region.videos > 0).length;
   const located = shown.regions.reduce((sum, region) => sum + region.photos + region.videos, 0);
   const activeRegion = hovered ?? selected;
   const summary = MAP_REGIONS.find(region => region.code === activeRegion);
@@ -77,7 +77,7 @@ export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLoca
     <section className="memoryMapIntro" aria-label="추억 지도 요약">
       <div className="memoryMapIntroText"><span className="memoryMapEyebrow"><Compass size={16} />나의 추억 지도</span>
         <h2>사진이 남긴 곳, 다시 펼쳐보기</h2>
-        <p>{initialLoading ? "사진에 담긴 지역 정보를 확인하고 있어요." : `17개 지역 중 ${covered}개 지역에 기록이 있어요. 지도에서 지역을 골라 그날의 사진을 만나보세요.`}</p></div>
+        <p>{initialLoading ? "사진에 담긴 지역 정보를 확인하고 있어요." : `16개 지역 중 ${covered}개 지역에 기록이 있어요. 지도에서 지역을 골라 그날의 사진을 만나보세요.`}</p></div>
       {!initialLoading && <div className="memoryMapIntroActions">
         <div className="memoryMapStats"><div><strong>{located.toLocaleString()}</strong><span>위치가 있는 기록</span></div><div><strong>{shown.unclassified.toLocaleString()}</strong><span>지역 미분류</span></div></div>
         <button className="memoryMapAutoButton" disabled={!desktop || busy || (shown.pending === 0 && shown.failed === 0)}
@@ -113,13 +113,16 @@ export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLoca
         <p className="memoryMapCredit">지도 경계: <a href="https://www.geoboundaries.org/" target="_blank" rel="noreferrer">geoBoundaries</a> (CC BY 4.0) · Natural Earth (공개 도메인)</p>
       </div>
       <aside className="memoryMapPlaces" aria-label="시도별 사진 개수">
-        <div className="memoryMapPlacesHead"><h3>지역별 기록</h3><span>{covered} / 17개 지역</span></div>
+        <div className="memoryMapPlacesHead"><h3>지역별 기록</h3><span>{covered} / 16개 지역</span></div>
         <div className="memoryMapPlaceList">{MAP_REGIONS.map(region => {
           const total = totalFor(shown, region.code);
           return <button key={region.code} aria-pressed={selected === region.code} className={total ? "has-records" : ""} onClick={event => select(region.code, event.currentTarget)}>
             <span>{REGION_LABELS[region.code]}</span><strong>{total.toLocaleString()}</strong>
           </button>;
         })}</div>
+        <button className="memoryMapUnclassified" aria-pressed={selected === "overseas"} onClick={event => select("overseas", event.currentTarget)}>
+          <MapPin size={16} /><span>해외 지역</span><strong>{items.filter(item => item.regionCode === "overseas").length.toLocaleString()}</strong>
+        </button>
         <button className="memoryMapUnclassified" aria-pressed={selected === "unclassified"} onClick={event => select("unclassified", event.currentTarget)}>
           <MapPin size={16} /><span>지역 미분류</span><strong>{shown.unclassified.toLocaleString()}</strong>
         </button>
@@ -131,7 +134,7 @@ export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLoca
       </aside>
     </section>}
     {selected && <RegionGallery key={selected} code={selected} focusVersion={focusVersion} items={items} revision={shown.analyzed}
-      summary={selected === "unclassified" ? "GPS가 없거나 위치를 확인할 수 없는 기록이에요. 직접 지역을 지정할 수 있어요." : `${shown.regions.find(region => region.code === selected)?.photos ?? 0}장의 사진 · ${shown.regions.find(region => region.code === selected)?.videos ?? 0}개의 영상`}
+      summary={selected === "unclassified" ? "GPS가 없거나 위치를 확인할 수 없는 기록이에요. 직접 지역을 지정할 수 있어요." : selected === "overseas" ? "나라와 도시를 직접 지정한 기록이에요." : `${shown.regions.find(region => region.code === selected)?.photos ?? 0}장의 사진 · ${shown.regions.find(region => region.code === selected)?.videos ?? 0}개의 영상`}
       onOpen={onOpen} onClose={closeGallery} onAssignRegion={onAssignRegion} onCreateAlbum={onCreateAlbum} />}
   </div>;
 }
