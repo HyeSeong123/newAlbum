@@ -61,7 +61,7 @@ export function RegionGallery({ code, items, revision, focusVersion, summary, on
   return <section className="memoryMapGallery" aria-label={`${code === "unclassified" ? "지역 미분류" : code === "overseas" ? "해외 지역" : REGION_NAMES[code]} 기록`}>
     <header><div><span className="memoryMapEyebrow">장소가 간직한 순간</span><h3 ref={heading} tabIndex={-1}>{code === "unclassified" ? "지역 미분류" : code === "overseas" ? "해외 지역" : REGION_NAMES[code]}</h3><p>{summary}</p></div>
       <button className="memoryMapAll" onClick={onClose}>전체 지도 보기</button></header>
-    <div className="regionGalleryTools">
+    <div className="regionGalleryToolbar"><div className="regionGalleryTools regionGalleryFilters">
       <label>종류<select aria-label="기록 종류" value={filters.fileType} onChange={event => filter({ fileType: event.target.value as RegionFilters["fileType"] })}>
         <option value="all">전체</option><option value="image">사진</option><option value="video">영상</option></select></label>
       <label>연도<select aria-label="기록 연도" value={filters.year} onChange={event => filter({ year: event.target.value })}>
@@ -71,9 +71,10 @@ export function RegionGallery({ code, items, revision, focusVersion, summary, on
       <label>정렬<select aria-label="기록 정렬" value={filters.oldest ? "oldest" : "newest"} onChange={event => filter({ oldest: event.target.value === "oldest" })}>
         <option value="newest">최신순</option><option value="oldest">오래된순</option></select></label>
       {filtered && <button onClick={() => filter({ fileType: "all", year: "", oldest: false, district: "" })}>필터 초기화</button>}
-      <button aria-pressed={selection.enabled} onClick={() => { selection.reset(!selection.enabled); setNotice(""); }}>{selection.enabled ? "선택 취소" : "선택"}</button>
-      <button disabled={loading || Boolean(error) || (selection.enabled ? !selection.ids.size : !result.total)} onClick={createAlbum}>앨범 만들기</button>
-    </div>
+    </div><div className="regionGalleryTools regionGalleryActions">
+      <button aria-pressed={selection.enabled} onClick={() => { selection.reset(!selection.enabled); setNotice(""); }}>{selection.enabled ? "선택 끝내기" : "사진 선택"}</button>
+      <button className="primaryControl" disabled={loading || Boolean(error) || (selection.enabled ? !selection.ids.size : !result.total)} onClick={createAlbum}>앨범 만들기</button>
+    </div></div>
     {selection.enabled && <><div className="regionGalleryTools regionGallerySelection">
       <p role="status">{selection.ids.size}개 선택 · 페이지를 넘겨도 유지돼요. 필터를 바꾸면 초기화됩니다.</p>
       <button disabled={loading || Boolean(error) || !pageIds.length} onClick={() => selection.toggleMany(pageIds)}>{allPageSelected ? "이 페이지 선택 해제" : "이 페이지 전체 선택"}</button>

@@ -36,8 +36,8 @@ const navItems: Array<{ name: View; label: string; accessibleLabel: string }> = 
   { name: "Library", label: "사진 기록", accessibleLabel: "사진보기" },
   { name: "Albums", label: "앨범", accessibleLabel: "내 앨범" },
   { name: "Diary", label: "일기장", accessibleLabel: "일기장" },
-  { name: "People", label: "사람과 반려동물", accessibleLabel: "인물" },
   { name: "Memories", label: "추억", accessibleLabel: "지난 추억" },
+  { name: "People", label: "사람·반려동물", accessibleLabel: "사람과 반려동물" },
 ];
 
 export function App() {
@@ -185,23 +185,23 @@ export function App() {
               <input aria-label={activeView === "People" ? "이름 검색" : activeView === "Diary" ? "일기 검색" : activeView === "Albums" ? "앨범 검색" : "사진과 추억 검색"} value={query} onChange={(event) => { setQuery(event.target.value); if (activeView === "Library" && activeMonth !== "favorites") setSelectedMonth("all"); }} placeholder={activeView === "People" ? "이름 검색" : activeView === "Diary" ? "일기 검색" : activeView === "Albums" ? "앨범을 검색하세요" : "사진과 추억을 검색하세요"} />
               {query && <button className="searchClear" aria-label="검색 지우기" onClick={() => setQuery("")}><X size={15} /></button>}
             </label>
-            <div className="importActions">
-              {activeView === "Library" && <button onClick={() => { setAlbumImportTitle(""); setAlbumImport(true); }}>가져와 앨범 만들기</button>}
+            {(activeView === "Library" || activeView === "Albums") && <div className="importActions">
               <button className="primary" onClick={activeView === "Albums" ? startAlbum : () => { setAlbumImportTitle(""); chooseFiles(); }} disabled={Boolean(importing)}>
                 {importing ? <LoaderCircle className="spinIcon" size={18} /> : <Plus size={18} />}
                 {importing === "files" ? "가져오는 중" : activeView === "Albums" ? "새 앨범" : "가져오기"}
               </button>
-              {activeView !== "Albums" && <ActionMenu label="가져오기 옵션" icon={<ChevronDown size={16} />} disabled={Boolean(importing)} actions={[
+              {activeView === "Library" && <ActionMenu label="가져오기 옵션" icon={<ChevronDown size={16} />} disabled={Boolean(importing)} actions={[
                 { label: "파일 선택", icon: <Upload size={16} />, onSelect: () => { setAlbumImportTitle(""); chooseFiles(); } },
                 { label: "폴더 선택", icon: <FolderOpen size={16} />, onSelect: chooseFolder },
+                { label: "가져오면서 앨범 만들기", icon: <Plus size={16} />, onSelect: () => { setAlbumImportTitle(""); setAlbumImport(true); } },
               ]} />}
               {importing && (
                 <div className="importStatus" role="status" aria-live="polite">
                   <LoaderCircle className="spinIcon" size={18} />
-                  <span>{importing === "folder" ? "폴더 안의 사진과 영상을 살펴보고 있어요." : "선택한 파일을 앨범에 담고 있어요."}</span>
+                  <span>{importing === "folder" ? "폴더 안의 사진과 영상을 살펴보고 있어요." : "선택한 파일을 등록하고 있어요."}</span>
                 </div>
               )}
-            </div>
+            </div>}
             <input ref={fileInput} type="file" accept={MEDIA_FILE_ACCEPT} multiple onChange={(event: ChangeEvent<HTMLInputElement>) => { void library.handleFilesIntoAlbum(event.target.files, albumImportTitle).then(created => { if (created) { setAlbumImportTitle(""); navigate("Albums"); } }); event.currentTarget.value = ""; }} hidden />
             <input
               ref={folderInput}

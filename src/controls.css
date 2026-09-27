@@ -140,8 +140,7 @@
 .sidebar { grid-template-columns:minmax(175px,1fr) auto auto auto; gap:12px; }
 .sidebar .layoutToggle { justify-self:end; margin:0; min-height:40px; padding:0 12px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text); font-size:14px; white-space:nowrap; }
 .sidebar .layoutToggle[aria-pressed="true"] { border-color:var(--primary); font-weight:700; }
-.workspace:has(.photoWorkspace.mode-grid) .topbar .importActions { display:flex; flex-wrap:wrap; justify-content:flex-end; max-width:236px; margin-left:0; }
-.workspace:has(.photoWorkspace.mode-grid) .topbar .importActions > button:first-child { flex-basis:100%; }
+.workspace:has(.photoWorkspace.mode-grid) .topbar .importActions { justify-self:end; margin-left:0; }
 .app.largeLayout .workspace { max-width:1800px; }
 .app.largeLayout .mainPanel :is(h2,h3) { font-size:clamp(24px,2vw,34px); }
 @media(max-width:1000px) {
@@ -151,6 +150,5 @@
   .sidebar .layoutToggle { margin-left:auto; }
 }
 @media(max-width:720px) {
-  .topbar .importActions { flex-wrap:wrap; }
-  .workspace:has(.photoWorkspace.mode-grid) .topbar .importActions { max-width:100%; justify-content:flex-start; }
+  .topbar .importActions { justify-content:flex-start; }
 }

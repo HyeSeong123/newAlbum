@@ -3,11 +3,13 @@
 .photoInspector .detailPhotoPane { padding: 16px 24px; grid-template-rows: auto minmax(0, 1fr) auto; gap: 16px; }
 .detailDownloadFeedback { flex-basis: 100%; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
 .detailDownloadFeedback[role="alert"] { color: var(--danger); }
-.photoInspector .detailPhotoActions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.photoInspector .detailPhotoActions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.photoInspector .detailActionTitle { color: var(--muted); font-size: 13px; font-weight: 600; }
+.photoInspector .detailActionButtons { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-left: auto; }
 .photoInspector .detailPhotoActions button,
 .photoInspector .detailZoomControls button { min-height: 38px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--border); border-radius: 6px; color: #53584b; background: var(--surface); font-size: 13px; white-space: nowrap; }
 .photoInspector .detailPhotoActions .detailFavorite.active { color: #a0524c; border-color: #d8b6af; background: #fbefec; }
-.photoInspector .detailExpand { margin-left: auto; }
+.photoInspector .detailExpand { margin-left: 0; }
 .photoInspector .detailStage { min-width: 0; min-height: 0; padding: 0; border-radius: 8px; background: #eeede7 !important; box-shadow: none; }
 .photoInspector .detailImageViewport { position: absolute; inset: 12px 56px; overflow: auto; overscroll-behavior: contain; }
 .photoInspector .detailImageViewport.canPan { cursor: grab; touch-action: none; }
@@ -71,6 +73,8 @@
   .photoInspector .detailHeader .detailBack { margin-right: 0; }
   .photoInspector .detailHeader .detailClose { min-width: 34px; }
   .photoInspector .detailPhotoActions { gap: 6px; }
+  .photoInspector .detailActionTitle { display: none; }
+  .photoInspector .detailActionButtons { justify-content: flex-start; margin-left: 0; gap: 6px; }
   .photoInspector .detailPhotoActions button { padding: 0 8px; font-size: 12px; }
   .photoInspector .detailImageViewport { inset: 10px 44px; }
   .photoInspector .photoNavButton.prev { left: 4px; }

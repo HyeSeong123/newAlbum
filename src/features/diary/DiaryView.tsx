@@ -38,6 +38,7 @@ export function DiaryView({ entries, albums, query = "", onSave, onAssign, onDel
 }) {
   const blank = (): DiaryEntry => ({ id: 0, date: localDateKey(new Date()), title: "", body: "", mood: "평온", weather: "맑음", album_id: null });
   const [draft, setDraft] = useState<DiaryEntry | null>(null);
+  const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<number[]>([]);
   const [destination, setDestination] = useState("");
   const [busy, setBusy] = useState(false);
@@ -48,12 +49,13 @@ export function DiaryView({ entries, albums, query = "", onSave, onAssign, onDel
   const visible = entries.filter(entry => `${entry.title} ${entry.body}`.toLocaleLowerCase().includes(query.toLocaleLowerCase())).sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
   return <div className="diaryView">
     <header className="diaryHeading"><div><span>하루를 천천히 적어 두는 곳</span><h2>나의 일기장</h2></div><button className="primary" onClick={() => setDraft(blank())}>+ 일기 쓰기</button></header>
+    {!!entries.length && <div className="diaryListTools"><span>{visible.length}편의 일기</span><button aria-pressed={selecting} onClick={() => { setSelecting(!selecting); setSelected([]); }}>{selecting ? "선택 끝내기" : "일기 선택"}</button></div>}
     {error && <p role="alert">{error}</p>}{message && <p role="status">{message}</p>}
-    {!!selected.length && <div className="diaryBulk"><strong>{selected.length}편 선택</strong><label>앨범으로 이동 <select aria-label="선택한 일기의 앨범" value={destination} onChange={e => setDestination(e.target.value)}><option value="">일기장에 두기</option>{albums.map(a => <option key={a.id} value={a.id}>{a.title}</option>)}</select></label><button disabled={busy} onClick={() => move(selected, destination)}>일괄 이동</button><button onClick={() => setSelected([])}>선택 해제</button></div>}
+    {selecting && <div className="diaryBulk"><strong>{selected.length}편 선택</strong><button onClick={() => setSelected(visible.every(entry => selected.includes(entry.id)) ? selected.filter(id => !visible.some(entry => entry.id === id)) : [...new Set([...selected, ...visible.map(entry => entry.id)])])} disabled={!visible.length}>{visible.length && visible.every(entry => selected.includes(entry.id)) ? "현재 결과 선택 해제" : "현재 결과 전체 선택"}</button><label>앨범으로 이동 <select aria-label="선택한 일기의 앨범" value={destination} onChange={e => setDestination(e.target.value)}><option value="">일기장에 두기</option>{albums.map(a => <option key={a.id} value={a.id}>{a.title}</option>)}</select></label><button className="primary" disabled={busy || !selected.length} onClick={() => move(selected, destination)}>일괄 이동</button></div>}
     {!entries.length && <p className="diaryEmpty">아직 적은 일기가 없어요. 오늘의 한 장면을 남겨 보세요.</p>}
     <div className="diaryCards">{visible.map(entry => <article key={entry.id} className="diaryCard">
-      <label className="diarySelect"><input type="checkbox" checked={selected.includes(entry.id)} onChange={e => setSelected(current => e.target.checked ? [...current, entry.id] : current.filter(id => id !== entry.id))} aria-label={`${entry.title} 선택`} />선택</label>
-      <button className="diaryOpen" onClick={() => setDraft({ ...entry })}><time>{entry.date}</time><h3>{entry.title}</h3><p>{entry.body || "내용을 적어 주세요."}</p><span>{moodIcon[entry.mood]} {entry.mood} · {weatherIcon[entry.weather]} {entry.weather}</span></button>
+      {selecting && <label className="diarySelect"><input type="checkbox" checked={selected.includes(entry.id)} onChange={e => setSelected(current => e.target.checked ? [...current, entry.id] : current.filter(id => id !== entry.id))} aria-label={`${entry.title} 선택`} />선택</label>}
+      <button className="diaryOpen" onClick={() => selecting ? setSelected(current => current.includes(entry.id) ? current.filter(id => id !== entry.id) : [...current, entry.id]) : setDraft({ ...entry })} aria-pressed={selecting ? selected.includes(entry.id) : undefined}><time>{entry.date}</time><h3>{entry.title}</h3><p>{entry.body || "내용을 적어 주세요."}</p><span>{moodIcon[entry.mood]} {entry.mood} · {weatherIcon[entry.weather]} {entry.weather}</span></button>
       <small>{albums.find(a => Number(a.id) === entry.album_id)?.title ?? "내 일기장"}</small>
     </article>)}</div>
     {draft && <div className="modalBackdrop"><section className="diaryDialog" role="dialog" aria-modal="true" aria-label={draft.id ? "일기 상세" : "새 일기"}>
