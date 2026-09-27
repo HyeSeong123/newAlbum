@@ -47,7 +47,9 @@ test('province counts, region gallery, unclassified list and existing detail sta
   await expect(page.locator('.memoryMapGallery')).toContainText('제주특별자치도');
   await expect(page.locator('.memoryMapGallery .recordMediaGrid > button')).toHaveCount(1);
   await page.getByRole('button', { name: '제주 바다 상세보기' }).click();
-  await expect(page.getByRole('dialog', { name: '사진 상세' })).toContainText('제주 바다');
+  const detail = page.getByRole('dialog', { name: '사진 상세' });
+  await expect(detail.locator('.detailFileName')).toHaveText('map-photo-2.jpg');
+  await expect(detail.locator('.detailImageCanvas img')).toBeVisible();
   await page.keyboard.press('Escape');
   await page.locator('.memoryMapUnclassified').click();
   await expect(page.locator('.memoryMapGallery')).toContainText('지역 미분류');
