@@ -16,7 +16,7 @@ export type PhotoMode = "grid" | "calendar" | "album" | "timeline" | "map";
 
 export function PhotoView({
   mode, setMode, items, allItems, activeMonth, onMonthChange, selected, onOpen,
-  selectionMode, selectedIds, onToggleSelection, onToggleSelectionMode,
+  selectionMode, selectedIds, onToggleSelection, onSelectAll, onToggleSelectionMode,
   selectedCount, commentCounts, onCreateAlbum, onCreateAlbumFromMap, onDeleteSelected, albums,
   onShowAlbums, onNewAlbum, onViewMedia, onAssignRegion, onLocationsAnalyzed, scopeKey,
 }: {
@@ -31,6 +31,7 @@ export function PhotoView({
   selectionMode: boolean;
   selectedIds: Set<string>;
   onToggleSelection: (id: string) => void;
+  onSelectAll: (ids: string[]) => void;
   onToggleSelectionMode: () => void;
   selectedCount: number;
   commentCounts: Record<string, number>;
@@ -41,7 +42,7 @@ export function PhotoView({
   onShowAlbums: () => void;
   onNewAlbum: () => void;
   onViewMedia: (item: MediaItem, collection?: MediaItem[]) => void;
-  onAssignRegion: (ids: string[], code: string) => Promise<void>;
+  onAssignRegion: (ids: string[], code: string, district?: string, country?: string, city?: string) => Promise<void>;
   onLocationsAnalyzed: () => Promise<void>;
   scopeKey: string;
 }) {
@@ -72,7 +73,7 @@ export function PhotoView({
     {mode === "grid" && <Library
       viewTabs={viewTabs}
       items={monthItems} selected={selected} onOpen={onOpen} selectionMode={selectionMode}
-      selectedIds={selectedIds} onToggleSelection={onToggleSelection}
+      selectedIds={selectedIds} onToggleSelection={onToggleSelection} onSelectAll={onSelectAll}
       onToggleSelectionMode={onToggleSelectionMode} selectedCount={selectedCount}
       commentCounts={commentCounts} onCreateAlbum={onCreateAlbum} onDeleteSelected={onDeleteSelected}
       onAssignRegion={onAssignRegion}

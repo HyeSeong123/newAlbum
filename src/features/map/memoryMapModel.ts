@@ -19,13 +19,14 @@ export function browserRegionPage(items: MediaItem[], code: string, offset: numb
     ? !item.regionCode || !REGION_NAMES[item.regionCode] : item.regionCode === code));
   const years = [...new Set(scoped.flatMap(item => /^\d{4}-/.test(item.takenAt ?? "") ? [item.takenAt!.slice(0, 4)] : []))].sort().reverse();
   const filtered = scoped.filter(item => (filters.fileType === "all" || item.fileType === filters.fileType)
-    && (!filters.year || item.takenAt?.slice(0,4) === filters.year));
+    && (!filters.year || item.takenAt?.slice(0,4) === filters.year)
+    && (!filters.district || (item.district || "__unset__") === filters.district));
   return { items: orderRegionMedia(filtered, filters.oldest).slice(offset, offset + 48), total: filtered.length, years };
 }
 
 // Browser preview has no DB aggregation. One pass replaces a scan per province.
 export function browserLocationOverview(items: MediaItem[], names: Record<string, string>): LocationOverview {
-  const regions = Object.entries(names).map(([code, name]) => ({ code, name, photos: 0, videos: 0 }));
+  const regions = [...Object.entries(names), ["overseas", "해외"]].map(([code, name]) => ({ code, name, photos: 0, videos: 0 }));
   const byCode = new Map(regions.map(region => [region.code, region]));
   let total = 0;
   let unclassified = 0;

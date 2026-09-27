@@ -15,11 +15,13 @@ function ringPath(ring: Point[]): string {
     return `${index ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`;
   }).join("") + "Z";
 }
-export const MAP_REGIONS = collection.features.map((feature) => {
-  const polygons = feature.geometry.type === "Polygon"
-    ? [feature.geometry.coordinates as Polygon] : feature.geometry.coordinates as Polygon[];
+export const MAP_REGIONS = collection.features.filter(feature => feature.properties.shapeISO !== "KR-29").map((feature) => {
+  const combined = feature.properties.shapeISO === "KR-46" ? collection.features.filter(entry => ["KR-46", "KR-29"].includes(entry.properties.shapeISO)) : [feature];
   return { code: feature.properties.shapeISO, name: REGION_NAMES[feature.properties.shapeISO],
-    path: polygons.map(polygon => polygon.map(ringPath).join("")).join("") };
+    path: combined.map(part => {
+      const parts = part.geometry.type === "Polygon" ? [part.geometry.coordinates as Polygon] : part.geometry.coordinates as Polygon[];
+      return parts.map(polygon => polygon.map(ringPath).join("")).join("");
+    }).join("") };
 });
 
 export function totalFor(overview: LocationOverview | null, code: string): number {

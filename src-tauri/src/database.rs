@@ -3,7 +3,7 @@ use std::time::Duration;
 
 // Versions before this migration used user_version = 0 (including existing installs).
 // Future schema changes must increment this and add an ordered migration here.
-const VERSION: i64 = 2;
+const VERSION: i64 = 3;
 
 fn version(conn: &Connection) -> Result<i64, String> {
     conn.query_row("PRAGMA user_version", [], |row| row.get(0))
@@ -38,6 +38,15 @@ pub fn initialize(conn: &mut Connection) -> Result<(), String> {
             .map_err(|error| format!("DB 인덱스를 적용할 수 없습니다: {error}"))?;
     }
     if current < 2 { super::location::migrate(&tx)?; }
+    if current < 3 {
+        super::location::migrate(&tx)?;
+        tx.execute_batch("CREATE TABLE IF NOT EXISTS diary (
+          id INTEGER PRIMARY KEY AUTOINCREMENT, entry_date TEXT NOT NULL,
+          title TEXT NOT NULL, body TEXT NOT NULL DEFAULT '', mood TEXT NOT NULL,
+          weather TEXT NOT NULL, album_id INTEGER REFERENCES album(id) ON DELETE SET NULL
+        ); CREATE INDEX IF NOT EXISTS idx_diary_date ON diary(entry_date DESC, id DESC);")
+            .map_err(|error| format!("일기 저장소를 만들 수 없습니다: {error}"))?;
+    }
     tx.pragma_update(None, "user_version", VERSION).map_err(|error| error.to_string())?;
     tx.commit().map_err(|error| error.to_string())
 }

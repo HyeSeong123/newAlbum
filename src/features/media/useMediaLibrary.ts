@@ -64,20 +64,37 @@ export function useMediaLibrary() {
     });
   }, [state.items, albums]);
 
-  async function register(kind: "files" | "folder") {
-    if (locked.current) return;
+  async function register(kind: "files" | "folder"): Promise<MediaItem[]> {
+    if (locked.current) return [];
     locked.current = true;
     setImporting(kind); setError("");
     try {
       const registered = kind === "files" ? await api.chooseAndRegisterFiles() : await api.chooseAndRegisterFolder();
+      const before = new Set(current.current.items.map(item => item.id));
       if (registered.length) {
         mediaRevision.current++;
         const items = retainMediaEdits(registered, current.current.items).map((item) => ({ ...item, ...pendingMediaEdits.current.get(item.id) }));
         publish({ items, loaded: true });
         pendingMediaEdits.current.clear();
+        return items.filter(item => !before.has(item.id));
       }
     } catch { setError("미디어를 등록하지 못했습니다. 다시 시도해 주세요."); }
     finally { locked.current = false; setImporting(null); }
+    return [];
+  }
+
+  async function importIntoAlbum(title: string) {
+    const added = await register("files");
+    if (!added.length) return false;
+    try { await createAlbum(title, "#B9C58E", added); return true; } catch { setError("사진은 등록했지만 앨범을 만들지 못했습니다. 다시 앨범을 만들어 주세요."); return false; }
+  }
+  async function handleFilesIntoAlbum(files: FileList | null, title: string) {
+    if (!title.trim()) { handleFiles(files, "files"); return false; }
+    const before = new Set(current.current.items.map(item => item.id));
+    handleFiles(files, "files");
+    const added = current.current.items.filter(item => !before.has(item.id));
+    if (!added.length) return false;
+    try { await createAlbum(title.trim(), "#B9C58E", added); return true; } catch { setError("사진은 등록했지만 앨범을 만들지 못했습니다. 다시 앨범을 만들어 주세요."); return false; }
   }
 
   function chooseFiles() {
@@ -137,12 +154,12 @@ export function useMediaLibrary() {
     });
   }
 
-  async function assignRegion(ids: string[], regionCode: string) {
-    if (!REGION_NAMES[regionCode] || !ids.length) throw new Error("지역과 기록을 선택해 주세요.");
+  async function assignRegion(ids: string[], regionCode: string, district = "", country = "", city = "") {
+    if ((!REGION_NAMES[regionCode] && regionCode !== "overseas") || !ids.length) throw new Error("지역과 기록을 선택해 주세요.");
     await write.current("locations", async () => {
-      if (desktop) await api.assignMediaRegion(ids, regionCode);
+      if (desktop) await api.assignMediaRegion(ids, regionCode, district, country, city);
       const selected = new Set(ids);
-      const patch: Partial<MediaItem> = { regionCode, regionName: REGION_NAMES[regionCode], locationSource: "manual", locationStatus: "ready" };
+      const patch: Partial<MediaItem> = { regionCode, regionName: REGION_NAMES[regionCode] ?? "해외", district: regionCode === "overseas" ? "" : district, country: regionCode === "overseas" ? country : "", city: regionCode === "overseas" ? city : "", locationSource: "manual", locationStatus: "ready" };
       const update = (item: MediaItem) => selected.has(item.id) ? { ...item, ...patch } : item;
       if (!current.current.loaded) {
         // Albums can open before the initial library query finishes. Keep its
@@ -170,6 +187,7 @@ export function useMediaLibrary() {
         const location = records.get(item.id);
         return location ? { ...item, latitude: location.latitude, longitude: location.longitude,
           regionCode: location.regionCode, regionName: location.regionName,
+          district: location.district, country: location.country, city: location.city,
           locationSource: location.locationSource, locationStatus: location.locationStatus } : item;
       }) });
     });
@@ -228,6 +246,6 @@ export function useMediaLibrary() {
     });
   }
 
-  return { items: state.items, itemsById, albums, importing, clearing, error, fileInput, folderInput,
+  return { desktop, importIntoAlbum, handleFilesIntoAlbum, items: state.items, itemsById, albums, importing, clearing, error, fileInput, folderInput,
     chooseFiles, chooseFolder, handleFiles, patchMedia, saveTitle, assignRegion, refreshLocations, recordView, removeMedia, createAlbum, saveAlbum, deleteAlbums };
 }

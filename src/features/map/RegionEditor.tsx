@@ -2,28 +2,40 @@ import { useState } from "react";
 import { REGION_NAMES } from "./regions";
 import "./region-editor.css";
 
-export function RegionEditor({ current, source, count = 1, initiallyEditing = false, onSave }: {
-  current?: string; source?: string; count?: number; initiallyEditing?: boolean; onSave: (code: string) => Promise<void>;
+export function RegionEditor({ current, district: initialDistrict = "", country: initialCountry = "", city: initialCity = "", source, count = 1, initiallyEditing = false, onSave }: {
+  current?: string; district?: string; country?: string; city?: string; source?: string; count?: number; initiallyEditing?: boolean;
+  onSave: (code: string, district?: string, country?: string, city?: string) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(initiallyEditing);
-  const [code, setCode] = useState(current ?? "");
+  const [overseas, setOverseas] = useState(current === "overseas");
+  const [code, setCode] = useState(current === "KR-29" ? "KR-46" : current ?? "");
+  const [district, setDistrict] = useState(initialDistrict);
+  const [country, setCountry] = useState(initialCountry);
+  const [city, setCity] = useState(initialCity);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   async function save() {
-    if (!code || busy || !count) return;
+    if (busy || !count || (overseas ? !country.trim() || !city.trim() : !code)) return;
     setBusy(true); setError("");
-    try { await onSave(code); setEditing(false); }
+    try { await onSave(overseas ? "overseas" : code, overseas ? "" : district.trim(), overseas ? country.trim() : "", overseas ? city.trim() : ""); setEditing(false); }
     catch { setError("지역을 저장하지 못했습니다. 다시 시도해 주세요."); }
     finally { setBusy(false); }
   }
+  const place = current === "overseas" ? [initialCountry, initialCity].filter(Boolean).join(" · ") : [REGION_NAMES[current ?? ""], initialDistrict].filter(Boolean).join(" · ");
   return <section className="regionEditor" aria-label="위치">
-    {!editing ? <><span>{count > 1 ? `선택한 ${count}개 기록` : current ? REGION_NAMES[current] : "지역 미분류"}
-      {source === "manual" && <small>직접 지정</small>}</span>
-      <button disabled={!count} onClick={() => { setCode(current ?? ""); setEditing(true); }}>{current ? "지역 변경" : "지역 지정"}</button></> : <>
-      <label>{count > 1 ? `선택한 ${count}개의 지역` : "지역"}<select aria-label="지정할 지역" disabled={busy} value={code} onChange={event => setCode(event.target.value)}>
-        <option value="">지역을 선택해 주세요</option>{Object.entries(REGION_NAMES).map(([value, name]) => <option key={value} value={value}>{name}</option>)}
-      </select></label>
-      <button disabled={busy || !code || !count} onClick={() => void save()}>{busy ? "저장 중" : "지역 저장"}</button>
+    {!editing ? <><span>{count > 1 ? `선택한 ${count}개 기록` : place || "지역 미분류"}{source === "manual" && <small>직접 지정</small>}</span>
+      <button disabled={!count} onClick={() => setEditing(true)}>{current ? "지역 변경" : "지역 지정"}</button></> : <>
+      <label className="overseasCheck"><input type="checkbox" checked={overseas} disabled={busy} onChange={event => setOverseas(event.target.checked)} /> 해외 지역</label>
+      {overseas ? <>
+        <label>나라<input aria-label="나라" maxLength={80} placeholder="예: 일본" value={country} disabled={busy} onChange={event => setCountry(event.target.value)} /></label>
+        <label>도시<input aria-label="도시" maxLength={80} placeholder="예: 교토" value={city} disabled={busy} onChange={event => setCity(event.target.value)} /></label>
+      </> : <>
+        <label>{count > 1 ? `선택한 ${count}개의 시·도` : "시·도"}<select aria-label="지정할 지역" disabled={busy} value={code} onChange={event => { setCode(event.target.value); setDistrict(""); }}>
+          <option value="">지역을 선택해 주세요</option>{Object.entries(REGION_NAMES).map(([value, name]) => <option key={value} value={value}>{name}</option>)}
+        </select></label>
+        <label>시·군·구<input aria-label="시군구" maxLength={60} placeholder="예: 서구, 담양군 (선택)" value={district} disabled={busy} onChange={event => setDistrict(event.target.value)} /></label>
+      </>}
+      <button disabled={busy || !count || (overseas ? !country.trim() || !city.trim() : !code)} onClick={() => void save()}>{busy ? "저장 중" : "지역 저장"}</button>
       <button disabled={busy} onClick={() => setEditing(false)}>취소</button>
     </>}
     {error && <p role="alert">{error}</p>}

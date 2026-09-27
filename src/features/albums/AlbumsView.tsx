@@ -7,16 +7,19 @@ import { ActionMenu } from "../../components/ActionMenu";
 import { ExportModal } from "../../components/ExportModal";
 import { mediaSummary } from "../media/journalModel";
 import { AlbumFullscreenReader } from "./AlbumReader";
+import type { DiaryEntry } from "../diary/DiaryView";
 import { AlbumEditor } from "./AlbumEditor";
 
 export function SavedAlbumsView({
   albums,
+  diaries = [],
   onOpen,
   onSave,
   onDelete,
   query = "",
 }: {
   albums: SavedAlbum[];
+  diaries?: DiaryEntry[];
   onOpen: (item: MediaItem, collection?: MediaItem[]) => void;
   onSave: (album: SavedAlbum) => Promise<void>;
   onDelete: (ids: string[]) => Promise<void>;
@@ -83,7 +86,7 @@ export function SavedAlbumsView({
                 { label: "내보내기", icon: <FolderOutput size={16} />, disabled: !album.items.length, onSelect: () => setExporting(album) },
               ]} />}
             </div>
-            <div className="savedAlbumMeta"><span>{mediaSummary(album.items)}</span></div>
+            <div className="savedAlbumMeta"><span>{mediaSummary(album.items)}{diaries.some(d => d.album_id === Number(album.id)) && ` · 일기 ${diaries.filter(d => d.album_id === Number(album.id)).length}편`}</span></div>
           </article>
           );
         })}
@@ -92,7 +95,7 @@ export function SavedAlbumsView({
         <AlbumFullscreenReader
           title={activeAlbum.title}
           items={activeAlbum.items}
-          contents={activeAlbum.contents}
+          contents={[...(activeAlbum.contents ?? []), ...diaries.filter(d => d.album_id === Number(activeAlbum.id)).map(d => ({ id: `diary-${d.id}`, kind: "TEXT" as const, title: `${d.date} · ${d.title}`, body: `${d.mood} · ${d.weather}\n\n${d.body}`, displayDuration: 5, transitionType: "fade" as const, commentVisible: true }))]}
           musicPath={activeAlbum.musicPath}
           color={activeAlbum.coverColor}
           open={true}

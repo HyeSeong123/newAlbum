@@ -13,7 +13,7 @@ test('browser counts photos and videos in one pass, excluding audio and retainin
   const overview = browserLocationOverview(items, names);
   assert.equal(overview.total, 5);
   assert.equal(overview.unclassified, 2);
-  assert.deepEqual(overview.regions.map(({ photos, videos }) => [photos, videos]), [[1, 1], [1, 0], [0, 0]]);
+  assert.deepEqual(overview.regions.map(({ photos, videos }) => [photos, videos]), [[1, 1], [1, 0], [0, 0], [0, 0]]);
   // The same number of records may have new regions after an update.
   assert.equal(browserLocationOverview(items.map(item => ({ ...item, regionCode: 'KR-49' })), names).regions[1].photos, 3);
   assert.equal(browserLocationOverview([], names).total, 0);
@@ -57,4 +57,18 @@ test('month grouping retains order and item identity without modifying the input
   assert.deepEqual(groups[0].items, [items[0], items[2]]);
   assert.strictEqual(groups[0].items[1], items[2]);
   assert.deepEqual(groupByMonth([]), []);
+});
+
+test('overseas records stay out of the unclassified bucket and districts filter locally', () => {
+  const items = [
+    { id: '1', fileType: 'image', regionCode: 'overseas', country: '일본', city: '교토', takenAt: '2026-09-01' },
+    { id: '2', fileType: 'image', regionCode: 'KR-46', district: '담양군', takenAt: '2026-09-02' },
+    { id: '3', fileType: 'image', regionCode: 'KR-46', takenAt: '2026-09-03' },
+  ];
+  const overview = browserLocationOverview(items, { 'KR-46': '전남광주통합특별시' });
+  assert.equal(overview.unclassified, 0);
+  assert.equal(overview.regions.find(region => region.code === 'overseas').photos, 1);
+  const filters = { fileType: 'all', year: '', oldest: false, district: '담양군' };
+  assert.deepEqual(browserRegionPage(items, 'KR-46', 0, filters).items.map(item => item.id), ['2']);
+  assert.deepEqual(browserRegionPage(items, 'KR-46', 0, { ...filters, district: '__unset__' }).items.map(item => item.id), ['3']);
 });
