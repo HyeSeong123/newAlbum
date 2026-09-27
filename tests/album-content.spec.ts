@@ -33,8 +33,7 @@ test('legacy album accepts a chapter at a chosen position, reloads, moves and de
   await page.goto('/');
   await page.getByRole('button', { name:'내 앨범', exact:true }).click();
   const openEditor = async () => {
-    await page.getByRole('button', { name:'제주 여행 앨범 메뉴' }).click();
-    await page.getByRole('button', { name:'앨범 수정', exact:true }).click();
+    await page.getByRole('button', { name:'챕터·감상문 편집', exact:true }).click();
   };
   await openEditor();
   const editor = page.getByRole('dialog', { name:'앨범 수정' });
@@ -50,6 +49,9 @@ test('legacy album accepts a chapter at a chosen position, reloads, moves and de
   const reader = page.getByRole('dialog', { name:'앨범 전체창' });
   await expect(reader.locator('.albumPaper.right .albumWrittenPage')).toContainText('DAY 2 · 성산일출봉');
   await expect(reader.locator('.albumPaper.left .albumPagePhoto')).toHaveCount(2);
+  await reader.getByRole('button', { name:'챕터·감상문 편집', exact:true }).click();
+  await expect(page.getByRole('dialog', { name:'앨범 수정' }).getByLabel('챕터 제목')).toHaveValue('DAY 2 · 성산일출봉');
+  await page.getByRole('dialog', { name:'앨범 수정' }).getByRole('button', { name:'취소', exact:true }).click();
   await reader.getByTitle('닫기', { exact:true }).click();
   await openEditor();
   await editor.getByRole('button', { name:'3번 항목 위로', exact:true }).click();
@@ -66,15 +68,17 @@ test('text-only album can be saved, read, edited and removed after reload', asyn
   await page.goto('/');
   await page.getByRole('button', { name:'내 앨범', exact:true }).click();
   const openEditor = async () => {
-    await page.getByRole('button', { name:'제주 여행 앨범 메뉴' }).click();
-    await page.getByRole('button', { name:'앨범 수정', exact:true }).click();
+    await page.getByRole('button', { name:'챕터·감상문 편집', exact:true }).click();
   };
   await openEditor();
   const editor = page.getByRole('dialog', { name:'앨범 수정' });
-  await editor.getByRole('button', { name:'글 페이지 추가', exact:true }).click();
-  await editor.getByLabel('글 제목', { exact:true }).fill('여행 마지막 날');
-  await editor.getByLabel('본문', { exact:true }).fill('별거 하지 않았는데\n이 날이 가장 기억에 남는다.');
-  for (let i = 0; i < 6; i++) await editor.getByRole('button', { name:'2번 항목 삭제', exact:true }).click();
+  await editor.getByRole('button', { name:'감상문 추가', exact:true }).click();
+  await editor.getByLabel('감상문 제목', { exact:true }).fill('여행 마지막 날');
+  await editor.getByLabel('감상문 내용', { exact:true }).fill('별거 하지 않았는데\n이 날이 가장 기억에 남는다.');
+  for (let i = 0; i < 6; i++) {
+    await editor.locator('.albumContentRow').first().getByRole('button').click();
+    await editor.getByRole('button', { name:'1번 항목 삭제', exact:true }).click();
+  }
   await editor.getByRole('button', { name:'저장', exact:true }).click();
   await expect(editor).toBeHidden();
   await page.reload();
@@ -84,7 +88,7 @@ test('text-only album can be saved, read, edited and removed after reload', asyn
   await expect(reader.locator('.albumPaper.left .albumWrittenPage')).toContainText('이 날이 가장 기억에 남는다.');
   await reader.getByTitle('닫기', { exact:true }).click();
   await openEditor();
-  await editor.getByLabel('본문', { exact:true }).fill('다시 쓴 기록');
+  await editor.getByLabel('감상문 내용', { exact:true }).fill('다시 쓴 기록');
   await editor.getByRole('button', { name:'저장', exact:true }).click();
   await expect(editor).toBeHidden();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('album-content-test')!).contents[0].body)).toBe('다시 쓴 기록');

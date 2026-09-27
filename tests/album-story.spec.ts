@@ -77,11 +77,14 @@ test('per-item story settings and album music survive a reload', async ({ page }
   await edit();
   const editor = page.getByRole('dialog',{ name:'앨범 수정' });
   const row = editor.locator('.albumContentRow').nth(1);
-  await row.getByText('스토리 설정',{ exact:true }).click();
-  await row.getByLabel('표시 시간',{ exact:true }).selectOption('custom');
-  await row.getByLabel('표시 시간(초)',{ exact:true }).fill('8.5');
-  await row.getByLabel('전환 효과',{ exact:true }).selectOption('zoom');
-  await row.getByLabel('댓글·기록 표시',{ exact:true }).uncheck();
+  await row.getByRole('button').click();
+  const settings = editor.locator('.albumEntryEditor');
+  await settings.getByText('스토리 설정',{ exact:true }).click();
+  await settings.getByLabel('표시 시간',{ exact:true }).selectOption('custom');
+  await settings.getByLabel('표시 시간(초)',{ exact:true }).fill('8.5');
+  await settings.getByLabel('전환 효과',{ exact:true }).selectOption('zoom');
+  await settings.getByLabel('댓글·기록 표시',{ exact:true }).uncheck();
+  await editor.getByRole('button',{ name:'스토리 음악',exact:true }).click();
   await editor.getByRole('button',{ name:'음악 제거',exact:true }).click();
   await editor.getByRole('button',{ name:'음악 선택',exact:true }).click();
   await editor.getByRole('button',{ name:'저장',exact:true }).click();
@@ -89,10 +92,12 @@ test('per-item story settings and album music survive a reload', async ({ page }
   await page.reload();
   await page.getByRole('button',{ name:'내 앨범',exact:true }).click();
   await edit();
-  await row.getByText('스토리 설정',{ exact:true }).click();
-  await expect(row.getByLabel('표시 시간(초)',{ exact:true })).toHaveValue('8.5');
-  await expect(row.getByLabel('전환 효과',{ exact:true })).toHaveValue('zoom');
-  await expect(row.getByLabel('댓글·기록 표시',{ exact:true })).not.toBeChecked();
+  await row.getByRole('button').click();
+  await settings.getByText('스토리 설정',{ exact:true }).click();
+  await expect(settings.getByLabel('표시 시간(초)',{ exact:true })).toHaveValue('8.5');
+  await expect(settings.getByLabel('전환 효과',{ exact:true })).toHaveValue('zoom');
+  await expect(settings.getByLabel('댓글·기록 표시',{ exact:true })).not.toBeChecked();
+  await editor.getByRole('button',{ name:'스토리 음악',exact:true }).click();
   await expect(editor.getByRole('region',{ name:'배경 음악',exact:true })).toContainText('story-music.wav');
 });
 

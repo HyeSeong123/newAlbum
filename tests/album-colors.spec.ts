@@ -139,10 +139,10 @@ test('fabric album colors survive create, edit and reload', async ({ page }) => 
   await page.getByRole('button', { name: '버건디 추억 앨범 선택' }).click();
   await page.getByRole('button', { name: '수정', exact: true }).click();
   const editor = page.getByRole('dialog', { name: '앨범 수정' });
+  await editor.getByRole('button', { name: '앨범 정보', exact: true }).click();
   await editor.getByRole('button', { name: '세이지 색상', exact: true }).click();
   await editor.getByRole('button', { name: '저장', exact: true }).click();
   await page.reload();
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
   await expect(page.getByRole('button', { name: '버건디 추억 앨범 열기' }).locator('.frontAlbum')).toHaveCSS('--album-color', '#D8DDCB');
 });
-

@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { BookOpen, Check, CheckSquare, FolderOutput, MoreVertical, Pencil, Trash2, X } from "lucide-react";
+import { BookOpen, Check, CheckSquare, FileText, FolderOutput, MoreVertical, Pencil, Trash2, X } from "lucide-react";
 import type { MediaItem, SavedAlbum } from "../../types/media";
 import { EmptyState } from "../../components/MediaVisual";
 import { AlbumCover } from "./AlbumCover";
@@ -8,7 +8,7 @@ import { ExportModal } from "../../components/ExportModal";
 import { mediaSummary } from "../media/journalModel";
 import { AlbumFullscreenReader } from "./AlbumReader";
 import type { DiaryEntry } from "../diary/DiaryView";
-import { AlbumEditor } from "./AlbumEditor";
+import { AlbumEditor, type AlbumEditorSection } from "./AlbumEditor";
 
 export function SavedAlbumsView({
   albums,
@@ -27,7 +27,8 @@ export function SavedAlbumsView({
 }) {
   const [activeAlbumId, setActiveAlbumId] = useState<string | null>(null);
   const activeAlbum = albums.find((album) => album.id === activeAlbumId);
-  const [editing, setEditing] = useState<SavedAlbum | null>(null);
+  const [editing, setEditing] = useState<{ album: SavedAlbum; section: AlbumEditorSection } | null>(null);
+  const openEditor = (album: SavedAlbum, section: AlbumEditorSection = "contents") => setEditing({ album, section });
   const [exporting, setExporting] = useState<SavedAlbum | null>(null);
   const [selecting, setSelecting] = useState(false);
   const [chosen, setChosen] = useState<string[]>([]);
@@ -63,7 +64,7 @@ export function SavedAlbumsView({
             {selecting ? <X size={17} /> : <CheckSquare size={17} />}{selecting ? "선택 끝내기" : "선택"}
           </button>
           {selecting && <>
-            <button disabled={chosen.length !== 1 || busy} onClick={() => setEditing(albums.find((album) => album.id === chosen[0]) ?? null)}><Pencil size={17} />수정</button>
+            <button disabled={chosen.length !== 1 || busy} onClick={() => { const album = albums.find(item => item.id === chosen[0]); if (album) openEditor(album); }}><Pencil size={17} />수정</button>
             <button disabled={!chosen.length || busy} onClick={() => void removeSelected()}><Trash2 size={17} />삭제</button>
           </>}
         </div>
@@ -82,11 +83,12 @@ export function SavedAlbumsView({
             </button>
               {!selecting && <ActionMenu label={`${album.title} 앨범 메뉴`} icon={<MoreVertical size={18} />} disabled={busy} actions={[
                 { label: "앨범 열기", icon: <BookOpen size={16} />, onSelect: () => setActiveAlbumId(album.id) },
-                { label: "앨범 수정", icon: <Pencil size={16} />, onSelect: () => setEditing(album) },
+                { label: "앨범 수정", icon: <Pencil size={16} />, onSelect: () => openEditor(album) },
                 { label: "내보내기", icon: <FolderOutput size={16} />, disabled: !album.items.length, onSelect: () => setExporting(album) },
               ]} />}
             </div>
             <div className="savedAlbumMeta"><span>{mediaSummary(album.items)}{diaries.some(d => d.album_id === Number(album.id)) && ` · 일기 ${diaries.filter(d => d.album_id === Number(album.id)).length}편`}</span></div>
+            {!selecting && <button className="savedAlbumEdit" disabled={busy} onClick={() => openEditor(album)}><FileText size={16} />챕터·감상문 편집</button>}
           </article>
           );
         })}
@@ -102,9 +104,10 @@ export function SavedAlbumsView({
           onOpen={onOpen}
           onClose={() => setActiveAlbumId(null)}
           onExport={() => setExporting(activeAlbum)}
+          onEdit={() => openEditor(activeAlbum)}
         />
       )}
-      {editing && <AlbumEditor album={editing} onClose={() => setEditing(null)} onSave={onSave} />}
+      {editing && <AlbumEditor key={editing.album.id} album={editing.album} initialSection={editing.section} onClose={() => setEditing(null)} onSave={onSave} />}
       {exporting && <ExportModal title={exporting.title} items={exporting.items} onClose={() => setExporting(null)} />}
     </div>
   );
