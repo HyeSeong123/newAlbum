@@ -1,0 +1,80 @@
+name: Windows preview package
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/warm-journal-v2]
+    paths:
+      - '.github/workflows/windows-preview.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: Build, install and publish Windows preview
+    runs-on: windows-2025
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install Windows Rust toolchain
+        run: rustup toolchain install stable-x86_64-pc-windows-msvc --profile minimal
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Install dependencies and verify source
+        run: |
+          npm ci
+          npm run version:check
+          npm run test:unit
+      - name: Build NSIS installer and application
+        run: npm run package:windows -- --ci -- --locked
+      - name: Install and test packaged application
+        shell: pwsh
+        run: ./scripts/smoke-windows.ps1
+      - name: Prepare tested downloads
+        id: files
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $installer = Get-ChildItem 'src-tauri/target/release/bundle/nsis/*-setup.exe' | Select-Object -First 1
+          $binary = Get-Item 'src-tauri/target/release/oraedameun.exe'
+          if (-not $installer -or -not $binary) { throw 'Installer or executable is missing.' }
+          New-Item -ItemType Directory -Force release-output | Out-Null
+          Copy-Item $installer.FullName "release-output/Oraedameun_${version}_x64-setup.exe"
+          Copy-Item $binary.FullName "release-output/Oraedameun_${version}_x64-portable.exe"
+          Get-ChildItem release-output/*.exe | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash *$($_.Name)"
+          } | Set-Content release-output/SHA256SUMS.txt -Encoding utf8
+          "tag=preview-$($env:GITHUB_SHA.Substring(0,12))" >> $env:GITHUB_OUTPUT
+          "version=$version" >> $env:GITHUB_OUTPUT
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Oraedameun-Windows-${{ steps.files.outputs.version }}
+          path: release-output/*
+          if-no-files-found: error
+          retention-days: 30
+      - name: Publish tested preview release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.files.outputs.tag }}
+          VERSION: ${{ steps.files.outputs.version }}
+        run: |
+          $notes = "Windows 64비트 테스트 빌드 ($env:VERSION). 설치, 실행, 네이티브 저장소·썸네일·재시작 지속성 자동 검증 통과. 설치 파일은 오프라인 WebView2를 포함합니다. 단독 실행 파일은 PC에 WebView2가 필요합니다. 코드 서명은 적용되지 않았습니다. 소스: $env:GITHUB_SHA"
+          gh release create $env:TAG release-output/* --target $env:GITHUB_SHA --title "오래담은 $env:VERSION Windows 미리보기" --prerelease --notes $notes
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-preview-diagnostics
+          path: test-results/desktop-smoke/
+          if-no-files-found: ignore
+          retention-days: 7

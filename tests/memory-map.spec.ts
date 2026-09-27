@@ -52,7 +52,7 @@ test('province counts, region gallery, unclassified list and existing detail sta
   await expect(detail.locator('.detailFileName')).toHaveText('map-photo-2.jpg');
   await expect(detail.locator('.detailImageCanvas img')).toBeVisible();
   await page.keyboard.press('Escape');
-  await page.locator('.memoryMapUnclassified').click();
+  await page.getByRole('button', { name: '지역 미분류' }).click();
   await expect(page.locator('.memoryMapGallery')).toContainText('지역 미분류');
   await expect(page.locator('.memoryMapGallery .recordMediaGrid > button')).toHaveCount(1);
   await expect(page.locator('.memoryMapGallery')).toContainText('사진관');
