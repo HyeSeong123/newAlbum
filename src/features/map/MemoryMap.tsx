@@ -20,6 +20,10 @@ export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLoca
   const [hovered, setHovered] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [overviewError, setOverviewError] = useState("");
+  const [refresh, setRefresh] = useState(0);
+  const [focusVersion, setFocusVersion] = useState(0);
+  const origin = useRef<HTMLElement | SVGElement | null>(null);
   const running = useRef(false);
   const alive = useRef(true);
   const desktop = isTauriRuntime();
@@ -27,12 +31,12 @@ export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLoca
 
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   useEffect(() => {
-    if (!desktop) return;
+    if (!desktop || busy) return;
     let disposed = false;
-    void loadLocationOverview().then(value => { if (!disposed) { setOverview(value); setError(""); } })
-      .catch(() => { if (!disposed) setError("위치 정보를 불러오지 못했습니다."); });
+    void loadLocationOverview().then(value => { if (!disposed) { setOverview(value); setOverviewError(""); } })
+      .catch(() => { if (!disposed) setOverviewError("위치 정보를 불러오지 못했습니다."); });
     return () => { disposed = true; };
-  }, [desktop, items]);
+  }, [desktop, items, refresh, busy]);
 
   async function analyze(retry: boolean) {
     if (!desktop || running.current) return;
@@ -51,7 +55,16 @@ export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLoca
     finally { running.current = false; if (alive.current) setBusy(false); }
   }
 
-  function select(code: string | null) { setSelected(code); setHovered(null); }
+  function select(code: string, control: HTMLElement | SVGElement) {
+    origin.current = control;
+    setSelected(code); setHovered(null); setFocusVersion(value => value + 1);
+  }
+  function closeGallery() {
+    setSelected(null); setHovered(null);
+    origin.current?.focus({ preventScroll: true });
+    origin.current?.scrollIntoView({ block: "center", behavior: "instant" });
+  }
+  const initialLoading = desktop && !overview;
 
   const shown = desktop ? overview ?? EMPTY_OVERVIEW : fallback;
   const covered = shown.regions.filter(region => region.photos + region.videos > 0).length;
@@ -64,11 +77,15 @@ export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLoca
     <section className="memoryMapIntro" aria-label="추억 지도 요약">
       <div className="memoryMapIntroText"><span className="memoryMapEyebrow"><Compass size={16} />나의 추억 지도</span>
         <h2>사진이 남긴 곳, 다시 펼쳐보기</h2>
-        <p>17개 지역 중 {covered}개 지역에 기록이 있어요. 지도에서 지역을 골라 그날의 사진을 만나보세요.</p></div>
-      <div className="memoryMapStats"><div><strong>{located.toLocaleString()}</strong><span>위치가 있는 기록</span></div><div><strong>{shown.unclassified.toLocaleString()}</strong><span>지역 미분류</span></div></div>
+        <p>{initialLoading ? "사진에 담긴 지역 정보를 확인하고 있어요." : `17개 지역 중 ${covered}개 지역에 기록이 있어요. 지도에서 지역을 골라 그날의 사진을 만나보세요.`}</p></div>
+      {!initialLoading && <div className="memoryMapStats"><div><strong>{located.toLocaleString()}</strong><span>위치가 있는 기록</span></div><div><strong>{shown.unclassified.toLocaleString()}</strong><span>지역 미분류</span></div></div>}
     </section>
+    {overviewError && <div className="memoryMapAlert" role="alert">{overviewError}
+      <button disabled={busy} onClick={() => { setOverviewError(""); setRefresh(value => value + 1); }}>지도 다시 불러오기</button>
+    </div>}
+    {initialLoading && !overviewError && <p role="status">추억 지도를 불러오는 중이에요.</p>}
     {error && <p className="memoryMapAlert" role="alert">{error}</p>}
-    <section className="memoryMapLayout" aria-label="대한민국 추억 분포">
+    {!initialLoading && <section className="memoryMapLayout" aria-label="대한민국 추억 분포">
       <div className="memoryMapPaper">
         <div className="memoryMapPaperHead"><div><span className="memoryMapEyebrow">우리의 장소들</span><h3>대한민국</h3></div><span>시·도별 기록</span></div>
         <svg className="memoryMapShape" viewBox="0 0 500 535" role="group" aria-label="대한민국 시·도 선택 지도">
@@ -78,9 +95,9 @@ export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLoca
               className={`memoryMapRegion ${amount ? "has-records" : ""} ${selected === region.code ? "selected" : ""} ${hovered === region.code ? "hovered" : ""}`}
               role="button" tabIndex={0} aria-label={`${region.name} 총 ${amount}개`}
               aria-pressed={selected === region.code}
-              onClick={() => select(region.code)} onMouseEnter={() => setHovered(region.code)} onMouseLeave={() => setHovered(null)}
+              onClick={event => select(region.code, event.currentTarget)} onMouseEnter={() => setHovered(region.code)} onMouseLeave={() => setHovered(null)}
               onFocus={() => setHovered(region.code)} onBlur={() => setHovered(null)}
-              onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(region.code); } }}>
+              onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(region.code, event.currentTarget); } }}>
               <title>{region.name} · {amount}개의 기록</title>
             </path>;
           })}
@@ -94,11 +111,11 @@ export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLoca
         <div className="memoryMapPlacesHead"><h3>지역별 기록</h3><span>{covered} / 17개 지역</span></div>
         <div className="memoryMapPlaceList">{MAP_REGIONS.map(region => {
           const total = totalFor(shown, region.code);
-          return <button key={region.code} aria-pressed={selected === region.code} className={total ? "has-records" : ""} onClick={() => select(region.code)}>
+          return <button key={region.code} aria-pressed={selected === region.code} className={total ? "has-records" : ""} onClick={event => select(region.code, event.currentTarget)}>
             <span>{REGION_LABELS[region.code]}</span><strong>{total.toLocaleString()}</strong>
           </button>;
         })}</div>
-        <button className="memoryMapUnclassified" aria-pressed={selected === "unclassified"} onClick={() => select("unclassified")}>
+        <button className="memoryMapUnclassified" aria-pressed={selected === "unclassified"} onClick={event => select("unclassified", event.currentTarget)}>
           <MapPin size={16} /><span>지역 미분류</span><strong>{shown.unclassified.toLocaleString()}</strong>
         </button>
         {desktop && (shown.pending > 0 || shown.failed > 0 || busy) && <div className="memoryMapAnalysis">
@@ -108,9 +125,9 @@ export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLoca
           {shown.pending === 0 && shown.failed > 0 && <button disabled={busy} onClick={() => void analyze(true)}><RefreshCw size={15} />분석 실패 {shown.failed}개 다시 시도</button>}
         </div>}
       </aside>
-    </section>
-    {selected && <RegionGallery key={selected} code={selected} items={items} revision={shown.analyzed}
+    </section>}
+    {selected && <RegionGallery key={selected} code={selected} focusVersion={focusVersion} items={items} revision={shown.analyzed}
       summary={selected === "unclassified" ? "GPS가 없거나 위치를 확인할 수 없는 기록이에요. 직접 지역을 지정할 수 있어요." : `${shown.regions.find(region => region.code === selected)?.photos ?? 0}장의 사진 · ${shown.regions.find(region => region.code === selected)?.videos ?? 0}개의 영상`}
-      onOpen={onOpen} onClose={() => select(null)} onAssignRegion={onAssignRegion} onCreateAlbum={onCreateAlbum} />}
+      onOpen={onOpen} onClose={closeGallery} onAssignRegion={onAssignRegion} onCreateAlbum={onCreateAlbum} />}
   </div>;
 }

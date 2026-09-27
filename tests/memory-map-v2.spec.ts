@@ -26,6 +26,8 @@ test.beforeEach(async ({ page }) => {
         if(command==='list_albums') return albums;
         if(command==='media_thumbnail') return `C:/region-photo-${args.id}.jpg`;
         if(command==='increment_media_view') return 1;
+        if(command==='location_overview' && location.search.includes('overview-error') && !localStorage.getItem('overview-recovered')) throw new Error('overview unavailable');
+        if(command==='location_overview' && location.search.includes('slow-overview')) await new Promise(resolve=>window.addEventListener('release-overview',resolve,{once:true}));
         if(command==='location_overview') return {total:media.length,analyzed:media.length,pending:0,failed:0,unclassified:media.filter(i=>!i.region_code).length,
           regions:Object.entries(names).map(([code,name])=>({code,name,photos:media.filter(i=>i.region_code===code&&i.file_type==='image').length,videos:media.filter(i=>i.region_code===code&&i.file_type==='video').length}))};
         if(command==='assign_media_region') {
@@ -34,6 +36,7 @@ test.beforeEach(async ({ page }) => {
           localStorage.setItem('region-test-media',JSON.stringify(media)); return;
         }
         if(command==='region_media_page') {
+          if(localStorage.getItem('region-page-fail')) throw new Error('page unavailable');
           const scope = media.filter(i=>args.regionCode==='unclassified'?!i.region_code:i.region_code===args.regionCode);
           const filtered = scope.filter(i=>(args.fileType==='all'||args.fileType===i.file_type)&&(!args.year||i.taken_at?.startsWith(args.year+'-')))
             .sort((a,b)=>!a.taken_at&&b.taken_at?1:a.taken_at&&!b.taken_at?-1:((a.taken_at??'').localeCompare(b.taken_at??'')||a.id-b.id)*(args.oldest?1:-1));
@@ -193,4 +196,78 @@ test('region edit from an existing album survives the delayed initial library re
   await page.locator('.memoryMapPlaceList button').filter({hasText:'서울'}).click();
   await page.getByRole('button',{name:'기록 1 상세보기',exact:true}).click();
   await expect(detail.getByText('직접 지정')).toBeVisible();
+});
+
+
+test('region and page navigation focus the gallery and return to the original map control',async({page})=>{
+  await map(page,'?large');
+  const region=page.locator('.memoryMapShape').getByRole('button',{name:'제주특별자치도 총 60개',exact:true});
+  await region.focus(); await page.keyboard.press('Enter');
+  const gallery=page.locator('.memoryMapGallery');
+  const heading=gallery.getByRole('heading',{name:'제주특별자치도',exact:true});
+  await expect(heading).toBeFocused(); await expect(heading).toBeInViewport();
+  await gallery.getByRole('navigation',{name:'지역 사진 페이지'}).getByRole('button',{name:'다음',exact:true}).click();
+  await expect(gallery).toContainText('49–60번째 기록');
+  await expect(heading).toBeFocused(); await expect(heading).toBeInViewport();
+  await gallery.getByRole('button',{name:'전체 지도 보기'}).click();
+  await expect(gallery).toHaveCount(0); await expect(region).toBeFocused(); await expect(region).toBeInViewport();
+});
+
+test('page selection retains other pages and clearing selections disables region saving',async({page})=>{
+  await map(page,'?large'); await page.locator('.memoryMapPlaceList button').filter({hasText:'제주'}).click();
+  const gallery=page.locator('.memoryMapGallery');
+  await gallery.getByRole('button',{name:'선택',exact:true}).click();
+  await gallery.getByRole('button',{name:'이 페이지 전체 선택',exact:true}).click();
+  await expect(gallery).toContainText('48개 선택');
+  await gallery.getByRole('navigation',{name:'지역 사진 페이지'}).getByRole('button',{name:'다음',exact:true}).click();
+  await gallery.getByRole('button',{name:'이 페이지 전체 선택',exact:true}).click();
+  await expect(gallery).toContainText('60개 선택');
+  await gallery.getByRole('button',{name:'이 페이지 선택 해제',exact:true}).click();
+  await expect(gallery).toContainText('48개 선택');
+  await gallery.getByRole('button',{name:'앨범 만들기'}).click();
+  const draft=page.getByRole('dialog',{name:'앨범 만들기'});
+  await expect(draft).toContainText('48개의 기록');
+  await draft.getByRole('button',{name:'취소',exact:true}).click();
+  await gallery.getByRole('button',{name:'지역 지정',exact:true}).click();
+  await gallery.getByLabel('지정할 지역').selectOption('KR-11');
+  await gallery.getByRole('button',{name:'선택 모두 해제',exact:true}).click();
+  await expect(gallery.getByRole('button',{name:'지역 저장',exact:true})).toBeDisabled();
+  await expect(gallery.getByRole('button',{name:'앨범 만들기'})).toBeDisabled();
+  await gallery.getByLabel('기록 종류').selectOption('video');
+  await expect(gallery).toContainText('필터 결과 1개');
+  await gallery.getByRole('button',{name:'필터 초기화'}).click();
+  await expect(gallery).toContainText('필터 결과 60개');
+  await expect(gallery).toContainText('1–48번째 기록');
+  await expect(gallery.getByRole('button',{name:'선택',exact:true})).toHaveAttribute('aria-pressed','false');
+});
+
+test('failed overview and filtered page queries can retry without losing the filters',async({page})=>{
+  await map(page,'?overview-error');
+  await expect(page.getByRole('alert')).toContainText('위치 정보를 불러오지 못했습니다');
+  await expect(page.locator('.memoryMapStats')).toHaveCount(0);
+  await page.evaluate(()=>localStorage.setItem('overview-recovered','1'));
+  await page.getByRole('button',{name:'지도 다시 불러오기'}).click();
+  await page.locator('.memoryMapPlaceList button').filter({hasText:'제주'}).click();
+  const gallery=page.locator('.memoryMapGallery');
+  await expect(gallery).toContainText('필터 결과 6개');
+  await page.evaluate(()=>localStorage.setItem('region-page-fail','1'));
+  await gallery.getByLabel('기록 연도').selectOption('2025');
+  await expect(gallery.getByRole('alert')).toContainText('지역 사진을 불러오지 못했습니다');
+  await expect(gallery.locator('.recordMediaGrid > button')).toHaveCount(0);
+  await expect(gallery.getByLabel('기록 연도')).toHaveValue('2025');
+  await expect(gallery.getByLabel('기록 연도').locator('option')).toHaveCount(3);
+  await page.evaluate(()=>localStorage.removeItem('region-page-fail'));
+  await gallery.getByRole('button',{name:'사진 다시 불러오기'}).click();
+  await expect(gallery).toContainText('필터 결과 4개');
+  await expect(gallery.getByLabel('기록 연도')).toHaveValue('2025');
+  await expect(gallery.getByRole('alert')).toHaveCount(0);
+});
+
+test('pending overview shows loading instead of empty map counts',async({page})=>{
+  await map(page,'?slow-overview');
+  await expect(page.getByRole('status').filter({hasText:'추억 지도를 불러오는 중'})).toBeVisible();
+  await expect(page.locator('.memoryMapStats')).toHaveCount(0);
+  await expect(page.locator('.memoryMapShape')).toHaveCount(0);
+  await page.evaluate(()=>window.dispatchEvent(new Event('release-overview')));
+  await expect(page.locator('.memoryMapPlaceList button').filter({hasText:'제주'})).toContainText('6');
 });
