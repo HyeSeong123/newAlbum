@@ -18,10 +18,19 @@ export function useMediaSelection(itemsById: ReadonlyMap<string, unknown>) {
     });
   }
 
+  function toggleMany(pageIds: string[]) {
+    setIds(current => {
+      const next = new Set(current);
+      const remove = pageIds.every(id => current.has(id));
+      for (const id of pageIds) { if (remove) next.delete(id); else next.add(id); }
+      return next;
+    });
+  }
+
   function reset(nextEnabled = false) {
     setEnabled(nextEnabled);
     setIds((current) => current.size ? new Set() : current);
   }
 
-  return { enabled, ids, toggle, reset, clear: () => setIds(new Set()) };
+  return { enabled, ids, toggle, toggleMany, reset, clear: () => setIds(new Set()) };
 }

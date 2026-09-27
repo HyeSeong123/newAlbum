@@ -54,3 +54,10 @@
 @media(max-width:1000px) { .memoryMapLayout { grid-template-columns: minmax(0,1fr) 280px; } .memoryMapPaper { padding: 18px; } .memoryMapPlaces { padding: 16px; } }
 @media(max-width:760px) { .memoryMapLayout { grid-template-columns: 1fr; } .memoryMapIntro { flex-wrap: wrap; padding: 22px; } .memoryMapStats { width: 100%; padding: 14px 0 0; border-left: 0; border-top: 1px solid var(--border); } .memoryMapPaper { padding: 18px; } .memoryMapShape { max-height: 430px; } .memoryMapGallery { padding: 18px; } }
 @media(max-width:380px) { .memoryMapStats { gap: 14px; } .memoryMapIntro h2 { font-size: 20px; } .memoryMapPlaces { padding: 14px; } }
+
+.memoryMapGallery h3 { scroll-margin-top: calc(var(--app-header-height, 80px) + 24px); }
+.memoryMapGallery h3:focus-visible { outline: 2px solid var(--accent, #7d845c); outline-offset: 6px; border-radius: 4px; }
+.memoryMapAlert { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.memoryMapAlert button { padding: 8px 12px; border: 1px solid currentColor; border-radius: 8px; background: transparent; color: inherit; cursor: pointer; }
+.regionGallerySelection { padding: 12px; border-radius: 10px; background: var(--surface-soft, #f4f1e9); }
+.regionGallerySelection p { flex: 1 1 260px; margin: 0; }
