@@ -1,0 +1,32 @@
+.sidebar .brand {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sidebar .brandSymbol {
+  display: block;
+  position: static;
+  flex: 0 0 54px;
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+}
+
+.sidebar .brand strong {
+  color: #624d3d;
+  font-family: "SUIT", "Segoe UI", system-ui, sans-serif;
+  font-size: 24px;
+  font-weight: 750;
+  letter-spacing: -.035em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .sidebar .brand { gap: 8px; }
+  .sidebar .brandSymbol { flex-basis: 46px; width: 46px; height: 46px; }
+  .sidebar .brand strong { font-size: 22px; }
+}

@@ -1,0 +1,66 @@
+name: Windows preview package
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build, install and upload Windows preview
+    runs-on: windows-2025
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install Windows Rust toolchain
+        run: rustup toolchain install stable-x86_64-pc-windows-msvc --profile minimal
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Install dependencies and verify source
+        run: |
+          npm ci
+          npm run version:check
+          npm run test:unit
+      - name: Build NSIS installer and application
+        run: npm run package:windows -- --ci -- --locked
+      - name: Install and test packaged application
+        shell: pwsh
+        run: ./scripts/smoke-windows.ps1
+      - name: Prepare tested downloads
+        id: files
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $installer = Get-ChildItem 'src-tauri/target/release/bundle/nsis/*-setup.exe' | Select-Object -First 1
+          $binary = Get-Item 'src-tauri/target/release/oraedameun.exe'
+          if (-not $installer -or -not $binary) { throw 'Installer or executable is missing.' }
+          New-Item -ItemType Directory -Force release-output | Out-Null
+          Copy-Item $installer.FullName "release-output/Oraedameun_${version}_x64-setup.exe"
+          Copy-Item $binary.FullName "release-output/Oraedameun_${version}_x64-portable.exe"
+          Get-ChildItem release-output/*.exe | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash *$($_.Name)"
+          } | Set-Content release-output/SHA256SUMS.txt -Encoding utf8
+          "version=$version" >> $env:GITHUB_OUTPUT
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Oraedameun-Windows-${{ steps.files.outputs.version }}
+          path: release-output/*
+          if-no-files-found: error
+          retention-days: 90
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-preview-diagnostics
+          path: test-results/desktop-smoke/
+          if-no-files-found: ignore
+          retention-days: 7

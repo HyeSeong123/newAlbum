@@ -18,11 +18,11 @@ export function AlbumContentsList({ title, items, contents, onOpen }: {
   return <div className="albumContentsList">
     <div className="albumListFilters" role="group" aria-label="앨범 목록 필터">
       <button aria-pressed={!diariesOnly} onClick={() => setDiariesOnly(false)}>전체 <span>{entries.length}</span></button>
-      <button aria-pressed={diariesOnly} onClick={() => setDiariesOnly(true)}>일기만 <span>{diaries.length}</span></button>
-      <span className="albumListCount" role="status">{diariesOnly ? `일기 ${diaries.length}편` : `${entries.length}개의 기록`}</span>
+      <button aria-pressed={diariesOnly} onClick={() => setDiariesOnly(true)}>글·일기만 <span>{diaries.length}</span></button>
+      <span className="albumListCount" role="status">{diariesOnly ? `글·일기 ${diaries.length}편` : `${entries.length}개의 기록`}</span>
     </div>
     <section className={`albumPhotoList${diariesOnly ? " diaries-only" : ""}`} aria-label={`${title} ${diariesOnly ? "일기 목록" : "사진 목록"}`}>
-      {!visible.length && <EmptyState text={diariesOnly ? "아직 작성된 일기가 없어요. 앨범 수정에서 글 페이지를 추가해 보세요." : "앨범에 담긴 기록이 없습니다."} />}
+      {!visible.length && <EmptyState text={diariesOnly ? "아직 작성된 글이 없어요. 앨범에서 감상문을 추가해 보세요." : "앨범에 담긴 기록이 없습니다."} />}
       {visible.map(entry => {
         if (entry.kind === "TEXT" || entry.kind === "CHAPTER") return <div key={entry.id} className="albumListWritten"><AlbumWrittenPage page={entry} /></div>;
         const item = byId.get(entry.mediaId ?? "");

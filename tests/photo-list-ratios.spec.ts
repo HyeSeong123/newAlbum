@@ -73,6 +73,7 @@ test('journal, person, pet, calendar, memory and album lists show complete photo
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
   await page.getByRole('button', { name: '원본 비율 앨범 메뉴', exact: true }).click();
   await page.getByRole('button', { name: '앨범 수정', exact: true }).click();
+  await page.getByRole('dialog', { name: '앨범 수정' }).getByRole('button', { name: /사진 관리/ }).click();
   await expectFullPhotos(page.locator('.albumEditPhotos .mediaImage'), 6);
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: '원본 비율 앨범 열기', exact: true }).click();

@@ -42,7 +42,7 @@ test('date search crosses months, combines with text and favorites, validates an
   await expect(page.locator('.mediaTile')).toHaveCount(1);
   await page.getByRole('button', { name: '검색 지우기' }).click();
   await expect(page.locator('.mediaTile')).toHaveCount(2);
-  await page.getByRole('button', { name: '필터 1', exact: true }).click();
+  await page.getByRole('button', { name: '필터', exact: true }).click();
   await page.getByLabel('즐겨찾기만', { exact: true }).check();
   await expect(page.locator('.mediaTile')).toHaveCount(1);
   await page.getByRole('button', { name: '초기화', exact: true }).click();
@@ -66,7 +66,7 @@ test('album list shows diaries separately and restores photos, chapters and book
   await reader.getByTitle('사진 목록', { exact: true }).click();
   await expect(reader.locator('.albumPhotoList > button')).toHaveCount(2);
   await expect(reader.locator('.albumListWritten')).toHaveCount(3);
-  await reader.getByRole('button', { name: '일기만 2', exact: true }).click();
+  await reader.getByRole('button', { name: '글·일기만 2', exact: true }).click();
   await expect(reader.locator('.albumPhotoList > button')).toHaveCount(0);
   await expect(reader.locator('.albumWrittenPage')).toHaveCount(2);
   await expect(reader.locator('.albumWrittenPage h3')).toHaveText(['첫날의 일기', '마지막 날']);
@@ -81,12 +81,12 @@ test('album list shows diaries separately and restores photos, chapters and book
   await reader.getByTitle('닫기', { exact: true }).click();
   await page.getByRole('button', { name: '사진만 있는 앨범 앨범 열기', exact: true }).click();
   await reader.getByTitle('사진 목록', { exact: true }).click();
-  await reader.getByRole('button', { name: '일기만 0', exact: true }).click();
-  await expect(reader.getByText(/아직 작성된 일기가 없어요/)).toBeVisible();
+  await reader.getByRole('button', { name: '글·일기만 0', exact: true }).click();
+  await expect(reader.getByText(/아직 작성된 글이 없어요/)).toBeVisible();
   await reader.getByTitle('닫기', { exact: true }).click();
   await page.getByRole('button', { name: '일기만 있는 앨범 앨범 열기', exact: true }).click();
   await reader.getByTitle('사진 목록', { exact: true }).click();
-  await reader.getByRole('button', { name: '일기만 1', exact: true }).click();
+  await reader.getByRole('button', { name: '글·일기만 1', exact: true }).click();
   await expect(reader.locator('.albumWrittenPage')).toContainText('첫날의 일기');
   expect(await reader.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
 });

@@ -173,7 +173,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
         </div>
       </div>
     </div>
-    {!desktop && <p role="status">얼굴 찾기는 오래담은 데스크톱 앱에서 사용할 수 있습니다.</p>}
+    {!desktop && <p role="status">얼굴 찾기는 그루터기 데스크톱 앱에서 사용할 수 있습니다.</p>}
     {loading && <p role="status"><LoaderCircle size={18} className="spinIcon" />인물 불러오는 중</p>}
     {(running || status) && <div className="faceProgress" role="status"><span>{status}</span><span>{progress.done} / {progress.total}장</span>{running && <progress value={progress.done} max={progress.total || 1} />}</div>}
     {error && <p role="alert" className="faceError">{error}</p>}

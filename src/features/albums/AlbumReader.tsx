@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from "react";
-import { BookOpen, ChevronLeft, ChevronRight, FolderOutput, Images, Maximize, Minimize, MoreVertical, Music, Play, RotateCcw, Shuffle } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, FolderOutput, Images, Maximize, Minimize, MoreVertical, Music, Pencil, Play, RotateCcw, Shuffle } from "lucide-react";
 import type { AlbumContent, MediaItem } from "../../types/media";
 import { AlbumWrittenPage } from "./chapter/AlbumWrittenPage";
 import { EmptyState, MediaVisual } from "../../components/MediaVisual";
@@ -11,7 +11,7 @@ import albumOpenBase from "../../assets/album-open-white-thin.png";
 import { AlbumStoryPlayer } from "./story-player/AlbumStoryPlayer";
 import { AlbumContentsList } from "./AlbumContentsList";
 
-export function AlbumFullscreenReader({ title, items, contents, musicPath, color, open, onOpen, onClose, onExport, backLabel = "내 앨범" }: {
+export function AlbumFullscreenReader({ title, items, contents, musicPath, color, open, onOpen, onClose, onExport, onEdit, backLabel = "내 앨범" }: {
   title: string;
   items: MediaItem[];
   contents?: AlbumContent[];
@@ -21,6 +21,7 @@ export function AlbumFullscreenReader({ title, items, contents, musicPath, color
   onOpen: (item: MediaItem, collection?: MediaItem[]) => void;
   onClose: () => void;
   onExport?: () => void;
+  onEdit?: () => void;
   backLabel?: string;
 }) {
   const [story, setStory] = useState(false);
@@ -42,9 +43,10 @@ export function AlbumFullscreenReader({ title, items, contents, musicPath, color
     <header className="albumJournalHeader">
       <button className="albumJournalBack" onClick={onClose} title="닫기"><ChevronLeft size={22} />{backLabel}</button>
       <div className="albumJournalHeading"><h2>{title}</h2><span>{[
-        orderedItems.length ? mediaSummary(orderedItems) : "", diaryCount ? `일기 ${diaryCount}편` : "", chapterCount ? `챕터 ${chapterCount}개` : "",
+        orderedItems.length ? mediaSummary(orderedItems) : "", diaryCount ? `글·일기 ${diaryCount}편` : "", chapterCount ? `챕터 ${chapterCount}개` : "",
       ].filter(Boolean).join(" · ") || "기록 없음"}{!listView && orderedItems.length > 0 && " · 세로 4장 / 가로 2장"}</span></div>
       <div className="albumJournalTools">
+        {onEdit && <button className="albumJournalEdit" onClick={onEdit} aria-label="챕터·감상문 편집" title="챕터·감상문 편집"><Pencil size={18} /><span>구성 편집</span></button>}
         <button onClick={() => setStory(true)} aria-label="스토리로 보기" title="스토리로 보기"><Play size={18} /><span>스토리로 보기</span></button>
         <button aria-pressed={listView} onClick={toggleListView} aria-label={listView ? "책으로 보기" : "사진 목록"} title={listView ? "책으로 보기" : "사진 목록"}>{listView ? <BookOpen size={18} /> : <Images size={18} />}<span>{listView ? "책으로 보기" : "사진 목록"}</span></button>
         <button onClick={() => void toggleFullscreen()} disabled={!document.fullscreenEnabled} aria-pressed={fullscreen} title={fullscreen ? "전체화면 종료" : "전체화면"}>{fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}<span>{fullscreen ? "전체화면 종료" : "전체화면"}</span></button>

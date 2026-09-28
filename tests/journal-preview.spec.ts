@@ -145,6 +145,7 @@ async function mockEditableAlbum(page: Page) {
       invoke: async (command: string, args: { ids?: number[] }) => {
         if (command === 'list_media') return media;
         if (command === 'list_albums') return [album];
+        if (command === 'list_diary') return [];
         if (command === 'media_thumbnail') return '';
         if (command === 'delete_registered_media') { media = media.filter((item) => !args.ids?.includes(item.id)); return media; }
         if (command === 'clear_registered_media') { media = []; return media; }

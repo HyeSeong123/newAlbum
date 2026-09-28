@@ -257,12 +257,15 @@ test("created albums are visible from saved albums menu", async ({ page }) => {
   await page.getByRole("button", { name: "가족 여행 앨범 선택" }).click();
   await page.getByRole("button", { name: "수정", exact: true }).click();
   const editor = page.getByRole("dialog", { name: "앨범 수정" });
+  await editor.getByRole("button", { name: "앨범 정보", exact: true }).click();
   await editor.getByLabel("제목", { exact: true }).fill("변경 취소");
   await editor.getByRole("button", { name: "취소", exact: true }).click();
   await expect(page.getByRole("button", { name: "가족 여행 앨범 선택" })).toBeVisible();
   await page.getByRole("button", { name: "수정", exact: true }).click();
+  await editor.getByRole("button", { name: "앨범 정보", exact: true }).click();
   await editor.getByLabel("제목", { exact: true }).fill("봄날의 가족");
   await editor.getByRole("button", { name: "네이비 색상", exact: true }).click();
+  await editor.getByRole("button", { name: /사진 관리/ }).click();
   await editor.locator(".albumEditPhotos button").first().click();
   await page.screenshot({ path: `test-results/album-editor-${test.info().project.name}.png`, fullPage: true });
   await editor.getByRole("button", { name: /앨범에서 삭제/ }).click();
@@ -271,7 +274,9 @@ test("created albums are visible from saved albums menu", async ({ page }) => {
   await expect(editor).toBeHidden();
   await expect(page.getByRole("button", { name: "봄날의 가족 앨범 선택" })).toBeVisible();
   await page.getByRole("button", { name: "수정", exact: true }).click();
+  await editor.getByRole("button", { name: /사진 관리/ }).click();
   await expect(editor.locator(".albumEditPhotos button")).toHaveCount(1);
+  await editor.getByRole("button", { name: "앨범 정보", exact: true }).click();
   await expect(editor.getByRole("button", { name: "네이비 색상", exact: true })).toHaveAttribute("aria-pressed", "true");
   await editor.getByRole("button", { name: "취소", exact: true }).click();
   page.once("dialog", (dialog) => dialog.accept());

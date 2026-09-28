@@ -148,8 +148,8 @@ export function App() {
     <main className={`app${largeLayout ? " largeLayout" : ""}`} style={{ "--app-header-height": `${navigationHeight}px` } as CSSProperties}>
       <header ref={navigationRef} className="sidebar" aria-label="주 메뉴">
         <div className="brand">
-          <strong>오래담은</strong>
-          <span>Warm Journal</span>
+          <img className="brandSymbol" src="/brand/geuruteogi-symbol.png" alt="" aria-hidden="true" width={54} height={54} draggable={false} />
+          <strong>그루터기</strong>
         </div>
 
         <nav className="navList" aria-label="주 메뉴">
@@ -180,11 +180,11 @@ export function App() {
             <span className="collectionCount">{topbarCount}</span>
           </div>
           <div className="toolbar">
-            <label className="searchBox">
+            {!(activeView === "Library" && photoMode === "grid") && <label className="searchBox">
               <Search size={18} />
               <input aria-label={activeView === "People" ? "이름 검색" : activeView === "Diary" ? "일기 검색" : activeView === "Albums" ? "앨범 검색" : "사진과 추억 검색"} value={query} onChange={(event) => { setQuery(event.target.value); if (activeView === "Library" && activeMonth !== "favorites") setSelectedMonth("all"); }} placeholder={activeView === "People" ? "이름 검색" : activeView === "Diary" ? "일기 검색" : activeView === "Albums" ? "앨범을 검색하세요" : "사진과 추억을 검색하세요"} />
               {query && <button className="searchClear" aria-label="검색 지우기" onClick={() => setQuery("")}><X size={15} /></button>}
-            </label>
+            </label>}
             {(activeView === "Library" || activeView === "Albums") && <div className="importActions">
               <button className="primary" onClick={activeView === "Albums" ? startAlbum : () => { setAlbumImportTitle(""); chooseFiles(); }} disabled={Boolean(importing)}>
                 {importing ? <LoaderCircle className="spinIcon" size={18} /> : <Plus size={18} />}
@@ -243,6 +243,8 @@ export function App() {
                 onNewAlbum={startAlbum}
                 onViewMedia={openViewer}
                 scopeKey={`${activeMonth}:${query}`}
+                query={query}
+                onQueryChange={(value) => { setQuery(value); if (activeMonth !== "favorites") setSelectedMonth("all"); }}
               />
             )}
             {activeView === "Diary" && <DiaryView entries={diary.entries} albums={savedAlbums} query={query} error={diary.error} onSave={diary.save} onAssign={diary.assign} onDelete={diary.remove} />}

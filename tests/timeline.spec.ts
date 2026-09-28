@@ -27,17 +27,17 @@ test('timeline preserves date groups, counts, notes and navigation into a day', 
   await expect(page.locator('.recordMediaGrid>button')).toHaveCount(2);
 });
 
-test('four view tabs support keyboard wrap and fit the mobile viewport', async ({ page }) => {
+test('five view tabs support keyboard wrap and fit the mobile viewport', async ({ page }) => {
   await installRecordFixture(page); await page.goto('/');
   const tabs = page.getByRole('tablist',{ name:'사진 보기 방식' });
-  await expect(tabs.getByRole('tab')).toHaveCount(4);
+  await expect(tabs.getByRole('tab')).toHaveCount(5);
   await page.getByRole('tab',{ name:'그리드',exact:true }).focus();
   await page.keyboard.press('End');
-  await expect(page.getByRole('tab',{ name:'타임라인',exact:true })).toHaveAttribute('aria-selected','true');
+  await expect(page.getByRole('tab',{ name:'위치 보기',exact:true })).toHaveAttribute('aria-selected','true');
   await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('tab',{ name:'그리드',exact:true })).toHaveAttribute('aria-selected','true');
   await page.keyboard.press('ArrowLeft');
-  await expect(page.getByRole('tab',{ name:'타임라인',exact:true })).toHaveAttribute('aria-selected','true');
+  await expect(page.getByRole('tab',{ name:'위치 보기',exact:true })).toHaveAttribute('aria-selected','true');
   const box = await tabs.boundingBox();
   expect(box!.x).toBeGreaterThanOrEqual(0);
   expect(box!.x + box!.width).toBeLessThanOrEqual(page.viewportSize()!.width + 1);
