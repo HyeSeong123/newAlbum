@@ -12,7 +12,7 @@ fn version(conn: &Connection) -> Result<i64, String> {
 
 fn check_version(version: i64) -> Result<(), String> {
     if version > VERSION {
-        return Err("더 최신 버전에서 만든 DB입니다. 오래담은을 업데이트해 주세요.".into());
+        return Err("더 최신 버전에서 만든 DB입니다. 그루터기를 업데이트해 주세요.".into());
     }
     Ok(())
 }
