@@ -33,7 +33,8 @@ test('legacy album accepts a chapter at a chosen position, reloads, moves and de
   await page.goto('/');
   await page.getByRole('button', { name:'내 앨범', exact:true }).click();
   const openEditor = async () => {
-    await page.getByRole('button', { name:'챕터·감상문 편집', exact:true }).click();
+    await page.getByRole('button', { name:'앨범 수정', exact:true }).click();
+    await page.getByRole('dialog', { name:'앨범 수정' }).getByRole('button', { name:'챕터·감상문', exact:true }).click();
   };
   await openEditor();
   const editor = page.getByRole('dialog', { name:'앨범 수정' });
@@ -49,7 +50,8 @@ test('legacy album accepts a chapter at a chosen position, reloads, moves and de
   const reader = page.getByRole('dialog', { name:'앨범 전체창' });
   await expect(reader.locator('.albumPaper.right .albumWrittenPage')).toContainText('DAY 2 · 성산일출봉');
   await expect(reader.locator('.albumPaper.left .albumPagePhoto')).toHaveCount(2);
-  await reader.getByRole('button', { name:'챕터·감상문 편집', exact:true }).click();
+  await reader.getByRole('button', { name:'앨범 수정', exact:true }).click();
+  await page.getByRole('dialog', { name:'앨범 수정' }).getByRole('button', { name:'챕터·감상문', exact:true }).click();
   await expect(page.getByRole('dialog', { name:'앨범 수정' }).getByLabel('챕터 제목')).toHaveValue('DAY 2 · 성산일출봉');
   await page.getByRole('dialog', { name:'앨범 수정' }).getByRole('button', { name:'취소', exact:true }).click();
   await reader.getByTitle('닫기', { exact:true }).click();
@@ -68,7 +70,8 @@ test('text-only album can be saved, read, edited and removed after reload', asyn
   await page.goto('/');
   await page.getByRole('button', { name:'내 앨범', exact:true }).click();
   const openEditor = async () => {
-    await page.getByRole('button', { name:'챕터·감상문 편집', exact:true }).click();
+    await page.getByRole('button', { name:'앨범 수정', exact:true }).click();
+    await page.getByRole('dialog', { name:'앨범 수정' }).getByRole('button', { name:'챕터·감상문', exact:true }).click();
   };
   await openEditor();
   const editor = page.getByRole('dialog', { name:'앨범 수정' });

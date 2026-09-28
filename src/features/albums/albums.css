@@ -4,10 +4,11 @@
 .savedAlbumGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 0; gap: 32px clamp(24px, 5vw, 72px); align-items: start; }
 .savedAlbumCard { position: relative; min-width: 0; display: grid; justify-items: center; }
 .savedAlbumCover { position: relative; width: min(100%, 300px); }
-.savedAlbumCover:has(.actionMenuPanel) { z-index: 5; }
-.savedAlbumCover > .actionMenu { position: absolute; z-index: 3; right: 10px; bottom: 12px; }
-.savedAlbumCover .actionMenuTrigger { min-height: 28px; padding: 4px; background: transparent; }
 .savedAlbumOpen { position: relative; display: flex; justify-content: center; width: 100%; padding: 0; color: inherit; background: transparent; border-radius: 4px; }
+.savedAlbumOpenLabel { position: absolute; z-index: 3; top: 16px; right: 16px; display: inline-flex; align-items: center; gap: 5px; padding: 7px 9px; border-radius: 5px; color: var(--text); background: #fffdf5e8; font-size: 13px; font-weight: 700; }
+.savedAlbumCardActions { position: relative; width: min(100%, 300px); display: flex; align-items: center; gap: 6px; }
+.savedAlbumCardActions:has(.actionMenuPanel) { z-index: 5; }
+.savedAlbumCardActions .actionMenuTrigger { min-height: 40px; border: 1px solid transparent; font-size: 13px; }
 .frontAlbum { position: relative; display: block; width: min(100%, 300px); aspect-ratio: 4 / 5; overflow: hidden; border: 1px solid #dfdfdc; border-radius: 2px; isolation: isolate; box-shadow: 0 3px 7px #20252a1c; transition: transform .2s ease, filter .2s ease; }
 .frontAlbumBase { position: absolute; left: -3.6%; top: -4.1%; width: 107.2%; height: 108.25%; pointer-events: none; user-select: none; }
 .frontAlbumTone { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: var(--album-tint, 0); background: var(--album-color); mix-blend-mode: multiply; }
@@ -19,7 +20,7 @@
 .savedAlbumOpen:hover .frontAlbum, .savedAlbumOpen:focus-visible .frontAlbum, .quickAlbum:hover .frontAlbum { transform: translateY(-3px); filter: drop-shadow(0 5px 5px #4d493014); }
 .savedAlbumOpen[aria-pressed='true'] { outline: 2px solid var(--primary); outline-offset: 3px; }
 .savedAlbumOpen .albumSelectionMark { z-index: 4; left: 13%; top: 8%; }
-.savedAlbumMeta { width: min(100%, 300px); min-height: 24px; margin-top: 8px; padding-left: 10px; color: var(--muted); font-size: 12px; }
+.savedAlbumMeta { width: min(100%, 300px); min-height: 24px; margin-top: 8px; padding-left: 10px; color: var(--muted); font-size: 13px; }
 .quickAlbum .frontAlbum { width: min(100%, 208px); aspect-ratio: 3 / 4; }
 .quickAlbum .frontAlbumTitle { width: 84%; font-size: 13px; }
 .albumCreateModal { width: min(100%, 760px); max-height: 92dvh; overflow: auto; background: #fff; color: var(--text); border-radius: 8px; }
@@ -90,6 +91,8 @@
 .albumJournalHeading span { display: block; margin-top: 6px; color: #777970; font-size: 13px; }
 .albumJournalTools { justify-self: end; display: flex; align-items: center; gap: 14px; }
 .albumJournalTools button { min-height: 42px; padding: 0 9px; display: inline-flex; align-items: center; gap: 8px; border-radius: 4px; font-size: 14px; }
+.albumJournalTools .albumStoryOpen { color: #fff; background: var(--primary); font-weight: 700; }
+.albumJournalTools .albumStoryOpen:hover:not(:disabled) { color: #fff; background: #6c714c; }
 
 .albumJournalCanvas {
   min-height: 0;
@@ -249,7 +252,7 @@
 }
 .albumPageCaption, .albumTurnCaption { min-width: 0; width: 100%; margin-top: var(--caption-gap); color: #393c36; font-size: 13px; line-height: var(--caption-line); text-align: center; }
 .albumPageCaption p, .albumTurnCaption p { height: var(--caption-line); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.albumPageCaption time, .albumTurnCaption time { display: block; height: var(--caption-line); overflow: hidden; text-overflow: ellipsis; color: #858680; font-size: 12px; white-space: nowrap; }
+.albumPageCaption time, .albumTurnCaption time { display: block; height: var(--caption-line); overflow: hidden; text-overflow: ellipsis; color: #858680; font-size: 13px; white-space: nowrap; }
 .albumPageNumber { bottom: 1.4%; font-size: 11px; }
 /* Landscape prints need extra height as well as width to grow with object-fit: contain.
    Turning padding uses the same book-relative distances divided by sheet width (45.8%). */
@@ -262,7 +265,7 @@
 }
 .landscape-page :is(.albumPageCaption, .albumTurnCaption) p { min-width: 0; }
 .landscape-page :is(.albumPageCaption, .albumTurnCaption) time { flex-shrink: 0; }
-.albumJournalTools .actionMenuPanel button { width: 100%; justify-content: flex-start; min-height: 34px; font-size: 12px; }
+.albumJournalTools .actionMenuPanel button { width: 100%; justify-content: flex-start; min-height: 40px; font-size: 13px; }
 .albumReaderNotice { position: absolute; z-index: 3; top: 76px; left: 50%; transform: translateX(-50%); padding: 10px 16px; border: 1px solid var(--border); border-radius: 5px; color: var(--muted); background: var(--surface); font-size: 12px; }
 .albumJournal.is-list { grid-template-rows: 76px minmax(0, 1fr); }
 .albumPhotoList { min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); align-content: start; gap: 24px 12px; padding: 24px 5vw 40px; }
@@ -277,10 +280,17 @@
 .albumCreateModal { background: var(--surface); }
 @media (max-width: 1000px) { .savedAlbumGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px; } }
 @media (max-width: 760px) {
-  .albumJournalHeading h2 { max-width: 38vw; }
-  .albumJournalTools button > span { display: none; }
+  .albumJournal { grid-template-rows: auto minmax(0, 1fr) auto; }
+  .albumJournal.is-list { grid-template-rows: auto minmax(0, 1fr); }
+  .albumJournalHeader { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; padding: 8px 12px; }
+  .albumJournalBack { font-size: 13px; gap: 4px; }
+  .albumJournalHeading { min-width: 0; padding: 0; text-align: left; }
+  .albumJournalHeading h2 { max-width: 100%; }
+  .albumJournalTools { grid-column: 1 / -1; justify-self: stretch; justify-content: flex-start; flex-wrap: wrap; gap: 4px; }
+  .albumJournalTools button { width: auto; min-height: 38px; padding: 0 7px; font-size: 13px; gap: 4px; }
+  .albumJournalTools button > span { display: inline; }
   .albumJournalTools .actionMenuPanel button { width: 100%; }
-  .albumJournal.is-list { grid-template-rows: 72px minmax(0, 1fr); }
+  .albumBookStage { width: min(100%, calc((100dvh - var(--app-header-height, 70px) - 230px) * var(--spread-ratio))); }
   .albumPageImages, .albumTurnFace { --caption-line: 12px; --caption-gap: 3px; }
   .albumLeafLayout { gap: 8px; }
   .albumPageCaption, .albumPageCaption time, .albumTurnCaption, .albumTurnCaption time { font-size: 9px; }
@@ -301,7 +311,7 @@
 }
 
 /* Album writing is reached from each cover and stays separate from photo management. */
-.savedAlbumEdit { width: min(100%, 300px); min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--secondary); font-size: 13px; font-weight: 700; }
+.savedAlbumEdit { flex: 1; min-width: 0; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--secondary); font-size: 13px; font-weight: 700; }
 .savedAlbumEdit:hover { border-color: var(--primary); background: var(--surface-soft); }
 .albumJournalTools .albumJournalEdit { border: 1px solid var(--border); background: #fff; color: var(--secondary); font-weight: 700; }
 .albumEditor { width: min(1120px, calc(100vw - 32px)); display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; }

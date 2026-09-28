@@ -106,8 +106,8 @@ test('album reader preserves order and supports list, scrubber and nested photo 
   });
   await page.goto('/');
   await expect(page.locator('.mediaTile')).toHaveCount(3);
-  await expect(page.getByRole('tablist', { name: '사진 보기 방식' }).getByRole('tab')).toHaveCount(5);
-  await page.getByRole('tab', { name: '전체 앨범', exact: true }).click();
+  await expect(page.getByRole('tablist', { name: '사진 보기 방식' }).getByRole('tab')).toHaveCount(3);
+  await page.getByRole('tab', { name: '책 보기', exact: true }).click();
   const reader = page.getByRole('dialog', { name: '앨범 전체창' });
   await expect(reader.locator('.albumPagePhoto').first()).toHaveAttribute('aria-label', 'record-1.jpg 상세보기');
   await expect(reader.locator('.albumPageCaption').first()).toContainText('바람이 좋았던 날');

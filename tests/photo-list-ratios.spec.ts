@@ -2,11 +2,10 @@ import { expect, test, type Locator } from '@playwright/test';
 
 async function expectFullPhotos(images: Locator, count: number) {
   await expect(images).toHaveCount(count);
-  await images.evaluateAll((entries: HTMLImageElement[]) => {
-    entries.forEach(image => { image.loading = 'eager'; });
-    return Promise.all(entries.map(image => image.decode()));
-  });
   for (const image of await images.all()) {
+    await image.scrollIntoViewIfNeeded();
+    await expect(image).toHaveAttribute('src', /\S+/);
+    await image.evaluate((element: HTMLImageElement) => element.decode());
     await expect(image).toHaveCSS('object-fit', 'contain');
     await expect(image).toHaveCSS('object-position', '50% 50%');
     const frame = await image.evaluate((element: HTMLImageElement) => ({
@@ -57,7 +56,7 @@ test('journal, person, pet, calendar, memory and album lists show complete photo
   await page.keyboard.press('Escape');
   await page.getByRole('tab', { name: '사진 있는 날', exact: true }).click();
   await expectFullPhotos(page.locator('.recordedDayGrid .mediaImage'), 1);
-  await page.getByRole('button', { name: '인물', exact: true }).click();
+  await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '가족 3장', exact: true }).click();
   await expectFullPhotos(page.locator('.personMediaGrid .mediaImage'), 3);
   await page.screenshot({ path: `test-results/full-frames-person-${test.info().project.name}.png` });
@@ -68,10 +67,12 @@ test('journal, person, pet, calendar, memory and album lists show complete photo
   await page.getByRole('button', { name: '사진·이름 편집', exact: true }).click();
   await expectFullPhotos(page.locator('.petEditor .mediaImage'), 6);
   await page.keyboard.press('Escape');
-  await page.getByTitle('지난 추억', { exact: true }).click();
-  await expectFullPhotos(page.locator('.memoryGrid .mediaImage'), 3);
+  await page.getByTitle('추억', { exact: true }).click();
+  await page.getByRole('button', { name: '몇 년 전 이번 달', exact: true }).click();
+  await page.locator('.memoryGroupCard').filter({ hasText: '2025' }).click();
+  await expectFullPhotos(page.locator('.recordMediaGrid .mediaImage'), 3);
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
-  await page.getByRole('button', { name: '원본 비율 앨범 메뉴', exact: true }).click();
+
   await page.getByRole('button', { name: '앨범 수정', exact: true }).click();
   await page.getByRole('dialog', { name: '앨범 수정' }).getByRole('button', { name: /사진 관리/ }).click();
   await expectFullPhotos(page.locator('.albumEditPhotos .mediaImage'), 6);

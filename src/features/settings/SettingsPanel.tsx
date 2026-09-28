@@ -3,18 +3,10 @@ import { LoaderCircle, Trash2 } from "lucide-react";
 export function SettingsPanel({ itemCount, clearing, onClear }: { itemCount: number; clearing: boolean; onClear: () => void }) {
   return (
     <div className="settingsPanel">
-      <label>
-        <span>사진을 불러올 기본 위치</span>
-        <input readOnly value="D:/Pictures" />
-      </label>
-      <label>
-        <span>미리보기 저장 위치</span>
-        <input readOnly value="D:/오래담은/미리보기" />
-      </label>
-      <label>
-        <span>앱 시작 화면</span>
-        <input readOnly value="사진보기" />
-      </label>
+      <section className="settingsSummary" aria-label="앱 시작 화면">
+        <h2>앱 시작 화면</h2>
+        <p>그루터기를 열면 사진 기록이 먼저 표시됩니다.</p>
+      </section>
       <section className="dangerPanel" aria-label="등록 목록 관리">
         <div>
           <h2>등록 목록 비우기</h2>

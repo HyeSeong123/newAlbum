@@ -3,7 +3,8 @@ import { installRecordFixture } from './record-fixture';
 
 test('timeline preserves date groups, counts, notes and navigation into a day', async ({ page }) => {
   await installRecordFixture(page); await page.goto('/');
-  await page.getByRole('tab',{ name:'타임라인',exact:true }).click();
+  await page.getByRole('button',{ name:'추억',exact:true }).click();
+  await page.getByRole('button',{ name:'우리의 기록',exact:true }).click();
   const timeline = page.getByRole('region',{ name:'우리의 기록 타임라인',exact:true });
   await timeline.getByRole('button',{ name:'2023년 기록',exact:true }).click();
   const autumn = timeline.getByRole('button',{ name:'2023년 9월 27일 · 사진 2장',exact:true });
@@ -27,17 +28,17 @@ test('timeline preserves date groups, counts, notes and navigation into a day', 
   await expect(page.locator('.recordMediaGrid>button')).toHaveCount(2);
 });
 
-test('five view tabs support keyboard wrap and fit the mobile viewport', async ({ page }) => {
+test('three photo view tabs support keyboard wrap and fit the mobile viewport', async ({ page }) => {
   await installRecordFixture(page); await page.goto('/');
   const tabs = page.getByRole('tablist',{ name:'사진 보기 방식' });
-  await expect(tabs.getByRole('tab')).toHaveCount(5);
+  await expect(tabs.getByRole('tab')).toHaveCount(3);
   await page.getByRole('tab',{ name:'그리드',exact:true }).focus();
   await page.keyboard.press('End');
-  await expect(page.getByRole('tab',{ name:'위치 보기',exact:true })).toHaveAttribute('aria-selected','true');
+  await expect(page.getByRole('tab',{ name:'책 보기',exact:true })).toHaveAttribute('aria-selected','true');
   await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('tab',{ name:'그리드',exact:true })).toHaveAttribute('aria-selected','true');
   await page.keyboard.press('ArrowLeft');
-  await expect(page.getByRole('tab',{ name:'위치 보기',exact:true })).toHaveAttribute('aria-selected','true');
+  await expect(page.getByRole('tab',{ name:'책 보기',exact:true })).toHaveAttribute('aria-selected','true');
   const box = await tabs.boundingBox();
   expect(box!.x).toBeGreaterThanOrEqual(0);
   expect(box!.x + box!.width).toBeLessThanOrEqual(page.viewportSize()!.width + 1);

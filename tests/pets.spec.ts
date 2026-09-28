@@ -25,7 +25,7 @@ test('pets collect photos manually and preserve originals', async ({ page }) => 
     } });
   }, { thumbnail });
   await page.goto('/');
-  await page.getByRole('button', { name: '인물', exact: true }).click();
+  await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await expect(page.getByRole('button', { name: '반려동물', exact: true })).toHaveCount(0);
   await page.getByRole('tab', { name: '사람', exact: true }).focus();
   await page.keyboard.press('ArrowRight');
@@ -50,7 +50,7 @@ test('pets collect photos manually and preserve originals', async ({ page }) => 
   await page.getByRole('button', { name: '저장', exact: true }).click();
   await expect(page.getByRole('button', { name: '사진 상세보기', exact: true })).toHaveCount(1);
   await page.reload();
-  await page.getByRole('button', { name: '인물', exact: true }).click();
+  await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('tab', { name: '반려동물', exact: true }).click();
   await expect(page.getByRole('button', { name: '우리 보리 1장', exact: true })).toBeVisible();
   await page.screenshot({ path: `test-results/pet-list-${test.info().project.name}.png` });
@@ -68,6 +68,6 @@ test('pets collect photos manually and preserve originals', async ({ page }) => 
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: '등록 삭제', exact: true }).click();
   await expect(page.getByText('아직 등록한 반려동물이 없습니다.')).toBeVisible();
-  await page.getByRole('button', { name: '사진보기', exact: true }).click();
+  await page.getByRole('button', { name: '사진 기록', exact: true }).click();
   await expect(page.locator('.mediaTile')).toHaveCount(3);
 });

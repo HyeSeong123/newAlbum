@@ -46,7 +46,10 @@ test('album overview and photo tools preserve the full frame and editing workflo
   await detail.locator('.commentEditForm').getByRole('button', { name: '저장' }).click();
   await expect(detail.locator('.commentItem')).toContainText('오래 기억하고 싶은 하루');
   await detail.getByTitle('확대 보기', { exact: true }).click();
-  await expect(page.getByRole('dialog', { name: '사진 확대 보기', exact: true })).toBeVisible();
+  const zoomDialog = page.getByRole('dialog', { name: '사진 확대 보기', exact: true });
+  await expect(zoomDialog).toBeVisible();
+  await expect(zoomDialog.getByRole('button', { name: '100%로 복원' })).toBeVisible();
+  expect(await zoomDialog.locator('.photoZoomToolbar').evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
   await page.keyboard.press('Escape');
   await expect(detail).toBeVisible();
   await expect(detail.getByTitle('확대 보기', { exact: true })).toBeFocused();

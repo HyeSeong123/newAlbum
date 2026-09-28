@@ -17,7 +17,7 @@
 }
 .librarySearchHead { justify-content: space-between; flex-wrap: wrap; gap: 12px 20px; }
 .librarySearchHead h2 { margin: 0; font-size: 16px; }
-.librarySearchHead span { color: var(--muted); font-size: 12px; }
+.librarySearchHead span { color: var(--muted); font-size: 13px; }
 .librarySearchActions { margin-left: auto; }
 .librarySearchActions button,
 .libraryResultsBar button { min-height: 38px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); white-space: nowrap; font-size: 13px; }

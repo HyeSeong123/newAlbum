@@ -92,8 +92,8 @@ export function AlbumStoryPlayer({ title, items, contents, musicPath, onClose }:
         <button onClick={togglePlay} disabled={!scenes.length} aria-label={playing ? "일시정지" : finished ? "다시 재생" : "재생"}>{playing ? <Pause /> : <Play />}<span>{playing ? "일시정지" : "재생"}</span></button>
         <button onClick={() => go(index + 1)} disabled={index >= scenes.length - 1} aria-label="다음 기록"><ChevronRight /></button>
         <output aria-label="스토리 진행 상태">{Math.max(0, index + 1)} / {scenes.length}</output>
-        <button onClick={() => setMuted(value => !value)} disabled={!musicSource} aria-pressed={muted} aria-label="음악 음소거">{muted ? <VolumeX /> : <Volume2 />}</button>
-        <button onClick={() => void toggleFullscreen()} disabled={!document.fullscreenEnabled} aria-pressed={fullscreen} aria-label="스토리 전체화면"><Maximize /></button>
+        <button onClick={() => setMuted(value => !value)} disabled={!musicSource} aria-pressed={muted} aria-label={muted ? "음악 켜기" : "음악 끄기"}>{muted ? <VolumeX /> : <Volume2 />}<span>{muted ? "음악 켜기" : "음악 끄기"}</span></button>
+        <button onClick={() => void toggleFullscreen()} disabled={!document.fullscreenEnabled} aria-pressed={fullscreen} aria-label={fullscreen ? "전체화면 종료" : "전체화면"}><Maximize /><span>{fullscreen ? "전체화면 종료" : "전체화면"}</span></button>
       </div>
       <input type="range" aria-label="스토리 위치" min={0} max={Math.max(0, scenes.length - 1)} value={Math.max(0, index)} disabled={!scenes.length} onChange={e => go(Number(e.target.value))} />
       <div className="storyCaptionOptions"><label><input type="checkbox" checked={showTitle} onChange={e => setShowTitle(e.target.checked)} />사진 제목</label><label><input type="checkbox" checked={showDate} onChange={e => setShowDate(e.target.checked)} />촬영 날짜</label><label><input type="checkbox" checked={showComments} onChange={e => setShowComments(e.target.checked)} />댓글·기록</label></div>

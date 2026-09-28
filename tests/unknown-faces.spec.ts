@@ -36,7 +36,7 @@ test('unknown directory shows only unnamed faces and retains person navigation',
   });
 
   await page.goto('/');
-  await page.getByRole('button', { name: '인물', exact: true }).click();
+  await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '아버님 1장', exact: true }).click();
   await page.getByRole('button', { name: '얼굴 선택하기', exact: true }).click();
   await page.getByRole('button', { name: '얼굴 선택', exact: true }).click();

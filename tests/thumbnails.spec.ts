@@ -29,7 +29,7 @@ test('list requests thumbnail while detail keeps original', async ({ page }) => 
   await expect(page.locator('.detailStage img.mediaImage')).toHaveAttribute('src', /#original$/);
   await page.getByTitle('닫기', { exact: true }).click();
   await page.getByRole('button', { name: '설정', exact: true }).click();
-  await page.getByRole('button', { name: '사진보기', exact: true }).click();
+  await page.getByRole('button', { name: '사진 기록', exact: true }).click();
   await expect(page.locator('.mediaTile img.mediaImage')).toHaveAttribute('src', /#thumbnail$/);
   expect(await page.evaluate(() => (window as unknown as { thumbnailCalls: number }).thumbnailCalls)).toBe(1);
 });

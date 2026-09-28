@@ -29,7 +29,7 @@ test.beforeEach(async({page})=>{
 });
 
 async function memories(page:import('@playwright/test').Page,query='') {
-  await page.goto('/'+query); await page.getByRole('button',{name:'지난 추억',exact:true}).click();
+  await page.goto('/'+query); await page.getByRole('button',{name:'추억',exact:true}).click();
 }
 
 test('travel candidates separate visits, show counts and open the existing photo detail',async({page})=>{
@@ -90,4 +90,14 @@ test('candidate covers are paged and the layout fits narrow screens',async({page
   await expect(page.locator('.tripCard')).toHaveCount(1);
   await expect(pager).toContainText('2 / 2');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});
+
+test('search filters travel candidates in rediscovery', async ({page}) => {
+  await memories(page);
+  await expect(page.locator('.tripCard')).toHaveCount(3);
+  const search = page.getByRole('textbox', {name:'사진과 추억 검색'});
+  await search.fill('여행 기록 1');
+  await expect(page.locator('.tripCard')).toHaveCount(0);
+  await search.fill('');
+  await expect(page.locator('.tripCard')).toHaveCount(3);
 });

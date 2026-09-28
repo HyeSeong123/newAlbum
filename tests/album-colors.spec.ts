@@ -42,8 +42,8 @@ test('fabric album colors survive create, edit and reload', async ({ page }) => 
   await expect(page.locator('.frontAlbumTitle').first()).toHaveCSS('transform', 'none');
   await page.locator('.frontAlbumBase').evaluateAll((images: HTMLImageElement[]) => Promise.all(images.map((image) => image.decode())));
   await page.screenshot({ path: `test-results/flat-album-covers-${test.info().project.name}.png`, fullPage: true });
-  await page.getByRole('button', { name: '브라운 앨범 앨범 메뉴', exact: true }).click();
-  await page.getByRole('button', { name: '앨범 수정', exact: true }).click();
+
+  await page.locator('.savedAlbumCard').filter({ hasText: '브라운 앨범' }).getByRole('button', { name: '앨범 수정', exact: true }).click();
   await expect(page.getByRole('dialog', { name: '앨범 수정', exact: true })).toBeVisible();
   await page.getByRole('dialog', { name: '앨범 수정', exact: true }).getByTitle('닫기').click();
 
@@ -112,11 +112,11 @@ test('fabric album colors survive create, edit and reload', async ({ page }) => 
   await expect(reader.getByTitle('이전 책장', { exact: true })).toBeEnabled();
   await reader.getByTitle('이전 책장', { exact: true }).click();
   await expect(reader.locator('.albumPagerActions p')).toHaveText(`1 / ${pageCount} 펼침`);
-  await page.getByRole('button', { name: '사진보기', exact: true }).click();
+  await page.getByRole('button', { name: '사진 기록', exact: true }).click();
   await expect(reader).toHaveCount(0);
 
-  await page.getByRole('button', { name: '사진보기', exact: true }).click();
-  await page.getByRole('tab', { name: '전체 앨범' }).click();
+  await page.getByRole('button', { name: '사진 기록', exact: true }).click();
+  await page.getByRole('tab', { name: '책 보기' }).click();
   const libraryReader = page.getByRole('dialog', { name: '앨범 전체창' });
   await expect(libraryReader.locator('.albumPaper')).toHaveCount(2);
   await expect(libraryReader.locator('.binderRings')).toHaveCount(0);

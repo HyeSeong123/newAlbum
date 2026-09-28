@@ -193,7 +193,7 @@ export function DayDetailModal({
                   <small>{calendarEventMeta[event.kind].label}{event.yearly && " · 매년"}{event.showDday && ` · ${formatDday(event.date)}`}</small>
                 </div>
                 <label><input type="checkbox" checked={event.showDday} onChange={() => onToggleEventDday(event.id)} />D-day</label>
-                <button title="일정 삭제" onClick={() => onDeleteEvent(event.id)}><Trash2 size={16} /></button>
+                <button title="일정 삭제" onClick={() => onDeleteEvent(event.id)}><Trash2 size={16} />삭제</button>
               </article>;
             })}
           </div>

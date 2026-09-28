@@ -3,7 +3,7 @@ import { installRecordFixture } from './record-fixture';
 test('memories switch between today and month and open the same records in story mode', async ({ page }) => {
   await installRecordFixture(page);
   await page.goto('/');
-  await page.getByRole('button',{ name:'지난 추억',exact:true }).click();
+  await page.getByRole('button',{ name:'추억',exact:true }).click();
   await expect(page.locator('.memoryGroupCard')).toHaveCount(2);
   await expect(page.getByRole('button',{ name:/^3년 전 오늘/ })).toContainText('사진 2장');
   await page.getByRole('button',{ name:'몇 년 전 이번 달',exact:true }).click();

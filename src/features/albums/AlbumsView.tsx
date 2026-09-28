@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { BookOpen, Check, CheckSquare, FileText, FolderOutput, MoreVertical, Pencil, Trash2, X } from "lucide-react";
+import { BookOpen, Check, CheckSquare, FolderOutput, MoreVertical, Pencil, Trash2, X } from "lucide-react";
 import type { MediaItem, SavedAlbum } from "../../types/media";
 import { EmptyState } from "../../components/MediaVisual";
 import { AlbumCover } from "./AlbumCover";
@@ -80,15 +80,14 @@ export function SavedAlbumsView({
             <button className="savedAlbumOpen" disabled={busy} aria-pressed={selecting ? chosen.includes(album.id) : undefined} onClick={() => selecting ? setChosen((current) => current.includes(album.id) ? current.filter((id) => id !== album.id) : [...current, album.id]) : setActiveAlbumId(album.id)} aria-label={`${album.title} 앨범 ${selecting ? "선택" : "열기"}`}>
               {selecting && <span className={`albumSelectionMark ${chosen.includes(album.id) ? "checked" : ""}`}>{chosen.includes(album.id) && <Check size={22} strokeWidth={3} />}</span>}
               <AlbumCover title={album.title} items={album.items} color={album.coverColor} />
+              {!selecting && <span className="savedAlbumOpenLabel"><BookOpen size={16} />책으로 보기</span>}
             </button>
-              {!selecting && <ActionMenu label={`${album.title} 앨범 메뉴`} icon={<MoreVertical size={18} />} disabled={busy} actions={[
-                { label: "앨범 열기", icon: <BookOpen size={16} />, onSelect: () => setActiveAlbumId(album.id) },
-                { label: "앨범 수정", icon: <Pencil size={16} />, onSelect: () => openEditor(album) },
-                { label: "내보내기", icon: <FolderOutput size={16} />, disabled: !album.items.length, onSelect: () => setExporting(album) },
-              ]} />}
             </div>
             <div className="savedAlbumMeta"><span>{mediaSummary(album.items)}{diaries.some(d => d.album_id === Number(album.id)) && ` · 일기 ${diaries.filter(d => d.album_id === Number(album.id)).length}편`}</span></div>
-            {!selecting && <button className="savedAlbumEdit" disabled={busy} onClick={() => openEditor(album)}><FileText size={16} />챕터·감상문 편집</button>}
+            {!selecting && <div className="savedAlbumCardActions"><button className="savedAlbumEdit" disabled={busy} onClick={() => openEditor(album)}><Pencil size={16} />앨범 수정</button>
+              <ActionMenu label={`${album.title} 앨범 메뉴`} triggerText="더 보기" icon={<MoreVertical size={16} />} disabled={busy} actions={[
+                { label: "앨범 내보내기", icon: <FolderOutput size={16} />, disabled: !album.items.length, onSelect: () => setExporting(album) },
+              ]} /></div>}
           </article>
           );
         })}

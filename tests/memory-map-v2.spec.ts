@@ -54,7 +54,7 @@ test.beforeEach(async ({ page }) => {
 
 async function map(page: import('@playwright/test').Page, query='') {
   await page.goto('/'+query);
-  await page.getByRole('button',{name:'지난 추억',exact:true}).click();
+  await page.getByRole('button',{name:'추억',exact:true}).click();
   await page.getByRole('group',{name:'추억 보기'}).getByRole('button',{name:'추억 지도'}).click();
 }
 
@@ -72,7 +72,7 @@ test('manual region editing persists, updates map counts, and failed saves keep 
   await page.keyboard.press('Escape');
   await expect(page.getByRole('button',{name:/지역 미분류/}).locator('strong')).toHaveText('1');
   await page.reload();
-  await page.getByRole('button',{name:'지난 추억',exact:true}).click();
+  await page.getByRole('button',{name:'추억',exact:true}).click();
   await page.getByRole('group',{name:'추억 보기'}).getByRole('button',{name:'추억 지도'}).click();
   await page.locator('.memoryMapPlaceList button').filter({hasText:'서울'}).click();
   await page.getByRole('button',{name:'기록 1 상세보기',exact:true}).click();
@@ -165,7 +165,7 @@ test('a small filtered region opens an editable album draft without saving autom
 });
 
 test('memories timeline opens dates and reuses photo detail',async({page})=>{
-  await page.goto('/'); await page.getByRole('button',{name:'지난 추억',exact:true}).click();
+  await page.goto('/'); await page.getByRole('button',{name:'추억',exact:true}).click();
   await page.getByRole('group',{name:'추억 보기'}).getByRole('button',{name:'우리의 기록'}).click();
   await expect(page.getByLabel('우리의 기록 타임라인')).toBeVisible();
   await page.locator('.timelineDay').first().click();
@@ -190,7 +190,7 @@ test('region edit from an existing album survives the delayed initial library re
   await expect(detail.getByLabel('위치',{exact:true})).toContainText('서울특별시');
   await detail.getByTitle('닫기',{exact:true}).click();
   await page.getByRole('dialog',{name:'앨범 전체창'}).getByTitle('닫기',{exact:true}).click();
-  await page.getByRole('button',{name:'지난 추억',exact:true}).click();
+  await page.getByRole('button',{name:'추억',exact:true}).click();
   await expect(page.locator('.collectionCount')).toHaveText('8개의 기록');
   await page.getByRole('group',{name:'추억 보기'}).getByRole('button',{name:'추억 지도'}).click();
   await page.locator('.memoryMapPlaceList button').filter({hasText:'서울'}).click();
@@ -270,4 +270,16 @@ test('pending overview shows loading instead of empty map counts',async({page})=
   await expect(page.locator('.memoryMapShape')).toHaveCount(0);
   await page.evaluate(()=>window.dispatchEvent(new Event('release-overview')));
   await expect(page.locator('.memoryMapPlaceList button').filter({hasText:'제주'})).toContainText('6');
+});
+
+test('map hides the unrelated global search and resets it when opened', async ({page}) => {
+  await page.goto('/');
+  await page.getByRole('button',{name:'추억',exact:true}).click();
+  const search = page.getByRole('textbox',{name:'사진과 추억 검색'});
+  await search.fill('기록 1');
+  const sections = page.getByRole('group',{name:'추억 보기'});
+  await sections.getByRole('button',{name:'추억 지도'}).click();
+  await expect(search).toHaveCount(0);
+  await sections.getByRole('button',{name:'다시 만난 추억'}).click();
+  await expect(search).toHaveValue('');
 });
