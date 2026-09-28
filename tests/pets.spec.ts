@@ -68,6 +68,6 @@ test('pets collect photos manually and preserve originals', async ({ page }) => 
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: '등록 삭제', exact: true }).click();
   await expect(page.getByText('아직 등록한 반려동물이 없습니다.')).toBeVisible();
-  await page.getByRole('button', { name: '사진보기', exact: true }).click();
+  await page.getByRole('button', { name: '사진 기록', exact: true }).click();
   await expect(page.locator('.mediaTile')).toHaveCount(3);
 });

@@ -1385,19 +1385,15 @@ textarea {
   gap: 14px;
 }
 
-.settingsPanel label {
-  display: grid;
-  gap: 8px;
-}
-
-.settingsPanel input {
-  height: 44px;
+.settingsSummary {
+  padding: 18px;
   border: 1px solid var(--border);
-  border-radius: 9999px;
-  padding: 0 16px;
-  color: var(--text);
+  border-radius: var(--radius-card);
   background: var(--surface);
 }
+
+.settingsSummary h2 { margin: 0 0 4px; font-size: 20px; }
+.settingsSummary p { margin: 0; color: var(--muted); font-size: 13px; }
 
 .dangerPanel {
   margin-top: 10px;

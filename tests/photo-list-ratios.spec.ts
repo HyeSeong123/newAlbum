@@ -67,7 +67,7 @@ test('journal, person, pet, calendar, memory and album lists show complete photo
   await page.getByRole('button', { name: '사진·이름 편집', exact: true }).click();
   await expectFullPhotos(page.locator('.petEditor .mediaImage'), 6);
   await page.keyboard.press('Escape');
-  await page.getByTitle('지난 추억', { exact: true }).click();
+  await page.getByTitle('추억', { exact: true }).click();
   await page.getByRole('button', { name: '몇 년 전 이번 달', exact: true }).click();
   await page.locator('.memoryGroupCard').filter({ hasText: '2025' }).click();
   await expectFullPhotos(page.locator('.recordMediaGrid .mediaImage'), 3);

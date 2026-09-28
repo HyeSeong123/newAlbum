@@ -11,7 +11,7 @@ test("past memories count appears in the menu", async ({ page }) => {
     } });
   });
   await page.goto("/");
-  const memoriesMenu = page.getByTitle("지난 추억");
+  const memoriesMenu = page.getByTitle("추억");
   await expect(memoriesMenu.locator(".navCount")).toHaveText("2");
   await page.screenshot({ path: `test-results/memories-menu-count-${test.info().project.name}.png` });
   await memoriesMenu.click();
@@ -60,7 +60,7 @@ test("annual events use month and day and persist across years", async ({ page }
 
 test("empty library flow works", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "사진보기" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "사진 기록" })).toBeVisible();
   await expect(page.getByText("가져오기로 첫 사진과 영상을 담아보세요.")).toBeVisible();
 
   await page.getByRole("tab", { name: /달력/ }).click();
@@ -148,7 +148,7 @@ test("mobile nav is usable", async ({ page, isMobile }) => {
   await page.goto("/");
   if (isMobile) {
     await expect(page.getByRole("navigation", { name: "주 메뉴" })).toBeVisible();
-    await page.getByRole("button", { name: /사진보기/ }).click();
+    await page.getByRole("button", { name: /사진 기록/ }).click();
     await page.getByRole("tab", { name: /책 보기/ }).click();
     await expect(page.getByRole("dialog", { name: "앨범 전체창" })).toBeVisible();
   }
@@ -158,6 +158,8 @@ test("settings clear button is disabled when album is empty", async ({ page }) =
   await page.goto("/");
   await page.getByRole("button", { name: /설정/ }).click();
   await expect(page.getByText("앱에 등록된 0개의 항목만 지웁니다. 원본 파일은 그대로 남습니다.")).toBeVisible();
+  await expect(page.locator(".settingsSummary")).toContainText("사진 기록");
+  await expect(page.locator(".settingsPanel")).not.toContainText("오래담은");
   await expect(page.getByRole("button", { name: /모두 비우기/ })).toBeDisabled();
 });
 
@@ -282,7 +284,7 @@ test("created albums are visible from saved albums menu", async ({ page }) => {
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "삭제", exact: true }).click();
   await expect(page.locator(".savedAlbumCard")).toHaveCount(0);
-  await page.getByRole("button", { name: "사진보기", exact: true }).click();
+  await page.getByRole("button", { name: "사진 기록", exact: true }).click();
   await expect(page.locator(".galleryGrid .mediaTile")).toHaveCount(2);
 });
 

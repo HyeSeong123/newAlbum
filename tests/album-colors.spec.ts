@@ -112,10 +112,10 @@ test('fabric album colors survive create, edit and reload', async ({ page }) => 
   await expect(reader.getByTitle('이전 책장', { exact: true })).toBeEnabled();
   await reader.getByTitle('이전 책장', { exact: true }).click();
   await expect(reader.locator('.albumPagerActions p')).toHaveText(`1 / ${pageCount} 펼침`);
-  await page.getByRole('button', { name: '사진보기', exact: true }).click();
+  await page.getByRole('button', { name: '사진 기록', exact: true }).click();
   await expect(reader).toHaveCount(0);
 
-  await page.getByRole('button', { name: '사진보기', exact: true }).click();
+  await page.getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.getByRole('tab', { name: '책 보기' }).click();
   const libraryReader = page.getByRole('dialog', { name: '앨범 전체창' });
   await expect(libraryReader.locator('.albumPaper')).toHaveCount(2);

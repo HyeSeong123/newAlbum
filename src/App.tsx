@@ -33,11 +33,11 @@ const viewLabels: Record<View, string> = {
 };
 
 const navItems: Array<{ name: View; label: string; accessibleLabel: string }> = [
-  { name: "Library", label: "사진 기록", accessibleLabel: "사진보기" },
-  { name: "Albums", label: "앨범", accessibleLabel: "내 앨범" },
+  { name: "Library", label: "사진 기록", accessibleLabel: "사진 기록" },
+  { name: "Albums", label: "내 앨범", accessibleLabel: "내 앨범" },
   { name: "Diary", label: "일기장", accessibleLabel: "일기장" },
-  { name: "Memories", label: "추억", accessibleLabel: "지난 추억" },
-  { name: "People", label: "사람·반려동물", accessibleLabel: "사람과 반려동물" },
+  { name: "Memories", label: "추억", accessibleLabel: "추억" },
+  { name: "People", label: "사람과 반려동물", accessibleLabel: "사람과 반려동물" },
 ];
 
 export function App() {
@@ -56,6 +56,7 @@ export function App() {
 
   const [activeView, setActiveView] = useState<View>("Library");
   const [photoMode, setPhotoMode] = useState<PhotoMode>("grid");
+  const [memorySection, setMemorySection] = useState<"rediscover" | "timeline" | "map">("rediscover");
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const library = useMediaLibrary();
   const diary = useDiary();
@@ -117,7 +118,7 @@ export function App() {
   }
 
   function navigate(view: View) {
-    setActiveView(view); setPhotoMode("grid"); setQuery("");
+    setActiveView(view); setPhotoMode("grid"); setMemorySection("rediscover"); setQuery("");
     selection.reset(); setSelectionNotice("");
   }
 
@@ -176,11 +177,11 @@ export function App() {
       <section className="workspace">
         <header className={`topbar view-${activeView.toLowerCase()}`}>
           <div>
-            <h1 aria-label={activeView === "Library" ? "사진보기" : viewLabels[activeView]}>{topbarTitle}</h1>
+            <h1 aria-label={viewLabels[activeView]}>{topbarTitle}</h1>
             <span className="collectionCount">{topbarCount}</span>
           </div>
           <div className="toolbar">
-            {!(activeView === "Library" && photoMode === "grid") && <label className="searchBox">
+            {!(activeView === "Library" && photoMode === "grid") && !(activeView === "Memories" && memorySection === "map") && <label className="searchBox">
               <Search size={18} />
               <input aria-label={activeView === "People" ? "이름 검색" : activeView === "Diary" ? "일기 검색" : activeView === "Albums" ? "앨범 검색" : "사진과 추억 검색"} value={query} onChange={(event) => { setQuery(event.target.value); if (activeView === "Library" && activeMonth !== "favorites") setSelectedMonth("all"); }} placeholder={activeView === "People" ? "이름 검색" : activeView === "Diary" ? "일기 검색" : activeView === "Albums" ? "앨범을 검색하세요" : "사진과 추억을 검색하세요"} />
               {query && <button className="searchClear" aria-label="검색 지우기" onClick={() => setQuery("")}><X size={15} /></button>}
@@ -247,6 +248,7 @@ export function App() {
             {activeView === "Diary" && <DiaryView entries={diary.entries} albums={savedAlbums} query={query} error={diary.error} onSave={diary.save} onAssign={diary.assign} onDelete={diary.remove} />}
             {activeView === "Albums" && <SavedAlbumsView diaries={diary.entries} albums={savedAlbums} query={query} onOpen={openViewer} onSave={library.saveAlbum} onDelete={library.deleteAlbums} />}
             {activeView === "Memories" && <MemoriesWorkspace items={filtered} allItems={items} today={today} onOpen={openViewer}
+              onSectionChange={(section) => { setMemorySection(section); if (section === "map") setQuery(""); }}
               onAssignRegion={library.assignRegion} onLocationsAnalyzed={library.refreshLocations}
               onCreateAlbum={(records, title = "") => { setAlbumDraftItems(records); setAlbumDraftTitle(title); }} />}
             {activeView === "People" && <PeopleWorkspace items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} />}

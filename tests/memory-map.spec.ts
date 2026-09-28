@@ -36,7 +36,7 @@ test.beforeEach(async ({ page }) => {
     } });
   });
   await page.goto('/');
-  await page.locator('.navList').getByRole('button', { name: '지난 추억' }).click();
+  await page.locator('.navList').getByRole('button', { name: '추억' }).click();
   await page.getByRole('group', { name: '추억 보기' }).getByRole('button', { name: '추억 지도' }).click();
 });
 

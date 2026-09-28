@@ -3,7 +3,7 @@ import { installRecordFixture } from './record-fixture';
 
 test('timeline preserves date groups, counts, notes and navigation into a day', async ({ page }) => {
   await installRecordFixture(page); await page.goto('/');
-  await page.getByRole('button',{ name:'지난 추억',exact:true }).click();
+  await page.getByRole('button',{ name:'추억',exact:true }).click();
   await page.getByRole('button',{ name:'우리의 기록',exact:true }).click();
   const timeline = page.getByRole('region',{ name:'우리의 기록 타임라인',exact:true });
   await timeline.getByRole('button',{ name:'2023년 기록',exact:true }).click();
