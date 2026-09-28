@@ -44,7 +44,7 @@ test('pets collect photos manually and preserve originals', async ({ page }) => 
   await page.getByRole('button', { name: '사진 상세보기', exact: true }).first().click();
   await expect(page.getByRole('dialog', { name: '사진 상세' })).toBeVisible();
   await page.getByTitle('닫기').click();
-  await page.getByRole('button', { name: '사진·이름 편집', exact: true }).click();
+  await page.getByRole('button', { name: '이름·사진 수정', exact: true }).click();
   await page.getByLabel('이름', { exact: true }).fill('우리 보리');
   await page.getByRole('button', { name: '사진 선택', exact: true }).first().click();
   await page.getByRole('button', { name: '저장', exact: true }).click();
@@ -56,7 +56,8 @@ test('pets collect photos manually and preserve originals', async ({ page }) => 
   await page.screenshot({ path: `test-results/pet-list-${test.info().project.name}.png` });
   await page.getByRole('button', { name: '우리 보리 1장', exact: true }).click();
   await page.route('**/src/features/pets/petRecognition.ts*', (route) => route.fulfill({ contentType: 'application/javascript', body: 'export async function describePets() { return [{kind:"dog", vector:[1,0]}]; } export function similarity() { return 0.9; }' }));
-  await page.getByRole('button', { name: '후보 찾기', exact: true }).click();
+  await page.getByRole('button', { name: '반려동물 관리', exact: true }).click();
+  await page.getByRole('button', { name: '비슷한 사진 찾기', exact: true }).click();
   const review = page.getByRole('dialog', { name: '우리 보리 후보 확인' });
   await review.getByRole('button', { name: '후보 찾기', exact: true }).click();
   await expect(review.getByText('후보 2장을 찾았습니다.')).toBeVisible();
@@ -66,7 +67,8 @@ test('pets collect photos manually and preserve originals', async ({ page }) => 
   await review.getByRole('button', { name: '선택한 사진 연결 (1)', exact: true }).click();
   await expect(page.getByRole('button', { name: '사진 상세보기', exact: true })).toHaveCount(2);
   page.once('dialog', (dialog) => dialog.accept());
-  await page.getByRole('button', { name: '등록 삭제', exact: true }).click();
+  await page.getByRole('button', { name: '반려동물 관리', exact: true }).click();
+  await page.getByRole('button', { name: '반려동물 등록 삭제', exact: true }).click();
   await expect(page.getByText('아직 등록한 반려동물이 없습니다.')).toBeVisible();
   await page.getByRole('button', { name: '사진 기록', exact: true }).click();
   await expect(page.locator('.mediaTile')).toHaveCount(3);

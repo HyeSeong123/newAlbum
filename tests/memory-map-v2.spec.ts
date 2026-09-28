@@ -265,7 +265,7 @@ test('failed overview and filtered page queries can retry without losing the fil
 
 test('pending overview shows loading instead of empty map counts',async({page})=>{
   await map(page,'?slow-overview');
-  await expect(page.getByRole('status').filter({hasText:'추억 지도를 불러오는 중'})).toBeVisible();
+  await expect(page.getByRole('status').filter({hasText:'사진의 위치 정보를 불러오는 중'})).toBeVisible();
   await expect(page.locator('.memoryMapStats')).toHaveCount(0);
   await expect(page.locator('.memoryMapShape')).toHaveCount(0);
   await page.evaluate(()=>window.dispatchEvent(new Event('release-overview')));

@@ -11,6 +11,7 @@ type LibraryState = { items: MediaItem[]; albums: SavedAlbum[]; loaded: boolean 
 export function useMediaLibrary() {
   const desktop = api.isTauriRuntime();
   const [state, setState] = useState<LibraryState>({ items: [], albums: [], loaded: !desktop });
+  const [albumsLoaded, setAlbumsLoaded] = useState(!desktop);
   const current = useRef(state);
   const mediaRevision = useRef(0);
   const pendingMediaEdits = useRef(new Map<string, Partial<MediaItem>>());
@@ -21,6 +22,7 @@ export function useMediaLibrary() {
   const [importing, setImporting] = useState<"files" | "folder" | null>(null);
   const [clearing, setClearing] = useState(false);
   const [error, setError] = useState("");
+  const [importNotice, setImportNotice] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
   const albums = useMemo(() => syncAlbumMedia(state.albums, state.items, state.loaded), [state]);
@@ -46,8 +48,11 @@ export function useMediaLibrary() {
       }
     }).catch(() => { if (!disposed) setError("등록된 미디어를 불러오지 못했습니다."); });
     void api.loadSavedAlbums().then((records) => {
-      if (!disposed && albumVersion === albumRevision.current) publish({ albums: records });
-    }).catch(() => { if (!disposed) setError("앨범 목록을 불러오지 못했습니다."); });
+      if (!disposed) {
+        if (albumVersion === albumRevision.current) publish({ albums: records });
+        setAlbumsLoaded(true);
+      }
+    }).catch(() => { if (!disposed) setError("앨범 목록을 불러오지 못했습니다. 앱을 다시 실행해 주세요."); });
     return () => { disposed = true; };
   }, [desktop]);
 
@@ -67,7 +72,7 @@ export function useMediaLibrary() {
   async function register(kind: "files" | "folder"): Promise<MediaItem[]> {
     if (locked.current) return [];
     locked.current = true;
-    setImporting(kind); setError("");
+    setImporting(kind); setError(""); setImportNotice("");
     try {
       const registered = kind === "files" ? await api.chooseAndRegisterFiles() : await api.chooseAndRegisterFolder();
       const before = new Set(current.current.items.map(item => item.id));
@@ -76,9 +81,20 @@ export function useMediaLibrary() {
         const items = retainMediaEdits(registered, current.current.items).map((item) => ({ ...item, ...pendingMediaEdits.current.get(item.id) }));
         publish({ items, loaded: true });
         pendingMediaEdits.current.clear();
-        return items.filter(item => !before.has(item.id));
+        const added = items.filter(item => !before.has(item.id));
+        setImportNotice(added.length ? `사진과 영상 ${added.length}개를 가져왔습니다.` : "새로 가져올 사진과 영상이 없습니다.");
+        return added;
       }
-    } catch { setError("미디어를 등록하지 못했습니다. 다시 시도해 주세요."); }
+    } catch {
+      try {
+        const before = new Set(current.current.items.map(item => item.id));
+        const latest = await api.loadRegisteredMedia();
+        const added = latest.filter(item => !before.has(item.id)).length;
+        mediaRevision.current++;
+        publish({ items: retainMediaEdits(latest, current.current.items), loaded: true });
+        setError(added ? `${added}개 파일은 가져왔습니다. 나머지 파일은 가져오지 못했습니다. 등록된 사진은 그대로 남아 있습니다. 다시 가져오기를 시도해 주세요.` : "사진과 영상을 가져오지 못했습니다. 이미 등록된 사진은 그대로 남아 있습니다. 다시 시도해 주세요.");
+      } catch { setError("사진과 영상을 가져오던 중 문제가 발생했습니다. 등록된 사진을 확인한 뒤 다시 시도해 주세요."); }
+    }
     finally { locked.current = false; setImporting(null); }
     return [];
   }
@@ -109,14 +125,15 @@ export function useMediaLibrary() {
 
   function handleFiles(files: FileList | null, kind: "files" | "folder") {
     if (!files?.length || locked.current) return;
-    setImporting(kind); setError("");
+    setImporting(kind); setError(""); setImportNotice("");
     try {
       const added = browserImportItems(files, current.current.items);
-      if (!added.length) return;
+      if (!added.length) { setImportNotice("새로 가져올 사진과 영상이 없습니다."); return; }
       added.forEach((item) => { if (item.previewUrl) urls.current.add(item.previewUrl); });
       mediaRevision.current++;
       publish({ items: [...added, ...current.current.items], loaded: true });
-    } catch { setError("선택한 파일을 읽지 못했습니다. 다시 시도해 주세요."); }
+      setImportNotice(`사진과 영상 ${added.length}개를 가져왔습니다.`);
+    } catch { setError("선택한 파일을 읽지 못했습니다. 이미 등록된 사진은 그대로 남아 있습니다. 다시 시도해 주세요."); }
     finally { setImporting(null); }
   }
 
@@ -246,6 +263,6 @@ export function useMediaLibrary() {
     });
   }
 
-  return { desktop, importIntoAlbum, handleFilesIntoAlbum, items: state.items, itemsById, albums, importing, clearing, error, fileInput, folderInput,
+  return { desktop, loaded: state.loaded && albumsLoaded, importIntoAlbum, handleFilesIntoAlbum, items: state.items, itemsById, albums, importing, importNotice, clearing, error, fileInput, folderInput,
     chooseFiles, chooseFolder, handleFiles, patchMedia, saveTitle, assignRegion, refreshLocations, recordView, removeMedia, createAlbum, saveAlbum, deleteAlbums };
 }

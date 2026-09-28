@@ -14,11 +14,12 @@ export function RegionEditor({ current, district: initialDistrict = "", country:
   const [city, setCity] = useState(initialCity);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   async function save() {
     if (busy || !count || (overseas ? !country.trim() || !city.trim() : !code)) return;
-    setBusy(true); setError("");
-    try { await onSave(overseas ? "overseas" : code, overseas ? "" : district.trim(), overseas ? country.trim() : "", overseas ? city.trim() : ""); setEditing(false); }
-    catch { setError("지역을 저장하지 못했습니다. 다시 시도해 주세요."); }
+    setBusy(true); setError(""); setNotice("");
+    try { await onSave(overseas ? "overseas" : code, overseas ? "" : district.trim(), overseas ? country.trim() : "", overseas ? city.trim() : ""); setEditing(false); setNotice("지역을 변경했습니다."); }
+    catch { setError("지역을 저장하지 못했습니다. 선택한 지역은 화면에 남아 있습니다. 다시 저장해 주세요."); }
     finally { setBusy(false); }
   }
   const place = current === "overseas" ? [initialCountry, initialCity].filter(Boolean).join(" · ") : [REGION_NAMES[current ?? ""], initialDistrict].filter(Boolean).join(" · ");
@@ -38,6 +39,6 @@ export function RegionEditor({ current, district: initialDistrict = "", country:
       <button disabled={busy || !count || (overseas ? !country.trim() || !city.trim() : !code)} onClick={() => void save()}>{busy ? "저장 중" : "지역 저장"}</button>
       <button disabled={busy} onClick={() => setEditing(false)}>취소</button>
     </>}
-    {error && <p role="alert">{error}</p>}
+    {error && <p role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
   </section>;
 }

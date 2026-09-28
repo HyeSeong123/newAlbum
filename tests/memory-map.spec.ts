@@ -63,9 +63,9 @@ test('province counts, region gallery, unclassified list and existing detail sta
 
 test('existing photos are analyzed in batches, totals refresh and video is listed', async ({ page }) => {
   await expect(page.locator('.memoryMapAnalysis')).toContainText('3 / 4');
-  await page.getByRole('button', { name: '지역 자동 조회', exact: true }).click();
+  await page.getByRole('button', { name: '위치 정보 분석하기', exact: true }).click();
   await expect(page.locator('.memoryMapAnalysis')).toContainText('4 / 4');
-  await expect(page.getByRole('button', { name: '지역 자동 조회', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '위치 정보 분석하기', exact: true })).toBeDisabled();
   await page.locator('.memoryMapPlaceList button').filter({ hasText: '제주' }).click();
   await expect(page.locator('.memoryMapGallery')).toContainText('1장의 사진 · 1개의 영상');
   await expect(page.locator('.memoryMapGallery .recordMediaGrid > button')).toHaveCount(2);

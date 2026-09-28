@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Compass, Image, MapPin, RefreshCw, Video } from "lucide-react";
 import type { MediaItem } from "../../types/media";
+import { EmptyState } from "../../components/MediaVisual";
 import { RegionGallery } from "./RegionGallery";
 import { analyzeLocationBatch, isTauriRuntime, loadLocationOverview, queueFailedLocations, type LocationOverview } from "../../services/tauriMediaService";
 import { MAP_REGIONS, REGION_LABELS, REGION_NAMES, totalFor } from "./regionModel";
@@ -9,11 +10,12 @@ import "./memory-map.css";
 
 const EMPTY_OVERVIEW = browserLocationOverview([], REGION_NAMES);
 
-export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLocationsAnalyzed }: {
+export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLocationsAnalyzed, onShowLibrary }: {
   items: MediaItem[]; onOpen: (item: MediaItem, collection: MediaItem[]) => void;
   onAssignRegion: (ids: string[], code: string, district?: string, country?: string, city?: string) => Promise<void>;
   onCreateAlbum: (items: MediaItem[], title?: string) => void;
   onLocationsAnalyzed: () => Promise<void>;
+  onShowLibrary: () => void;
 }) {
   const [overview, setOverview] = useState<LocationOverview | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLoca
         if (progress.pending >= previous) throw new Error("진행 상태가 갱신되지 않았습니다.");
       }
       await onLocationsAnalyzed();
-    } catch { if (alive.current) setError("일부 파일의 위치를 분석하지 못했습니다. 다시 시도해 주세요."); }
+    } catch { if (alive.current) setError("위치 정보를 읽는 중 문제가 발생했습니다. 이미 등록된 사진과 확인한 지역은 그대로 남아 있습니다. 다시 시도해 주세요."); }
     finally { running.current = false; if (alive.current) setBusy(false); }
   }
 
@@ -72,6 +74,8 @@ export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLoca
   const activeRegion = hovered ?? selected;
   const summary = MAP_REGIONS.find(region => region.code === activeRegion);
   const summaryCount = shown.regions.find(region => region.code === activeRegion);
+  const hasMappedRecord = located > 0 || items.some(item => item.regionCode === "overseas");
+  const chooseUnclassified = () => { setSelected("unclassified"); setHovered(null); setFocusVersion(value => value + 1); };
 
   return <div className="memoryMap">
     <section className="memoryMapIntro" aria-label="추억 지도 요약">
@@ -82,14 +86,24 @@ export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLoca
         <div className="memoryMapStats"><div><strong>{located.toLocaleString()}</strong><span>위치가 있는 기록</span></div><div><strong>{shown.unclassified.toLocaleString()}</strong><span>지역 미분류</span></div></div>
         <button className="memoryMapAutoButton" disabled={!desktop || busy || (shown.pending === 0 && shown.failed === 0)}
           title={!desktop ? "자동 조회는 데스크톱 앱에서 사용할 수 있어요" : shown.pending === 0 && shown.failed === 0 ? "새로 조회할 기록이 없습니다" : undefined}
-          onClick={() => void analyze(shown.pending === 0 && shown.failed > 0)}><RefreshCw size={16} className={busy ? "spinIcon" : ""} />{busy ? "조회 중" : "지역 자동 조회"}</button>
+          onClick={() => void analyze(shown.pending === 0 && shown.failed > 0)}><RefreshCw size={16} className={busy ? "spinIcon" : ""} />{busy ? `위치 정보를 확인하는 중 ${shown.analyzed.toLocaleString()} / ${shown.total.toLocaleString()}개` : "위치 정보 분석하기"}</button>
       </div>}
     </section>
     {overviewError && <div className="memoryMapAlert" role="alert">{overviewError}
       <button disabled={busy} onClick={() => { setOverviewError(""); setRefresh(value => value + 1); }}>지도 다시 불러오기</button>
     </div>}
-    {initialLoading && !overviewError && <p role="status">추억 지도를 불러오는 중이에요.</p>}
+    {initialLoading && !overviewError && <p role="status">사진의 위치 정보를 불러오는 중</p>}
     {error && <p className="memoryMapAlert" role="alert">{error}</p>}
+    {!initialLoading && !hasMappedRecord && <div className="memoryMapEmpty">
+      <EmptyState icon={<MapPin size={32} />} title="아직 지도에 표시할 기록이 없습니다."
+        description={items.length ? "휴대폰으로 찍은 사진에는 촬영 위치가 저장되어 있을 수 있습니다." : "사진을 가져오면 촬영 위치를 확인해 지도에 표시할 수 있습니다."}
+        actionLabel={items.length ? shown.pending || shown.failed ? "위치 정보 분석하기" : shown.unclassified ? "지역 미분류 사진 보기" : "사진 기록 보기" : "사진 기록 보기"}
+        onAction={items.length ? shown.pending || shown.failed ? () => void analyze(shown.pending === 0) : shown.unclassified ? chooseUnclassified : onShowLibrary : onShowLibrary}
+        actionIcon={<MapPin size={18} />} />
+      {shown.unclassified > 0 && (shown.pending > 0 || shown.failed > 0) && <button className="memoryMapUnclassified" onClick={chooseUnclassified}>지역 미분류 사진 보기 · 직접 지역 지정</button>}
+      {shown.failed > 0 && <p role="status">{shown.failed}개 사진의 위치를 읽지 못했습니다. 사진은 정상적으로 등록되어 있습니다.</p>}
+      {shown.unclassified > 0 && <p>위치가 없는 사진은 직접 지역을 지정할 수 있습니다.</p>}
+    </div>}
     {!initialLoading && <section className="memoryMapLayout" aria-label="대한민국 추억 분포">
       <div className="memoryMapPaper">
         <div className="memoryMapPaperHead"><div><span className="memoryMapEyebrow">우리의 장소들</span><h3>대한민국</h3></div><span>시·도별 기록</span></div>
@@ -129,7 +143,7 @@ export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLoca
         <div className="memoryMapAnalysis">
           <div className="memoryMapAnalysisHeader"><strong>위치 정보 분석</strong><span aria-live="polite">{shown.analyzed.toLocaleString()} / {shown.total.toLocaleString()}</span></div>
           <progress aria-label="위치 정보 분석 진행" value={shown.analyzed} max={Math.max(1, shown.total)} />
-          {shown.failed > 0 && <span className="memoryMapAnalysisFailure">조회 실패 {shown.failed}개{shown.pending === 0 ? " · 다시 누르면 재시도" : ""}</span>}
+          {shown.failed > 0 && <span className="memoryMapAnalysisFailure">위치 정보 읽기 실패 {shown.failed}개 · 사진은 그대로 보관됩니다</span>}
         </div>
       </aside>
     </section>}

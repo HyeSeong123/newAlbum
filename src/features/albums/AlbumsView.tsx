@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { BookOpen, Check, CheckSquare, FolderOutput, MoreVertical, Pencil, Trash2, X } from "lucide-react";
+import { BookOpen, BookPlus, Check, CheckSquare, FolderOutput, MoreVertical, Pencil, Trash2, X } from "lucide-react";
 import type { MediaItem, SavedAlbum } from "../../types/media";
 import { EmptyState } from "../../components/MediaVisual";
 import { AlbumCover } from "./AlbumCover";
@@ -16,6 +16,7 @@ export function SavedAlbumsView({
   onOpen,
   onSave,
   onDelete,
+  onNewAlbum,
   query = "",
 }: {
   albums: SavedAlbum[];
@@ -23,6 +24,7 @@ export function SavedAlbumsView({
   onOpen: (item: MediaItem, collection?: MediaItem[]) => void;
   onSave: (album: SavedAlbum) => Promise<void>;
   onDelete: (ids: string[]) => Promise<void>;
+  onNewAlbum: () => void;
   query?: string;
 }) {
   const [activeAlbumId, setActiveAlbumId] = useState<string | null>(null);
@@ -70,7 +72,7 @@ export function SavedAlbumsView({
         </div>
       </div>
       {error && <p role="alert">{error}</p>}
-      {!albums.length && <EmptyState text="아직 만든 앨범이 없습니다. 새 앨범을 눌러 함께 담을 사진을 골라보세요." />}
+      {!albums.length && <EmptyState title="아직 만든 앨범이 없습니다." description="함께 보고 싶은 사진을 골라 한 권의 앨범으로 만들어보세요." actionLabel="첫 앨범 만들기" actionIcon={<BookPlus size={18} />} onAction={onNewAlbum} />}
       {albums.length > 0 && !visibleAlbums.length && <EmptyState text="검색한 이름의 앨범이 없습니다." />}
       <div className="savedAlbumGrid">
         {visibleAlbums.map((album) => {

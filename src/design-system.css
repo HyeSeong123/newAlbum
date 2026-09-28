@@ -85,6 +85,10 @@ button:disabled { opacity: .45; }
 .mediaTile .mediaDate { margin: 10px 0 0; font-weight: 500; font-size: 13px; color: var(--muted); }
 .selectMark { box-shadow: none; }
 .emptyState { background: transparent; border: 0; border-radius: 0; box-shadow: none; min-height: 260px; color: var(--muted); }
+.emptyState h3 { margin: 0; color: var(--text); font-size: 21px; }
+.emptyState p { max-width: 460px; font-size: 15px; line-height: 1.6; }
+.emptyStateAction { min-height: 46px; padding: 10px 20px; border-radius: 9999px; color: #fff; background: var(--primary); font-size: 16px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.emptyStateAction:hover { filter: brightness(.93); }
 .pagination { border-top: 1px solid var(--border); padding-top: 20px; }
 .monthPicker select, .scheduleForm input:not([type="checkbox"]), .scheduleForm select, .commentForm input, .commentForm textarea, .dayNote textarea, .settingsPanel input {
   border-radius: 6px; background: #fff; color: var(--text); border-color: var(--border); font-size: 14px;
@@ -501,6 +505,7 @@ h3 { font-size: 15px; }
 .actionMenuPanel { position: absolute; z-index: 100; top: calc(100% + 6px); right: 0; min-width: 168px; padding: 5px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); box-shadow: 0 8px 24px #34342b1f; }
 .actionMenuPanel button, .topbar .importActions .actionMenuPanel button { width: 100%; min-height: 40px; padding: 0 10px; display: flex; justify-content: flex-start; align-items: center; gap: 8px; border: 0; border-radius: 4px; background: transparent; color: var(--text); font-size: 13px; white-space: nowrap; }
 .actionMenuPanel button:hover:not(:disabled) { background: var(--surface-soft); }
+.actionMenuPanel button.dangerAction { margin-top: 6px; border-top: 1px solid var(--border); border-radius: 0; color: #9b2828; }
 .peopleWorkspace > .viewTabs { margin-bottom: 24px; }
 .peopleView > .panelHeader:first-child { padding-bottom: 16px; border-bottom: 1px solid var(--border); }
 .peopleActions button { background: transparent; border-color: var(--border); font-size: 12px; }

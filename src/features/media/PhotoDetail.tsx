@@ -290,7 +290,7 @@ function PhotoTitleEditor({ item, onSave }: { item: MediaItem; onSave: (id: stri
       setDraft(draft.trim());
       setNotice("제목을 저장했습니다.");
     } catch {
-      setError("제목을 저장하지 못했습니다. 다시 저장해 주세요.");
+      setError("제목을 저장하지 못했습니다. 입력한 제목은 화면에 남아 있습니다. 다시 저장해 주세요.");
     } finally { busy.current = false; setSaving(false); }
   }
 

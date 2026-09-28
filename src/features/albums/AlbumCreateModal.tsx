@@ -15,7 +15,7 @@ export function AlbumCreateModal({ items, initialTitle = "", onClose, onCreate }
     if (busy || !title.trim()) return;
     setBusy(true); setError("");
     try { await onCreate(title.trim(), color); onClose(); }
-    catch { setError("앨범을 만들지 못했습니다. 다시 시도해 주세요."); }
+    catch { setError("앨범을 만들지 못했습니다. 입력한 이름은 화면에 남아 있습니다. 다시 만들기를 눌러 주세요."); }
     finally { setBusy(false); }
   }
   return <div className="modalBackdrop">

@@ -33,7 +33,7 @@ export function AlbumEditor({ album, onClose, onSave, initialSection = "contents
     saving.current = true;
     setBusy(true); setError("");
     try { await onSave({ ...draft, title: draft.title.trim() }); onClose(); }
-    catch { setError("앨범을 저장하지 못했습니다. 다시 시도해 주세요."); }
+    catch { setError("앨범을 저장하지 못했습니다. 입력한 내용은 화면에 그대로 남아 있습니다. 다시 저장해 주세요."); }
     finally { saving.current = false; setBusy(false); }
   }
   function removeChosen() {

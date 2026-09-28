@@ -1,0 +1,18 @@
+.firstRunBackdrop { z-index: 30; }
+.firstRunGuide {
+  width: min(460px, 100%);
+  padding: clamp(24px, 5vw, 38px);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-strong);
+  display: grid;
+  justify-items: start;
+  gap: 16px;
+}
+.firstRunGuide > svg { color: var(--primary); }
+.firstRunGuide h2 { margin: 0; font-size: clamp(23px, 4vw, 28px); }
+.firstRunGuide p { margin: 0 0 12px; color: var(--text); font-size: 16px; line-height: 1.65; }
+.firstRunGuide p:last-child { margin-bottom: 0; }
+.firstRunGuide button { min-height: 48px; padding: 10px 18px; border-radius: 9999px; font-size: 16px; }
+.firstRunImport { display: inline-flex; align-items: center; gap: 9px; }
+.firstRunLater { color: var(--text); background: var(--surface-soft); }
