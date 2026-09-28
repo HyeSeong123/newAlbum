@@ -324,7 +324,7 @@ function PhotoZoomViewer({ item, onClose }: { item: MediaItem; onClose: () => vo
           <input aria-label="확대 배율" type="range" min="1" max="4" step="0.1" value={scale} onChange={(event) => changeScale(Number(event.target.value))} />
           <output>{Math.round(scale * 100)}%</output>
           <button title="확대" onClick={() => changeScale(scale + 0.25)} disabled={scale >= 4}><ZoomIn size={20} /></button>
-          <button title="100%로 복원" onClick={() => setScale(1)}><RotateCcw size={19} /></button>
+          <button className="photoZoomReset" title="100%로 복원" onClick={() => setScale(1)}><RotateCcw size={19} />100%로 복원</button>
           <button className="photoZoomClose" title="확대 보기 닫기" autoFocus onClick={onClose}><X size={20} /></button>
         </div>
         <div className="photoZoomStage">

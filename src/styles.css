@@ -1302,8 +1302,12 @@ textarea {
 }
 
 .eventItem button {
-  width: 36px;
+  min-width: 36px;
   min-height: 36px;
+  padding: 0 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   border: 1px solid var(--border);
   color: var(--danger);
   background: var(--surface);

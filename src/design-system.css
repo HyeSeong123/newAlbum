@@ -280,6 +280,7 @@ button:disabled { opacity: .45; }
 .photoZoomViewer { width: 100%; height: 100dvh; display: grid; grid-template-rows: 58px minmax(0, 1fr); overflow: hidden; background: #0d0e10; }
 .photoZoomToolbar { z-index: 2; min-width: 0; padding: 0 18px; display: flex; align-items: center; justify-content: center; gap: 10px; color: #f2f3f5; background: #18191c; border-bottom: 1px solid #303238; }
 .photoZoomToolbar button { width: 38px; height: 38px; flex: 0 0 auto; padding: 0; display: grid; place-items: center; border: 1px solid #3c3f46; border-radius: 6px; color: #eceef1; background: #292b31; }
+.photoZoomToolbar .photoZoomReset { width: auto; padding: 0 10px; display: inline-flex; align-items: center; gap: 5px; font-size: 13px; }
 .photoZoomToolbar button:hover:not(:disabled) { background: #41454e; }
 .photoZoomToolbar button:disabled { opacity: .35; }
 .photoZoomToolbar input { width: min(320px, 35vw); accent-color: #7aa7e8; cursor: pointer; }
@@ -333,6 +334,11 @@ button:disabled { opacity: .45; }
   .photoZoomToolbar button { width: 36px; height: 36px; }
   .photoZoomToolbar input { width: min(150px, 32vw); }
   .photoZoomToolbar .photoZoomClose { right: 10px; }
+}
+@media (max-width: 600px) {
+  .photoZoomViewer { grid-template-rows: 100px minmax(0, 1fr); }
+  .photoZoomToolbar { flex-wrap: wrap; align-content: center; padding-right: 52px; }
+  .photoZoomToolbar .photoZoomClose { top: 10px; }
 }
 
 /* Reference-matched people directory */
