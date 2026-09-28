@@ -1,7 +1,12 @@
 import { expect, test } from '@playwright/test';
 
 test('first run explains the workflow, opens the existing file picker, and stays dismissed', async ({ page }) => {
-  await page.addInitScript(() => localStorage.removeItem('geuruteogi.first-run-completed-v1'));
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem('first-run-test-initialized')) {
+      localStorage.removeItem('geuruteogi.first-run-completed-v1');
+      sessionStorage.setItem('first-run-test-initialized', 'true');
+    }
+  });
   await page.goto('/');
   const guide = page.getByRole('dialog', { name: '그루터기에 사진을 담아보세요' });
   await expect(guide).toBeVisible();
@@ -16,7 +21,12 @@ test('first run explains the workflow, opens the existing file picker, and stays
 });
 
 test('later and existing diary data suppress the first run guide', async ({ page }) => {
-  await page.addInitScript(() => localStorage.removeItem('geuruteogi.first-run-completed-v1'));
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem('first-run-test-initialized')) {
+      localStorage.removeItem('geuruteogi.first-run-completed-v1');
+      sessionStorage.setItem('first-run-test-initialized', 'true');
+    }
+  });
   await page.goto('/');
   await page.getByRole('dialog', { name: '그루터기에 사진을 담아보세요' }).getByRole('button', { name: '나중에 하기' }).click();
   await page.reload();
