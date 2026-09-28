@@ -50,7 +50,7 @@ test('story pauses timed pages, plays video to its end, limits preloading and re
   await expect(story.locator('.storyCaption')).toContainText('비가 오던 날');
   await story.getByLabel('댓글·기록',{ exact:true }).uncheck();
   await expect(story.locator('.storyCaption')).not.toContainText('비가 오던 날');
-  await story.getByRole('button',{ name:'음악 음소거',exact:true }).click();
+  await story.getByRole('button',{ name:'음악 끄기',exact:true }).click();
   await expect(story.locator('.storyMusic')).toHaveJSProperty('muted',true);
   expect(await story.locator('img').count()).toBe(1);
   await story.getByRole('button',{ name:'다음 기록',exact:true }).click();
@@ -71,7 +71,6 @@ test('per-item story settings and album music survive a reload', async ({ page }
   await page.goto('/');
   await page.getByRole('button',{ name:'내 앨범',exact:true }).click();
   const edit = async () => {
-    await page.getByRole('button',{ name:'제주 스토리 앨범 메뉴' }).click();
     await page.getByRole('button',{ name:'앨범 수정',exact:true }).click();
   };
   await edit();

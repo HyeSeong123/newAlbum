@@ -57,7 +57,7 @@
 .peopleActions select { padding-block: 0; }
 .collectionTools .sortControl { padding: 0 10px; gap: 6px; }
 .collectionTools .sortControl select { font-size: 13px; }
-.topbar .importActions .actionMenuTrigger { width: 32px; min-width: 32px; padding: 0; }
+.topbar .importActions .actionMenuTrigger { width: auto; min-width: 0; padding-inline: 9px; }
 .peopleActions .toolbarIcon { width: var(--control-height); padding: 0; }
 .peopleActions button svg,
 .collectionTools button svg,
@@ -140,6 +140,15 @@
 .sidebar { grid-template-columns:minmax(175px,1fr) auto auto auto; gap:12px; }
 .sidebar .layoutToggle { justify-self:end; margin:0; min-height:40px; padding:0 12px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text); font-size:14px; white-space:nowrap; }
 .sidebar .layoutToggle[aria-pressed="true"] { border-color:var(--primary); font-weight:700; }
+.sidebar .globalSettings { width: auto; min-height: 40px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-size: 13px; }
+.topbar .importActions .folderImport { color: var(--text); border-color: var(--border); background: var(--surface); }
+.topbar .importActions .actionMenuTrigger { color: var(--muted); border-color: transparent; background: transparent; }
+.topbar .importActions .actionMenuTrigger:hover { background: var(--surface-soft); }
+.topbar .importActions { flex-wrap: wrap; gap: 6px; }
+.topbar .importActions:has(.actionMenu) .primary { border-radius: var(--control-radius); }
+.topbar .importActions .actionMenuTrigger { border-radius: var(--control-radius); }
+.peopleActions .actionMenuTrigger { border: 1px solid var(--border); border-radius: var(--control-radius); }
+.peopleActions .actionMenuPanel button { justify-content: flex-start; border: 0; border-radius: 4px; }
 .workspace:has(.photoWorkspace.mode-grid) .topbar .importActions { justify-self:end; margin-left:0; }
 .app.largeLayout .workspace { max-width:1800px; }
 .app.largeLayout .mainPanel :is(h2,h3) { font-size:clamp(24px,2vw,34px); }
@@ -148,6 +157,11 @@
   .sidebar .navList { order:3; width:100%; overflow-x:auto; }
   .sidebar .navList button { min-height:44px; }
   .sidebar .layoutToggle { margin-left:auto; }
+}
+@media(max-width:380px) {
+  .sidebar { gap: 6px; }
+  .sidebar .layoutToggle { padding-inline: 8px; font-size: 13px; }
+  .sidebar .globalSettings { padding-inline: 4px; }
 }
 @media(max-width:720px) {
   .topbar .importActions { justify-content:flex-start; }

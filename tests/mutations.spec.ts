@@ -23,9 +23,9 @@ for (const cancel of [true, false]) {
     }, { cancel });
     await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('data-load-pending', 'true');
-    await page.getByRole('button', { name: '가져오기', exact: true }).click();
+    await page.getByRole('button', { name: '사진·영상 가져오기', exact: true }).click();
     await expect(page.locator('html')).toHaveAttribute('data-dialog-chosen', 'true');
-    await expect(page.getByRole('button', { name: '가져오기', exact: true })).toBeEnabled();
+    await expect(page.getByRole('button', { name: '사진·영상 가져오기', exact: true })).toBeEnabled();
     if (!cancel) await expect(page.locator('.mediaTile')).toHaveCount(2);
     await page.evaluate(async () => {
       window.dispatchEvent(new Event('finish-initial-load'));
@@ -203,7 +203,7 @@ test('export ignores duplicate submits and retains inputs after a failed copy', 
   await page.goto('/');
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
   await page.getByRole('button', { name: '내보낼 앨범 앨범 메뉴' }).click();
-  await page.getByRole('button', { name: '내보내기', exact: true }).click();
+  await page.getByRole('button', { name: '앨범 내보내기', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: '내보내기', exact: true });
   await dialog.getByLabel('내보낼 경로', { exact: true }).fill('D:/exports');
   await dialog.locator('form').evaluate(form => {

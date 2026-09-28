@@ -8,6 +8,7 @@ import { useRowSelection } from '../../hooks/useRowSelection';
 import './people.css';
 import { FaceMatchReview } from './FaceMatchReview';
 import { ExportModal } from '../../components/ExportModal';
+import { ActionMenu } from '../../components/ActionMenu';
 import { EMPTY_FACES, indexFaces, mediaForFaces } from './peopleModel';
 
 export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items: MediaItem[]; query?: string; onOpen: (item: MediaItem, collection?: MediaItem[]) => void; onCreateAlbum: (items: MediaItem[]) => void }) {
@@ -165,12 +166,12 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
           <button disabled={blocked || !desktop || !index.people.some((entry) => entry.name.trim())} onClick={() => setReviewing(true)}><RefreshCw size={18} />미확인 얼굴 다시 비교</button>
           {running ? <button onClick={() => { stop.current = true; setStatus('현재 사진을 마치고 중단합니다.'); }}><Pause size={18} />중단</button> : <button className="primaryControl" disabled={blocked || !desktop || !remaining.length} onClick={() => void start()}><Play size={18} />{index.scanned.length ? '이어서 분석' : '얼굴 찾기'}</button>}
         </div>
-        <div className="toolbarGroup" role="group" aria-label="분석 정보 관리">
-          <button className="toolbarIcon" title="분석 정보 새로고침" disabled={blocked || !desktop} onClick={() => void edit(async () => {})}><RefreshCw size={18} /></button>
-          <button className="toolbarIcon" title="얼굴 분석 정보 지우기" disabled={blocked || !desktop || !index.scanned.length} onClick={() => {
+        <ActionMenu label="얼굴 분석 관리" triggerText="분석 관리" icon={<RefreshCw size={16} />} disabled={blocked || !desktop} actions={[
+          { label: '분석 정보 새로고침', icon: <RefreshCw size={16} />, onSelect: () => void edit(async () => {}) },
+          { label: '얼굴 분석 정보 지우기', icon: <Trash2 size={16} />, disabled: !index.scanned.length, onSelect: () => {
             if (window.confirm('인물 이름, 얼굴 분석 정보와 제외 설정을 모두 지울까요? 원본 사진은 유지됩니다.')) void edit(async () => { await clearFaceIndex(); openFaceView('people'); setLastExcluded([]); });
-          }}><Trash2 size={18} /></button>
-        </div>
+          } },
+        ]} />
       </div>
     </div>
     {!desktop && <p role="status">얼굴 찾기는 그루터기 데스크톱 앱에서 사용할 수 있습니다.</p>}
@@ -249,7 +250,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
           <option value="">옮길 인물</option>{index.people.filter((entry) => entry.id !== active).map((entry) => <option key={entry.id} value={entry.id}>{entry.name.trim() || `미확인 얼굴 ${entry.id}`}</option>)}
         </select>
         <button disabled={blocked || !chosen.length || !target} onClick={() => void edit(() => moveFaces(chosen, Number(target)))}><Users size={18} />옮기기</button>
-        <button title="선택 해제" disabled={!chosen.length} onClick={() => setChosen([])}><X size={18} /></button>
+        <button title="선택 해제" disabled={!chosen.length} onClick={() => setChosen([])}><X size={18} />선택 해제</button>
       </div>}
       {!faces.length && <div className="emptyState"><Users size={30} /><p>{showUnknownFaces ? '미확인 얼굴이 없습니다.' : '표시할 얼굴이 없습니다.'}</p></div>}
       <div className={`personPhotoGrid${showFaceThumbnails ? ' faceOverviewGrid' : person ? ' personMediaGrid' : ''}${selecting ? ' selecting' : ''}`} {...dragSelection}>{faces.slice(currentFacePage * 24, (currentFacePage + 1) * 24).map((face) => {

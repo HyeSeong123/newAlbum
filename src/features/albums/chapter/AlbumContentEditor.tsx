@@ -95,9 +95,9 @@ export function AlbumContentEditor({ contents, items, onChange, selectedId, onSe
           <div className="albumEntryHeader">
             <div><small>{activeIndex + 1}번째 · {active.kind === "CHAPTER" ? "챕터" : active.kind === "TEXT" ? "감상문" : "사진·영상"}</small><h4>{label(active)}</h4></div>
             <div className="albumEntryActions">
-              <button type="button" aria-label={`${activeIndex + 1}번 항목 위로`} title="위로 이동" disabled={activeIndex === 0} onClick={() => move(activeIndex - 1)}><ArrowUp size={18} /></button>
-              <button type="button" aria-label={`${activeIndex + 1}번 항목 아래로`} title="아래로 이동" disabled={activeIndex === contents.length - 1} onClick={() => move(activeIndex + 1)}><ArrowDown size={18} /></button>
-              <button type="button" className="albumEntryDelete" aria-label={`${activeIndex + 1}번 항목 삭제`} title={active.mediaId ? "앨범에서 제거" : "항목 삭제"} onClick={remove}><Trash2 size={18} /></button>
+              <button type="button" aria-label={`${activeIndex + 1}번 항목 위로`} title="위로 이동" disabled={activeIndex === 0} onClick={() => move(activeIndex - 1)}><ArrowUp size={18} />위로</button>
+              <button type="button" aria-label={`${activeIndex + 1}번 항목 아래로`} title="아래로 이동" disabled={activeIndex === contents.length - 1} onClick={() => move(activeIndex + 1)}><ArrowDown size={18} />아래로</button>
+              <button type="button" className="albumEntryDelete" aria-label={`${activeIndex + 1}번 항목 삭제`} title={active.mediaId ? "앨범에서 제거" : "항목 삭제"} onClick={remove}><Trash2 size={18} />{active.mediaId ? "앨범에서 제거" : "삭제"}</button>
             </div>
           </div>
           {active.mediaId ? <p className="albumEntryHint"><Image size={17} />사진의 제목과 설명은 사진 상세 화면에서 수정할 수 있습니다. 이곳에서는 순서와 스토리 설정을 바꿀 수 있어요.</p> : <div className="albumWritingFields">

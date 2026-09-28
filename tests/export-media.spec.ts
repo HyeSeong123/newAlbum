@@ -28,7 +28,7 @@ test('albums and person groups export unique original files through the export m
   await page.goto('/');
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
   await page.getByRole('button', { name: '가족 앨범 앨범 메뉴', exact: true }).click();
-  await page.getByRole('button', { name: '내보내기', exact: true }).click();
+  await page.getByRole('button', { name: '앨범 내보내기', exact: true }).click();
   let dialog = page.getByRole('dialog', { name: '내보내기', exact: true });
   await expect(dialog.getByLabel('폴더명', { exact: true })).toHaveValue('가족 앨범');
   await dialog.getByLabel('내보낼 경로', { exact: true }).fill('D:/exports');
@@ -36,7 +36,7 @@ test('albums and person groups export unique original files through the export m
   await expect(dialog.getByText('2개 파일을 내보냈습니다')).toBeVisible();
   await dialog.locator('.exportComplete').getByRole('button', { name: '닫기', exact: true }).click();
 
-  await page.getByRole('button', { name: '인물', exact: true }).click();
+  await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '지은 2장', exact: true }).click();
   await page.getByRole('button', { name: '내보내기', exact: true }).click();
   dialog = page.getByRole('dialog', { name: '내보내기', exact: true });

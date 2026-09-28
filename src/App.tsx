@@ -15,7 +15,7 @@ import { SavedAlbumsView } from "./features/albums/AlbumsView";
 import { AlbumCreateModal } from "./features/albums/AlbumCreateModal";
 import { ActionMenu } from "./components/ActionMenu";
 import { ChangeEvent, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { ChevronDown, FolderOpen, LoaderCircle, Plus, Search, Settings, Upload, X } from "lucide-react";
+import { ChevronDown, FolderOpen, LoaderCircle, Plus, Search, Settings, X } from "lucide-react";
 import { MEDIA_FILE_ACCEPT } from "./features/media/mediaService";
 import { filterJournalMonth, journalMonthTitle, resolveJournalMonth } from "./features/media/journalModel";
 import type { MediaItem } from "./types/media";
@@ -170,7 +170,7 @@ export function App() {
           ))}
         </nav>
         <button className="layoutToggle" aria-pressed={largeLayout} onClick={() => { setLargeLayout(!largeLayout); localStorage.setItem("warm-journal-large-layout", String(!largeLayout)); }}>{largeLayout ? "기본 크기" : "크게 보기"}</button>
-        <button className="globalSettings" aria-label="설정" title="설정" aria-pressed={activeView === "Settings"} onClick={() => navigate("Settings")}><Settings size={20} /></button>
+        <button className="globalSettings" aria-label="설정" title="설정" aria-pressed={activeView === "Settings"} onClick={() => navigate("Settings")}><Settings size={20} /><span>설정</span></button>
       </header>
 
       <section className="workspace">
@@ -188,13 +188,12 @@ export function App() {
             {(activeView === "Library" || activeView === "Albums") && <div className="importActions">
               <button className="primary" onClick={activeView === "Albums" ? startAlbum : () => { setAlbumImportTitle(""); chooseFiles(); }} disabled={Boolean(importing)}>
                 {importing ? <LoaderCircle className="spinIcon" size={18} /> : <Plus size={18} />}
-                {importing === "files" ? "가져오는 중" : activeView === "Albums" ? "새 앨범" : "가져오기"}
+                {importing === "files" ? "가져오는 중" : activeView === "Albums" ? "새 앨범 만들기" : "사진·영상 가져오기"}
               </button>
-              {activeView === "Library" && <ActionMenu label="가져오기 옵션" icon={<ChevronDown size={16} />} disabled={Boolean(importing)} actions={[
-                { label: "파일 선택", icon: <Upload size={16} />, onSelect: () => { setAlbumImportTitle(""); chooseFiles(); } },
-                { label: "폴더 선택", icon: <FolderOpen size={16} />, onSelect: chooseFolder },
+              {activeView === "Library" && <><button className="folderImport" disabled={Boolean(importing)} onClick={chooseFolder}><FolderOpen size={17} />폴더 가져오기</button>
+                <ActionMenu label="다른 가져오기 방법" triggerText="더 보기" icon={<ChevronDown size={16} />} disabled={Boolean(importing)} actions={[
                 { label: "가져오면서 앨범 만들기", icon: <Plus size={16} />, onSelect: () => { setAlbumImportTitle(""); setAlbumImport(true); } },
-              ]} />}
+              ]} /></>}
               {importing && (
                 <div className="importStatus" role="status" aria-live="polite">
                   <LoaderCircle className="spinIcon" size={18} />

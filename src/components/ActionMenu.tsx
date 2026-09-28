@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-export function ActionMenu({ label, icon, disabled = false, actions }: {
+export function ActionMenu({ label, icon, triggerText, disabled = false, actions }: {
   label: string;
   icon: ReactNode;
+  triggerText?: string;
   disabled?: boolean;
   actions: { label: string; icon?: ReactNode; disabled?: boolean; onSelect: () => void }[];
 }) {
@@ -25,7 +26,7 @@ export function ActionMenu({ label, icon, disabled = false, actions }: {
       event.preventDefault(); event.stopPropagation(); setOpen(false); trigger.current?.focus();
     }
   }}>
-    <button ref={trigger} type="button" className="actionMenuTrigger" aria-label={label} title={label} aria-expanded={open} disabled={disabled} onClick={() => setOpen(!open)}>{icon}</button>
+    <button ref={trigger} type="button" className="actionMenuTrigger" aria-label={label} title={label} aria-expanded={open} disabled={disabled} onClick={() => setOpen(!open)}>{triggerText && <span>{triggerText}</span>}{icon}</button>
     {open && <div className="actionMenuPanel" role="group" aria-label={label}>
       {actions.map((action) => <button type="button" key={action.label} disabled={action.disabled} onClick={() => { setOpen(false); trigger.current?.focus(); action.onSelect(); }}>{action.icon}{action.label}</button>)}
     </div>}

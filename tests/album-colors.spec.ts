@@ -42,8 +42,8 @@ test('fabric album colors survive create, edit and reload', async ({ page }) => 
   await expect(page.locator('.frontAlbumTitle').first()).toHaveCSS('transform', 'none');
   await page.locator('.frontAlbumBase').evaluateAll((images: HTMLImageElement[]) => Promise.all(images.map((image) => image.decode())));
   await page.screenshot({ path: `test-results/flat-album-covers-${test.info().project.name}.png`, fullPage: true });
-  await page.getByRole('button', { name: '브라운 앨범 앨범 메뉴', exact: true }).click();
-  await page.getByRole('button', { name: '앨범 수정', exact: true }).click();
+
+  await page.locator('.savedAlbumCard').filter({ hasText: '브라운 앨범' }).getByRole('button', { name: '앨범 수정', exact: true }).click();
   await expect(page.getByRole('dialog', { name: '앨범 수정', exact: true })).toBeVisible();
   await page.getByRole('dialog', { name: '앨범 수정', exact: true }).getByTitle('닫기').click();
 

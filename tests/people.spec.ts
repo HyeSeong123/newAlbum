@@ -47,7 +47,7 @@ test('person photos form an even grid and create an album from unique originals'
   });
 
   await page.goto('/');
-  await page.getByRole('button', { name: '인물', exact: true }).click();
+  await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '가족 2장', exact: true }).click();
   const widths = await page.locator('.personMediaGrid .personPhoto').evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().width));
   expect(widths).toHaveLength(3);
@@ -100,7 +100,7 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
     } });
   }, { thumbnail });
   await page.goto('/');
-  await page.getByRole('button', { name: '인물', exact: true }).click();
+  await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await expect(page.locator('.personTile')).toHaveCount(2);
   const unknownSection = page.getByRole('region', { name: '미확인 얼굴', exact: true });
   await unknownSection.getByRole('button', { name: '미확인 얼굴 선택', exact: true }).click();
@@ -141,7 +141,7 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
   await page.getByRole('button', { name: '옮기기', exact: true }).click();
   await expect(page.locator('.personTile')).toHaveCount(2);
   await page.reload();
-  await page.getByRole('button', { name: '인물', exact: true }).click();
+  await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '가족 2장', exact: true }).click();
   await page.getByRole('button', { name: '대표 사진 변경', exact: true }).click();
   await page.getByRole('button', { name: '대표 사진으로 설정' }).nth(1).click();
@@ -150,7 +150,7 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
   await page.getByTitle('인물 목록').click();
   await expect(page.getByRole('button', { name: '가족 2장', exact: true })).toHaveAttribute('data-cover-face-id', '3');
   await page.reload();
-  await page.getByRole('button', { name: '인물', exact: true }).click();
+  await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await expect(page.getByRole('button', { name: '가족 2장', exact: true })).toHaveAttribute('data-cover-face-id', '3');
   await page.getByRole('button', { name: '가족 2장', exact: true }).click();
   await page.getByRole('button', { name: '사진 상세보기', exact: true }).first().click();
@@ -185,7 +185,7 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
   await page.getByRole('button', { name: '얼굴 제외', exact: true }).click();
   await expect(page.locator('.personPhoto')).toHaveCount(2);
   await page.reload();
-  await page.getByRole('button', { name: '인물', exact: true }).click();
+  await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await expect(page.locator('.personTile')).toHaveCount(1);
   await expect(page.getByRole('button', { name: '가족 2장', exact: true })).toBeVisible();
   // Restore the fixture to continue the legacy duplicate-name scenario.
@@ -202,7 +202,7 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
     localStorage.setItem('face-test-state', JSON.stringify(state));
   });
   await page.reload();
-  await page.getByRole('button', { name: '인물', exact: true }).click();
+  await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '가족 1장', exact: true }).click();
   await expect(page.getByRole('button', { name: '합치기', exact: true })).toBeEnabled();
   await page.screenshot({ path: `test-results/people-duplicate-${test.info().project.name}.png` });
@@ -229,7 +229,7 @@ test('review applies only checked face suggestions', async ({ page }) => {
     } });
   }, { thumbnail });
   await page.goto('/');
-  await page.getByRole('button', { name: '인물', exact: true }).click();
+  await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '미확인 얼굴 다시 비교' }).click();
   await expect(page.getByRole('checkbox')).toHaveCount(2);
   await page.getByRole('checkbox').first().check();
@@ -272,7 +272,7 @@ test('analysis stops after current photo and retries failed photos', async ({ pa
     } });
   }, { thumbnail });
   await page.goto('/');
-  await page.getByRole('button', { name: '인물', exact: true }).click();
+  await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '얼굴 찾기', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-face-saves', '[1]', { timeout: 60_000 });
   await page.getByRole('button', { name: '중단', exact: true }).click();

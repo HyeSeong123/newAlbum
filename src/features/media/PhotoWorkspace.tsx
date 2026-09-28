@@ -76,7 +76,7 @@ export function PhotoView({
       onDateSearch={() => onMonthChange("all")}
     />}
     {mode === "grid" && <aside className="quickAlbums" aria-label="내 앨범 미리보기">
-      <header><h2>내 앨범</h2><button title="새 앨범" onClick={onNewAlbum}><Plus size={17} /></button></header>
+      <header><h2>내 앨범</h2><button title="새 앨범 만들기" onClick={onNewAlbum}><Plus size={17} />새 앨범</button></header>
       {albums.slice(0, 2).map((album) => <button className="quickAlbum" key={album.id} onClick={() => setQuickAlbumId(album.id)} aria-label={`${album.title} 앨범 열기`}>
         <AlbumCover title={album.title} items={album.items} color={album.coverColor} />
         <span className="quickAlbumMeta">{mediaSummary(album.items)}</span>
