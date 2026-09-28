@@ -202,7 +202,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
             });
           }}><X size={18} />선택한 얼굴 제외</button></>}
         </div>}</div>
-        {!loading && !group.people.length && <p>{query ? '검색한 이름의 인물이 없습니다.' : group.title === '등록된 인물' ? '이름을 등록한 인물이 없습니다.' : '미확인 얼굴이 없습니다.'}</p>}
+        {!loading && !group.people.length && <p>{query ? '검색한 이름의 인물이 없습니다.' : group.title === '등록된 사람' ? '이름을 등록한 인물이 없습니다.' : '미확인 얼굴이 없습니다.'}</p>}
       <div className="personGrid">{group.people.slice(page * 24, (page + 1) * 24).map((entry) => {
         const members = lookup.byPerson.get(entry.id) ?? EMPTY_FACES;
         const selectable = !entry.name.trim() && selectingUnknown;
@@ -271,7 +271,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
         const item = mediaById.get(face.media_id);
         return <article key={face.id} className="personPhoto" data-selection-id={face.id}>
           <button className="personOriginal" disabled={choosingCover ? blocked : selecting ? blocked : !item} onClick={() => {
-            if (choosingCover && person) { void edit(() => setPersonCoverFace(person.id, face.id)).then(() => { if (alive.current) setChoosingCover(false); }); }
+            if (choosingCover && person) { void edit(() => setPersonCoverFace(person.id, face.id)).then(saved => { if (saved && alive.current) setChoosingCover(false); }); }
             else if (selecting) toggleFace(String(face.id));
             else if (item) onOpen(item, faceItems);
           }} aria-label={choosingCover ? '대표 사진으로 설정' : selecting ? '얼굴 선택' : '사진 상세보기'} aria-pressed={choosingCover ? person?.cover_face_id === face.id : selecting ? chosen.includes(face.id) : undefined}>

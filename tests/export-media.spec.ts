@@ -38,7 +38,7 @@ test('albums and person groups export unique original files through the export m
 
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '지은 2장', exact: true }).click();
-  await page.getByRole('button', { name: '내보내기', exact: true }).click();
+  await page.getByRole('button', { name: '사진 내보내기', exact: true }).click();
   dialog = page.getByRole('dialog', { name: '내보내기', exact: true });
   await expect(dialog.getByLabel('폴더명', { exact: true })).toHaveValue('지은');
   await dialog.getByLabel('내보낼 경로', { exact: true }).fill('D:/people');

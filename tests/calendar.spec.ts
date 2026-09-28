@@ -45,7 +45,8 @@ test('calendar and day viewer follow the compact reference layout', async ({ pag
   if (testInfo.project.name === 'desktop') {
     const bounds = (await grid.boundingBox())!;
     expect(bounds.width).toBeGreaterThan(1000);
-    expect(bounds.width).toBeLessThan(1100);
+    expect(bounds.width).toBeGreaterThan(1694 * .9);
+    expect(bounds.width).toBeLessThan(1694 - 32);
     expect(Math.abs(bounds.x - (1694 - bounds.width) / 2)).toBeLessThan(2);
     expect(bounds.y + bounds.height).toBeLessThan(928);
   }

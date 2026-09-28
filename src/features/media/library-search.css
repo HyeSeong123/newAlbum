@@ -4,7 +4,7 @@
   gap: 16px;
   padding: 18px 20px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--surface);
 }
 .librarySearchHead,
@@ -25,11 +25,11 @@
 .libraryResultsBar .activeAction { border-color: var(--primary); background: var(--primary); color: #fff; }
 .librarySearchActions button:disabled { opacity: .45; }
 .librarySearchBasics { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px 16px; }
-.librarySearchBasics .libraryKeywordSearch { flex: 1 1 205px; width: auto; min-width: 180px; min-height: 38px; margin: 0; }
+.librarySearchBasics .libraryKeywordSearch { flex: 1 1 240px; width: auto; min-width: 180px; min-height: 38px; margin: 0; }
 .libraryKeywordSearch input { min-width: 0; width: 100%; }
-.librarySearchBasics .takenDateFilter { flex: 2 1 390px; min-width: 0; margin: 0; padding: 0; border: 0; background: transparent; }
+.librarySearchBasics .takenDateFilter { flex: 2 1 520px; min-width: 0; margin: 0; padding: 0; border: 0; background: transparent; }
 .librarySearchBasics .takenDateControls { gap: 8px; }
-.librarySearchBasics .takenDateControls input { width: min(140px, 100%); min-height: 38px; background: var(--surface); }
+.librarySearchBasics .takenDateControls input { width: max(145px, calc(13ch + 42px)); min-height: 38px; background: var(--surface); }
 .librarySearchBasics .takenDateTitle { white-space: nowrap; }
 .librarySearchBasics .takenDateHint { display: none; }
 .librarySearchBasics .takenDateFilter[data-active="true"] .takenDateHint,
@@ -49,4 +49,5 @@
   .librarySearchBasics .sortControl { margin-left: 0; }
   .librarySearchBasics .takenDateControls label { flex: 1 1 110px; }
   .librarySearchBasics .takenDateControls input { width: 100%; }
+  .app.largeLayout .librarySearchBasics .takenDateControls label { flex-basis: 100%; }
 }

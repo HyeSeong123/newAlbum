@@ -60,7 +60,7 @@ test("annual events use month and day and persist across years", async ({ page }
 
 test("empty library flow works", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "사진 기록" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "사진 기록", exact: true })).toBeVisible();
   await expect(page.getByText("아직 사진 기록이 없습니다.")).toBeVisible();
 
   await page.getByRole("tab", { name: /달력/ }).click();

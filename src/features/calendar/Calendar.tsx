@@ -3,7 +3,7 @@ import { calendarEventMeta } from "./calendarPresentation";
 import { useCalendarRecords } from "./useCalendarRecords";
 import { DayDetailModal } from "./DayDetailModal";
 import { CalendarEventModal } from "./CalendarEventModal";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { ChevronLeft, ChevronRight, Music, Play, Plus } from "lucide-react";
 import type { MediaItem } from "../../types/media";
 import { MediaImage, EmptyState } from "../../components/MediaVisual";
@@ -130,7 +130,7 @@ export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; 
         </button>
       </div>
       {calendarViewMode === "month" ? (
-        <div className="calendarGrid">
+        <div className="calendarGrid" style={{ "--calendar-weeks": calendarCells.length / 7 } as CSSProperties}>
           {["일", "월", "화", "수", "목", "금", "토"].map((label, index) => (
             <span className={`weekday ${index === 0 ? "sunday" : index === 6 ? "saturday" : ""}`} key={label}>{label}</span>
           ))}

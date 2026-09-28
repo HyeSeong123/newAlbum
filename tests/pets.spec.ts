@@ -11,6 +11,7 @@ test('pets collect photos manually and preserve originals', async ({ page }) => 
       invoke: async (command: string, args: { id: number | null; name: string; mediaIds: number[]; coverMediaId: number | null }) => {
         if (command === 'list_media') return [1, 2, 3].map((id) => ({ id, file_path: `C:/pet/${id}.jpg`, file_type: 'image', taken_at: `2026-09-0${id}`, size_bytes: 1000, rating: 0, comment: '', favorite: false, metadata_status: 'ready' }));
         if (command === 'list_albums') return [];
+        if (command === 'list_diary') return [];
         if (command === 'list_face_index') return { people: [], faces: [], scanned: [] };
         if (command === 'list_pets') return pets;
         if (command === 'media_thumbnail') return 'C:/cache/photo.png';

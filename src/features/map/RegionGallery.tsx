@@ -87,7 +87,7 @@ export function RegionGallery({ code, items, revision, focusVersion, summary, on
     {!loading && !error && <p aria-live="polite">필터 결과 {result.total}개{result.total > 0 && ` · ${page * 48 + 1}–${page * 48 + result.items.length}번째 기록`}</p>}
     {loading ? <p role="status">사진을 불러오는 중이에요.</p> : !error && (result.items.length ? groups.map(group => <div className="memoryMapMonth" key={group.month}>
       <h4>{/^\d{4}-\d{2}$/.test(group.month) ? `${group.month.slice(0,4)}년 ${Number(group.month.slice(5))}월` : group.month}</h4>
-      <RecordMediaGrid items={group.items} onOpen={item => onOpen(item, result.items)} selectedIds={selection.ids} onToggle={selection.enabled ? selection.toggle : undefined} />
+      <RecordMediaGrid items={group.items} onOpen={item => onOpen(item, result.items)} selectedIds={selection.ids} onToggle={selection.enabled ? selection.toggle : undefined} showLocationStatus={code === "unclassified"} />
     </div>) : !error && <EmptyState text="조건에 맞는 사진과 영상이 아직 없어요." />)}
     {!error && pages > 1 && <nav className="memoryMapPager" aria-label="지역 사진 페이지"><button disabled={loading || page === 0} onClick={() => setPage(page - 1)}>이전</button>
       <span>{page + 1} / {pages}</span><button disabled={loading || page >= pages - 1} onClick={() => setPage(page + 1)}>다음</button></nav>}

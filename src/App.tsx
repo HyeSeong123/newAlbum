@@ -137,7 +137,9 @@ export function App() {
 
   function startAlbum() {
     navigate("Library"); setSelectedMonth("all"); selection.reset(true);
-    setSelectionNotice("앨범에 담을 사진과 영상을 선택해 주세요.");
+    setAlbumImportTitle("");
+    setSelectionNotice(items.length ? "앨범에 담을 사진과 영상을 선택해 주세요." : "먼저 사진과 영상을 가져온 뒤 앨범에 담을 기록을 선택해 주세요.");
+    if (!items.length) chooseFiles();
   }
 
   async function deleteSelectedItems() {

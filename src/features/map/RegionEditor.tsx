@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { REGION_NAMES } from "./regions";
+import type { MediaItem } from "../../types/media";
+import { locationStatusText } from "./locationStatus";
 import "./region-editor.css";
 
-export function RegionEditor({ current, district: initialDistrict = "", country: initialCountry = "", city: initialCity = "", source, count = 1, initiallyEditing = false, onSave }: {
+export function RegionEditor({ current, district: initialDistrict = "", country: initialCountry = "", city: initialCity = "", source, status, count = 1, initiallyEditing = false, onSave }: {
   current?: string; district?: string; country?: string; city?: string; source?: string; count?: number; initiallyEditing?: boolean;
+  status?: MediaItem["locationStatus"];
   onSave: (code: string, district?: string, country?: string, city?: string) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(initiallyEditing);
@@ -39,6 +42,7 @@ export function RegionEditor({ current, district: initialDistrict = "", country:
       <button disabled={busy || !count || (overseas ? !country.trim() || !city.trim() : !code)} onClick={() => void save()}>{busy ? "저장 중" : "지역 저장"}</button>
       <button disabled={busy} onClick={() => setEditing(false)}>취소</button>
     </>}
+    {!current && locationStatusText(status) && <p className="regionLocationStatus" data-location-status={status}>{locationStatusText(status)}{status === "failed" ? " · 원본 사진은 유지됩니다. 추억 지도에서 다시 분석할 수 있습니다." : status === "no-gps" ? " · 촬영 위치가 저장되지 않은 사진입니다. 직접 지역을 지정할 수 있습니다." : ""}</p>}
     {error && <p role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
   </section>;
 }

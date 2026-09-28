@@ -38,6 +38,7 @@ test('redesigned views fit and retain photo workflows', async ({ page }) => {
   }
   await page.getByRole('button', { name: '사진 선택', exact: true }).click();
   const tiles = page.locator('.mediaTile');
+  await tiles.first().evaluate(element => element.scrollIntoView({ block: 'center', behavior: 'instant' }));
   const boxes = await tiles.evaluateAll((elements) => elements.map((element) => { const box = element.getBoundingClientRect(); return { x: box.x, y: box.y, width: box.width, height: box.height }; }));
   const secondRow = boxes.findIndex((box) => box.y > boxes[0].y + 4);
   await page.mouse.move(boxes[0].x + 20, boxes[0].y + 20);

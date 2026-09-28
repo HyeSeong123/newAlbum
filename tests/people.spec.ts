@@ -36,6 +36,7 @@ test('person photos form an even grid and create an album from unique originals'
       invoke: async (command: string, args: { mediaIds?: number[] }) => {
         if (command === 'list_media') return media;
         if (command === 'list_albums') return [];
+        if (command === 'list_diary') return [];
         if (command === 'list_face_index') return { people: [{ id: 7, name: '가족' }], faces, scanned: [1, 2] };
         if (command === 'create_album_from_media') {
           document.documentElement.dataset.personAlbumIds = JSON.stringify(args.mediaIds);
@@ -78,6 +79,7 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
       invoke: async (command: string, args: { id: number; name: string; ids: number[]; target: number | null; excluded: boolean }) => {
         if (command === 'list_media') return [1, 2, 3].map((id) => ({ id, file_path: `C:/test/${id}.jpg`, file_type: 'image', taken_at: '2026-09-06', width: 640, height: 480, duration: null, size_bytes: 2000, rating: 0, comment: '', favorite: false, metadata_status: 'ready' }));
         if (command === 'list_albums') return [];
+        if (command === 'list_diary') return [];
         if (command === 'list_face_index') {
           const faces = state.faces.filter((face) => !state.excluded?.includes(face.id));
           return { ...state, faces, people: state.people.filter((person) => faces.some((face) => face.person_id === person.id)) };
@@ -137,11 +139,11 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
   await expect(page.getByRole('heading', { name: '우리 가족' })).toBeVisible();
   await page.getByRole('button', { name: '사람 관리', exact: true }).click();
   await page.getByRole('button', { name: '얼굴 선택·분리·합치기' }).click();
-  await page.getByRole('button', { name: '얼굴 선택' }).first().click();
+  await page.getByRole('button', { name: '얼굴 선택', exact: true }).first().click();
   await page.screenshot({ path: `test-results/people-edit-${test.info().project.name}.png`, fullPage: false });
   await page.getByRole('button', { name: '새 인물로 분리' }).click();
   await expect(page.locator('.personPhoto')).toHaveCount(1);
-  await page.getByRole('button', { name: '얼굴 선택' }).click();
+  await page.getByRole('button', { name: '얼굴 선택', exact: true }).click();
   await page.getByLabel('옮길 인물').selectOption('2');
   await page.getByRole('button', { name: '옮기기', exact: true }).click();
   await expect(page.locator('.personTile')).toHaveCount(2);
@@ -228,7 +230,7 @@ test('review applies only checked face suggestions', async ({ page }) => {
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: () => thumbnail,
       invoke: async (command: string, args: { ids: number[]; target: number }) => {
-        if (command === 'list_media' || command === 'list_albums') return [];
+        if (command === 'list_media' || command === 'list_albums' || command === 'list_diary') return [];
         if (command === 'list_face_index') return { people: [{ id: 1, name: '아버님' }, { id: 2, name: '' }], faces, scanned: [] };
         if (command === 'find_face_matches') return faces.filter((face) => face.person_id === 2).map((face) => ({ face_id: face.id, person_id: 1 }));
         if (command === 'move_faces') {
@@ -266,6 +268,7 @@ test('analysis stops after current photo and retries failed photos', async ({ pa
       invoke: async (command: string, args: { mediaId: number; faces: { thumbnail: string }[] }) => {
         if (command === 'list_media') return [1, 2].map((id) => ({ id, file_path: `C:/test/${id}.jpg`, file_type: 'image', taken_at: '2026-09-06', size_bytes: 2000, rating: 0, comment: '', favorite: false, metadata_status: 'ready' }));
         if (command === 'list_albums') return [];
+        if (command === 'list_diary') return [];
         // Tauri serializes command results; each invocation returns a fresh snapshot.
         if (command === 'list_face_index') return structuredClone(state);
         if (command === 'save_face_scan') {
@@ -285,7 +288,7 @@ test('analysis stops after current photo and retries failed photos', async ({ pa
   }, { thumbnail });
   await page.goto('/');
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
-  await page.getByRole('button', { name: '사진에서 사람 찾기', exact: true }).click();
+  await page.getByRole('group', { name: '얼굴 분석', exact: true }).getByRole('button', { name: '사진에서 사람 찾기', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-face-saves', '[1]', { timeout: 60_000 });
   await page.getByRole('button', { name: '중단', exact: true }).click();
   await expect(page.getByText('사람 찾기를 중단했습니다. 확인한 사진은 그대로 남아 있습니다.')).toBeVisible();

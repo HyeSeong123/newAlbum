@@ -47,9 +47,14 @@ test('empty screens explain the next step and open their existing flows', async 
   await page.getByRole('button', { name: '사진 가져오기', exact: true }).click();
   await (await chooser).setFiles([]);
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
+  const albumChooser = page.waitForEvent('filechooser');
   await page.getByRole('button', { name: '첫 앨범 만들기' }).click();
+  await (await albumChooser).setFiles({ name: 'album-first.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('photo') });
+  await expect(page.getByRole('button', { name: '선택 끝내기', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '현재 결과 전체 선택 (1개)', exact: true }).click();
+  await page.getByRole('button', { name: '앨범 만들기', exact: true }).click();
   await expect(page.getByRole('dialog', { name: '앨범 만들기' })).toBeVisible();
-  await page.getByRole('button', { name: '닫기' }).last().click();
+  await page.getByRole('dialog', { name: '앨범 만들기' }).getByRole('button', { name: '닫기', exact: true }).click();
   await page.getByRole('button', { name: '일기장', exact: true }).click();
   await page.getByRole('button', { name: '첫 일기 쓰기' }).click();
   await expect(page.getByRole('dialog', { name: '새 일기' })).toBeVisible();

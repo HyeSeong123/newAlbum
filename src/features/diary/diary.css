@@ -18,7 +18,7 @@
 .diaryCard small { color:#806d55; } .diaryBulk { display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:14px; background:#f6f0df; } .diaryBulk label { display:flex; align-items:center; gap:8px; }
 .diaryEmpty { margin:40px; text-align:center; }
 .diaryDialog { width:min(690px,100%); max-height:90dvh; overflow:auto; padding:28px; border-radius:16px; background:#fffdf8; box-shadow:0 18px 60px #0004; }
-.diaryDialog form,.diaryDialog label { display:grid; gap:10px; } .diaryDialog form { gap:18px; } .diaryDialog input,.diaryDialog select,.diaryDialog textarea { width:100%; padding:12px; border:1px solid #ccc4b3; border-radius:8px; background:#fff; font:inherit; }
+.diaryDialog form,.diaryDialog label { display:grid; gap:10px; } .diaryDialog form,.diaryDialog fieldset { gap:18px; } .diaryDialog fieldset { display:grid; min-width:0; margin:0; padding:0; border:0; } .diaryDialog input,.diaryDialog select,.diaryDialog textarea { width:100%; min-width:0; padding:12px; border:1px solid #ccc4b3; border-radius:8px; background:#fff; font:inherit; }
 .diaryDialog textarea { resize:vertical; line-height:1.8; background:repeating-linear-gradient(#fff 0 34px,#e9e4d8 35px,#fff 36px); }
 .diaryPair { display:grid; grid-template-columns:1fr 1fr; gap:16px; } .diaryDialogTop,.diaryDialogActions { display:flex; justify-content:space-between; align-items:center; gap:12px; }
 @media(max-width:650px) { .diaryHeading { padding:20px; }.diaryPair { grid-template-columns:1fr; }.diaryBulk strong { flex-basis:100%; }.diaryBulk label { flex-wrap:wrap; } }

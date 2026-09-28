@@ -185,5 +185,5 @@
 }
 /* Let the month fill the available page while keeping the seven columns readable. */
 .workspace:has(.photoWorkspace.mode-calendar) { width:100%; max-width:none; padding:24px clamp(20px,3vw,64px) 48px; }
-.calendarPanel .calendarGrid button,.calendarPanel .calendarGrid .emptyDay { aspect-ratio:auto; min-height:clamp(105px,14vh,190px); }
-@media(max-width:750px) { .calendarPanel .calendarGrid button,.calendarPanel .calendarGrid .emptyDay { min-height:85px; } }
+.calendarPanel .calendarGrid button,.calendarPanel .calendarGrid .emptyDay { aspect-ratio:auto; height:clamp(96px,calc((100dvh - var(--app-header-height, 70px) - 270px) / var(--calendar-weeks, 5)),160px); min-height:0; }
+@media(max-width:750px) { .calendarPanel .calendarGrid button,.calendarPanel .calendarGrid .emptyDay { height:auto; min-height:85px; } }

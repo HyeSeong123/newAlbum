@@ -191,7 +191,7 @@ export function DetailModal({
               <h2>{item.fileType === "image" ? "사진 정보" : item.fileType === "video" ? "영상 정보" : "음성 정보"}</h2>
               <p className="detailFileName">{item.fileName}</p>
               <PhotoTitleEditor key={item.id} item={item} onSave={onSaveTitle} />
-              {item.fileType !== "audio" && <RegionEditor key={`region-${item.id}`} current={item.regionCode} district={item.district} country={item.country} city={item.city} source={item.locationSource} onSave={(code, district, country, city) => onAssignRegion([item.id], code, district, country, city)} />}
+              {item.fileType !== "audio" && <RegionEditor key={`region-${item.id}`} current={item.regionCode} district={item.district} country={item.country} city={item.city} source={item.locationSource} status={item.locationStatus} onSave={(code, district, country, city) => onAssignRegion([item.id], code, district, country, city)} />}
               <section className="detailRating" aria-label="별점">
                 <h3>별점</h3>
                 <div className="rating">
