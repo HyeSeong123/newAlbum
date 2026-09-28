@@ -234,10 +234,8 @@ export function App() {
                 selectedCount={selectedCount}
                 commentCounts={commentCounts}
                 onCreateAlbum={() => setAlbumDraftItems(items.filter((item) => selectedIds.has(item.id)))}
-                onCreateAlbumFromMap={(records, title = "") => { setAlbumDraftItems(records); setAlbumDraftTitle(title); }}
                 onDeleteSelected={deleteSelectedItems}
                 onAssignRegion={library.assignRegion}
-                onLocationsAnalyzed={library.refreshLocations}
                 albums={savedAlbums}
                 onShowAlbums={() => navigate("Albums")}
                 onNewAlbum={startAlbum}

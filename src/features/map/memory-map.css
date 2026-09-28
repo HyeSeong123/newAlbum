@@ -6,7 +6,7 @@
 .memoryMapStats { flex: none; display: flex; gap: 22px; padding-left: 22px; border-left: 1px solid var(--border); }
 .memoryMapStats div { display: grid; gap: 5px; }
 .memoryMapStats strong { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }
-.memoryMapStats span { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.memoryMapStats span { color: var(--muted); font-size: 13px; white-space: nowrap; }
 .memoryMapIntroActions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 14px; }
 .memoryMapAutoButton { min-height: 38px; padding: 0 13px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--primary); border-radius: 5px; background: var(--primary); color: #fff; font-size: 12px; white-space: nowrap; }
 .memoryMapAutoButton:disabled { opacity: .5; cursor: default; }
@@ -15,7 +15,7 @@
 .memoryMapPaper { min-width: 0; padding: 24px 28px 15px; }
 .memoryMapPaperHead, .memoryMapPlacesHead { display: flex; align-items: end; justify-content: space-between; gap: 12px; }
 .memoryMapPaperHead h3 { margin: 5px 0 0; font-size: 18px; font-weight: 650; }
-.memoryMapPaperHead > span, .memoryMapPlacesHead span { color: var(--muted); font-size: 12px; }
+.memoryMapPaperHead > span, .memoryMapPlacesHead span { color: var(--muted); font-size: 13px; }
 .memoryMapShape { display: block; width: 100%; max-width: 570px; height: auto; max-height: 490px; margin: 10px auto 0; overflow: visible; }
 .memoryMapRegion { fill: #eee7de; stroke: #fffdfa; stroke-width: 1.8; vector-effect: non-scaling-stroke; cursor: pointer; transition: fill .16s ease; }
 .memoryMapRegion.has-records { fill: #dcbaa0; }
@@ -49,7 +49,7 @@
 .memoryMapGallery { padding: 24px 28px 30px; }
 .memoryMapGallery > header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 22px; }
 .memoryMapGallery h3 { margin: 7px 0 4px; font-size: 21px; font-weight: 650; }
-.memoryMapGallery p { margin: 0; color: var(--muted); font-size: 12px; }
+.memoryMapGallery p { margin: 0; color: var(--muted); font-size: 13px; }
 .memoryMapMonth { margin-bottom: 24px; }
 .memoryMapMonth h4 { margin: 0 0 13px; padding-bottom: 8px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 650; }
 .memoryMapPager { display: flex; align-items: center; justify-content: center; gap: 15px; font-size: 12px; font-variant-numeric: tabular-nums; }

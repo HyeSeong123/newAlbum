@@ -116,7 +116,7 @@ test('fabric album colors survive create, edit and reload', async ({ page }) => 
   await expect(reader).toHaveCount(0);
 
   await page.getByRole('button', { name: '사진보기', exact: true }).click();
-  await page.getByRole('tab', { name: '전체 앨범' }).click();
+  await page.getByRole('tab', { name: '책 보기' }).click();
   const libraryReader = page.getByRole('dialog', { name: '앨범 전체창' });
   await expect(libraryReader.locator('.albumPaper')).toHaveCount(2);
   await expect(libraryReader.locator('.binderRings')).toHaveCount(0);

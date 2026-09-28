@@ -70,7 +70,7 @@ test('redesigned views fit and retain photo workflows', async ({ page }) => {
   await page.getByLabel('매년 반복').check();
   await capture('event');
   await page.getByTitle('닫기').click();
-  await page.getByRole('tab', { name: '전체 앨범' }).click();
+  await page.getByRole('tab', { name: '책 보기' }).click();
   const totalPages = Number(await page.getByRole('slider', { name: '앨범 책장 이동' }).getAttribute('max'));
   await page.locator('.albumPagePhoto .mediaImage').evaluateAll((images: HTMLImageElement[]) => Promise.all(images.map((image) => image.decode())));
   await capture('reader');

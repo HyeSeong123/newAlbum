@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('photo location tab analyzes GPS and bulk region edits preserve coordinates', async ({ page }) => {
+test('memory map analyzes GPS and bulk region edits preserve coordinates', async ({ page }) => {
   await page.route('**/location-photo-*.jpg', route => route.fulfill({
     contentType: 'image/svg+xml',
     body: '<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360"><rect width="480" height="360" fill="#8bb6a7"/></svg>',
@@ -47,8 +47,9 @@ test('photo location tab analyzes GPS and bulk region edits preserve coordinates
     } });
   });
   await page.goto('/');
-  await page.getByRole('tab', { name: '위치 보기', exact: true }).click();
-  await expect(page.getByRole('tabpanel', { name: '위치 보기' }).locator('.memoryMapRegion')).toHaveCount(17);
+  await page.getByRole('button', { name: '지난 추억', exact: true }).click();
+  await page.getByRole('button', { name: '추억 지도', exact: true }).click();
+  await expect(page.locator('.memoryMapRegion')).toHaveCount(16);
   await expect(page.locator('.memoryMapAnalysis')).toContainText('1 / 2');
   await expect(page.getByRole('button', { name: '지역 자동 조회', exact: true })).toBeInViewport();
   await page.screenshot({ path: `test-results/photo-location-map-${test.info().project.name}.png` });
@@ -57,14 +58,14 @@ test('photo location tab analyzes GPS and bulk region edits preserve coordinates
   await expect(page.getByRole('button', { name: '지역 자동 조회', exact: true })).toBeDisabled();
   await page.locator('.memoryMapPlaceList button').filter({ hasText: '제주' }).click();
   await expect(page.locator('.memoryMapGallery')).toContainText('1장의 사진');
-  await page.getByRole('tab', { name: '그리드', exact: true }).click();
+  await page.getByRole('button', { name: '사진보기', exact: true }).click();
   await page.getByRole('button', { name: '사진 선택', exact: true }).click();
   await page.locator('.galleryGrid .mediaTile[data-media-id="1"]').click();
   await page.locator('.galleryGrid .mediaTile[data-media-id="2"]').click();
   await page.locator('.galleryGrid .mediaTile[data-media-id="3"]').click();
   await page.getByRole('button', { name: '지역 일괄 수정', exact: true }).click();
   const editor = page.locator('#libraryBulkRegion');
-  await expect(editor).toContainText('선택한 2개의 지역');
+  await expect(editor).toContainText('선택한 2개의 시·도');
   await page.screenshot({ path: `test-results/photo-location-bulk-${test.info().project.name}.png` });
   await editor.getByLabel('지정할 지역').selectOption('KR-26');
   await editor.getByRole('button', { name: '지역 저장' }).click();

@@ -18,7 +18,7 @@
 .albumOutline, .albumEntryEditor { min-width: 0; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
 .albumOutline { overflow: hidden; }
 .albumOutlineHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 16px; border-bottom: 1px solid var(--border); }
-.albumOutlineHead span, .albumOutlineText small, .albumEntryHeader small, .albumWritingCount { color: var(--muted); font-size: 12px; }
+.albumOutlineHead span, .albumOutlineText small, .albumEntryHeader small, .albumWritingCount { color: var(--muted); font-size: 13px; }
 .albumOutlineEmpty { padding: 20px; color: var(--muted); font-size: 14px; }
 .albumContentRows { max-height: min(56vh, 560px); overflow-y: auto; margin: 0; padding: 8px; list-style: none; display: grid; gap: 4px; }
 .albumContentRow { min-width: 0; }

@@ -1,5 +1,5 @@
-import { lazy, Suspense, useMemo, useRef, useState } from "react";
-import { CalendarDays, ChevronRight, History, Image, LayoutGrid, MapPin, Plus } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { BookOpen, CalendarDays, ChevronRight, LayoutGrid, Plus } from "lucide-react";
 import type { MediaItem, SavedAlbum } from "../../types/media";
 import { Library } from "./LibraryView";
 import { PhotoDateNavigation } from "./PhotoDateNavigation";
@@ -8,17 +8,13 @@ import { Calendar } from "../calendar/Calendar";
 import { AlbumFullscreenReader } from "../albums/AlbumReader";
 import { AlbumCover } from "../albums/AlbumCover";
 import { ExportModal } from "../../components/ExportModal";
-import { TimelineView } from "../timeline/TimelineView";
-
-const MemoryMap = lazy(() => import("../map/MemoryMap").then(module => ({ default: module.MemoryMap })));
-
-export type PhotoMode = "grid" | "calendar" | "album" | "timeline" | "map";
+export type PhotoMode = "grid" | "calendar" | "album";
 
 export function PhotoView({
   mode, setMode, items, allItems, activeMonth, onMonthChange, selected, onOpen,
   selectionMode, selectedIds, onToggleSelection, onSelectAll, onToggleSelectionMode,
-  selectedCount, commentCounts, onCreateAlbum, onCreateAlbumFromMap, onDeleteSelected, albums,
-  onShowAlbums, onNewAlbum, onViewMedia, onAssignRegion, onLocationsAnalyzed, scopeKey, query, onQueryChange,
+  selectedCount, commentCounts, onCreateAlbum, onDeleteSelected, albums,
+  onShowAlbums, onNewAlbum, onViewMedia, onAssignRegion, scopeKey, query, onQueryChange,
 }: {
   mode: PhotoMode;
   setMode: (mode: PhotoMode) => void;
@@ -36,14 +32,12 @@ export function PhotoView({
   selectedCount: number;
   commentCounts: Record<string, number>;
   onCreateAlbum: () => void;
-  onCreateAlbumFromMap: (items: MediaItem[], title?: string) => void;
   onDeleteSelected: () => void;
   albums: SavedAlbum[];
   onShowAlbums: () => void;
   onNewAlbum: () => void;
   onViewMedia: (item: MediaItem, collection?: MediaItem[]) => void;
   onAssignRegion: (ids: string[], code: string, district?: string, country?: string, city?: string) => Promise<void>;
-  onLocationsAnalyzed: () => Promise<void>;
   scopeKey: string;
   query: string;
   onQueryChange: (value: string) => void;
@@ -56,9 +50,7 @@ export function PhotoView({
   const tabs = [
     { mode: "grid" as const, label: "그리드", Icon: LayoutGrid },
     { mode: "calendar" as const, label: "달력", Icon: CalendarDays },
-    { mode: "album" as const, label: "전체 앨범", Icon: Image },
-    { mode: "timeline" as const, label: "타임라인", Icon: History },
-    { mode: "map" as const, label: "위치 보기", Icon: MapPin },
+    { mode: "album" as const, label: "책 보기", Icon: BookOpen },
   ];
   const viewTabs = <div className="viewTabs" role="tablist" aria-label="사진 보기 방식">
       {tabs.map((tab, index) => <button key={tab.mode} ref={(node) => { tabRefs.current[index] = node; }} id={`photo-tab-${tab.mode}`} role="tab" aria-selected={mode === tab.mode} aria-controls={`photo-panel-${tab.mode}`} tabIndex={mode === tab.mode ? 0 : -1} className={mode === tab.mode ? "active" : ""} onClick={() => setMode(tab.mode)} onKeyDown={(event) => {
@@ -93,11 +85,6 @@ export function PhotoView({
       {albums.length > 0 && <button className="showAllAlbums" onClick={onShowAlbums}>모두 보기 <ChevronRight size={16} /></button>}
     </aside>}
     {mode === "calendar" && <div className="calendarTabPanel" id="photo-panel-calendar" role="tabpanel" aria-labelledby="photo-tab-calendar"><Calendar items={items} initialMonth={/^\d{4}-\d{2}$/.test(activeMonth) ? activeMonth : undefined} onOpen={(item) => onViewMedia(item, items)} /></div>}
-    {mode === "timeline" && <div id="photo-panel-timeline" role="tabpanel" aria-labelledby="photo-tab-timeline"><TimelineView key={scopeKey} items={items} onOpen={onViewMedia} /></div>}
-    {mode === "map" && <div id="photo-panel-map" role="tabpanel" aria-labelledby="photo-tab-map"><Suspense fallback={<p role="status">위치 기록을 불러오는 중이에요.</p>}>
-      <MemoryMap items={allItems} onOpen={onViewMedia} onAssignRegion={onAssignRegion}
-        onLocationsAnalyzed={onLocationsAnalyzed} onCreateAlbum={onCreateAlbumFromMap} />
-    </Suspense></div>}
     {mode === "album" && <div id="photo-panel-album" role="tabpanel" aria-labelledby="photo-tab-album"><AlbumFullscreenReader title="모든 기록" items={items} open={true} backLabel="사진 기록" onOpen={onViewMedia} onClose={() => setMode("grid")} /></div>}
     {quickAlbum && <AlbumFullscreenReader title={quickAlbum.title} items={quickAlbum.items} contents={quickAlbum.contents} musicPath={quickAlbum.musicPath} color={quickAlbum.coverColor} open={true} backLabel="사진 기록" onOpen={onViewMedia} onClose={() => { setQuickAlbumId(null); setExportingQuickAlbum(false); }} onExport={() => setExportingQuickAlbum(true)} />}
     {quickAlbum && exportingQuickAlbum && <ExportModal title={quickAlbum.title} items={quickAlbum.items} onClose={() => setExportingQuickAlbum(false)} />}
