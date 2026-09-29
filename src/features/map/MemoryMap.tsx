@@ -124,7 +124,7 @@ export function MemoryMap({ items, onOpen, onAssignRegion, onCreateAlbum, onLoca
         <div className="memoryMapHover" aria-live="polite">{summary ? <>
           <strong>{summary.name}</strong><span><Image size={14} /> 사진 {summaryCount?.photos ?? 0}장</span><span><Video size={14} /> 영상 {summaryCount?.videos ?? 0}개</span>
         </> : <span><MapPin size={16} /> 지역을 선택해 사진을 찾아보세요.</span>}</div>
-        <p className="memoryMapCredit">지도 경계: <a href="https://www.geoboundaries.org/" target="_blank" rel="noreferrer">geoBoundaries</a> (CC BY 4.0) · Natural Earth (공개 도메인)</p>
+        <p className="memoryMapCredit">시·도 지도: <a href="https://www.geoboundaries.org/" target="_blank" rel="noreferrer">geoBoundaries</a> (CC BY 4.0) · Natural Earth (공개 도메인)<br />시·군·구 경계: 통계청 SGIS · 행정안전부, <a href="https://github.com/vuski/admdongkor" target="_blank" rel="noreferrer">admdongkor</a> · <a href="https://github.com/DevMinGeonPark/mapcn-kr" target="_blank" rel="noreferrer">mapcn-kr</a> (CC BY 4.0)</p>
       </div>
       <aside className="memoryMapPlaces" aria-label="시도별 사진 개수">
         <div className="memoryMapPlacesHead"><h3>지역별 기록</h3><span>{covered} / 16개 지역</span></div>
