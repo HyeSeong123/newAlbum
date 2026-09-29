@@ -71,6 +71,7 @@ test('per-item story settings and album music survive a reload', async ({ page }
   await page.goto('/');
   await page.getByRole('button',{ name:'내 앨범',exact:true }).click();
   const edit = async () => {
+    await page.locator('.savedAlbumFooter .actionMenuTrigger').first().click();
     await page.getByRole('button',{ name:'앨범 수정',exact:true }).click();
   };
   await edit();

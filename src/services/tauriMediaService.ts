@@ -275,8 +275,17 @@ function formatDuration(seconds: number): string {
   return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
 }
 
-export interface BackendDiaryEntry { id: number; date: string; title: string; body: string; mood: string; weather: string; album_id: number | null }
+import type { DiaryEntry as BackendDiaryEntry, DiaryPhoto } from "../features/diary/diaryModel";
 export const listDiary = () => invoke<BackendDiaryEntry[]>("list_diary");
 export const saveDiary = (entry: BackendDiaryEntry) => invoke<void>("save_diary", { entry });
 export const assignDiaryAlbum = (ids: number[], albumId: number | null) => invoke<void>("assign_diary_album", { ids, albumId });
 export const deleteDiary = (id: number) => invoke<void>("delete_diary", { id });
+
+export async function chooseDiaryPhotos(remaining: number): Promise<DiaryPhoto[]> {
+  const selected = await open({ multiple: true, directory: false, title: "일기에 담을 사진 선택",
+    filters: [{ name: "사진", extensions: ["jpg", "jpeg", "png", "webp", "heic"] }] });
+  if (!selected) return [];
+  const paths = Array.isArray(selected) ? selected : [selected];
+  if (paths.length > remaining) throw new Error("사진은 최대 6장까지 첨부할 수 있어요.");
+  return invoke<DiaryPhoto[]>("import_diary_photos", { paths });
+}

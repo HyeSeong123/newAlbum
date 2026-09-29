@@ -190,6 +190,14 @@ export function useMediaLibrary() {
     });
   }
 
+  async function reloadRegisteredMedia() {
+    if (!desktop) return;
+    const registered = await api.loadRegisteredMedia();
+    mediaRevision.current++;
+    publish({ items: retainMediaEdits(registered, current.current.items).map(item => ({ ...item, ...pendingMediaEdits.current.get(item.id) })), loaded: true });
+    pendingMediaEdits.current.clear();
+  }
+
   async function refreshLocations() {
     if (!desktop) return;
     await write.current("locations", async () => {
@@ -264,5 +272,5 @@ export function useMediaLibrary() {
   }
 
   return { desktop, loaded: state.loaded && albumsLoaded, importIntoAlbum, handleFilesIntoAlbum, items: state.items, itemsById, albums, importing, importNotice, clearing, error, fileInput, folderInput,
-    chooseFiles, chooseFolder, handleFiles, patchMedia, saveTitle, assignRegion, refreshLocations, recordView, removeMedia, createAlbum, saveAlbum, deleteAlbums };
+    chooseFiles, chooseFolder, handleFiles, patchMedia, saveTitle, assignRegion, refreshLocations, reloadRegisteredMedia, recordView, removeMedia, createAlbum, saveAlbum, deleteAlbums };
 }

@@ -2,6 +2,11 @@
 identifier = "album-library"
 description = "Allow the main album window to use the existing photo, album, face and pet commands."
 commands.allow = [
+  "list_diary",
+  "save_diary",
+  "assign_diary_album",
+  "delete_diary",
+  "import_diary_photos",
   "list_media",
   "location_overview",
   "analyze_locations",

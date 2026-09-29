@@ -6,6 +6,7 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    allowedHosts: ["terminal.local"],
     host: "127.0.0.1",
   },
 });

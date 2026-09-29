@@ -69,7 +69,11 @@ async fn list_diary(app: AppHandle) -> Result<Vec<diary::Entry>, String> {
 }
 #[tauri::command]
 async fn save_diary(app: AppHandle, entry: diary::Entry) -> Result<(), String> {
-    tauri::async_runtime::spawn_blocking(move || diary::save(&open_database(&app)?, entry)).await.map_err(|e| e.to_string())?
+    tauri::async_runtime::spawn_blocking(move || diary::save(&mut open_database(&app)?, entry)).await.map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn import_diary_photos(app: AppHandle, paths: Vec<String>) -> Result<Vec<diary::Photo>, String> {
+    tauri::async_runtime::spawn_blocking(move || diary::import_photos(&mut open_database(&app)?, paths)).await.map_err(|e| e.to_string())?
 }
 #[tauri::command]
 async fn assign_diary_album(app: AppHandle, ids: Vec<i64>, album_id: Option<i64>) -> Result<(), String> {
@@ -1015,7 +1019,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            list_diary, save_diary, assign_diary_album, delete_diary,
+            list_diary, save_diary, assign_diary_album, delete_diary, import_diary_photos,
             list_media,
             location_overview,
             analyze_locations,

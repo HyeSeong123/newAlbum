@@ -33,6 +33,7 @@ test('legacy album accepts a chapter at a chosen position, reloads, moves and de
   await page.goto('/');
   await page.getByRole('button', { name:'내 앨범', exact:true }).click();
   const openEditor = async () => {
+    await page.locator('.savedAlbumFooter .actionMenuTrigger').first().click();
     await page.getByRole('button', { name:'앨범 수정', exact:true }).click();
     await page.getByRole('dialog', { name:'앨범 수정' }).getByRole('button', { name:'챕터·감상문', exact:true }).click();
   };
@@ -70,6 +71,7 @@ test('text-only album can be saved, read, edited and removed after reload', asyn
   await page.goto('/');
   await page.getByRole('button', { name:'내 앨범', exact:true }).click();
   const openEditor = async () => {
+    await page.locator('.savedAlbumFooter .actionMenuTrigger').first().click();
     await page.getByRole('button', { name:'앨범 수정', exact:true }).click();
     await page.getByRole('dialog', { name:'앨범 수정' }).getByRole('button', { name:'챕터·감상문', exact:true }).click();
   };

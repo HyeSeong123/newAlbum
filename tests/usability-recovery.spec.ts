@@ -121,15 +121,12 @@ test('diary storage failure retains every field without creating a phantom or du
   await dialog.getByLabel('오늘의 기분').selectOption('그리움');
   await dialog.getByRole('combobox', { name: '날씨', exact: true }).selectOption('비');
   await page.evaluate(() => {
-    const original = Storage.prototype.setItem;
-    Storage.prototype.setItem = function(key, value) {
-      if (key === 'warm-journal-diaries-v1') throw new Error('quota');
-      original.call(this, key, value);
-    };
-    window.addEventListener('restore-storage', () => { Storage.prototype.setItem = original; }, { once: true });
+    const original = IDBObjectStore.prototype.put;
+    IDBObjectStore.prototype.put = function() { throw new Error('quota'); };
+    window.addEventListener('restore-storage', () => { IDBObjectStore.prototype.put = original; }, { once: true });
   });
   await dialog.getByRole('button', { name: '일기 저장' }).click();
-  await expect(dialog.getByRole('alert')).toContainText('입력한 내용은 화면에 남아 있습니다');
+  await expect(dialog.getByRole('alert')).toContainText('입력한 내용은 그대로 남아 있어요.');
   await expect(dialog.getByLabel('제목', { exact: true })).toHaveValue('잃으면 안 되는 제목');
   await expect(dialog.getByRole('textbox', { name: '내용', exact: true })).toHaveValue('저장 실패에도 남아야 하는 내용');
   await expect(dialog.getByLabel('날짜', { exact: true })).toHaveValue('2026-09-25');
@@ -153,11 +150,8 @@ test('invalid stored diary leaves the app usable and does not overwrite existing
   await page.goto('/');
   await page.getByRole('button', { name: '일기장', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('일기를 불러오지 못했습니다');
-  await page.getByRole('button', { name: '첫 일기 쓰기' }).click();
-  const dialog = page.getByRole('dialog', { name: '새 일기' });
-  await dialog.getByLabel('제목', { exact: true }).fill('덮어쓰면 안 되는 일기');
-  await dialog.getByRole('button', { name: '일기 저장' }).click();
-  await expect(dialog.getByRole('alert')).toContainText('입력한 내용은 화면에 남아 있습니다');
+  await expect(page.getByRole('button', { name: '일기 쓰기', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '첫 일기 쓰기' })).toHaveCount(0);
   expect(await page.evaluate(() => localStorage.getItem('warm-journal-diaries-v1'))).toBe('{"preserve":"original"}');
   expect(errors).toEqual([]);
 });
@@ -305,6 +299,7 @@ test('album creation and editing preserve title and written content after failed
   await expect(creation.getByLabel('제목', { exact: true })).toHaveValue('우리 앨범');
   await creation.getByRole('button', { name: '만들기', exact: true }).click();
   await expect(creation).toBeHidden();
+  await page.locator('.savedAlbumFooter .actionMenuTrigger').first().click();
   await page.getByRole('button', { name: '앨범 수정', exact: true }).click();
   const editor = page.getByRole('dialog', { name: '앨범 수정' });
   await editor.getByRole('button', { name: '감상문 추가', exact: true }).click();
