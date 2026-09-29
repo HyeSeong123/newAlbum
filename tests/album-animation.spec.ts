@@ -32,7 +32,8 @@ test.beforeEach(async ({ page }) => {
   await page.locator('.albumBookBase, .albumPagePhoto img').evaluateAll((images: HTMLImageElement[]) => Promise.all(images.map(image => image.decode())));
 });
 
-test('both faces remain attached to the binding and swap slowly without duplicate interactive photos', async ({ page }) => {
+test('both faces remain attached to the binding and swap slowly without duplicate interactive photos', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'mobile', 'The stacked mobile pages use the pager and omit the turning sheet.');
   await page.clock.install();
   await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
   const spread = page.locator('.albumSpread');

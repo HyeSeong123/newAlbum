@@ -308,6 +308,28 @@
   .albumPhotoList { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 520px) { .savedAlbumGrid { grid-template-columns: minmax(0, 1fr); gap: 24px; } .savedAlbumOpen { padding: 0; } .frontAlbum { width: min(100%, 330px); } }
+
+/* Two full-width leaves fit a phone more legibly than a scaled two-page spread. */
+@media (max-width: 520px) {
+  .albumBookStage { --spread-ratio: .68; width: min(100%, calc((100dvh - var(--app-header-height, 70px) - 210px) * var(--spread-ratio))); }
+  .albumSpread { filter: none; }
+  .albumHardback { inset: 0; transform-style: flat; }
+  .albumBookBase { display: none; }
+  .albumPaper, .albumPaper.landscape-page {
+    top: 0; bottom: auto; left: 0; right: auto; width: 100%; height: 48.5%;
+    padding: 5% 6% 9%; border: 1px solid #e7e2d6; border-radius: 3px;
+    background: #faf9f5; box-shadow: 0 3px 8px #2b291d16;
+  }
+  .albumPaper.right, .albumPaper.right.landscape-page { top: 51.5%; }
+  .albumPaper.left { left: 0; }
+  .albumPageNumber { bottom: 2%; }
+  .albumEdgeNav { top: 50%; bottom: auto; transform: translateY(-50%); width: 18px; height: 38px; padding: 0; background: transparent; }
+  .albumEdgeNav.prev { left: -18px; }
+  .albumEdgeNav.next { right: -18px; }
+  .albumEdgeNav svg { width: 18px; }
+  .albumTurnLayer { display: none; }
+  .albumPageCaption time, .albumTurnCaption time { letter-spacing: -.02em; }
+}
 @media (prefers-reduced-motion: reduce) {
   .frontAlbum { transition: none; }
   .albumTurnLayer { display: none; }

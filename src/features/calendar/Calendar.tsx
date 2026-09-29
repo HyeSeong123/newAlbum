@@ -152,6 +152,7 @@ export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; 
                 <span className="dayNumber">{cell.day}</span>
                 {events.length > 0 && (
                   <span className="dayEvents">
+                    <small className="calendarCompactEvent" aria-hidden="true">일정{events.length}</small>
                     {events.slice(0, 1).map((event) => {
                       const EventIcon = calendarEventMeta[event.kind].icon;
                       return (

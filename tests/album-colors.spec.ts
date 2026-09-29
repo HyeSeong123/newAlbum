@@ -58,7 +58,7 @@ test('fabric album colors survive create, edit and reload', async ({ page }) => 
   expect(await reader.locator('.albumHardback').evaluate((element) => getComputedStyle(element, '::before').content)).toBe('none');
   await expect(reader.locator('.scrapbookStage, .scrapbookSheet, .scrapbookPrint')).toHaveCount(0);
   const spread = await reader.locator('.albumSpread').boundingBox();
-  expect(spread!.width / spread!.height).toBeCloseTo(2.2, 2);
+  expect(spread!.width / spread!.height).toBeCloseTo(test.info().project.name === 'mobile' ? .68 : 2.2, 2);
   const navigation = await page.locator('.sidebar').boundingBox();
   const readerBox = await reader.boundingBox();
   expect(readerBox!.y).toBeCloseTo(navigation!.y + navigation!.height, 0);
@@ -88,13 +88,15 @@ test('fabric album colors survive create, edit and reload', async ({ page }) => 
     const next = (await reader.getByTitle('다음 책장', { exact: true }).boundingBox())!;
     const header = (await reader.locator('.albumJournalHeader').boundingBox())!;
     const pager = (await reader.locator('.albumJournalPager').boundingBox())!;
-    expect(book.width / book.height).toBeCloseTo(2.2, 2);
-    expect(book.x - prev.x - prev.width).toBeCloseTo(6, 0);
-    expect(next.x - book.x - book.width).toBeCloseTo(6, 0);
+    expect(book.width / book.height).toBeCloseTo(test.info().project.name === 'mobile' ? .68 : 2.2, 2);
+    expect(book.x - prev.x - prev.width).toBeCloseTo(test.info().project.name === 'mobile' ? 0 : 6, 0);
+    expect(next.x - book.x - book.width).toBeCloseTo(test.info().project.name === 'mobile' ? 0 : 6, 0);
     expect(prev.y + prev.height / 2).toBeCloseTo(book.y + book.height / 2, 0);
     expect(next.y + next.height / 2).toBeCloseTo(book.y + book.height / 2, 0);
-    expect(base.x + base.width * .027).toBeCloseTo(book.x, 0);
-    expect(base.x + base.width * .973).toBeCloseTo(book.x + book.width, 0);
+    if (test.info().project.name === 'desktop') {
+      expect(base.x + base.width * .027).toBeCloseTo(book.x, 0);
+      expect(base.x + base.width * .973).toBeCloseTo(book.x + book.width, 0);
+    }
     expect(prev.x).toBeGreaterThanOrEqual(0);
     expect(next.x + next.width).toBeLessThanOrEqual(size.width);
     expect(book.y).toBeGreaterThanOrEqual(header.y + header.height);
