@@ -35,6 +35,8 @@ test('diary preserves six photos, dates and text across reloads and detaches one
   await dialog.getByRole('button', { name: '6번째 사진 삭제', exact: true }).click();
   await expect(dialog.getByRole('button', { name: '사진 추가', exact: true })).toBeEnabled();
   await dialog.getByRole('button', { name: '일기 저장', exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.locator('.diaryCard')).toContainText('사진 5장');
   await page.reload();
   await page.getByRole('button', { name: '일기장', exact: true }).click();
   await expect(page.locator('.diaryCard')).toHaveCount(1);
