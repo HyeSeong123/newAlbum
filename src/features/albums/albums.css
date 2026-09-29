@@ -328,6 +328,7 @@
   .albumEdgeNav.next { right: -18px; }
   .albumEdgeNav svg { width: 18px; }
   .albumTurnLayer { display: none; }
+  .albumSpread:is(.departing-next, .departing-prev, .arriving-next, .arriving-prev, .settling-next, .settling-prev) .albumPhotoEntry { opacity: 1; animation: none; }
   .albumPageCaption time, .albumTurnCaption time { letter-spacing: -.02em; }
 }
 @media (prefers-reduced-motion: reduce) {
