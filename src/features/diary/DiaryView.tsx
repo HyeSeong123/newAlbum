@@ -11,6 +11,8 @@ import { appendDiaryPhotos, diaryDateLabel, DIARY_PHOTO_ACCEPT, MAX_DIARY_PHOTOS
 import { DiaryPhoto } from "./DiaryPhoto";
 import "@fontsource/noto-serif-kr/400.css";
 import "@fontsource/noto-serif-kr/500.css";
+import "@fontsource/noto-serif-kr/korean-400.css";
+import "@fontsource/noto-serif-kr/korean-500.css";
 import "./diary.css";
 export { useDiary } from "./useDiary";
 export type { DiaryEntry } from "./diaryModel";
@@ -29,6 +31,7 @@ export function DiaryView({ entries, albums, query = "", onQueryChange, onSave, 
   const [draft, setDraft] = useState<DiaryEntry | null>(null);
   const original = useRef("");
   const [month, setMonth] = useState("");
+  const monthTouched = useRef(false);
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<number[]>([]);
   const [destination, setDestination] = useState("");
@@ -41,6 +44,12 @@ export function DiaryView({ entries, albums, query = "", onQueryChange, onSave, 
   const fileInput = useRef<HTMLInputElement>(null);
   const form = useRef<HTMLFormElement>(null);
   const photos = draft?.photos ?? [];
+
+  useEffect(() => {
+    if (!monthTouched.current && !month && entries.length) {
+      setMonth(entries.reduce((latest, entry) => entry.date.slice(0, 7) > latest ? entry.date.slice(0, 7) : latest, ""));
+    }
+  }, [entries, month]);
 
   function updateDraft(patch: Partial<DiaryEntry>) { setDraft(current => current ? { ...current, ...patch } : current); }
   function open(entry: DiaryEntry) {
@@ -100,7 +109,7 @@ export function DiaryView({ entries, albums, query = "", onQueryChange, onSave, 
   }
   function changeMonth(delta: number) {
     const base = new Date(`${month || localDateKey(new Date()).slice(0, 7)}-01T12:00:00`);
-    base.setMonth(base.getMonth() + delta); setMonth(localDateKey(base).slice(0, 7)); setSelected([]);
+    base.setMonth(base.getMonth() + delta); monthTouched.current = true; setMonth(localDateKey(base).slice(0, 7)); setSelected([]);
   }
   const visible = useMemo(() => entries.filter(entry => {
     if (query.trim()) return `${entry.title} ${entry.body}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase());
@@ -110,14 +119,14 @@ export function DiaryView({ entries, albums, query = "", onQueryChange, onSave, 
 
   return <div className="diaryView">
     <header className="diaryHeading">
-      <div><span className="diaryEyebrow">하루를 천천히 적어 두는 곳</span><h1>나의 일기장</h1><p>평범한 하루도, 오래 간직하고 싶은 이야기.</p></div>
+      <div><span className="diaryEyebrow">그루터기 · 하루의 기록</span><h1>나의 일기장</h1><p>평범한 하루도, 오래 간직하고 싶은 이야기.</p></div>
       <div className="diaryHeadingActions">
         <label className="diarySearch"><Search size={17} /><input aria-label="일기 검색" placeholder="일기 검색" value={query} onChange={e => onQueryChange(e.target.value)} />{query && <button type="button" aria-label="검색 지우기" onClick={() => onQueryChange("")}><X size={15} /></button>}</label>
         <button className="diaryPrimary" onClick={() => open(blank())} disabled={!!error}><Pencil size={16} />일기 쓰기</button>
       </div>
     </header>
     <div className="diaryListTools">
-      <div className="diaryMonthNav"><button aria-label="이전 달" onClick={() => changeMonth(-1)} disabled={!!query}><ChevronLeft size={18} /></button><label><span>{query ? "찾아본 이야기" : monthTitle}</span><input type="month" aria-label="일기 월 선택" value={month} onInput={e => { setMonth(e.currentTarget.value); setSelected([]); }} disabled={!!query} /></label><button aria-label="다음 달" onClick={() => changeMonth(1)} disabled={!!query}><ChevronRight size={18} /></button>{month && <button className="diaryAllMonths" onClick={() => setMonth("")}>전체 일기</button>}</div>
+      <div className="diaryMonthNav"><button aria-label="이전 달" onClick={() => changeMonth(-1)} disabled={!!query}><ChevronLeft size={18} /></button><label><span>{query ? "찾아본 이야기" : monthTitle}</span><input type="month" aria-label="일기 월 선택" value={month} onInput={e => { monthTouched.current = true; setMonth(e.currentTarget.value); setSelected([]); }} disabled={!!query} /></label><button aria-label="다음 달" onClick={() => changeMonth(1)} disabled={!!query}><ChevronRight size={18} /></button>{month && <button className="diaryAllMonths" onClick={() => { monthTouched.current = true; setMonth(""); }}>전체 일기</button>}</div>
       <div className="diaryListCount"><span>{visible.length}편의 기록</span>{!!entries.length && <button aria-pressed={selecting} onClick={() => { setSelecting(!selecting); setSelected([]); }}><CheckSquare size={15} />{selecting ? "선택 끝내기" : "일기 선택"}</button>}</div>
     </div>
     {error && <p className="diaryNotice" role="alert">{error}</p>}{message && <p className="diaryNotice" role="status">{message}</p>}

@@ -193,5 +193,15 @@ test('compact calendar keeps event counts visible beside empty and busy photo da
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   await page.setViewportSize({ width: 393, height: 851 });
   await expect(busy.locator('.calendarCompactEvent')).toBeHidden();
-  await expect(busy.locator('i .mediaImage')).toHaveCSS('object-fit', 'cover');
+  await expect(busy.locator('i .mediaImage')).toHaveCSS('object-fit', 'contain');
+  const photo = (await busy.locator('i').boundingBox())!;
+  const cell = (await busy.boundingBox())!;
+  expect(photo.y).toBeLessThan(cell.y + 60);
+  expect(photo.height).toBeGreaterThan(50);
+  await page.setViewportSize({ width: 1694, height: 928 });
+  const widePhoto = (await busy.locator('i').boundingBox())!;
+  const wideCell = (await busy.boundingBox())!;
+  expect(widePhoto.y).toBeLessThan(wideCell.y + 60);
+  expect(widePhoto.height).toBeGreaterThan(60);
+  await page.screenshot({ path: `test-results/calendar-event-${test.info().project.name}.png` });
 });

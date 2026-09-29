@@ -25,6 +25,13 @@ test('diary preserves six photos, dates and text across reloads and detaches one
   await page.getByRole('button', { name: '일기장', exact: true }).click();
   await expect(page.locator('.diaryCard')).toContainText('09.24');
   await expect(page.locator('.diaryCard')).toContainText('사진 6장');
+  await expect(page.locator('.diaryMonthNav')).toContainText('2026년 9월');
+  if (page.viewportSize()!.width >= 1100) {
+    const card = await page.locator('.diaryCard').boundingBox();
+    expect(card!.width).toBeGreaterThanOrEqual(390);
+    expect(card!.height).toBeGreaterThanOrEqual(590);
+  }
+  await page.screenshot({ path: `test-results/diary-list-${test.info().project.name}.png` });
   await page.locator('.diaryOpen').click();
   await expect(dialog.getByLabel('내용', { exact: true })).toHaveValue('사진 여섯 장과 함께 남기는 이야기');
   await expect(dialog.getByLabel('날씨', { exact: true })).toHaveValue('흐림');

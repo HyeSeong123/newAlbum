@@ -86,7 +86,7 @@ test('redesigned views fit and retain photo workflows', async ({ page }) => {
   await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
   await page.getByTitle('다음 책장', { exact: true }).click();
   await expect(page.locator('.albumSpread')).toHaveAttribute('data-turn-phase', 'departing');
-  await expect(page.locator('.albumPhotoEntry[data-side="right"]').first()).toHaveCSS('opacity', '0');
+  await expect(page.locator('.albumPhotoEntry[data-side="right"]').first()).toHaveCSS('opacity', page.viewportSize()!.width <= 520 ? '1' : '0');
   await expect(page.locator('.albumPhotoEntry[data-side="left"]').first()).toHaveCSS('opacity', '1');
   await expect(page.locator('.albumTurnFace')).toHaveCount(2);
   await capture('reader-turn-start');
@@ -157,6 +157,10 @@ test('album cards handle empty covers and varying photo counts', async ({ page }
   await expect(page.locator('.savedAlbumCard')).toHaveCount(5);
   await expect(page.locator('.savedAlbumPhoto img')).toHaveCount(4);
   await expect(page.locator('.savedAlbumFooter .actionMenuTrigger')).toHaveCount(5);
+  if (page.viewportSize()!.width >= 1100) {
+    const cover = await page.locator('.savedAlbumCard').first().boundingBox();
+    expect(cover!.width).toBeGreaterThanOrEqual(400);
+  }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   await page.screenshot({ path: `test-results/fabric-cover-counts-${test.info().project.name}.png` });
 });
