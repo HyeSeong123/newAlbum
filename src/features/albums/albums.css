@@ -227,8 +227,10 @@
   .albumJournalHeading span { margin-top: 3px; }
   .albumJournalTools { gap: 2px; }
   .albumJournalTools button { width: 38px; padding: 0; justify-content: center; font-size: 0; }
-  .albumJournalCanvas { padding: 10px 40px; }
-  .albumEdgeNav { width: 34px; }
+  .albumJournalCanvas { padding: 10px 12px; }
+  .albumEdgeNav { width: 30px; background: #fffdf8cf; border-radius: 6px; }
+  .albumEdgeNav.prev { right: auto; left: 0; }
+  .albumEdgeNav.next { left: auto; right: 0; }
   .albumEdgeNav svg { width: 26px; }
   .albumBookStage { width: min(100%, calc((100dvh - var(--app-header-height, 70px) - 156px) * var(--spread-ratio))); }
   .albumPaper { padding: 1.5% 2.2% 4%; }
@@ -291,9 +293,11 @@
   .albumJournalTools button > span { display: inline; }
   .albumJournalTools .actionMenuPanel button { width: 100%; }
   .albumBookStage { width: min(100%, calc((100dvh - var(--app-header-height, 70px) - 230px) * var(--spread-ratio))); }
-  .albumPageImages, .albumTurnFace { --caption-line: 18px; --caption-gap: 3px; }
+  .albumPageImages, .albumTurnFace { --caption-line: 15px; --caption-gap: 2px; }
   .albumLeafLayout { gap: 8px; }
-  .albumPageCaption, .albumPageCaption time, .albumTurnCaption, .albumTurnCaption time { font-size: 13px; }
+  .albumLeafLayout.layout-grid { gap: 4px; }
+  .albumPageCaption, .albumTurnCaption { font-size: 13px; }
+  .albumPageCaption time, .albumTurnCaption time { font-size: 12px; }
   .albumTurnFace.right { padding: 3.2751% 4.8035% 8.7336% 7.2052%; }
   .albumTurnFace.left { padding: 3.2751% 7.2052% 8.7336% 4.8035%; }
   .albumTurnFace.landscape-page.right { padding: 2.1834% 4.3668% 3.2751% 6.7686%; }
