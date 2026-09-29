@@ -127,7 +127,8 @@ test('redesigned views fit and retain photo workflows', async ({ page }) => {
   await expect(page.getByRole('tab', { name: '그리드' })).toHaveAttribute('aria-selected', 'true');
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
   await expect(page.locator('.savedAlbumCard')).toHaveCount(9);
-  await expect(page.locator('.savedAlbumPhoto img').first()).toHaveCSS('object-fit', 'contain');
+  await expect(page.locator('.savedAlbumOpen .frontAlbumWindow img').first()).toHaveCSS('object-fit', 'cover');
+  await expect(page.locator('.savedAlbumOpen .frontAlbumBase')).toHaveCount(9);
   await expect(page.locator('.savedAlbumFooter .actionMenuTrigger')).toHaveCount(9);
   await expect(page.getByText('책으로 보기', { exact: true })).toHaveCount(0);
   await page.locator('.savedAlbumFooter .actionMenuTrigger').first().click();
@@ -155,7 +156,7 @@ test('album cards handle empty covers and varying photo counts', async ({ page }
   await page.goto('/');
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
   await expect(page.locator('.savedAlbumCard')).toHaveCount(5);
-  await expect(page.locator('.savedAlbumPhoto img')).toHaveCount(4);
+  await expect(page.locator('.savedAlbumOpen .frontAlbumWindow img')).toHaveCount(4);
   await expect(page.locator('.savedAlbumFooter .actionMenuTrigger')).toHaveCount(5);
   if (page.viewportSize()!.width >= 1100) {
     const cover = await page.locator('.savedAlbumCard').first().boundingBox();

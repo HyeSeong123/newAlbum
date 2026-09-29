@@ -67,9 +67,9 @@
 }
 .calendarPanel .calendarGrid i { order: 1; }
 .calendarPanel .calendarGrid i .mediaImage { object-fit: contain; object-position: center; background: #eeede7; }
-.calendarPanel .calendarGrid button.hasEvent i { inset: 0; }
+.calendarPanel .calendarGrid button.hasEvent i { inset: auto; }
 .calendarPanel .calendarGrid .dayEvents { position: static; order: 2; flex: none; gap: 3px; min-width: 0; }
-.calendarPanel .calendarGrid button.hasMedia.hasEvent .dayEvents { position: absolute; left: 8px; right: 8px; bottom: 25px; z-index: 2; }
+.calendarPanel .calendarGrid button.hasMedia.hasEvent .dayEvents { position: static; }
 .calendarPanel .calendarGrid .dayEvents small { min-height: 18px; padding: 1px 4px; border-radius: 2px; font-size: 12px; font-weight: 500; color: #4d563a; background: #e8ebdb; box-shadow: none; white-space: nowrap; }
 .calendarPanel .calendarGrid .dayEvents .calendarCompactEvent { display: none; }
 .calendarPanel .calendarGrid .dayEvents strong { font-size: 12px; }
@@ -194,7 +194,7 @@
 }
 /* Let the month fill the available page while keeping the seven columns readable. */
 .workspace:has(.photoWorkspace.mode-calendar) { width:100%; max-width:none; padding:24px clamp(20px,3vw,64px) 48px; }
-.calendarPanel .calendarGrid button,.calendarPanel .calendarGrid .emptyDay { aspect-ratio:auto; height:clamp(126px,calc((100dvh - var(--app-header-height, 70px) - 240px) / var(--calendar-weeks, 5)),190px); min-height:0; }
+.calendarPanel .calendarGrid button,.calendarPanel .calendarGrid .emptyDay { aspect-ratio:auto; height:clamp(150px,calc((100dvh - var(--app-header-height, 70px) - 240px) / var(--calendar-weeks, 5)),190px); min-height:0; }
 @media(max-width:750px) { .calendarPanel .calendarGrid button,.calendarPanel .calendarGrid .emptyDay { height:140px; min-height:140px; } }
 @media(max-width:380px) {
   .calendarPanel .calendarGrid .dayEvents small { display: none; }

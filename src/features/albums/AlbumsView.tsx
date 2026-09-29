@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from "react";
 import { BookPlus, Check, CheckSquare, FolderOutput, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
 import type { MediaItem, SavedAlbum } from "../../types/media";
-import { EmptyState, MediaVisual } from "../../components/MediaVisual";
+import { EmptyState } from "../../components/MediaVisual";
+import { AlbumCover } from "./AlbumCover";
 import { ActionMenu } from "../../components/ActionMenu";
 import { ExportModal } from "../../components/ExportModal";
 import { mediaSummary } from "../media/journalModel";
@@ -76,13 +77,12 @@ export function SavedAlbumsView({
       {albums.length > 0 && !visibleAlbums.length && <EmptyState text="검색한 이름의 앨범이 없습니다." />}
       <div className="savedAlbumGrid">
         {visibleAlbums.map((album) => {
-          const cover = album.items.find(item => item.fileType === "image") ?? album.items[0];
           return (
           <article key={album.id} className="savedAlbumCard">
             <div className="savedAlbumCover">
             <button className="savedAlbumOpen" disabled={busy} aria-pressed={selecting ? chosen.includes(album.id) : undefined} onClick={() => selecting ? setChosen((current) => current.includes(album.id) ? current.filter((id) => id !== album.id) : [...current, album.id]) : setActiveAlbumId(album.id)} aria-label={`${album.title} 앨범 ${selecting ? "선택" : "열기"}`}>
               {selecting && <span className={`albumSelectionMark ${chosen.includes(album.id) ? "checked" : ""}`}>{chosen.includes(album.id) && <Check size={22} strokeWidth={3} />}</span>}
-              <span className="savedAlbumPhoto">{cover ? <MediaVisual item={cover} fit="contain" /> : <BookPlus size={34} aria-hidden="true" />}</span>
+              <AlbumCover title={album.title} items={album.items} color={album.coverColor} />
             </button>
             </div>
             <div className="savedAlbumFooter">

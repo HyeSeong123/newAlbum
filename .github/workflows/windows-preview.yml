@@ -2,6 +2,9 @@ name: Windows preview package
 
 on:
   workflow_dispatch:
+  push:
+    branches: [feature/warm-journal-v2]
+    paths: [.github/workflows/windows-preview.yml]
 
 permissions:
   contents: read
