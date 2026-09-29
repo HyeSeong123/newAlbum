@@ -40,18 +40,22 @@ test('calendar and day viewer follow the compact reference layout', async ({ pag
   await expect(grid.locator('.emptyDay')).toHaveCount(4);
   await expect(grid.locator('.weekday')).toHaveCount(7);
   await expect(grid.locator('.hasMedia')).toHaveCount(18);
-  await grid.locator('img').evaluateAll((images: HTMLImageElement[]) => Promise.all(images.map((image) => image.decode())));
+  const firstPhoto = grid.locator('.hasMedia img').first();
+  await firstPhoto.scrollIntoViewIfNeeded();
+  await expect(firstPhoto).toHaveAttribute('src', /calendar-photo-/);
+  await firstPhoto.evaluate((image: HTMLImageElement) => image.decode());
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   if (testInfo.project.name === 'desktop') {
     const bounds = (await grid.boundingBox())!;
     expect(bounds.width).toBeGreaterThan(1000);
-    expect(bounds.width).toBeLessThan(1100);
+    expect(bounds.width).toBeGreaterThan(1694 * .9);
+    expect(bounds.width).toBeLessThan(1694 - 32);
     expect(Math.abs(bounds.x - (1694 - bounds.width) / 2)).toBeLessThan(2);
-    expect(bounds.y + bounds.height).toBeLessThan(928);
+    expect(bounds.height).toBeGreaterThan(600);
   }
   await page.screenshot({ path: `test-results/calendar-month-${testInfo.project.name}.png`, fullPage: true });
 
-  await grid.getByRole('button', { name: '2025년 5월 31일, 사진 150장' }).click();
+  await grid.getByRole('button', { name: '2025년 5월 31일, 사진 150장, 메모 있음' }).click();
   const dialog = page.getByRole('dialog', { name: '2025-05-31 기록' });
   await expect(dialog.getByRole('heading')).toHaveText('2025년 5월 31일 토요일');
   await expect(dialog.getByText('사진 150장', { exact: true })).toBeVisible();
@@ -85,11 +89,11 @@ test('calendar and day viewer follow the compact reference layout', async ({ pag
   await expect(dialog.locator('.calendarThumbnails .active .calendarCoverBadge')).toHaveText('대표');
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
-  await expect(grid.getByRole('button', { name: '2025년 5월 31일, 사진 150장' }).locator('i')).toHaveAttribute('data-media-id', selectedId!);
+  await expect(grid.getByRole('button', { name: '2025년 5월 31일, 사진 150장, 메모 있음' }).locator('i')).toHaveAttribute('data-media-id', selectedId!);
 
   await page.reload();
   await page.getByRole('tab', { name: '달력', exact: true }).click();
-  await grid.getByRole('button', { name: '2025년 5월 31일, 사진 150장' }).click();
+  await grid.getByRole('button', { name: '2025년 5월 31일, 사진 150장, 메모 있음' }).click();
   await expect(dialog.getByLabel('그날의 메모')).toHaveValue('메모를 입력해도 선택 사진 유지');
   await expect(dialog.locator('.calendarDayOpen')).toHaveAttribute('data-media-id', selectedId!);
   await page.keyboard.press('Escape');
@@ -133,7 +137,61 @@ test('missing representative photos fall back without blocking the day viewer', 
   await page.evaluate(() => localStorage.setItem('oraedameun.dayCovers', JSON.stringify({ '2025-05-31': 'deleted-photo' })));
   await page.reload();
   await page.getByRole('tab', { name: '달력', exact: true }).click();
-  await page.locator('.calendarGrid').getByRole('button', { name: '2025년 5월 31일, 사진 150장' }).click();
+  await page.locator('.calendarGrid').getByRole('button', { name: '2025년 5월 31일, 사진 150장, 메모 있음' }).click();
   await expect(page.locator('.calendarPhotoPosition')).toHaveText('1 / 150');
   await expect(page.locator('.calendarThumbnails button').first().locator('.calendarCoverBadge')).toBeVisible();
+});
+
+test('calendar keeps readable dates and recognizable photos at narrow and desktop sizes', async ({ page }, testInfo) => {
+  const sizes = testInfo.project.name === 'mobile'
+    ? [{ width: 393, height: 851 }]
+    : [{ width: 1080, height: 720 }, { width: 1440, height: 960 }, { width: 1920, height: 1080 }];
+  for (const size of sizes) {
+    await page.setViewportSize(size);
+    const measures = await page.locator('.calendarGrid .hasMedia').first().evaluate((cell) => {
+      const photo = cell.querySelector('i')!;
+      const date = cell.querySelector('.dayNumber')!;
+      return {
+        photoHeight: photo.getBoundingClientRect().height,
+        photoWidth: photo.getBoundingClientRect().width,
+        dateSize: parseFloat(getComputedStyle(date).fontSize),
+        countSize: parseFloat(getComputedStyle(cell.querySelector('b')!).fontSize),
+      };
+    });
+    expect(measures.dateSize, `${size.width}px 날짜`).toBeGreaterThanOrEqual(14);
+    expect(measures.countSize, `${size.width}px 사진 개수`).toBeGreaterThanOrEqual(12);
+    expect(measures.photoHeight, `${size.width}px 사진 높이`).toBeGreaterThan(testInfo.project.name === 'mobile' ? 35 : 50);
+    expect(measures.photoWidth, `${size.width}px 사진 너비`).toBeGreaterThan(30);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    const buttons = await page.locator('.calendarPanel .monthControls button').evaluateAll((elements) =>
+      elements.map(element => getComputedStyle(element).whiteSpace));
+    expect(buttons.every(value => value === 'nowrap')).toBe(true);
+  }
+});
+
+test('compact calendar keeps event counts visible beside empty and busy photo dates', async ({ page }) => {
+  await page.evaluate(() => {
+    const event = (id: string, date: string) => ({ id, date, title: id, kind: 'appointment', showDday: false });
+    localStorage.setItem('oraedameun.calendarEvents', JSON.stringify({
+      '2025-05-02': [event('empty', '2025-05-02')],
+      '2025-05-31': [event('first', '2025-05-31'), event('second', '2025-05-31')],
+    }));
+  });
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.reload();
+  await page.getByRole('tab', { name: '달력', exact: true }).click();
+  const empty = page.locator('.calendarGrid button[aria-label="2025년 5월 2일, 사진 0장, 일정 1개"]');
+  const busy = page.locator('.calendarGrid button[aria-label="2025년 5월 31일, 사진 150장, 일정 2개, 메모 있음"]');
+  await expect(empty.locator('.calendarCompactEvent')).toBeVisible();
+  await expect(busy.locator('.calendarCompactEvent')).toHaveText('일정2');
+  for (const cell of [empty, busy]) {
+    const badge = await cell.locator('.calendarCompactEvent').evaluate(element => ({ width: element.clientWidth, content: element.scrollWidth }));
+    expect(badge.content).toBeLessThanOrEqual(badge.width);
+  }
+  await expect(busy.locator('i .mediaImage')).toHaveCSS('object-fit', 'contain');
+  expect((await busy.locator('i').boundingBox())!.height).toBeGreaterThan(40);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.setViewportSize({ width: 393, height: 851 });
+  await expect(busy.locator('.calendarCompactEvent')).toBeHidden();
+  await expect(busy.locator('i .mediaImage')).toHaveCSS('object-fit', 'cover');
 });

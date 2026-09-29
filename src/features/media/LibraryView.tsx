@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ArrowUpDown, CheckSquare, ChevronLeft, ChevronRight, Heart, MapPin, Music, Play, Plus, Search, SlidersHorizontal, Trash2, X } from "lucide-react";
+import { ArrowUpDown, CheckSquare, ChevronLeft, ChevronRight, Heart, ImagePlus, MapPin, Music, Play, Plus, Search, SlidersHorizontal, Trash2, X } from "lucide-react";
 import type { MediaItem } from "../../types/media";
 import { EmptyState, MediaVisual } from "../../components/MediaVisual";
 import { useRowSelection } from "../../hooks/useRowSelection";
@@ -28,6 +28,7 @@ export function Library({
   onCreateAlbum,
   onDeleteSelected,
   onAssignRegion,
+  onImport,
   scopeKey,
   emptyText,
   onDateSearch,
@@ -48,6 +49,7 @@ export function Library({
   onCreateAlbum: () => void;
   onDeleteSelected: () => void;
   onAssignRegion: (ids: string[], code: string, district?: string, country?: string, city?: string) => Promise<void>;
+  onImport?: () => void;
   scopeKey: string;
   emptyText: string;
   onDateSearch: () => void;
@@ -143,7 +145,9 @@ export function Library({
       {selectionMode && bulkRegionOpen && <div id="libraryBulkRegion" className="libraryBulkRegion">
         <RegionEditor count={locationIds.length} initiallyEditing onSave={(code, district, country, city) => onAssignRegion(locationIds, code, district, country, city)} />
       </div>}
-      {!items.length && <EmptyState text={emptyText} />}
+      {!items.length && (onImport
+        ? <EmptyState title="아직 사진 기록이 없습니다." description="사진과 영상을 가져오면 날짜별로 정리해서 볼 수 있습니다. 원본 파일은 그대로 유지됩니다." actionLabel="사진 가져오기" actionIcon={<ImagePlus size={18} />} onAction={onImport} />
+        : <EmptyState text={emptyText} />)}
       {Boolean(items.length) && !visibleCollection.length && <EmptyState text="조건에 맞는 사진과 영상이 없습니다." />}
       <div className={selectionMode ? "galleryGrid selecting" : "galleryGrid"} {...dragSelection}>
         {Object.entries(groupByTakenDate(visibleItems)).map(([date, datedItems], dayIndex) => {

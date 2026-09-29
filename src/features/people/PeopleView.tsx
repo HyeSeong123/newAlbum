@@ -3,7 +3,7 @@ import { ArrowLeft, BookPlus, Check, FolderOutput, Image as ImageIcon, LoaderCir
 import type { MediaItem } from '../../types/media';
 import { isTauriRuntime } from '../../services/tauriMediaService';
 import { clearFaceIndex, emptyFaceIndex, FaceIndex, loadFaceEngine, loadFaceIndex, moveFaces, renamePerson, scanPhoto, setFacesExcluded, setPersonCoverFace } from './faceService';
-import { MediaVisual } from '../../components/MediaVisual';
+import { EmptyState, MediaVisual } from '../../components/MediaVisual';
 import { useRowSelection } from '../../hooks/useRowSelection';
 import './people.css';
 import { FaceMatchReview } from './FaceMatchReview';
@@ -27,6 +27,8 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [active, setActive] = useState<number | null>(null);
   const [name, setName] = useState('');
+  const [editingName, setEditingName] = useState(false);
+  const [showUnknownGroups, setShowUnknownGroups] = useState(false);
   const [chosen, setChosen] = useState<number[]>([]);
   const [target, setTarget] = useState('');
   const [facePage, setFacePage] = useState(0);
@@ -57,8 +59,8 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
   const matchingPeople = useMemo(() => index.people.filter((entry) => (entry.name.trim() || "미확인 얼굴").toLocaleLowerCase().includes(search)), [index.people, search]);
   useEffect(() => { setPersonPage(0); setUnknownPage(0); openFaceView('people'); }, [query]);
   const personGroups = [
-    { title: '등록된 인물', people: matchingPeople.filter((entry) => entry.name.trim()), page: personPage, setPage: setPersonPage },
-    { title: '미확인 얼굴', people: matchingPeople.filter((entry) => !entry.name.trim()), page: unknownPage, setPage: setUnknownPage },
+    { title: '등록된 사람', people: matchingPeople.filter((entry) => entry.name.trim()), page: personPage, setPage: setPersonPage },
+    ...(showUnknownGroups ? [{ title: '미확인 얼굴', people: matchingPeople.filter((entry) => !entry.name.trim()), page: unknownPage, setPage: setUnknownPage }] : []),
   ];
   const blocked = running || saving || loading;
   const unknownFaceIds = useMemo(() => {
@@ -79,6 +81,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
     setFaceView(view);
     setActive(selectedPerson?.id ?? null);
     setName(selectedPerson?.name ?? '');
+    setEditingName(!selectedPerson?.name.trim());
     setChosen([]);
     setTarget('');
     setSelecting(false);
@@ -96,12 +99,14 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
       const destination = sameNamePeople[0];
       const sources = new Set([person.id, ...sameNamePeople.slice(1).map((entry) => entry.id)]);
       const ids = index.faces.filter((face) => sources.has(face.person_id)).map((face) => face.id);
-      await edit(async () => {
+      const saved = await edit(async () => {
         await moveFaces(ids, destination.id);
         if (alive.current) { setActive(destination.id); setName(destination.name); setFacePage(0); }
       });
+      if (saved && alive.current) setEditingName(false);
     } else {
-      await edit(() => renamePerson(person.id, trimmedName));
+      const saved = await edit(() => renamePerson(person.id, trimmedName));
+      if (saved && alive.current) setEditingName(false);
     }
   }
 
@@ -127,7 +132,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
       let done = 0;
       for (const item of remaining) {
         if (stop.current) break;
-        if (alive.current) setStatus('얼굴 찾는 중');
+        if (alive.current) setStatus('사진에서 사람을 찾는 중');
         try { await scanPhoto(item); }
         catch { failures += 1; }
         done += 1;
@@ -136,39 +141,41 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
       }
       if (alive.current) {
         setIndex(await loadFaceIndex());
-        setStatus(stop.current ? '분석을 중단했습니다.' : '분석을 마쳤습니다.');
-        if (failures) setError(`${failures}장의 사진을 분석하지 못했습니다. 원본을 확인한 뒤 다시 시도해 주세요.`);
+        setStatus(stop.current ? '사람 찾기를 중단했습니다. 확인한 사진은 그대로 남아 있습니다.' : failures ? `얼굴 찾기를 마쳤습니다. ${remaining.length}장 중 ${done - failures}장을 확인했습니다. ${failures}장은 확인하지 못했습니다. 새 사진에서 사람 찾기를 눌러 다시 시도할 수 있습니다.` : `얼굴 찾기를 마쳤습니다. ${done}장을 확인했습니다.`);
       }
-    } catch { if (alive.current) setError('얼굴 분석을 준비하지 못했습니다. 앱을 다시 실행해 주세요.'); }
+    } catch { if (alive.current) setError('사진에서 사람을 찾는 중 문제가 발생했습니다. 이미 확인한 사진과 원본은 그대로 남아 있습니다. 다시 시도해 주세요.'); }
     finally { locked.current = false; if (alive.current) setRunning(false); }
   }
 
   async function edit(action: () => Promise<unknown>) {
-    if (locked.current) return;
+    if (locked.current) return false;
     locked.current = true; setSaving(true); setError('');
     try {
       await action();
       const next = await loadFaceIndex();
       if (alive.current) { setIndex(next); setChosen([]); setTarget(''); }
-    } catch { if (alive.current) setError('변경 사항을 저장하지 못했습니다. 다시 시도해 주세요.'); }
+      return true;
+    } catch { if (alive.current) setError('변경 사항을 저장하지 못했습니다. 입력한 내용은 화면에 남아 있습니다. 다시 저장해 주세요.'); return false; }
     finally { locked.current = false; if (alive.current) setSaving(false); }
   }
 
   return <section className="peopleView">
     <div className="panelHeader">
-      <h2>{showUnknownFaces ? '미확인 얼굴' : allFaces ? '얼굴 모아보기' : person ? person.name.trim() || '미확인 얼굴' : '인물'}</h2>
+      <h2>{showUnknownFaces ? '미확인 얼굴' : allFaces ? '모든 얼굴' : person ? person.name.trim() || '미확인 얼굴' : '사람'}</h2>
       <div className="peopleActions peopleToolbar">
         <div className="toolbarGroup" role="group" aria-label="인물 보기">
-          <button disabled={blocked} onClick={() => openFaceView(allFaces ? 'people' : 'all')}><Users size={18} />{allFaces ? '인물별 보기' : '얼굴 모아보기'}</button>
-          {!person && !showFaceThumbnails && <button disabled={blocked || !index.faces.length} onClick={() => { openFaceView('all'); setSelecting(true); }}><Check size={18} />얼굴 선택하기</button>}
+          {(person || showFaceThumbnails) && <button disabled={blocked} onClick={() => openFaceView('people')}><ArrowLeft size={18} />사람별 보기</button>}
+          {!person && !showFaceThumbnails && <button disabled={blocked || !unidentifiedFaces.length} onClick={() => setShowUnknownGroups(value => !value)}><Users size={18} />{showUnknownGroups ? '미확인 얼굴 닫기' : '미확인 얼굴 보기'}</button>}
         </div>
         <div className="toolbarGroup" role="group" aria-label="얼굴 분석">
-          <button disabled={blocked || !desktop || !index.people.some((entry) => entry.name.trim())} onClick={() => setReviewing(true)}><RefreshCw size={18} />미확인 얼굴 다시 비교</button>
-          {running ? <button onClick={() => { stop.current = true; setStatus('현재 사진을 마치고 중단합니다.'); }}><Pause size={18} />중단</button> : <button className="primaryControl" disabled={blocked || !desktop || !remaining.length} onClick={() => void start()}><Play size={18} />{index.scanned.length ? '이어서 분석' : '얼굴 찾기'}</button>}
+          {running ? <button onClick={() => { stop.current = true; setStatus('현재 사진을 마치고 중단합니다.'); }}><Pause size={18} />중단</button> : <button className="primaryControl" disabled={blocked || !desktop || !remaining.length} onClick={() => void start()}><Play size={18} />{index.scanned.length ? '새 사진에서 사람 찾기' : '사진에서 사람 찾기'}</button>}
         </div>
-        <ActionMenu label="얼굴 분석 관리" triggerText="분석 관리" icon={<RefreshCw size={16} />} disabled={blocked || !desktop} actions={[
-          { label: '분석 정보 새로고침', icon: <RefreshCw size={16} />, onSelect: () => void edit(async () => {}) },
-          { label: '얼굴 분석 정보 지우기', icon: <Trash2 size={16} />, disabled: !index.scanned.length, onSelect: () => {
+        <ActionMenu label="얼굴 관리" triggerText="얼굴 관리" icon={<RefreshCw size={16} />} disabled={blocked} actions={[
+          { label: '모든 얼굴 보기', icon: <Users size={16} />, onSelect: () => openFaceView('all') },
+          { label: '얼굴 선택하기', icon: <Check size={16} />, disabled: !index.faces.length, onSelect: () => { if (!showUnknownFaces && !allFaces) openFaceView('all'); setSelecting(true); } },
+          { label: '미확인 얼굴 다시 비교', icon: <RefreshCw size={16} />, disabled: !desktop || !index.people.some((entry) => entry.name.trim()), onSelect: () => setReviewing(true) },
+          { label: '얼굴 정보 새로고침', icon: <RefreshCw size={16} />, disabled: !desktop, onSelect: () => void edit(async () => {}) },
+          { label: '얼굴 정보 초기화', icon: <Trash2 size={16} />, danger: true, disabled: !desktop || !index.scanned.length, onSelect: () => {
             if (window.confirm('인물 이름, 얼굴 분석 정보와 제외 설정을 모두 지울까요? 원본 사진은 유지됩니다.')) void edit(async () => { await clearFaceIndex(); openFaceView('people'); setLastExcluded([]); });
           } },
         ]} />
@@ -176,12 +183,12 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
     </div>
     {!desktop && <p role="status">얼굴 찾기는 그루터기 데스크톱 앱에서 사용할 수 있습니다.</p>}
     {loading && <p role="status"><LoaderCircle size={18} className="spinIcon" />인물 불러오는 중</p>}
-    {(running || status) && <div className="faceProgress" role="status"><span>{status}</span><span>{progress.done} / {progress.total}장</span>{running && <progress value={progress.done} max={progress.total || 1} />}</div>}
+    {(running || status) && <div className="faceProgress" role="status"><span>{status}</span>{running && <span>{progress.done} / {progress.total}장</span>}{running && <progress value={progress.done} max={progress.total || 1} />}</div>}
     {error && <p role="alert" className="faceError">{error}</p>}
     {lastExcluded.length > 0 && <div className="peopleActions"><span>{lastExcluded.length}개 얼굴 제외됨</span><button disabled={blocked} onClick={() => void edit(async () => { await setFacesExcluded(lastExcluded, false); setLastExcluded([]); })}>제외 되돌리기</button></div>}
     {!person && !showFaceThumbnails ? <>
-      <div className="peopleSummary">인물 {index.people.length}명 · 분석 완료 {photos.length - remaining.length} / {photos.length}장</div>
-      {!loading && !index.people.length && <div className="emptyState"><Users size={30} /><p>{index.scanned.length ? '아직 찾은 얼굴이 없습니다.' : '아직 분류된 인물이 없습니다.'}</p></div>}
+      <div className="peopleSummary">등록된 사람 {index.people.filter(entry => entry.name.trim()).length}명 · 확인한 사진 {photos.length - remaining.length} / {photos.length}장</div>
+      {!loading && !index.people.length && <EmptyState icon={<Users size={30} />} title={index.scanned.length ? '아직 찾은 얼굴이 없습니다.' : '아직 등록된 사람이 없습니다.'} description="사진 속 얼굴을 찾아 사람별로 사진을 모아볼 수 있습니다." actionLabel={remaining.length && desktop ? '사진에서 사람 찾기' : undefined} onAction={remaining.length && desktop ? () => void start() : undefined} actionIcon={<Play size={18} />} />}
       {personGroups.map((group) => {
         const pages = Math.max(1, Math.ceil(group.people.length / 24));
         const page = Math.min(group.page, pages - 1);
@@ -195,7 +202,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
             });
           }}><X size={18} />선택한 얼굴 제외</button></>}
         </div>}</div>
-        {!loading && !group.people.length && <p>{query ? '검색한 이름의 인물이 없습니다.' : group.title === '등록된 인물' ? '이름을 등록한 인물이 없습니다.' : '미확인 얼굴이 없습니다.'}</p>}
+        {!loading && !group.people.length && <p>{query ? '검색한 이름의 인물이 없습니다.' : group.title === '등록된 사람' ? '이름을 등록한 인물이 없습니다.' : '미확인 얼굴이 없습니다.'}</p>}
       <div className="personGrid">{group.people.slice(page * 24, (page + 1) * 24).map((entry) => {
         const members = lookup.byPerson.get(entry.id) ?? EMPTY_FACES;
         const selectable = !entry.name.trim() && selectingUnknown;
@@ -227,18 +234,25 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
       </aside>}
       <div className="personDetailContent">
       {person && !allFaces && <div className="peopleActions personEditor">
-        <button title="인물 목록" onClick={() => openFaceView('people')}><ArrowLeft size={18} /></button>
-        <form onSubmit={(event) => { event.preventDefault(); void saveName(); }}>
+        <button onClick={() => openFaceView('people')}><ArrowLeft size={18} />사람 목록</button>
+        <span>사진 {personItems.length}장</span>
+        {editingName ? <form onSubmit={(event) => { event.preventDefault(); void saveName(); }}>
           <input aria-label="인물 이름" placeholder="이름" maxLength={80} value={name} disabled={blocked} onChange={(event) => setName(event.target.value)} />
-          <button disabled={blocked || (!sameNamePeople.length && trimmedName === person.name)}><Check size={18} />{sameNamePeople.length ? '합치기' : '저장'}</button>
-        </form>
-        {person.name.trim() && <button aria-pressed={choosingCover} disabled={blocked} onClick={() => { setChoosingCover(!choosingCover); setSelecting(false); setChosen([]); }}><ImageIcon size={18} />{choosingCover ? '대표 사진 선택 취소' : '대표 사진 변경'}</button>}
+          <button disabled={blocked || (!sameNamePeople.length && trimmedName === person.name)}><Check size={18} />{sameNamePeople.length ? '같은 이름 합치기' : '이름 저장'}</button>
+        </form> : <button disabled={blocked} onClick={() => setEditingName(true)}><Check size={18} />이름 수정</button>}
+        <button disabled={blocked || !personItems.length} onClick={() => onCreateAlbum(personItems)}><BookPlus size={18} />앨범 만들기</button>
+        <button disabled={blocked || !personItems.length} onClick={() => setExporting(true)}><FolderOutput size={18} />사진 내보내기</button>
+        <ActionMenu label="사람 관리" triggerText="사람 관리" icon={<Users size={16} />} disabled={blocked} actions={[
+          { label: '대표 사진 변경', icon: <ImageIcon size={16} />, onSelect: () => { setChoosingCover(true); setSelecting(false); setChosen([]); } },
+          { label: '얼굴 선택·분리·합치기', icon: <Scissors size={16} />, onSelect: () => { setSelecting(true); setChoosingCover(false); setChosen([]); } },
+        ]} />
       </div>}
       {showUnknownFaces && <div className="peopleActions">
-        <button title="인물 목록" onClick={() => openFaceView('people')}><ArrowLeft size={18} /></button>
+        <button onClick={() => openFaceView('people')}><ArrowLeft size={18} />사람 목록</button>
         <span>{faces.length}개 얼굴</span>
       </div>}
-      {!choosingCover && <div className="peopleActions"><button disabled={blocked} onClick={() => { setSelecting(!selecting); setChosen([]); }}><Check size={18} />{selecting ? '선택 끝내기' : '얼굴 선택하기'}</button>{person && !allFaces && <button disabled={blocked || !personItems.length} onClick={() => setExporting(true)}><FolderOutput size={18} />내보내기</button>}</div>}
+      {choosingCover && <div className="peopleActions"><span>대표로 사용할 사진을 고르세요.</span><button onClick={() => setChoosingCover(false)}>대표 사진 선택 취소</button></div>}
+      {selecting && <div className="peopleActions"><button onClick={() => { setSelecting(false); setChosen([]); }}><Check size={18} />얼굴 선택 끝내기</button></div>}
       {selecting && <div className="peopleActions faceSelectionActions">
         <span>{chosen.length}개 선택</span>
         {person && !allFaces && <button disabled={blocked || !chosenAlbumItems.length} onClick={() => onCreateAlbum(chosenAlbumItems)}><BookPlus size={18} />앨범 만들기 ({chosenAlbumItems.length})</button>}
@@ -257,7 +271,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
         const item = mediaById.get(face.media_id);
         return <article key={face.id} className="personPhoto" data-selection-id={face.id}>
           <button className="personOriginal" disabled={choosingCover ? blocked : selecting ? blocked : !item} onClick={() => {
-            if (choosingCover && person) { void edit(() => setPersonCoverFace(person.id, face.id)).then(() => { if (alive.current) setChoosingCover(false); }); }
+            if (choosingCover && person) { void edit(() => setPersonCoverFace(person.id, face.id)).then(saved => { if (saved && alive.current) setChoosingCover(false); }); }
             else if (selecting) toggleFace(String(face.id));
             else if (item) onOpen(item, faceItems);
           }} aria-label={choosingCover ? '대표 사진으로 설정' : selecting ? '얼굴 선택' : '사진 상세보기'} aria-pressed={choosingCover ? person?.cover_face_id === face.id : selecting ? chosen.includes(face.id) : undefined}>

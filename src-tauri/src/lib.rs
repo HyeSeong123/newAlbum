@@ -69,7 +69,11 @@ async fn list_diary(app: AppHandle) -> Result<Vec<diary::Entry>, String> {
 }
 #[tauri::command]
 async fn save_diary(app: AppHandle, entry: diary::Entry) -> Result<(), String> {
-    tauri::async_runtime::spawn_blocking(move || diary::save(&open_database(&app)?, entry)).await.map_err(|e| e.to_string())?
+    tauri::async_runtime::spawn_blocking(move || diary::save(&mut open_database(&app)?, entry)).await.map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn import_diary_photos(app: AppHandle, paths: Vec<String>) -> Result<Vec<diary::Photo>, String> {
+    tauri::async_runtime::spawn_blocking(move || diary::import_photos(&mut open_database(&app)?, paths)).await.map_err(|e| e.to_string())?
 }
 #[tauri::command]
 async fn assign_diary_album(app: AppHandle, ids: Vec<i64>, album_id: Option<i64>) -> Result<(), String> {
@@ -764,8 +768,8 @@ fn register_file(conn: &Connection, path: &Path) -> Result<(), String> {
         file_hash(path).map_err(|error| format!("파일 해시를 계산할 수 없습니다: {error}"))?;
 
     conn.execute(
-        "INSERT INTO media (file_path, content_hash, file_type, taken_at, size_bytes, width, height, rating, comment, favorite, metadata_status, latitude, longitude, region_code, region_name, location_status)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, '', 0, 'ready', ?8, ?9, ?10, ?11, ?12)
+        "INSERT INTO media (file_path, content_hash, file_type, taken_at, size_bytes, width, height, rating, comment, favorite, metadata_status, latitude, longitude, region_code, region_name, district, location_status)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, '', 0, 'ready', ?8, ?9, ?10, ?11, ?12, ?13)
          ON CONFLICT(file_path) DO UPDATE SET
            file_type = excluded.file_type,
            content_hash = COALESCE(media.content_hash, excluded.content_hash),
@@ -778,6 +782,7 @@ fn register_file(conn: &Connection, path: &Path) -> Result<(), String> {
            longitude = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.longitude ELSE media.longitude END,
            region_code = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.region_code ELSE media.region_code END,
            region_name = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.region_name ELSE media.region_name END,
+           district = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.district ELSE media.district END,
            location_status = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.location_status ELSE media.location_status END
          ON CONFLICT(content_hash) DO NOTHING",
         params![file_path, content_hash, file_type, taken_at, metadata.len() as i64,
@@ -786,6 +791,7 @@ fn register_file(conn: &Connection, path: &Path) -> Result<(), String> {
             location.as_ref().and_then(|value| value.longitude),
             location.as_ref().and_then(|value| value.region_code.as_deref()),
             location.as_ref().and_then(|value| value.region_name.as_deref()),
+            location.as_ref().and_then(|value| value.district.as_deref()),
             location.as_ref().map_or("queued", |value| value.status)],
     )
     .map_err(|error| format!("파일을 등록할 수 없습니다: {error}"))?;
@@ -1015,7 +1021,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            list_diary, save_diary, assign_diary_album, delete_diary,
+            list_diary, save_diary, assign_diary_album, delete_diary, import_diary_photos,
             list_media,
             location_overview,
             analyze_locations,

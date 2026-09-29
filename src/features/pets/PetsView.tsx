@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, LoaderCircle, PawPrint, Pencil, Plus, Trash2, X } from 'lucide-react';
 import type { MediaItem } from '../../types/media';
 import { MediaVisual } from '../../components/MediaVisual';
+import { EmptyState } from '../../components/MediaVisual';
+import { ActionMenu } from '../../components/ActionMenu';
 import { useModalBehavior } from '../../hooks/useModalBehavior';
 import { useRowSelection } from '../../hooks/useRowSelection';
 import { isTauriRuntime } from '../../services/tauriMediaService';
@@ -42,23 +44,26 @@ export function PetsView({ items, onOpen, query = "" }: { items: MediaItem[]; qu
     if (!pet || busy || !window.confirm(`'${pet.name}' 등록을 삭제할까요? 원본 사진은 유지됩니다.`)) return;
     setBusy(true); setError('');
     try { await deletePet(pet.id); setPets(await loadPets()); setActive(null); setPage(0); }
-    catch { setError('등록을 삭제하지 못했습니다. 다시 시도해 주세요.'); }
+    catch { setError('반려동물 등록을 삭제하지 못했습니다. 사진과 등록 내용은 그대로 남아 있습니다. 다시 시도해 주세요.'); }
     finally { setBusy(false); }
   }
   return <section className="petsView">
     <div className="panelHeader">
       <h2>{pet?.name ?? '반려동물'}</h2>
       <div className="peopleActions">
-        {pet && <button className="toolbarIcon" title="반려동물 목록" onClick={() => { setActive(null); setPage(0); }}><ArrowLeft size={18} /></button>}
-        {pet && <button disabled={busy || !linked.length} onClick={() => setReviewing(true)}><ScanSearch size={18} />후보 찾기</button>}
-        {pet && <><button disabled={busy} onClick={() => setEditing(pet)}><Pencil size={18} />사진·이름 편집</button><button disabled={busy} onClick={() => void remove()}><Trash2 size={18} />등록 삭제</button></>}
+        {pet && <button onClick={() => { setActive(null); setPage(0); }}><ArrowLeft size={18} />반려동물 목록</button>}
+        {pet && <><button disabled={busy} onClick={() => setEditing(pet)}><Pencil size={18} />이름·사진 수정</button><ActionMenu label="반려동물 관리" triggerText="반려동물 관리" icon={<PawPrint size={16} />} disabled={busy} actions={[
+          { label: '비슷한 사진 찾기', icon: <ScanSearch size={16} />, disabled: !linked.length, onSelect: () => setReviewing(true) },
+          { label: '반려동물 등록 삭제', icon: <Trash2 size={16} />, danger: true, onSelect: () => void remove() },
+        ]} /></>}
         {!pet && <button className="primaryControl" disabled={loading || !desktop} onClick={() => setEditing({ id: 0, name: '', cover_media_id: null, media_ids: [] })}><Plus size={18} />반려동물 등록</button>}
       </div>
     </div>
     {!desktop && <p role="status">반려동물 등록은 데스크톱 앱에서 사용할 수 있습니다.</p>}
-    {loading && <p role="status"><LoaderCircle className="spinIcon" size={18} />불러오는 중</p>}
+    {loading && <p role="status"><LoaderCircle className="spinIcon" size={18} />반려동물 정보를 불러오는 중</p>}
     {error && <p role="alert">{error}</p>}
-    {!loading && !(pet ? linked.length : matchingPets.length) && <div className="emptyState"><PawPrint size={30} /><p>{pet ? '아직 연결한 사진이 없습니다.' : query ? '검색한 이름의 반려동물이 없습니다.' : '아직 등록한 반려동물이 없습니다.'}</p></div>}
+    {!pet && <div className="peopleSummary">등록된 반려동물 {pets.length}마리</div>}
+    {!loading && !(pet ? linked.length : matchingPets.length) && <EmptyState icon={<PawPrint size={30} />} title={pet ? '아직 연결한 사진이 없습니다.' : query ? '검색한 이름의 반려동물이 없습니다.' : '아직 등록한 반려동물이 없습니다.'} description={pet ? '이름·사진 수정에서 사진을 선택해 주세요.' : query ? '다른 이름으로 검색하거나 반려동물을 등록해 보세요.' : '함께 찍은 사진을 골라 반려동물별로 모아볼 수 있습니다.'} actionLabel={desktop && !query ? pet ? '사진 연결하기' : '반려동물 등록하기' : undefined} onAction={desktop && !query ? () => setEditing(pet ?? { id: 0, name: '', cover_media_id: null, media_ids: [] }) : undefined} actionIcon={<Plus size={18} />} />}
     <div className="petGrid">{pet ? linked.slice(currentPage * 24, (currentPage + 1) * 24).map((item) => <button key={item.id} className="petPhoto" aria-label="사진 상세보기" onClick={() => onOpen(item, linked)}><MediaVisual item={item} /><span>{item.takenAt ?? '날짜 없음'}</span></button>) : matchingPets.slice(currentPage * 24, (currentPage + 1) * 24).map((entry) => {
       const cover = covers.get(entry.id);
       return <button className="petPhoto" key={entry.id} onClick={() => { setActive(entry.id); setPage(0); }}>
@@ -91,7 +96,7 @@ function PetEditor({ pet, photos, onClose, onSaved }: { pet: Pet; photos: MediaI
     try {
       const id = await savePet(pet.id || null, name.trim(), selected, actualCover);
       await onSaved(id); onClose();
-    } catch { setError('저장하지 못했습니다. 다시 시도해 주세요.'); }
+    } catch { setError('반려동물 정보를 저장하지 못했습니다. 입력한 이름과 선택한 사진은 화면에 남아 있습니다. 다시 저장해 주세요.'); }
     finally { setBusy(false); }
   }
   return <div className="modalBackdrop"><section className="petEditor" role="dialog" aria-modal="true" aria-labelledby="petEditorTitle">

@@ -1,7 +1,7 @@
 /* A stable viewing area beside a scrollable information and comments panel. */
 .photoInspector .detailLayout { grid-template-columns: minmax(0, 1fr) 340px; grid-template-rows: minmax(0, 1fr); }
 .photoInspector .detailPhotoPane { padding: 16px 24px; grid-template-rows: auto minmax(0, 1fr) auto; gap: 16px; }
-.detailDownloadFeedback { flex-basis: 100%; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.detailDownloadFeedback { flex-basis: 100%; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .detailDownloadFeedback[role="alert"] { color: var(--danger); }
 .photoInspector .detailPhotoActions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
 .photoInspector .detailActionTitle { color: var(--muted); font-size: 13px; font-weight: 600; }
@@ -22,25 +22,25 @@
 .photoInspector .detailStage > .mediaPlayback { max-width: 100%; max-height: 100%; }
 .photoInspector .detailZoomControls { min-width: 0; display: flex; justify-content: center; align-items: center; gap: 10px; }
 .photoInspector .detailZoomControls input { min-width: 40px; width: min(160px, 18vw); accent-color: var(--primary); }
-.photoInspector .detailZoomControls output { width: 44px; flex-shrink: 0; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.photoInspector .detailZoomControls output { width: 44px; flex-shrink: 0; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 .photoInspector .detailZoomControls button { padding: 0 9px; }
 .photoInspector .detailSidebar { min-height: 0; overflow: auto; overscroll-behavior: contain; border-left: 1px solid var(--border); background: var(--surface); }
 .photoInspector .photoInformation { padding: 24px; }
 .photoInspector h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; font-size: 16px; font-weight: 650; }
 .photoInspector h2 svg { width: 19px; height: 19px; }
-.photoInspector .detailFileName { margin: 0 0 20px; color: var(--muted); font-size: 12px; font-weight: 400; line-height: 1.6; }
+.photoInspector .detailFileName { margin: 0 0 20px; color: var(--muted); font-size: 13px; font-weight: 400; line-height: 1.6; }
 .photoTitleForm { display: grid; gap: 8px; margin-bottom: 20px; }
-.photoTitleForm > label { color: var(--muted); font-size: 12px; }
+.photoTitleForm > label { color: var(--muted); font-size: 14px; }
 .photoTitleControls { display: flex; gap: 8px; min-width: 0; }
 .photoTitleControls input { flex: 1; min-width: 0; width: 100%; height: 38px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); font-size: 13px; }
-.photoTitleControls button { flex-shrink: 0; min-height: 38px; padding: 0 12px; border-radius: 6px; background: var(--primary); color: white; font-size: 12px; }
-.photoTitleForm > p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.photoTitleControls button { flex-shrink: 0; min-height: 42px; padding: 0 12px; border-radius: 6px; background: var(--primary); color: white; font-size: 14px; }
+.photoTitleForm > p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .photoTitleForm > .photoTitleError { color: var(--danger); }
 .photoInspector .detailRating { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
-.photoInspector .detailRating h3 { margin: 0; font-size: 12px; font-weight: 500; color: var(--muted); }
+.photoInspector .detailRating h3 { margin: 0; font-size: 14px; font-weight: 500; color: var(--muted); }
 .photoInspector .rating button { width: 32px; min-height: 32px; padding: 4px; border: 0; }
 .photoInspector .rating svg { width: 21px; height: 21px; }
-.photoInspector .photoMetadata { display: grid; gap: 12px; margin: 0; font-size: 12px; }
+.photoInspector .photoMetadata { display: grid; gap: 12px; margin: 0; font-size: 13px; }
 .photoInspector .photoMetadata > div { display: flex; justify-content: space-between; gap: 16px; }
 .photoInspector .photoMetadata dt { color: var(--muted); flex-shrink: 0; }
 .photoInspector .photoMetadata dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
@@ -53,9 +53,9 @@
 .photoInspector .commentAvatar { display: none; }
 .photoInspector .commentItem .commentItemHeading { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 4px 8px; }
 .photoInspector .commentItem .commentActions { width: 100%; margin: 4px 0; justify-content: flex-end; }
-.photoInspector .commentActions button { min-height: 28px; padding: 0 6px; border: 0; background: transparent; border-radius: 4px; font-size: 12px; }
+.photoInspector .commentActions button { min-height: 42px; padding: 0 6px; border: 0; background: transparent; border-radius: 4px; font-size: 14px; }
 .photoInspector .commentForm, .photoInspector .commentEditForm { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
-.photoInspector .commentForm label, .photoInspector .commentEditForm label { display: grid; gap: 6px; font-size: 12px; font-weight: 500; }
+.photoInspector .commentForm label, .photoInspector .commentEditForm label { display: grid; gap: 6px; font-size: 14px; font-weight: 500; }
 .photoInspector .commentForm input, .photoInspector .commentEditForm input { width: 100%; min-height: 38px; height: 38px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
 .photoInspector .commentForm textarea, .photoInspector .commentEditForm textarea { width: 100%; min-height: 96px; height: 96px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); resize: vertical; }
 .photoInspector .commentForm button { grid-column: auto; height: 38px; min-height: 38px; border-radius: 6px; font-size: 13px; }
@@ -69,17 +69,17 @@
   .photoInspector .detailLayout { display: block; overflow-y: auto; }
   .photoInspector .detailPhotoPane { height: max(380px, 58dvh); }
   .photoInspector .detailSidebar { overflow: visible; border-left: 0; border-top: 1px solid var(--border); }
-  .photoInspector .detailHeader .detailDateTitle { display: block; margin: 0 auto; font-size: 11px; }
+  .photoInspector .detailHeader .detailDateTitle { display: block; margin: 0 auto; font-size: 13px; }
   .photoInspector .detailHeader .detailBack { margin-right: 0; }
   .photoInspector .detailHeader .detailClose { min-width: 34px; }
   .photoInspector .detailPhotoActions { gap: 6px; }
   .photoInspector .detailActionTitle { display: none; }
   .photoInspector .detailActionButtons { justify-content: flex-start; margin-left: 0; gap: 6px; }
-  .photoInspector .detailPhotoActions button { padding: 0 8px; font-size: 12px; }
+  .photoInspector .detailPhotoActions button { padding: 0 8px; font-size: 13px; }
   .photoInspector .detailImageViewport { inset: 10px 44px; }
   .photoInspector .photoNavButton.prev { left: 4px; }
   .photoInspector .photoNavButton.next { right: 4px; }
   .photoInspector .detailZoomControls { gap: 6px; }
   .photoInspector .detailZoomControls input { flex: 1; }
-  .photoInspector .detailZoomControls button { font-size: 11px; padding-inline: 6px; }
+  .photoInspector .detailZoomControls button { font-size: 13px; padding-inline: 6px; }
 }

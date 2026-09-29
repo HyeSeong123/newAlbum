@@ -5,7 +5,7 @@ export function ActionMenu({ label, icon, triggerText, disabled = false, actions
   icon: ReactNode;
   triggerText?: string;
   disabled?: boolean;
-  actions: { label: string; icon?: ReactNode; disabled?: boolean; onSelect: () => void }[];
+  actions: { label: string; icon?: ReactNode; disabled?: boolean; danger?: boolean; onSelect: () => void }[];
 }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -28,7 +28,7 @@ export function ActionMenu({ label, icon, triggerText, disabled = false, actions
   }}>
     <button ref={trigger} type="button" className="actionMenuTrigger" aria-label={label} title={label} aria-expanded={open} disabled={disabled} onClick={() => setOpen(!open)}>{triggerText && <span>{triggerText}</span>}{icon}</button>
     {open && <div className="actionMenuPanel" role="group" aria-label={label}>
-      {actions.map((action) => <button type="button" key={action.label} disabled={action.disabled} onClick={() => { setOpen(false); trigger.current?.focus(); action.onSelect(); }}>{action.icon}{action.label}</button>)}
+      {actions.map((action) => <button type="button" key={action.label} className={action.danger ? "dangerAction" : undefined} disabled={action.disabled} onClick={() => { setOpen(false); trigger.current?.focus(); action.onSelect(); }}>{action.icon}{action.label}</button>)}
     </div>}
   </div>;
 }

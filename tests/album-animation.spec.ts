@@ -32,7 +32,8 @@ test.beforeEach(async ({ page }) => {
   await page.locator('.albumBookBase, .albumPagePhoto img').evaluateAll((images: HTMLImageElement[]) => Promise.all(images.map(image => image.decode())));
 });
 
-test('both faces remain attached to the binding and swap slowly without duplicate interactive photos', async ({ page }) => {
+test('both faces remain attached to the binding and swap slowly without duplicate interactive photos', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'mobile', 'The stacked mobile pages use the pager and omit the turning sheet.');
   await page.clock.install();
   await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
   const spread = page.locator('.albumSpread');
@@ -125,12 +126,15 @@ test('both faces remain attached to the binding and swap slowly without duplicat
   }
 });
 
-test('scrubbing, list view and closing cancel the slower turn; reduced motion stays immediate', async ({ page }) => {
+test('scrubbing, list view and closing cancel the slower turn; reduced motion stays immediate', async ({ page }, testInfo) => {
   await page.clock.install();
   await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
   const reader = page.getByRole('dialog', { name: '앨범 전체창' });
   const label = reader.locator('.albumPagerActions p');
   await reader.getByTitle('다음 책장', { exact: true }).click();
+  if (testInfo.project.name === 'mobile') {
+    for (const entry of await reader.locator('.albumPhotoEntry').all()) await expect(entry).toHaveCSS('opacity', '1');
+  }
   await reader.getByLabel('앨범 책장 이동').fill('3');
   await page.clock.runFor(ALBUM_TURN_TIMING.duration + 100);
   await expect(label).toHaveText('3 / 3 펼침');

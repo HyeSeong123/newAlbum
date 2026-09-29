@@ -21,7 +21,17 @@ export function browserRegionPage(items: MediaItem[], code: string, offset: numb
   const filtered = scoped.filter(item => (filters.fileType === "all" || item.fileType === filters.fileType)
     && (!filters.year || item.takenAt?.slice(0,4) === filters.year)
     && (!filters.district || (item.district || "__unset__") === filters.district));
-  return { items: orderRegionMedia(filtered, filters.oldest).slice(offset, offset + 48), total: filtered.length, years };
+  const byPlace = orderRegionMedia(filtered, filters.oldest).sort((a, b) => {
+    const first = placeOrderKey(a, code), second = placeOrderKey(b, code);
+    return first < second ? -1 : first > second ? 1 : 0;
+  });
+  return { items: byPlace.slice(offset, offset + 48), total: filtered.length, years };
+}
+
+function placeOrderKey(item: Pick<MediaItem, "district" | "country" | "city">, regionCode: string): string {
+  if (regionCode === "unclassified") return "";
+  if (regionCode === "overseas") return `${item.country?.trim() || "\uffff"}\0${item.city?.trim() || "\uffff"}`;
+  return item.district?.trim() || "\uffff";
 }
 
 // Browser preview has no DB aggregation. One pass replaces a scan per province.
@@ -50,4 +60,17 @@ export function groupByMonth<T extends { takenAt: string | null }>(items: T[]): 
     else groups.set(month, [item]);
   }
   return [...groups].map(([month, entries]) => ({ month, items: entries }));
+}
+
+export function groupByDistrict<T extends { district?: string; country?: string; city?: string }>(items: T[], regionCode: string): Array<{ place: string; items: T[] }> {
+  const groups = new Map<string, T[]>();
+  for (const item of items) {
+    const place = regionCode === "unclassified" ? "" : regionCode === "overseas"
+      ? [item.country, item.city].filter(Boolean).join(" · ") || "도시 미지정"
+      : item.district?.trim().replace(/시(?=[^ ]+구$)/, "시 ") || "시·군·구 미확인";
+    const entries = groups.get(place);
+    if (entries) entries.push(item);
+    else groups.set(place, [item]);
+  }
+  return [...groups].map(([place, entries]) => ({ place, items: entries }));
 }

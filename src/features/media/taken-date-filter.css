@@ -1,10 +1,11 @@
 .takenDateFilter { margin: 0 0 18px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
 .takenDateControls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.takenDateTitle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
-.takenDateControls label { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 13px; }
-.takenDateControls input { box-sizing: border-box; min-width: 0; width: 145px; min-height: 34px; padding: 5px 7px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); font: inherit; }
+.takenDateTitle { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.takenDateControls label { display: flex; flex: 0 0 auto; align-items: center; gap: 7px; color: var(--muted); font-size: 14px; white-space: nowrap; }
+.takenDateControls label > span { flex-shrink: 0; }
+.takenDateControls input { box-sizing: border-box; flex-shrink: 0; min-width: 0; width: max(145px, calc(13ch + 42px)); min-height: 34px; padding: 5px 7px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); font: inherit; }
 .takenDateControls input:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-.takenDateHint, .takenDateError { margin: 8px 0 0; font-size: 11px; line-height: 1.6; color: var(--muted); }
+.takenDateHint, .takenDateError { margin: 8px 0 0; font-size: 13px; line-height: 1.6; color: var(--muted); }
 .takenDateError { color: #9b4237; }
 @media (max-width: 760px) {
   .takenDateControls { gap: 8px; }
@@ -12,4 +13,6 @@
   .takenDateControls label { display: grid; flex: 1; gap: 4px; min-width: 0; }
   .takenDateControls input { width: 100%; }
   .takenDateSeparator { padding-top: 18px; }
+  .app.largeLayout .takenDateControls label { flex: 1 1 100%; }
+  .app.largeLayout .takenDateSeparator { display: none; }
 }

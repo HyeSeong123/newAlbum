@@ -14,7 +14,7 @@ export function PhotoView({
   mode, setMode, items, allItems, activeMonth, onMonthChange, selected, onOpen,
   selectionMode, selectedIds, onToggleSelection, onSelectAll, onToggleSelectionMode,
   selectedCount, commentCounts, onCreateAlbum, onDeleteSelected, albums,
-  onShowAlbums, onNewAlbum, onViewMedia, onAssignRegion, scopeKey, query, onQueryChange,
+  onShowAlbums, onNewAlbum, onImport, onViewMedia, onAssignRegion, scopeKey, query, onQueryChange,
 }: {
   mode: PhotoMode;
   setMode: (mode: PhotoMode) => void;
@@ -36,6 +36,7 @@ export function PhotoView({
   albums: SavedAlbum[];
   onShowAlbums: () => void;
   onNewAlbum: () => void;
+  onImport: () => void;
   onViewMedia: (item: MediaItem, collection?: MediaItem[]) => void;
   onAssignRegion: (ids: string[], code: string, district?: string, country?: string, city?: string) => Promise<void>;
   scopeKey: string;
@@ -71,8 +72,9 @@ export function PhotoView({
       onToggleSelectionMode={onToggleSelectionMode} selectedCount={selectedCount}
       commentCounts={commentCounts} onCreateAlbum={onCreateAlbum} onDeleteSelected={onDeleteSelected}
       onAssignRegion={onAssignRegion}
+      onImport={allItems.length ? undefined : onImport}
       query={query} onQueryChange={onQueryChange}
-      scopeKey={scopeKey} emptyText={allItems.length ? "조건에 맞는 기록이 없습니다. 다른 월을 선택하거나 검색을 바꿔보세요." : "가져오기로 첫 사진과 영상을 담아보세요."}
+      scopeKey={scopeKey} emptyText={allItems.length ? "조건에 맞는 기록이 없습니다. 다른 월을 선택하거나 검색을 바꿔보세요." : "아직 사진 기록이 없습니다."}
       onDateSearch={() => onMonthChange("all")}
     />}
     {mode === "grid" && <aside className="quickAlbums" aria-label="내 앨범 미리보기">

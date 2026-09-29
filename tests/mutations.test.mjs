@@ -99,11 +99,11 @@ test('album pairs retain the latest captions without changing the source objects
 });
 
 test('a stale import response cannot undo a manual region saved while importing', () => {
-  const edited = { id:'1', locationSource:'manual', locationStatus:'ready', regionCode:'KR-49', regionName:'제주특별자치도', latitude:37.5, longitude:127 };
-  const response = { ...edited, locationSource:'gps', regionCode:'KR-11', regionName:'서울특별시', width:600 };
+  const edited = { id:'1', locationSource:'manual', locationStatus:'ready', regionCode:'KR-49', regionName:'제주특별자치도', district:'제주시', latitude:37.5, longitude:127 };
+  const response = { ...edited, locationSource:'gps', regionCode:'KR-11', regionName:'서울특별시', district:'중구', width:600 };
   const [merged] = retainMediaEdits([response], [edited]);
   assert.equal(merged.regionCode,'KR-49'); assert.equal(merged.locationSource,'manual');
-  assert.equal(merged.latitude,37.5); assert.equal(merged.width,600); assert.equal(response.regionCode,'KR-11');
+  assert.equal(merged.district,'제주시'); assert.equal(merged.latitude,37.5); assert.equal(merged.width,600); assert.equal(response.regionCode,'KR-11');
 });
 
 test('comment replacement removes empty buckets and preserves unrelated comments', () => {

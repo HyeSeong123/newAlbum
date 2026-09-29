@@ -20,7 +20,7 @@
   font-family: "SUIT", "Segoe UI", system-ui, sans-serif;
   font-size: 24px;
   font-weight: 750;
-  letter-spacing: -.035em;
+  letter-spacing: 0;
   line-height: 1.2;
   white-space: nowrap;
 }

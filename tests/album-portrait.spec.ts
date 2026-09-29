@@ -107,7 +107,7 @@ test('portrait grids keep four uncropped photos per leaf through turns, detail a
   for (const photo of await photos.all()) await expectUncroppedPhoto(photo);
 });
 
-test('mixed orientations group four portraits and two landscapes without losing photos or page navigation', async ({ page }) => {
+test('mixed orientations group four portraits and two landscapes without losing photos or page navigation', async ({ page }, testInfo) => {
   await page.route('**/orientation-*.jpg', (route) => {
     const id = Number(route.request().url().match(/orientation-(\d+)/)![1]);
     if ([1, 5, 6, 7].includes(id)) {
@@ -181,7 +181,8 @@ test('mixed orientations group four portraits and two landscapes without losing 
   await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
   await page.getByTitle('다음 책장', { exact: true }).click();
   await expect(page.locator('.albumSpread')).toHaveAttribute('data-turn-phase', 'departing');
-  await expect(right.locator('.albumPhotoEntry').first()).toHaveCSS('opacity', '0');
+  await expect(right.locator('.albumPhotoEntry').first()).toHaveCSS('opacity', testInfo.project.name === 'mobile' ? '1' : '0');
+  if (testInfo.project.name === 'mobile') await expect(page.locator('.albumTurnLayer')).toHaveCSS('display', 'none');
   await page.clock.runFor(ALBUM_TURN_TIMING.swap);
   await expect(page.locator('.albumSpread')).toHaveAttribute('data-turn-phase', 'arriving');
   expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-5.jpg 상세보기', 'orientation-6.jpg 상세보기', 'orientation-7.jpg 상세보기']);
@@ -339,5 +340,52 @@ test('empty, single and extreme-ratio albums fit both book leaves', async ({ pag
     }
     if (!count) await expect(reader.getByText('앨범에 담긴 기록이 없습니다.')).toBeVisible();
     await reader.getByTitle('닫기', { exact: true }).click();
+  }
+});
+
+test('phone book pages keep one, two and four photos with readable dates and navigation', async ({ page }) => {
+  await page.route('**/phone-page-*.jpg', route => route.fulfill({
+    path: 'node_modules/@vladmandic/face-api/demo/sample1.jpg', contentType: 'image/jpeg',
+  }));
+  await page.addInitScript(() => {
+    const media = Array.from({ length: 8 }, (_, index) => ({
+      id: index + 1, file_path: `C:/phone-page-${index + 1}.jpg`, file_type: 'image',
+      taken_at: '2026-09-21', width: 600, height: 900, size_bytes: 1000,
+      rating: 0, comment: '', title: `오래 기억할 장면 ${index + 1}`, favorite: false,
+    }));
+    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
+      convertFileSrc: (path: string) => '/' + path.split('/').pop(),
+      invoke: async (command: string) => command === 'list_media' ? media : command === 'list_albums' ?
+        [1, 2, 4, 8].map(count => ({ id: count, title: `${count}장 앨범`, description: '', created_at: '2026-09-21', items: media.slice(0, count) })) : [],
+    } });
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: '내 앨범', exact: true }).click();
+  const reader = page.getByRole('dialog', { name: '앨범 전체창' });
+  for (const size of [{ width: 320, height: 740 }, { width: 393, height: 851 }]) {
+    await page.setViewportSize(size);
+    for (const count of [1, 2, 4, 8]) {
+      await page.getByRole('button', { name: `${count}장 앨범 앨범 열기` }).click();
+      const pages = reader.locator('.albumPaper');
+      const photos = reader.locator('.albumPagePhoto');
+      await expect(photos).toHaveCount(count);
+      const [first, second] = await pages.evaluateAll(elements => elements.map(element => element.getBoundingClientRect().toJSON()));
+      expect(first.y + first.height).toBeLessThan(second.y);
+      expect(first.x).toBeCloseTo(second.x, 0);
+      for (const photo of await photos.all()) {
+        const box = (await photo.boundingBox())!;
+        expect(box.height).toBeGreaterThan(35);
+      }
+      const dates = await reader.locator('.albumPageCaption time').evaluateAll(elements => elements.map(element => ({ text: element.textContent, width: element.clientWidth, scroll: element.scrollWidth })));
+      expect(dates).toHaveLength(count);
+      expect(dates.every(date => date.text === '2026.09.21' && date.scroll <= date.width)).toBe(true);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+      if (count === 8) {
+        await reader.locator('.albumPagePhoto').first().click();
+        await expect(page.getByRole('dialog', { name: '사진 상세' })).toBeVisible();
+        await page.keyboard.press('Escape');
+      }
+      await reader.getByTitle('닫기').click();
+    }
   }
 });

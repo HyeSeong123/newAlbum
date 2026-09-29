@@ -9,6 +9,7 @@ import "./controls.css";
 import "./features/media/photo-detail.css";
 import "./components/media-visual.css";
 import "./brand.css";
+import "./features/albums/album-library.css";
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

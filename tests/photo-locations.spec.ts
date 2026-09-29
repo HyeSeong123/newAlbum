@@ -51,11 +51,11 @@ test('memory map analyzes GPS and bulk region edits preserve coordinates', async
   await page.getByRole('button', { name: '추억 지도', exact: true }).click();
   await expect(page.locator('.memoryMapRegion')).toHaveCount(16);
   await expect(page.locator('.memoryMapAnalysis')).toContainText('1 / 2');
-  await expect(page.getByRole('button', { name: '지역 자동 조회', exact: true })).toBeInViewport();
+  await expect(page.getByRole('button', { name: '위치 정보 분석하기', exact: true })).toBeInViewport();
   await page.screenshot({ path: `test-results/photo-location-map-${test.info().project.name}.png` });
-  await page.getByRole('button', { name: '지역 자동 조회', exact: true }).click();
+  await page.getByRole('button', { name: '위치 정보 분석하기', exact: true }).click();
   await expect(page.locator('.memoryMapAnalysis')).toContainText('2 / 2');
-  await expect(page.getByRole('button', { name: '지역 자동 조회', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '위치 정보 분석하기', exact: true })).toBeDisabled();
   await page.locator('.memoryMapPlaceList button').filter({ hasText: '제주' }).click();
   await expect(page.locator('.memoryMapGallery')).toContainText('1장의 사진');
   await page.getByRole('button', { name: '사진 기록', exact: true }).click();

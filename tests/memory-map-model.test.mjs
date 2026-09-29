@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { modelUrl } from './model-loader.mjs';
-const { browserLocationOverview, groupByMonth, browserRegionPage, orderRegionMedia } = await import(await modelUrl('features/map/memoryMapModel.ts'));
+const { browserLocationOverview, groupByMonth, groupByDistrict, browserRegionPage, orderRegionMedia } = await import(await modelUrl('features/map/memoryMapModel.ts'));
 
 test('browser counts photos and videos in one pass, excluding audio and retaining empty provinces', () => {
   const names = { 'KR-11': '서울특별시', 'KR-49': '제주특별자치도', 'KR-30': '대전광역시' };
@@ -57,6 +57,32 @@ test('month grouping retains order and item identity without modifying the input
   assert.deepEqual(groups[0].items, [items[0], items[2]]);
   assert.strictEqual(groups[0].items[1], items[2]);
   assert.deepEqual(groupByMonth([]), []);
+});
+
+test('district grouping uses the stored location, without grouping by date', () => {
+  const items = Object.freeze([
+    { district: '담양군', takenAt: '2026-01-01' },
+    { district: '옥천군', takenAt: '2026-01-01' },
+    { district: '담양군', takenAt: '2025-04-01' },
+    { district: '', takenAt: null },
+  ].map(Object.freeze));
+  const groups = groupByDistrict(items, 'KR-46');
+  assert.deepEqual(groups.map(group => group.place), ['담양군', '옥천군', '시·군·구 미확인']);
+  assert.deepEqual(groups[0].items, [items[0], items[2]]);
+  assert.strictEqual(groups[0].items[1], items[2]);
+  assert.deepEqual(groupByDistrict([{ country: '일본', city: '교토' }], 'overseas')[0].place, '일본 · 교토');
+  assert.equal(groupByDistrict(items, 'unclassified')[0].place, '');
+});
+
+test('region pages keep districts together before sorting photos by date', () => {
+  const items = [
+    { id: '1', fileType: 'image', regionCode: 'KR-46', district: '담양군', takenAt: '2024-01-01' },
+    { id: '2', fileType: 'image', regionCode: 'KR-46', district: '화순군', takenAt: '2026-01-01' },
+    { id: '3', fileType: 'image', regionCode: 'KR-46', district: '담양군', takenAt: '2025-01-01' },
+    { id: '4', fileType: 'image', regionCode: 'KR-46', takenAt: '2027-01-01' },
+  ];
+  const page = browserRegionPage(items, 'KR-46', 0, { fileType: 'all', year: '', oldest: false, district: '' });
+  assert.deepEqual(page.items.map(item => item.id), ['3', '1', '2', '4']);
 });
 
 test('overseas records stay out of the unclassified bucket and districts filter locally', () => {

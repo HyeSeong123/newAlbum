@@ -38,7 +38,8 @@ test('unknown directory shows only unnamed faces and retains person navigation',
   await page.goto('/');
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '아버님 1장', exact: true }).click();
-  await page.getByRole('button', { name: '얼굴 선택하기', exact: true }).click();
+  await page.getByRole('button', { name: '사람 관리', exact: true }).click();
+  await page.getByRole('button', { name: '얼굴 선택·분리·합치기' }).click();
   await page.getByRole('button', { name: '얼굴 선택', exact: true }).click();
   const directory = page.getByRole('complementary', { name: '이름을 지정한 사람' });
   const unknown = directory.locator('.unknownDirectory');
@@ -60,6 +61,7 @@ test('unknown directory shows only unnamed faces and retains person navigation',
   await expect(page.getByRole('dialog', { name: '사진 상세', exact: true })).toBeVisible();
   await page.getByRole('dialog', { name: '사진 상세', exact: true }).getByTitle('닫기', { exact: true }).click();
 
+  await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
   await page.getByRole('button', { name: '얼굴 선택하기', exact: true }).click();
   await page.getByRole('button', { name: '얼굴 선택', exact: true }).first().click();
   await page.getByLabel('옮길 인물').selectOption('1');
@@ -73,6 +75,7 @@ test('unknown directory shows only unnamed faces and retains person navigation',
   await expect(page.locator('.personPhoto')).toHaveCount(24);
   await expect(page.locator('.personPhoto').first()).toHaveAttribute('data-selection-id', '1');
 
+  await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
   await page.getByRole('button', { name: '얼굴 선택하기', exact: true }).click();
   for (const face of await page.getByRole('button', { name: '얼굴 선택', exact: true }).all()) await face.click();
   await page.getByRole('button', { name: '다음', exact: true }).click();

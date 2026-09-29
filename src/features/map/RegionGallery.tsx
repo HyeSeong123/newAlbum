@@ -6,7 +6,7 @@ import { useMediaSelection } from "../media/useMediaSelection";
 import { isTauriRuntime, loadRegionPage, type RegionFilters, type RegionPage } from "../../services/tauriMediaService";
 import { RegionEditor } from "./RegionEditor";
 import { REGION_NAMES } from "./regions";
-import { browserRegionPage, groupByMonth, orderRegionMedia, REGION_ALBUM_LIMIT } from "./memoryMapModel";
+import { browserRegionPage, groupByDistrict, orderRegionMedia, REGION_ALBUM_LIMIT } from "./memoryMapModel";
 
 export function RegionGallery({ code, items, revision, focusVersion, summary, onOpen, onClose, onAssignRegion, onCreateAlbum }: {
   code: string; items: MediaItem[]; revision: number; focusVersion: number; summary: string;
@@ -53,7 +53,7 @@ export function RegionGallery({ code, items, revision, focusVersion, summary, on
     if (selected.length) onCreateAlbum(selected);
   }
   const pages = Math.max(1, Math.ceil(result.total / 48));
-  const groups = useMemo(() => groupByMonth(result.items), [result.items]);
+  const groups = useMemo(() => groupByDistrict(result.items, code), [result.items, code]);
   const pageIds = result.items.map(item => item.id);
   const allPageSelected = pageIds.length > 0 && pageIds.every(id => selection.ids.has(id));
   const districts = useMemo(() => [...new Set(items.filter(item => item.regionCode === code).map(item => item.district || "__unset__"))].sort((a,b) => a.localeCompare(b,"ko")), [items,code]);
@@ -85,9 +85,9 @@ export function RegionGallery({ code, items, revision, focusVersion, summary, on
       }} /></>}
     {notice && <p role="status">{notice}</p>}{error && <div className="memoryMapAlert" role="alert">{error}<button onClick={() => setRefresh(value => value + 1)}>사진 다시 불러오기</button></div>}
     {!loading && !error && <p aria-live="polite">필터 결과 {result.total}개{result.total > 0 && ` · ${page * 48 + 1}–${page * 48 + result.items.length}번째 기록`}</p>}
-    {loading ? <p role="status">사진을 불러오는 중이에요.</p> : !error && (result.items.length ? groups.map(group => <div className="memoryMapMonth" key={group.month}>
-      <h4>{/^\d{4}-\d{2}$/.test(group.month) ? `${group.month.slice(0,4)}년 ${Number(group.month.slice(5))}월` : group.month}</h4>
-      <RecordMediaGrid items={group.items} onOpen={item => onOpen(item, result.items)} selectedIds={selection.ids} onToggle={selection.enabled ? selection.toggle : undefined} />
+    {loading ? <p role="status">사진을 불러오는 중이에요.</p> : !error && (result.items.length ? groups.map(group => <div className="memoryMapPlaceGroup" key={group.place}>
+      {group.place && <h4>{group.place}</h4>}
+      <RecordMediaGrid items={group.items} onOpen={item => onOpen(item, result.items)} selectedIds={selection.ids} onToggle={selection.enabled ? selection.toggle : undefined} showLocationStatus={code === "unclassified"} />
     </div>) : !error && <EmptyState text="조건에 맞는 사진과 영상이 아직 없어요." />)}
     {!error && pages > 1 && <nav className="memoryMapPager" aria-label="지역 사진 페이지"><button disabled={loading || page === 0} onClick={() => setPage(page - 1)}>이전</button>
       <span>{page + 1} / {pages}</span><button disabled={loading || page >= pages - 1} onClick={() => setPage(page + 1)}>다음</button></nav>}

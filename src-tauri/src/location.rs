@@ -1,4 +1,4 @@
-//! Offline EXIF/track coordinates and province lookup. Original files are only read.
+//! Offline EXIF/track coordinates and province/district lookup. Original files are only read.
 use nom_exif::{read_exif, read_track};
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
@@ -10,6 +10,7 @@ pub struct LocationResult {
     pub longitude: Option<f64>,
     pub region_code: Option<String>,
     pub region_name: Option<String>,
+    pub district: Option<String>,
     pub status: &'static str,
 }
 
@@ -20,6 +21,7 @@ impl LocationResult {
             longitude: None,
             region_code: None,
             region_name: None,
+            district: None,
             status: "no-gps",
         }
     }
@@ -46,6 +48,22 @@ struct Properties {
     shape_iso: String,
 }
 #[derive(Deserialize)]
+struct DistrictProperties {
+    #[serde(rename = "sidonm")]
+    province: String,
+    #[serde(rename = "sggnm")]
+    name: String,
+}
+#[derive(Deserialize)]
+struct DistrictCollection {
+    features: Vec<DistrictFeature>,
+}
+#[derive(Deserialize)]
+struct DistrictFeature {
+    properties: DistrictProperties,
+    geometry: Geometry,
+}
+#[derive(Deserialize)]
 struct Geometry {
     #[serde(rename = "type")]
     kind: String,
@@ -56,6 +74,13 @@ struct RegionBoundary {
     code: String,
     name: &'static str,
     polygons: Vec<Vec<Vec<[f64; 2]>>>,
+}
+struct DistrictBoundary {
+    region_code: &'static str,
+    region_name: &'static str,
+    name: String,
+    polygons: Vec<Vec<Vec<[f64; 2]>>>,
+    bounds: [f64; 4],
 }
 
 pub const REGIONS: [(&str, &str); 17] = [
@@ -125,6 +150,36 @@ fn boundaries() -> &'static [RegionBoundary] {
     })
 }
 
+fn polygons(geometry: Geometry) -> Vec<Vec<Vec<[f64; 2]>>> {
+    if geometry.kind == "Polygon" {
+        vec![serde_json::from_value(geometry.coordinates).expect("valid district polygon rings")]
+    } else {
+        assert_eq!(geometry.kind, "MultiPolygon");
+        serde_json::from_value(geometry.coordinates).expect("valid district multipolygon rings")
+    }
+}
+
+fn district_boundaries() -> &'static [DistrictBoundary] {
+    static BOUNDARIES: OnceLock<Vec<DistrictBoundary>> = OnceLock::new();
+    BOUNDARIES.get_or_init(|| {
+        let data: DistrictCollection = serde_json::from_str(include_str!("../../data/korea-sgg.geojson"))
+            .expect("bundled Korean district GeoJSON must be valid");
+        assert_eq!(data.features.len(), 256, "all bundled districts must be present");
+        data.features.into_iter().map(|feature| {
+            let &(region_code, region_name) = REGIONS.iter()
+                .find(|(_, name)| *name == feature.properties.province)
+                .expect("unknown province in district map");
+            let polygons = polygons(feature.geometry);
+            let mut bounds = [f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
+            for point in polygons.iter().flat_map(|polygon| polygon.iter().flat_map(|ring| ring.iter())) {
+                bounds[0] = bounds[0].min(point[0]); bounds[1] = bounds[1].min(point[1]);
+                bounds[2] = bounds[2].max(point[0]); bounds[3] = bounds[3].max(point[1]);
+            }
+            DistrictBoundary { region_code, region_name, name: feature.properties.name, polygons, bounds }
+        }).collect()
+    })
+}
+
 fn ring_contains(ring: &[[f64; 2]], longitude: f64, latitude: f64) -> bool {
     if ring.len() < 3 {
         return false;
@@ -184,6 +239,19 @@ pub fn resolve_region(latitude: f64, longitude: f64) -> Option<(&'static str, &'
     None
 }
 
+fn resolve_district(latitude: f64, longitude: f64) -> Option<&'static DistrictBoundary> {
+    if !latitude.is_finite() || !longitude.is_finite()
+        || !(-90.0..=90.0).contains(&latitude) || !(-180.0..=180.0).contains(&longitude) { return None; }
+    district_boundaries().iter().find(|district| {
+        longitude >= district.bounds[0] && longitude <= district.bounds[2]
+            && latitude >= district.bounds[1] && latitude <= district.bounds[3]
+            && district.polygons.iter().any(|rings| {
+                rings.first().is_some_and(|outer| ring_contains(outer, longitude, latitude))
+                    && !rings.iter().skip(1).any(|hole| ring_contains(hole, longitude, latitude))
+            })
+    })
+}
+
 fn from_coordinates(latitude: f64, longitude: f64) -> LocationResult {
     if !latitude.is_finite()
         || !longitude.is_finite()
@@ -192,12 +260,15 @@ fn from_coordinates(latitude: f64, longitude: f64) -> LocationResult {
     {
         return LocationResult::failed();
     }
-    let region = resolve_region(latitude, longitude);
+    let district = resolve_district(latitude, longitude);
+    let region = district.map(|value| (value.region_code, value.region_name))
+        .or_else(|| resolve_region(latitude, longitude));
     LocationResult {
         latitude: Some(latitude),
         longitude: Some(longitude),
         region_code: region.map(|value| value.0.to_owned()),
         region_name: region.map(|value| value.1.to_owned()),
+        district: district.map(|value| value.name.clone()),
         status: if region.is_some() {
             "ready"
         } else {
@@ -273,8 +344,8 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
 
 #[cfg(test)]
 pub fn save(conn: &Connection, id: i64, result: &LocationResult) -> Result<(), String> {
-    conn.execute("UPDATE media SET latitude=?1, longitude=?2, region_code=?3, region_name=?4, location_status=?5 WHERE id=?6",
-        params![result.latitude, result.longitude, result.region_code, result.region_name, result.status, id])
+    conn.execute("UPDATE media SET latitude=?1, longitude=?2, region_code=?3, region_name=?4, district=?5, location_status=?6 WHERE id=?7",
+        params![result.latitude, result.longitude, result.region_code, result.region_name, result.district, result.status, id])
         .map_err(|error| format!("위치 정보 저장 실패: {error}"))?;
     Ok(())
 }
@@ -306,17 +377,38 @@ pub fn analyze_batch(conn: &Connection, batch_size: i64) -> Result<Overview, Str
         let tx = conn.unchecked_transaction().map_err(|error| error.to_string())?;
         {
             let mut update = tx.prepare("UPDATE media SET latitude=?1, longitude=?2, region_code=?3,
-                region_name=?4, location_status=?5 WHERE id=?6 AND location_status='queued' AND location_source!='manual'")
+                region_name=?4, district=?5, location_status=?6 WHERE id=?7 AND location_status='queued' AND location_source!='manual'")
                 .map_err(|error| error.to_string())?;
             for (id, result) in results {
                 // A concurrent import/analysis may already have completed this row.
                 update.execute(params![result.latitude, result.longitude, result.region_code,
-                    result.region_name, result.status, id]).map_err(|error| error.to_string())?;
+                    result.region_name, result.district, result.status, id]).map_err(|error| error.to_string())?;
             }
         }
         tx.commit().map_err(|error| error.to_string())?;
     }
     overview(conn)
+}
+
+// Fill already analyzed GPS records from stored coordinates without reading source files.
+// Manually assigned regions and districts always take precedence.
+pub fn backfill_districts(conn: &Connection) -> Result<(), String> {
+    let mut statement = conn.prepare("SELECT id, latitude, longitude, region_code FROM media
+        WHERE location_source!='manual' AND location_status='ready' AND COALESCE(district,'')=''
+        AND latitude IS NOT NULL AND longitude IS NOT NULL AND region_code IS NOT NULL")
+        .map_err(|error| error.to_string())?;
+    let candidates = statement.query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, f64>(1)?,
+        row.get::<_, f64>(2)?, row.get::<_, String>(3)?)))
+        .map_err(|error| error.to_string())?.collect::<Result<Vec<_>, _>>().map_err(|error| error.to_string())?;
+    drop(statement);
+    let mut update = conn.prepare("UPDATE media SET district=?1 WHERE id=?2 AND location_source!='manual' AND COALESCE(district,'')=''")
+        .map_err(|error| error.to_string())?;
+    for (id, latitude, longitude, code) in candidates {
+        if let Some(district) = resolve_district(latitude, longitude).filter(|value| value.region_code == code) {
+            update.execute(params![district.name.as_str(), id]).map_err(|error| error.to_string())?;
+        }
+    }
+    Ok(())
 }
 
 pub fn queue_failed(conn: &Connection) -> Result<Overview, String> {
@@ -389,8 +481,13 @@ pub fn region_page(conn: &Connection, code: &str, offset: i64, kind: &str, year:
         rows.collect::<Result<Vec<String>,_>>().map_err(|e| e.to_string())?
     };
     let direction = if oldest { "ASC" } else { "DESC" };
+    let location_order = match code {
+        "unclassified" => "''",
+        "overseas" => "COALESCE(NULLIF(TRIM(country),''),char(65535)), COALESCE(NULLIF(TRIM(city),''),char(65535))",
+        _ => "COALESCE(NULLIF(TRIM(district),''),char(65535))",
+    };
     let items = {
-        let mut stmt = tx.prepare(&format!("SELECT {} FROM media WHERE {predicate} ORDER BY taken_at {direction} NULLS LAST, id {direction} LIMIT 48 OFFSET ?6", super::MEDIA_COLUMNS)).map_err(|e| e.to_string())?;
+        let mut stmt = tx.prepare(&format!("SELECT {} FROM media WHERE {predicate} ORDER BY {location_order}, taken_at {direction} NULLS LAST, id {direction} LIMIT 48 OFFSET ?6", super::MEDIA_COLUMNS)).map_err(|e| e.to_string())?;
         let rows = stmt.query_map(params![code, kind, year, next_year.to_string(), district, offset.max(0)], super::media_from_row).map_err(|e| e.to_string())?;
         rows.collect::<Result<Vec<_>,_>>().map_err(|e| e.to_string())?
     };
@@ -460,6 +557,38 @@ mod tests {
         fs,
         time::{SystemTime, UNIX_EPOCH},
     };
+
+    #[test]
+    fn gps_identifies_damyang_and_okcheon_without_changing_originals() {
+        for (latitude, longitude, region, district) in [
+            (35.32, 126.98, "KR-46", "담양군"),
+            (36.30, 127.57, "KR-43", "옥천군"),
+            (37.5665, 126.978, "KR-11", "중구"),
+        ] {
+            let result = from_coordinates(latitude, longitude);
+            assert_eq!(result.region_code.as_deref(), Some(region));
+            assert_eq!(result.district.as_deref(), Some(district));
+            assert_eq!(result.status, "ready");
+        }
+        assert!(from_coordinates(35.68, 139.69).district.is_none());
+        assert!(LocationResult::no_gps().district.is_none());
+    }
+
+    #[test]
+    fn upgrade_fills_stored_gps_but_preserves_manually_assigned_district() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        crate::database::initialize(&mut conn).unwrap();
+        conn.execute_batch("INSERT INTO media(id,file_path,file_type,size_bytes,latitude,longitude,region_code,region_name,location_status,location_source,district)
+            VALUES (1,'old-damyang.jpg','image',1,35.32,126.98,'KR-46','전남광주통합특별시','ready','gps',NULL),
+                   (2,'manual.jpg','image',1,36.30,127.57,'KR-46','전남광주통합특별시','ready','manual','담양군'),
+                   (3,'no-coordinates.jpg','image',1,NULL,NULL,'KR-43','충청북도','ready','gps',NULL);
+            PRAGMA user_version=4;").unwrap();
+        crate::database::initialize(&mut conn).unwrap();
+        let districts: Vec<Option<String>> = conn.prepare("SELECT district FROM media ORDER BY id").unwrap()
+            .query_map([], |row| row.get(0)).unwrap().collect::<Result<_, _>>().unwrap();
+        assert_eq!(districts, vec![Some("담양군".into()), Some("담양군".into()), None]);
+        assert_eq!(conn.query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0)).unwrap(), 5);
+    }
 
     #[test]
     fn database_failure_rolls_back_the_whole_analysis_batch_and_allows_retry() {

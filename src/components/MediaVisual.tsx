@@ -18,11 +18,15 @@ function requestThumbnail(key: string, id: number): Promise<string> {
   return request;
 }
 
-export function EmptyState({ text }: { text: string }) {
+export function EmptyState({ text, title, description, actionLabel, onAction, actionIcon, icon }: {
+  text?: string; title?: string; description?: string; actionLabel?: string; onAction?: () => void; actionIcon?: ReactNode; icon?: ReactNode;
+}) {
   return (
     <div className="emptyState">
-      <Image size={28} />
-      <p>{text}</p>
+      {icon ?? <Image size={30} aria-hidden="true" />}
+      {title ? <h3>{title}</h3> : null}
+      {description ? <p>{description}</p> : text ? <p>{text}</p> : null}
+      {actionLabel && onAction && <button className="emptyStateAction" onClick={onAction}>{actionIcon}{actionLabel}</button>}
     </div>
   );
 }

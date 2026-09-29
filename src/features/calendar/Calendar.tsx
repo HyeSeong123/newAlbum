@@ -3,7 +3,7 @@ import { calendarEventMeta } from "./calendarPresentation";
 import { useCalendarRecords } from "./useCalendarRecords";
 import { DayDetailModal } from "./DayDetailModal";
 import { CalendarEventModal } from "./CalendarEventModal";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { ChevronLeft, ChevronRight, Music, Play, Plus } from "lucide-react";
 import type { MediaItem } from "../../types/media";
 import { MediaImage, EmptyState } from "../../components/MediaVisual";
@@ -130,7 +130,7 @@ export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; 
         </button>
       </div>
       {calendarViewMode === "month" ? (
-        <div className="calendarGrid">
+        <div className="calendarGrid" style={{ "--calendar-weeks": calendarCells.length / 7 } as CSSProperties}>
           {["일", "월", "화", "수", "목", "금", "토"].map((label, index) => (
             <span className={`weekday ${index === 0 ? "sunday" : index === 6 ? "saturday" : ""}`} key={label}>{label}</span>
           ))}
@@ -145,14 +145,15 @@ export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; 
               <button
                 key={cell.id}
                 className={[matches.length ? "hasMedia" : "", dayNotes[date] ? "hasNote" : "", events.length ? "hasEvent" : "", weekday === 0 ? "sunday" : weekday === 6 ? "saturday" : ""].filter(Boolean).join(" ")}
-                aria-label={`${formatDateKo(date)}, ${formatMediaCount(matches)}${events.length ? `, 일정 ${events.length}개` : ""}`}
+                aria-label={`${formatDateKo(date)}, ${formatMediaCount(matches)}${events.length ? `, 일정 ${events.length}개` : ""}${dayNotes[date] ? ", 메모 있음" : ""}`}
                 aria-current={date === today ? "date" : undefined}
                 onClick={() => setSelectedDate(date)}
               >
                 <span className="dayNumber">{cell.day}</span>
                 {events.length > 0 && (
                   <span className="dayEvents">
-                    {events.slice(0, 2).map((event) => {
+                    <small className="calendarCompactEvent" aria-hidden="true">일정{events.length}</small>
+                    {events.slice(0, 1).map((event) => {
                       const EventIcon = calendarEventMeta[event.kind].icon;
                       return (
                         <small key={event.id} aria-label={`${event.title} ${calendarEventMeta[event.kind].label}`} title={event.title}>
@@ -162,6 +163,7 @@ export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; 
                         </small>
                       );
                     })}
+                    {events.length > 1 && <small className="calendarMoreEvents">+{events.length - 1}</small>}
                   </span>
                 )}
                 {cover && (
