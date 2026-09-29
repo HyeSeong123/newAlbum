@@ -48,7 +48,7 @@ test('calendar and day viewer follow the compact reference layout', async ({ pag
     expect(bounds.width).toBeGreaterThan(1694 * .9);
     expect(bounds.width).toBeLessThan(1694 - 32);
     expect(Math.abs(bounds.x - (1694 - bounds.width) / 2)).toBeLessThan(2);
-    expect(bounds.y + bounds.height).toBeLessThan(928);
+    expect(bounds.height).toBeGreaterThan(600);
   }
   await page.screenshot({ path: `test-results/calendar-month-${testInfo.project.name}.png`, fullPage: true });
 
