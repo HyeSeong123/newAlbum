@@ -107,7 +107,7 @@ test('portrait grids keep four uncropped photos per leaf through turns, detail a
   for (const photo of await photos.all()) await expectUncroppedPhoto(photo);
 });
 
-test('mixed orientations group four portraits and two landscapes without losing photos or page navigation', async ({ page }) => {
+test('mixed orientations group four portraits and two landscapes without losing photos or page navigation', async ({ page }, testInfo) => {
   await page.route('**/orientation-*.jpg', (route) => {
     const id = Number(route.request().url().match(/orientation-(\d+)/)![1]);
     if ([1, 5, 6, 7].includes(id)) {
@@ -181,7 +181,8 @@ test('mixed orientations group four portraits and two landscapes without losing 
   await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
   await page.getByTitle('다음 책장', { exact: true }).click();
   await expect(page.locator('.albumSpread')).toHaveAttribute('data-turn-phase', 'departing');
-  await expect(right.locator('.albumPhotoEntry').first()).toHaveCSS('opacity', '0');
+  await expect(right.locator('.albumPhotoEntry').first()).toHaveCSS('opacity', testInfo.project.name === 'mobile' ? '1' : '0');
+  if (testInfo.project.name === 'mobile') await expect(page.locator('.albumTurnLayer')).toHaveCSS('display', 'none');
   await page.clock.runFor(ALBUM_TURN_TIMING.swap);
   await expect(page.locator('.albumSpread')).toHaveAttribute('data-turn-phase', 'arriving');
   expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-5.jpg 상세보기', 'orientation-6.jpg 상세보기', 'orientation-7.jpg 상세보기']);
