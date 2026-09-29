@@ -145,14 +145,14 @@ export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; 
               <button
                 key={cell.id}
                 className={[matches.length ? "hasMedia" : "", dayNotes[date] ? "hasNote" : "", events.length ? "hasEvent" : "", weekday === 0 ? "sunday" : weekday === 6 ? "saturday" : ""].filter(Boolean).join(" ")}
-                aria-label={`${formatDateKo(date)}, ${formatMediaCount(matches)}${events.length ? `, 일정 ${events.length}개` : ""}`}
+                aria-label={`${formatDateKo(date)}, ${formatMediaCount(matches)}${events.length ? `, 일정 ${events.length}개` : ""}${dayNotes[date] ? ", 메모 있음" : ""}`}
                 aria-current={date === today ? "date" : undefined}
                 onClick={() => setSelectedDate(date)}
               >
                 <span className="dayNumber">{cell.day}</span>
                 {events.length > 0 && (
                   <span className="dayEvents">
-                    {events.slice(0, 2).map((event) => {
+                    {events.slice(0, 1).map((event) => {
                       const EventIcon = calendarEventMeta[event.kind].icon;
                       return (
                         <small key={event.id} aria-label={`${event.title} ${calendarEventMeta[event.kind].label}`} title={event.title}>
@@ -162,6 +162,7 @@ export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; 
                         </small>
                       );
                     })}
+                    {events.length > 1 && <small className="calendarMoreEvents">+{events.length - 1}</small>}
                   </span>
                 )}
                 {cover && (

@@ -127,7 +127,7 @@ button:disabled {
   justify-content: center;
   color: #FFFFFF;
   background: var(--primary);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
@@ -1091,7 +1091,7 @@ textarea {
 
 .calendarGrid small strong {
   color: var(--primary);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .dayMemo {
@@ -1616,7 +1616,7 @@ textarea {
   .calendarGrid small {
     min-height: 20px;
     padding: 0 6px;
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .scheduleForm {

@@ -29,7 +29,7 @@
 .personPhotoGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
 .personPhotoGrid.faceOverviewGrid { grid-template-columns: repeat(auto-fill, 128px); gap: 16px; }
 .personPhotoGrid.personMediaGrid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 24px 16px; }
-.faceOverviewGrid .personPhotoMeta { font-size: 12px; overflow-wrap: anywhere; }
+.faceOverviewGrid .personPhotoMeta { font-size: 13px; overflow-wrap: anywhere; }
 .faceOverviewGrid .personPhotoMeta img { display: none; }
 .personPhoto { position: relative; min-width: 0; }
 .personOriginal { width: 100%; aspect-ratio: 1; padding: 0; border: 0; background: #eef1ef; border-radius: 4px; overflow: hidden; display: block; }

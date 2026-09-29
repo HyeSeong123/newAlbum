@@ -22,16 +22,16 @@
 .calendarPanel .panelHeader h2 { margin: 0; font-size: 18px; white-space: nowrap; }
 .calendarPanel .monthPicker { flex-wrap: nowrap; gap: 8px; width: auto; }
 .calendarPanel .monthPicker label { flex: none; }
-.calendarPanel .monthPicker span { font-size: 11px; }
-.calendarPanel .monthPicker select { min-height: 32px; min-width: 76px; padding: 0 8px; border-radius: 4px; font-size: 12px; }
+.calendarPanel .monthPicker span { font-size: 14px; white-space: nowrap; }
+.calendarPanel .monthPicker select { min-height: 42px; min-width: 76px; padding: 0 8px; border-radius: 4px; font-size: 14px; }
 .calendarPanel .monthControls { width: auto; flex-wrap: nowrap; gap: 7px; }
-.calendarPanel .monthControls button { flex: none; min-height: 32px; padding: 0 11px; gap: 5px; border-radius: 4px; font-size: 12px; white-space: nowrap; }
+.calendarPanel .monthControls button { flex: none; min-height: 42px; padding: 0 11px; gap: 5px; border-radius: 4px; font-size: 14px; white-space: nowrap; }
 .calendarPanel .monthControls .primaryControl { box-shadow: none; }
 .calendarPanel .calendarModeTabs { display: flex; gap: 16px; margin: 0 0 8px; padding: 0; }
-.calendarPanel .calendarModeTabs button { min-height: 26px; padding: 0 0 6px; border-radius: 0; font-size: 12px; }
+.calendarPanel .calendarModeTabs button { min-height: 42px; padding: 0 0 6px; border-radius: 0; font-size: 14px; }
 
 .calendarPanel .calendarGrid { gap: 1px; padding: 0; border: 1px solid #deded6; border-radius: 4px; background: #e4e3dc; }
-.calendarPanel .calendarGrid .weekday { padding: 8px 0; min-height: 0; border-radius: 0; font-size: 12px; font-weight: 500; background: var(--bg); }
+.calendarPanel .calendarGrid .weekday { padding: 8px 0; min-height: 0; border-radius: 0; font-size: 14px; font-weight: 500; background: var(--bg); }
 .calendarPanel .calendarGrid button,
 .calendarPanel .calendarGrid .emptyDay {
   min-width: 0;
@@ -45,7 +45,7 @@
 .calendarPanel .calendarGrid button { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 4px; transition: background-color .15s; }
 .calendarPanel .calendarGrid button:hover { background: #efefe7; box-shadow: inset 0 0 0 1px #b5b79b; }
 .calendarPanel .calendarGrid button[aria-current="date"] { box-shadow: inset 0 0 0 2px var(--primary); }
-.calendarPanel .calendarGrid .dayNumber { position: static; flex: none; align-self: flex-start; line-height: 16px; font-size: 12px; font-weight: 500; }
+.calendarPanel .calendarGrid .dayNumber { position: static; flex: none; align-self: flex-start; line-height: 18px; font-size: 15px; font-weight: 600; }
 .calendarPanel .calendarGrid .hasMedia .dayNumber { font-weight: 650; }
 .calendarPanel .calendarGrid .sunday,
 .calendarPanel .calendarGrid .sunday .dayNumber { color: #bb413a; }
@@ -65,14 +65,16 @@
   border-radius: 2px;
   color: white;
 }
-.calendarPanel .calendarGrid i .mediaImage { object-fit: contain; object-position: center; }
-.calendarPanel .calendarGrid .dayEvents { position: static; flex: none; gap: 3px; }
-.calendarPanel .calendarGrid .dayEvents small { min-height: 18px; padding: 1px 4px; border-radius: 2px; font-size: 10px; font-weight: 500; color: #5c6349; background: #e8ebdb; box-shadow: none; }
-.calendarPanel .calendarGrid .dayEvents strong { font-size: 9px; }
+.calendarPanel .calendarGrid i { order: 1; }
+.calendarPanel .calendarGrid i .mediaImage { object-fit: cover; object-position: center; }
+.calendarPanel .calendarGrid .dayEvents { position: static; order: 2; flex: none; gap: 3px; min-width: 0; }
+.calendarPanel .calendarGrid .dayEvents small { min-height: 18px; padding: 1px 4px; border-radius: 2px; font-size: 12px; font-weight: 500; color: #4d563a; background: #e8ebdb; box-shadow: none; white-space: nowrap; }
+.calendarPanel .calendarGrid .dayEvents strong { font-size: 12px; }
+.calendarPanel .calendarGrid .dayEvents .calendarMoreEvents { flex: none; }
 .calendarPanel .calendarGrid .dayEvents svg { flex-shrink: 0; }
-.calendarPanel .calendarDayMeta { display: flex; align-items: center; justify-content: space-between; flex: none; min-height: 13px; margin-top: auto; gap: 3px; }
-.calendarPanel .calendarGrid b { position: static; margin-left: auto; line-height: 13px; color: #45483f; font-size: 11px; font-weight: 400; }
-.calendarPanel .calendarGrid .dayNoteBadge { position: static; min-height: 13px; padding: 0; border-radius: 0; color: var(--muted); background: none; font-size: 10px; font-weight: 400; }
+.calendarPanel .calendarDayMeta { display: flex; align-items: center; justify-content: space-between; order: 3; flex: none; min-height: 18px; margin-top: auto; gap: 3px; }
+.calendarPanel .calendarGrid b { position: static; margin-left: auto; line-height: 18px; color: #45483f; font-size: 13px; font-weight: 500; }
+.calendarPanel .calendarGrid .dayNoteBadge { position: static; min-height: 18px; padding: 0; border-radius: 0; color: var(--muted); background: none; font-size: 12px; font-weight: 400; }
 
 .calendarDayBackdrop.modalBackdrop { display: grid; place-items: center; padding: 24px; background: #20231b73; backdrop-filter: none; }
 .calendarDayDialog {
@@ -115,7 +117,7 @@
 .calendarThumbnails button > div { position: relative; display: grid; place-items: center; width: 100%; height: 100%; overflow: hidden; border-radius: 2px; }
 .calendarThumbnails .mediaImage { object-fit: contain; object-position: center; }
 .calendarThumbnails button:hover { border-color: var(--primary); }
-.calendarCoverBadge { position: absolute; left: 4px; bottom: 4px; padding: 3px 7px; border-radius: 12px; color: white; background: var(--primary); font-size: 10px; font-weight: 600; }
+.calendarCoverBadge { position: absolute; left: 4px; bottom: 4px; padding: 3px 7px; border-radius: 12px; color: white; background: var(--primary); font-size: 12px; font-weight: 600; }
 .calendarStripArrow { width: 34px; height: 34px; }
 .calendarStripArrow.previous { left: -12px; }
 .calendarStripArrow.next { right: -12px; }
@@ -147,21 +149,24 @@
   .workspace:has(.photoWorkspace.mode-calendar) .topbar { gap: 12px; margin-bottom: 14px; }
   .workspace:has(.photoWorkspace.mode-calendar) .topbar .toolbar { gap: 10px; }
   .workspace:has(.photoWorkspace.mode-calendar) .searchBox { width: auto; min-width: 0; }
-  .workspace:has(.photoWorkspace.mode-calendar) .collectionCount { font-size: 11px; }
+  .workspace:has(.photoWorkspace.mode-calendar) .collectionCount { font-size: 13px; }
   .photoWorkspace.mode-calendar > .viewTabs { margin-bottom: 18px; }
   .calendarPanel .panelHeader { gap: 10px; }
   .calendarPanel .panelHeader h2 { font-size: 17px; }
   .calendarPanel .monthPicker label { gap: 4px; }
   .calendarPanel .monthPicker select { min-width: 68px; padding-inline: 4px; }
   .calendarPanel .monthControls { justify-content: flex-start; gap: 6px; }
-  .calendarPanel .monthControls button { min-height: 34px; padding-inline: 9px; font-size: 11px; }
-  .calendarPanel .calendarGrid button, .calendarPanel .calendarGrid .emptyDay { aspect-ratio: auto; height: 92px; padding: 4px 3px; gap: 3px; }
-  .calendarPanel .calendarGrid .weekday { padding: 8px 0; font-size: 11px; }
-  .calendarPanel .calendarGrid .dayNumber { font-size: 11px; line-height: 14px; }
-  .calendarPanel .calendarGrid b, .calendarPanel .calendarGrid .dayNoteBadge { font-size: 9px; }
-  .calendarPanel .calendarGrid .dayEvents small { padding: 1px 2px; min-height: 16px; gap: 2px; font-size: 9px; }
+  .calendarPanel .monthControls button { min-height: 42px; padding-inline: 9px; font-size: 13px; }
+  .calendarPanel .calendarGrid button, .calendarPanel .calendarGrid .emptyDay { aspect-ratio: auto; height: 118px; padding: 5px 3px; gap: 3px; }
+  .calendarPanel .calendarGrid .weekday { padding: 8px 0; font-size: 13px; }
+  .calendarPanel .calendarGrid .dayNumber { font-size: 14px; line-height: 18px; }
+  .calendarPanel .calendarGrid b, .calendarPanel .calendarGrid .dayNoteBadge { font-size: 12px; }
+  .calendarPanel .calendarGrid .dayEvents small { padding: 1px 2px; min-height: 18px; gap: 2px; font-size: 12px; }
   .calendarPanel .calendarGrid .dayEvents strong { display: none; }
-  .calendarPanel .calendarGrid .dayEvents svg { width: 10px; }
+  .calendarPanel .calendarGrid .dayEvents svg { display: none; }
+  .calendarPanel .calendarGrid .dayEvents small > span { display: inline; }
+  .calendarPanel .calendarGrid .dayEvents small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .calendarPanel .calendarDayMeta:has(b) .dayNoteBadge { width: 8px; min-width: 8px; height: 8px; min-height: 8px; overflow: hidden; font-size: 0; border-radius: 50%; background: #176c47 !important; }
   .calendarDayBackdrop.modalBackdrop { padding: 12px; }
   .calendarDayDialog { width: 100%; max-height: calc(100dvh - 24px); padding: 16px 14px 14px; }
   .calendarDayHeader { gap: 8px; }
@@ -176,8 +181,8 @@
   .calendarStripArrow.next { right: -8px; }
   .calendarMemoHeader { gap: 8px; }
   .calendarMemoHeader label { font-size: 15px; }
-  .calendarMemoHeader span { font-size: 10px; }
-  .calendarMemoHeader button { padding-inline: 9px; font-size: 11px; }
+  .calendarMemoHeader span { font-size: 13px; }
+  .calendarMemoHeader button { padding-inline: 9px; font-size: 13px; }
   .calendarDayFooter { flex-wrap: wrap; padding-top: 14px; gap: 10px; }
   .calendarSaveStatus { width: 100%; }
   .calendarSaveStatus:has([role="status"]:empty):not(:has([role="alert"])) { display: none; }
@@ -185,5 +190,6 @@
 }
 /* Let the month fill the available page while keeping the seven columns readable. */
 .workspace:has(.photoWorkspace.mode-calendar) { width:100%; max-width:none; padding:24px clamp(20px,3vw,64px) 48px; }
-.calendarPanel .calendarGrid button,.calendarPanel .calendarGrid .emptyDay { aspect-ratio:auto; height:clamp(96px,calc((100dvh - var(--app-header-height, 70px) - 270px) / var(--calendar-weeks, 5)),160px); min-height:0; }
-@media(max-width:750px) { .calendarPanel .calendarGrid button,.calendarPanel .calendarGrid .emptyDay { height:auto; min-height:85px; } }
+.calendarPanel .calendarGrid button,.calendarPanel .calendarGrid .emptyDay { aspect-ratio:auto; height:clamp(126px,calc((100dvh - var(--app-header-height, 70px) - 240px) / var(--calendar-weeks, 5)),190px); min-height:0; }
+@media(max-width:750px) { .calendarPanel .calendarGrid button,.calendarPanel .calendarGrid .emptyDay { height:auto; min-height:118px; } }
+@media(max-width:380px) { .calendarPanel .calendarGrid .dayEvents small { display:none; } .calendarPanel .calendarGrid button,.calendarPanel .calendarGrid .emptyDay { min-height:108px; } }

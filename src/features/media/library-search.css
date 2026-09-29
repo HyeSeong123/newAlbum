@@ -20,16 +20,16 @@
 .librarySearchHead span { color: var(--muted); font-size: 13px; }
 .librarySearchActions { margin-left: auto; }
 .librarySearchActions button,
-.libraryResultsBar button { min-height: 38px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); white-space: nowrap; font-size: 13px; }
+.libraryResultsBar button { min-height: 42px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); white-space: nowrap; font-size: 14px; }
 .librarySearchActions .filterActive,
 .libraryResultsBar .activeAction { border-color: var(--primary); background: var(--primary); color: #fff; }
 .librarySearchActions button:disabled { opacity: .45; }
 .librarySearchBasics { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px 16px; }
-.librarySearchBasics .libraryKeywordSearch { flex: 1 1 240px; width: auto; min-width: 180px; min-height: 38px; margin: 0; }
+.librarySearchBasics .libraryKeywordSearch { flex: 1 1 240px; width: auto; min-width: 180px; min-height: 42px; margin: 0; }
 .libraryKeywordSearch input { min-width: 0; width: 100%; }
 .librarySearchBasics .takenDateFilter { flex: 2 1 520px; min-width: 0; margin: 0; padding: 0; border: 0; background: transparent; }
 .librarySearchBasics .takenDateControls { gap: 8px; }
-.librarySearchBasics .takenDateControls input { width: max(145px, calc(13ch + 42px)); min-height: 38px; background: var(--surface); }
+.librarySearchBasics .takenDateControls input { width: max(145px, calc(13ch + 42px)); min-height: 42px; background: var(--surface); }
 .librarySearchBasics .takenDateTitle { white-space: nowrap; }
 .librarySearchBasics .takenDateHint { display: none; }
 .librarySearchBasics .takenDateFilter[data-active="true"] .takenDateHint,

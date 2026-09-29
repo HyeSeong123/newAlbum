@@ -1,7 +1,7 @@
 /* Shared menu controls. Media tiles, date cells and photo-viewer tools keep
    their own sizing; only toolbar controls use these compact dimensions. */
 :root {
-  --control-height: 36px;
+  --control-height: 42px;
   --control-gap: 8px;
   --control-radius: 6px;
 }
@@ -38,7 +38,7 @@ button > svg { flex-shrink: 0; }
   justify-content: center;
   gap: 6px;
   border-radius: var(--control-radius);
-  font-size: 13px;
+  font-size: var(--font-control);
   line-height: 1;
   white-space: nowrap;
   flex-shrink: 0;
@@ -53,7 +53,7 @@ button > svg { flex-shrink: 0; }
   height: var(--control-height);
   min-height: var(--control-height);
   border-radius: var(--control-radius);
-  font-size: 13px;
+  font-size: var(--font-control);
 }
 
 .peopleActions input,
@@ -145,7 +145,7 @@ button > svg { flex-shrink: 0; }
 
 @media(max-width:600px){
   .photoWorkspace .viewTabs,.photoWorkspace .collectionTools>.viewTabs{display:flex;width:100%;max-width:100%;}
-  .photoWorkspace .viewTabs button,.photoWorkspace .collectionTools .viewTabs button{flex:1;min-width:0;padding-inline:6px;font-size:11px;gap:4px;white-space:nowrap;}
+  .photoWorkspace .viewTabs button,.photoWorkspace .collectionTools .viewTabs button{flex:1;min-width:0;padding-inline:6px;font-size:13px;gap:4px;white-space:nowrap;}
 }
 .sidebar { grid-template-columns:minmax(175px,1fr) auto auto auto; gap:12px; }
 .sidebar .layoutToggle { justify-self:end; margin:0; min-height:40px; padding:0 12px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text); font-size:14px; white-space:nowrap; }
