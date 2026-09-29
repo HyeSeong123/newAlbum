@@ -40,7 +40,10 @@ test('calendar and day viewer follow the compact reference layout', async ({ pag
   await expect(grid.locator('.emptyDay')).toHaveCount(4);
   await expect(grid.locator('.weekday')).toHaveCount(7);
   await expect(grid.locator('.hasMedia')).toHaveCount(18);
-  await grid.locator('img').evaluateAll((images: HTMLImageElement[]) => Promise.all(images.map((image) => image.decode())));
+  const firstPhoto = grid.locator('.hasMedia img').first();
+  await firstPhoto.scrollIntoViewIfNeeded();
+  await expect(firstPhoto).toHaveAttribute('src', /calendar-photo-/);
+  await firstPhoto.evaluate((image: HTMLImageElement) => image.decode());
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   if (testInfo.project.name === 'desktop') {
     const bounds = (await grid.boundingBox())!;
