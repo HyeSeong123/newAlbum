@@ -195,7 +195,7 @@
 @media(max-width:750px) { .calendarPanel .calendarGrid button,.calendarPanel .calendarGrid .emptyDay { height:auto; min-height:118px; } }
 @media(max-width:380px) {
   .calendarPanel .calendarGrid .dayEvents small { display: none; }
-  .calendarPanel .calendarGrid .dayEvents .calendarCompactEvent { display: block; font-size: 11px; padding-inline: 2px; }
+  .calendarPanel .calendarGrid .dayEvents .calendarCompactEvent { display: block; flex: none; font-size: 11px; letter-spacing: -.03em; padding-inline: 0; }
   .calendarPanel .calendarGrid button,.calendarPanel .calendarGrid .emptyDay { min-height: 132px; }
   .calendarPanel .calendarGrid i .mediaImage { object-fit: contain; }
 }
