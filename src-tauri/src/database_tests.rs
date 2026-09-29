@@ -42,15 +42,18 @@ fn existing_library_survives_migration_reopen_and_read_only_fast_path() {
         INSERT INTO pet(id,name,cover_media_id) VALUES(1,'강아지',1);
         INSERT INTO pet_media VALUES(1,1);").unwrap();
     let before = snapshot(&conn);
+    let mut expected = before.clone();
+    // The district backfill is the sole change to an existing GPS photo.
+    expected[0][0][21] = Value::Text("제주시".into());
     initialize(&mut conn).unwrap();
-    assert_eq!(snapshot(&conn), before);
+    assert_eq!(snapshot(&conn), expected);
     assert_eq!(version(&conn).unwrap(), VERSION);
     drop(conn);
     let mut reopened = Connection::open(&path).unwrap();
     // A current schema must not attempt any write, DDL, or full-path normalization.
     reopened.pragma_update(None, "query_only", true).unwrap();
     initialize(&mut reopened).unwrap();
-    assert_eq!(snapshot(&reopened), before);
+    assert_eq!(snapshot(&reopened), expected);
     assert_eq!(reopened.query_row("PRAGMA foreign_keys", [], |r| r.get::<_, i64>(0)).unwrap(), 1);
     assert_eq!(reopened.query_row("PRAGMA quick_check", [], |r| r.get::<_, String>(0)).unwrap(), "ok");
     assert!(reopened.prepare("PRAGMA foreign_key_check").unwrap().query([]).unwrap().next().unwrap().is_none());
