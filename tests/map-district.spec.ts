@@ -27,7 +27,7 @@ test('map photos are grouped by county, and the county filter opens its complete
   await page.goto('/');
   await page.getByRole('button', { name: '추억', exact: true }).click();
   await page.getByRole('group', { name: '추억 보기' }).getByRole('button', { name: '추억 지도' }).click();
-  await page.locator('.memoryMapPlaceList button').filter({ hasText: '전남광주' }).click();
+  await page.locator('.memoryMapPlaceList button').filter({ hasText: '전남·광주' }).click();
   const gallery = page.locator('.memoryMapGallery');
   await expect(gallery.locator('.memoryMapPlaceGroup h4')).toHaveText(['담양군', '화순군']);
   await expect(gallery.locator('.memoryMapPlaceGroup').first()).toContainText('담양 봄');
