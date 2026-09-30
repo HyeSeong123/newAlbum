@@ -13,6 +13,15 @@ try {
   await page.waitForFunction(() => Boolean(window.__TAURI_INTERNALS__?.invoke));
   await page.locator('.app').waitFor();
   await mkdir('test-results/desktop-smoke', { recursive: true });
+  page.on('pageerror', error => console.error('WebView error:', error));
+  await page.evaluate(() => {
+    const nativeInvoke = window.__TAURI_INTERNALS__.invoke;
+    window.__TAURI_INTERNALS__.invoke = async (...args) => {
+      try { return await nativeInvoke(...args); }
+      catch (error) { console.error('Native command failed:', args[0], String(error)); throw error; }
+    };
+  });
+  page.on('console', message => { if (message.type() === 'error') console.error('WebView console:', message.text()); });
   const restarted = process.argv.includes('--restarted') || process.argv.includes('--upgraded');
   if (restarted) {
     assert.equal(await page.evaluate(() => localStorage.getItem('installer-smoke')), 'persisted');
@@ -66,7 +75,14 @@ try {
   await editor.getByRole('button', { name:'앨범 정보', exact:true }).click();
   await editor.getByRole('button', { name:'네이비 색상', exact:true }).click();
   await editor.getByRole('button', { name:'저장', exact:true }).click();
-  await expect(editor).toBeHidden();
+  try { await expect(editor).toBeHidden({ timeout: 15000 }); }
+  catch (error) {
+    console.error('Album save failure:', await editor.innerText());
+    console.error('Invalid fields:', await editor.locator(':invalid').evaluateAll(fields => fields.map(field => ({ tag:field.tagName, type:field.type, value:field.value, message:field.validationMessage }))));
+    console.error('Stored albums:', await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_albums')));
+    await page.screenshot({ path:'test-results/desktop-smoke/save-failed.png' });
+    throw error;
+  }
   await reader.getByTitle('닫기', { exact:true }).click();
   await expect(page.locator('.savedAlbumOpen .frontAlbumTone')).toHaveCSS('background-color', 'rgb(47, 64, 88)');
   await expect(page.locator('.savedAlbumOpen .frontAlbumTone')).toHaveCSS('opacity', '0.9');
