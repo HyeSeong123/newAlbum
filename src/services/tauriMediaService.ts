@@ -141,12 +141,6 @@ export async function deleteAlbums(ids: string[]): Promise<void> {
   await invoke("delete_albums", { ids: ids.map(Number) });
 }
 
-export async function chooseAlbumMusic(): Promise<string | null> {
-  const selected = await open({ multiple:false, directory:false, title:"앨범 배경 음악",
-    filters:[{ name:"음악", extensions:["mp3", "wav", "ogg", "m4a", "flac"] }] });
-  return Array.isArray(selected) ? selected[0] ?? null : selected;
-}
-
 export async function chooseAndRegisterFiles(): Promise<MediaItem[]> {
   const selected = await open({
     multiple: true,
