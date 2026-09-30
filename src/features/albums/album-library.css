@@ -1,7 +1,7 @@
 /* Album-library cards: one cover, one title row, one contextual menu. */
 .savedAlbumsIntro { margin: 0 0 22px; padding-bottom: 20px; border-bottom: 1px solid var(--border); color: var(--muted); font-size: 16px; }
 .savedAlbums .savedAlbumGrid { grid-template-columns: repeat(3, minmax(0, 410px)); justify-content: start; gap: 38px; margin-top: 22px; }
-.savedAlbums .savedAlbumCard { display: block; padding: 20px 20px 16px; border: 1px solid #e5dfd3; border-radius: 6px; background: #fffdfb; box-shadow: 0 3px 12px #5147350c; }
+.savedAlbums .savedAlbumCard { display: block; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .savedAlbums .savedAlbumCard:has(.actionMenuPanel) { z-index: 5; }
 .savedAlbums .savedAlbumCover { width: 100%; }
 .savedAlbums .savedAlbumOpen { width: 100%; border: 0; border-radius: 3px; overflow: hidden; }
@@ -20,7 +20,6 @@
 @media (max-width: 1440px) { .savedAlbums .savedAlbumGrid { grid-template-columns: repeat(2, minmax(0, 410px)); } }
 @media (max-width: 720px) {
   .savedAlbums .savedAlbumGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
-  .savedAlbums .savedAlbumCard { padding: 10px; }
   .savedAlbumFooter { gap: 3px; }
   .savedAlbums .savedAlbumTitle { font-size: 14px; }
   .savedAlbums .savedAlbumMeta { font-size: 12px; }

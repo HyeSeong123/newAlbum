@@ -77,7 +77,7 @@ test("empty library flow works", async ({ page }) => {
   await page.getByPlaceholder("예: 엄마 생신, 가족 저녁 약속").fill("엄마 생신");
   await page.getByRole("button", { name: "일정 추가" }).click();
   await expect(page.getByRole("dialog", { name: "일정 등록" })).toBeHidden();
-  await page.locator(".calendarGrid button").first().click();
+  await page.locator(".calendarGrid button[aria-current=\"date\"]").click();
   await expect(page.getByText("엄마 생신")).toBeVisible();
   await expect(page.getByText(/생일 · D/)).toBeVisible();
   await page.getByTitle("닫기").click();
@@ -85,7 +85,7 @@ test("empty library flow works", async ({ page }) => {
   await page.getByRole("tab", { name: /책 보기/ }).click();
   await expect(page.getByRole("dialog", { name: "앨범 전체창" })).toBeVisible();
   await page.getByTitle("닫기").click();
-  await expect(page.getByRole("tab", { name: "그리드" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "사진 모아보기" })).toHaveAttribute("aria-selected", "true");
 });
 
 test("gallery sorting, combined filters and persistent view counts work", async ({ page }) => {
@@ -300,9 +300,9 @@ test("album view opens immersive reader", async ({ page }) => {
   await expect(page.locator(".albumJournal .albumPagerActions")).toContainText("펼침");
   await page.getByTitle("닫기").click();
   await expect(page.getByRole("dialog", { name: "앨범 전체창" })).toBeHidden();
-  await expect(page.getByRole("tab", { name: "그리드" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "사진 모아보기" })).toHaveAttribute("aria-selected", "true");
   await expect(page.locator(".galleryGrid .mediaTile")).toHaveCount(2);
   await page.getByRole("tab", { name: "책 보기" }).click();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("tab", { name: "그리드" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "사진 모아보기" })).toHaveAttribute("aria-selected", "true");
 });
