@@ -3,7 +3,6 @@ import { ArrowDown, ArrowUp, BookOpen, FileText, Image, Plus, Trash2 } from "luc
 import type { AlbumContent, MediaItem } from "../../../types/media";
 import { moveContent, writtenPage } from "../albumContent";
 import { MediaVisual } from "../../../components/MediaVisual";
-import { StoryItemSettings } from "../story-player/StorySettings";
 import "./written-page.css";
 
 const PAGE_SIZE = 20;
@@ -100,12 +99,11 @@ export function AlbumContentEditor({ contents, items, onChange, selectedId, onSe
               <button type="button" className="albumEntryDelete" aria-label={`${activeIndex + 1}번 항목 삭제`} title={active.mediaId ? "앨범에서 제거" : "항목 삭제"} onClick={remove}><Trash2 size={18} />{active.mediaId ? "앨범에서 제거" : "삭제"}</button>
             </div>
           </div>
-          {active.mediaId ? <p className="albumEntryHint"><Image size={17} />사진의 제목과 설명은 사진 상세 화면에서 수정할 수 있습니다. 이곳에서는 순서와 스토리 설정을 바꿀 수 있어요.</p> : <div className="albumWritingFields">
+          {active.mediaId ? <p className="albumEntryHint"><Image size={17} />사진의 제목과 설명은 사진 상세 화면에서 수정할 수 있습니다. 이곳에서는 앨범에 담을 순서를 바꿀 수 있어요.</p> : <div className="albumWritingFields">
             <label htmlFor={`page-title-${active.id}`}>{active.kind === "CHAPTER" ? "챕터 제목" : "감상문 제목"}<input id={`page-title-${active.id}`} maxLength={120} value={active.title} placeholder={active.kind === "CHAPTER" ? "예: 첫 번째 여행" : "예: 오래 기억하고 싶은 하루"} onChange={event => edit({ title: event.target.value })} /></label>
             <label htmlFor={`page-body-${active.id}`}>{active.kind === "CHAPTER" ? "부제목 또는 설명" : "감상문 내용"}<textarea id={`page-body-${active.id}`} aria-label={active.kind === "CHAPTER" ? "부제목 또는 설명" : "감상문 내용"} maxLength={4000} value={active.body} placeholder={active.kind === "CHAPTER" ? "이 장면을 소개하는 짧은 글을 적어보세요." : "이때 느꼈던 마음과 기억을 편하게 적어보세요."} onChange={event => edit({ body: event.target.value })} /></label>
             <small className="albumWritingCount">{active.body.length} / 4,000자</small>
           </div>}
-          <StoryItemSettings key={active.id} entry={active} onChange={edit} />
         </> : <div className="albumEntryEmpty"><BookOpen size={32} /><p>목차에서 편집할 항목을 선택하세요.</p></div>}
       </div>
     </div>

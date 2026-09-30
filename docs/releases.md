@@ -1,6 +1,6 @@
 # 버전 관리와 직접 패키징
 
-**Source validation**은 Linux에서 버전·소스·브라우저와 Rust 저장소를 검증합니다. **Windows preview package**는 Windows에서 NSIS 설치 파일과 단독 실행 파일을 만들고, 설치 후 WebView2·네이티브 저장소·재시작 및 단독 실행을 검증한 다음 Actions 아티팩트에 파일을 업로드합니다. 소스·테스트·워크플로 파일이 변경되어 브랜치에 푸시될 때 또는 GitHub Actions에서 수동 실행할 때 동작합니다. 아티팩트는 90일간 보관됩니다.
+**Source validation**은 Linux에서 버전·소스·브라우저와 Rust 저장소를 검증합니다. **Windows preview package**는 Windows에서 NSIS 설치 파일과 기존 사용자용 업데이트 파일을 만들고, 설치 후 WebView2·네이티브 저장소·재시작 및 단독 실행을 검증한 다음 Actions 아티팩트에 파일을 업로드합니다. 소스 검사는 브랜치 푸시 시 실행되고 Windows 파일 생성은 수동 실행합니다. 이번 0.3.2 요청에 한해 지정한 패키징 커밋에서 한 번 실행합니다. 아티팩트는 90일간 보관됩니다.
 
 ## 코드 수정 반영
 
@@ -14,7 +14,7 @@ npm run version:check
 npm run package:windows -- --ci -- --locked
 ```
 
-설치 파일은 `src-tauri/target/release/bundle/nsis/`에 생성됩니다. Node.js 24, Rust stable, Visual Studio Build Tools의 C++ 데스크톱 개발 환경이 필요합니다. 앱을 종료한 뒤 새 설치 파일을 실행해 업데이트합니다. 앱 식별자와 데이터 저장 경로는 유지됩니다. CI 미리보기는 코드 서명이 없는 테스트 빌드입니다.
+처음 설치용 파일은 `src-tauri/target/release/bundle/nsis/`에 생성됩니다. 기존 사용자용 업데이트 파일은 같은 명령에 `--config src-tauri/tauri.update.conf.json`을 추가하면 WebView2 오프라인 설치 파일을 제외하고 생성됩니다. Node.js 24, Rust stable, Visual Studio Build Tools의 C++ 데스크톱 개발 환경이 필요합니다. 앱을 종료한 뒤 새 설치 파일을 실행해 업데이트합니다. 앱 식별자와 데이터 저장 경로는 유지됩니다. CI 미리보기는 코드 서명이 없는 테스트 빌드입니다.
 
 ## 다음 배포 버전 올리기
 

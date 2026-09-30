@@ -44,9 +44,6 @@
 .albumEntryHint { display: flex; align-items: start; gap: 8px; padding: 20px 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
 .albumEntryHint svg { flex: 0 0 auto; }
 .albumEntryEmpty { min-height: 280px; display: grid; place-content: center; justify-items: center; gap: 8px; color: var(--muted); }
-.albumEntryEditor .storyItemSettings { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--border); }
-.albumEntryEditor .storyItemSettings summary { cursor: pointer; color: var(--secondary); font-size: 14px; font-weight: 700; }
-.albumEntryEditor .storyItemSettings[open] { display: grid; gap: 12px; }
 .albumContentRowActions button { padding: 6px 10px; font-size: 12px; }
 @media (max-width: 760px) {
   .albumContentWorkspace { grid-template-columns: minmax(0, 1fr); }

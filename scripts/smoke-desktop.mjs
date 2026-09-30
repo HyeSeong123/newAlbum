@@ -1,4 +1,4 @@
-import { chromium } from '@playwright/test';
+import { chromium, expect } from '@playwright/test';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -13,7 +13,8 @@ try {
   await page.waitForFunction(() => Boolean(window.__TAURI_INTERNALS__?.invoke));
   await page.locator('.app').waitFor();
   await mkdir('test-results/desktop-smoke', { recursive: true });
-  if (process.argv.includes('--restarted')) {
+  const restarted = process.argv.includes('--restarted') || process.argv.includes('--upgraded');
+  if (restarted) {
     assert.equal(await page.evaluate(() => localStorage.getItem('installer-smoke')), 'persisted');
     assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_media')).length), 1);
     assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_media'))[0].title), '설치 후에도 남아 있는 제목');
@@ -51,19 +52,28 @@ try {
     }, { path:resolve('tests/fixtures/pet-dog.jpg'), musicPath });
     assert.equal(count, 1);
   }
+  if (!process.argv.includes('--seed-legacy')) {
   await page.reload();
   await page.locator('.app').waitFor();
   await page.getByRole('button', { name:'내 앨범', exact:true }).click();
   await page.getByRole('button', { name:'제목 저장 확인 앨범 열기', exact:true }).click();
-  await page.getByRole('button', { name:'스토리로 보기', exact:true }).click();
-  await page.getByRole('button', { name:'재생', exact:true }).click();
-  await page.waitForFunction(() => {
-    const music = document.querySelector('.storyMusic');
-    return music && music.readyState >= 2 && !music.paused;
-  });
-  await page.getByRole('button', { name:'스토리 종료', exact:true }).click();
-  await page.screenshot({ path: `test-results/desktop-smoke/${process.argv.includes('--restarted') ? 'restarted' : 'installed'}.png` });
+  const reader = page.getByRole('dialog', { name:'앨범 전체창' });
+  await expect(reader.getByRole('button', { name:'스토리로 보기', exact:true })).toHaveCount(0);
+  await expect(reader.locator('.albumWrittenPage').first()).toContainText('첫 번째 기록');
+  await reader.getByRole('button', { name:'앨범 수정', exact:true }).click();
+  const editor = page.getByRole('dialog', { name:'앨범 수정' });
+  await expect(editor.getByRole('button', { name:'스토리 음악', exact:true })).toHaveCount(0);
+  await editor.getByRole('button', { name:'앨범 정보', exact:true }).click();
+  await editor.getByRole('button', { name:'네이비 색상', exact:true }).click();
+  await editor.getByRole('button', { name:'저장', exact:true }).click();
+  await expect(editor).toBeHidden();
+  await reader.getByTitle('닫기', { exact:true }).click();
+  await expect(page.locator('.savedAlbumOpen .frontAlbumTone')).toHaveCSS('background-color', 'rgb(47, 64, 88)');
+  await expect(page.locator('.savedAlbumOpen .frontAlbumTone')).toHaveCSS('opacity', '0.9');
+  assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_albums'))[0].cover_color), '#2F4058');
+  await page.screenshot({ path: `test-results/desktop-smoke/${process.argv.includes('--upgraded') ? 'upgraded' : restarted ? 'restarted' : 'installed'}.png` });
   console.log('Packaged webview, native commands, SQLite, thumbnails and persistence: OK');
+  } else { console.log('Legacy app seeded: media, album, chapters, text, playback metadata and WebView storage.'); }
 } finally {
   // Disconnect from CDP; the PowerShell check closes the actual desktop window.
   await browser.close();

@@ -102,7 +102,6 @@ export function SavedAlbumsView({
           title={activeAlbum.title}
           items={activeAlbum.items}
           contents={[...(activeAlbum.contents ?? []), ...diaries.filter(d => d.album_id === Number(activeAlbum.id)).map(d => ({ id: `diary-${d.id}`, kind: "TEXT" as const, title: `${d.date} · ${d.title}`, body: `${d.mood} · ${d.weather}\n\n${d.body}`, displayDuration: 5, transitionType: "fade" as const, commentVisible: true }))]}
-          musicPath={activeAlbum.musicPath}
           color={activeAlbum.coverColor}
           open={true}
           onOpen={onOpen}

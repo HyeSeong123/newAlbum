@@ -1,5 +1,10 @@
+param(
+    [string]$InstallerPath = '',
+    [switch]$Upgrade,
+    [switch]$SeedLegacy
+)
 $ErrorActionPreference = 'Stop'
-$installer = Get-ChildItem 'src-tauri/target/release/bundle/nsis/*-setup.exe' | Select-Object -First 1
+$installer = if ($InstallerPath) { Get-Item $InstallerPath } else { Get-ChildItem 'src-tauri/target/release/bundle/nsis/*-setup.exe' | Select-Object -First 1 }
 if (-not $installer) { throw 'Windows installer was not generated.' }
 $installDirectory = Join-Path $env:RUNNER_TEMP 'OraedameunSmoke'
 $setup = Start-Process -FilePath $installer.FullName -ArgumentList "/S /D=$installDirectory" -Wait -PassThru
@@ -65,9 +70,10 @@ try {
     if ($listeners.Count -ne 1 -or $listeners[0].LocalAddress -ne '127.0.0.1') { throw 'Server is not restricted to loopback.' }
     $second = Start-Process -FilePath $binary.FullName -PassThru
     if (-not $second.WaitForExit(10000)) { Stop-Process -Id $second.Id -Force; throw 'Second app instance did not exit.' }
-    node scripts/smoke-desktop.mjs
+    if ($SeedLegacy) { node scripts/smoke-desktop.mjs --seed-legacy } elseif ($Upgrade) { node scripts/smoke-desktop.mjs --upgraded } else { node scripts/smoke-desktop.mjs }
     if ($LASTEXITCODE -ne 0) { throw 'Packaged native bridge check failed.' }
     Close-LocalApp
+    if (-not $SeedLegacy) {
     $application = Start-Process -FilePath $binary.FullName -PassThru
     Wait-LocalApp
     node scripts/smoke-desktop.mjs --restarted
@@ -78,6 +84,7 @@ try {
     node scripts/smoke-desktop.mjs --restarted
     if ($LASTEXITCODE -ne 0) { throw 'Standalone executable check failed.' }
     Close-LocalApp
+    }
 } finally {
     Get-NetTCPConnection -LocalPort 5173,9222 -ErrorAction SilentlyContinue |
         Format-Table -AutoSize | Out-String | Tee-Object -FilePath (Join-Path $diagnostics 'ports.log') | Write-Host

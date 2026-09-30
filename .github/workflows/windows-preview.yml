@@ -2,13 +2,20 @@ name: Windows preview package
 
 on:
   workflow_dispatch:
+  push:
+    branches: [feature/warm-journal-v2]
+    paths: [.github/workflows/windows-preview.yml]
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   package:
     name: Build, install and upload Windows preview
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[windows-preview-0.3.2]')
+    outputs:
+      version: ${{ steps.files.outputs.version }}
     runs-on: windows-2025
     timeout-minutes: 90
     steps:
@@ -31,24 +38,56 @@ jobs:
           npm run test:unit
       - name: Build NSIS installer and application
         run: npm run package:windows -- --ci -- --locked
-      - name: Install and test packaged application
+      - name: Preserve full installer
         shell: pwsh
-        run: ./scripts/smoke-windows.ps1
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $installer = Get-ChildItem 'src-tauri/target/release/bundle/nsis/*-setup.exe' | Select-Object -First 1
+          if (-not $installer) { throw 'Full installer is missing.' }
+          New-Item -ItemType Directory -Force release-output | Out-Null
+          Copy-Item $installer.FullName "release-output/Oraedameun_${version}_x64-setup.exe"
+      - name: Download previous tested app for upgrade verification
+        uses: actions/download-artifact@v4
+        with:
+          name: Oraedameun-Windows-0.3.1
+          run-id: 36644502021
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: legacy-release
+      - name: Install previous version and seed existing records
+        shell: pwsh
+        run: ./scripts/smoke-windows.ps1 -InstallerPath legacy-release/Oraedameun_0.3.1_x64-setup.exe -SeedLegacy
+      - name: Upgrade with full installer and verify retained records
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          ./scripts/smoke-windows.ps1 -InstallerPath "release-output/Oraedameun_${version}_x64-setup.exe" -Upgrade
+      - name: Build smaller installer for existing installations
+        run: npm run package:windows -- --ci --config src-tauri/tauri.update.conf.json -- --locked
+      - name: Verify update installer preserves records
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $installer = Get-ChildItem 'src-tauri/target/release/bundle/nsis/*-setup.exe' | Select-Object -First 1
+          if (-not $installer) { throw 'Update installer is missing.' }
+          Copy-Item $installer.FullName "release-output/Oraedameun_${version}_x64-update.exe"
+          ./scripts/smoke-windows.ps1 -InstallerPath "release-output/Oraedameun_${version}_x64-update.exe" -Upgrade
       - name: Prepare tested downloads
         id: files
         shell: pwsh
         run: |
           $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
-          $installer = Get-ChildItem 'src-tauri/target/release/bundle/nsis/*-setup.exe' | Select-Object -First 1
-          $binary = Get-Item 'src-tauri/target/release/oraedameun.exe'
-          if (-not $installer -or -not $binary) { throw 'Installer or executable is missing.' }
-          New-Item -ItemType Directory -Force release-output | Out-Null
-          Copy-Item $installer.FullName "release-output/Oraedameun_${version}_x64-setup.exe"
-          Copy-Item $binary.FullName "release-output/Oraedameun_${version}_x64-portable.exe"
           Get-ChildItem release-output/*.exe | ForEach-Object {
             $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
             "$hash *$($_.Name)"
           } | Set-Content release-output/SHA256SUMS.txt -Encoding utf8
+          @"
+          그루터기 $version
+          처음 설치: Oraedameun_${version}_x64-setup.exe (WebView2 오프라인 설치 포함)
+          기존 사용자: 앱을 종료한 뒤 Oraedameun_${version}_x64-update.exe 실행 (WebView2 설치된 PC용)
+          기존 사진 등록 정보, 앨범, 일기, 메모 데이터는 유지됩니다.
+          업데이트 파일은 새 버전 앱을 덮어 설치하는 방식이며 자동 업데이트 서비스가 아닙니다.
+          Windows 10/11 x64용이며 코드 서명이 없는 개발 미리보기입니다.
+          "@ | Set-Content release-output/INSTALL.txt -Encoding utf8
           "version=$version" >> $env:GITHUB_OUTPUT
       - uses: actions/upload-artifact@v4
         with:
@@ -64,3 +103,168 @@ jobs:
           path: test-results/desktop-smoke/
           if-no-files-found: ignore
           retention-days: 7
+
+  transfer:
+    name: Prepare bounded downloads
+    needs: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Oraedameun-Windows-${{ needs.package.outputs.version }}
+          path: release-output
+      - name: Split tested downloads
+        shell: python
+        run: |
+          import pathlib, zipfile
+          with zipfile.ZipFile('tested-windows.zip', 'w', compression=zipfile.ZIP_STORED) as archive:
+              for p in sorted(pathlib.Path('release-output').iterdir()): archive.write(p, p.name)
+          pathlib.Path('transfer').mkdir()
+          with open('tested-windows.zip', 'rb') as source:
+              index = 0
+              while chunk := source.read(28 * 1024 * 1024):
+                  pathlib.Path(f'transfer/part-{index:02}.bin').write_bytes(chunk)
+                  index += 1
+          if index > 20: raise RuntimeError('More than 20 transfer parts required')
+          print(f'Prepared {index} transfer parts.')
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-00.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-00
+          path: transfer/part-00.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-01.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-01
+          path: transfer/part-01.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-02.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-02
+          path: transfer/part-02.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-03.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-03
+          path: transfer/part-03.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-04.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-04
+          path: transfer/part-04.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-05.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-05
+          path: transfer/part-05.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-06.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-06
+          path: transfer/part-06.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-07.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-07
+          path: transfer/part-07.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-08.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-08
+          path: transfer/part-08.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-09.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-09
+          path: transfer/part-09.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-10.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-10
+          path: transfer/part-10.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-11.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-11
+          path: transfer/part-11.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-12.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-12
+          path: transfer/part-12.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-13.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-13
+          path: transfer/part-13.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-14.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-14
+          path: transfer/part-14.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-15.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-15
+          path: transfer/part-15.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-16.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-16
+          path: transfer/part-16.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-17.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-17
+          path: transfer/part-17.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-18.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-18
+          path: transfer/part-18.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-19.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-19
+          path: transfer/part-19.bin
+          compression-level: 0
+          retention-days: 1
