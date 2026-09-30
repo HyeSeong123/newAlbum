@@ -24,6 +24,7 @@ for (const cancel of [true, false]) {
     await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('data-load-pending', 'true');
     await page.getByRole('button', { name: '사진·영상 가져오기', exact: true }).click();
+    await page.getByRole('dialog', { name: '사진·영상 가져오기' }).getByRole('button', { name: '파일 선택' }).click();
     await expect(page.locator('html')).toHaveAttribute('data-dialog-chosen', 'true');
     await expect(page.getByRole('button', { name: '사진·영상 가져오기', exact: true })).toBeEnabled();
     if (!cancel) await expect(page.locator('.mediaTile')).toHaveCount(2);

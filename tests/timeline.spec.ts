@@ -32,11 +32,11 @@ test('three photo view tabs support keyboard wrap and fit the mobile viewport', 
   await installRecordFixture(page); await page.goto('/');
   const tabs = page.getByRole('tablist',{ name:'사진 보기 방식' });
   await expect(tabs.getByRole('tab')).toHaveCount(3);
-  await page.getByRole('tab',{ name:'그리드',exact:true }).focus();
+  await page.getByRole('tab',{ name:'사진 모아보기',exact:true }).focus();
   await page.keyboard.press('End');
   await expect(page.getByRole('tab',{ name:'책 보기',exact:true })).toHaveAttribute('aria-selected','true');
   await page.keyboard.press('ArrowRight');
-  await expect(page.getByRole('tab',{ name:'그리드',exact:true })).toHaveAttribute('aria-selected','true');
+  await expect(page.getByRole('tab',{ name:'사진 모아보기',exact:true })).toHaveAttribute('aria-selected','true');
   await page.keyboard.press('ArrowLeft');
   await expect(page.getByRole('tab',{ name:'책 보기',exact:true })).toHaveAttribute('aria-selected','true');
   const box = await tabs.boundingBox();

@@ -64,10 +64,23 @@
 .diaryBulk button, .diaryBulk select { padding: 8px 10px; min-height: 36px; border: 1px solid var(--diary-rule); border-radius: 5px; background: var(--diary-paper); color: inherit; }
 .diaryNotice { margin: 14px 0; font-size: 13px; line-height: 1.7; }
 .diaryError { color: #a04a39; }
-.diaryEmpty { margin: 40px auto; padding: 32px; max-width: 650px; background: var(--diary-paper) url('/textures/diary-paper.webp') repeat; background-size: 512px; box-shadow: 0 5px 20px #66512b0c; border-radius: 5px; }
-.diaryEmpty h3 { font: 400 21px/1.7 var(--diary-serif); }
-.diaryBackdrop { padding: 30px 20px; background: #39362e66; backdrop-filter: blur(4px); z-index: 120; }
-.diaryDialog { position: relative; width: min(840px, 100%); max-height: calc(100dvh - 60px); overflow: auto; overscroll-behavior: contain; padding: 30px 44px 24px; border: 1px solid #ece4d6; border-radius: 5px; background: var(--diary-paper) url('/textures/diary-paper.webp') repeat; background-size: 512px; box-shadow: -5px 5px 0 #f6f1e5, 6px 8px 0 -2px #e9e2d4, 0 18px 60px #31281d30; }
+/* The empty page uses the same paper, bookmark and type as a diary entry. */
+.diaryEmpty { position: relative; margin: 40px auto; padding: 44px 40px 36px; max-width: 680px; border: 1px solid #eee7dc; border-radius: 4px 8px 5px 3px; background: var(--diary-paper) url('/textures/diary-paper.webp') repeat; background-size: 512px; box-shadow: -4px 5px 0 -1px #f8f5eb, -8px 8px 0 -3px #ebe5d7, 0 7px 16px #66512b0d; }
+.diaryEmptyEyebrow { color: var(--diary-muted); font-size: 14px; }
+.diaryEmpty h2 { margin: 20px 0 12px; color: var(--diary-ink); font: 500 24px/1.6 var(--diary-serif); overflow-wrap: anywhere; }
+.diaryEmpty p { margin: 0; color: var(--diary-muted); font: 400 16px/2 var(--diary-serif); }
+.diaryEmptyLines { height: 96px; margin: 20px 0 28px; background: repeating-linear-gradient(transparent 0 31px, #e7dfd077 31px 32px); }
+.diaryBackdrop { padding: 20px 24px; background: #39362e66; backdrop-filter: blur(4px); z-index: 120; }
+.diaryDialog { position: relative; width: min(1480px, 100%); height: calc(100dvh - 40px); max-height: calc(100dvh - 40px); overflow: auto; overscroll-behavior: contain; padding: 28px 40px 24px; border: 1px solid #ece4d6; border-radius: 5px; background: var(--diary-paper) url('/textures/diary-paper.webp') repeat; background-size: 512px; box-shadow: -5px 5px 0 #f6f1e5, 6px 8px 0 -2px #e9e2d4, 0 18px 60px #31281d30; }
+.diaryDialog form { height: 100%; }
+.diaryDialog fieldset { display: flex; flex-direction: column; height: 100%; min-height: 100%; }
+.diaryEditorBody { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 320px); gap: 32px; flex: 1; padding-block: 24px; }
+.diaryEditorBody .diaryWriting { display: flex; flex-direction: column; min-width: 0; margin: 0 0 0 10px; }
+.diaryDialog .diaryEditorBody textarea { flex: 1; min-height: 320px; }
+.diaryEditorSide { min-width: 0; padding-left: 28px; border-left: 1px solid var(--diary-rule); }
+.diaryEditorSide .diaryAttachmentList { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 12px; }
+.diaryEditorSide .diaryAlbumChoice { flex-wrap: wrap; gap: 8px; }
+.diaryEditorSide .diaryAlbumChoice select { width: 100%; }
 .diaryDialog fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .diaryDialogTop { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; font: 400 14px var(--diary-serif); }
 .diaryDialog .diaryIconButton { display: grid; place-items: center; border: 0; background: transparent; min-width: 32px; min-height: 32px; color: var(--diary-ink); }
@@ -131,3 +144,20 @@
 }
 @media (prefers-reduced-motion: reduce) { .diaryCard { transition: none; } }
 @media (min-width: 900px) { .workspace:has(.diaryView) { padding-inline: clamp(32px, 6vw, 110px); } }
+
+@media (max-width: 999px) {
+  .diaryEditorBody { display: block; }
+  .diaryEditorBody .diaryWriting { margin-bottom: 28px; }
+  .diaryEditorBody textarea { min-height: clamp(288px, 44dvh, 520px); }
+  .diaryEditorSide { padding-left: 0; border-left: 0; }
+  .diaryEditorSide .diaryAttachmentList { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .diaryEditorSide .diaryAlbumChoice { flex-wrap: nowrap; }
+  .diaryEditorSide .diaryAlbumChoice select { width: min(280px, 75%); }
+}
+@media (max-width: 720px) {
+  .diaryDialog { height: calc(100dvh - 24px); }
+  .diaryEmpty { margin: 28px 4px; padding: 34px 24px 28px; }
+  .diaryEmpty h2 { font-size: 21px; }
+  .diaryEmpty p { font-size: 15px; }
+  .diaryEditorSide .diaryAttachmentList { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

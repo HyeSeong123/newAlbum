@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Bookmark, CalendarDays, CheckSquare, ChevronLeft, ChevronRight, Cloud, CloudRain, CloudSnow, MoreHorizontal, Pencil, Plus, Search, Smile, Sun, Trash2, Wind, X } from "lucide-react";
 import { localDateKey } from "../calendar/calendarModel";
-import { EmptyState } from "../../components/MediaVisual";
 import { ActionMenu } from "../../components/ActionMenu";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
 import type { SavedAlbum } from "../../types/media";
@@ -131,7 +130,14 @@ export function DiaryView({ entries, albums, query = "", onQueryChange, onSave, 
     </div>
     {error && <p className="diaryNotice" role="alert">{error}</p>}{message && <p className="diaryNotice" role="status">{message}</p>}
     {selecting && <div className="diaryBulk"><strong>{selected.length}편 선택</strong><button onClick={() => setSelected(visible.every(entry => selected.includes(entry.id)) ? selected.filter(id => !visible.some(entry => entry.id === id)) : [...new Set([...selected, ...visible.map(entry => entry.id)])])} disabled={!visible.length}>{visible.length && visible.every(entry => selected.includes(entry.id)) ? "현재 결과 선택 해제" : "현재 결과 전체 선택"}</button><label>앨범으로 이동 <select aria-label="선택한 일기의 앨범" value={destination} onChange={e => setDestination(e.target.value)}><option value="">일기장에 두기</option>{albums.map(a => <option key={a.id} value={a.id}>{a.title}</option>)}</select></label><button className="diaryPrimary" disabled={busy || !selected.length} onClick={() => move(selected, destination)}>일괄 이동</button></div>}
-    {!error && !visible.length && <div className="diaryEmpty"><EmptyState icon={<Pencil size={28} />} title={!entries.length ? "아직 펼치지 않은 첫 페이지" : query ? "찾는 이야기가 없어요" : "이번 달은 아직 빈 페이지예요"} description={!entries.length ? "오늘의 마음과 사진을 한 장씩 남겨 보세요." : query ? "다른 단어로 일기를 찾아보세요." : "오늘의 기록을 남기거나 다른 달의 일기를 펼쳐 보세요."} actionLabel={!entries.length ? "첫 일기 쓰기" : undefined} onAction={() => open(blank())} /></div>}
+    {!error && !visible.length && <section className="diaryEmpty" aria-label="빈 일기장">
+      <Bookmark className="diaryBookmark" size={30} fill="currentColor" strokeWidth={0} aria-hidden="true" />
+      <span className="diaryEmptyEyebrow">나의 일기장</span>
+      <h2>{!entries.length ? "아직 펼치지 않은 첫 페이지" : query ? "찾는 이야기가 없어요" : "이번 달은 아직 빈 페이지예요"}</h2>
+      <p>{!entries.length ? "오늘의 마음과 사진을 한 장씩 남겨 보세요." : query ? "다른 단어로 일기를 찾아보세요." : "오늘의 기록을 남기거나 다른 달의 일기를 펼쳐 보세요."}</p>
+      <div className="diaryEmptyLines" aria-hidden="true" />
+      {!entries.length && <button className="diaryPrimary" onClick={() => open(blank())}><Pencil size={16} />첫 일기 쓰기</button>}
+    </section>}
     <div className="diaryCards">{visible.map(entry => <article key={entry.id} className={`diaryCard${selected.includes(entry.id) ? " isSelected" : ""}`}>
       <Bookmark className="diaryBookmark" size={28} fill="currentColor" strokeWidth={0} aria-hidden="true" />
       <div className="diaryCardMenu">{selecting ? <label className="diarySelect"><input type="checkbox" checked={selected.includes(entry.id)} onChange={e => setSelected(current => e.target.checked ? [...current, entry.id] : current.filter(id => id !== entry.id))} aria-label={`${entry.title} 선택`} /><span>선택</span></label> : <ActionMenu label={`${entry.title} 일기 메뉴`} icon={<MoreHorizontal size={19} />} disabled={busy} actions={[{ label: "일기 수정", icon: <Pencil size={16} />, onSelect: () => open(entry) }, { label: "일기 삭제", icon: <Trash2 size={16} />, danger: true, onSelect: () => remove(entry) }]} />}</div>
@@ -154,14 +160,15 @@ export function DiaryView({ entries, albums, query = "", onQueryChange, onSave, 
       }}><fieldset disabled={busy || adding}>
         <div className="diaryDialogTop"><span>{draft.id ? "그날의 기록" : "오늘의 기록"}</span><button className="diaryIconButton" type="button" aria-label="닫기" onClick={close}><X size={21} /></button></div>
         <div className="diaryMetadata"><label className="diaryDateInput"><CalendarDays size={18} /><span>{diaryDateLabel(draft.date, true)}</span><input aria-label="날짜" type="date" required value={draft.date} onInput={e => updateDraft({ date: e.currentTarget.value })} /></label><div className="diaryMoodWeather"><label><Weather value={draft.weather} /><select aria-label="날씨" value={draft.weather} onChange={e => updateDraft({ weather: e.target.value })}>{weathers.map(w => <option key={w}>{w}</option>)}</select></label><label><Smile size={18} /><select aria-label="오늘의 기분" value={draft.mood} onChange={e => updateDraft({ mood: e.target.value })}>{moods.map(m => <option key={m}>{m}</option>)}</select></label></div></div>
-        <div className="diaryWriting"><input className="diaryTitleInput" aria-label="제목" required maxLength={120} placeholder="오늘을 기억할 제목" value={draft.title} onChange={e => updateDraft({ title: e.target.value })} /><textarea aria-label="내용" maxLength={20000} rows={8} placeholder="오늘은 어떤 하루였나요?" value={draft.body} onChange={e => updateDraft({ body: e.target.value })} /></div>
-        <div className="diaryAttachments"><div className="diaryAttachmentHeading"><span>오늘의 사진 <strong aria-live="polite">{photos.length} / {MAX_DIARY_PHOTOS}</strong></span><button type="button" disabled={photos.length >= MAX_DIARY_PHOTOS || busy || adding} onClick={addPhotos}><Plus size={15} />사진 추가</button></div>
+        <div className="diaryEditorBody"><div className="diaryWriting"><input className="diaryTitleInput" aria-label="제목" required maxLength={120} placeholder="오늘을 기억할 제목" value={draft.title} onChange={e => updateDraft({ title: e.target.value })} /><textarea aria-label="내용" maxLength={20000} rows={8} placeholder="오늘은 어떤 하루였나요?" value={draft.body} onChange={e => updateDraft({ body: e.target.value })} /></div>
+        <div className="diaryEditorSide"><div className="diaryAttachments"><div className="diaryAttachmentHeading"><span>오늘의 사진 <strong aria-live="polite">{photos.length} / {MAX_DIARY_PHOTOS}</strong></span><button type="button" disabled={photos.length >= MAX_DIARY_PHOTOS || busy || adding} onClick={addPhotos}><Plus size={15} />사진 추가</button></div>
           <input ref={fileInput} type="file" accept={DIARY_PHOTO_ACCEPT} multiple hidden aria-label="일기 사진 파일" onChange={event => { const files = Array.from(event.target.files ?? []); event.target.value = ""; if (files.length) void attach(() => readDiaryPhotoFiles(files, MAX_DIARY_PHOTOS - photos.length)); }} />
           <div className="diaryAttachmentList">{photos.map((photo, index) => <div className="diaryAttachmentPrint" key={photo.id}><DiaryPhoto photo={photo} /><button type="button" className="diaryRemovePhoto" aria-label={`${index + 1}번째 사진 삭제`} onClick={() => updateDraft({ photos: photos.filter(p => p.id !== photo.id) })}><X size={14} /></button></div>)}{photos.length < MAX_DIARY_PHOTOS && <button type="button" className="diaryAddPhoto" onClick={addPhotos} aria-label="일기 사진 추가"><Plus size={22} /><span>{adding ? "사진을 가져오는 중" : "사진 추가"}</span></button>}</div>
           <p className="diaryPhotoHint" aria-live="polite">{adding ? "사진을 가져오고 있어요." : photos.length === MAX_DIARY_PHOTOS ? "사진 6장을 모두 담았어요. 바꾸려면 사진을 먼저 빼 주세요." : "사진은 최대 6장까지 첨부할 수 있어요."}</p>
         </div>
         <label className="diaryAlbumChoice">담을 앨범<select aria-label="앨범" value={draft.album_id ?? ""} onChange={e => updateDraft({ album_id: e.target.value ? Number(e.target.value) : null })}><option value="">내 일기장</option>{albums.map(a => <option key={a.id} value={a.id}>{a.title}</option>)}</select></label>
         {draftError && <p className="diaryNotice diaryError" role="alert">{draftError}</p>}
+        </div></div>
         <div className="diaryDialogActions">{draft.id > 0 && <button className="diaryDelete" type="button" onClick={() => remove(draft)}><Trash2 size={15} />삭제</button>}<button className="diaryCancel" type="button" onClick={close}>취소</button><button className="diaryPrimary" type="submit" disabled={busy || adding}>{busy ? "저장 중" : "일기 저장"}</button></div>
       </fieldset></form></section></div>}
   </div>;

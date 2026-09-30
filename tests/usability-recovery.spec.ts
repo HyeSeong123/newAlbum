@@ -183,10 +183,12 @@ test('partial native import keeps successful photos and retry does not duplicate
   await nativeLibrary(page, { partialImport: true });
   await page.goto('/');
   await page.getByRole('button', { name: '사진 가져오기', exact: true }).click();
+  await page.getByRole('dialog', { name: '사진·영상 가져오기' }).getByRole('button', { name: '파일 선택' }).click();
   await expect(page.getByRole('alert')).toContainText('1개 파일은 가져왔습니다.');
   await expect(page.getByRole('alert')).toContainText('등록된 사진은 그대로 남아 있습니다.');
   await expect(page.locator('.mediaTile')).toHaveCount(1);
   await page.getByRole('button', { name: '사진·영상 가져오기', exact: true }).click();
+  await page.getByRole('dialog', { name: '사진·영상 가져오기' }).getByRole('button', { name: '파일 선택' }).click();
   await expect(page.locator('.mediaTile')).toHaveCount(2);
   await expect(page.locator('.mediaTile[data-media-id="1"]')).toHaveCount(1);
   await expect(page.locator('.mediaTile[data-media-id="2"]')).toHaveCount(1);
