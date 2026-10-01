@@ -27,6 +27,10 @@ try {
     assert.equal(await page.evaluate(() => localStorage.getItem('installer-smoke')), 'persisted');
     assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_media')).length), 1);
     assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_media'))[0].title), '설치 후에도 남아 있는 제목');
+    const place = await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_media'))[0]);
+    assert.equal(place.region_code, 'KR-11');
+    assert.equal(place.district, '강남구');
+    assert.equal(place.location_source, 'manual');
     assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_albums'))[0].items[0].title), '설치 후에도 남아 있는 제목');
     assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_albums'))[0].contents[0].kind), 'CHAPTER');
     assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_albums'))[0].contents[2].body), '여행 마지막 날.\n가장 기억에 남는다.');
@@ -44,6 +48,7 @@ try {
       const media = await invoke('list_media');
       if (!(media[0].width > 0 && media[0].height > 0)) throw new Error('Imported image dimensions were not persisted');
       await invoke('update_media_title', { id: media[0].id, title: '설치 후에도 남아 있는 제목' });
+      await invoke('assign_media_region', { ids:[media[0].id], regionCode:'KR-11', district:'강남구', country:'', city:'' });
       await invoke('create_album_from_media', { title: '제목 저장 확인', mediaIds: [media[0].id], coverColor: '#D8DDCB' });
       const album = (await invoke('list_albums'))[0];
       await invoke('update_album', { id:album.id, title:album.title, coverColor:album.cover_color, musicPath, mediaIds:[media[0].id], contents:[

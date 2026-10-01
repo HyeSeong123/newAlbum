@@ -7,7 +7,7 @@ import { syncAlbumMedia } from "./journalModel";
 import { REGION_NAMES } from "../map/regions";
 
 type LibraryState = { items: MediaItem[]; albums: SavedAlbum[]; loaded: boolean };
-export type MediaImportOptions = { kind: "files" | "folder"; album?: { title: string; color: string } };
+export type MediaImportOptions = { kind: "files" | "folder"; album?: { title: string; color: string }; region?: { code: string; district: string } };
 
 export function useMediaLibrary() {
   const desktop = api.isTauriRuntime();
@@ -107,9 +107,19 @@ export function useMediaLibrary() {
     try { await createAlbum(album.title.trim(), album.color, added); return true; } catch { setError("사진은 등록했지만 앨범을 만들지 못했습니다. 다시 앨범을 만들어 주세요."); return false; }
   }
 
+  async function finishImportedMedia(added: MediaItem[], options?: MediaImportOptions) {
+    const located = added.filter(item => item.fileType === "image" || item.fileType === "video");
+    if (located.length && options?.kind === "folder" && options.region) {
+      try { await assignRegion(located.map(item => item.id), options.region.code, options.region.district); }
+      catch { setError("사진은 가져왔지만 촬영 지역을 저장하지 못했습니다. 가져온 기록을 선택해 지역을 다시 지정해 주세요."); }
+    }
+    const latest = new Map(current.current.items.map(item => [item.id, item]));
+    return finishImportedAlbum(added.map(item => latest.get(item.id) ?? item), options?.album);
+  }
+
   async function requestImport(options: MediaImportOptions) {
     if (locked.current) return false;
-    if (desktop) return finishImportedAlbum(await register(options.kind), options.album);
+    if (desktop) return finishImportedMedia(await register(options.kind), options);
     pendingImport.current = options;
     (options.kind === "files" ? fileInput : folderInput).current?.click();
     return false;
@@ -119,7 +129,7 @@ export function useMediaLibrary() {
     const options = pendingImport.current;
     pendingImport.current = null;
     const added = handleFiles(files, kind);
-    return finishImportedAlbum(added, options?.kind === kind ? options.album : undefined);
+    return finishImportedMedia(added, options?.kind === kind ? options : undefined);
   }
 
   useEffect(() => {

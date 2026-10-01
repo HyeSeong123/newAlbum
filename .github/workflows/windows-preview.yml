@@ -2,14 +2,22 @@ name: Windows preview package
 
 on:
   workflow_dispatch:
+  push:
+    branches: [feature/warm-journal-v2, master]
 
 permissions:
   contents: read
   actions: read
 
+concurrency:
+  group: windows-package-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   package:
     name: Build, install and upload Windows preview
+    outputs:
+      version: ${{ steps.files.outputs.version }}
     runs-on: windows-2025
     timeout-minutes: 90
     steps:
@@ -41,16 +49,34 @@ jobs:
           if (-not $installer) { throw 'Full installer is missing.' }
           New-Item -ItemType Directory -Force release-output | Out-Null
           Copy-Item $installer.FullName "release-output/Oraedameun_${version}_x64-setup.exe"
+      - name: Find previous tested installer
+        id: previous
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const version = require('./package.json').version;
+            const artifacts = await github.paginate(github.rest.actions.listArtifactsForRepo, { ...context.repo, per_page:100 });
+            const previous = artifacts.filter(item => !item.expired && /^Oraedameun-Windows-\d+\.\d+\.\d+$/.test(item.name)
+              && item.workflow_run?.head_branch === context.ref.replace('refs/heads/', '')
+              && item.workflow_run?.id !== context.runId && item.name !== `Oraedameun-Windows-${version}`)
+              .sort((a,b) => b.created_at.localeCompare(a.created_at))[0];
+            core.setOutput('found', !!previous);
+            if (previous) { core.setOutput('name', previous.name); core.setOutput('run', previous.workflow_run.id); }
       - name: Download previous tested app for upgrade verification
+        if: steps.previous.outputs.found == 'true'
         uses: actions/download-artifact@v4
         with:
-          name: Oraedameun-Windows-0.3.1
-          run-id: 36644502021
+          name: ${{ steps.previous.outputs.name }}
+          run-id: ${{ steps.previous.outputs.run }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: legacy-release
-      - name: Install previous version and seed existing records
+      - name: Seed records for installation verification
         shell: pwsh
-        run: ./scripts/smoke-windows.ps1 -InstallerPath legacy-release/Oraedameun_0.3.1_x64-setup.exe -SeedLegacy
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $previous = Get-ChildItem legacy-release/*-setup.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          $seedInstaller = if ($previous) { $previous.FullName } else { "release-output/Oraedameun_${version}_x64-setup.exe" }
+          ./scripts/smoke-windows.ps1 -InstallerPath $seedInstaller -SeedLegacy
       - name: Upgrade with full installer and verify retained records
         shell: pwsh
         run: |
@@ -98,3 +124,168 @@ jobs:
           path: test-results/desktop-smoke/
           if-no-files-found: ignore
           retention-days: 7
+
+  transfer:
+    name: Prepare bounded downloads
+    needs: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Oraedameun-Windows-${{ needs.package.outputs.version }}
+          path: release-output
+      - name: Split tested downloads
+        shell: python
+        run: |
+          import pathlib, zipfile
+          with zipfile.ZipFile('tested-windows.zip', 'w', compression=zipfile.ZIP_STORED) as archive:
+              for p in sorted(pathlib.Path('release-output').iterdir()): archive.write(p, p.name)
+          pathlib.Path('transfer').mkdir()
+          with open('tested-windows.zip', 'rb') as source:
+              index = 0
+              while chunk := source.read(28 * 1024 * 1024):
+                  pathlib.Path(f'transfer/part-{index:02}.bin').write_bytes(chunk)
+                  index += 1
+          if index > 20: raise RuntimeError('More than 20 transfer parts required')
+          print(f'Prepared {index} transfer parts.')
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-00.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-00
+          path: transfer/part-00.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-01.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-01
+          path: transfer/part-01.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-02.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-02
+          path: transfer/part-02.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-03.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-03
+          path: transfer/part-03.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-04.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-04
+          path: transfer/part-04.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-05.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-05
+          path: transfer/part-05.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-06.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-06
+          path: transfer/part-06.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-07.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-07
+          path: transfer/part-07.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-08.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-08
+          path: transfer/part-08.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-09.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-09
+          path: transfer/part-09.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-10.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-10
+          path: transfer/part-10.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-11.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-11
+          path: transfer/part-11.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-12.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-12
+          path: transfer/part-12.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-13.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-13
+          path: transfer/part-13.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-14.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-14
+          path: transfer/part-14.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-15.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-15
+          path: transfer/part-15.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-16.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-16
+          path: transfer/part-16.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-17.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-17
+          path: transfer/part-17.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-18.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-18
+          path: transfer/part-18.bin
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('transfer/part-19.bin') != ''
+        with:
+          name: Windows-${{ needs.package.outputs.version }}-transfer-19
+          path: transfer/part-19.bin
+          compression-level: 0
+          retention-days: 1

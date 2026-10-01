@@ -7,7 +7,7 @@
 - `index.html`, `src-tauri/tauri.conf.json`: 웹 제목과 파비콘, 앱 표시 이름과 창 제목.
 - `src-tauri/src/database.rs`, `src-tauri/src/lib.rs`, `src/features/people/PeopleView.tsx`: 사용자에게 보이는 앱 이름.
 
-앱 식별자 `com.oraedameun.album`, Rust crate 이름, 저장 키와 기존 데이터 경로는 유지한다. Windows 아이콘·실행파일·설치파일은 이번 작업 대상이 아니다. Windows 패키징 workflow는 수동 실행만 허용해 소스 업로드가 패키징을 실행하지 않게 한다.
+앱 식별자 `com.oraedameun.album`, Rust crate 이름, 저장 키와 기존 데이터 경로는 유지한다. 2026-10-01부터 Windows 패키징 workflow는 작업 브랜치 푸시마다 설치파일과 업데이트 파일을 모두 생성한다.
 
 심볼은 선택한 시안에서 내장 이미지 생성 도구로 배경과 글자를 제거해 제작한 PNG이며 SVG 벡터 파일이 아니다. 글자는 이미지에 합치지 않아 화면에서 선명하게 표시하고 접근성 텍스트로 읽을 수 있다.
 
