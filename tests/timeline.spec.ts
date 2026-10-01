@@ -35,10 +35,13 @@ test('three photo view tabs support keyboard wrap and fit the mobile viewport', 
   await page.getByRole('tab',{ name:'사진 모아보기',exact:true }).focus();
   await page.keyboard.press('End');
   await expect(page.getByRole('tab',{ name:'책 보기',exact:true })).toHaveAttribute('aria-selected','true');
+  await expect(page.getByRole('tab',{ name:'책 보기',exact:true })).toBeFocused();
   await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('tab',{ name:'사진 모아보기',exact:true })).toHaveAttribute('aria-selected','true');
+  await expect(page.getByRole('tab',{ name:'사진 모아보기',exact:true })).toBeFocused();
   await page.keyboard.press('ArrowLeft');
   await expect(page.getByRole('tab',{ name:'책 보기',exact:true })).toHaveAttribute('aria-selected','true');
+  await expect(page.getByRole('tab',{ name:'책 보기',exact:true })).toBeFocused();
   const box = await tabs.boundingBox();
   expect(box!.x).toBeGreaterThanOrEqual(0);
   expect(box!.x + box!.width).toBeLessThanOrEqual(page.viewportSize()!.width + 1);

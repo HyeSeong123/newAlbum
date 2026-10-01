@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, CalendarDays, ChevronRight, LayoutGrid, Plus } from "lucide-react";
 import type { MediaItem, SavedAlbum } from "../../types/media";
 import { Library } from "./LibraryView";
@@ -47,6 +47,12 @@ export function PhotoView({
   const [exportingQuickAlbum, setExportingQuickAlbum] = useState(false);
   const quickAlbum = albums.find((album) => album.id === quickAlbumId);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const pendingTabFocus = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    if (pendingTabFocus.current === null) return;
+    tabRefs.current[pendingTabFocus.current]?.focus();
+    pendingTabFocus.current = null;
+  }, [mode]);
   const monthItems = useMemo(() => filterJournalMonth(items, activeMonth), [items, activeMonth]);
   const tabs = [
     { mode: "grid" as const, label: "사진 모아보기", Icon: LayoutGrid },
@@ -58,8 +64,9 @@ export function PhotoView({
         if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
         event.preventDefault();
         const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length;
+        // The grid mounts its tabs inside Library; focus after the new DOM commits.
+        pendingTabFocus.current = next;
         setMode(tabs[next].mode);
-        requestAnimationFrame(() => tabRefs.current[next]?.focus());
       }}><tab.Icon size={16} />{tab.label}</button>)}
     </div>;
   return <div className={`photoWorkspace mode-${mode}`}>

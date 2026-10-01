@@ -15,6 +15,13 @@
   ${EndIf}
 !macroend
 
+!macro NSIS_HOOK_PREINSTALL
+  ; The old executable name also needs to be closed during the first branded upgrade.
+  ${If} ${FileExists} "$INSTDIR\oraedameun.exe"
+    !insertmacro CheckIfAppIsRunning "oraedameun.exe" "${PRODUCTNAME}"
+  ${EndIf}
+!macroend
+
 !macro NSIS_HOOK_POSTINSTALL
   !insertmacro REMOVE_LEGACY_SHORTCUT "$SMPROGRAMS\그루터기.lnk"
   !insertmacro REMOVE_LEGACY_SHORTCUT "$SMPROGRAMS\$AppStartMenuFolder\그루터기.lnk"
