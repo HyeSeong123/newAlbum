@@ -10,9 +10,24 @@ using System;
 using System.Text;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
+[ComImport, Guid("00021401-0000-0000-C000-000000000046")]
+public class GamjassakShellLink { }
+[ComImport, Guid("000214F9-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+public interface IGamjassakShellLinkW {
+    void GetPath([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder path, int size, IntPtr findData, uint flags);
+}
 public static class GamjassakCanonicalPath {
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     public static extern uint GetFinalPathNameByHandle(SafeFileHandle handle, StringBuilder path, uint size, uint flags);
+    public static string ReadShortcut(string filename) {
+        object link = new GamjassakShellLink();
+        try {
+            ((System.Runtime.InteropServices.ComTypes.IPersistFile)link).Load(filename, 0);
+            var path = new StringBuilder(1024);
+            ((IGamjassakShellLinkW)link).GetPath(path, path.Capacity, IntPtr.Zero, 4);
+            return path.ToString();
+        } finally { Marshal.FinalReleaseComObject(link); }
+    }
 }
 '@
 }
@@ -33,17 +48,21 @@ $setup = Start-Process -FilePath $installer.FullName -ArgumentList $arguments -W
 if ($setup.ExitCode -ne 0) { throw "Installer failed: $($setup.ExitCode)" }
 $binary = Get-ChildItem $installDirectory -Filter '*.exe' | Where-Object { $_.Name -notmatch 'uninstall' } | Select-Object -First 1
 if (-not $binary) { throw 'Installed application executable is missing.' }
+$diagnostics = Join-Path (Get-Location) 'test-results/desktop-smoke'
+New-Item -ItemType Directory -Force -Path $diagnostics | Out-Null
 if (-not $SeedLegacy) {
     if ($binary.Name -ne 'gamjassak.exe') { throw 'Visible application binary name was not updated.' }
     if (Test-Path (Join-Path $installDirectory 'oraedameun.exe')) { throw 'Legacy application executable was left behind.' }
     $entry = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\그루터기'
     if ($entry.DisplayName -ne '감자싹') { throw 'Windows installed app display name was not updated.' }
     if (Test-Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\감자싹') { throw 'Rename created a duplicate installed app.' }
-    $shell = New-Object -ComObject WScript.Shell
+    $shortcutIndex = 0
     foreach ($folder in @([Environment]::GetFolderPath('Desktop'), [Environment]::GetFolderPath('Programs'))) {
         $shortcut = Join-Path $folder '감자싹.lnk'
         if (-not (Test-Path $shortcut)) { throw "New branded shortcut missing: $shortcut" }
-        $target = $shell.CreateShortcut($shortcut).TargetPath
+        Copy-Item -LiteralPath $shortcut -Destination (Join-Path $diagnostics "shortcut-$shortcutIndex.lnk")
+        $shortcutIndex++
+        $target = [GamjassakCanonicalPath]::ReadShortcut($shortcut)
         Write-Host "Shortcut target: $target; installed binary: $($binary.FullName)"
         if (-not (Test-Path -LiteralPath $target -PathType Leaf) -or (Resolve-InstalledFile $target) -ne (Resolve-InstalledFile $binary.FullName)) {
             throw "Shortcut does not launch the new binary: $target; expected: $($binary.FullName)"
@@ -54,8 +73,6 @@ if (-not $SeedLegacy) {
 
 # Enable CDP only in this CI process to exercise the real WebView2/native bridge.
 $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = '--remote-debugging-port=9222'
-$diagnostics = Join-Path (Get-Location) 'test-results/desktop-smoke'
-New-Item -ItemType Directory -Force -Path $diagnostics | Out-Null
 $env:ORAEDAMEUN_STARTUP_LOG = Join-Path $diagnostics 'startup.log'
 $application = $null
 $debugPolicyPath = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments'
