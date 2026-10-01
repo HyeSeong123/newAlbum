@@ -118,7 +118,7 @@ export function DiaryView({ entries, albums, query = "", onQueryChange, onSave, 
 
   return <div className="diaryView">
     <header className="diaryHeading">
-      <div><span className="diaryEyebrow">그루터기 · 하루의 기록</span><h1>나의 일기장</h1><p>평범한 하루도, 오래 간직하고 싶은 이야기.</p></div>
+      <div><span className="diaryEyebrow">감자싹 · 하루의 기록</span><h1>나의 일기장</h1><p>평범한 하루도, 오래 간직하고 싶은 이야기.</p></div>
       <div className="diaryHeadingActions">
         <label className="diarySearch"><Search size={17} /><input aria-label="일기 검색" placeholder="일기 검색" value={query} onChange={e => onQueryChange(e.target.value)} />{query && <button type="button" aria-label="검색 지우기" onClick={() => onQueryChange("")}><X size={15} /></button>}</label>
         <button className="diaryPrimary" onClick={() => open(blank())} disabled={!!error}><Pencil size={16} />일기 쓰기</button>

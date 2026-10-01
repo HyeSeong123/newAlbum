@@ -25,6 +25,12 @@ try {
   const restarted = process.argv.includes('--restarted') || process.argv.includes('--upgraded');
   if (restarted) {
     assert.equal(await page.evaluate(() => localStorage.getItem('installer-smoke')), 'persisted');
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('oraedameun.dayNotes'))['2026-10-01']), '이름 변경 전 날짜 메모');
+    const diary = await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_diary'))[0]);
+    assert.equal(diary.title, '이름 변경 전 일기');
+    assert.equal(diary.body, '사진과 함께 보관한 기존 일기');
+    assert.equal(diary.photos.length, 1);
+    assert.equal(diary.album_id, await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_albums'))[0].id));
     assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_media')).length), 1);
     assert.equal(await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_media'))[0].title), '설치 후에도 남아 있는 제목');
     const place = await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_media'))[0]);
@@ -61,12 +67,17 @@ try {
       image.src = window.__TAURI_INTERNALS__.convertFileSrc(thumbnail, 'asset');
       await image.decode();
       if (!image.naturalWidth) throw new Error('Native media protocol failed');
+      await invoke('save_diary', { entry: { id: 1700000000350, date: '2026-10-01', title: '이름 변경 전 일기', body: '사진과 함께 보관한 기존 일기', mood: '평온', weather: '맑음', album_id: album.id, photos: [{ id: media[0].id, file_path: media[0].file_path }] } });
+      localStorage.setItem('oraedameun.dayNotes', JSON.stringify({ '2026-10-01': '이름 변경 전 날짜 메모' }));
       localStorage.setItem('installer-smoke', 'persisted');
       return media.length;
     }, { path:resolve('tests/fixtures/pet-dog.jpg'), musicPath });
     assert.equal(count, 1);
   }
   if (!process.argv.includes('--seed-legacy')) {
+  await expect(page).toHaveTitle('감자싹');
+  await expect(page.locator('.brand').getByRole('img', { name: '감자싹', exact: true })).toBeVisible();
+  assert.equal(await page.locator('.brand img').evaluate(image => image.complete && image.naturalWidth > 0), true);
   await page.reload();
   await page.locator('.app').waitFor();
   await page.getByRole('button', { name:'내 앨범', exact:true }).click();

@@ -992,11 +992,11 @@ pub fn run() {
                     Ok(server) => { app.manage(server); }
                     Err(error) => {
                         let message = if error.kind() == io::ErrorKind::AddrInUse {
-                            "127.0.0.1:5173 포트를 다른 프로그램이 사용하고 있습니다. 개발 서버 또는 해당 프로그램을 종료한 뒤 그루터기를 다시 실행해 주세요.".to_owned()
+                            "127.0.0.1:5173 포트를 다른 프로그램이 사용하고 있습니다. 개발 서버 또는 해당 프로그램을 종료한 뒤 감자싹을 다시 실행해 주세요.".to_owned()
                         } else {
                             format!("로컬 서버를 시작하지 못했습니다.\n{error}")
                         };
-                        app.dialog().message(&message).title("그루터기 실행 안내")
+                        app.dialog().message(&message).title("감자싹 실행 안내")
                             .kind(tauri_plugin_dialog::MessageDialogKind::Error).blocking_show();
                         return Err(Box::new(io::Error::new(error.kind(), message)));
                     }

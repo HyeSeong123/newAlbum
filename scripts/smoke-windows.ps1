@@ -7,10 +7,25 @@ $ErrorActionPreference = 'Stop'
 $installer = if ($InstallerPath) { Get-Item $InstallerPath } else { Get-ChildItem 'src-tauri/target/release/bundle/nsis/*-setup.exe' | Select-Object -First 1 }
 if (-not $installer) { throw 'Windows installer was not generated.' }
 $installDirectory = Join-Path $env:RUNNER_TEMP 'OraedameunSmoke'
-$setup = Start-Process -FilePath $installer.FullName -ArgumentList "/S /D=$installDirectory" -Wait -PassThru
+$arguments = if ($Upgrade) { "/S" } else { "/S /D=$installDirectory" }
+$setup = Start-Process -FilePath $installer.FullName -ArgumentList $arguments -Wait -PassThru
 if ($setup.ExitCode -ne 0) { throw "Installer failed: $($setup.ExitCode)" }
 $binary = Get-ChildItem $installDirectory -Filter '*.exe' | Where-Object { $_.Name -notmatch 'uninstall' } | Select-Object -First 1
 if (-not $binary) { throw 'Installed application executable is missing.' }
+if (-not $SeedLegacy) {
+    if ($binary.Name -ne 'gamjassak.exe') { throw 'Visible application binary name was not updated.' }
+    if (Test-Path (Join-Path $installDirectory 'oraedameun.exe')) { throw 'Legacy application executable was left behind.' }
+    $entry = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\그루터기'
+    if ($entry.DisplayName -ne '감자싹') { throw 'Windows installed app display name was not updated.' }
+    if (Test-Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\감자싹') { throw 'Rename created a duplicate installed app.' }
+    $shell = New-Object -ComObject WScript.Shell
+    foreach ($folder in @([Environment]::GetFolderPath('Desktop'), [Environment]::GetFolderPath('Programs'))) {
+        $shortcut = Join-Path $folder '감자싹.lnk'
+        if (-not (Test-Path $shortcut)) { throw "New branded shortcut missing: $shortcut" }
+        if ($shell.CreateShortcut($shortcut).TargetPath -ne $binary.FullName) { throw 'Shortcut does not launch the new binary.' }
+        if (Test-Path (Join-Path $folder '그루터기.lnk')) { throw 'Legacy shortcut was left behind.' }
+    }
+}
 
 # Enable CDP only in this CI process to exercise the real WebView2/native bridge.
 $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = '--remote-debugging-port=9222'
@@ -79,7 +94,8 @@ try {
     node scripts/smoke-desktop.mjs --restarted
     if ($LASTEXITCODE -ne 0) { throw 'App persistence check failed after restart.' }
     Close-LocalApp
-    $application = Start-Process -FilePath (Resolve-Path 'src-tauri/target/release/oraedameun.exe') -PassThru
+    $mainBinary = (Get-Content 'src-tauri/tauri.conf.json' -Raw | ConvertFrom-Json).mainBinaryName
+    $application = Start-Process -FilePath (Resolve-Path "src-tauri/target/release/$mainBinary.exe") -PassThru
     Wait-LocalApp
     node scripts/smoke-desktop.mjs --restarted
     if ($LASTEXITCODE -ne 0) { throw 'Standalone executable check failed.' }

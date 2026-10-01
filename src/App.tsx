@@ -162,8 +162,7 @@ export function App() {
     <main className={`app${largeLayout ? " largeLayout" : ""}`} style={{ "--app-header-height": `${navigationHeight}px` } as CSSProperties}>
       <header ref={navigationRef} className="sidebar" aria-label="주 메뉴">
         <div className="brand">
-          <img className="brandSymbol" src="/brand/geuruteogi-symbol.png" alt="" aria-hidden="true" width={54} height={54} draggable={false} />
-          <strong>그루터기</strong>
+          <img className="brandLogo" src="/brand/gamjassak-logo.png" alt="감자싹" width={2022} height={778} draggable={false} />
         </div>
 
         <nav className="navList" aria-label="주 메뉴">

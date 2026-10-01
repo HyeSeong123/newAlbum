@@ -9,7 +9,7 @@
   justify-items: start;
   gap: 16px;
 }
-.firstRunGuide > svg { color: var(--primary); }
+.firstRunMascot { display: block; width: 80px; height: 80px; object-fit: contain; }
 .firstRunGuide h2 { margin: 0; font-size: clamp(23px, 4vw, 28px); }
 .firstRunGuide p { margin: 0 0 12px; color: var(--text); font-size: 16px; line-height: 1.65; }
 .firstRunGuide p:last-child { margin-bottom: 0; }

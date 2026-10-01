@@ -101,7 +101,7 @@ for (const existing of ['media', 'album', 'diary'] as const) {
     page.on('pageerror', error => guides.push(error.message));
     await page.goto('/');
     await expect.poll(() => page.evaluate(() => localStorage.getItem('geuruteogi.first-run-completed-v1'))).toBe('true');
-    await expect(page.getByRole('dialog', { name: '그루터기에 사진을 담아보세요' })).toHaveCount(0);
+    await expect(page.getByRole('dialog', { name: '감자싹에 사진을 담아보세요' })).toHaveCount(0);
     await expect(page.locator('html')).not.toHaveAttribute('data-guide-appeared', 'true');
     await page.reload();
     await expect(page.getByRole('heading', { name: '사진 기록', exact: true })).toBeVisible();
