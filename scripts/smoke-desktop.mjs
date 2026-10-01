@@ -67,7 +67,7 @@ try {
       image.src = window.__TAURI_INTERNALS__.convertFileSrc(thumbnail, 'asset');
       await image.decode();
       if (!image.naturalWidth) throw new Error('Native media protocol failed');
-      await invoke('save_diary', { entry: { id: 1700000000350, date: '2026-10-01', title: '이름 변경 전 일기', body: '사진과 함께 보관한 기존 일기', mood: '평온', weather: '맑음', album_id: album.id, photos: [{ id: media[0].id, file_path: media[0].file_path }] } });
+      await invoke('save_diary', { entry: { id: 0, date: '2026-10-01', title: '이름 변경 전 일기', body: '사진과 함께 보관한 기존 일기', mood: '평온', weather: '맑음', album_id: album.id, photos: [{ id: media[0].id, file_path: media[0].file_path }] } });
       localStorage.setItem('oraedameun.dayNotes', JSON.stringify({ '2026-10-01': '이름 변경 전 날짜 메모' }));
       localStorage.setItem('installer-smoke', 'persisted');
       return media.length;
