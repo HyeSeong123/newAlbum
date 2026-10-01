@@ -4,6 +4,27 @@ param(
     [switch]$SeedLegacy
 )
 $ErrorActionPreference = 'Stop'
+if (-not ('GamjassakCanonicalPath' -as [type])) {
+    Add-Type @'
+using System;
+using System.Text;
+using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
+public static class GamjassakCanonicalPath {
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern uint GetFinalPathNameByHandle(SafeFileHandle handle, StringBuilder path, uint size, uint flags);
+}
+'@
+}
+function Resolve-InstalledFile([string]$Path) {
+    $stream = [System.IO.File]::Open($Path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+    try {
+        $buffer = [System.Text.StringBuilder]::new(1024)
+        $length = [GamjassakCanonicalPath]::GetFinalPathNameByHandle($stream.SafeFileHandle, $buffer, $buffer.Capacity, 0)
+        if ($length -eq 0 -or $length -ge $buffer.Capacity) { throw "Could not resolve installed file: $Path" }
+        return $buffer.ToString()
+    } finally { $stream.Dispose() }
+}
 $installer = if ($InstallerPath) { Get-Item $InstallerPath } else { Get-ChildItem 'src-tauri/target/release/bundle/nsis/*-setup.exe' | Select-Object -First 1 }
 if (-not $installer) { throw 'Windows installer was not generated.' }
 $installDirectory = Join-Path $env:RUNNER_TEMP 'OraedameunSmoke'
@@ -22,7 +43,11 @@ if (-not $SeedLegacy) {
     foreach ($folder in @([Environment]::GetFolderPath('Desktop'), [Environment]::GetFolderPath('Programs'))) {
         $shortcut = Join-Path $folder '감자싹.lnk'
         if (-not (Test-Path $shortcut)) { throw "New branded shortcut missing: $shortcut" }
-        if ($shell.CreateShortcut($shortcut).TargetPath -ne $binary.FullName) { throw 'Shortcut does not launch the new binary.' }
+        $target = $shell.CreateShortcut($shortcut).TargetPath
+        Write-Host "Shortcut target: $target; installed binary: $($binary.FullName)"
+        if (-not (Test-Path -LiteralPath $target -PathType Leaf) -or (Resolve-InstalledFile $target) -ne (Resolve-InstalledFile $binary.FullName)) {
+            throw "Shortcut does not launch the new binary: $target; expected: $($binary.FullName)"
+        }
         if (Test-Path (Join-Path $folder '그루터기.lnk')) { throw 'Legacy shortcut was left behind.' }
     }
 }
