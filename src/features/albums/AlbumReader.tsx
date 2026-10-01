@@ -9,6 +9,7 @@ import { useAlbumReader } from "./useAlbumReader";
 import { ALBUM_TURN_TIMING } from "./albumAnimation";
 import albumOpenBase from "../../assets/album-open-white-thin.png";
 import { AlbumContentsList } from "./AlbumContentsList";
+import { DEFAULT_ALBUM_COLOR } from "./AlbumCover";
 
 export function AlbumFullscreenReader({ title, items, contents, color, open, onOpen, onClose, onExport, onEdit, backLabel = "내 앨범" }: {
   title: string;
@@ -29,7 +30,7 @@ export function AlbumFullscreenReader({ title, items, contents, color, open, onO
 
   if (!open) return null;
   return <div className={`albumJournal${listView ? " is-list" : ""}`} style={{
-    "--album-color": color,
+    "--album-color": color ?? DEFAULT_ALBUM_COLOR,
     "--album-turn-duration": `${ALBUM_TURN_TIMING.motion}ms`,
     "--album-photo-reveal": `${ALBUM_TURN_TIMING.reveal}ms`,
     "--album-first-reveal-delay": `${ALBUM_TURN_TIMING.firstRevealDelay}ms`,
@@ -59,6 +60,7 @@ export function AlbumFullscreenReader({ title, items, contents, color, open, onO
       <div className={`albumSpread ${turning ? `turning-${turning}` : ""} ${turning && turnPhase ? `${turnPhase}-${turning}` : ""}`} data-turn-phase={turnPhase ?? undefined} aria-label="양면 포토앨범 책장" aria-busy={Boolean(turning)}>
         <div className="albumHardback">
           <img className="albumBookBase" src={albumOpenBase} alt="" aria-hidden="true" />
+          <span className="albumBookTrim" aria-hidden="true" />
           {(["left", "right"] as const).map((side, sideIndex) => {
             const entries = visibleSpread?.[side] ?? [];
             const written = visibleSpread?.[`${side}Page`];

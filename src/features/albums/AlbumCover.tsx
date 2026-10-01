@@ -25,6 +25,7 @@ export function AlbumCover({ title, items, color = DEFAULT_ALBUM_COLOR }: { titl
   return <span className="frontAlbum" style={{ "--album-color": color, "--album-title-color": luminance < .179 ? "#FFFDF8" : "#303129", "--album-tint": color.toUpperCase() === DEFAULT_ALBUM_COLOR ? 0 : .9 } as CSSProperties}>
     <img className="frontAlbumBase" src={albumClosedBase} alt="" aria-hidden="true" draggable={false} />
     <span className="frontAlbumTone" aria-hidden="true" />
+    <span className="frontAlbumSpine" aria-hidden="true" />
       <span className="frontAlbumWindow">
         {cover ? <MediaVisual item={cover} fit="cover" /> : <BookOpen size={34} aria-hidden="true" />}
       </span>

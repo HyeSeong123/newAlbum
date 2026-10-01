@@ -12,6 +12,7 @@
 .frontAlbum { position: relative; display: block; width: min(100%, 300px); aspect-ratio: 4 / 5; overflow: hidden; border: 1px solid #dfdfdc; border-radius: 2px; isolation: isolate; box-shadow: 0 3px 7px #20252a1c; transition: transform .2s ease, filter .2s ease; }
 .frontAlbumBase { position: absolute; left: -3.6%; top: -4.1%; width: 107.2%; height: 108.25%; pointer-events: none; user-select: none; }
 .frontAlbumTone { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: var(--album-tint, 0); background: var(--album-color); mix-blend-mode: multiply; }
+.frontAlbumSpine { position: absolute; z-index: 1; inset: 0 auto 0 0; width: 4.8%; pointer-events: none; background: linear-gradient(90deg, #00000038, #ffffff18 24%, #00000020 68%, #00000070 88%, #ffffff55 98%, #00000018); box-shadow: 1px 0 1px #ffffff30; }
 .frontAlbumWindow { position: absolute; z-index: 2; left: 10%; top: 5%; width: 84%; height: 78%; display: grid; place-items: center; overflow: hidden; color: var(--muted); background: #e6e4da; }
 .frontAlbumWindow > div { position: absolute; inset: 0; }
 .frontAlbumWindow .mediaImage { width: 100%; height: 100%; object-fit: cover; object-position: center; }
@@ -136,6 +137,7 @@
   pointer-events: none;
   user-select: none;
 }
+.albumBookTrim { position: absolute; z-index: 1; inset: 14% 2.7% 12%; border: clamp(2px, .4cqw, 5px) solid var(--album-color); border-radius: 6px; box-shadow: inset 0 0 0 1px #00000012; pointer-events: none; }
 .albumPaper {
   position: absolute;
   z-index: 2;
@@ -313,10 +315,11 @@
   .albumSpread { filter: none; }
   .albumHardback { inset: 0; transform-style: flat; }
   .albumBookBase { display: none; }
+  .albumBookTrim { display: none; }
   .albumPaper, .albumPaper.landscape-page {
     top: 0; bottom: auto; left: 0; right: auto; width: 100%; height: 48.5%;
-    padding: 5% 6% 9%; border: 1px solid #e7e2d6; border-radius: 3px;
-    background: #faf9f5; box-shadow: 0 3px 8px #2b291d16;
+    padding: 5% 6% 9%; border: 2px solid var(--album-color); border-radius: 3px;
+    background: #fff; box-shadow: 0 3px 8px #2b291d16;
   }
   .albumPaper.right, .albumPaper.right.landscape-page { top: 51.5%; }
   .albumPaper.left { left: 0; }
