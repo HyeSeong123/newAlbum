@@ -3,13 +3,14 @@ import { expect, test } from '@playwright/test';
 test.beforeEach(async ({ page }) => {
   await page.route('**/region-photo-*.jpg', route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360"><rect width="480" height="360" fill="#e1e7d1"/></svg>' }));
   await page.addInitScript(() => {
-    type Record = { id:number; file_path:string; title:string; file_type:string; taken_at:string|null; region_code:string|null; region_name:string|null; location_source:string; location_status:string; width:number; height:number; size_bytes:number; rating:number; favorite:boolean; comment:string; metadata_status:string };
+    type Record = { id:number; file_path:string; title:string; file_type:string; taken_at:string|null; region_code:string|null; region_name:string|null; district?:string; location_source:string; location_status:string; width:number; height:number; size_bytes:number; rating:number; favorite:boolean; comment:string; metadata_status:string };
     const names: { [key:string]:string } = { 'KR-49':'제주특별자치도','KR-11':'서울특별시','KR-26':'부산광역시' };
     const large = location.search.includes('large');
     let media: Record[] = JSON.parse(localStorage.getItem('region-test-media') || 'null') ?? Array.from({length:large ? 60 : 8}, (_,index) => ({
       id:index+1, file_path:`C:/region-photo-${index+1}.jpg`, title:`기록 ${index+1}`, file_type:index===2 ? 'video':'image',
       taken_at:index===7 ? null : `${index===3 ? '2026' : '2025'}-08-${String(12+index).padStart(2,'0')}`,
       region_code:!large && index<2 ? null:'KR-49', region_name:!large && index<2 ? null:names['KR-49'],
+      district:location.search.includes('legacy') && index===3 ? '옛 행정구역' : undefined,
       location_source:'gps', location_status:!large && index<2 ? 'no-gps':'ready',
       width:480,height:360,size_bytes:123,rating:0,favorite:false,comment:'',metadata_status:'ready',
     }));
@@ -32,7 +33,7 @@ test.beforeEach(async ({ page }) => {
           regions:Object.entries(names).map(([code,name])=>({code,name,photos:media.filter(i=>i.region_code===code&&i.file_type==='image').length,videos:media.filter(i=>i.region_code===code&&i.file_type==='video').length}))};
         if(command==='assign_media_region') {
           if(localStorage.getItem('region-test-fail')) throw new Error('save failed');
-          media = media.map(i=>args.ids.includes(i.id)?{...i,region_code:args.regionCode,region_name:names[args.regionCode],location_source:'manual',location_status:'ready'}:i);
+          media = media.map(i=>args.ids.includes(i.id)?{...i,region_code:args.regionCode,region_name:names[args.regionCode],district:args.district,location_source:'manual',location_status:'ready'}:i);
           localStorage.setItem('region-test-media',JSON.stringify(media)); return;
         }
         if(command==='region_media_page') {
@@ -65,9 +66,17 @@ test('manual region editing persists, updates map counts, and failed saves keep 
   const detail=page.getByRole('dialog',{name:'사진 상세'});
   await detail.getByRole('button',{name:'지역 지정',exact:true}).click();
   await expect(detail.getByLabel('지정할 지역').locator('option[value="KR-11"]')).toHaveText('서울특별시');
+  await detail.getByLabel('지정할 지역').selectOption('KR-50');
+  await expect(detail.getByLabel('시군구')).toBeDisabled();
+  await detail.getByLabel('지정할 지역').selectOption('KR-28');
+  await expect(detail.getByLabel('시군구').locator('option[value="제물포구"]')).toHaveText('제물포구');
+  await expect(detail.getByLabel('시군구').locator('option[value="서해구"]')).toHaveText('서해구');
   await detail.getByLabel('지정할 지역').selectOption('KR-11');
+  await expect(detail.getByLabel('시군구')).toHaveValue('');
+  await detail.getByLabel('시군구').selectOption('종로구');
   await detail.getByRole('button',{name:'지역 저장'}).click();
-  await expect(detail.getByLabel('위치',{exact:true})).toContainText('서울특별시');
+  await expect(detail.getByLabel('위치',{exact:true})).toContainText('서울특별시 · 종로구');
+  await expect(detail.getByLabel('위치',{exact:true})).toContainText('서울특별시 · 종로구');
   await expect(detail.getByText('직접 지정')).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('button',{name:/지역 미분류/}).locator('strong')).toHaveText('1');
@@ -80,10 +89,25 @@ test('manual region editing persists, updates map counts, and failed saves keep 
   await page.evaluate(()=>localStorage.setItem('region-test-fail','1'));
   await detail.getByRole('button',{name:'지역 변경'}).click();
   await detail.getByLabel('지정할 지역').selectOption('KR-26');
+  await detail.getByLabel('시군구').selectOption('해운대구');
   await detail.getByRole('button',{name:'지역 저장'}).click();
   await expect(detail.getByRole('alert')).toContainText('지역을 저장하지 못했습니다');
+  await expect(detail.getByLabel('시군구')).toHaveValue('해운대구');
   await detail.getByRole('button',{name:'취소',exact:true}).click();
-  await expect(detail.getByLabel('위치',{exact:true})).toContainText('서울특별시');
+  await expect(detail.getByLabel('위치',{exact:true})).toContainText('서울특별시 · 종로구');
+});
+
+test('stored districts outside the current code list remain selectable and are not discarded',async({page})=>{
+  await map(page,'?legacy');
+  await page.locator('.memoryMapPlaceList button').filter({hasText:'제주'}).click();
+  await page.getByRole('button',{name:'기록 4 상세보기',exact:true}).click();
+  const detail=page.getByRole('dialog',{name:'사진 상세'});
+  await expect(detail.getByLabel('위치',{exact:true})).toContainText('옛 행정구역');
+  await detail.getByRole('button',{name:'지역 변경'}).click();
+  await expect(detail.getByLabel('시군구')).toHaveValue('옛 행정구역');
+  await expect(detail.getByLabel('시군구').locator('option[value="옛 행정구역"]')).toContainText('기존 저장값');
+  await detail.getByRole('button',{name:'지역 저장'}).click();
+  await expect(detail.getByLabel('위치',{exact:true})).toContainText('옛 행정구역');
 });
 
 test('bulk unclassified assignment and GPS override update their existing records',async({page})=>{

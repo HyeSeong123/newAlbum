@@ -15,11 +15,17 @@ export const ALBUM_COVER_COLORS = [
   { name: "네이비", value: "#2F4058" },
 ] as const;
 
-export function AlbumCover({ title, items, color = DEFAULT_ALBUM_COLOR, showColor = false }: { title: string; items: MediaItem[]; color?: string; showColor?: boolean }) {
+export function AlbumCover({ title, items, color = DEFAULT_ALBUM_COLOR }: { title: string; items: MediaItem[]; color?: string }) {
+  const rgb = color.replace("#", "").match(/.{2}/g)?.map(value => parseInt(value, 16)) ?? [229, 225, 213];
+  const luminance = rgb.reduce((sum, channel, index) => {
+    const value = channel / 255;
+    return sum + (value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4) * [.2126, .7152, .0722][index];
+  }, 0);
   const cover = items.find((item) => item.fileType === "image") ?? items[0];
-  return <span className="frontAlbum" style={{ "--album-color": color, "--album-tint": color.toUpperCase() === DEFAULT_ALBUM_COLOR ? 0 : .3 } as CSSProperties}>
+  return <span className="frontAlbum" style={{ "--album-color": color, "--album-title-color": luminance < .179 ? "#FFFDF8" : "#303129", "--album-tint": color.toUpperCase() === DEFAULT_ALBUM_COLOR ? 0 : .9 } as CSSProperties}>
     <img className="frontAlbumBase" src={albumClosedBase} alt="" aria-hidden="true" draggable={false} />
-    {showColor && <span className="frontAlbumTone" aria-hidden="true" />}
+    <span className="frontAlbumTone" aria-hidden="true" />
+    <span className="frontAlbumSpine" aria-hidden="true" />
       <span className="frontAlbumWindow">
         {cover ? <MediaVisual item={cover} fit="cover" /> : <BookOpen size={34} aria-hidden="true" />}
       </span>
@@ -37,7 +43,7 @@ export function AlbumColorPicker({ value, onChange, items, title }: { value: str
         </button>)}
         <label className="customAlbumColor">직접 선택<input aria-label="직접 색상 선택" type="color" value={value} onChange={(event) => onChange(event.target.value.toUpperCase())} /></label>
       </div>
-      <span className="albumColorPreview" aria-hidden="true"><AlbumCover title={title} items={items} color={value} showColor /></span>
+      <span className="albumColorPreview" aria-hidden="true"><AlbumCover title={title} items={items} color={value} /></span>
     </div>
   </fieldset>;
 }

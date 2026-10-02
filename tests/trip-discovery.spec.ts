@@ -72,8 +72,7 @@ test('candidate album uses an editable suggested title and chronological media o
   expect(saved.title).toBe('우리의 제주 여행'); expect(saved.mediaIds).toEqual([1,2,3]);
   await page.getByRole('button',{name:'우리의 제주 여행 앨범 열기',exact:true}).click();
   await expect(page.getByRole('dialog',{name:'앨범 전체창'})).toBeVisible();
-  await page.getByRole('button',{name:'스토리로 보기',exact:true}).click();
-  await expect(page.getByRole('dialog',{name:'앨범 스토리'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'스토리로 보기',exact:true})).toHaveCount(0);
 });
 
 test('two-photo visits do not generate travel recommendations',async({page})=>{

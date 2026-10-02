@@ -22,8 +22,10 @@ for (const cancel of [true, false]) {
       } });
     }, { cancel });
     await page.goto('/');
+    await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
     await expect(page.locator('html')).toHaveAttribute('data-load-pending', 'true');
     await page.getByRole('button', { name: '사진·영상 가져오기', exact: true }).click();
+    await page.getByRole('dialog', { name: '사진·영상 가져오기' }).getByRole('button', { name: '파일 선택' }).click();
     await expect(page.locator('html')).toHaveAttribute('data-dialog-chosen', 'true');
     await expect(page.getByRole('button', { name: '사진·영상 가져오기', exact: true })).toBeEnabled();
     if (!cancel) await expect(page.locator('.mediaTile')).toHaveCount(2);
@@ -57,6 +59,7 @@ test('rapid photo edits are persisted in order even when the first write fails',
     } });
   });
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.locator('.mediaTile').click();
   const detail = page.getByRole('dialog', { name: '사진 상세', exact: true });
   await detail.getByRole('button', { name: '즐겨찾기', exact: true }).click();
@@ -117,6 +120,7 @@ test('browser imports release session URLs after unregistering without touching 
     };
   });
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   const fileInput = page.locator('input[type="file"]').first();
   await fileInput.setInputFiles('tests/fixtures/test-photo.jpg');
   await expect(page.locator('.mediaTile')).toHaveCount(1);
@@ -132,6 +136,7 @@ test('browser imports release session URLs after unregistering without touching 
 
 test('comment storage failure retains the draft and retry adds only one comment', async ({ page }) => {
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.locator('input[type="file"]').first().setInputFiles('tests/fixtures/test-photo.jpg');
   await page.locator('.mediaTile').click();
   const detail = page.getByRole('dialog', { name: '사진 상세', exact: true });
@@ -158,6 +163,7 @@ test('comment storage failure retains the draft and retry adds only one comment'
 
 test('calendar event storage failure keeps the form open for retry', async ({ page }) => {
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.getByRole('tab', { name: '달력' }).click();
   await page.getByRole('button', { name: '일정 등록', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: '일정 등록', exact: true });

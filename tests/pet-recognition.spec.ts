@@ -6,6 +6,7 @@ test('local pet models detect a dog and produce comparable features', async ({ p
   await page.route('**/pet-test.jpg', (route) => route.fulfill({ path: 'tests/fixtures/pet-dog.jpg', contentType: 'image/jpeg' }));
   await page.route('**/pet-negative.jpg', (route) => route.fulfill({ path: 'node_modules/@vladmandic/face-api/demo/sample1.jpg', contentType: 'image/jpeg' }));
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.evaluate(() => document.fonts.ready);
   const external: string[] = [];
   page.on('request', (request) => { if (!['localhost', '127.0.0.1'].includes(new URL(request.url()).hostname)) external.push(request.url()); });

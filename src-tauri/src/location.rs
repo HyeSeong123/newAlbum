@@ -422,6 +422,7 @@ pub fn queue_failed(conn: &Connection) -> Result<Overview, String> {
 
 // A single transaction prevents partial bulk edits. Coordinates are retained as
 // original metadata; only the app's region classification is overridden.
+#[cfg(test)]
 pub fn assign_region(conn: &Connection, ids: &[i64], code: &str) -> Result<(), String> {
     let name = REGIONS.iter().find(|(region, _)| *region == code)
         .map(|(_, name)| *name).ok_or("존재하지 않는 지역입니다.")?;

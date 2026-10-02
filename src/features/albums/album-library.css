@@ -1,26 +1,34 @@
 /* Album-library cards: one cover, one title row, one contextual menu. */
-.savedAlbumsIntro { margin: 0 0 22px; padding-bottom: 20px; border-bottom: 1px solid var(--border); color: var(--muted); font-size: 13px; }
-.savedAlbums .savedAlbumGrid { grid-template-columns: repeat(auto-fill, minmax(250px, 300px)); justify-content: start; gap: 32px; margin-top: 22px; }
-.savedAlbums .savedAlbumCard { display: block; padding: 16px 16px 14px; border: 1px solid #e5dfd3; border-radius: 6px; background: #fffdf8; box-shadow: 0 3px 12px #5147350c; }
+.savedAlbumsIntro { margin: 0 0 22px; padding-bottom: 20px; border-bottom: 1px solid var(--border); color: var(--muted); font-size: 16px; }
+.savedAlbums .savedAlbumGrid { grid-template-columns: repeat(3, minmax(0, 410px)); justify-content: start; gap: 38px; margin-top: 22px; }
+.savedAlbums .savedAlbumCard { display: block; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .savedAlbums .savedAlbumCard:has(.actionMenuPanel) { z-index: 5; }
 .savedAlbums .savedAlbumCover { width: 100%; }
 .savedAlbums .savedAlbumOpen { width: 100%; border: 0; border-radius: 3px; overflow: hidden; }
-.savedAlbumPhoto { display: grid; place-items: center; width: 100%; aspect-ratio: 0.88; background: #f1eee7; color: var(--muted); }
-.savedAlbumPhoto > .mediaVisual { width: 100%; height: 100%; }
-.savedAlbumPhoto .mediaImage { object-fit: contain; }
+.savedAlbums .savedAlbumOpen { overflow: visible; background: transparent; }
+.savedAlbums .savedAlbumOpen .frontAlbum { width: 100%; aspect-ratio: 3 / 4; }
+.savedAlbums .frontAlbumTitle { width: 84%; font-size: clamp(15px, 1.3vw, 20px); }
 .savedAlbumFooter { width: 100%; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-top: 14px; }
 .savedAlbumInfo { flex: 1; min-width: 0; }
-.savedAlbums .savedAlbumTitle { display: block; max-width: 100%; padding: 0; border: 0; background: transparent; color: var(--text); font: 600 15px/1.5 "SUIT", sans-serif; text-align: left; overflow-wrap: anywhere; cursor: pointer; }
-.savedAlbums .savedAlbumMeta { display: block; width: 100%; min-height: 0; margin-top: 5px; padding: 0; font-size: 12px; line-height: 1.6; }
+.savedAlbums .savedAlbumTitle { display: block; max-width: 100%; padding: 0; border: 0; background: transparent; color: var(--text); font: 600 19px/1.5 "SUIT", sans-serif; text-align: left; overflow-wrap: anywhere; cursor: pointer; }
+.savedAlbums .savedAlbumMeta { display: block; width: 100%; min-height: 0; margin-top: 5px; padding: 0; font-size: 15px; line-height: 1.6; }
 .savedAlbumFooter .actionMenuTrigger { display: grid; place-items: center; width: 34px; min-height: 34px; padding: 6px; border: 0; border-radius: 5px; background: transparent; color: var(--muted); }
 .savedAlbumFooter .actionMenuTrigger:hover, .savedAlbumFooter .actionMenuTrigger[aria-expanded="true"] { background: #eeeae0; color: var(--text); }
 .savedAlbumFooter .actionMenuPanel { top: calc(100% + 6px); right: 0; min-width: 176px; }
 .savedAlbumFooter .dangerAction { margin-top: 4px; border-top: 1px solid var(--border); border-radius: 0; }
 .savedAlbums .savedAlbumOpen .albumSelectionMark { top: 10px; left: 10px; }
+@media (max-width: 1440px) { .savedAlbums .savedAlbumGrid { grid-template-columns: repeat(2, minmax(0, 410px)); } }
 @media (max-width: 720px) {
   .savedAlbums .savedAlbumGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
-  .savedAlbums .savedAlbumCard { padding: 10px; }
   .savedAlbumFooter { gap: 3px; }
   .savedAlbums .savedAlbumTitle { font-size: 14px; }
+  .savedAlbums .savedAlbumMeta { font-size: 12px; }
 }
 @media (max-width: 480px) { .savedAlbums .savedAlbumGrid { grid-template-columns: minmax(0, 320px); justify-content: center; } }
+@media (min-width: 900px) {
+  .workspace:has(.savedAlbums) { padding-inline: clamp(32px, 5vw, 90px); }
+  .workspace:has(.savedAlbums) .topbar h1 { font-size: 30px; }
+  .workspace:has(.savedAlbums) .collectionCount { font-size: 16px; }
+  .workspace:has(.savedAlbums) .topbar .searchBox { width: 320px; min-height: 48px; }
+  .workspace:has(.savedAlbums) .topbar .importActions .primary { min-height: 48px; padding-inline: 20px; font-size: 15px; }
+}

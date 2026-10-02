@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { REGION_NAMES } from "./regions";
+import { KOREAN_DISTRICTS } from "./koreanDistricts";
 import type { MediaItem } from "../../types/media";
 import { locationStatusText } from "./locationStatus";
 import "./region-editor.css";
@@ -18,6 +19,8 @@ export function RegionEditor({ current, district: initialDistrict = "", country:
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const districtOptions = KOREAN_DISTRICTS[code] ?? [];
+  const hasLegacyDistrict = !!district && !districtOptions.includes(district);
   async function save() {
     if (busy || !count || (overseas ? !country.trim() || !city.trim() : !code)) return;
     setBusy(true); setError(""); setNotice("");
@@ -37,7 +40,11 @@ export function RegionEditor({ current, district: initialDistrict = "", country:
         <label>{count > 1 ? `선택한 ${count}개의 시·도` : "시·도"}<select aria-label="지정할 지역" disabled={busy} value={code} onChange={event => { setCode(event.target.value); setDistrict(""); }}>
           <option value="">지역을 선택해 주세요</option>{Object.entries(REGION_NAMES).map(([value, name]) => <option key={value} value={value}>{name}</option>)}
         </select></label>
-        <label>시·군·구<input aria-label="시군구" maxLength={60} placeholder="예: 서구, 담양군 (선택)" value={district} disabled={busy} onChange={event => setDistrict(event.target.value)} /></label>
+        <label>시·군·구<select aria-label="시군구" value={district} disabled={busy || !code || (!districtOptions.length && !hasLegacyDistrict)} onChange={event => setDistrict(event.target.value)}>
+          <option value="">{!code ? "시·도를 먼저 선택하세요" : districtOptions.length ? "시·군·구 선택 (선택)" : "시·군·구 없음"}</option>
+          {hasLegacyDistrict && <option value={district}>{district} (기존 저장값)</option>}
+          {districtOptions.map(name => <option key={name} value={name}>{name}</option>)}
+        </select></label>
       </>}
       <button disabled={busy || !count || (overseas ? !country.trim() || !city.trim() : !code)} onClick={() => void save()}>{busy ? "저장 중" : "지역 저장"}</button>
       <button disabled={busy} onClick={() => setEditing(false)}>취소</button>

@@ -1,16 +1,78 @@
+param(
+    [string]$InstallerPath = '',
+    [switch]$Upgrade,
+    [switch]$SeedLegacy
+)
 $ErrorActionPreference = 'Stop'
-$installer = Get-ChildItem 'src-tauri/target/release/bundle/nsis/*-setup.exe' | Select-Object -First 1
+if (-not ('GamjassakCanonicalPath' -as [type])) {
+    Add-Type @'
+using System;
+using System.Text;
+using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
+[ComImport, Guid("00021401-0000-0000-C000-000000000046")]
+public class GamjassakShellLink { }
+[ComImport, Guid("000214F9-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+public interface IGamjassakShellLinkW {
+    void GetPath([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder path, int size, IntPtr findData, uint flags);
+}
+public static class GamjassakCanonicalPath {
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern uint GetFinalPathNameByHandle(SafeFileHandle handle, StringBuilder path, uint size, uint flags);
+    public static string ReadShortcut(string filename) {
+        object link = new GamjassakShellLink();
+        try {
+            ((System.Runtime.InteropServices.ComTypes.IPersistFile)link).Load(filename, 0);
+            var path = new StringBuilder(1024);
+            ((IGamjassakShellLinkW)link).GetPath(path, path.Capacity, IntPtr.Zero, 4);
+            return path.ToString();
+        } finally { Marshal.FinalReleaseComObject(link); }
+    }
+}
+'@
+}
+function Resolve-InstalledFile([string]$Path) {
+    $stream = [System.IO.File]::Open($Path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+    try {
+        $buffer = [System.Text.StringBuilder]::new(1024)
+        $length = [GamjassakCanonicalPath]::GetFinalPathNameByHandle($stream.SafeFileHandle, $buffer, $buffer.Capacity, 0)
+        if ($length -eq 0 -or $length -ge $buffer.Capacity) { throw "Could not resolve installed file: $Path" }
+        return $buffer.ToString()
+    } finally { $stream.Dispose() }
+}
+$installer = if ($InstallerPath) { Get-Item $InstallerPath } else { Get-ChildItem 'src-tauri/target/release/bundle/nsis/*-setup.exe' | Select-Object -First 1 }
 if (-not $installer) { throw 'Windows installer was not generated.' }
 $installDirectory = Join-Path $env:RUNNER_TEMP 'OraedameunSmoke'
-$setup = Start-Process -FilePath $installer.FullName -ArgumentList "/S /D=$installDirectory" -Wait -PassThru
+$arguments = if ($Upgrade) { "/S" } else { "/S /D=$installDirectory" }
+$setup = Start-Process -FilePath $installer.FullName -ArgumentList $arguments -Wait -PassThru
 if ($setup.ExitCode -ne 0) { throw "Installer failed: $($setup.ExitCode)" }
 $binary = Get-ChildItem $installDirectory -Filter '*.exe' | Where-Object { $_.Name -notmatch 'uninstall' } | Select-Object -First 1
 if (-not $binary) { throw 'Installed application executable is missing.' }
+$diagnostics = Join-Path (Get-Location) 'test-results/desktop-smoke'
+New-Item -ItemType Directory -Force -Path $diagnostics | Out-Null
+if (-not $SeedLegacy) {
+    if ($binary.Name -ne 'gamjassak.exe') { throw 'Visible application binary name was not updated.' }
+    if (Test-Path (Join-Path $installDirectory 'oraedameun.exe')) { throw 'Legacy application executable was left behind.' }
+    $entry = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\그루터기'
+    if ($entry.DisplayName -ne '감자싹') { throw 'Windows installed app display name was not updated.' }
+    if (Test-Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\감자싹') { throw 'Rename created a duplicate installed app.' }
+    $shortcutIndex = 0
+    foreach ($folder in @([Environment]::GetFolderPath('Desktop'), [Environment]::GetFolderPath('Programs'))) {
+        $shortcut = Join-Path $folder '감자싹.lnk'
+        if (-not (Test-Path $shortcut)) { throw "New branded shortcut missing: $shortcut" }
+        Copy-Item -LiteralPath $shortcut -Destination (Join-Path $diagnostics "shortcut-$shortcutIndex.lnk")
+        $shortcutIndex++
+        $target = [GamjassakCanonicalPath]::ReadShortcut($shortcut)
+        Write-Host "Shortcut target: $target; installed binary: $($binary.FullName)"
+        if (-not (Test-Path -LiteralPath $target -PathType Leaf) -or (Resolve-InstalledFile $target) -ne (Resolve-InstalledFile $binary.FullName)) {
+            throw "Shortcut does not launch the new binary: $target; expected: $($binary.FullName)"
+        }
+        if (Test-Path (Join-Path $folder '그루터기.lnk')) { throw 'Legacy shortcut was left behind.' }
+    }
+}
 
 # Enable CDP only in this CI process to exercise the real WebView2/native bridge.
 $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = '--remote-debugging-port=9222'
-$diagnostics = Join-Path (Get-Location) 'test-results/desktop-smoke'
-New-Item -ItemType Directory -Force -Path $diagnostics | Out-Null
 $env:ORAEDAMEUN_STARTUP_LOG = Join-Path $diagnostics 'startup.log'
 $application = $null
 $debugPolicyPath = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments'
@@ -65,19 +127,22 @@ try {
     if ($listeners.Count -ne 1 -or $listeners[0].LocalAddress -ne '127.0.0.1') { throw 'Server is not restricted to loopback.' }
     $second = Start-Process -FilePath $binary.FullName -PassThru
     if (-not $second.WaitForExit(10000)) { Stop-Process -Id $second.Id -Force; throw 'Second app instance did not exit.' }
-    node scripts/smoke-desktop.mjs
+    if ($SeedLegacy) { node scripts/smoke-desktop.mjs --seed-legacy } elseif ($Upgrade) { node scripts/smoke-desktop.mjs --upgraded } else { node scripts/smoke-desktop.mjs }
     if ($LASTEXITCODE -ne 0) { throw 'Packaged native bridge check failed.' }
     Close-LocalApp
+    if (-not $SeedLegacy) {
     $application = Start-Process -FilePath $binary.FullName -PassThru
     Wait-LocalApp
     node scripts/smoke-desktop.mjs --restarted
     if ($LASTEXITCODE -ne 0) { throw 'App persistence check failed after restart.' }
     Close-LocalApp
-    $application = Start-Process -FilePath (Resolve-Path 'src-tauri/target/release/oraedameun.exe') -PassThru
+    $mainBinary = (Get-Content 'src-tauri/tauri.conf.json' -Raw | ConvertFrom-Json).mainBinaryName
+    $application = Start-Process -FilePath (Resolve-Path "src-tauri/target/release/$mainBinary.exe") -PassThru
     Wait-LocalApp
     node scripts/smoke-desktop.mjs --restarted
     if ($LASTEXITCODE -ne 0) { throw 'Standalone executable check failed.' }
     Close-LocalApp
+    }
 } finally {
     Get-NetTCPConnection -LocalPort 5173,9222 -ErrorAction SilentlyContinue |
         Format-Table -AutoSize | Out-String | Tee-Object -FilePath (Join-Path $diagnostics 'ports.log') | Write-Host

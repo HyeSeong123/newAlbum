@@ -11,6 +11,7 @@ test("past memories count appears in the menu", async ({ page }) => {
     } });
   });
   await page.goto("/");
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   const memoriesMenu = page.getByTitle("추억");
   await expect(memoriesMenu.locator(".navCount")).toHaveText("2");
   await page.screenshot({ path: `test-results/memories-menu-count-${test.info().project.name}.png` });
@@ -20,6 +21,7 @@ test("past memories count appears in the menu", async ({ page }) => {
 
 test("annual events use month and day and persist across years", async ({ page }) => {
   await page.goto("/");
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.getByRole("tab", { name: "달력" }).click();
   await page.getByRole("button", { name: "일정 등록", exact: true }).click();
   const form = page.getByRole("dialog", { name: "일정 등록" });
@@ -35,6 +37,7 @@ test("annual events use month and day and persist across years", async ({ page }
   await page.screenshot({ path: `test-results/annual-event-${test.info().project.name}.png` });
   await form.getByRole("button", { name: "일정 추가" }).click();
   await page.reload();
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.getByRole("tab", { name: "달력" }).click();
   await page.locator(".monthPicker").getByLabel("연도").selectOption("2028");
   await page.locator(".monthPicker select").nth(1).selectOption("09");
@@ -60,6 +63,7 @@ test("annual events use month and day and persist across years", async ({ page }
 
 test("empty library flow works", async ({ page }) => {
   await page.goto("/");
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await expect(page.getByRole("heading", { name: "사진 기록", exact: true })).toBeVisible();
   await expect(page.getByText("아직 사진 기록이 없습니다.")).toBeVisible();
 
@@ -77,7 +81,7 @@ test("empty library flow works", async ({ page }) => {
   await page.getByPlaceholder("예: 엄마 생신, 가족 저녁 약속").fill("엄마 생신");
   await page.getByRole("button", { name: "일정 추가" }).click();
   await expect(page.getByRole("dialog", { name: "일정 등록" })).toBeHidden();
-  await page.locator(".calendarGrid button").first().click();
+  await page.locator(".calendarGrid button[aria-current=\"date\"]").click();
   await expect(page.getByText("엄마 생신")).toBeVisible();
   await expect(page.getByText(/생일 · D/)).toBeVisible();
   await page.getByTitle("닫기").click();
@@ -85,7 +89,7 @@ test("empty library flow works", async ({ page }) => {
   await page.getByRole("tab", { name: /책 보기/ }).click();
   await expect(page.getByRole("dialog", { name: "앨범 전체창" })).toBeVisible();
   await page.getByTitle("닫기").click();
-  await expect(page.getByRole("tab", { name: "그리드" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "사진 모아보기" })).toHaveAttribute("aria-selected", "true");
 });
 
 test("gallery sorting, combined filters and persistent view counts work", async ({ page }) => {
@@ -115,6 +119,7 @@ test("gallery sorting, combined filters and persistent view counts work", async 
     } });
   });
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.getByRole("button", { name: "모든 기록", exact: true }).click();
   const order = () => page.locator('.mediaTile').evaluateAll((tiles) => tiles.map((tile) => tile.getAttribute('data-media-id')));
   await expect.poll(order).toEqual(['1', '3', '2']);
@@ -146,6 +151,7 @@ test("gallery sorting, combined filters and persistent view counts work", async 
 
 test("mobile nav is usable", async ({ page, isMobile }) => {
   await page.goto("/");
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   if (isMobile) {
     await expect(page.getByRole("navigation", { name: "주 메뉴" })).toBeVisible();
     await page.getByRole("button", { name: /사진 기록/ }).click();
@@ -158,13 +164,14 @@ test("settings clear button is disabled when album is empty", async ({ page }) =
   await page.goto("/");
   await page.getByRole("button", { name: /설정/ }).click();
   await expect(page.getByText("앱에 등록된 0개의 항목만 지웁니다. 원본 파일은 그대로 남습니다.")).toBeVisible();
-  await expect(page.locator(".settingsSummary")).toContainText("사진 기록");
+  await expect(page.locator(".settingsSummary")).toContainText("홈");
   await expect(page.locator(".settingsPanel")).not.toContainText("오래담은");
   await expect(page.getByRole("button", { name: /모두 비우기/ })).toBeDisabled();
 });
 
 test("clicking a media tile opens detail modal", async ({ page }) => {
   await page.goto("/");
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.locator('input[type="file"]').first().setInputFiles([
     "tests/fixtures/test-photo.jpg",
     "tests/fixtures/test-photo-2.jpg",
@@ -211,6 +218,7 @@ test("clicking a media tile opens detail modal", async ({ page }) => {
 
 test("selection mode supports selected actions", async ({ page }) => {
   await page.goto("/");
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.locator('input[type="file"]').first().setInputFiles([
     "tests/fixtures/test-photo.jpg",
     "tests/fixtures/test-photo-2.jpg",
@@ -234,6 +242,7 @@ test("selection mode supports selected actions", async ({ page }) => {
 
 test("created albums are visible from saved albums menu", async ({ page }) => {
   await page.goto("/");
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.locator('input[type="file"]').first().setInputFiles([
     "tests/fixtures/test-photo.jpg",
     "tests/fixtures/test-photo-2.jpg",
@@ -290,6 +299,7 @@ test("created albums are visible from saved albums menu", async ({ page }) => {
 
 test("album view opens immersive reader", async ({ page }) => {
   await page.goto("/");
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.locator('input[type="file"]').first().setInputFiles([
     "tests/fixtures/test-photo.jpg",
     "tests/fixtures/test-photo-2.jpg",
@@ -300,9 +310,9 @@ test("album view opens immersive reader", async ({ page }) => {
   await expect(page.locator(".albumJournal .albumPagerActions")).toContainText("펼침");
   await page.getByTitle("닫기").click();
   await expect(page.getByRole("dialog", { name: "앨범 전체창" })).toBeHidden();
-  await expect(page.getByRole("tab", { name: "그리드" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "사진 모아보기" })).toHaveAttribute("aria-selected", "true");
   await expect(page.locator(".galleryGrid .mediaTile")).toHaveCount(2);
   await page.getByRole("tab", { name: "책 보기" }).click();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("tab", { name: "그리드" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "사진 모아보기" })).toHaveAttribute("aria-selected", "true");
 });

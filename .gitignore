@@ -30,6 +30,7 @@ Thumbs.db
 
 # Windows binaries and installer output are never committed
 installer-output/
+release-output/
 *.exe
 *.msi
 *.msix

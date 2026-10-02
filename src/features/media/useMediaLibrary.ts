@@ -7,6 +7,7 @@ import { syncAlbumMedia } from "./journalModel";
 import { REGION_NAMES } from "../map/regions";
 
 type LibraryState = { items: MediaItem[]; albums: SavedAlbum[]; loaded: boolean };
+export type MediaImportOptions = { kind: "files" | "folder"; album?: { title: string; color: string }; region?: { code: string; district: string } };
 
 export function useMediaLibrary() {
   const desktop = api.isTauriRuntime();
@@ -25,6 +26,7 @@ export function useMediaLibrary() {
   const [importNotice, setImportNotice] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
+  const pendingImport = useRef<MediaImportOptions | null>(null);
   const albums = useMemo(() => syncAlbumMedia(state.albums, state.items, state.loaded), [state]);
   const itemsById = useMemo(() => {
     const entries = state.loaded ? state.items : [...albums.flatMap((album) => album.items), ...state.items];
@@ -99,42 +101,58 @@ export function useMediaLibrary() {
     return [];
   }
 
-  async function importIntoAlbum(title: string) {
-    const added = await register("files");
+  async function finishImportedAlbum(added: MediaItem[], album?: MediaImportOptions["album"]) {
+    if (!album) return false;
     if (!added.length) return false;
-    try { await createAlbum(title, "#B9C58E", added); return true; } catch { setError("사진은 등록했지만 앨범을 만들지 못했습니다. 다시 앨범을 만들어 주세요."); return false; }
-  }
-  async function handleFilesIntoAlbum(files: FileList | null, title: string) {
-    if (!title.trim()) { handleFiles(files, "files"); return false; }
-    const before = new Set(current.current.items.map(item => item.id));
-    handleFiles(files, "files");
-    const added = current.current.items.filter(item => !before.has(item.id));
-    if (!added.length) return false;
-    try { await createAlbum(title.trim(), "#B9C58E", added); return true; } catch { setError("사진은 등록했지만 앨범을 만들지 못했습니다. 다시 앨범을 만들어 주세요."); return false; }
+    try { await createAlbum(album.title.trim(), album.color, added); return true; } catch { setError("사진은 등록했지만 앨범을 만들지 못했습니다. 다시 앨범을 만들어 주세요."); return false; }
   }
 
-  function chooseFiles() {
-    if (locked.current) return;
-    if (desktop) void register("files"); else fileInput.current?.click();
+  async function finishImportedMedia(added: MediaItem[], options?: MediaImportOptions) {
+    const located = added.filter(item => item.fileType === "image" || item.fileType === "video");
+    if (located.length && options?.kind === "folder" && options.region) {
+      try { await assignRegion(located.map(item => item.id), options.region.code, options.region.district); }
+      catch { setError("사진은 가져왔지만 촬영 지역을 저장하지 못했습니다. 가져온 기록을 선택해 지역을 다시 지정해 주세요."); }
+    }
+    const latest = new Map(current.current.items.map(item => [item.id, item]));
+    return finishImportedAlbum(added.map(item => latest.get(item.id) ?? item), options?.album);
   }
 
-  function chooseFolder() {
-    if (locked.current) return;
-    if (desktop) void register("folder"); else folderInput.current?.click();
+  async function requestImport(options: MediaImportOptions) {
+    if (locked.current) return false;
+    if (desktop) return finishImportedMedia(await register(options.kind), options);
+    pendingImport.current = options;
+    (options.kind === "files" ? fileInput : folderInput).current?.click();
+    return false;
   }
 
-  function handleFiles(files: FileList | null, kind: "files" | "folder") {
-    if (!files?.length || locked.current) return;
+  async function completeImport(files: FileList | null, kind: "files" | "folder") {
+    const options = pendingImport.current;
+    pendingImport.current = null;
+    const added = handleFiles(files, kind);
+    return finishImportedMedia(added, options?.kind === kind ? options : undefined);
+  }
+
+  useEffect(() => {
+    const inputs = [fileInput.current, folderInput.current];
+    const cancel = () => { pendingImport.current = null; };
+    inputs.forEach(input => input?.addEventListener("cancel", cancel));
+    return () => inputs.forEach(input => input?.removeEventListener("cancel", cancel));
+  }, []);
+
+  function handleFiles(files: FileList | null, kind: "files" | "folder"): MediaItem[] {
+    if (!files?.length || locked.current) return [];
     setImporting(kind); setError(""); setImportNotice("");
     try {
       const added = browserImportItems(files, current.current.items);
-      if (!added.length) { setImportNotice("새로 가져올 사진과 영상이 없습니다."); return; }
+      if (!added.length) { setImportNotice("새로 가져올 사진과 영상이 없습니다."); return []; }
       added.forEach((item) => { if (item.previewUrl) urls.current.add(item.previewUrl); });
       mediaRevision.current++;
       publish({ items: [...added, ...current.current.items], loaded: true });
       setImportNotice(`사진과 영상 ${added.length}개를 가져왔습니다.`);
+      return added;
     } catch { setError("선택한 파일을 읽지 못했습니다. 이미 등록된 사진은 그대로 남아 있습니다. 다시 시도해 주세요."); }
     finally { setImporting(null); }
+    return [];
   }
 
   function patchMedia(id: string, patch: Partial<MediaItem> | ((item: MediaItem) => Partial<MediaItem>), persist = true) {
@@ -271,6 +289,6 @@ export function useMediaLibrary() {
     });
   }
 
-  return { desktop, loaded: state.loaded && albumsLoaded, importIntoAlbum, handleFilesIntoAlbum, items: state.items, itemsById, albums, importing, importNotice, clearing, error, fileInput, folderInput,
-    chooseFiles, chooseFolder, handleFiles, patchMedia, saveTitle, assignRegion, refreshLocations, reloadRegisteredMedia, recordView, removeMedia, createAlbum, saveAlbum, deleteAlbums };
+  return { desktop, loaded: state.loaded && albumsLoaded, requestImport, completeImport, items: state.items, itemsById, albums, importing, importNotice, clearing, error, fileInput, folderInput,
+    patchMedia, saveTitle, assignRegion, refreshLocations, reloadRegisteredMedia, recordView, removeMedia, createAlbum, saveAlbum, deleteAlbums };
 }

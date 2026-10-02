@@ -5,7 +5,7 @@ export function SettingsPanel({ itemCount, clearing, onClear }: { itemCount: num
     <div className="settingsPanel">
       <section className="settingsSummary" aria-label="앱 시작 화면">
         <h2>앱 시작 화면</h2>
-        <p>그루터기를 열면 사진 기록이 먼저 표시됩니다.</p>
+        <p>감자싹을 열면 홈이 먼저 표시됩니다. 로고를 누르면 언제든 홈으로 돌아갈 수 있습니다.</p>
       </section>
       <section className="dangerPanel" aria-label="등록 목록 관리">
         <div>
@@ -20,4 +20,3 @@ export function SettingsPanel({ itemCount, clearing, onClear }: { itemCount: num
     </div>
   );
 }
-

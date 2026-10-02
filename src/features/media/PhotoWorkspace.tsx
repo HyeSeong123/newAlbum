@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, CalendarDays, ChevronRight, LayoutGrid, Plus } from "lucide-react";
 import type { MediaItem, SavedAlbum } from "../../types/media";
 import { Library } from "./LibraryView";
@@ -47,9 +47,15 @@ export function PhotoView({
   const [exportingQuickAlbum, setExportingQuickAlbum] = useState(false);
   const quickAlbum = albums.find((album) => album.id === quickAlbumId);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const pendingTabFocus = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    if (pendingTabFocus.current === null) return;
+    tabRefs.current[pendingTabFocus.current]?.focus();
+    pendingTabFocus.current = null;
+  }, [mode]);
   const monthItems = useMemo(() => filterJournalMonth(items, activeMonth), [items, activeMonth]);
   const tabs = [
-    { mode: "grid" as const, label: "그리드", Icon: LayoutGrid },
+    { mode: "grid" as const, label: "사진 모아보기", Icon: LayoutGrid },
     { mode: "calendar" as const, label: "달력", Icon: CalendarDays },
     { mode: "album" as const, label: "책 보기", Icon: BookOpen },
   ];
@@ -58,8 +64,13 @@ export function PhotoView({
         if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
         event.preventDefault();
         const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length;
+        if (tabs[next].mode === mode) {
+          tabRefs.current[next]?.focus();
+          return;
+        }
+        // The grid mounts its tabs inside Library; focus after the new DOM commits.
+        pendingTabFocus.current = next;
         setMode(tabs[next].mode);
-        requestAnimationFrame(() => tabRefs.current[next]?.focus());
       }}><tab.Icon size={16} />{tab.label}</button>)}
     </div>;
   return <div className={`photoWorkspace mode-${mode}`}>
@@ -86,9 +97,9 @@ export function PhotoView({
       {!albums.length && <div className="quickAlbumEmpty"><p>함께 기억하고 싶은 순간을<br />한 권의 앨범에 담아보세요.</p><button onClick={onNewAlbum}><Plus size={15} />첫 앨범 만들기</button></div>}
       {albums.length > 0 && <button className="showAllAlbums" onClick={onShowAlbums}>모두 보기 <ChevronRight size={16} /></button>}
     </aside>}
-    {mode === "calendar" && <div className="calendarTabPanel" id="photo-panel-calendar" role="tabpanel" aria-labelledby="photo-tab-calendar"><Calendar items={items} initialMonth={/^\d{4}-\d{2}$/.test(activeMonth) ? activeMonth : undefined} onOpen={(item) => onViewMedia(item, items)} /></div>}
+    {mode === "calendar" && <div className="calendarTabPanel" id="photo-panel-calendar" role="tabpanel" aria-labelledby="photo-tab-calendar"><Calendar items={items} onOpen={(item) => onViewMedia(item, items)} /></div>}
     {mode === "album" && <div id="photo-panel-album" role="tabpanel" aria-labelledby="photo-tab-album"><AlbumFullscreenReader title="모든 기록" items={items} open={true} backLabel="사진 기록" onOpen={onViewMedia} onClose={() => setMode("grid")} /></div>}
-    {quickAlbum && <AlbumFullscreenReader title={quickAlbum.title} items={quickAlbum.items} contents={quickAlbum.contents} musicPath={quickAlbum.musicPath} color={quickAlbum.coverColor} open={true} backLabel="사진 기록" onOpen={onViewMedia} onClose={() => { setQuickAlbumId(null); setExportingQuickAlbum(false); }} onExport={() => setExportingQuickAlbum(true)} />}
+    {quickAlbum && <AlbumFullscreenReader title={quickAlbum.title} items={quickAlbum.items} contents={quickAlbum.contents} color={quickAlbum.coverColor} open={true} backLabel="사진 기록" onOpen={onViewMedia} onClose={() => { setQuickAlbumId(null); setExportingQuickAlbum(false); }} onExport={() => setExportingQuickAlbum(true)} />}
     {quickAlbum && exportingQuickAlbum && <ExportModal title={quickAlbum.title} items={quickAlbum.items} onClose={() => setExportingQuickAlbum(false)} />}
   </div>;
 }

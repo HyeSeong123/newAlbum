@@ -1,9 +1,8 @@
-import { MONTH_LABELS, formatDateKo, localDateKey, formatMediaCount, formatDday, calendarYears, monthCells, eventsOnDate } from "./calendarModel";
-import { calendarEventMeta } from "./calendarPresentation";
+import { MONTH_LABELS, formatDateKo, localDateKey, formatMediaCount, calendarYears, monthCells, eventsOnDate } from "./calendarModel";
 import { useCalendarRecords } from "./useCalendarRecords";
 import { DayDetailModal } from "./DayDetailModal";
 import { CalendarEventModal } from "./CalendarEventModal";
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { ChevronLeft, ChevronRight, Music, Play, Plus } from "lucide-react";
 import type { MediaItem } from "../../types/media";
 import { MediaImage, EmptyState } from "../../components/MediaVisual";
@@ -11,7 +10,7 @@ import { journalMonths } from "../media/journalModel";
 
 type CalendarViewMode = "month" | "recorded";
 
-export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; onOpen: (item: MediaItem) => void; initialMonth?: string }) {
+export function Calendar({ items, onOpen }: { items: MediaItem[]; onOpen: (item: MediaItem) => void }) {
   const availableMonths = useMemo(() => journalMonths(items), [items]);
   const currentYear = new Date().getFullYear();
   const monthCalendarYears = useMemo(() => calendarYears(items, currentYear), [items, currentYear]);
@@ -19,11 +18,12 @@ export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; 
     return Array.from(new Set(availableMonths.map((monthLabel) => monthLabel.slice(0, 4)))).sort().reverse();
   }, [availableMonths]);
   const today = localDateKey(new Date());
-  const [visibleMonth, setVisibleMonth] = useState(initialMonth ?? availableMonths[0] ?? today.slice(0, 7));
+  const [visibleMonth, setVisibleMonth] = useState(today.slice(0, 7));
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const { dayNotes, dayCovers, eventIndex, error, updateDayNote, updateDayCover, addDayEvent, toggleEventDday, deleteDayEvent } = useCalendarRecords();
   const [calendarViewMode, setCalendarViewMode] = useState<CalendarViewMode>("month");
+  const todayCell = useRef<HTMLButtonElement>(null);
   const [selectedYear, selectedMonth] = visibleMonth.split("-");
   const year = Number(selectedYear);
   const month = Number(selectedMonth);
@@ -45,6 +45,12 @@ export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; 
   const selectedDayItems = selectedDate ? itemsByDate.get(selectedDate) ?? [] : [];
   const recordedDates = useMemo(() => [...itemsByDate.keys()].sort().reverse(), [itemsByDate]);
   const visibleRecordedDates = recordedDates.filter((date) => date.startsWith(visibleMonth));
+
+  useEffect(() => {
+    if (calendarViewMode === "month" && visibleMonth === today.slice(0, 7)) {
+      todayCell.current?.scrollIntoView({ block: "nearest" });
+    }
+  }, [calendarViewMode, visibleMonth, today]);
 
   useEffect(() => {
     if (calendarViewMode !== "recorded" || !availableMonths.length || availableMonths.includes(visibleMonth)) return;
@@ -110,7 +116,7 @@ export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; 
         <div className="monthControls" aria-label="달력 작업">
           <div className="calendarNavigation" role="group" aria-label="달 이동">
             <button onClick={() => moveMonth(-1)} title="이전 달"><ChevronLeft size={17} />이전 달</button>
-            <button onClick={() => { setCalendarViewMode("month"); setVisibleMonth(today.slice(0, 7)); }}>오늘</button>
+            <button onClick={() => { setCalendarViewMode("month"); setVisibleMonth(today.slice(0, 7)); todayCell.current?.scrollIntoView({ block: "nearest" }); }}>오늘</button>
             <button onClick={() => moveMonth(1)} title="다음 달">다음 달<ChevronRight size={17} /></button>
           </div>
           <button className="primaryControl" onClick={() => setEventModalOpen(true)}>
@@ -144,28 +150,18 @@ export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; 
             return (
               <button
                 key={cell.id}
+                ref={date === today ? todayCell : undefined}
                 className={[matches.length ? "hasMedia" : "", dayNotes[date] ? "hasNote" : "", events.length ? "hasEvent" : "", weekday === 0 ? "sunday" : weekday === 6 ? "saturday" : ""].filter(Boolean).join(" ")}
                 aria-label={`${formatDateKo(date)}, ${formatMediaCount(matches)}${events.length ? `, 일정 ${events.length}개` : ""}${dayNotes[date] ? ", 메모 있음" : ""}`}
                 aria-current={date === today ? "date" : undefined}
                 onClick={() => setSelectedDate(date)}
               >
-                <span className="dayNumber">{cell.day}</span>
-                {events.length > 0 && (
-                  <span className="dayEvents">
-                    <small className="calendarCompactEvent" aria-hidden="true">일정{events.length}</small>
-                    {events.slice(0, 1).map((event) => {
-                      const EventIcon = calendarEventMeta[event.kind].icon;
-                      return (
-                        <small key={event.id} aria-label={`${event.title} ${calendarEventMeta[event.kind].label}`} title={event.title}>
-                          <EventIcon size={12} />
-                          <span>{calendarEventMeta[event.kind].label}</span>
-                          {event.showDday && <strong>{formatDday(event.date)}</strong>}
-                        </small>
-                      );
-                    })}
-                    {events.length > 1 && <small className="calendarMoreEvents">+{events.length - 1}</small>}
-                  </span>
-                )}
+                <span className="calendarCellHeader">
+                  <span className="dayNumber">{cell.day}</span>
+                  {events.length > 0 && <span className="dayEvents" title={events.map(event => event.title).join(" · ")}>
+                    <small className="calendarCompactEvent" aria-hidden="true"><span className="calendarEventWord">일정</span>{events.length}</small>
+                  </span>}
+                </span>
                 {cover && (
                   <i style={{ background: "#eeede7" }} data-media-id={cover.id}>
                     <MediaImage item={cover} />
@@ -221,7 +217,7 @@ export function Calendar({ items, onOpen, initialMonth }: { items: MediaItem[]; 
       {eventModalOpen && (
         <CalendarEventModal
           error={error}
-          initialDate={`${visibleMonth}-01`}
+          initialDate={visibleMonth === today.slice(0, 7) ? today : `${visibleMonth}-01`}
           onAddEvent={addDayEvent}
           onClose={() => setEventModalOpen(false)}
         />

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { installRecordFixture } from './record-fixture';
-test('memories switch between today and month and open the same records in story mode', async ({ page }) => {
+test('memories switch between today and month and open the same records in the album reader', async ({ page }) => {
   await installRecordFixture(page);
   await page.goto('/');
   await page.getByRole('button',{ name:'추억',exact:true }).click();
@@ -15,9 +15,8 @@ test('memories switch between today and month and open the same records in story
   await expect(page.getByRole('dialog',{ name:'사진 상세' })).toBeVisible();
   await page.getByRole('dialog',{ name:'사진 상세' }).getByTitle('닫기',{ exact:true }).click();
   await page.getByRole('button',{ name:'함께 감상',exact:true }).click();
-  await page.getByRole('button',{ name:'스토리로 보기',exact:true }).click();
-  await expect(page.getByRole('dialog',{ name:'앨범 스토리' })).toBeVisible();
-  await page.getByRole('button',{ name:'스토리 종료',exact:true }).click();
+  await expect(page.getByRole('dialog',{ name:'앨범 전체창' })).toBeVisible();
+  await expect(page.getByRole('button',{ name:'스토리로 보기',exact:true })).toHaveCount(0);
   await page.getByRole('dialog',{ name:'앨범 전체창' }).getByTitle('닫기',{ exact:true }).click();
   await page.getByRole('button',{ name:'추억 목록',exact:true }).click();
   await expect(page.locator('.memoryGroupCard')).toHaveCount(2);

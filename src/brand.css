@@ -2,31 +2,51 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 10px;
   min-width: 0;
+  padding: 0;
+  border-radius: 6px;
+  background: transparent;
 }
 
-.sidebar .brandSymbol {
+.sidebar .brand .brandLogo {
+  --brand-height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: none;
+  height: var(--brand-height);
+}
+
+.sidebar .brand .brandLogoCharacter, .sidebar .brand .brandLogoLettering {
+  position: relative;
   display: block;
-  position: static;
-  flex: 0 0 54px;
-  width: 54px;
-  height: 54px;
-  object-fit: contain;
+  flex: none;
+  height: var(--brand-height);
+  overflow: hidden;
 }
+/* Windows into the unchanged 2022 × 778 artwork: character x=100..762, lettering x=762..1930. */
+.sidebar .brand .brandLogoCharacter { width: calc(var(--brand-height) * 662 / 778); }
+.sidebar .brand .brandLogoLettering { width: calc(var(--brand-height) * 1168 / 778); }
+.sidebar .brand .brandLogo img {
+  position: absolute;
+  top: 0;
+  width: calc(var(--brand-height) * 2022 / 778);
+  max-width: none;
+  height: var(--brand-height);
+}
+.sidebar .brand .brandLogoCharacter img { left: calc(var(--brand-height) * -100 / 778); }
+.sidebar .brand .brandLogoLettering img { left: calc(var(--brand-height) * -762 / 778); }
 
-.sidebar .brand strong {
-  color: #624d3d;
-  font-family: "SUIT", "Segoe UI", system-ui, sans-serif;
-  font-size: 24px;
-  font-weight: 750;
-  letter-spacing: 0;
-  line-height: 1.2;
-  white-space: nowrap;
+/* Keep the six-item navigation and logo clear of each other on smaller desktop windows. */
+@media (min-width: 1001px) and (max-width: 1250px) {
+  .sidebar { grid-template-columns: auto minmax(0, 1fr) auto auto; padding-inline: 24px; }
+  .sidebar .navList { min-width: 0; max-width: 100%; gap: 4px; }
+  .sidebar .navList button, .sidebar .navList button:last-child { padding-inline: 10px; }
 }
 
 @media (max-width: 760px) {
-  .sidebar .brand { gap: 8px; }
-  .sidebar .brandSymbol { flex-basis: 46px; width: 46px; height: 46px; }
-  .sidebar .brand strong { font-size: 22px; }
+  .sidebar .brand .brandLogo { --brand-height: 56px; }
+}
+@media (max-width: 380px) {
+  .sidebar .brand .brandLogo { --brand-height: 46px; }
 }

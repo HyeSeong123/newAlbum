@@ -46,6 +46,7 @@ test('journal, person, pet, calendar, memory and album lists show complete photo
     } });
   });
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await expectFullPhotos(page.locator('.journalMosaic .mediaImage'), 3);
   await expect(page.locator('.mediaTile .thumb').first()).toHaveCSS('background-color', 'rgb(238, 237, 231)');
   await page.screenshot({ path: `test-results/full-frames-journal-${test.info().project.name}.png` });

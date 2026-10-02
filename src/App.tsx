@@ -13,18 +13,21 @@ import { localDateKey } from "./features/calendar/calendarModel";
 import { PeopleWorkspace } from "./features/people/PeopleWorkspace";
 import { SavedAlbumsView } from "./features/albums/AlbumsView";
 import { AlbumCreateModal } from "./features/albums/AlbumCreateModal";
-import { ActionMenu } from "./components/ActionMenu";
+import { MediaImportModal } from "./features/media/MediaImportModal";
 import { FirstRunGuide, FIRST_RUN_KEY } from "./components/FirstRunGuide";
 import { ChangeEvent, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { ChevronDown, FolderOpen, LoaderCircle, Plus, Search, Settings, X } from "lucide-react";
+import { LoaderCircle, Plus, Search, Settings, X } from "lucide-react";
 import { MEDIA_FILE_ACCEPT } from "./features/media/mediaService";
 import { filterJournalMonth, journalMonthTitle, resolveJournalMonth } from "./features/media/journalModel";
 import type { MediaItem } from "./types/media";
 import { DiaryView, useDiary } from "./features/diary/DiaryView";
+import { BrandLogo } from "./components/BrandLogo";
+import { HomeView } from "./features/home/HomeView";
 
-type View = "Library" | "Albums" | "Memories" | "People" | "Diary" | "Settings";
+type View = "Home" | "Library" | "Albums" | "Memories" | "People" | "Diary" | "Settings";
 
 const viewLabels: Record<View, string> = {
+  Home: "홈",
   Library: "사진 기록",
   Albums: "내 앨범",
   Memories: "추억",
@@ -34,6 +37,7 @@ const viewLabels: Record<View, string> = {
 };
 
 const navItems: Array<{ name: View; label: string; accessibleLabel: string }> = [
+  { name: "Home", label: "홈", accessibleLabel: "홈" },
   { name: "Library", label: "사진 기록", accessibleLabel: "사진 기록" },
   { name: "Albums", label: "내 앨범", accessibleLabel: "내 앨범" },
   { name: "Diary", label: "일기장", accessibleLabel: "일기장" },
@@ -55,16 +59,15 @@ export function App() {
     return () => observer.disconnect();
   }, []);
 
-  const [activeView, setActiveView] = useState<View>("Library");
+  const [activeView, setActiveView] = useState<View>("Home");
   const [photoMode, setPhotoMode] = useState<PhotoMode>("grid");
   const [memorySection, setMemorySection] = useState<"rediscover" | "timeline" | "map">("rediscover");
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const library = useMediaLibrary();
   const diary = useDiary();
   const [largeLayout, setLargeLayout] = useState(() => localStorage.getItem("warm-journal-large-layout") === "true");
-  const [albumImport, setAlbumImport] = useState(false);
-  const [albumImportTitle, setAlbumImportTitle] = useState("");
-  const { items, itemsById, albums: savedAlbums, importing, clearing, fileInput, folderInput, chooseFiles, chooseFolder, handleFiles } = library;
+  const [importOpen, setImportOpen] = useState(false);
+  const { items, itemsById, albums: savedAlbums, importing, clearing, fileInput, folderInput } = library;
   const viewer = useMediaViewer(itemsById, library.recordView);
   const { selected } = viewer;
   const selection = useMediaSelection(itemsById);
@@ -104,7 +107,7 @@ export function App() {
   const topbarTitle = activeView === "Library" && photoMode === "grid"
     ? journalMonthTitle(activeMonth)
     : viewLabels[activeView];
-  const topbarCount = activeView === "Albums" ? `${savedAlbums.length}개의 앨범` : activeView === "Diary" ? `${diary.entries.length}편의 일기` : `${items.length}개의 기록`;
+  const topbarCount = activeView === "Home" ? "오늘도 반가워요" : activeView === "Albums" ? `${savedAlbums.length}개의 앨범` : activeView === "Diary" ? `${diary.entries.length}편의 일기` : `${items.length}개의 기록`;
 
   async function clearAllRegisteredMedia() {
     if (clearing || !window.confirm("등록 목록을 모두 비울까요? 원본 사진과 영상 파일은 삭제되지 않습니다.")) return;
@@ -137,9 +140,8 @@ export function App() {
 
   function startAlbum() {
     navigate("Library"); setSelectedMonth("all"); selection.reset(true);
-    setAlbumImportTitle("");
     setSelectionNotice(items.length ? "앨범에 담을 사진과 영상을 선택해 주세요." : "먼저 사진과 영상을 가져온 뒤 앨범에 담을 기록을 선택해 주세요.");
-    if (!items.length) chooseFiles();
+    if (!items.length) setImportOpen(true);
   }
 
   async function deleteSelectedItems() {
@@ -163,10 +165,9 @@ export function App() {
   return (
     <main className={`app${largeLayout ? " largeLayout" : ""}`} style={{ "--app-header-height": `${navigationHeight}px` } as CSSProperties}>
       <header ref={navigationRef} className="sidebar" aria-label="주 메뉴">
-        <div className="brand">
-          <img className="brandSymbol" src="/brand/geuruteogi-symbol.png" alt="" aria-hidden="true" width={54} height={54} draggable={false} />
-          <strong>그루터기</strong>
-        </div>
+        <button type="button" className="brand" aria-label="감자싹 홈으로 이동" title="홈으로 이동" onClick={() => navigate("Home")}>
+          <BrandLogo />
+        </button>
 
         <nav className="navList" aria-label="주 메뉴">
           {navItems.map(({ name, label, accessibleLabel }) => (
@@ -196,20 +197,16 @@ export function App() {
             <span className="collectionCount">{topbarCount}</span>
           </div>
           <div className="toolbar">
-            {!(activeView === "Library" && photoMode === "grid") && !(activeView === "Memories" && memorySection === "map") && <label className="searchBox">
+            {activeView !== "Home" && !(activeView === "Library" && photoMode === "grid") && !(activeView === "Memories" && memorySection === "map") && <label className="searchBox">
               <Search size={18} />
               <input aria-label={activeView === "People" ? "이름 검색" : activeView === "Diary" ? "일기 검색" : activeView === "Albums" ? "앨범 검색" : "사진과 추억 검색"} value={query} onChange={(event) => { setQuery(event.target.value); if (activeView === "Library" && activeMonth !== "favorites") setSelectedMonth("all"); }} placeholder={activeView === "People" ? "이름 검색" : activeView === "Diary" ? "일기 검색" : activeView === "Albums" ? "앨범을 검색하세요" : "사진과 추억을 검색하세요"} />
               {query && <button className="searchClear" aria-label="검색 지우기" onClick={() => setQuery("")}><X size={15} /></button>}
             </label>}
             {(activeView === "Library" || activeView === "Albums") && <div className="importActions">
-              <button className="primary" onClick={activeView === "Albums" ? startAlbum : () => { setAlbumImportTitle(""); chooseFiles(); }} disabled={Boolean(importing)}>
+              <button className="primary" onClick={activeView === "Albums" ? startAlbum : () => setImportOpen(true)} disabled={Boolean(importing)}>
                 {importing ? <LoaderCircle className="spinIcon" size={18} /> : <Plus size={18} />}
-                {importing === "files" ? "사진과 영상을 가져오는 중" : activeView === "Albums" ? "새 앨범 만들기" : "사진·영상 가져오기"}
+                {importing ? "사진과 영상을 가져오는 중" : activeView === "Albums" ? "새 앨범 만들기" : "사진·영상 가져오기"}
               </button>
-              {activeView === "Library" && <><button className="folderImport" disabled={Boolean(importing)} onClick={chooseFolder}><FolderOpen size={17} />폴더 가져오기</button>
-                <ActionMenu label="다른 가져오기 방법" triggerText="더 보기" icon={<ChevronDown size={16} />} disabled={Boolean(importing)} actions={[
-                { label: "가져오면서 앨범 만들기", icon: <Plus size={16} />, onSelect: () => { setAlbumImportTitle(""); setAlbumImport(true); } },
-              ]} /></>}
               {importing && (
                 <div className="importStatus" role="status" aria-live="polite">
                   <LoaderCircle className="spinIcon" size={18} />
@@ -217,12 +214,12 @@ export function App() {
                 </div>
               )}
             </div>}
-            <input ref={fileInput} type="file" accept={MEDIA_FILE_ACCEPT} multiple onChange={(event: ChangeEvent<HTMLInputElement>) => { void library.handleFilesIntoAlbum(event.target.files, albumImportTitle).then(created => { if (created) { setAlbumImportTitle(""); navigate("Albums"); } }); event.currentTarget.value = ""; }} hidden />
+            <input ref={fileInput} type="file" accept={MEDIA_FILE_ACCEPT} multiple onChange={(event: ChangeEvent<HTMLInputElement>) => { void library.completeImport(event.target.files, "files").then(created => { if (created) navigate("Albums"); }); event.currentTarget.value = ""; }} hidden />
             <input
               ref={folderInput}
               type="file"
               multiple
-              onChange={(event: ChangeEvent<HTMLInputElement>) => { handleFiles(event.target.files, "folder"); event.currentTarget.value = ""; }}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => { void library.completeImport(event.target.files, "folder").then(created => { if (created) navigate("Albums"); }); event.currentTarget.value = ""; }}
               hidden
               {...({ webkitdirectory: "" } as Record<string, string>)}
             />
@@ -231,6 +228,8 @@ export function App() {
 
         <section className="contentGrid">
           <div className="mainPanel">
+            {activeView === "Home" && <HomeView today={today} itemCount={items.length} albumCount={savedAlbums.length} diaryCount={diary.entries.length}
+              onShowLibrary={() => navigate("Library")} onShowAlbums={() => navigate("Albums")} onShowDiary={() => navigate("Diary")} />}
             {activeView === "Library" && (
               <PhotoView
                 mode={photoMode}
@@ -254,7 +253,7 @@ export function App() {
                 albums={savedAlbums}
                 onShowAlbums={() => navigate("Albums")}
                 onNewAlbum={startAlbum}
-                onImport={chooseFiles}
+                onImport={() => setImportOpen(true)}
                 onViewMedia={openViewer}
                 scopeKey={`${activeMonth}:${query}`}
                 query={query}
@@ -271,11 +270,11 @@ export function App() {
             {activeView === "Settings" && <SettingsPanel itemCount={items.length} clearing={clearing} onClear={clearAllRegisteredMedia} />}
           </div>
         </section>
-        {firstRunOpen && <FirstRunGuide onLater={closeFirstRun} onImport={() => { closeFirstRun(); chooseFiles(); }} />}
-        {albumImport && <div className="modalBackdrop"><form className="importAlbumDialog" onSubmit={event => { event.preventDefault(); if (!albumImportTitle.trim()) return; setAlbumImport(false); if (library.desktop) void library.importIntoAlbum(albumImportTitle.trim()).then(created => { if (created) navigate("Albums"); }); else fileInput.current?.click(); }}>
-          <h2>사진을 가져오며 앨범 만들기</h2><label>앨범 이름<input autoFocus maxLength={80} required placeholder="예: 졸업식" value={albumImportTitle} onChange={event => setAlbumImportTitle(event.target.value)} /></label>
-          <p>선택한 파일 중 새로 등록된 사진과 영상을 바로 앨범에 담습니다.</p><div><button type="button" onClick={() => setAlbumImport(false)}>취소</button><button className="primary" type="submit">파일 선택</button></div>
-        </form></div>}
+        {firstRunOpen && <FirstRunGuide onLater={closeFirstRun} onImport={() => { closeFirstRun(); setImportOpen(true); }} />}
+        {importOpen && <MediaImportModal onClose={() => setImportOpen(false)} onImport={async options => {
+          const created = await library.requestImport(options);
+          if (created) navigate("Albums");
+        }} />}
         {library.error && <p className="selectionNotice" role="alert">{library.error}</p>}
         {library.importNotice && !library.error && <p className="selectionNotice" role="status">{library.importNotice}</p>}
         {selectionNotice && <p className="selectionNotice" role="status">{selectionNotice}</p>}

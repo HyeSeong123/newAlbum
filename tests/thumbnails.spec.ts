@@ -17,6 +17,7 @@ test('list requests thumbnail while detail keeps original', async ({ page }) => 
     } });
   }, { image });
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await expect(page.locator('.mediaTile .thumb')).toHaveCSS('background-image', 'none');
   await expect(page.locator('.mediaTile .thumb')).toHaveCSS('background-color', 'rgb(238, 237, 231)');
   await expect.poll(() => page.evaluate(() => typeof (window as unknown as { releaseThumbnail?: () => void }).releaseThumbnail)).toBe('function');

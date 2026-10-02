@@ -7,8 +7,16 @@ const photos = Array.from({ length: 7 }, (_, i) => ({ name: `memory-${i + 1}.jpg
 test('diary preserves six photos, dates and text across reloads and detaches one photo', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: '일기장', exact: true }).click();
+  await expect(page.locator('.diaryEmpty h2')).toHaveCSS('font-family', /Noto Serif KR/);
+  await expect(page.locator('.diaryEmpty .emptyState')).toHaveCount(0);
   await page.getByRole('button', { name: '첫 일기 쓰기', exact: true }).click();
   const dialog = page.getByRole('dialog');
+  const bounds = (await dialog.boundingBox())!;
+  expect(bounds.width).toBeGreaterThan(page.viewportSize()!.width * .85);
+  expect(bounds.height).toBeGreaterThan(page.viewportSize()!.height * .9);
+  if (page.viewportSize()!.width >= 1000) {
+    expect((await dialog.getByLabel('내용', { exact: true }).boundingBox())!.height).toBeGreaterThan(page.viewportSize()!.height * .5);
+  }
   await dialog.getByLabel('제목', { exact: true }).fill('오래 기억할 하루');
   await dialog.getByLabel('내용', { exact: true }).fill('사진 여섯 장과 함께 남기는 이야기');
   await dialog.getByLabel('날짜', { exact: true }).fill('2026-09-24');
@@ -25,6 +33,13 @@ test('diary preserves six photos, dates and text across reloads and detaches one
   await page.getByRole('button', { name: '일기장', exact: true }).click();
   await expect(page.locator('.diaryCard')).toContainText('09.24');
   await expect(page.locator('.diaryCard')).toContainText('사진 6장');
+  await expect(page.locator('.diaryMonthNav')).toContainText('2026년 9월');
+  if (page.viewportSize()!.width >= 1100) {
+    const card = await page.locator('.diaryCard').boundingBox();
+    expect(card!.width).toBeGreaterThanOrEqual(390);
+    expect(card!.height).toBeGreaterThanOrEqual(590);
+  }
+  await page.screenshot({ path: `test-results/diary-list-${test.info().project.name}.png` });
   await page.locator('.diaryOpen').click();
   await expect(dialog.getByLabel('내용', { exact: true })).toHaveValue('사진 여섯 장과 함께 남기는 이야기');
   await expect(dialog.getByLabel('날씨', { exact: true })).toHaveValue('흐림');

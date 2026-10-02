@@ -27,6 +27,7 @@ test('desktop original download handles cancellation, retry and repeated clicks'
     } });
   });
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.getByRole('button', { name: 'original-1.jpg 상세보기', exact: true }).click();
   const detail = page.getByRole('dialog', { name: '사진 상세', exact: true });
   const download = detail.getByRole('button', { name: '원본 다운로드', exact: true });
@@ -53,6 +54,7 @@ test('desktop original download handles cancellation, retry and repeated clicks'
 test('browser download retains the original filename and bytes', async ({ page }) => {
   const original = await readFile('tests/fixtures/pet-dog.jpg');
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.locator('input[type="file"]').first().setInputFiles({ name: 'original-photo.jpg', mimeType: 'image/jpeg', buffer: original });
   await page.getByRole('button', { name: 'original-photo.jpg 상세보기', exact: true }).click();
   const pending = page.waitForEvent('download');

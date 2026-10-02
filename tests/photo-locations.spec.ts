@@ -12,6 +12,7 @@ test('memory map analyzes GPS and bulk region edits preserve coordinates', async
       size_bytes: 1000, rating: 0, comment: '', favorite: false, metadata_status: 'ready',
       latitude: index === 0 ? 37.5665 : null, longitude: index === 0 ? 126.978 : null,
       region_code: index === 0 ? 'KR-11' : null, region_name: index === 0 ? '서울특별시' : null,
+      district: '',
       location_source: 'gps', location_status: index === 1 ? 'queued' : 'ready',
     }));
     let scans = 0;
@@ -23,7 +24,7 @@ test('memory map analyzes GPS and bulk region edits preserve coordinates', async
       ] });
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: (path: string) => '/' + path.split('/').pop(),
-      invoke: async (command: string, args: { ids?: number[]; regionCode?: string; id?: number }) => {
+      invoke: async (command: string, args: { ids?: number[]; regionCode?: string; district?: string; id?: number }) => {
         if (command === 'list_media') return media.map(item => ({ ...item }));
         if (command === 'list_albums') return [];
         if (command === 'location_overview') return overview();
@@ -36,6 +37,7 @@ test('memory map analyzes GPS and bulk region edits preserve coordinates', async
           for (const item of media) if (args.ids?.includes(item.id)) {
             item.region_code = args.regionCode!;
             item.region_name = args.regionCode === 'KR-26' ? '부산광역시' : '서울특별시';
+            item.district = args.district ?? '';
             item.location_source = 'manual'; item.location_status = 'ready';
           }
           return null;
@@ -68,11 +70,12 @@ test('memory map analyzes GPS and bulk region edits preserve coordinates', async
   await expect(editor).toContainText('선택한 2개의 시·도');
   await page.screenshot({ path: `test-results/photo-location-bulk-${test.info().project.name}.png` });
   await editor.getByLabel('지정할 지역').selectOption('KR-26');
+  await editor.getByLabel('시군구').selectOption('해운대구');
   await editor.getByRole('button', { name: '지역 저장' }).click();
   await expect(editor).toContainText('선택한 2개 기록');
   await page.getByRole('button', { name: '선택 끝내기', exact: true }).click();
   await page.locator('.galleryGrid .mediaTile[data-media-id="1"]').click();
   const detail = page.getByRole('dialog', { name: '사진 상세', exact: true });
-  await expect(detail.getByLabel('위치', { exact: true })).toContainText('부산광역시');
+  await expect(detail.getByLabel('위치', { exact: true })).toContainText('부산광역시 · 해운대구');
   await expect(detail.getByText('37.56650, 126.97800')).toBeVisible();
 });

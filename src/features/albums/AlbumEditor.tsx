@@ -6,9 +6,8 @@ import { useModalBehavior } from "../../hooks/useModalBehavior";
 import { AlbumColorPicker } from "./AlbumCover";
 import { albumContents } from "./albumContent";
 import { AlbumContentEditor } from "./chapter/AlbumContentEditor";
-import { AlbumMusicSettings } from "./story-player/StorySettings";
 
-export type AlbumEditorSection = "contents" | "details" | "photos" | "music";
+export type AlbumEditorSection = "contents" | "details" | "photos";
 
 export function AlbumEditor({ album, onClose, onSave, initialSection = "contents" }: { album: SavedAlbum; onClose: () => void; onSave: (album: SavedAlbum) => Promise<void>; initialSection?: AlbumEditorSection }) {
   const [draft, setDraft] = useState(() => ({ ...album, contents: albumContents(album) }));
@@ -57,13 +56,11 @@ export function AlbumEditor({ album, onClose, onSave, initialSection = "contents
               ["contents", "챕터·감상문"],
               ["details", "앨범 정보"],
               ["photos", `사진 관리 · ${draft.items.length}`],
-              ["music", "스토리 음악"],
             ] as const).map(([key, label]) => <button key={key} type="button" aria-current={section === key ? "page" : undefined} onClick={() => { setSection(key); setError(""); }}>{label}</button>)}
           </nav>
           {section === "contents" && <AlbumContentEditor contents={draft.contents} items={draft.items} onChange={changeContents} selectedId={selectedContentId} onSelect={setSelectedContentId} />}
           {section === "details" && <section className="albumEditorSimple"><h3>앨범 정보</h3><p>앨범 이름과 표지 색상을 바꿀 수 있습니다.</p><label className="albumTitleField">제목<input required maxLength={80} value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} /></label>
             <AlbumColorPicker value={draft.coverColor} onChange={(coverColor) => setDraft({ ...draft, coverColor })} items={draft.items} title={draft.title} /></section>}
-          {section === "music" && <div className="albumEditorSimple"><AlbumMusicSettings path={draft.musicPath} onChange={musicPath => setDraft({ ...draft, musicPath })} /></div>}
           {section === "photos" && <section className="albumEditorSimple"><h3>사진 관리</h3><p>앨범에서 제외할 사진을 선택하세요. 원본 사진은 유지됩니다.</p>
           <div className="albumActions"><strong>사진 {draft.items.length}장</strong><button type="button" disabled={!chosen.length} onClick={removeChosen}><Trash2 size={17} />앨범에서 삭제{chosen.length > 0 ? ` (${chosen.length})` : ""}</button></div>
           <div className="albumEditPhotos">{draft.items.slice(currentPage * 24, (currentPage + 1) * 24).map((item) => <button type="button" key={item.id} aria-label={`${item.takenAt ?? "날짜 없음"} 사진 선택`} aria-pressed={chosen.includes(item.id)} onClick={() => setChosen((current) => current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id])}>
