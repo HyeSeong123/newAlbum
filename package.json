@@ -1,6 +1,6 @@
 {
   "name": "local-album-manager",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -17,7 +17,7 @@
     "version:major": "node scripts/version.mjs major",
     "version:check": "node scripts/version.mjs --check",
     "test:e2e": "playwright test",
-    "test:unit": "node --test tests/diary-model.test.mjs tests/journal-model.test.mjs tests/media-playback.test.mjs tests/feature-models.test.mjs tests/mutations.test.mjs tests/version.test.mjs tests/album-content.test.mjs tests/memories-model.test.mjs tests/timeline-model.test.mjs tests/memory-map-model.test.mjs tests/trip-model.test.mjs"
+    "test:unit": "node --test tests/diary-model.test.mjs tests/journal-model.test.mjs tests/media-playback.test.mjs tests/feature-models.test.mjs tests/mutations.test.mjs tests/version.test.mjs tests/album-content.test.mjs tests/memories-model.test.mjs tests/timeline-model.test.mjs tests/memory-map-model.test.mjs tests/trip-model.test.mjs tests/characters-model.test.mjs"
   },
   "dependencies": {
     "@fontsource/noto-serif-kr": "^5.2.7",

@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS media (
   district TEXT,
   country TEXT,
   city TEXT,
-  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  gps_region_code TEXT
 );
 
 CREATE TABLE IF NOT EXISTS album (

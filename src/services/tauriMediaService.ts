@@ -24,6 +24,7 @@ interface BackendMediaItem {
   view_count?: number;
   metadata_status: "ready" | "queued" | "missing-date";
   location_source?: "gps" | "manual";
+  gps_region_code?: string | null;
   latitude?: number | null;
   longitude?: number | null;
   region_code?: string | null;
@@ -249,6 +250,7 @@ function toMediaItem(row: BackendMediaItem): MediaItem {
     district: row.district ?? undefined, country: row.country ?? undefined, city: row.city ?? undefined,
     locationStatus: row.location_status ?? "queued",
     locationSource: row.location_source ?? "gps",
+    gpsRegionCode: row.gps_region_code ?? undefined,
   };
 }
 

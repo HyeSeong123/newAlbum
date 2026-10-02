@@ -21,6 +21,8 @@ export interface MediaItem {
   previewUrl?: string;
   metadataStatus: "ready" | "queued" | "missing-date";
   locationSource?: "gps" | "manual";
+  /** Original EXIF region; manual map edits never populate or overwrite this. */
+  gpsRegionCode?: string;
   latitude?: number;
   longitude?: number;
   regionCode?: string;

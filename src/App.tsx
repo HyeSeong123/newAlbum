@@ -23,8 +23,11 @@ import type { MediaItem } from "./types/media";
 import { DiaryView, useDiary } from "./features/diary/DiaryView";
 import { BrandLogo } from "./components/BrandLogo";
 import { HomeView } from "./features/home/HomeView";
+import { CharacterBook } from "./features/characters/CharacterBook";
+import { CharacterEventModal } from "./features/characters/CharacterEventModal";
+import { useCharacters } from "./features/characters/useCharacters";
 
-type View = "Home" | "Library" | "Albums" | "Memories" | "People" | "Diary" | "Settings";
+type View = "Home" | "Library" | "Albums" | "Memories" | "People" | "Diary" | "Characters" | "Settings";
 
 const viewLabels: Record<View, string> = {
   Home: "홈",
@@ -33,6 +36,7 @@ const viewLabels: Record<View, string> = {
   Memories: "추억",
   People: "사람과 반려동물",
   Diary: "일기장",
+  Characters: "새싹 도감",
   Settings: "설정",
 };
 
@@ -42,6 +46,7 @@ const navItems: Array<{ name: View; label: string; accessibleLabel: string }> = 
   { name: "Albums", label: "내 앨범", accessibleLabel: "내 앨범" },
   { name: "Diary", label: "일기장", accessibleLabel: "일기장" },
   { name: "Memories", label: "추억", accessibleLabel: "추억" },
+  { name: "Characters", label: "새싹 도감", accessibleLabel: "새싹 도감" },
   { name: "People", label: "사람과 반려동물", accessibleLabel: "사람과 반려동물" },
 ];
 
@@ -68,6 +73,9 @@ export function App() {
   const [largeLayout, setLargeLayout] = useState(() => localStorage.getItem("warm-journal-large-layout") === "true");
   const [importOpen, setImportOpen] = useState(false);
   const { items, itemsById, albums: savedAlbums, importing, clearing, fileInput, folderInput } = library;
+  const characters = useCharacters(items.map(item => `${item.id}:${item.gpsRegionCode || ""}`).join("|"));
+  const mainCharacter = characters.snapshot.characters.find(character => character.isMain);
+  const pendingCharacterEvent = characters.snapshot.events[0];
   const viewer = useMediaViewer(itemsById, library.recordView);
   const { selected } = viewer;
   const selection = useMediaSelection(itemsById);
@@ -136,6 +144,7 @@ export function App() {
   function navigate(view: View) {
     setActiveView(view); setPhotoMode("grid"); setMemorySection("rediscover"); setQuery("");
     selection.reset(); setSelectionNotice("");
+    if (view === "Home" || view === "Characters") void characters.refresh();
   }
 
   function startAlbum() {
@@ -197,7 +206,7 @@ export function App() {
             <span className="collectionCount">{topbarCount}</span>
           </div>
           <div className="toolbar">
-            {activeView !== "Home" && !(activeView === "Library" && photoMode === "grid") && !(activeView === "Memories" && memorySection === "map") && <label className="searchBox">
+            {activeView !== "Home" && activeView !== "Characters" && !(activeView === "Library" && photoMode === "grid") && !(activeView === "Memories" && memorySection === "map") && <label className="searchBox">
               <Search size={18} />
               <input aria-label={activeView === "People" ? "이름 검색" : activeView === "Diary" ? "일기 검색" : activeView === "Albums" ? "앨범 검색" : "사진과 추억 검색"} value={query} onChange={(event) => { setQuery(event.target.value); if (activeView === "Library" && activeMonth !== "favorites") setSelectedMonth("all"); }} placeholder={activeView === "People" ? "이름 검색" : activeView === "Diary" ? "일기 검색" : activeView === "Albums" ? "앨범을 검색하세요" : "사진과 추억을 검색하세요"} />
               {query && <button className="searchClear" aria-label="검색 지우기" onClick={() => setQuery("")}><X size={15} /></button>}
@@ -229,7 +238,10 @@ export function App() {
         <section className="contentGrid">
           <div className="mainPanel">
             {activeView === "Home" && <HomeView today={today} itemCount={items.length} albumCount={savedAlbums.length} diaryCount={diary.entries.length}
+              mainCharacter={mainCharacter} onInteract={id => { void characters.interact(id); }} onShowCharacters={() => navigate("Characters")}
               onShowLibrary={() => navigate("Library")} onShowAlbums={() => navigate("Albums")} onShowDiary={() => navigate("Diary")} />}
+            {activeView === "Characters" && <CharacterBook characters={characters.snapshot.characters} onRename={characters.rename} onSetMain={characters.setMain} onInteract={characters.interact} />}
+            {characters.error && (activeView === "Home" || activeView === "Characters") && <p role="alert">{characters.error}</p>}
             {activeView === "Library" && (
               <PhotoView
                 mode={photoMode}
@@ -271,6 +283,9 @@ export function App() {
           </div>
         </section>
         {firstRunOpen && <FirstRunGuide onLater={closeFirstRun} onImport={() => { closeFirstRun(); setImportOpen(true); }} />}
+        {!firstRunOpen && pendingCharacterEvent && <CharacterEventModal event={pendingCharacterEvent}
+          onMeet={() => { void characters.dismiss(pendingCharacterEvent.id).then(saved => { if (saved) navigate("Characters"); }); }}
+          onLater={() => { void characters.dismiss(pendingCharacterEvent.id); }} />}
         {importOpen && <MediaImportModal onClose={() => setImportOpen(false)} onImport={async options => {
           const created = await library.requestImport(options);
           if (created) navigate("Albums");

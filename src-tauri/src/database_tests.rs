@@ -44,8 +44,9 @@ fn existing_library_survives_migration_reopen_and_read_only_fast_path() {
         INSERT INTO pet_media VALUES(1,1);").unwrap();
     let before = snapshot(&conn);
     let mut expected = before.clone();
-    // The district backfill is the sole change to an existing GPS photo.
+    // Both caches are derived from the existing original GPS, without editing user data.
     expected[0][0][21] = Value::Text("제주시".into());
+    *expected[0][0].last_mut().unwrap() = Value::Text("KR-49".into());
     initialize(&mut conn).unwrap();
     assert_eq!(snapshot(&conn), expected);
     assert_eq!(version(&conn).unwrap(), VERSION);

@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, BookHeart, Images, NotebookPen } from "lucide-react";
+import { CharacterVisual } from "../characters/CharacterVisual";
+import { characterDefinitions, characterName, nextDialogue, stageNames, type OwnedCharacter } from "../characters/models";
+import "../characters/characters.css";
 import "./home.css";
 
 const messages = [
@@ -29,17 +32,29 @@ type HomeViewProps = {
   onShowLibrary: () => void;
   onShowAlbums: () => void;
   onShowDiary: () => void;
+  onShowCharacters: () => void;
+  mainCharacter?: OwnedCharacter;
+  onInteract: (id: string) => void;
 };
 
-export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibrary, onShowAlbums, onShowDiary }: HomeViewProps) {
+export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibrary, onShowAlbums, onShowDiary, onShowCharacters, mainCharacter, onInteract }: HomeViewProps) {
   const [messageIndex, setMessageIndex] = useState(0);
+  const [happy, setHappy] = useState(false);
+  const timer = useRef<number | undefined>(undefined);
+  const definition = characterDefinitions.find(item => item.id === mainCharacter?.id);
+  const lines = definition ? [...definition.dialogues.all, ...(definition.dialogues.stages[String(mainCharacter?.growthStage)] || [])] : messages;
+  useEffect(() => { setMessageIndex(0); }, [mainCharacter?.id]);
+  useEffect(() => () => window.clearTimeout(timer.current), []);
   const dateLabel = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long" })
     .format(new Date(`${today}T12:00:00`));
 
   function talk() {
     // Draw from every other message, so even rapid clicks never repeat the last line.
-    const next = Math.floor(Math.random() * (messages.length - 1));
-    setMessageIndex(next >= messageIndex ? next + 1 : next);
+    setMessageIndex(previous => nextDialogue(lines, previous));
+    setHappy(true);
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setHappy(false), 1000);
+    if (mainCharacter) onInteract(mainCharacter.id);
   }
 
   const shortcuts = [
@@ -54,11 +69,14 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
       <h2>작은 하루가 자라는 곳</h2>
       <p className="homeIntroduction">소중한 순간도, 평범한 하루도 차곡차곡 담아두세요.</p>
       <div className="homeCompanion">
-        <p id="homeMessage" className="homeSpeech" role="status" aria-live="polite" aria-atomic="true">{messages[messageIndex]}</p>
-        <button className="homeMascot" type="button" aria-label="감자싹에게 말 걸기" aria-describedby="homeMascotHint" onClick={talk}>
-          <img key={messageIndex} src="/brand/gamjassak-symbol.png" alt="" width={1254} height={1254} draggable={false} />
+        <p id="homeMessage" className="homeSpeech" role="status" aria-live="polite" aria-atomic="true">{lines[messageIndex] || lines[0]}</p>
+        <button className={`homeMascot${happy ? " happy" : ""}`} type="button" aria-label={`${definition ? characterName(definition, mainCharacter) : "감자싹"}에게 말 걸기`} aria-describedby="homeMascotHint" onClick={talk}>
+          {definition && mainCharacter ? <CharacterVisual definition={definition} stage={mainCharacter.growthStage} expression={happy ? "happy" : "idle"} />
+            : <img key={messageIndex} src="/brand/gamjassak-symbol.png" alt="" width={1254} height={1254} draggable={false} />}
         </button>
-        <p id="homeMascotHint" className="homeMascotHint">감자싹을 톡 눌러 말을 걸어보세요</p>
+        {definition && mainCharacter && <p className="homeCharacterMeta"><strong>{characterName(definition, mainCharacter)}</strong><span>{definition.regionLabel}에서 만난 {stageNames[mainCharacter.growthStage]} · 추억 {mainCharacter.regionPhotoCount}장 · 친밀도 {mainCharacter.affection}</span></p>}
+        <p id="homeMascotHint" className="homeMascotHint">새싹을 톡 눌러 말을 걸어보세요</p>
+        <button className="homeCharacterLink" type="button" onClick={onShowCharacters}>새싹 도감 보기</button>
       </div>
     </div>
     <nav className="homeShortcuts" aria-label="기록 바로가기">

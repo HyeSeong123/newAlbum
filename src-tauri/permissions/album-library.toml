@@ -2,6 +2,11 @@
 identifier = "album-library"
 description = "Allow the main album window to use the existing photo, album, face and pet commands."
 commands.allow = [
+  "sync_characters",
+  "rename_character",
+  "set_main_character",
+  "interact_character",
+  "dismiss_character_event",
   "list_diary",
   "save_diary",
   "assign_diary_album",

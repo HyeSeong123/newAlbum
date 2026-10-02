@@ -21,6 +21,7 @@ mod location;
 mod album_content;
 mod database;
 mod diary;
+mod characters;
 #[cfg(any(feature = "custom-protocol", test))]
 mod localhost;
 
@@ -49,6 +50,7 @@ struct MediaItemDto {
     district: Option<String>,
     country: Option<String>,
     city: Option<String>,
+    gps_region_code: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -73,7 +75,12 @@ async fn save_diary(app: AppHandle, entry: diary::Entry) -> Result<(), String> {
 }
 #[tauri::command]
 async fn import_diary_photos(app: AppHandle, paths: Vec<String>) -> Result<Vec<diary::Photo>, String> {
-    tauri::async_runtime::spawn_blocking(move || diary::import_photos(&mut open_database(&app)?, paths)).await.map_err(|e| e.to_string())?
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut conn = open_database(&app)?;
+        let photos = diary::import_photos(&mut conn, paths)?;
+        characters::reconcile(&mut conn)?;
+        Ok(photos)
+    }).await.map_err(|e| e.to_string())?
 }
 #[tauri::command]
 async fn assign_diary_album(app: AppHandle, ids: Vec<i64>, album_id: Option<i64>) -> Result<(), String> {
@@ -102,9 +109,35 @@ async fn location_overview(app: AppHandle) -> Result<location::Overview, String>
 }
 
 #[tauri::command]
+async fn sync_characters(app: AppHandle) -> Result<characters::Snapshot, String> {
+    tauri::async_runtime::spawn_blocking(move || characters::reconcile(&mut open_database(&app)?)).await.map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn rename_character(app: AppHandle, id: String, name: String) -> Result<characters::Snapshot, String> {
+    tauri::async_runtime::spawn_blocking(move || characters::rename(&mut open_database(&app)?, &id, &name)).await.map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn set_main_character(app: AppHandle, id: String) -> Result<characters::Snapshot, String> {
+    tauri::async_runtime::spawn_blocking(move || characters::set_main(&mut open_database(&app)?, &id)).await.map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn interact_character(app: AppHandle, id: String) -> Result<characters::Snapshot, String> {
+    tauri::async_runtime::spawn_blocking(move || characters::interact(&mut open_database(&app)?, &id)).await.map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn dismiss_character_event(app: AppHandle, event_id: i64) -> Result<characters::Snapshot, String> {
+    tauri::async_runtime::spawn_blocking(move || characters::dismiss(&mut open_database(&app)?, event_id)).await.map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
 async fn analyze_locations(app: AppHandle) -> Result<location::Overview, String> {
     // Small batches keep the UI responsive and show progress between calls.
-    tauri::async_runtime::spawn_blocking(move || location::analyze_batch(&open_database(&app)?, 24))
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut conn = open_database(&app)?;
+        let overview = location::analyze_batch(&conn, 24)?;
+        characters::reconcile(&mut conn)?;
+        Ok(overview)
+    })
         .await.map_err(|error| error.to_string())?
 }
 
@@ -149,6 +182,7 @@ async fn delete_registered_media(app: AppHandle, ids: Vec<i64>) -> Result<Vec<Me
     tauri::async_runtime::spawn_blocking(move || {
         let mut conn = open_database(&app)?;
         database::delete_media(&mut conn, &ids)?;
+        characters::reconcile(&mut conn)?;
         read_media(&conn)
     }).await.map_err(|error| error.to_string())?
 }
@@ -211,11 +245,12 @@ fn insert_album(
 #[tauri::command]
 async fn register_paths(app: AppHandle, paths: Vec<String>) -> Result<Vec<MediaItemDto>, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let conn = open_database(&app)?;
+        let mut conn = open_database(&app)?;
         let files = collect_supported_files(paths)?;
         for file in files {
             register_file(&conn, &file)?;
         }
+        characters::reconcile(&mut conn)?;
         read_media(&conn)
     }).await.map_err(|error| error.to_string())?
 }
@@ -751,8 +786,8 @@ fn register_file(conn: &Connection, path: &Path) -> Result<(), String> {
         file_hash(path).map_err(|error| format!("파일 해시를 계산할 수 없습니다: {error}"))?;
 
     conn.execute(
-        "INSERT INTO media (file_path, content_hash, file_type, taken_at, size_bytes, width, height, rating, comment, favorite, metadata_status, latitude, longitude, region_code, region_name, district, location_status)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, '', 0, 'ready', ?8, ?9, ?10, ?11, ?12, ?13)
+        "INSERT INTO media (file_path, content_hash, file_type, taken_at, size_bytes, width, height, rating, comment, favorite, metadata_status, latitude, longitude, region_code, region_name, district, location_status, gps_region_code)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, '', 0, 'ready', ?8, ?9, ?10, ?11, ?12, ?13, ?10)
          ON CONFLICT(file_path) DO UPDATE SET
            file_type = excluded.file_type,
            content_hash = COALESCE(media.content_hash, excluded.content_hash),
@@ -763,6 +798,7 @@ fn register_file(conn: &Connection, path: &Path) -> Result<(), String> {
            metadata_status = 'ready',
            latitude = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.latitude ELSE media.latitude END,
            longitude = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.longitude ELSE media.longitude END,
+           gps_region_code = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.gps_region_code ELSE media.gps_region_code END,
            region_code = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.region_code ELSE media.region_code END,
            region_name = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.region_name ELSE media.region_name END,
            district = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.district ELSE media.district END,
@@ -805,10 +841,11 @@ fn media_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MediaItemDto> {
         location_status: row.get(18)?,
         location_source: row.get(19)?,
         district: row.get(20)?, country: row.get(21)?, city: row.get(22)?,
+        gps_region_code: row.get(23)?,
     })
 }
 
-const MEDIA_COLUMNS: &str = "id, file_path, file_type, taken_at, width, height, duration, size_bytes, rating, comment, favorite, metadata_status, view_count, title, latitude, longitude, region_code, region_name, location_status, location_source, district, country, city";
+const MEDIA_COLUMNS: &str = "id, file_path, file_type, taken_at, width, height, duration, size_bytes, rating, comment, favorite, metadata_status, view_count, title, latitude, longitude, region_code, region_name, location_status, location_source, district, country, city, gps_region_code";
 
 fn read_media(conn: &Connection) -> Result<Vec<MediaItemDto>, String> {
     let mut stmt = conn
@@ -858,7 +895,7 @@ fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
     // Load all memberships once instead of issuing one photo query per album.
     let mut stmt = conn
         .prepare(
-            "SELECT m.id, m.file_path, m.file_type, m.taken_at, m.width, m.height, m.duration, m.size_bytes, m.rating, m.comment, m.favorite, m.metadata_status, m.view_count, m.title, m.latitude, m.longitude, m.region_code, m.region_name, m.location_status, m.location_source, m.district, m.country, m.city, ai.album_id
+            "SELECT m.id, m.file_path, m.file_type, m.taken_at, m.width, m.height, m.duration, m.size_bytes, m.rating, m.comment, m.favorite, m.metadata_status, m.view_count, m.title, m.latitude, m.longitude, m.region_code, m.region_name, m.location_status, m.location_source, m.district, m.country, m.city, m.gps_region_code, ai.album_id
              FROM album_item ai
              JOIN media m ON m.id = ai.media_id
              ORDER BY ai.album_id, ai.sequence ASC",
@@ -867,7 +904,7 @@ fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
 
     let rows = stmt
         .query_map([], |row| {
-            Ok((row.get::<_, i64>(23)?, media_from_row(row)?))
+            Ok((row.get::<_, i64>(24)?, media_from_row(row)?))
         })
         .map_err(|error| format!("앨범 항목을 읽을 수 없습니다: {error}"))?;
 
@@ -1004,6 +1041,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            sync_characters, rename_character, set_main_character, interact_character, dismiss_character_event,
             list_diary, save_diary, assign_diary_album, delete_diary, import_diary_photos,
             list_media,
             location_overview,

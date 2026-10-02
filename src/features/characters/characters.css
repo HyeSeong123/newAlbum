@@ -1,0 +1,35 @@
+.characterBook { max-width: 1040px; margin: 0 auto; }
+.characterBookIntro { margin-bottom: 22px; }
+.characterBookIntro h2 { margin: 0 0 8px; color: #514536; font-size: 22px; }
+.characterBookIntro p { margin: 0 0 10px; color: var(--muted); line-height: 1.7; }
+.characterBookIntro span, .characterRegion { color: #677654; font-size: 13px; }
+.characterGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+.characterCard { min-width: 0; padding: 20px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+.characterCardArt { display: grid; place-items: center; min-height: 180px; background: #f4f2e9; border-radius: 12px; }
+.characterCardArt button { border: 0; background: none; cursor: pointer; }
+.characterVisual { width: min(100%, 190px); height: auto; object-fit: contain; }
+.characterCard h3 { margin: 8px 0; font-size: 19px; }
+.characterCard p { color: var(--muted); font-size: 13px; line-height: 1.7; }
+.characterCard .characterStats { color: #586548; }
+.characterCardActions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.characterCardActions button, .characterCard form button, .characterModal button { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: #fffefa; color: var(--text); cursor: pointer; }
+.characterMainBadge { color: #607450; font-size: 13px; }
+.characterCard form { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.characterCard form label { flex-basis: 100%; font-size: 13px; }
+.characterCard input { min-width: 90px; flex: 1; padding: 7px; border: 1px solid var(--border); border-radius: 6px; }
+.characterSilhouette { display: grid; place-items: center; width: 140px; height: 140px; border-radius: 48% 48% 44% 44%; background: #d8d9cc; filter: blur(2px); color: white; font-size: 55px; }
+.characterModalBackdrop { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 20px; background: #30291f99; }
+.characterModal { width: min(100%,420px); padding: 22px; text-align: center; border-radius: 18px; background: #fffefa; box-shadow: 0 20px 60px #30291f33; }
+.characterModal .characterVisual { animation: characterArrive .6s ease-out; }
+.characterModal h2 { color: #514536; font-size: 21px; }
+.characterModal p { color: var(--muted); line-height: 1.7; }
+.characterModal > div { display: flex; justify-content: center; gap: 10px; }
+.characterModal .primary { background: #657b55; color: white; }
+.homeCharacterMeta { display: grid; gap: 4px; color: #677654; font-size: 13px; }
+.homeCharacterMeta strong { color: #514536; font-size: 18px; }
+.homeCharacterLink { margin-top: 12px; color: #5b704d; text-decoration: underline; border: 0; background: none; cursor: pointer; }
+.homeMascot.happy img { animation: characterHop .55s ease-out; }
+@keyframes characterHop { 50% { transform: translateY(-16px) scale(1.08); } }
+@keyframes characterArrive { 0% { transform: scale(.65); opacity: 0; } 70% { transform: scale(1.08); opacity: 1; } }
+@media(max-width: 640px) { .characterGrid { grid-template-columns: minmax(0,1fr); } }
+@media(prefers-reduced-motion: reduce) { .homeMascot.happy img, .characterModal .characterVisual { animation: none; } }

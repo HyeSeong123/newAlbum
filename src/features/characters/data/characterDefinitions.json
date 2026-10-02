@@ -1,0 +1,26 @@
+[
+  {
+    "id": "potato", "type": "potato", "regionCode": "KR-42", "regionName": "강원특별자치도", "regionLabel": "강원", "defaultName": "감자싹",
+    "description": "산바람과 포근한 강원의 순간을 함께 기억하는 친구예요.", "maxStage": 4,
+    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/potato",
+    "dialogues": { "all": ["강원도의 추억이 하나 더 생겼네!", "오늘 사진도 같이 볼까?", "또 만나러 와줘서 고마워.", "산바람을 닮은 사진이 참 좋아."], "stages": {} }
+  },
+  {
+    "id": "sweet-potato", "type": "sweet-potato", "regionCode": "KR-46", "regionName": "전남광주통합특별시", "regionLabel": "전남·광주", "defaultName": "고구마싹",
+    "description": "들판의 햇살처럼 따뜻한 남도의 추억을 간직해요.", "maxStage": 4,
+    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/sweet-potato",
+    "dialogues": { "all": ["남도의 햇살이 사진에 담겼네.", "우리 추억은 천천히 달콤해지고 있어.", "그날의 이야기를 또 들려줄래?", "네가 남긴 순간들이 참 따뜻해."], "stages": {} }
+  },
+  {
+    "id": "apple", "type": "apple", "regionCode": "KR-47", "regionName": "경상북도", "regionLabel": "경북", "defaultName": "사과싹",
+    "description": "사진 속 계절이 익어가는 경북의 작은 친구예요.", "maxStage": 4,
+    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/apple",
+    "dialogues": { "all": ["오늘도 추억 하나가 익어가고 있어.", "내 고향 사진이 또 생겼네!", "우리 경북의 풍경을 다시 볼까?", "사진 속 그 계절이 아직 생각나."], "stages": {} }
+  },
+  {
+    "id": "orange", "type": "orange", "regionCode": "KR-49", "regionName": "제주특별자치도", "regionLabel": "제주", "defaultName": "귤싹",
+    "description": "바람과 바다, 제주에서 만난 순간들을 함께 품어요.", "maxStage": 4,
+    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/orange",
+    "dialogues": { "all": ["제주에서 찍은 사진 기억나?", "바람 냄새가 아직도 나는 것 같아.", "우리 제주 추억을 다시 볼까?", "바다 빛깔이 사진 속에 남아 있네."], "stages": {} }
+  }
+]
