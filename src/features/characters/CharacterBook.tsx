@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { CharacterVisual } from "./CharacterVisual";
-import { characterDefinitions, characterName, nextDialogue, stageNames, type OwnedCharacter } from "./models";
+import { characterDefinitions, characterName, dialogueLines, nextDialogue, stageNames, type OwnedCharacter } from "./models";
 import "./characters.css";
 
 type Props = {
@@ -21,7 +21,7 @@ export function CharacterBook({ characters, onRename, onSetMain, onInteract }: P
       const name = characterName(def, owned);
       return <article key={def.id} className={`characterCard${owned ? "" : " locked"}`}>
         <div className="characterCardArt">{owned ? <button type="button" aria-label={`${name}에게 말 걸기`} onClick={() => {
-          const lines = [...def.dialogues.all, ...(def.dialogues.stages[String(owned.growthStage)] || [])];
+          const lines = dialogueLines(def, owned.growthStage, owned.affection >= 20 ? "highAffection" : "idle");
           const index = nextDialogue(lines, lastLines.current[def.id] ?? 0);
           lastLines.current[def.id] = index;
           setSpoken({ id: def.id, index, happy: true });
@@ -32,7 +32,7 @@ export function CharacterBook({ characters, onRename, onSetMain, onInteract }: P
         <span className="characterRegion">{def.regionLabel}</span>
         <h3>{owned ? name : "????"}</h3>
         {owned ? <>
-          {spoken?.id === def.id && <p className="characterDialogue" role="status">{[...def.dialogues.all, ...(def.dialogues.stages[String(owned.growthStage)] || [])][spoken.index]}</p>}
+          {spoken?.id === def.id && <p className="characterDialogue" role="status">{dialogueLines(def, owned.growthStage, owned.affection >= 20 ? "highAffection" : "idle")[spoken.index]}</p>}
           <p>{def.description}</p><p className="characterStats">{stageNames[owned.growthStage]} · 추억 {owned.regionPhotoCount}장 · 친밀도 {owned.affection}</p>
           <div className="characterCardActions">
             {owned.isMain ? <span className="characterMainBadge">대표 새싹</span> : <button type="button" onClick={() => void onSetMain(def.id)}>대표로 설정</button>}
