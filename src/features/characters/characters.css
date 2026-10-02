@@ -28,10 +28,24 @@
 .homeCharacterMeta { display: grid; gap: 4px; color: #677654; font-size: 13px; }
 .homeCharacterMeta strong { color: #514536; font-size: 18px; }
 .homeCharacterLink { margin-top: 12px; color: #5b704d; text-decoration: underline; border: 0; background: none; cursor: pointer; }
-.homeMascot.happy img { animation: characterHop .55s ease-out; }
 @keyframes characterHop { 50% { transform: translateY(-16px) scale(1.08); } }
 @keyframes characterArrive { 0% { transform: scale(.65); opacity: 0; } 70% { transform: scale(1.08); opacity: 1; } }
 @media(max-width: 1000px) { .characterGrid { grid-template-columns: repeat(3,minmax(0,1fr)); } }
 @media(max-width: 760px) { .characterGrid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media(max-width: 520px) { .characterGrid { grid-template-columns: minmax(0,1fr); } }
-@media(prefers-reduced-motion: reduce) { .homeMascot.happy img, .characterModal .characterVisual { animation: none; } }
+@media(prefers-reduced-motion: reduce) { .homeMascot.happy img, .characterModal .characterVisual, .characterCardArt button:hover .characterVisual { animation: none; } }
+
+/* Each core sprout owns a different movement language. Motion is intentionally subtle
+   so the warm journal mood stays stronger than the game-like feedback. */
+.characterCardArt button:hover .characterMotion--soft-bounce,
+.homeMascot.happy .characterMotion--soft-bounce { animation: characterSoftBounce .72s ease-out; }
+.characterCardArt button:hover .characterMotion--slow-sway,
+.homeMascot.happy .characterMotion--slow-sway { animation: characterSlowSway .9s ease-in-out; }
+.characterCardArt button:hover .characterMotion--quick-hop,
+.homeMascot.happy .characterMotion--quick-hop { animation: characterQuickHop .48s ease-out; }
+.characterCardArt button:hover .characterMotion--playful-wiggle,
+.homeMascot.happy .characterMotion--playful-wiggle { animation: characterPlayfulWiggle .58s ease-out; }
+@keyframes characterSoftBounce { 35% { transform: translateY(-7px) scale(1.025,.975); } 68% { transform: translateY(1px) scale(.99,1.01); } }
+@keyframes characterSlowSway { 30% { transform: rotate(-3deg) scaleY(1.025); } 65% { transform: rotate(3deg) scaleY(.99); } }
+@keyframes characterQuickHop { 42% { transform: translateY(-17px) scale(.97,1.04); } 72% { transform: translateY(1px) scale(1.025,.975); } }
+@keyframes characterPlayfulWiggle { 22% { transform: translateX(-5px) rotate(-5deg); } 45% { transform: translateX(5px) rotate(5deg) translateY(-4px); } 68% { transform: translateX(-3px) rotate(-3deg); } }
