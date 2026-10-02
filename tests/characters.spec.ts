@@ -21,7 +21,7 @@ test('GPS discovery opens the book, names a companion, changes the main and retu
   await page.getByRole('button',{name:'만나보기'}).click();
   await expect(page.getByRole('heading',{name:'새싹 도감',exact:true})).toBeVisible();
   await expect(page.locator('.characterCard.locked')).toHaveCount(2);
-  const orange = page.locator('.characterCard').filter({has:page.getByRole('heading',{name:'귤싹'})});
+  const orange = page.locator('.characterCard').filter({has:page.locator('.characterRegion',{hasText:'제주'})});
   await expect(orange).toContainText('추억 12장');
   await orange.getByRole('button',{name:'이름 바꾸기'}).click();
   await orange.getByLabel('새싹 이름').fill('귤이');
