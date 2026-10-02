@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, BookHeart, Images, NotebookPen } from "lucide-react";
 import { CharacterVisual } from "../characters/CharacterVisual";
-import { characterDefinitions, characterName, nextDialogue, stageNames, type OwnedCharacter } from "../characters/models";
+import { characterDefinitions, characterName, dialogueLines, nextDialogue, stageNames, type OwnedCharacter } from "../characters/models";
 import "../characters/characters.css";
 import "./home.css";
 
@@ -42,7 +42,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   const [happy, setHappy] = useState(false);
   const timer = useRef<number | undefined>(undefined);
   const definition = characterDefinitions.find(item => item.id === mainCharacter?.id);
-  const lines = definition ? [...definition.dialogues.all, ...(definition.dialogues.stages[String(mainCharacter?.growthStage)] || [])] : messages;
+  const lines = definition && mainCharacter ? dialogueLines(definition, mainCharacter.growthStage, mainCharacter.affection >= 20 ? "highAffection" : "greeting") : messages;
   useEffect(() => { setMessageIndex(0); }, [mainCharacter?.id]);
   useEffect(() => () => window.clearTimeout(timer.current), []);
   const dateLabel = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long" })

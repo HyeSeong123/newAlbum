@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "node scripts/prepare-face-models.mjs && node scripts/prepare-pet-models.mjs",
-    "prebuild": "node scripts/prepare-face-models.mjs && node scripts/prepare-pet-models.mjs",
+    "predev": "node scripts/generate-character-assets.mjs && node scripts/prepare-face-models.mjs && node scripts/prepare-pet-models.mjs",
+    "prebuild": "node scripts/generate-character-assets.mjs && node scripts/prepare-face-models.mjs && node scripts/prepare-pet-models.mjs",
     "dev": "vite --host 127.0.0.1 --port 5173",
     "build": "tsc && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4173",

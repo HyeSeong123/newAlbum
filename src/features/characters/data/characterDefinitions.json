@@ -1,98 +1,634 @@
 [
   {
-    "id": "potato", "type": "potato", "regionCode": "KR-42", "regionName": "강원특별자치도", "regionLabel": "강원", "defaultName": "감자싹",
-    "description": "산바람과 포근한 강원의 순간을 함께 기억하는 친구예요.", "maxStage": 4,
-    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/potato",
-    "dialogues": { "all": ["강원도의 추억이 하나 더 생겼네!", "오늘 사진도 같이 볼까?", "또 만나러 와줘서 고마워.", "산바람을 닮은 사진이 참 좋아."], "stages": {} }
+    "id": "potato",
+    "type": "potato",
+    "regionCode": "KR-42",
+    "regionName": "강원특별자치도",
+    "regionLabel": "강원",
+    "defaultName": "감자싹",
+    "description": "산바람과 포근한 강원의 순간을 함께 기억하는 친구예요.",
+    "maxStage": 4,
+    "growthConditions": {
+      "stage1": 1,
+      "stage2": 10,
+      "stage3": 30,
+      "stage4": 60
+    },
+    "assetPath": "/characters/potato",
+    "dialogues": {
+      "all": [
+        "강원도의 추억이 하나 더 생겼네!",
+        "오늘 사진도 같이 볼까?",
+        "또 만나러 와줘서 고마워.",
+        "산바람을 닮은 사진이 참 좋아."
+      ],
+      "stages": {},
+      "situations": {
+        "greeting": [
+          "왔구나. 오늘도 천천히 둘러봐.",
+          "반가워. 네 이야기를 기다리고 있었어."
+        ],
+        "photoAdded": [
+          "오늘도 좋은 추억이 하나 생겼네.",
+          "사진 한 장이 따뜻하게 자리 잡았네."
+        ],
+        "regionMemory": [
+          "강원의 바람이 다시 생각나네.",
+          "그날의 산길도 조용히 기억하고 있어."
+        ],
+        "highAffection": [
+          "오래 곁에 있어줘서 고마워.",
+          "우리 추억이 참 포근하게 쌓였네."
+        ],
+        "growth": [
+          "나도 추억만큼 조금 더 자랐어.",
+          "천천히 자라도 든든해지는 것 같아."
+        ],
+        "selectedAsMain": [
+          "오늘은 내가 곁에 있을게.",
+          "대표 친구라니, 조용히 잘 지켜볼게."
+        ],
+        "idle": [
+          "천천히 모아도 괜찮아.",
+          "네 사진들을 보고 있으면 마음이 편안해져."
+        ],
+        "sad": [
+          "오늘은 말없이 곁에 있어줄게.",
+          "조금 쉬어가도 괜찮아."
+        ]
+      }
+    },
+    "personality": {
+      "keywords": [
+        "포근함",
+        "차분함",
+        "든든함",
+        "다정함"
+      ],
+      "speechTone": "gentle",
+      "mood": "calm",
+      "signatureAnimation": "soft-bounce",
+      "emotionalRole": "comfort",
+      "visualTraits": [
+        "둥글고 납작한 감자 실루엣",
+        "작은 반달눈",
+        "짧고 통통한 잎",
+        "감자 껍질 점무늬"
+      ],
+      "growthVisualTraits": [
+        "점무늬가 또렷해짐",
+        "새싹 잎이 풍성해짐",
+        "몸이 둥글고 든든해짐"
+      ]
+    }
   },
   {
-    "id": "sweet-potato", "type": "sweet-potato", "regionCode": "KR-46", "regionName": "전남광주통합특별시", "regionLabel": "전남·광주", "defaultName": "고구마싹",
-    "description": "들판의 햇살처럼 따뜻한 남도의 추억을 간직해요.", "maxStage": 4,
-    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/sweet-potato",
-    "dialogues": { "all": ["남도의 햇살이 사진에 담겼네.", "우리 추억은 천천히 달콤해지고 있어.", "그날의 이야기를 또 들려줄래?", "네가 남긴 순간들이 참 따뜻해."], "stages": {} }
+    "id": "sweet-potato",
+    "type": "sweet-potato",
+    "regionCode": "KR-46",
+    "regionName": "전남광주통합특별시",
+    "regionLabel": "전남·광주",
+    "defaultName": "고구마싹",
+    "description": "들판의 햇살처럼 따뜻한 남도의 추억을 간직해요.",
+    "maxStage": 4,
+    "growthConditions": {
+      "stage1": 1,
+      "stage2": 10,
+      "stage3": 30,
+      "stage4": 60
+    },
+    "assetPath": "/characters/sweet-potato",
+    "dialogues": {
+      "all": [
+        "남도의 햇살이 사진에 담겼네.",
+        "우리 추억은 천천히 달콤해지고 있어.",
+        "그날의 이야기를 또 들려줄래?",
+        "네가 남긴 순간들이 참 따뜻해."
+      ],
+      "stages": {},
+      "situations": {
+        "greeting": [
+          "왔구나아… 천천히 쉬다 가.",
+          "오늘도 따뜻하게 지내보자."
+        ],
+        "photoAdded": [
+          "따뜻한 추억이 차곡차곡 쌓이고 있네.",
+          "사진도 천천히 익어가는 것 같아."
+        ],
+        "regionMemory": [
+          "남도의 햇살이 아직 포근해.",
+          "그날의 따뜻한 공기가 생각난다."
+        ],
+        "highAffection": [
+          "같이 있는 시간이 참 편안해.",
+          "오래 봐도 따뜻한 사이네."
+        ],
+        "growth": [
+          "조금 더 길게 자랐네… 느긋하게 가자.",
+          "추억을 먹고 천천히 자랐어."
+        ],
+        "selectedAsMain": [
+          "오늘은 내가 옆에서 쉬어갈 자리가 되어줄게.",
+          "같이 천천히 하루를 보내자."
+        ],
+        "idle": [
+          "오늘은 조금 천천히 쉬어가도 괜찮아.",
+          "기억은 천천히 익어가는 거야."
+        ],
+        "sad": [
+          "힘든 날이면 잠깐 기대어도 돼.",
+          "오늘은 아무것도 서두르지 말자."
+        ]
+      }
+    },
+    "personality": {
+      "keywords": [
+        "느긋함",
+        "따뜻함",
+        "감성적",
+        "위로"
+      ],
+      "speechTone": "soft",
+      "mood": "warm",
+      "signatureAnimation": "slow-sway",
+      "emotionalRole": "rest",
+      "visualTraits": [
+        "길쭉하고 말랑한 타원형",
+        "졸린 반달눈",
+        "길고 흐르는 새싹 잎",
+        "부드러운 곡선"
+      ],
+      "growthVisualTraits": [
+        "몸이 조금씩 길어짐",
+        "잎과 줄기가 길어짐",
+        "넝쿨 느낌이 강해짐"
+      ]
+    }
   },
   {
-    "id": "apple", "type": "apple", "regionCode": "KR-47", "regionName": "경상북도", "regionLabel": "경북", "defaultName": "사과싹",
-    "description": "사진 속 계절이 익어가는 경북의 작은 친구예요.", "maxStage": 4,
-    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/apple",
-    "dialogues": { "all": ["오늘도 추억 하나가 익어가고 있어.", "내 고향 사진이 또 생겼네!", "우리 경북의 풍경을 다시 볼까?", "사진 속 그 계절이 아직 생각나."], "stages": {} }
+    "id": "apple",
+    "type": "apple",
+    "regionCode": "KR-47",
+    "regionName": "경상북도",
+    "regionLabel": "경북",
+    "defaultName": "사과싹",
+    "description": "사진 속 계절이 익어가는 경북의 작은 친구예요.",
+    "maxStage": 4,
+    "growthConditions": {
+      "stage1": 1,
+      "stage2": 10,
+      "stage3": 30,
+      "stage4": 60
+    },
+    "assetPath": "/characters/apple",
+    "dialogues": {
+      "all": [
+        "오늘도 추억 하나가 익어가고 있어.",
+        "내 고향 사진이 또 생겼네!",
+        "우리 경북의 풍경을 다시 볼까?",
+        "사진 속 그 계절이 아직 생각나."
+      ],
+      "stages": {},
+      "situations": {
+        "greeting": [
+          "좋아, 오늘 기록도 깔끔하게 시작해볼까?",
+          "반가워! 오늘의 순간도 놓치지 말자."
+        ],
+        "photoAdded": [
+          "오늘도 추억이 하나 예쁘게 정리됐어!",
+          "사진 한 장, 깔끔하게 추가 완료!"
+        ],
+        "regionMemory": [
+          "경북의 그 계절, 잘 정리해뒀어.",
+          "그날의 풍경도 선명하게 기억나!"
+        ],
+        "highAffection": [
+          "우리 기록, 꽤 멋지게 쌓였는걸!",
+          "함께 모은 순간들이 반짝반짝해."
+        ],
+        "growth": [
+          "사진이 하나 더 익었네! 나도 자랐어.",
+          "좋아! 한 단계 더 야무지게 성장 완료!"
+        ],
+        "selectedAsMain": [
+          "대표라면 오늘 기록도 꼼꼼히 챙길게!",
+          "오늘의 추억 정리는 나한테 맡겨!"
+        ],
+        "idle": [
+          "차곡차곡 모으면 더 멋진 기억이 돼.",
+          "오늘 기록도 보기 좋게 정리해볼까?"
+        ],
+        "sad": [
+          "괜찮아, 오늘 기록은 천천히 정리해도 돼.",
+          "조금 흐린 날도 소중한 기록이야."
+        ]
+      }
+    },
+    "personality": {
+      "keywords": [
+        "상큼함",
+        "부지런함",
+        "섬세함",
+        "야무짐"
+      ],
+      "speechTone": "cheerful",
+      "mood": "neat",
+      "signatureAnimation": "quick-hop",
+      "emotionalRole": "freshness",
+      "visualTraits": [
+        "윗부분이 들어간 사과형 실루엣",
+        "크고 또렷한 눈",
+        "짧은 꼭지와 한쪽 잎",
+        "매끈한 하이라이트"
+      ],
+      "growthVisualTraits": [
+        "풋사과에서 붉게 익어감",
+        "표면 윤기가 선명해짐",
+        "꼭지와 잎이 또렷해짐"
+      ]
+    }
   },
   {
-    "id": "orange", "type": "orange", "regionCode": "KR-49", "regionName": "제주특별자치도", "regionLabel": "제주", "defaultName": "귤싹",
-    "description": "바람과 바다, 제주에서 만난 순간들을 함께 품어요.", "maxStage": 4,
-    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/orange",
-    "dialogues": { "all": ["제주에서 찍은 사진 기억나?", "바람 냄새가 아직도 나는 것 같아.", "우리 제주 추억을 다시 볼까?", "바다 빛깔이 사진 속에 남아 있네."], "stages": {} }
+    "id": "orange",
+    "type": "orange",
+    "regionCode": "KR-49",
+    "regionName": "제주특별자치도",
+    "regionLabel": "제주",
+    "defaultName": "귤싹",
+    "description": "바람과 바다, 제주에서 만난 순간들을 함께 품어요.",
+    "maxStage": 4,
+    "growthConditions": {
+      "stage1": 1,
+      "stage2": 10,
+      "stage3": 30,
+      "stage4": 60
+    },
+    "assetPath": "/characters/orange",
+    "dialogues": {
+      "all": [
+        "제주에서 찍은 사진 기억나?",
+        "바람 냄새가 아직도 나는 것 같아.",
+        "우리 제주 추억을 다시 볼까?",
+        "바다 빛깔이 사진 속에 남아 있네."
+      ],
+      "stages": {},
+      "situations": {
+        "greeting": [
+          "반가워! 오늘은 어디 추억부터 볼까?",
+          "왔네! 재밌는 사진 찾으러 가자!"
+        ],
+        "photoAdded": [
+          "오! 새 사진이다! 같이 보자!",
+          "오늘 사진은 햇살 냄새가 난다!"
+        ],
+        "regionMemory": [
+          "우리 또 제주 추억 보러 갈까?",
+          "제주 바람이 휙 하고 생각났어!"
+        ],
+        "highAffection": [
+          "우리 진짜 많이 친해졌지? 헤헤!",
+          "같이 다닌 추억이 이렇게 많아졌어!"
+        ],
+        "growth": [
+          "짜잔! 나 더 잘 익었지?",
+          "제주 햇살 먹고 한 뼘 더 컸다!"
+        ],
+        "selectedAsMain": [
+          "좋아! 오늘 여행 기분은 내가 책임질게!",
+          "대표 친구 출동! 신나는 추억 찾자!"
+        ],
+        "idle": [
+          "어디 재미있는 추억 없나~?",
+          "다음 여행 사진도 벌써 궁금해!"
+        ],
+        "sad": [
+          "오늘은 바람도 조금 조용하네.",
+          "기운 나면 그때 다시 같이 놀자."
+        ]
+      }
+    },
+    "personality": {
+      "keywords": [
+        "명랑함",
+        "친근함",
+        "장난기",
+        "활기"
+      ],
+      "speechTone": "bright",
+      "mood": "playful",
+      "signatureAnimation": "playful-wiggle",
+      "emotionalRole": "excitement",
+      "visualTraits": [
+        "작고 통통한 원형",
+        "웃는 반짝눈",
+        "넓고 비대칭인 잎",
+        "귤 껍질 주근깨"
+      ],
+      "growthVisualTraits": [
+        "청귤에서 주황색으로 익어감",
+        "잎이 넓고 선명해짐",
+        "껍질 질감이 또렷해짐"
+      ]
+    }
   },
   {
-    "id": "ginkgo", "type": "ginkgo", "regionCode": "KR-11", "regionName": "서울특별시", "regionLabel": "서울", "defaultName": "은행싹",
-    "description": "서울의 거리에서 모은 작은 순간을 기억해요.", "maxStage": 4,
-    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/ginkgo",
-    "dialogues": { "all": ["서울의 오늘은 어떤 색이었어?", "바쁜 길에서도 우리 사진은 반짝여.", "다음 산책도 같이 가자."], "stages": {} }
+    "id": "ginkgo",
+    "type": "ginkgo",
+    "regionCode": "KR-11",
+    "regionName": "서울특별시",
+    "regionLabel": "서울",
+    "defaultName": "은행싹",
+    "description": "서울의 거리에서 모은 작은 순간을 기억해요.",
+    "maxStage": 4,
+    "growthConditions": {
+      "stage1": 1,
+      "stage2": 10,
+      "stage3": 30,
+      "stage4": 60
+    },
+    "assetPath": "/characters/ginkgo",
+    "dialogues": {
+      "all": [
+        "서울의 오늘은 어떤 색이었어?",
+        "바쁜 길에서도 우리 사진은 반짝여.",
+        "다음 산책도 같이 가자."
+      ],
+      "stages": {}
+    }
   },
   {
-    "id": "camellia", "type": "camellia", "regionCode": "KR-26", "regionName": "부산광역시", "regionLabel": "부산", "defaultName": "동백싹",
-    "description": "부산 바다 가까이에서 피어난 추억을 간직해요.", "maxStage": 4,
-    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/camellia",
-    "dialogues": { "all": ["바다를 보던 그날이 떠올라.", "부산의 바람을 또 만나고 싶어.", "오늘 사진도 함께 볼까?"], "stages": {} }
+    "id": "camellia",
+    "type": "camellia",
+    "regionCode": "KR-26",
+    "regionName": "부산광역시",
+    "regionLabel": "부산",
+    "defaultName": "동백싹",
+    "description": "부산 바다 가까이에서 피어난 추억을 간직해요.",
+    "maxStage": 4,
+    "growthConditions": {
+      "stage1": 1,
+      "stage2": 10,
+      "stage3": 30,
+      "stage4": 60
+    },
+    "assetPath": "/characters/camellia",
+    "dialogues": {
+      "all": [
+        "바다를 보던 그날이 떠올라.",
+        "부산의 바람을 또 만나고 싶어.",
+        "오늘 사진도 함께 볼까?"
+      ],
+      "stages": {}
+    }
   },
   {
-    "id": "magnolia", "type": "magnolia", "regionCode": "KR-27", "regionName": "대구광역시", "regionLabel": "대구", "defaultName": "목련싹",
-    "description": "대구의 계절이 바뀔 때마다 함께 자라요.", "maxStage": 4,
-    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/magnolia",
-    "dialogues": { "all": ["대구의 햇살이 사진에 남았네.", "다음 계절도 함께 기록하자.", "오늘은 어떤 풍경을 만났어?"], "stages": {} }
+    "id": "magnolia",
+    "type": "magnolia",
+    "regionCode": "KR-27",
+    "regionName": "대구광역시",
+    "regionLabel": "대구",
+    "defaultName": "목련싹",
+    "description": "대구의 계절이 바뀔 때마다 함께 자라요.",
+    "maxStage": 4,
+    "growthConditions": {
+      "stage1": 1,
+      "stage2": 10,
+      "stage3": 30,
+      "stage4": 60
+    },
+    "assetPath": "/characters/magnolia",
+    "dialogues": {
+      "all": [
+        "대구의 햇살이 사진에 남았네.",
+        "다음 계절도 함께 기록하자.",
+        "오늘은 어떤 풍경을 만났어?"
+      ],
+      "stages": {}
+    }
   },
   {
-    "id": "sea-lavender", "type": "sea-lavender", "regionCode": "KR-28", "regionName": "인천광역시", "regionLabel": "인천", "defaultName": "해국싹",
-    "description": "인천의 물결과 섬길을 따라 추억을 모아요.", "maxStage": 4,
-    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/sea-lavender",
-    "dialogues": { "all": ["인천의 바람이 생각나.", "섬길에서 찍은 사진도 보여줘.", "오늘도 새로운 길을 찾았네."], "stages": {} }
+    "id": "sea-lavender",
+    "type": "sea-lavender",
+    "regionCode": "KR-28",
+    "regionName": "인천광역시",
+    "regionLabel": "인천",
+    "defaultName": "해국싹",
+    "description": "인천의 물결과 섬길을 따라 추억을 모아요.",
+    "maxStage": 4,
+    "growthConditions": {
+      "stage1": 1,
+      "stage2": 10,
+      "stage3": 30,
+      "stage4": 60
+    },
+    "assetPath": "/characters/sea-lavender",
+    "dialogues": {
+      "all": [
+        "인천의 바람이 생각나.",
+        "섬길에서 찍은 사진도 보여줘.",
+        "오늘도 새로운 길을 찾았네."
+      ],
+      "stages": {}
+    }
   },
   {
-    "id": "grape", "type": "grape", "regionCode": "KR-30", "regionName": "대전광역시", "regionLabel": "대전", "defaultName": "포도싹",
-    "description": "대전에서 함께한 하루를 한 알씩 간직해요.", "maxStage": 4,
-    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/grape",
-    "dialogues": { "all": ["대전에서 보낸 하루가 또 쌓였어.", "이 장면도 오래 기억하자.", "다음 이야기가 궁금해."], "stages": {} }
+    "id": "grape",
+    "type": "grape",
+    "regionCode": "KR-30",
+    "regionName": "대전광역시",
+    "regionLabel": "대전",
+    "defaultName": "포도싹",
+    "description": "대전에서 함께한 하루를 한 알씩 간직해요.",
+    "maxStage": 4,
+    "growthConditions": {
+      "stage1": 1,
+      "stage2": 10,
+      "stage3": 30,
+      "stage4": 60
+    },
+    "assetPath": "/characters/grape",
+    "dialogues": {
+      "all": [
+        "대전에서 보낸 하루가 또 쌓였어.",
+        "이 장면도 오래 기억하자.",
+        "다음 이야기가 궁금해."
+      ],
+      "stages": {}
+    }
   },
   {
-    "id": "pear", "type": "pear", "regionCode": "KR-31", "regionName": "울산광역시", "regionLabel": "울산", "defaultName": "배싹",
-    "description": "울산에서 찍은 사진만큼 마음도 천천히 익어가요.", "maxStage": 4,
-    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/pear",
-    "dialogues": { "all": ["울산의 오늘은 어땠어?", "함께한 순간이 점점 많아져.", "사진 속 바람 소리가 들리는 것 같아."], "stages": {} }
+    "id": "pear",
+    "type": "pear",
+    "regionCode": "KR-31",
+    "regionName": "울산광역시",
+    "regionLabel": "울산",
+    "defaultName": "배싹",
+    "description": "울산에서 찍은 사진만큼 마음도 천천히 익어가요.",
+    "maxStage": 4,
+    "growthConditions": {
+      "stage1": 1,
+      "stage2": 10,
+      "stage3": 30,
+      "stage4": 60
+    },
+    "assetPath": "/characters/pear",
+    "dialogues": {
+      "all": [
+        "울산의 오늘은 어땠어?",
+        "함께한 순간이 점점 많아져.",
+        "사진 속 바람 소리가 들리는 것 같아."
+      ],
+      "stages": {}
+    }
   },
   {
-    "id": "rose", "type": "rose", "regionCode": "KR-41", "regionName": "경기도", "regionLabel": "경기", "defaultName": "장미싹",
-    "description": "경기의 여러 길에서 만난 순간들을 모아요.", "maxStage": 4,
-    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/rose",
-    "dialogues": { "all": ["경기도에서 또 어디를 걸었어?", "가까운 곳에도 좋은 순간이 많아.", "우리 사진을 다시 펼쳐볼까?"], "stages": {} }
+    "id": "rose",
+    "type": "rose",
+    "regionCode": "KR-41",
+    "regionName": "경기도",
+    "regionLabel": "경기",
+    "defaultName": "장미싹",
+    "description": "경기의 여러 길에서 만난 순간들을 모아요.",
+    "maxStage": 4,
+    "growthConditions": {
+      "stage1": 1,
+      "stage2": 10,
+      "stage3": 30,
+      "stage4": 60
+    },
+    "assetPath": "/characters/rose",
+    "dialogues": {
+      "all": [
+        "경기도에서 또 어디를 걸었어?",
+        "가까운 곳에도 좋은 순간이 많아.",
+        "우리 사진을 다시 펼쳐볼까?"
+      ],
+      "stages": {}
+    }
   },
   {
-    "id": "jujube", "type": "jujube", "regionCode": "KR-43", "regionName": "충청북도", "regionLabel": "충북", "defaultName": "대추싹",
-    "description": "충북의 고요한 풍경과 함께 추억을 키워요.", "maxStage": 4,
-    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/jujube",
-    "dialogues": { "all": ["충북의 풍경이 참 포근했어.", "작은 순간도 소중히 모아둘게.", "다음 사진은 어떤 이야기일까?"], "stages": {} }
+    "id": "jujube",
+    "type": "jujube",
+    "regionCode": "KR-43",
+    "regionName": "충청북도",
+    "regionLabel": "충북",
+    "defaultName": "대추싹",
+    "description": "충북의 고요한 풍경과 함께 추억을 키워요.",
+    "maxStage": 4,
+    "growthConditions": {
+      "stage1": 1,
+      "stage2": 10,
+      "stage3": 30,
+      "stage4": 60
+    },
+    "assetPath": "/characters/jujube",
+    "dialogues": {
+      "all": [
+        "충북의 풍경이 참 포근했어.",
+        "작은 순간도 소중히 모아둘게.",
+        "다음 사진은 어떤 이야기일까?"
+      ],
+      "stages": {}
+    }
   },
   {
-    "id": "chestnut", "type": "chestnut", "regionCode": "KR-44", "regionName": "충청남도", "regionLabel": "충남", "defaultName": "밤싹",
-    "description": "충남의 산과 바다에서 모은 하루를 품어요.", "maxStage": 4,
-    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/chestnut",
-    "dialogues": { "all": ["충남의 그날은 참 좋았지.", "함께 걸은 길을 기억하고 있어.", "오늘 사진도 보여줄래?"], "stages": {} }
+    "id": "chestnut",
+    "type": "chestnut",
+    "regionCode": "KR-44",
+    "regionName": "충청남도",
+    "regionLabel": "충남",
+    "defaultName": "밤싹",
+    "description": "충남의 산과 바다에서 모은 하루를 품어요.",
+    "maxStage": 4,
+    "growthConditions": {
+      "stage1": 1,
+      "stage2": 10,
+      "stage3": 30,
+      "stage4": 60
+    },
+    "assetPath": "/characters/chestnut",
+    "dialogues": {
+      "all": [
+        "충남의 그날은 참 좋았지.",
+        "함께 걸은 길을 기억하고 있어.",
+        "오늘 사진도 보여줄래?"
+      ],
+      "stages": {}
+    }
   },
   {
-    "id": "barley", "type": "barley", "regionCode": "KR-45", "regionName": "전북특별자치도", "regionLabel": "전북", "defaultName": "보리싹",
-    "description": "전북의 들판처럼 추억도 나란히 자라요.", "maxStage": 4,
-    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/barley",
-    "dialogues": { "all": ["전북의 햇살이 따뜻했어.", "우리 이야기가 한 뼘 더 자랐네.", "그날의 사진을 또 보고 싶어."], "stages": {} }
+    "id": "barley",
+    "type": "barley",
+    "regionCode": "KR-45",
+    "regionName": "전북특별자치도",
+    "regionLabel": "전북",
+    "defaultName": "보리싹",
+    "description": "전북의 들판처럼 추억도 나란히 자라요.",
+    "maxStage": 4,
+    "growthConditions": {
+      "stage1": 1,
+      "stage2": 10,
+      "stage3": 30,
+      "stage4": 60
+    },
+    "assetPath": "/characters/barley",
+    "dialogues": {
+      "all": [
+        "전북의 햇살이 따뜻했어.",
+        "우리 이야기가 한 뼘 더 자랐네.",
+        "그날의 사진을 또 보고 싶어."
+      ],
+      "stages": {}
+    }
   },
   {
-    "id": "persimmon", "type": "persimmon", "regionCode": "KR-48", "regionName": "경상남도", "regionLabel": "경남", "defaultName": "단감싹",
-    "description": "경남에서 보낸 시간이 달콤한 기억으로 남아요.", "maxStage": 4,
-    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/persimmon",
-    "dialogues": { "all": ["경남의 풍경을 다시 볼까?", "오늘의 순간도 잘 간직할게.", "함께한 시간이 더 달콤해졌어."], "stages": {} }
+    "id": "persimmon",
+    "type": "persimmon",
+    "regionCode": "KR-48",
+    "regionName": "경상남도",
+    "regionLabel": "경남",
+    "defaultName": "단감싹",
+    "description": "경남에서 보낸 시간이 달콤한 기억으로 남아요.",
+    "maxStage": 4,
+    "growthConditions": {
+      "stage1": 1,
+      "stage2": 10,
+      "stage3": 30,
+      "stage4": 60
+    },
+    "assetPath": "/characters/persimmon",
+    "dialogues": {
+      "all": [
+        "경남의 풍경을 다시 볼까?",
+        "오늘의 순간도 잘 간직할게.",
+        "함께한 시간이 더 달콤해졌어."
+      ],
+      "stages": {}
+    }
   },
   {
-    "id": "peach", "type": "peach", "regionCode": "KR-50", "regionName": "세종특별자치시", "regionLabel": "세종", "defaultName": "복숭아싹",
-    "description": "세종의 길에서 만난 다정한 하루를 기억해요.", "maxStage": 4,
-    "growthConditions": { "stage1": 1, "stage2": 10, "stage3": 30, "stage4": 60 }, "assetPath": "/characters/peach",
-    "dialogues": { "all": ["세종에서 보낸 하루는 어땠어?", "우리 사진이 하나 더 늘었네.", "다음 산책도 함께하자."], "stages": {} }
+    "id": "peach",
+    "type": "peach",
+    "regionCode": "KR-50",
+    "regionName": "세종특별자치시",
+    "regionLabel": "세종",
+    "defaultName": "복숭아싹",
+    "description": "세종의 길에서 만난 다정한 하루를 기억해요.",
+    "maxStage": 4,
+    "growthConditions": {
+      "stage1": 1,
+      "stage2": 10,
+      "stage3": 30,
+      "stage4": 60
+    },
+    "assetPath": "/characters/peach",
+    "dialogues": {
+      "all": [
+        "세종에서 보낸 하루는 어땠어?",
+        "우리 사진이 하나 더 늘었네.",
+        "다음 산책도 함께하자."
+      ],
+      "stages": {}
+    }
   }
 ]
