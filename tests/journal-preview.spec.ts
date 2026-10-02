@@ -34,6 +34,7 @@ test('journal days show three representative photos before expanding', async ({ 
   });
 
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   const day = page.locator('.journalDay').first();
   await expect(day.locator('.mediaTile')).toHaveCount(3);
   if (test.info().project.name === 'desktop') {
@@ -76,6 +77,7 @@ test('month navigation and album shortcuts keep their own scope', async ({ page 
     } });
   });
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await expect(page.locator('h1')).toHaveText('2026년 9월');
   await expect(page.locator('.mediaTile')).toHaveCount(1);
   await page.getByRole('button', { name: '2026년 5월', exact: true }).click();
@@ -105,6 +107,7 @@ test('album reader preserves order and supports list, scrubber and nested photo 
     } });
   });
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await expect(page.locator('.mediaTile')).toHaveCount(3);
   await expect(page.getByRole('tablist', { name: '사진 보기 방식' }).getByRole('tab')).toHaveCount(3);
   await page.getByRole('tab', { name: '책 보기', exact: true }).click();
@@ -160,7 +163,7 @@ for (const entry of ['saved albums', 'journal shortcut']) {
     test.skip(isMobile && entry === 'journal shortcut', 'The album sidebar is hidden on narrow screens.');
     await mockEditableAlbum(page);
     await page.goto('/');
-    if (entry === 'saved albums') await page.getByRole('button', { name: '내 앨범', exact: true }).click();
+    await page.locator('.navList').getByRole('button', { name: entry === 'saved albums' ? '내 앨범' : '사진 기록', exact: true }).click();
     await page.getByRole('button', { name: '함께한 가을 앨범 열기', exact: true }).click();
     const reader = page.getByRole('dialog', { name: '앨범 전체창' });
     await reader.getByRole('slider', { name: '앨범 책장 이동' }).fill('2');
@@ -192,6 +195,7 @@ for (const entry of ['saved albums', 'journal shortcut']) {
 test('unregistered photos disappear from albums and clearing leaves an empty album', async ({ page }) => {
   await mockEditableAlbum(page);
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.getByRole('button', { name: '사진 선택', exact: true }).click();
   await page.locator('.mediaTile[data-media-id="1"]').click();
   page.once('dialog', (dialog) => dialog.accept());

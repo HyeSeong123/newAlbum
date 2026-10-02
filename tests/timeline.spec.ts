@@ -30,6 +30,7 @@ test('timeline preserves date groups, counts, notes and navigation into a day', 
 
 test('three photo view tabs support keyboard wrap and fit the mobile viewport', async ({ page }) => {
   await installRecordFixture(page); await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   const tabs = page.getByRole('tablist',{ name:'사진 보기 방식' });
   await expect(tabs.getByRole('tab')).toHaveCount(3);
   await page.getByRole('tab',{ name:'사진 모아보기',exact:true }).focus();

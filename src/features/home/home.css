@@ -1,0 +1,70 @@
+.homeView { max-width: 1040px; margin: 0 auto; }
+.homeWelcome {
+  padding: 38px 24px 30px;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: radial-gradient(ellipse at 50% 65%, #e9eddf70, transparent 55%), var(--surface);
+}
+.homeDate { display: block; color: var(--muted); font-size: 13px; }
+.homeWelcome h2 { margin: 16px 0 10px; color: #514536; font-size: 24px; font-weight: 650; line-height: 1.5; }
+.homeIntroduction { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.8; word-break: keep-all; }
+.homeCompanion { display: grid; justify-items: center; margin-top: 26px; }
+.homeSpeech {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, 350px);
+  min-height: 88px;
+  margin: 0 0 18px;
+  padding: 18px 24px;
+  border: 1px solid #dcdccd;
+  border-radius: 18px;
+  background: #fffefa;
+  color: #554934;
+  font-size: 15px;
+  line-height: 1.8;
+  word-break: keep-all;
+}
+.homeSpeech::after {
+  content: "";
+  position: absolute;
+  bottom: -7px;
+  left: calc(50% - 7px);
+  width: 12px;
+  height: 12px;
+  border-right: 1px solid #dcdccd;
+  border-bottom: 1px solid #dcdccd;
+  background: #fffefa;
+  transform: rotate(45deg);
+}
+.homeMascot { display: grid; place-items: center; width: 220px; height: 220px; padding: 0; border-radius: 50%; background: transparent; -webkit-tap-highlight-color: transparent; }
+.homeMascot img { display: block; width: 100%; height: 100%; object-fit: contain; animation: homeSproutHello .36s ease-out; transition: transform .18s ease; }
+.homeMascot:hover img { transform: translateY(-4px) rotate(-3deg); }
+.homeMascot:active img { transform: scale(.95); }
+.homeMascotHint { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.homeShortcuts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
+.homeShortcut { display: flex; align-items: flex-start; gap: 14px; min-width: 0; padding: 24px 20px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); background: var(--surface); text-align: left; }
+.homeShortcut:hover { background: #f0f1e8; border-color: #bcc1a6; }
+.homeShortcutIcon { flex: none; margin-top: 2px; color: var(--primary); }
+.homeShortcutText { display: grid; gap: 8px; min-width: 0; }
+.homeShortcutText strong { font-size: 15px; font-weight: 650; }
+.homeShortcutText > span { color: var(--muted); font-size: 13px; line-height: 1.6; word-break: keep-all; }
+.homeShortcutText small { margin-top: 6px; color: #61664e; font-size: 13px; }
+.homeShortcutArrow { flex: none; margin-left: auto; color: #868975; }
+.topbar.view-home .toolbar { display: none; }
+.app.largeLayout .homeSpeech, .app.largeLayout .homeIntroduction { font-size: 17px; }
+@keyframes homeSproutHello { 0% { transform: scale(.94) rotate(-4deg); } 65% { transform: scale(1.04) rotate(2deg); } 100% { transform: none; } }
+@media (max-width: 760px) {
+  .homeWelcome { padding: 28px 18px 26px; }
+  .homeWelcome h2 { font-size: 22px; }
+  .homeShortcuts { grid-template-columns: minmax(0, 1fr); gap: 10px; margin-top: 16px; }
+  .homeShortcut { padding: 18px; }
+  .homeShortcutText { gap: 5px; }
+  .homeShortcutText small { margin-top: 2px; }
+  .homeMascot { width: 190px; height: 190px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .homeMascot img { animation: none; transition: none; }
+  .homeMascot:hover img, .homeMascot:active img { transform: none; }
+}

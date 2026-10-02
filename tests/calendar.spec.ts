@@ -33,6 +33,7 @@ test.beforeEach(async ({ page }) => {
     } });
   });
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await expect(page.locator('.collectionCount')).toContainText('개의 기록');
   await expect(page.locator('h1')).toHaveText('2025년 5월');
   await page.getByRole('tab', { name: '달력', exact: true }).click();
@@ -98,6 +99,7 @@ test('calendar and day viewer follow the compact reference layout', async ({ pag
   await expect(grid.getByRole('button', { name: '2025년 5월 31일, 사진 150장, 메모 있음' }).locator('i')).toHaveAttribute('data-media-id', selectedId!);
 
   await page.reload();
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.getByRole('tab', { name: '달력', exact: true }).click();
   await showFixtureMonth(page);
   await grid.getByRole('button', { name: '2025년 5월 31일, 사진 150장, 메모 있음' }).click();
@@ -143,6 +145,7 @@ test('empty dates, complete weeks and memo storage errors are handled', async ({
 test('missing representative photos fall back without blocking the day viewer', async ({ page }) => {
   await page.evaluate(() => localStorage.setItem('oraedameun.dayCovers', JSON.stringify({ '2025-05-31': 'deleted-photo' })));
   await page.reload();
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.getByRole('tab', { name: '달력', exact: true }).click();
   await showFixtureMonth(page);
   await page.locator('.calendarGrid').getByRole('button', { name: '2025년 5월 31일, 사진 150장, 메모 있음' }).click();
@@ -187,6 +190,7 @@ test('compact calendar keeps event counts visible beside empty and busy photo da
   });
   await page.setViewportSize({ width: 320, height: 740 });
   await page.reload();
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.getByRole('tab', { name: '달력', exact: true }).click();
   await showFixtureMonth(page);
   const empty = page.locator('.calendarGrid button[aria-label="2025년 5월 2일, 사진 0장, 일정 1개"]');
@@ -243,6 +247,7 @@ test('schedules keep photo height and their delete actions fit long titles', asy
     '2025-05-31': [{ id: 'long', date: '2025-05-31', title: '가족과 함께하는 아주 긴 이름의 저녁 약속과 기념일 기록'.repeat(3), kind: 'appointment', showDday: true }],
   })));
   await page.reload();
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.getByRole('tab', { name: '달력', exact: true }).click();
   await showFixtureMonth(page);
   for (const width of testInfo.project.name === 'mobile' ? [320, 393] : [1080, 1694]) {

@@ -42,6 +42,7 @@ test('later and existing diary data suppress the first run guide', async ({ page
 
 test('empty screens explain the next step and open their existing flows', async ({ page }) => {
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await expect(page.getByText('아직 사진 기록이 없습니다.')).toBeVisible();
   const chooser = page.waitForEvent('filechooser');
   await page.getByRole('button', { name: '사진 가져오기', exact: true }).click();
@@ -65,6 +66,7 @@ test('empty screens explain the next step and open their existing flows', async 
 
 test('a map without GPS offers direct region assignment while keeping the photo', async ({ page }) => {
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.locator('input[type="file"]').first().setInputFiles({ name: 'without-gps.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('photo') });
   await page.getByRole('button', { name: '추억', exact: true }).click();
   await page.getByRole('group', { name: '추억 보기' }).getByRole('button', { name: '추억 지도' }).click();

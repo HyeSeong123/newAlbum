@@ -38,6 +38,7 @@ for (const kind of ['files', 'folder'] as const) {
       } });
     });
     await page.goto('/');
+    await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
     await expect(page.locator('.mediaTile')).toHaveCount(1);
     await expect(page.locator('.importActions')).not.toContainText('폴더 가져오기');
     const dialog = await openImport(page);
@@ -97,6 +98,7 @@ test('canceling the native picker leaves no empty album or stale album settings'
     } });
   });
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   let dialog = await openImport(page);
   await dialog.getByRole('radio', { name:/폴더 가져오기/ }).check();
   await dialog.getByLabel('가져올 폴더의 시도').selectOption('KR-11');
@@ -117,6 +119,7 @@ test('canceling the native picker leaves no empty album or stale album settings'
 
 test('browser file imports honor the album toggle and chosen color', async ({ page }) => {
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   let dialog = await openImport(page);
   await dialog.getByRole('checkbox', { name: /가져오면서 앨범 만들기/ }).check();
   await dialog.getByLabel('앨범 제목').fill('첫 기록');
@@ -145,6 +148,7 @@ test('browser folder imports create an album and ignore unsupported files', asyn
     await copyFile('tests/fixtures/pet-dog.jpg', join(directory, 'walk.jpg'));
     await copyFile('package.json', join(directory, 'notes.json'));
     await page.goto('/');
+    await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
     const dialog = await openImport(page);
     await dialog.getByRole('radio', { name: /폴더 가져오기/ }).check();
     await dialog.getByLabel('가져올 폴더의 시도').selectOption('KR-49');
@@ -185,6 +189,7 @@ for (const failRegion of [false, true]) {
       } });
     }, { failRegion });
     await page.goto('/');
+    await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
     await expect(page.locator('.mediaTile')).toHaveCount(1);
     const dialog = await openImport(page);
     await dialog.getByRole('radio', { name:/폴더 가져오기/ }).check();

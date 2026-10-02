@@ -104,7 +104,7 @@ for (const existing of ['media', 'album', 'diary'] as const) {
     await expect(page.getByRole('dialog', { name: '감자싹에 사진을 담아보세요' })).toHaveCount(0);
     await expect(page.locator('html')).not.toHaveAttribute('data-guide-appeared', 'true');
     await page.reload();
-    await expect(page.getByRole('heading', { name: '사진 기록', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '홈', exact: true })).toBeVisible();
     await expect(page.locator('html')).not.toHaveAttribute('data-guide-appeared', 'true');
     expect(guides).toEqual([]);
   });
@@ -182,6 +182,7 @@ test('native diary blocks duplicate submits and retains the draft through a fail
 test('partial native import keeps successful photos and retry does not duplicate them', async ({ page }) => {
   await nativeLibrary(page, { partialImport: true });
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.getByRole('button', { name: '사진 가져오기', exact: true }).click();
   await page.getByRole('dialog', { name: '사진·영상 가져오기' }).getByRole('button', { name: '파일 선택' }).click();
   await expect(page.getByRole('alert')).toContainText('1개 파일은 가져왔습니다.');
@@ -291,6 +292,7 @@ test('pet empty action and management preserve name, photos and cover on failed 
 test('album creation and editing preserve title and written content after failed saves', async ({ page }) => {
   await nativeLibrary(page);
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.getByRole('button', { name: '사진 선택', exact: true }).click();
   await page.getByRole('button', { name: '현재 결과 전체 선택 (2개)', exact: true }).click();
   await page.getByRole('button', { name: '앨범 만들기', exact: true }).click();
@@ -332,6 +334,7 @@ test('search date labels and action buttons remain readable at narrow and wide w
   for (const width of isMobile ? [360, 393] : [1100, 1440]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.goto('/');
+    await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
     const panel = page.locator('.librarySearchPanel');
     for (const large of [false, true]) {
       const toggle = page.locator('.layoutToggle');

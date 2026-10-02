@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('approved single logo loads across views and narrow headers without losing legacy diary data', async ({ page }) => {
+test('approved spaced logo loads across views and narrow headers without losing legacy diary data', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('warm-journal-diaries-v1', JSON.stringify([{ id: 'legacy-diary', date: '2026-10-01', title: '이름 변경 전 일기', body: '기존 기록을 그대로 읽습니다.', mood: '평온', weather: '맑음', photos: [] }]));
   });
@@ -8,10 +8,11 @@ test('approved single logo loads across views and narrow headers without losing 
   await expect(page).toHaveTitle('감자싹');
   const brand = page.locator('.brand');
   const logo = brand.getByRole('img', { name: '감자싹', exact: true });
-  await expect(brand.locator('img')).toHaveCount(1);
+  await expect(brand.getByRole('img', { name: '감자싹', exact: true })).toHaveCount(1);
   await expect(logo).toBeVisible();
-  await logo.evaluate((image: HTMLImageElement) => image.decode());
-  expect(await logo.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+  await brand.locator('img').evaluateAll((images: HTMLImageElement[]) => Promise.all(images.map(image => image.decode())));
+  expect(await brand.locator('img').evaluateAll((images: HTMLImageElement[]) => images.every(image => image.naturalWidth > 0))).toBe(true);
+  await expect(logo).toHaveCSS('gap', '16px');
   await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/favicon.png');
   const favicon = await page.request.get('/favicon.png');
   expect(favicon.ok()).toBe(true);

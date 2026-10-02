@@ -77,9 +77,14 @@ try {
   if (!process.argv.includes('--seed-legacy')) {
   await expect(page).toHaveTitle('감자싹');
   await expect(page.locator('.brand').getByRole('img', { name: '감자싹', exact: true })).toBeVisible();
-  assert.equal(await page.locator('.brand img').evaluate(image => image.complete && image.naturalWidth > 0), true);
+  assert.equal(await page.locator('.brand img').evaluateAll(images => images.every(image => image.complete && image.naturalWidth > 0)), true);
   await page.reload();
   await page.locator('.app').waitFor();
+  await expect(page.getByRole('heading', { name: '홈', exact: true })).toBeVisible();
+  const mascot = page.getByRole('button', { name: '감자싹에게 말 걸기' });
+  const greeting = await page.locator('.homeSpeech').innerText();
+  await mascot.click();
+  await expect(page.locator('.homeSpeech')).not.toHaveText(greeting);
   await page.getByRole('button', { name:'내 앨범', exact:true }).click();
   await page.getByRole('button', { name:'제목 저장 확인 앨범 열기', exact:true }).click();
   const reader = page.getByRole('dialog', { name:'앨범 전체창' });

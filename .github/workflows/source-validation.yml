@@ -90,14 +90,16 @@ jobs:
           path: test-results/album-appearance-*.png
           if-no-files-found: ignore
           retention-days: 7
-      - name: Test approved brand and capture previews
-        run: npx playwright test tests/branding.spec.ts --workers=2
+      - name: Test Home and approved brand and capture previews
+        run: npx playwright test tests/home.spec.ts tests/branding.spec.ts --workers=2
       - name: Upload brand previews
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gamjassak-brand-previews
-          path: test-results/branding-*.png
+          path: |
+            test-results/branding-*.png
+            test-results/home-*.png
           if-no-files-found: ignore
           retention-days: 7
       - name: Build TypeScript frontend

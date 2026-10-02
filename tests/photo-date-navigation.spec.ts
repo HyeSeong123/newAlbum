@@ -13,6 +13,7 @@ test('date rail groups years, counts records and switches between favorites and 
     } });
   });
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   const rail = page.getByRole('complementary', { name: '촬영 월', exact: true });
   await expect(rail.getByRole('button', { name: '2026년', exact: true })).toHaveAttribute('aria-expanded', 'true');
   await expect(rail.getByRole('button', { name: '2025년', exact: true })).toHaveAttribute('aria-expanded', 'false');

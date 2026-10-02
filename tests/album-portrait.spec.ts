@@ -134,6 +134,7 @@ test('mixed orientations group four portraits and two landscapes without losing 
     } });
   });
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await expect(page.locator('.quickAlbum .frontAlbumTone')).toHaveCSS('background-color', 'rgb(138, 46, 53)');
   await expect(page.locator('.quickAlbum .frontAlbumTone')).toHaveCSS('opacity', '0.9');
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();

@@ -27,6 +27,7 @@ test.beforeEach(async ({ page }) => {
     } });
   });
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
 });
 
 test('date search crosses months, combines with text and favorites, validates and resets', async ({ page }) => {

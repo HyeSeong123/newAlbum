@@ -3,16 +3,50 @@
   flex-direction: row;
   align-items: center;
   min-width: 0;
+  padding: 0;
+  border-radius: 6px;
+  background: transparent;
 }
 
-.sidebar .brandLogo {
+.sidebar .brand .brandLogo {
+  --brand-height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: none;
+  height: var(--brand-height);
+}
+
+.sidebar .brand .brandLogoCharacter, .sidebar .brand .brandLogoLettering {
+  position: relative;
   display: block;
   flex: none;
-  width: 156px;
-  height: 60px;
-  object-fit: contain;
+  height: var(--brand-height);
+  overflow: hidden;
+}
+/* Windows into the unchanged 2022 × 778 artwork: character x=100..762, lettering x=762..1930. */
+.sidebar .brand .brandLogoCharacter { width: calc(var(--brand-height) * 662 / 778); }
+.sidebar .brand .brandLogoLettering { width: calc(var(--brand-height) * 1168 / 778); }
+.sidebar .brand .brandLogo img {
+  position: absolute;
+  top: 0;
+  width: calc(var(--brand-height) * 2022 / 778);
+  max-width: none;
+  height: var(--brand-height);
+}
+.sidebar .brand .brandLogoCharacter img { left: calc(var(--brand-height) * -100 / 778); }
+.sidebar .brand .brandLogoLettering img { left: calc(var(--brand-height) * -762 / 778); }
+
+/* Keep the six-item navigation and logo clear of each other on smaller desktop windows. */
+@media (min-width: 1001px) and (max-width: 1250px) {
+  .sidebar { grid-template-columns: auto minmax(0, 1fr) auto auto; padding-inline: 24px; }
+  .sidebar .navList { min-width: 0; max-width: 100%; gap: 4px; }
+  .sidebar .navList button, .sidebar .navList button:last-child { padding-inline: 10px; }
 }
 
 @media (max-width: 760px) {
-  .sidebar .brandLogo { width: 146px; height: 56px; }
+  .sidebar .brand .brandLogo { --brand-height: 56px; }
+}
+@media (max-width: 380px) {
+  .sidebar .brand .brandLogo { --brand-height: 46px; }
 }

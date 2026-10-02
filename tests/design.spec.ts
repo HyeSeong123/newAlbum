@@ -19,6 +19,7 @@ test('redesigned views fit and retain photo workflows', async ({ page }) => {
     } });
   });
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await expect(page.locator('.galleryGrid .mediaTile')).toHaveCount(18);
   await page.locator('.galleryGrid img').first().evaluate((img: HTMLImageElement) => img.decode());
   const capture = async (name: string) => {

@@ -6,6 +6,7 @@ test('local models detect faces without remote requests', async ({ page, isMobil
   test.setTimeout(120_000);
   await page.route('**/face-test.jpg', (route) => route.fulfill({ path: 'node_modules/@vladmandic/face-api/demo/sample1.jpg', contentType: 'image/jpeg' }));
   await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   // Observe inference requests only after the app's existing web fonts settle.
   await page.evaluate(() => document.fonts.ready);
   const external: string[] = [];
