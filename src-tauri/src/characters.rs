@@ -8,7 +8,11 @@ use std::sync::OnceLock;
 pub struct GrowthConditions { pub stage1: i64, pub stage2: i64, pub stage3: i64, pub stage4: i64 }
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Definition { pub id: String, pub region_code: String, pub growth_conditions: GrowthConditions }
+pub struct Definition {
+    pub id: String, pub region_code: String, pub growth_conditions: GrowthConditions,
+    #[serde(default)]
+    pub default_unlocked: bool,
+}
 
 pub fn definitions() -> &'static [Definition] {
     static DATA: OnceLock<Vec<Definition>> = OnceLock::new();
@@ -50,6 +54,24 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
     conn.execute_batch(include_str!("../database/characters.sql")).map_err(|e| e.to_string())
 }
 
+// Idempotent for fresh installs and upgrades. Keep names, growth, affection and the
+// user's chosen main; starters never generate a travel discovery notification.
+pub fn ensure_starters(conn: &Connection) -> Result<(), String> {
+    for def in definitions().iter().filter(|def| def.default_unlocked) {
+        conn.execute("INSERT OR IGNORE INTO owned_character(character_id,growth_stage,is_main)
+            VALUES(?1,1,0)", [&def.id])
+            .map_err(|e| e.to_string())?;
+        conn.execute("DELETE FROM character_event WHERE character_id=?1 AND kind='unlock'", [&def.id])
+            .map_err(|e| e.to_string())?;
+    }
+    if let Some(first) = definitions().iter().find(|def| def.default_unlocked) {
+        conn.execute("UPDATE owned_character SET is_main=1 WHERE character_id=?1
+            AND NOT EXISTS(SELECT 1 FROM owned_character WHERE is_main=1)", [&first.id])
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 pub fn snapshot(conn: &Connection) -> Result<Snapshot, String> {
     let mut stmt = conn.prepare("SELECT c.character_id,c.custom_name,c.growth_stage,
         (SELECT COUNT(*) FROM media m WHERE m.file_type='image' AND m.gps_region_code=?1),
@@ -70,6 +92,7 @@ pub fn snapshot(conn: &Connection) -> Result<Snapshot, String> {
 
 pub fn reconcile(conn: &mut Connection) -> Result<Snapshot, String> {
     let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate).map_err(|e| e.to_string())?;
+    ensure_starters(&tx)?;
     for def in definitions() {
         let count: i64 = tx.query_row("SELECT COUNT(*) FROM media WHERE file_type='image' AND gps_region_code=?1",
             [&def.region_code],|r| r.get(0)).map_err(|e| e.to_string())?;

@@ -8,7 +8,9 @@ export function CharacterVisual({ definition, stage, expression = "idle", classN
   return <img
     className={`characterVisual characterVisual--${definition.type} characterMotion--${animation} ${className}`.trim()}
     data-character={definition.type}
-    src={`${definition.assetPath}/stage${Math.max(1, Math.min(4, stage))}-${expression}.svg`}
+    data-stage={Math.max(1, Math.min(4, stage))}
+    data-expression={expression}
+    src={definition.originalAssetPath || `${definition.assetPath}/stage${Math.max(1, Math.min(4, stage))}-${expression}.svg`}
     alt="" draggable={false} width={220} height={220}
   />;
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { CharacterVisual } from "./CharacterVisual";
-import { characterDefinitions, characterName, dialogueLines, nextDialogue, stageNames, type OwnedCharacter } from "./models";
+import { characterDefinitions, characterName, companionLabel, dialogueLines, nextDialogue, stageNames, type OwnedCharacter } from "./models";
 import "./characters.css";
 
 type Props = {
@@ -15,7 +15,7 @@ export function CharacterBook({ characters, onRename, onSetMain, onInteract }: P
   const timer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(timer.current), []);
   return <section className="characterBook" aria-label="새싹 도감">
-    <header className="characterBookIntro"><h2>여행길에서 만난 새싹들</h2><p>그곳에서 찍은 사진을 남기면 작은 친구를 만날 수 있어요. GPS가 담긴 사진만 발견 기록으로 이어져요.</p><span>{characters.length} / {characterDefinitions.length} 친구</span></header>
+    <header className="characterBookIntro"><h2>함께 기록하고, 여행길에서 만나는 새싹들</h2><p>동생 감자싹과 형 고구마싹은 처음부터 함께해요. 다른 친구들은 그 지역에서 찍은 GPS 사진을 등록하면 만날 수 있어요.</p><p>감자싹은 사용법을 알려주고, 고구마싹은 작은 기록을 응원해요. 새싹들은 각 지역의 GPS 사진이 10장, 30장, 60장 쌓일 때 자라요.</p><span>{characters.length} / {characterDefinitions.length} 친구</span></header>
     <div className="characterGrid">{characterDefinitions.map(def => {
       const owned = characters.find(item => item.id === def.id);
       const name = characterName(def, owned);
@@ -29,11 +29,11 @@ export function CharacterBook({ characters, onRename, onSetMain, onInteract }: P
           timer.current = window.setTimeout(() => setSpoken(current => current?.id === def.id ? { ...current, happy: false } : current), 1000);
           void onInteract(def.id);
         }}><CharacterVisual definition={def} stage={owned.growthStage} expression={spoken?.id === def.id && spoken.happy ? "happy" : "idle"} /></button> : <span className="characterSilhouette" aria-hidden="true">?</span>}</div>
-        <span className="characterRegion">{def.regionLabel}</span>
+        <span className="characterRegion">{companionLabel(def)}</span>
         <h3>{owned ? name : "????"}</h3>
         {owned ? <>
           {spoken?.id === def.id && <p className="characterDialogue" role="status">{dialogueLines(def, owned.growthStage, owned.affection >= 20 ? "highAffection" : "idle")[spoken.index]}</p>}
-          <p>{def.description}</p><p className="characterStats">{stageNames[owned.growthStage]} · 추억 {owned.regionPhotoCount}장 · 친밀도 {owned.affection}</p>
+          <p>{def.description}</p><p className="characterStats">{stageNames[owned.growthStage]} · {def.defaultUnlocked ? `${def.regionLabel} ` : ""}추억 {owned.regionPhotoCount}장 · 친밀도 {owned.affection}</p>
           <div className="characterCardActions">
             {owned.isMain ? <span className="characterMainBadge">대표 새싹</span> : <button type="button" onClick={() => void onSetMain(def.id)}>대표로 설정</button>}
             <button type="button" onClick={() => { setDraft(owned.customName || ""); setEditing(def.id); }}>이름 바꾸기</button>

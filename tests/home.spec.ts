@@ -41,7 +41,7 @@ test('the mascot chooses different messages and supports Enter and Space without
   await expect(speech).not.toHaveText(second);
   await page.evaluate(() => { Math.random = () => 0.999999; });
   await mascot.press('Space');
-  await expect(speech).toHaveText('여기 담아둔 마음들이 너에게 따뜻한 선물이 되길.');
+  await expect(speech).toHaveText('새싹에게 톡 말 걸면 하루 한 번 더 친해질 수 있어!');
   const last = await speech.innerText();
   await mascot.click();
   await expect(speech).not.toHaveText(last);

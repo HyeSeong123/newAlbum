@@ -14,11 +14,15 @@ export type CharacterPersonality = {
 export type CharacterDefinition = {
   id: string; type: string; regionCode: string; regionName: string; regionLabel: string;
   defaultName: string; description: string; maxStage: number; assetPath: string;
+  originalAssetPath?: string;
+  defaultUnlocked?: boolean;
+  companionRole?: "younger-brother" | "older-brother";
   growthConditions: { stage1: number; stage2: number; stage3: number; stage4: number };
   personality?: CharacterPersonality;
   dialogues: { all: string[]; stages: Record<string, string[]>; situations?: Partial<Record<DialogueContext, string[]>> };
 };
-export const characterDefinitions = (definitions as CharacterDefinition[]).slice().sort((a, b) => a.regionCode.localeCompare(b.regionCode));
+export const characterDefinitions = (definitions as CharacterDefinition[]).slice().sort((a, b) =>
+  Number(Boolean(b.defaultUnlocked)) - Number(Boolean(a.defaultUnlocked)) || a.regionCode.localeCompare(b.regionCode));
 export type OwnedCharacter = {
   id: string; customName: string | null; growthStage: number; regionPhotoCount: number;
   affection: number; isMain: boolean; unlockedAt: string; createdAt: string; updatedAt: string;
@@ -26,6 +30,17 @@ export type OwnedCharacter = {
 export type CharacterEvent = { id: number; characterId: string; kind: "unlock" | "grow"; stage: number };
 export type CharacterSnapshot = { characters: OwnedCharacter[]; events: CharacterEvent[] };
 export const stageNames = ["", "씨앗", "새싹", "어린싹", "다 자란 새싹"];
+export function companionLabel(definition: CharacterDefinition) {
+  return definition.companionRole === "younger-brother" ? "처음부터 함께 · 동생" :
+    definition.companionRole === "older-brother" ? "처음부터 함께 · 형" : definition.regionLabel;
+}
+export function starterSnapshot(): CharacterSnapshot {
+  const now = new Date().toISOString();
+  return { characters: characterDefinitions.filter(def => def.defaultUnlocked).map((def, index) => ({
+    id: def.id, customName: null, growthStage: 1, regionPhotoCount: 0, affection: 0,
+    isMain: index === 0, unlockedAt: now, createdAt: now, updatedAt: now,
+  })), events: [] };
+}
 export function characterName(definition: CharacterDefinition, owned?: OwnedCharacter) {
   return owned?.customName || definition.defaultName;
 }
