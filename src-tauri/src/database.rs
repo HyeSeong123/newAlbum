@@ -3,7 +3,7 @@ use std::time::Duration;
 
 // Versions before this migration used user_version = 0 (including existing installs).
 // Future schema changes must increment this and add an ordered migration here.
-const VERSION: i64 = 6;
+pub(crate) const VERSION: i64 = 6;
 
 fn version(conn: &Connection) -> Result<i64, String> {
     conn.query_row("PRAGMA user_version", [], |row| row.get(0))

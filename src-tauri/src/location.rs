@@ -588,7 +588,7 @@ mod tests {
         let districts: Vec<Option<String>> = conn.prepare("SELECT district FROM media ORDER BY id").unwrap()
             .query_map([], |row| row.get(0)).unwrap().collect::<Result<_, _>>().unwrap();
         assert_eq!(districts, vec![Some("담양군".into()), Some("담양군".into()), None]);
-        assert_eq!(conn.query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0)).unwrap(), 5);
+        assert_eq!(conn.query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0)).unwrap(), crate::database::VERSION);
     }
 
     #[test]
