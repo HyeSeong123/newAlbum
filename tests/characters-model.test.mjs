@@ -8,14 +8,20 @@ const { outputText } = ts.transpileModule(source.replace('import definitions fro
   `const definitions = ${readFileSync(new URL('../src/features/characters/data/characterDefinitions.json', import.meta.url),'utf8')};`),
   { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } });
 const { characterDefinitions, nextDialogue, characterName } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
+const regionSource = readFileSync(new URL('../src/features/map/regions.ts', import.meta.url),'utf8');
+const { REGION_NAMES } = await import(`data:text/javascript;base64,${Buffer.from(ts.transpileModule(regionSource,
+  { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText).toString('base64')}`);
 
 test('each region has one definition, four increasing thresholds and complete local expression assets', () => {
-  assert.deepEqual(characterDefinitions.map(def => def.regionCode), ['KR-42','KR-46','KR-47','KR-49']);
+  assert.deepEqual(characterDefinitions.map(def => def.regionCode), Object.keys(REGION_NAMES).sort());
+  assert.equal(new Set(characterDefinitions.map(def => def.id)).size, characterDefinitions.length);
   for (const def of characterDefinitions) {
     assert.deepEqual(Object.values(def.growthConditions), [1,10,30,60]);
     assert.ok(def.dialogues.all.length >= 2);
     for (let stage=1; stage<=4; stage++) for (const expression of ['idle','happy','sad','grow']) {
-      assert.ok(existsSync(new URL(`../public${def.assetPath}/stage${stage}-${expression}.svg`, import.meta.url)));
+      const asset = new URL(`../public${def.assetPath}/stage${stage}-${expression}.svg`, import.meta.url);
+      assert.ok(existsSync(asset));
+      assert.match(readFileSync(asset,'utf8'), /^<svg[\s\S]*<\/svg>$/);
     }
     assert.equal(characterName(def),def.defaultName);
     assert.equal(characterName(def,{customName:'별이'}),'별이');

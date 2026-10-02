@@ -48,6 +48,24 @@ fn manual_region_and_video_do_not_unlock_or_grow() {
 }
 
 #[test]
+fn every_map_region_has_a_distinct_gps_companion() {
+    let mut conn = database();
+    let definitions = definitions();
+    assert_eq!(definitions.len(), 16);
+    for (index, definition) in definitions.iter().enumerate() {
+        photo(&conn, index as i64, Some(&definition.region_code));
+    }
+    let result = reconcile(&mut conn).unwrap();
+    assert_eq!(result.characters.len(), definitions.len());
+    assert_eq!(result.events.len(), definitions.len());
+    for definition in definitions {
+        let character = result.characters.iter().find(|item| item.id == definition.id).unwrap();
+        assert_eq!(character.growth_stage, 1);
+        assert_eq!(character.region_photo_count, 1);
+    }
+}
+
+#[test]
 fn rename_main_and_click_require_owned_character() {
     let mut conn = database();
     assert!(set_main(&mut conn,"orange").is_err());

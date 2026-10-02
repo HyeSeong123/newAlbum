@@ -6,7 +6,7 @@ export type CharacterDefinition = {
   growthConditions: { stage1: number; stage2: number; stage3: number; stage4: number };
   dialogues: { all: string[]; stages: Record<string, string[]> };
 };
-export const characterDefinitions = definitions as CharacterDefinition[];
+export const characterDefinitions = (definitions as CharacterDefinition[]).slice().sort((a, b) => a.regionCode.localeCompare(b.regionCode));
 export type OwnedCharacter = {
   id: string; customName: string | null; growthStage: number; regionPhotoCount: number;
   affection: number; isMain: boolean; unlockedAt: string; createdAt: string; updatedAt: string;
