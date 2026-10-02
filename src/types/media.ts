@@ -16,7 +16,6 @@ export interface MediaItem {
   comment: string;
   favorite: boolean;
   viewCount: number;
-  tags: string[];
   thumbnail: string;
   /** Session-only URL for files selected in the browser preview. */
   previewUrl?: string;

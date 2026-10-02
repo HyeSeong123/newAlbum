@@ -14,7 +14,7 @@ export function browserImportItems(files: Iterable<File>, existing: MediaItem[],
         id: `local-${crypto.randomUUID()}`, fileName: file.name, filePath, fileType,
         takenAt: new Date(file.lastModified).toISOString().slice(0, 10),
         sizeLabel: `${Math.max(0.1, file.size / 1024 / 1024).toFixed(1)} MB`,
-        title: "", rating: 0, comment: "", favorite: false, viewCount: 0, tags: ["new"],
+        title: "", rating: 0, comment: "", favorite: false, viewCount: 0,
         thumbnail: "#eae9e1", metadataStatus: "queued", previewUrl: createUrl(file),
       });
     }

@@ -218,3 +218,74 @@ in this pass; the user's actual library and packaged app were not tested.
 3. Separate the remaining Rust database command implementations if that simplifies
    ownership and testing. Export is now independent; database commands retain the
    existing transactions and migration behavior.
+
+## Unused Features, Schema and Styles (2026-10-02)
+
+Version 0.4.1 removes code with no current application callers, rather than
+removing navigation features that remain in use. Photo/album/diary storage,
+original files, current face/pet recognition, media playback, Home and the current
+region-filtered map remain in use.
+
+### Removed Code
+
+- The old `list_region_media` Tauri command, its permission and unused frontend
+  adapter. The map uses `region_media_page` for paging, filters and location groups.
+- `anniversaryMemories`, superseded by `memoryGroups`; the old map `groupByMonth`,
+  superseded by district/country/city grouping; the unused `isSupportedMedia`
+  wrapper around `getMediaType`.
+- Prototype media tags: they had no tag editor, storage command or native reader.
+  Browser imports no longer create the synthetic `new` tag. Search continues to
+  use photo titles, file names and comments.
+- Tests for the two superseded providers. Current memory-provider and location
+  grouping tests remain; file-extension checks now call the actual classifier.
+
+### Database Version 6
+
+| Table | Current replacement / use | Upgrade policy |
+| --- | --- | --- |
+| `tag`, `media_tag` | No current tag feature | Omit from new databases; remove both only when both existing tables are empty |
+| `media_person` | `detected_face.person_id` stores current face associations | Omit from new databases; remove only if empty |
+
+A populated legacy group and its reverse foreign-key index are retained.
+A missing index is restored on upgrade so that subsequent media/person deletion
+can still cascade efficiently. Cleanup runs once in the existing versioned,
+writer-locked transaction. Failed cleanup rolls back table drops and the version;
+reopening a current DB retains the read-only initialization fast path.
+
+The historical table definitions now live only in a native test fixture. Regression
+cases cover new and version-5 empty databases, populated tag-group preservation,
+independent person-link removal, failed-upgrade rollback/retry and legacy cascades.
+The existing version-0 populated-library test continues to compare every row.
+
+`person.profile_type`, `detected_face`, `excluded_face`, `face_scan`, `pet`,
+`pet_media` and `diary_photo` are used by current features. Historical album music,
+cover-concept and playback-setting columns remain for compatibility; removing them
+would erase old metadata rather than remove an unused empty prototype.
+
+### Styles
+
+Removed 46 unused selectors across eight stylesheets, including old memory tiles,
+day memo, album-card actions, map month headers and the retired import-album dialog.
+Removed 145 superseded declarations only where the same selector and conditional
+scope have a later declaration of the same property with sufficient priority.
+Shorthand/longhand pairs and dynamic classes were retained, along with responsive,
+focus, animation and reduced-motion rules.
+
+Edited CSS sources decrease from 148,742 to 141,405 bytes (7,337 bytes).
+The initial production CSS decreases from 174.93 to 168.71 KB; gzip decreases from
+31.87 to 30.85 KB. Map CSS decreases from 6.84 to 6.65 KB. These are stylesheet
+measurements, not a startup-time benchmark.
+
+### Verification
+
+- Frontend unit tests: 80 passed. Two obsolete provider tests were removed, with
+  current replacements still covered.
+- TypeScript/production build, version consistency and whitespace checks passed.
+- Existing SQLite schema tests: 5 passed.
+- Browser workflow regressions: 170 passed, 4 existing conditional skips. One
+  long screenshot workflow exceeded the 30-second shared-run limit and passed
+  alone in 25.4 seconds with a 60-second limit.
+- Desktop and narrow-window visual comparisons cover current views. Rust migration/storage tests and Windows upgrade smoke
+  checks run in the existing source-validation and package workflows on push.
+
+No user's installed database or original media was opened during this cleanup.

@@ -91,11 +91,6 @@ export async function analyzeLocationBatch(): Promise<LocationOverview> {
 export async function queueFailedLocations(): Promise<LocationOverview> {
   return invoke<LocationOverview>("queue_failed_locations");
 }
-export async function loadRegionMedia(regionCode: string, offset: number, limit = 48): Promise<MediaItem[]> {
-  const rows = await invoke<BackendMediaItem[]>("list_region_media", { regionCode, offset, limit });
-  return rows.map(toMediaItem);
-}
-
 export interface RegionFilters { fileType: "all" | "image" | "video"; year: string; oldest: boolean; district: string }
 export interface RegionPage { items: MediaItem[]; total: number; years: string[] }
 export async function loadRegionPage(regionCode: string, offset: number, filters: RegionFilters): Promise<RegionPage> {
@@ -245,7 +240,6 @@ function toMediaItem(row: BackendMediaItem): MediaItem {
     comment: row.comment,
     favorite: row.favorite,
     viewCount: row.view_count ?? 0,
-    tags: [],
     thumbnail: placeholders[row.file_type],
     metadataStatus: row.metadata_status,
     latitude: row.latitude ?? undefined,

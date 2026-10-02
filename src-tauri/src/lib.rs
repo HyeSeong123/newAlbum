@@ -115,23 +115,6 @@ async fn queue_failed_locations(app: AppHandle) -> Result<location::Overview, St
 }
 
 #[tauri::command]
-async fn list_region_media(app: AppHandle, region_code: String, offset: i64, limit: i64) -> Result<Vec<MediaItemDto>, String> {
-    tauri::async_runtime::spawn_blocking(move || {
-        if region_code != "unclassified" && region_code != "overseas" && !location::REGIONS.iter().any(|(code,_)| *code == region_code) {
-            return Err("존재하지 않는 지역입니다.".into());
-        }
-        let conn = open_database(&app)?;
-        let filter = if region_code == "unclassified" { location::UNCLASSIFIED_FILTER_SQL } else { location::REGION_FILTER_SQL };
-        let mut stmt = conn.prepare(&format!("SELECT {MEDIA_COLUMNS} FROM media
-            WHERE {filter} ORDER BY taken_at DESC NULLS LAST, id DESC LIMIT ?2 OFFSET ?3"))
-            .map_err(|error| error.to_string())?;
-        let rows = stmt.query_map(params![region_code, limit.clamp(1, 48), offset.max(0)], media_from_row)
-            .map_err(|error| error.to_string())?;
-        rows.collect::<Result<Vec<_>,_>>().map_err(|error| error.to_string())
-    }).await.map_err(|error| error.to_string())?
-}
-
-#[tauri::command]
 async fn region_media_page(app: AppHandle, region_code: String, offset: i64, file_type: String, year: String, oldest: bool, district: String) -> Result<location::RegionPage, String> {
     tauri::async_runtime::spawn_blocking(move || location::region_page(&open_database(&app)?, &region_code, offset, &file_type, &year, oldest, &district))
         .await.map_err(|error| error.to_string())?
@@ -1026,7 +1009,6 @@ pub fn run() {
             location_overview,
             analyze_locations,
             queue_failed_locations,
-            list_region_media,
             region_media_page,
             assign_media_region,
             thumbnails::media_thumbnail,

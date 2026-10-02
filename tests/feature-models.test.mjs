@@ -9,12 +9,12 @@ async function loadModel(path) {
   return import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
 }
 
-const { selectMediaCollection, searchMedia, anniversaryMemories, dateRangeError } = await loadModel('media/collectionModel.ts');
+const { selectMediaCollection, searchMedia, dateRangeError } = await loadModel('media/collectionModel.ts');
 const calendar = await loadModel('calendar/calendarModel.ts');
 const comments = await loadModel('media/mediaComments.ts');
 const { indexFaces, mediaForFaces } = await loadModel('people/peopleModel.ts');
 const { petPhotos, petCovers } = await loadModel('pets/petModel.ts');
-const photo = (id, extra = {}) => ({ id: String(id), fileType: 'image', fileName: `사진 ${id}.jpg`, comment: '', tags: [], takenAt: null, rating: 0, favorite: false, ...extra });
+const photo = (id, extra = {}) => ({ id: String(id), fileType: 'image', fileName: `사진 ${id}.jpg`, comment: '', takenAt: null, rating: 0, favorite: false, ...extra });
 const defaults = { sort: 'date-desc', mediaType: 'all', favoritesOnly: false, commentsOnly: false, minimumRating: 0 };
 const ids = (items) => items.map((item) => item.id);
 
@@ -76,20 +76,13 @@ test('all optimized comparators match the previous implementation on mixed recor
   }
 });
 
-test('search includes names, captions and tags without changing whitespace semantics', () => {
-  const items = [photo(1, { fileName: 'Jeju.JPG', title: '바람이 불던 오후' }), photo(2, { comment: '가족 여행' }), photo(3, { tags: ['SEA'] })];
+test('search includes titles, filenames and captions without changing whitespace semantics', () => {
+  const items = [photo(1, { fileName: 'Jeju.JPG', title: '바람이 불던 오후' }), photo(2, { comment: '가족 여행' })];
   assert.strictEqual(searchMedia(items, ''), items);
   assert.deepEqual(ids(searchMedia(items, 'jeju')), ['1']);
   assert.deepEqual(ids(searchMedia(items, '바람이')), ['1']);
   assert.deepEqual(ids(searchMedia(items, '가족')), ['2']);
-  assert.deepEqual(ids(searchMedia(items, 'sea')), ['3']);
   assert.deepEqual(searchMedia(items, ' absent '), []);
-});
-
-test('anniversary memories respect the supplied local day and exclude this year', () => {
-  const items = [photo(1, { takenAt: '2025-09-24' }), photo(2, { takenAt: '2026-09-24' }), photo(3), photo(4, { takenAt: '2024-09-24' })];
-  assert.deepEqual(ids(anniversaryMemories(items, '2026-09-24')), ['1', '4']);
-  assert.deepEqual(anniversaryMemories(items, '2026-09-25'), []);
 });
 
 test('calendar cells fill complete weeks for leap years and different starting weekdays', () => {

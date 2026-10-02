@@ -3,7 +3,7 @@ use std::time::Duration;
 
 // Versions before this migration used user_version = 0 (including existing installs).
 // Future schema changes must increment this and add an ordered migration here.
-const VERSION: i64 = 5;
+const VERSION: i64 = 6;
 
 fn version(conn: &Connection) -> Result<i64, String> {
     conn.query_row("PRAGMA user_version", [], |row| row.get(0))
@@ -52,8 +52,43 @@ pub fn initialize(conn: &mut Connection) -> Result<(), String> {
             .map_err(|error| format!("일기 사진 저장소를 만들 수 없습니다: {error}"))?;
     }
     if current < 5 { super::location::backfill_districts(&tx)?; }
+    if current < 6 { remove_unused_tables(&tx)?; }
     tx.pragma_update(None, "user_version", VERSION).map_err(|error| error.to_string())?;
     tx.commit().map_err(|error| error.to_string())
+}
+
+fn table_exists(conn: &Connection, table: &str) -> Result<bool, String> {
+    conn.query_row("SELECT EXISTS(SELECT 1 FROM sqlite_schema WHERE type='table' AND name=?1)",
+        [table], |row| row.get(0)).map_err(|error| error.to_string())
+}
+
+// These prototypes have no current readers or writers. Retain populated legacy
+// tables as a group, including their deletion indexes; only empty groups are removed.
+fn remove_unused_tables(conn: &Connection) -> Result<(), String> {
+    for (tables, index) in [
+        (&["media_tag", "tag"][..], "CREATE INDEX IF NOT EXISTS idx_media_tag_tag ON media_tag(tag_id)"),
+        (&["media_person"][..], "CREATE INDEX IF NOT EXISTS idx_media_person_person ON media_person(person_id)"),
+    ] {
+        let mut existing = Vec::new();
+        let mut populated = false;
+        for table in tables {
+            if !table_exists(conn, table)? { continue; }
+            existing.push(*table);
+            populated |= conn.query_row(&format!("SELECT EXISTS(SELECT 1 FROM {table} LIMIT 1)"),
+                [], |row| row.get::<_, bool>(0)).map_err(|error| error.to_string())?;
+        }
+        if populated {
+            if existing.contains(&tables[0]) {
+                conn.execute_batch(index).map_err(|error| error.to_string())?;
+            }
+        } else {
+            for table in existing {
+                conn.execute_batch(&format!("DROP TABLE {table}"))
+                    .map_err(|error| format!("미사용 DB 테이블을 정리할 수 없습니다: {error}"))?;
+            }
+        }
+    }
+    Ok(())
 }
 
 pub fn delete_media(conn: &mut Connection, ids: &[i64]) -> Result<(), String> {

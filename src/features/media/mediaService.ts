@@ -13,10 +13,6 @@ export function getMediaType(fileName: string): MediaType | null {
   return extension && Object.hasOwn(mediaTypes, extension) ? mediaTypes[extension] : null;
 }
 
-export function isSupportedMedia(fileName: string): boolean {
-  return getMediaType(fileName) !== null;
-}
-
 export function groupByTakenDate(items: MediaItem[]) {
   return items.reduce<Record<string, MediaItem[]>>((groups, item) => {
     const key = item.takenAt ?? "날짜 없음";

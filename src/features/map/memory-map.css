@@ -50,13 +50,10 @@
 .memoryMapGallery > header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 22px; }
 .memoryMapGallery h3 { margin: 7px 0 4px; font-size: 21px; font-weight: 650; }
 .memoryMapGallery p { margin: 0; color: var(--muted); font-size: 13px; }
-.memoryMapMonth { margin-bottom: 24px; }
-.memoryMapMonth h4 { margin: 0 0 13px; padding-bottom: 8px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 650; }
 .memoryMapPlaceGroup { margin-bottom: 28px; }
 .memoryMapPlaceGroup h4 { margin: 0 0 13px; padding-bottom: 9px; border-bottom: 1px solid var(--border); font-size: 17px; font-weight: 700; }
 .memoryMapPager { display: flex; align-items: center; justify-content: center; gap: 15px; font-size: 13px; font-variant-numeric: tabular-nums; }
 .memoryMapAlert { margin: 0; padding: 10px 14px; border: 1px solid #e9c4b7; border-radius: 5px; color: #9a4b38; background: #fff7f2; font-size: 13px; }
-.view-map .toolbar { display: none; }
 @media(max-width:1000px) { .memoryMapLayout { grid-template-columns: minmax(0,1fr) 280px; } .memoryMapPaper { padding: 18px; } .memoryMapPlaces { padding: 16px; } }
 @media(max-width:760px) { .memoryMapLayout { grid-template-columns: 1fr; } .memoryMapIntro { flex-wrap: wrap; padding: 22px; } .memoryMapIntroActions { width: 100%; justify-content: space-between; } .memoryMapStats { padding: 14px 0 0; border-left: 0; border-top: 1px solid var(--border); } .memoryMapPaper { padding: 18px; } .memoryMapShape { max-height: 430px; } .memoryMapGallery { padding: 18px; } }
 @media(max-width:380px) { .memoryMapStats { gap: 14px; } .memoryMapIntro h2 { font-size: 20px; } .memoryMapPlaces { padding: 14px; } .memoryMapPlaceList { grid-template-columns: 1fr; } }

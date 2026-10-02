@@ -17,7 +17,7 @@ async function loadSource(path) {
   return module.exports;
 }
 
-const { getMediaType, isSupportedMedia, MEDIA_FILE_ACCEPT } = await loadSource('../src/features/media/mediaService.ts');
+const { getMediaType, MEDIA_FILE_ACCEPT } = await loadSource('../src/features/media/mediaService.ts');
 const { normalizeLocalFilePath, resolveMediaSource } = await loadSource('../src/features/media/mediaSource.ts');
 const { MediaPlayback } = await loadSource('../src/components/MediaPlayback.tsx');
 
@@ -25,8 +25,8 @@ test('registration classifies supported extensions without relying on browser MI
   for (const extension of ['jpg', 'jpeg', 'png', 'webp', 'heic']) assert.equal(getMediaType(`사진.${extension.toUpperCase()}`), 'image');
   for (const extension of ['mp4', 'mov', 'avi', 'mkv', 'webm']) assert.equal(getMediaType(`영상.${extension.toUpperCase()}`), 'video');
   for (const extension of ['mp3', 'wav', 'flac', 'm4a']) assert.equal(getMediaType(`음원.${extension.toUpperCase()}`), 'audio');
-  for (const name of ['text.txt', 'photo.jpg.exe', 'mp3', 'picture.', 'file.constructor']) assert.equal(isSupportedMedia(name), false);
-  assert.deepEqual(MEDIA_FILE_ACCEPT.split(',').filter((extension) => !isSupportedMedia(`file${extension}`)), []);
+  for (const name of ['text.txt', 'photo.jpg.exe', 'mp3', 'picture.', 'file.constructor']) assert.equal(getMediaType(name), null);
+  assert.deepEqual(MEDIA_FILE_ACCEPT.split(',').filter((extension) => getMediaType(`file${extension}`) === null), []);
 });
 
 test('browser-selected media use their session URL without calling the desktop bridge', () => {

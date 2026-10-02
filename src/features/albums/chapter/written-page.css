@@ -9,7 +9,7 @@
 .albumContentEditor label { display: grid; gap: 7px; color: var(--secondary); font-size: 14px; font-weight: 650; }
 .albumContentEditor input, .albumContentEditor textarea, .albumContentEditor select { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-weight: 400; }
 .albumContentEditor textarea { resize: vertical; min-height: 220px; line-height: 1.8; }
-.albumContentToolbar, .albumContentRowActions { display: flex; flex-wrap: wrap; gap: 9px; align-items: end; }
+.albumContentToolbar { display: flex; flex-wrap: wrap; gap: 9px; align-items: end; }
 .albumContentToolbar { padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-soft); }
 .albumContentToolbar label { flex: 1 1 230px; min-width: 0; }
 .albumContentToolbar button { min-height: 44px; padding: 0 15px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--primary); border-radius: 8px; background: #fff; color: var(--secondary); font-weight: 700; }
@@ -44,7 +44,6 @@
 .albumEntryHint { display: flex; align-items: start; gap: 8px; padding: 20px 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
 .albumEntryHint svg { flex: 0 0 auto; }
 .albumEntryEmpty { min-height: 280px; display: grid; place-content: center; justify-items: center; gap: 8px; color: var(--muted); }
-.albumContentRowActions button { padding: 6px 10px; font-size: 12px; }
 @media (max-width: 760px) {
   .albumContentWorkspace { grid-template-columns: minmax(0, 1fr); }
   .albumContentRows { max-height: 240px; }
