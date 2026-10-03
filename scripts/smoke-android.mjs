@@ -20,10 +20,15 @@ async function apkFiles(path) {
   return all;
 }
 async function connect() {
-  const pid = await adb('shell', 'pidof', appId);
-  const socket = `webview_devtools_remote_${pid}`;
-  for (let attempts = 0; attempts < 60; attempts++) {
-    if ((await adb('shell', 'cat', '/proc/net/unix')).includes(socket)) {
+  for (let attempts = 0; attempts < 120; attempts++) {
+    // Cold startup on a freshly booted emulator can precede process creation.
+    // A missing PID is expected until Android finishes launching the activity.
+    const pid = await adb('shell', 'pidof', appId).catch(error => {
+      if (error.code === 1 && !error.stdout?.trim()) return '';
+      throw error;
+    });
+    const socket = `webview_devtools_remote_${pid}`;
+    if (pid && (await adb('shell', 'cat', '/proc/net/unix')).includes(socket)) {
       await adb('forward', 'tcp:9222', `localabstract:${socket}`);
       const browser = await chromium.connectOverCDP('http://127.0.0.1:9222');
       const context = browser.contexts()[0];
@@ -35,6 +40,11 @@ async function connect() {
     await pause(500);
   }
   throw new Error('Android WebView debugging socket was not available.');
+}
+async function startApp() {
+  const started = await adb('shell', 'am', 'start', '-W', '-n', `${appId}/.MainActivity`);
+  await writeFile(join(output, 'activity-start.txt'), started);
+  assert.ok(!/Error:|Status:\s*(?:timeout|error)/i.test(started), started);
 }
 async function nativeTree() {
   await adb('shell', 'uiautomator', 'dump', '/sdcard/window.xml');
@@ -69,7 +79,7 @@ try {
   const video = join(output, 'large-smoke.mp4');
   await writeFile(video, Buffer.alloc(64 * 1024 * 1024, 43));
   await adb('push', resolve(video), '/sdcard/Download/GamjassakSmoke/large-smoke.mp4');
-  await adb('shell', 'am', 'start', '-n', `${appId}/.MainActivity`);
+  await startApp();
   let connection = await connect(); browser = connection.browser;
   let page = connection.page;
   await page.evaluate(() => localStorage.setItem('geuruteogi.first-run-completed-v1', 'true'));
@@ -114,13 +124,14 @@ try {
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   await browser.close(); browser = undefined;
   await adb('shell', 'am', 'force-stop', appId);
-  await adb('shell', 'am', 'start', '-n', `${appId}/.MainActivity`);
+  await startApp();
   connection = await connect(); browser = connection.browser; page = connection.page;
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_media'))).length, 2);
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_albums')))[0].title, '안드로이드에서 담은 추억');
   console.log('Android installation, real folder picker/content URI copying, byte progress, SQLite persistence and back navigation: OK');
 } catch (error) {
-  await writeFile(join(output, 'logcat.txt'), await adb('logcat', '-d', '-t', '1500')).catch(() => {});
+  await writeFile(join(output, 'logcat.txt'), await adb('logcat', '-d', '-t', '5000')).catch(() => {});
+  await writeFile(join(output, 'crashes.txt'), await adb('logcat', '-b', 'crash', '-d')).catch(() => {});
   await adb('shell', 'screencap', '-p', '/sdcard/failure.png').catch(() => {});
   await adb('pull', '/sdcard/failure.png', join(output, 'failure.png')).catch(() => {});
   throw error;
