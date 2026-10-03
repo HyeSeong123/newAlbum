@@ -1,8 +1,9 @@
-import { chromium, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { _android as android } from 'playwright';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdir, readdir, writeFile } from 'node:fs/promises';
+import { appendFile, mkdir, readdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
 const run = promisify(execFile);
@@ -20,26 +21,22 @@ async function apkFiles(path) {
   return all;
 }
 async function connect() {
-  for (let attempts = 0; attempts < 120; attempts++) {
-    // Cold startup on a freshly booted emulator can precede process creation.
-    // A missing PID is expected until Android finishes launching the activity.
-    const pid = await adb('shell', 'pidof', appId).catch(error => {
-      if (error.code === 1 && !error.stdout?.trim()) return '';
-      throw error;
-    });
-    const socket = `webview_devtools_remote_${pid}`;
-    if (pid && (await adb('shell', 'cat', '/proc/net/unix')).includes(socket)) {
-      await adb('forward', 'tcp:9222', `localabstract:${socket}`);
-      const browser = await chromium.connectOverCDP('http://127.0.0.1:9222');
-      const context = browser.contexts()[0];
-      context.setDefaultTimeout(45_000);
-      const page = context.pages()[0] ?? await context.waitForEvent('page');
-      await page.locator('main.app').waitFor();
-      return { browser, page };
-    }
-    await pause(500);
+  // Android WebView does not support the browser-context/download overrides
+  // used by a desktop Chromium CDP connection. Use Playwright's Android adapter.
+  if (!device) {
+    device = (await android.devices({ omitDriverInstall:true })).find(item => item.serial().startsWith('emulator-'));
+    assert.ok(device, 'The Android emulator must be connected through ADB');
   }
-  throw new Error('Android WebView debugging socket was not available.');
+  const webView = await device.webView({ pkg:appId }, { timeout:60_000 });
+  const page = await webView.page();
+  const context = page.context();
+  context.setDefaultTimeout(45_000);
+  const log = message => void appendFile(join(output, 'webview-console.txt'), `${message}\n`).catch(() => {});
+  page.on('pageerror', error => log(error.stack ?? error.message));
+  page.on('console', message => { if (message.type() === 'error') log(message.text()); });
+  page.on('requestfailed', request => log(`${request.url()}: ${request.failure()?.errorText}`));
+  await page.locator('main.app').waitFor();
+  return { context, page };
 }
 async function startApp() {
   const started = await adb('shell', 'am', 'start', '-W', '-n', `${appId}/.MainActivity`);
@@ -68,7 +65,7 @@ async function downloads() {
   await tapNative(/text="Downloads"/);
 }
 
-let browser;
+let device, context;
 await mkdir(output, { recursive:true });
 try {
   const apk = (await apkFiles('src-tauri/gen/android/app/build/outputs/apk')).find(path => /x86[_-]64/i.test(path));
@@ -80,7 +77,7 @@ try {
   await writeFile(video, Buffer.alloc(64 * 1024 * 1024, 43));
   await adb('push', resolve(video), '/sdcard/Download/GamjassakSmoke/large-smoke.mp4');
   await startApp();
-  let connection = await connect(); browser = connection.browser;
+  let connection = await connect(); context = connection.context;
   let page = connection.page;
   await page.evaluate(() => localStorage.setItem('geuruteogi.first-run-completed-v1', 'true'));
   await page.reload();
@@ -122,10 +119,10 @@ try {
   await expect(page.getByRole('heading', { name:'홈', exact:true })).toBeVisible();
   await page.screenshot({ path:join(output, 'home.png') });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-  await browser.close(); browser = undefined;
+  await context.close(); context = undefined;
   await adb('shell', 'am', 'force-stop', appId);
   await startApp();
-  connection = await connect(); browser = connection.browser; page = connection.page;
+  connection = await connect(); context = connection.context; page = connection.page;
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_media'))).length, 2);
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_albums')))[0].title, '안드로이드에서 담은 추억');
   console.log('Android installation, real folder picker/content URI copying, byte progress, SQLite persistence and back navigation: OK');
@@ -135,4 +132,7 @@ try {
   await adb('shell', 'screencap', '-p', '/sdcard/failure.png').catch(() => {});
   await adb('pull', '/sdcard/failure.png', join(output, 'failure.png')).catch(() => {});
   throw error;
-} finally { if (browser) await browser.close(); }
+} finally {
+  if (context) await context.close();
+  if (device) await device.close();
+}
