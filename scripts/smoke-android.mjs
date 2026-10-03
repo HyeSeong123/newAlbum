@@ -65,8 +65,9 @@ async function tapNative(label, timeout = 60_000) {
   throw new Error(`Native picker entry was missing: ${label}`);
 }
 async function downloads() {
-  await tapNative(/content-desc="Show roots"/);
-  await tapNative(/text="Downloads"/);
+  // ACTION_OPEN_DOCUMENT_TREE on API 36 starts at internal storage and has
+  // no roots drawer. Navigate the visible directory rather than a file-picker UI.
+  await tapNative(/text="Download"/);
 }
 
 let device, context;
