@@ -22,6 +22,16 @@ struct Document { uri: String, name: String, mime: String, size: Option<u64>, mo
 #[derive(Deserialize)]
 struct Documents { files: Vec<Document> }
 
+#[derive(Deserialize)]
+struct PickedDirectory { uri: Option<String> }
+
+pub fn pick_directory(app: &tauri::AppHandle) -> Result<Option<String>, String> {
+    let bridge = app.state::<AndroidMedia>();
+    let selected: PickedDirectory = bridge.0.run_mobile_plugin("pickDirectory", serde_json::json!({}))
+        .map_err(|error| format!("폴더를 선택하지 못했습니다: {error}"))?;
+    Ok(selected.uri)
+}
+
 pub fn prepare_paths(app: &tauri::AppHandle, paths: Vec<String>, mut on_progress: impl FnMut(ImportProgressDto)) -> Result<Vec<String>, String> {
     let mut local = Vec::new();
     let mut documents = Vec::new();

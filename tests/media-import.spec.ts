@@ -22,7 +22,7 @@ test('large native import shows full-screen byte progress through region and alb
       invoke: async (command: string, args: any) => {
         if (command === 'list_media') return registered;
         if (command === 'list_albums') return albums;
-        if (command === 'plugin:dialog|open') return 'C:/memories';
+        if (command === 'plugin:dialog|open' || command === 'choose_android_directory') return 'C:/memories';
         if (command === 'register_paths') {
           const callback = callbacks.get(args.progress.id)!;
           callback({ index:0, message:{ phase:'registering', processed:0, total:1, fileName:'big-memory.mp4', bytesProcessed:0, totalBytes:1024 ** 3 } });
@@ -101,8 +101,13 @@ for (const kind of ['files', 'folder'] as const) {
           if (command === 'list_media') return registered;
           if (command === 'list_albums') return albums;
           if (command === 'plugin:dialog|open') {
+            document.documentElement.dataset.importPicker = command;
             document.documentElement.dataset.importOptions = JSON.stringify(args.options);
             return args.options.directory ? 'C:/memories' : ['C:/import-2.jpg'];
+          }
+          if (command === 'choose_android_directory') {
+            document.documentElement.dataset.importPicker = command;
+            return 'C:/memories';
           }
           if (command === 'register_paths') { registered = media; return registered; }
           if (command === 'assign_media_region') {
@@ -150,9 +155,16 @@ for (const kind of ['files', 'folder'] as const) {
     await expect(page.locator('.savedAlbumCard')).toHaveCount(1);
     await expect(page.locator('.savedAlbumTitle')).toHaveText('가을 산책');
     expect(await page.locator('html').getAttribute('data-created-album')).toBe(JSON.stringify({ title: '가을 산책', mediaIds: [2], coverColor: '#2F4058' }));
-    const options = JSON.parse((await page.locator('html').getAttribute('data-import-options'))!);
-    expect(options.directory).toBe(kind === 'folder');
-    expect(options.multiple).toBe(kind === 'files');
+    const android = await page.evaluate(() => /Android/i.test(navigator.userAgent));
+    if (kind === 'folder' && android) {
+      await expect(page.locator('html')).toHaveAttribute('data-import-picker', 'choose_android_directory');
+      await expect(page.locator('html')).not.toHaveAttribute('data-import-options');
+    } else {
+      await expect(page.locator('html')).toHaveAttribute('data-import-picker', 'plugin:dialog|open');
+      const options = JSON.parse((await page.locator('html').getAttribute('data-import-options'))!);
+      expect(options.directory).toBe(kind === 'folder');
+      expect(options.multiple).toBe(kind === 'files');
+    }
     if (kind === 'folder') {
       expect(JSON.parse((await page.locator('html').getAttribute('data-assigned-import-region'))!)).toEqual({ ids:[2], regionCode:'KR-11', district:'강남구', country:'', city:'' });
       await page.getByRole('button', { name:'가을 산책 앨범 열기', exact:true }).click();
@@ -259,7 +271,7 @@ for (const failRegion of [false, true]) {
         convertFileSrc: () => '/favicon.svg',
         invoke: async (command: string, args: any) => {
           if (command === 'list_media') return registered;
-          if (command === 'plugin:dialog|open') return 'C:/place';
+          if (command === 'plugin:dialog|open' || command === 'choose_android_directory') return 'C:/place';
           if (command === 'register_paths') { registered = media; return registered; }
           if (command === 'assign_media_region') {
             document.documentElement.dataset.assignedImportRegion = JSON.stringify(args);

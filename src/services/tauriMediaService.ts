@@ -152,7 +152,7 @@ export async function chooseAndRegisterFiles(onProgress?: (progress: MediaImport
 }
 
 export async function chooseAndRegisterFolder(onProgress?: (progress: MediaImportProgress) => void): Promise<MediaItem[]> {
-  const selected = await open({
+  const selected = isAndroidRuntime() ? await invoke<string | null>("choose_android_directory") : await open({
     multiple: false,
     directory: true,
   });
@@ -165,7 +165,7 @@ export interface MediaExportResult {
 }
 
 export async function chooseExportDestination(): Promise<string | null> {
-  const selected = await open({
+  const selected = isAndroidRuntime() ? await invoke<string | null>("choose_android_directory") : await open({
     multiple: false,
     directory: true,
     title: "내보낼 위치 선택",

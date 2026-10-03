@@ -249,6 +249,20 @@ fn insert_album(
     Ok(album_id)
 }
 
+#[tauri::command]
+async fn choose_android_directory(app: AppHandle) -> Result<Option<String>, String> {
+    #[cfg(target_os = "android")]
+    {
+        tauri::async_runtime::spawn_blocking(move || android_media::pick_directory(&app))
+            .await.map_err(|error| error.to_string())?
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = app;
+        Err("Android 폴더 선택기는 휴대폰 앱에서 사용할 수 있습니다.".into())
+    }
+}
+
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ImportProgressDto {
@@ -1191,6 +1205,7 @@ pub fn run() {
             export_media_group,
             download_media,
             register_paths,
+            choose_android_directory,
             update_media_details,
             update_media_title,
             increment_media_view,

@@ -28,6 +28,7 @@ commands.allow = [
   "export_media_group",
   "download_media",
   "register_paths",
+  "choose_android_directory",
   "update_media_details",
   "update_media_title",
   "increment_media_view",

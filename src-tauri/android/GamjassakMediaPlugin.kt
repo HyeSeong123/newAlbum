@@ -1,6 +1,7 @@
 package com.oraedameun.album
 
 import android.app.Activity
+import android.content.Intent
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
@@ -8,6 +9,8 @@ import android.webkit.MimeTypeMap
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.ActivityResult
+import app.tauri.annotation.ActivityCallback
 import app.tauri.annotation.Command
 import app.tauri.annotation.InvokeArg
 import app.tauri.annotation.TauriPlugin
@@ -48,6 +51,22 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
         component.onBackPressedDispatcher.addCallback(component, back!!)
     }
     override fun onDestroy() { back?.remove(); back = null }
+
+    @Command
+    fun pickDirectory(invoke: Invoke) {
+        try {
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
+            startActivityForResult(invoke, intent, "directoryResult")
+        } catch (error: Exception) { invoke.reject(error.message ?: "폴더 선택기를 열지 못했습니다.") }
+    }
+
+    @ActivityCallback
+    fun directoryResult(invoke: Invoke, result: ActivityResult) {
+        val uri = if (result.resultCode == Activity.RESULT_OK) result.data?.data?.toString() else null
+        invoke.resolve(JSObject().put("uri", uri))
+    }
 
     @Command
     fun describe(invoke: Invoke) {
