@@ -1,6 +1,8 @@
 // Each species owns its silhouette and growth, rather than a recoloured base.
+import { plantGrowthArtwork } from './plant-growth-art.mjs';
 const ink = '#594940', green = '#789863';
 const palettes = {
+  potato: ['#e9bc77','#b38d5e'],
   'sweet-potato': ['#b888ab','#906081'], apple: ['#d9867b','#af645e'], orange: ['#efb16a','#ce894b'],
   ginkgo: ['#e8cb7c','#b4a05b'], camellia: ['#ce7e89','#9c5b66'], magnolia: ['#f1e5df','#ba9fa6'],
   'sea-lavender': ['#b1a0c7','#857393'], grape: ['#aa8bbd','#7f6495'], pear: ['#d6ce93','#a69d62'],
@@ -145,17 +147,19 @@ function face(expression,mood,y,size) {
   else if(happy) eyes=line('M-25 0q6-9 12 0m26 0q6-9 12 0',ink,2.8);
   else if(mood==='melancholy') eyes=line('M-25-3q6 5 12 0m26 0q6 5 12 0',ink,2.5);
   else if(['cool','mysterious','proud'].includes(mood)) eyes=line('M-25-2h13m25 0h13',ink,2.5)+ellipse(-18,1,2.2,3.2,ink)+ellipse(19,1,2.2,3.2,ink);
-  else if(mood==='shy') eyes=ellipse(-18,-1,2,3.2,ink)+ellipse(18,-1,2,3.2,ink)+line('M-24-10q5-3 9 0m9 0q5-3 9 0',ink,1.7);
+  else if(mood==='shy') eyes=ellipse(-18,-1,3,4.8,ink)+ellipse(18,-1,3,4.8,ink)+circle(-19,-3,1.1,'#fff')+circle(17,-3,1.1,'#fff')+line('M-24-11q5-3 9 0m9 0q5-3 9 0',ink,1.7);
   else if(mood==='quirky') eyes=ellipse(-19,-1,3.3,4.6,ink)+ellipse(18,0,2.5,3.4,ink)+line('M-23-11l8-2',ink,1.7);
   else if(mood==='hyper') eyes=ellipse(-19,-1,3.4,5,ink)+ellipse(19,-1,3.4,5,ink)+circle(-20,-3,1,'#fff')+circle(18,-3,1,'#fff');
   else if(mood==='calm'||mood==='warm') eyes=line('M-25-1q6 4 12 0m26 0q6 4 12 0',ink,2.4);
-  else eyes=ellipse(-19,-1,2.8,4,ink)+ellipse(19,-1,2.8,4,ink);
+  else eyes=ellipse(-19,-1,3.5,5,ink)+ellipse(19,-1,3.5,5,ink)+circle(-20,-3,1.1,'#fff')+circle(18,-3,1.1,'#fff');
   const mouth=sad?line('M-7 15q7-7 14 0',ink,2):happy?line('M-7 11q7 13 14 0',ink,2.2):mood==='cool'||mood==='mysterious'?line('M-6 12h12',ink,2):mood==='melancholy'?line('M-5 14q5-3 10 0',ink,1.8):line('M-7 11q7 8 14 0',ink,2.2);
-  return `<g transform="translate(110 ${y}) scale(${size})">${eyes}${mouth}${ellipse(-29,11,6,2.8,'#e68f95')}${ellipse(29,11,6,2.8,'#e68f95')}${sad?path('M-27 6q-5 7 0 10q5-3 0-10Z','#b0c9d0','none'):''}</g>`;
+  return `<g transform="translate(110 ${y}) scale(${size})"><g class="sproutEyes">${eyes}</g>${mouth}${ellipse(-29,11,6,2.8,'#e6a0a5')}${ellipse(29,11,6,2.8,'#e6a0a5')}${sad?path('M-27 6q-5 7 0 10q5-3 0-10Z','#b0c9d0','none'):''}</g>`;
 }
 export function renderCharacterSvg(definition,stage,expression='idle') {
   const [colour,shade]=palettes[definition.type];
-  const {art,y,faceSize}=artwork(definition.type,stage,colour,shade);
+  const {art,y,faceSize}=stage<6 ? plantGrowthArtwork(definition.type,stage,{path,line,ellipse,circle,leaf,heartLeaf,longLeaf,fan,blossom,petals}) : artwork(definition.type,4,colour,shade);
   const sparkle=expression==='grow'?path('M35 73l3 7 7 3-7 3-3 7-3-7-7-3 7-3Z','#e5bd77','none')+circle(182,88,3,'#e5bd77'):'';
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220" role="img" data-character="${definition.type}" data-stage="${stage}"><title>${definition.growthStages[stage-1].name}</title>${ellipse(110,199,stage===1?33:52,5,'#d9d2c1')}${art}${face(expression,definition.personality?.mood,y,faceSize)}${sparkle}</svg>`;
+  const blink=expression==='idle'?'<style>.sproutEyes{transform-box:fill-box;transform-origin:center;animation:sproutBlink 5.2s infinite}@keyframes sproutBlink{0%,42%,46%,100%{transform:scaleY(1)}44%{transform:scaleY(.08)}}@media(prefers-reduced-motion:reduce){.sproutEyes{animation:none}}</style>':'';
+  const frame=stage===1?'45 95 130 130':stage===2?'30 65 160 160':'0 0 220 220';
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="${frame}" role="img" data-character="${definition.type}" data-stage="${stage}"><title>${definition.growthStages[stage-1].name}</title>${blink}${ellipse(110,199,stage===1?33:52,5,'#d9d2c1')}${art}${face(expression,definition.personality?.mood,y,faceSize)}${sparkle}</svg>`;
 }

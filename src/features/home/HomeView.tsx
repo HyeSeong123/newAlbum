@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, BookHeart, Images, NotebookPen } from "lucide-react";
+import { ArrowUpRight, BookHeart, Heart, Images, NotebookPen } from "lucide-react";
 import { CharacterVisual } from "../characters/CharacterVisual";
-import { characterDefinitions, characterName, companionLabel, dialogueLines, growthStageName, nextDialogue, type OwnedCharacter } from "../characters/models";
+import { characterDefinitions, characterName, dialogueLines, nextDialogue, type OwnedCharacter } from "../characters/models";
 import "../characters/characters.css";
 import "./home.css";
 
@@ -39,18 +39,23 @@ type HomeViewProps = {
 
 export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibrary, onShowAlbums, onShowDiary, onShowCharacters, mainCharacter, onInteract }: HomeViewProps) {
   const [messageIndex, setMessageIndex] = useState(0);
+  const [spokenLine, setSpokenLine] = useState<string | undefined>(undefined);
   const [happy, setHappy] = useState(false);
+  const lastLine = useRef(0);
   const timer = useRef<number | undefined>(undefined);
   const definition = characterDefinitions.find(item => item.id === mainCharacter?.id);
-  const lines = definition && mainCharacter ? dialogueLines(definition, mainCharacter.growthStage, definition.defaultUnlocked ? "idle" : mainCharacter.affection >= 20 ? "highAffection" : "greeting") : messages;
-  useEffect(() => { setMessageIndex(0); }, [mainCharacter?.id]);
+  const lines = definition && mainCharacter ? dialogueLines(definition, mainCharacter.growthStage, mainCharacter.affection >= 20 ? "highAffection" : "idle") : messages;
+  useEffect(() => { lastLine.current=0; setMessageIndex(0); setSpokenLine(undefined); }, [mainCharacter?.id,mainCharacter?.growthStage]);
   useEffect(() => () => window.clearTimeout(timer.current), []);
   const dateLabel = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long" })
     .format(new Date(`${today}T12:00:00`));
 
   function talk() {
     // Draw from every other message, so even rapid clicks never repeat the last line.
-    setMessageIndex(previous => nextDialogue(lines, previous));
+    const next = nextDialogue(lines,lastLine.current);
+    lastLine.current=next;
+    setMessageIndex(next);
+    setSpokenLine(lines[next]);
     setHappy(true);
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setHappy(false), 1000);
@@ -69,13 +74,13 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
       <h2>작은 하루가 자라는 곳</h2>
       <p className="homeIntroduction">소중한 순간도, 평범한 하루도 차곡차곡 담아두세요.</p>
       <div className="homeCompanion">
-        <p id="homeMessage" className="homeSpeech" role="status" aria-live="polite" aria-atomic="true">{lines[messageIndex] || lines[0]}</p>
+        <p id="homeMessage" className="homeSpeech" role="status" aria-live="polite" aria-atomic="true">{spokenLine || lines[0]}</p>
         <button className={`homeMascot${happy ? " happy" : ""}`} type="button" aria-label={`${definition ? characterName(definition, mainCharacter) : "감자싹"}에게 말 걸기`} aria-describedby="homeMascotHint" onClick={talk}>
-          {definition && mainCharacter ? <CharacterVisual definition={definition} stage={mainCharacter.growthStage} expression={happy ? "happy" : "idle"} />
+          {definition && mainCharacter ? <CharacterVisual definition={definition} stage={mainCharacter.growthStage} expression={happy ? "happy" : "idle"} reactionKey={messageIndex} />
             : <img key={messageIndex} src="/brand/gamjassak-symbol.png" alt="" width={1254} height={1254} draggable={false} />}
         </button>
-        {definition && mainCharacter && <p className="homeCharacterMeta"><strong>{characterName(definition, mainCharacter)}</strong><span>{definition.defaultUnlocked ? companionLabel(definition) : `${definition.regionLabel}에서 만난 친구`}</span><span>{growthStageName(definition, mainCharacter.growthStage)} · {definition.defaultUnlocked ? `${definition.regionLabel} ` : ""}추억 {mainCharacter.regionPhotoCount}장 · 친밀도 {mainCharacter.affection}</span></p>}
-        <p id="homeMascotHint" className="homeMascotHint">새싹을 톡 눌러 말을 걸어보세요</p>
+        {definition && mainCharacter && <p className="homeCharacterMeta"><strong>{characterName(definition, mainCharacter)}</strong><span className="homeAffection"><Heart size={14} aria-hidden="true" />친밀도 {mainCharacter.affection}</span></p>}
+        <p id="homeMascotHint" className="homeMascotHint">홈에서 톡, 쓰다듬으며 말을 걸어 주세요</p>
         <button className="homeCharacterLink" type="button" onClick={onShowCharacters}>새싹 도감 보기</button>
       </div>
     </div>

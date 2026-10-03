@@ -121,7 +121,8 @@ async fn set_main_character(app: AppHandle, id: String) -> Result<characters::Sn
     tauri::async_runtime::spawn_blocking(move || characters::set_main(&mut open_database(&app)?, &id)).await.map_err(|e| e.to_string())?
 }
 #[tauri::command]
-async fn interact_character(app: AppHandle, id: String) -> Result<characters::Snapshot, String> {
+async fn interact_character(app: AppHandle, id: String, source: String) -> Result<characters::Snapshot, String> {
+    if source != "home" { return Err("홈에서 함께하는 새싹에게 말을 걸어 주세요.".into()); }
     tauri::async_runtime::spawn_blocking(move || characters::interact(&mut open_database(&app)?, &id)).await.map_err(|e| e.to_string())?
 }
 #[tauri::command]

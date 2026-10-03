@@ -115,7 +115,7 @@ export function App() {
   const topbarTitle = activeView === "Library" && photoMode === "grid"
     ? journalMonthTitle(activeMonth)
     : viewLabels[activeView];
-  const topbarCount = activeView === "Home" ? "오늘도 반가워요" : activeView === "Albums" ? `${savedAlbums.length}개의 앨범` : activeView === "Diary" ? `${diary.entries.length}편의 일기` : `${items.length}개의 기록`;
+  const topbarCount = activeView === "Home" ? "오늘도 반가워요" : activeView === "Characters" ? "" : activeView === "Albums" ? `${savedAlbums.length}개의 앨범` : activeView === "Diary" ? `${diary.entries.length}편의 일기` : `${items.length}개의 기록`;
 
   async function clearAllRegisteredMedia() {
     if (clearing || !window.confirm("등록 목록을 모두 비울까요? 원본 사진과 영상 파일은 삭제되지 않습니다.")) return;
@@ -240,7 +240,7 @@ export function App() {
             {activeView === "Home" && <HomeView today={today} itemCount={items.length} albumCount={savedAlbums.length} diaryCount={diary.entries.length}
               mainCharacter={mainCharacter} onInteract={id => { void characters.interact(id); }} onShowCharacters={() => navigate("Characters")}
               onShowLibrary={() => navigate("Library")} onShowAlbums={() => navigate("Albums")} onShowDiary={() => navigate("Diary")} />}
-            {activeView === "Characters" && <CharacterBook characters={characters.snapshot.characters} onRename={characters.rename} onSetMain={characters.setMain} onInteract={characters.interact} />}
+            {activeView === "Characters" && <CharacterBook characters={characters.snapshot.characters} onRename={characters.rename} onSetMain={characters.setMain} />}
             {characters.error && (activeView === "Home" || activeView === "Characters") && <p role="alert">{characters.error}</p>}
             {activeView === "Library" && (
               <PhotoView

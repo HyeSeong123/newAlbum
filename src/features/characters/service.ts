@@ -18,6 +18,7 @@ function previewCall(command: string, args?: Record<string, unknown>): Character
     preview = { ...preview, characters: preview.characters.map(c => c.id === args?.id ? { ...c, customName: name || null } : c) };
   } else if (command === "interact_character") {
     const id = String(args?.id);
+    if (args?.source !== "home" || !preview.characters.some(c => c.id === id && c.isMain)) throw new Error("홈에서 함께하는 새싹에게 말을 걸어 주세요.");
     const day = new Date().toLocaleDateString();
     if (clickedToday.get(id) !== day) {
       clickedToday.set(id, day);
@@ -34,5 +35,5 @@ async function call(command: string, args?: Record<string, unknown>): Promise<Ch
 export const syncCharacters = () => call("sync_characters");
 export const renameCharacter = (id: string, name: string) => call("rename_character", { id, name });
 export const setMainCharacter = (id: string) => call("set_main_character", { id });
-export const interactCharacter = (id: string) => call("interact_character", { id });
+export const interactCharacter = (id: string) => call("interact_character", { id, source: "home" });
 export const dismissCharacterEvent = (eventId: number) => call("dismiss_character_event", { eventId });

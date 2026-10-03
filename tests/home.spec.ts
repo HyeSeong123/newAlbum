@@ -41,7 +41,7 @@ test('the mascot chooses different messages and supports Enter and Space without
   await expect(speech).not.toHaveText(second);
   await page.evaluate(() => { Math.random = () => 0.999999; });
   await mascot.press('Space');
-  await expect(speech).toContainText('꼬마 감자싹');
+  await expect(speech).toContainText('잠든 씨감자싹');
   const last = await speech.innerText();
   await mascot.click();
   await expect(speech).not.toHaveText(last);
@@ -71,6 +71,7 @@ test('Home shortcuts show existing counts and open the matching records', async 
 });
 
 test('Home and the 16px logo gap fit narrow windows and larger text', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   const widths = test.info().project.name === 'mobile' ? [393, 320] : [1440, 1080, 1024, 1001];
   for (const width of widths) {
@@ -89,7 +90,7 @@ test('Home and the 16px logo gap fit narrow windows and larger text', async ({ p
       if (width > 1000) expect(logo.x + logo.width).toBeLessThanOrEqual(nav.x);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
       await expect(page.getByRole('button', { name: '감자싹에게 말 걸기' })).toBeVisible();
-      await page.screenshot({ path: `test-results/home-${width}-${large ? 'large' : 'default'}.png`, fullPage: true });
+      await page.screenshot({ path: `test-results/home-${width}-${large ? 'large' : 'default'}.png`, fullPage: true, animations: 'disabled' });
     }
   }
 });

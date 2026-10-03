@@ -20,21 +20,21 @@ fn gps_photos_unlock_once_and_raise_stage_at_defined_thresholds() {
         photo(&conn,id,Some("KR-49"));
         let current = reconcile(&mut conn).unwrap();
         let orange = current.characters.iter().find(|c| c.id=="orange").unwrap();
-        assert_eq!(orange.growth_stage, if id < 11 {1} else if id < 31 {2} else if id < 61 {3} else {4});
+        assert_eq!(orange.growth_stage, if id < 4 {1} else if id < 11 {2} else if id < 31 {3} else if id < 46 {4} else if id < 61 {5} else {6});
         assert_eq!(orange.region_photo_count,id-1);
         assert_eq!(current.characters.len(),3);
     }
     let before = snapshot(&conn).unwrap();
     let after = reconcile(&mut conn).unwrap();
-    assert_eq!(before.events.len(),4);
-    assert_eq!(after.events.len(),4);
+    assert_eq!(before.events.len(),6);
+    assert_eq!(after.events.len(),6);
     let orange_before = before.characters.iter().find(|c| c.id == "orange").unwrap();
     let orange_after = after.characters.iter().find(|c| c.id == "orange").unwrap();
     assert_eq!(orange_before.affection,orange_after.affection);
     conn.execute("DELETE FROM media WHERE gps_region_code='KR-49'",[]).unwrap();
     let after = reconcile(&mut conn).unwrap();
     let orange = after.characters.iter().find(|c| c.id == "orange").unwrap();
-    assert_eq!(orange.growth_stage,4);
+    assert_eq!(orange.growth_stage,6);
     assert_eq!(orange.region_photo_count,0);
 }
 
@@ -138,11 +138,11 @@ fn version_seven_upgrade_keeps_existing_progress_and_main_and_only_adds_missing_
     assert_eq!(result.characters.len(), 3);
     let potato = result.characters.iter().find(|c| c.id == "potato").unwrap();
     assert_eq!(potato.custom_name.as_deref(), Some("감자 동생"));
-    assert_eq!(potato.growth_stage, 3);
+    assert_eq!(potato.growth_stage, 4);
     assert_eq!(potato.affection, 25);
     assert_eq!(result.characters.iter().find(|c| c.is_main).unwrap().id, "orange");
     assert!(result.events.iter().all(|e| e.character_id != "potato" || e.kind != "unlock"));
-    assert!(result.events.iter().any(|e| e.character_id == "potato" && e.kind == "grow" && e.stage == 3));
+    assert!(result.events.iter().any(|e| e.character_id == "potato" && e.kind == "grow" && e.stage == 4));
 }
 
 #[test]
@@ -150,7 +150,7 @@ fn starters_still_grow_only_from_their_own_gps_photos() {
     let mut conn = database();
     for id in 0..10 { photo(&conn, id, Some("KR-42")); }
     let result = reconcile(&mut conn).unwrap();
-    assert_eq!(result.characters.iter().find(|c| c.id == "potato").unwrap().growth_stage, 2);
+    assert_eq!(result.characters.iter().find(|c| c.id == "potato").unwrap().growth_stage, 3);
     assert_eq!(result.characters.iter().find(|c| c.id == "sweet-potato").unwrap().growth_stage, 1);
     assert_eq!(result.events.len(), 1);
     assert_eq!(result.events[0].kind, "grow");
@@ -170,7 +170,7 @@ fn sweet_potato_waits_for_potato_completion_then_counts_only_new_photos() {
     assert!(waiting.events.is_empty());
     for id in 100..160 { photo(&conn, id, Some("KR-42")); }
     let ready = reconcile(&mut conn).unwrap();
-    assert_eq!(ready.characters.iter().find(|c| c.id == "potato").unwrap().growth_stage, 4);
+    assert_eq!(ready.characters.iter().find(|c| c.id == "potato").unwrap().growth_stage, 6);
     let sweet = ready.characters.iter().find(|c| c.id == "sweet-potato").unwrap();
     assert_eq!(sweet.growth_stage, 1);
     assert_eq!(sweet.growth_photo_count, 0);
@@ -179,7 +179,7 @@ fn sweet_potato_waits_for_potato_completion_then_counts_only_new_photos() {
     for id in 200..210 { photo(&conn, id, Some("KR-46")); }
     let grown = reconcile(&mut conn).unwrap();
     let sweet = grown.characters.iter().find(|c| c.id == "sweet-potato").unwrap();
-    assert_eq!(sweet.growth_stage, 2);
+    assert_eq!(sweet.growth_stage, 3);
     assert_eq!(sweet.growth_photo_count, 10);
     assert_eq!(sweet.region_photo_count, 60);
     assert_eq!(grown.events.iter().filter(|e| e.character_id == "sweet-potato").count(), 1);
@@ -198,17 +198,63 @@ fn growth_upgrade_preserves_existing_sweet_potato_progress_and_resumes_without_a
     set_main(&mut conn, "sweet-potato").unwrap();
     let waiting = reconcile(&mut conn).unwrap();
     let sweet = waiting.characters.iter().find(|c| c.id == "sweet-potato").unwrap();
-    assert_eq!(sweet.growth_stage, 3);
+    assert_eq!(sweet.growth_stage, 4);
     assert_eq!(sweet.custom_name.as_deref(), Some("든든한 형"));
     assert_eq!(sweet.affection, 22);
     assert!(sweet.is_main);
-    conn.execute("UPDATE owned_character SET growth_stage=4 WHERE character_id='potato'", []).unwrap();
+    conn.execute("UPDATE owned_character SET growth_stage=6 WHERE character_id='potato'", []).unwrap();
     let resumed = reconcile(&mut conn).unwrap();
     let sweet = resumed.characters.iter().find(|c| c.id == "sweet-potato").unwrap();
-    assert_eq!(sweet.growth_stage, 3);
+    assert_eq!(sweet.growth_stage, 4);
     assert_eq!(sweet.growth_photo_count, 30);
     assert!(resumed.events.is_empty());
     for id in 100..130 { photo(&conn, id, Some("KR-46")); }
     let completed = reconcile(&mut conn).unwrap();
-    assert_eq!(completed.characters.iter().find(|c| c.id == "sweet-potato").unwrap().growth_stage, 4);
+    assert_eq!(completed.characters.iter().find(|c| c.id == "sweet-potato").unwrap().growth_stage, 6);
+}
+
+#[test]
+fn discovering_and_syncing_do_not_raise_affection_and_only_the_home_companion_can_interact() {
+    let mut conn = database();
+    for id in 0..60 { photo(&conn, id, Some("KR-49")); }
+    for _ in 0..3 {
+        let result = reconcile(&mut conn).unwrap();
+        assert!(result.characters.iter().all(|c| c.affection == 0));
+    }
+    assert!(interact(&mut conn, "orange").is_err());
+    set_main(&mut conn, "orange").unwrap();
+    interact(&mut conn, "orange").unwrap();
+    interact(&mut conn, "orange").unwrap();
+    let result = reconcile(&mut conn).unwrap();
+    assert_eq!(result.characters.iter().find(|c| c.id == "orange").unwrap().affection, 1);
+    assert!(result.characters.iter().filter(|c| c.id != "orange").all(|c| c.affection == 0));
+}
+
+#[test]
+fn version_nine_upgrade_preserves_completed_appearance_pending_events_and_foreign_keys() {
+    let mut conn = database();
+    conn.execute_batch("UPDATE owned_character SET growth_stage=4,custom_name='동생',affection=19 WHERE character_id='potato';
+        UPDATE owned_character SET growth_stage=3 WHERE character_id='sweet-potato';
+        INSERT INTO character_event(character_id,kind,stage) VALUES('potato','grow',4);
+        INSERT INTO character_photo_credit VALUES('hash:old-photo','potato');
+        INSERT INTO character_growth_start VALUES('sweet-potato',123,30);
+        PRAGMA user_version=9;").unwrap();
+    set_main(&mut conn, "sweet-potato").unwrap();
+    crate::database::initialize(&mut conn).unwrap();
+    crate::database::initialize(&mut conn).unwrap();
+    let result = snapshot(&conn).unwrap();
+    let potato = result.characters.iter().find(|c| c.id == "potato").unwrap();
+    assert_eq!(potato.growth_stage, 6);
+    assert_eq!(potato.custom_name.as_deref(), Some("동생"));
+    assert_eq!(potato.affection, 19);
+    let sweet = result.characters.iter().find(|c| c.id == "sweet-potato").unwrap();
+    assert_eq!(sweet.growth_stage, 4);
+    assert_eq!(sweet.growth_photo_count, 30);
+    assert!(sweet.is_main);
+    assert_eq!(result.events[0].stage, 6);
+    assert_eq!(conn.query_row("SELECT COUNT(*) FROM character_photo_credit", [], |r| r.get::<_,i64>(0)).unwrap(), 1);
+    assert_eq!(conn.query_row("SELECT last_media_id FROM character_growth_start", [], |r| r.get::<_,i64>(0)).unwrap(), 123);
+    assert!(!conn.prepare("PRAGMA foreign_key_check").unwrap().exists([]).unwrap());
+    conn.execute("DELETE FROM owned_character WHERE character_id='sweet-potato'", []).unwrap();
+    assert_eq!(conn.query_row("SELECT COUNT(*) FROM character_growth_start", [], |r| r.get::<_,i64>(0)).unwrap(), 0);
 }

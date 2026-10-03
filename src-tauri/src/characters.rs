@@ -5,7 +5,10 @@ use std::sync::OnceLock;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct GrowthConditions { pub stage1: i64, pub stage2: i64, pub stage3: i64, pub stage4: i64 }
+pub struct GrowthConditions { pub stage1: i64, pub stage2: i64, pub stage3: i64, pub stage4: i64, pub stage5: i64, pub stage6: i64 }
+impl GrowthConditions {
+    fn thresholds(&self) -> [i64; 6] { [self.stage1,self.stage2,self.stage3,self.stage4,self.stage5,self.stage6] }
+}
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GrowthPrerequisite { pub character_id: String, pub stage: i64 }
@@ -26,7 +29,7 @@ pub fn definitions() -> &'static [Definition] {
 }
 
 pub fn stage_for(count: i64, conditions: &GrowthConditions) -> i64 {
-    [conditions.stage1, conditions.stage2, conditions.stage3, conditions.stage4]
+    conditions.thresholds()
         .iter().filter(|&&threshold| count >= threshold).count() as i64
 }
 
@@ -119,10 +122,7 @@ pub fn reconcile(conn: &mut Connection) -> Result<Snapshot, String> {
             if !ready { continue; }
             // Preserve earlier progress on upgrade, while fresh companions start
             // at zero and do not instantly mature from previously collected photos.
-            let retained = match previous.unwrap_or(1) {
-                4 => def.growth_conditions.stage4, 3 => def.growth_conditions.stage3,
-                2 => def.growth_conditions.stage2, _ => 0,
-            };
+            let retained = def.growth_conditions.thresholds()[(previous.unwrap_or(1).clamp(1,6)-1) as usize];
             // An import boundary remains valid even if older photos are deleted.
             tx.execute("INSERT OR IGNORE INTO character_growth_start(character_id,last_media_id,retained_photo_count)
                 SELECT ?1,COALESCE(MAX(id),0),?2 FROM media",
@@ -138,12 +138,10 @@ pub fn reconcile(conn: &mut Connection) -> Result<Snapshot, String> {
             tx.execute("INSERT INTO owned_character(character_id,growth_stage,is_main)
                 VALUES(?1,?2,NOT EXISTS(SELECT 1 FROM owned_character WHERE is_main=1))",params![def.id,stage]).map_err(|e| e.to_string())?;
         }
-        let credits = tx.execute("INSERT OR IGNORE INTO character_photo_credit(photo_key,character_id)
-            SELECT CASE WHEN content_hash IS NOT NULL THEN 'hash:' || content_hash ELSE 'path:' || file_path END,?1
-            FROM media WHERE file_type='image' AND gps_region_code=?2",params![def.id,def.region_code]).map_err(|e| e.to_string())?;
-        if credits > 0 || previous.is_some_and(|old| stage > old) {
-            tx.execute("UPDATE owned_character SET growth_stage=MAX(growth_stage,?1),affection=affection+?2,
-                updated_at=CURRENT_TIMESTAMP WHERE character_id=?3",params![stage,credits as i64,def.id]).map_err(|e| e.to_string())?;
+        // Photo discoveries grow the plant. Affection belongs only to Home.
+        if previous.is_some_and(|old| stage > old) {
+            tx.execute("UPDATE owned_character SET growth_stage=?1,
+                updated_at=CURRENT_TIMESTAMP WHERE character_id=?2",params![stage,def.id]).map_err(|e| e.to_string())?;
         }
         if previous.is_none() || previous.is_some_and(|old| stage > old) {
             tx.execute("INSERT INTO character_event(character_id,kind,stage) VALUES(?1,?2,?3)",
@@ -180,6 +178,8 @@ pub fn set_main(conn: &mut Connection, id: &str) -> Result<Snapshot, String> {
 pub fn interact(conn: &mut Connection, id: &str) -> Result<Snapshot, String> {
     let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate).map_err(|e| e.to_string())?;
     require_owned(&tx,id)?;
+    let main: bool = tx.query_row("SELECT is_main FROM owned_character WHERE character_id=?1", [id], |r| r.get(0)).map_err(|e| e.to_string())?;
+    if !main { return Err("홈에서 함께하는 새싹에게 말을 걸어 주세요.".into()); }
     tx.execute("UPDATE owned_character SET affection=affection+1,last_click_day=date('now','localtime'),updated_at=CURRENT_TIMESTAMP
         WHERE character_id=?1 AND (last_click_day IS NULL OR last_click_day!=date('now','localtime'))",[id]).map_err(|e| e.to_string())?;
     let result=snapshot(&tx)?; tx.commit().map_err(|e| e.to_string())?; Ok(result)

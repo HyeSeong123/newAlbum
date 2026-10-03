@@ -1,6 +1,6 @@
 {
   "name": "local-album-manager",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "private": true,
   "type": "module",
   "scripts": {
@@ -28,6 +28,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "@vladmandic/face-api": "^1.7.15",
     "lucide-react": "^0.468.0",
+    "motion": "^14.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "typescript": "^5.7.2",

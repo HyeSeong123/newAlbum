@@ -1,22 +1,38 @@
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { CharacterDefinition } from "./models";
-import { PotatoGrowthVisual } from "./PotatoGrowthVisual";
 
 export type Expression = "idle" | "happy" | "sad" | "grow";
-export function CharacterVisual({ definition, stage, expression = "idle", className = "" }: {
-  definition: CharacterDefinition; stage: number; expression?: Expression; className?: string;
+const reactions: Record<string, [number, number]> = {
+  "soft-bounce": [10, 2], "slow-sway": [3, 4], "quiet-nod": [2, 1], "playful-wiggle": [14, 8],
+  "fan-flutter": [4, 6], "petal-nod": [5, 2], "shy-peek": [3, 3], "gentle-drift": [3, 1],
+  "berry-bob": [12, 5], "neat-tilt": [2, 3], "rose-turn": [6, 7], "curious-tilt": [4, 8],
+  "shell-tuck": [2, 4], "grain-wave": [8, 6], "cozy-roll": [2, 5], "peach-sway": [7, 4],
+};
+export function CharacterVisual({ definition, stage, expression = "idle", className = "", reactionKey = 0 }: {
+  definition: CharacterDefinition; stage: number; expression?: Expression; className?: string; reactionKey?: number;
 }) {
-  const animation = definition.personality?.signatureAnimation || "default";
-  const visualClass = `characterVisual characterVisual--${definition.type} characterMotion--${animation} ${className}`.trim();
-  const currentStage = Math.max(1, Math.min(4, stage));
-  if (definition.originalAssetPath && currentStage < 4) {
-    return <PotatoGrowthVisual src={definition.originalAssetPath} stage={currentStage} expression={expression} className={visualClass} />;
-  }
-  return <img
-    className={visualClass}
-    data-character={definition.type}
-    data-stage={Math.max(1, Math.min(4, stage))}
-    data-expression={expression}
-    src={definition.originalAssetPath || `${definition.assetPath}/stage${Math.max(1, Math.min(4, stage))}-${expression}.svg`}
-    alt="" draggable={false} width={220} height={220}
-  />;
+  const reduced = useReducedMotion();
+  const currentStage = Math.max(1, Math.min(definition.maxStage, stage));
+  const signature = definition.personality?.signatureAnimation || "soft-bounce";
+  const [hop, tilt] = reactions[signature] || [4, 2];
+  const excited = expression === "happy" || expression === "grow";
+  const original = definition.originalAssetPath && currentStage === definition.maxStage;
+  const src = original ? definition.originalAssetPath : `${definition.assetPath}/stage${currentStage}-${expression}.svg`;
+  return <span className={`characterVisual characterVisual--${definition.type} characterMotion--${signature} ${className}`.trim()}
+    data-character={definition.type} data-stage={currentStage} data-expression={expression} data-reduced-motion={Boolean(reduced)}>
+    <motion.span key={`${currentStage}:${excited}:${excited ? reactionKey : 0}`} className="characterBody"
+      initial={false} style={{ transformOrigin: "50% 84%" }}
+      animate={reduced ? { y:0,rotate:0,scale:1 } : excited
+        ? { y:[0,-hop,2,-hop*.35,0],rotate:[0,-tilt,tilt,-tilt*.3,0],scale:[1,1.025,.97,1.01,1] }
+        : { y:[0,-2,0],rotate:[0,.6,0],scale:[1,1.012,1] }}
+      transition={reduced ? { duration:0 } : excited ? { duration:.9,ease:"easeInOut" } : { duration:4.6,repeat:Infinity,ease:"easeInOut" }}>
+      <img className="characterIllustration" src={src} data-stage={currentStage} data-expression={expression}
+        alt="" draggable={false} width={220} height={220} />
+    </motion.span>
+    <AnimatePresence>{excited && !reduced && <motion.span key={reactionKey} className="characterHeart" aria-hidden="true"
+      initial={{ opacity:0,y:6,scale:.6,rotate:-12 }} animate={{ opacity:[0,1,1,0],y:-28,scale:1,rotate:10 }}
+      exit={{ opacity:0 }} transition={{ duration:1.1 }}>
+      <svg viewBox="0 0 24 24"><path d="M12 21C7 17 2 13 2 8a5 5 0 0 1 10-2 5 5 0 0 1 10 2c0 5-5 9-10 13Z" fill="currentColor" /></svg>
+    </motion.span>}</AnimatePresence>
+  </span>;
 }

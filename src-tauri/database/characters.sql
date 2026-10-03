@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS owned_character (
   character_id TEXT PRIMARY KEY,
   custom_name TEXT,
-  growth_stage INTEGER NOT NULL CHECK(growth_stage BETWEEN 1 AND 4),
+  growth_stage INTEGER NOT NULL CHECK(growth_stage BETWEEN 1 AND 6),
   affection INTEGER NOT NULL DEFAULT 0 CHECK(affection >= 0),
   is_main INTEGER NOT NULL DEFAULT 0 CHECK(is_main IN (0,1)),
   last_click_day TEXT,
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS character_event (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   character_id TEXT NOT NULL REFERENCES owned_character(character_id) ON DELETE CASCADE,
   kind TEXT NOT NULL CHECK(kind IN ('unlock','grow')),
-  stage INTEGER NOT NULL CHECK(stage BETWEEN 1 AND 4),
+  stage INTEGER NOT NULL CHECK(stage BETWEEN 1 AND 6),
   UNIQUE(character_id,kind,stage)
 );
 CREATE INDEX IF NOT EXISTS idx_media_character_region ON media(gps_region_code) WHERE file_type='image' AND gps_region_code IS NOT NULL;

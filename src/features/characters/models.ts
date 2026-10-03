@@ -20,7 +20,7 @@ export type CharacterDefinition = {
   companionRole?: "younger-brother" | "older-brother";
   growthPrerequisite?: { characterId: string; stage: number };
   growthStages: { name: string; description: string }[];
-  growthConditions: { stage1: number; stage2: number; stage3: number; stage4: number };
+  growthConditions: { stage1: number; stage2: number; stage3: number; stage4: number; stage5: number; stage6: number };
   personality?: CharacterPersonality;
   dialogues: { all: string[]; stages: Record<string, string[]>; situations?: Partial<Record<DialogueContext, string[]>> };
 };
@@ -33,23 +33,12 @@ export type OwnedCharacter = {
 };
 export type CharacterEvent = { id: number; characterId: string; kind: "unlock" | "grow"; stage: number };
 export type CharacterSnapshot = { characters: OwnedCharacter[]; events: CharacterEvent[] };
-export const stageNames = ["", "새싹", "성장 1", "성장 2", "완성"];
+export const stageNames = ["", "씨앗", "발아", "새잎", "자람", "꽃과 열매", "완성"];
 export function growthStage(definition: CharacterDefinition, stage: number) {
   return definition.growthStages[Math.max(1, Math.min(definition.maxStage, stage)) - 1];
 }
 export function growthStageName(definition: CharacterDefinition, stage: number) {
   return growthStage(definition, stage).name;
-}
-export function growthProgress(definition: CharacterDefinition, owned: OwnedCharacter, characters: OwnedCharacter[]) {
-  const required = definition.growthPrerequisite;
-  const ready = !required || owned.growthStage >= definition.maxStage ||
-    characters.some(c => c.id === required.characterId && c.growthStage >= required.stage);
-  const count = owned.growthPhotoCount ?? (required ? 0 : owned.regionPhotoCount);
-  const nextStage = Math.min(definition.maxStage, owned.growthStage + 1);
-  const target = Object.values(definition.growthConditions)[nextStage - 1];
-  const prerequisiteName = characterDefinitions.find(c => c.id === required?.characterId)?.defaultName;
-  return { ready, count, target, remaining: Math.max(0, target - count), nextStage, prerequisiteName,
-    complete: owned.growthStage >= definition.maxStage };
 }
 export function companionLabel(definition: CharacterDefinition) {
   return definition.companionRole === "younger-brother" ? "처음부터 함께 · 동생" :
