@@ -1,0 +1,20 @@
+.mediaImportScreen { position:fixed; inset:0; z-index:400; display:grid; place-items:center; padding:24px; overflow:auto; background:rgba(247,245,238,.96); backdrop-filter:blur(12px); font-family:"SUIT","Noto Serif KR","Malgun Gothic",system-ui,sans-serif; }
+.mediaImportCard { width:min(100%,480px); padding:42px 36px 30px; border:1px solid #e3ddce; border-radius:24px; background:#fffefb; box-shadow:0 20px 70px #71644615; text-align:center; outline:none; color:#433e32; }
+.mediaImportIllustration { position:relative; display:grid; place-items:center; width:100px; height:100px; margin:0 auto 24px; color:#788757; }
+.mediaImportSpinner { position:absolute; inset:7px; stroke-width:1; color:#b7c298; animation:mediaImportSpin 2s linear infinite; }
+.mediaImportEyebrow { font-size:12px; font-weight:700; letter-spacing:.1em; color:#7a875a; }
+.mediaImportCard h2 { margin:12px 0; font-family:inherit; font-size:clamp(21px,4vw,26px); line-height:1.4; }
+.mediaImportPhase { margin:0 0 28px; font-size:15px; color:#716d62; }
+.mediaImportTrack { height:8px; border-radius:10px; overflow:hidden; background:#eceee5; }
+.mediaImportTrack span { display:block; height:100%; background:#859561; border-radius:inherit; transition:width .15s linear; }
+.mediaImportTrack span.indeterminate { width:35%; animation:mediaImportSweep 1.8s ease-in-out infinite; }
+.mediaImportCounts { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:12px; font-size:14px; font-variant-numeric:tabular-nums; }
+.mediaImportSmallSpinner { animation:mediaImportSpin 1s linear infinite; }
+.mediaImportBytes { margin:10px 0 0; font-size:13px; color:#787369; font-variant-numeric:tabular-nums; }
+.mediaImportFile { margin:12px 0 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; color:#878274; }
+.mediaImportHint { margin:28px 0 12px; font-size:13px; line-height:1.8; color:#878274; }
+.mediaImportElapsed { font-size:12px; color:#9b9588; font-variant-numeric:tabular-nums; }
+@keyframes mediaImportSpin { to { transform:rotate(360deg); } }
+@keyframes mediaImportSweep { from { transform:translateX(-110%); } to { transform:translateX(400%); } }
+@media (max-width:480px) { .mediaImportScreen { padding:20px; } .mediaImportCard { padding:32px 24px 24px; } }
+@media (prefers-reduced-motion:reduce) { .mediaImportSpinner,.mediaImportSmallSpinner { animation:none; } .mediaImportTrack span.indeterminate { animation:none; width:100%; opacity:.55; } .mediaImportTrack span { transition:none; } }

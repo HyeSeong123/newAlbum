@@ -5,7 +5,7 @@ use std::{
     fs,
     io::{self, Read},
     path::{Path, PathBuf},
-    time::UNIX_EPOCH,
+    time::{Instant, UNIX_EPOCH},
 };
 use tauri::{AppHandle, Manager};
 use walkdir::WalkDir;
@@ -243,14 +243,58 @@ fn insert_album(
     Ok(album_id)
 }
 
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ImportProgressDto {
+    phase: &'static str,
+    processed: usize,
+    total: usize,
+    file_name: Option<String>,
+    bytes_processed: u64,
+    total_bytes: u64,
+}
+
 #[tauri::command]
-async fn register_paths(app: AppHandle, paths: Vec<String>) -> Result<Vec<MediaItemDto>, String> {
+async fn register_paths(app: AppHandle, paths: Vec<String>, progress: Option<tauri::ipc::Channel<ImportProgressDto>>) -> Result<Vec<MediaItemDto>, String> {
     tauri::async_runtime::spawn_blocking(move || {
+        let send = |value: ImportProgressDto| {
+            if let Some(channel) = progress.as_ref() {
+                // Closing a window must not interrupt an otherwise valid import.
+                let _ = channel.send(value);
+            }
+        };
+        let mut status = ImportProgressDto { phase: "scanning", processed: 0, total: 0,
+            file_name: None, bytes_processed: 0, total_bytes: 0 };
+        send(status.clone());
         let mut conn = open_database(&app)?;
-        let files = collect_supported_files(paths)?;
-        for file in files {
-            register_file(&conn, &file)?;
+        let mut scan_update = Instant::now();
+        let files = collect_supported_files_with_progress(paths, |found| {
+            if scan_update.elapsed().as_millis() >= 100 {
+                status.total = found;
+                send(status.clone());
+                scan_update = Instant::now();
+            }
+        })?;
+        status.phase = "registering";
+        status.total = files.len();
+        status.total_bytes = files.iter().filter_map(|path| fs::metadata(path).ok()).map(|metadata| metadata.len()).sum();
+        send(status.clone());
+        for (index, file) in files.iter().enumerate() {
+            status.file_name = file.file_name().map(|name| name.to_string_lossy().into_owned());
+            send(status.clone());
+            let bytes_before = status.bytes_processed;
+            let file_size = fs::metadata(file).map(|metadata| metadata.len()).unwrap_or(0);
+            register_file_with_progress(&conn, file, |read| {
+                status.bytes_processed = bytes_before + read.min(file_size);
+                send(status.clone());
+            })?;
+            status.processed = index + 1;
+            status.bytes_processed = bytes_before + file_size;
+            send(status.clone());
         }
+        status.phase = "finishing";
+        status.file_name = None;
+        send(status);
         characters::reconcile(&mut conn)?;
         read_media(&conn)
     }).await.map_err(|error| error.to_string())?
@@ -521,6 +565,30 @@ mod album_concept_tests {
     use super::*;
 
     #[test]
+    fn import_hash_progress_keeps_existing_deduplication_hash_and_reports_bytes() {
+        let directory = std::env::temp_dir().join(format!("album-import-progress-{}", std::process::id()));
+        fs::create_dir_all(&directory).unwrap();
+        let path = directory.join("hello.mp4");
+        fs::write(&path, b"hello").unwrap();
+        let mut updates = Vec::new();
+        let hash = file_hash_with_progress(&path, |bytes| updates.push(bytes)).unwrap();
+        assert_eq!(hash, "a430d84680aabd0b");
+        assert_eq!(file_hash(&path).unwrap(), hash);
+        assert_eq!(updates.first(), Some(&0));
+        assert_eq!(updates.last(), Some(&5));
+        assert!(updates.windows(2).all(|pair| pair[0] <= pair[1]));
+        fs::write(&path, []).unwrap();
+        assert_eq!(file_hash_with_progress(&path, |_| {}).unwrap(), "cbf29ce484222325");
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn importing_a_missing_selection_reports_an_error_instead_of_empty_success() {
+        let missing = std::env::temp_dir().join(format!("album-missing-selection-{}.jpg", std::process::id()));
+        assert!(collect_supported_files(vec![missing.to_string_lossy().into_owned()]).unwrap_err().contains("찾을 수 없습니다"));
+    }
+
+    #[test]
     fn legacy_media_titles_migrate_without_changing_existing_metadata() {
         let conn = Connection::open_in_memory().unwrap();
         conn.execute_batch("CREATE TABLE media (id INTEGER PRIMARY KEY, file_path TEXT, comment TEXT, rating INTEGER, favorite INTEGER);
@@ -742,6 +810,10 @@ fn normalize_existing_file_paths(conn: &Connection) -> Result<(), String> {
 }
 
 fn collect_supported_files(paths: Vec<String>) -> Result<Vec<PathBuf>, String> {
+    collect_supported_files_with_progress(paths, |_| {})
+}
+
+fn collect_supported_files_with_progress(paths: Vec<String>, mut on_found: impl FnMut(usize)) -> Result<Vec<PathBuf>, String> {
     let mut files = Vec::new();
 
     for raw_path in paths {
@@ -749,6 +821,7 @@ fn collect_supported_files(paths: Vec<String>) -> Result<Vec<PathBuf>, String> {
         if path.is_file() {
             if is_supported_file(&path) {
                 files.push(path);
+                on_found(files.len());
             }
             continue;
         }
@@ -758,8 +831,11 @@ fn collect_supported_files(paths: Vec<String>) -> Result<Vec<PathBuf>, String> {
                 let candidate = entry.path();
                 if candidate.is_file() && is_supported_file(candidate) {
                     files.push(candidate.to_path_buf());
+                    on_found(files.len());
                 }
             }
+        } else {
+            return Err(format!("선택한 파일이나 폴더를 찾을 수 없습니다: {}", path.display()));
         }
     }
 
@@ -767,6 +843,10 @@ fn collect_supported_files(paths: Vec<String>) -> Result<Vec<PathBuf>, String> {
 }
 
 fn register_file(conn: &Connection, path: &Path) -> Result<(), String> {
+    register_file_with_progress(conn, path, |_| {})
+}
+
+fn register_file_with_progress(conn: &Connection, path: &Path, on_read: impl FnMut(u64)) -> Result<(), String> {
     let metadata =
         fs::metadata(path).map_err(|error| format!("파일 정보를 읽을 수 없습니다: {error}"))?;
     let file_path =
@@ -784,7 +864,7 @@ fn register_file(conn: &Connection, path: &Path) -> Result<(), String> {
         Some(location::analyze_path(path, file_type))
     };
     let content_hash =
-        file_hash(path).map_err(|error| format!("파일 해시를 계산할 수 없습니다: {error}"))?;
+        file_hash_with_progress(path, on_read).map_err(|error| format!("파일 해시를 계산할 수 없습니다: {error}"))?;
 
     conn.execute(
         "INSERT INTO media (file_path, content_hash, file_type, taken_at, size_bytes, width, height, rating, comment, favorite, metadata_status, latitude, longitude, region_code, region_name, district, location_status, gps_region_code)
@@ -951,9 +1031,16 @@ fn normalize_file_path_string(path: &str) -> String {
 }
 
 fn file_hash(path: &Path) -> io::Result<String> {
+    file_hash_with_progress(path, |_| {})
+}
+
+fn file_hash_with_progress(path: &Path, mut on_read: impl FnMut(u64)) -> io::Result<String> {
     let mut file = fs::File::open(path)?;
     let mut hash = 0xcbf29ce484222325_u64;
     let mut buffer = [0_u8; 64 * 1024];
+    let mut processed = 0_u64;
+    let mut last_update = Instant::now();
+    on_read(0);
 
     loop {
         let read = file.read(&mut buffer)?;
@@ -965,7 +1052,13 @@ fn file_hash(path: &Path) -> io::Result<String> {
             hash ^= u64::from(*byte);
             hash = hash.wrapping_mul(0x100000001b3);
         }
+        processed += read as u64;
+        if last_update.elapsed().as_millis() >= 100 {
+            on_read(processed);
+            last_update = Instant::now();
+        }
     }
+    on_read(processed);
 
     Ok(format!("{hash:016x}"))
 }

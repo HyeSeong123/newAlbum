@@ -8,6 +8,87 @@ async function openImport(page: Page) {
   return page.getByRole('dialog', { name: '사진·영상 가져오기', exact: true });
 }
 
+test('large native import shows full-screen byte progress through region and album writes', async ({ page }) => {
+  await page.addInitScript(() => {
+    const callbacks = new Map<number, (message: unknown) => void>();
+    let nextCallback = 0;
+    const media = [{ id:1, file_path:'C:/big-memory.mp4', file_type:'video', taken_at:'2026-09-25', size_bytes:1024 ** 3, rating:0, comment:'', favorite:false, metadata_status:'ready' }];
+    let registered: unknown[] = [];
+    let albums: unknown[] = [];
+    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
+      convertFileSrc: () => '/favicon.svg',
+      transformCallback: (callback: (message: unknown) => void) => { const id = ++nextCallback; callbacks.set(id, callback); return id; },
+      unregisterCallback: (id: number) => callbacks.delete(id),
+      invoke: async (command: string, args: any) => {
+        if (command === 'list_media') return registered;
+        if (command === 'list_albums') return albums;
+        if (command === 'plugin:dialog|open') return 'C:/memories';
+        if (command === 'register_paths') {
+          const callback = callbacks.get(args.progress.id)!;
+          callback({ index:0, message:{ phase:'registering', processed:0, total:1, fileName:'big-memory.mp4', bytesProcessed:0, totalBytes:1024 ** 3 } });
+          (window as any).advanceImport = () => callback({ index:1, message:{ phase:'registering', processed:0, total:1, fileName:'big-memory.mp4', bytesProcessed:512 * 1024 ** 2, totalBytes:1024 ** 3 } });
+          await new Promise<void>(resolve => { (window as any).finishImport = resolve; });
+          registered = media;
+          callback({ index:2, end:true });
+          return registered;
+        }
+        if (command === 'assign_media_region') await new Promise<void>(resolve => { (window as any).finishRegion = resolve; });
+        if (command === 'create_album_from_media') {
+          await new Promise<void>(resolve => { (window as any).finishAlbum = resolve; });
+          albums = [{ id:1, title:args.title, cover_color:args.coverColor, description:'', created_at:'2026-09-25', items:media }];
+          return 1;
+        }
+        return [];
+      },
+    } });
+  });
+  await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name:'사진 기록', exact:true }).click();
+  const dialog = await openImport(page);
+  await dialog.getByRole('radio', { name:/폴더 가져오기/ }).check();
+  await dialog.getByLabel('가져올 폴더의 시도').selectOption('KR-50');
+  await dialog.getByRole('checkbox', { name:/가져오면서 앨범 만들기/ }).check();
+  await dialog.getByLabel('앨범 제목').fill('큰 영상의 추억');
+  await dialog.getByRole('button', { name:'폴더 선택' }).click();
+  const loading = page.getByRole('dialog', { name:'사진·영상 가져오는 중' });
+  await expect(loading).toBeVisible();
+  await expect(loading).toContainText('big-memory.mp4');
+  await expect(loading.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
+  expect(await page.locator('main.app').evaluate(element => (element as HTMLElement).inert)).toBe(true);
+  const bounds = await page.locator('.mediaImportScreen').boundingBox();
+  expect(bounds).toMatchObject({ x:0, y:0, width:page.viewportSize()!.width, height:page.viewportSize()!.height });
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Tab');
+  await expect(loading).toBeFocused();
+  await page.evaluate(() => (window as any).advanceImport());
+  await expect(loading.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '50');
+  await expect(loading).toContainText('읽은 용량 512.0 MB / 1.00 GB');
+  await page.screenshot({ path:`test-results/media-import-loading-${test.info().project.name}.png` });
+  await page.evaluate(() => (window as any).finishImport());
+  await expect(loading).toContainText('촬영 지역을 저장하고 있어요');
+  await expect(loading.getByRole('progressbar')).not.toHaveAttribute('aria-valuenow');
+  await page.evaluate(() => (window as any).finishRegion());
+  await expect(loading).toContainText('앨범에 추억을 담고 있어요');
+  await page.evaluate(() => (window as any).finishAlbum());
+  await expect(loading).toBeHidden();
+  expect(await page.locator('main.app').evaluate(element => (element as HTMLElement).inert)).toBe(false);
+  await expect(page.locator('.savedAlbumTitle')).toHaveText('큰 영상의 추억');
+});
+
+test('browser input clearing keeps all selected photos and videos during asynchronous import', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('.navList').getByRole('button', { name:'사진 기록', exact:true }).click();
+  await page.locator('input[type="file"][accept]').first().setInputFiles([
+    { name:'photo.jpg', mimeType:'image/jpeg', buffer:Buffer.from('preview photo') },
+    { name:'movie.mp4', mimeType:'video/mp4', buffer:Buffer.from('preview video') },
+    { name:'notes.txt', mimeType:'text/plain', buffer:Buffer.from('unsupported') },
+  ]);
+  await expect(page.getByRole('dialog', { name:'사진·영상 가져오는 중' })).toBeHidden();
+  await expect(page.locator('.mediaTile')).toHaveCount(2);
+  await expect(page.getByRole('button', { name:'photo.jpg 상세보기' })).toBeVisible();
+  await expect(page.getByRole('button', { name:'movie.mp4 상세보기' })).toBeVisible();
+});
+
 for (const kind of ['files', 'folder'] as const) {
   test(`native ${kind} import creates an album with only new media and the chosen color`, async ({ page }) => {
     await page.addInitScript(() => {

@@ -1,5 +1,6 @@
 import { open, save } from "@tauri-apps/plugin-dialog";
-import { invoke } from "@tauri-apps/api/core";
+import { Channel, invoke } from "@tauri-apps/api/core";
+import type { MediaImportProgress } from "../features/media/importProgress";
 import type { AlbumContent, MediaItem, MediaType, SavedAlbum } from "../types/media";
 import { albumContents } from "../features/albums/albumContent";
 
@@ -137,21 +138,21 @@ export async function deleteAlbums(ids: string[]): Promise<void> {
   await invoke("delete_albums", { ids: ids.map(Number) });
 }
 
-export async function chooseAndRegisterFiles(): Promise<MediaItem[]> {
+export async function chooseAndRegisterFiles(onProgress?: (progress: MediaImportProgress) => void): Promise<MediaItem[]> {
   const selected = await open({
     multiple: true,
     directory: false,
     filters: [{ name: "미디어", extensions: ["jpg", "jpeg", "png", "webp", "heic", "mp4", "mov", "avi", "mkv", "webm", "mp3", "wav", "flac", "m4a"] }],
   });
-  return registerSelection(selected);
+  return registerSelection(selected, onProgress);
 }
 
-export async function chooseAndRegisterFolder(): Promise<MediaItem[]> {
+export async function chooseAndRegisterFolder(onProgress?: (progress: MediaImportProgress) => void): Promise<MediaItem[]> {
   const selected = await open({
     multiple: false,
     directory: true,
   });
-  return registerSelection(selected);
+  return registerSelection(selected, onProgress);
 }
 
 export interface MediaExportResult {
@@ -217,10 +218,13 @@ export async function incrementMediaView(id: string): Promise<number> {
   return invoke<number>("increment_media_view", { id: Number(id) });
 }
 
-async function registerSelection(selection: string | string[] | null): Promise<MediaItem[]> {
+async function registerSelection(selection: string | string[] | null, onProgress?: (progress: MediaImportProgress) => void): Promise<MediaItem[]> {
   if (!selection) return [];
   const paths = Array.isArray(selection) ? selection : [selection];
-  const rows = await invoke<BackendMediaItem[]>("register_paths", { paths });
+  onProgress?.({ phase: "scanning", processed: 0, total: 0 });
+  const internals = (window as unknown as { __TAURI_INTERNALS__?: { transformCallback?: unknown } }).__TAURI_INTERNALS__;
+  const progress = onProgress && typeof internals?.transformCallback === "function" ? new Channel<MediaImportProgress>(onProgress) : undefined;
+  const rows = await invoke<BackendMediaItem[]>("register_paths", { paths, ...(progress ? { progress } : {}) });
   return rows.map(toMediaItem);
 }
 

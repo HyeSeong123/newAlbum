@@ -19,7 +19,7 @@ async function modelUrl(path, imports = {}) {
 }
 
 const { createKeyedTaskQueue } = await import(await modelUrl('services/keyedTaskQueue.ts'));
-const { browserImportItems, retainMediaEdits } = await import(await modelUrl('features/media/browserImport.ts', {
+const { browserImportItems, browserImportItemsAsync, retainMediaEdits } = await import(await modelUrl('features/media/browserImport.ts', {
   './mediaService': await modelUrl('features/media/mediaService.ts'),
 }));
 const { makeAlbumSpreads } = await import(await modelUrl('features/media/journalModel.ts'));
@@ -74,6 +74,34 @@ test('failed browser batches release the object URLs already allocated', () => {
     return 'blob:first';
   }, url => revoked.push(url)), /allocation failed/);
   assert.deepEqual(revoked, ['blob:first']);
+});
+
+test('large browser imports yield, deduplicate across batches, and report completed files', async () => {
+  const files = Array.from({ length: 260 }, (_, i) => file(`photo-${i}.jpg`));
+  files.push(files[0], file('notes.txt'));
+  const progress = [];
+  let created = 0;
+  const promise = browserImportItemsAsync(files, [], value => progress.push(value), () => `blob:${++created}`);
+  assert.equal(created, 0, 'the loading screen gets a chance to paint before URL allocation');
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(created, 0);
+  const imported = await promise;
+  assert.equal(imported.length, 260);
+  assert.equal(created, 260);
+  assert.deepEqual(progress.map(value => value.processed), [0, 128, 256, 262]);
+  assert.equal(progress.at(-1).total, 262);
+});
+
+test('a failed later browser batch revokes URLs from every completed batch', async () => {
+  const files = Array.from({ length: 140 }, (_, i) => file(`photo-${i}.jpg`));
+  const revoked = [];
+  let calls = 0;
+  await assert.rejects(browserImportItemsAsync(files, [], () => {}, () => {
+    if (++calls === 135) throw new Error('allocation failed');
+    return `blob:${calls}`;
+  }, url => revoked.push(url)), /allocation failed/);
+  assert.equal(revoked.length, 134);
+  assert.equal(new Set(revoked).size, 134);
 });
 
 test('refreshing imported media retains edits but accepts fresh metadata and new records', () => {

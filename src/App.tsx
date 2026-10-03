@@ -14,6 +14,7 @@ import { PeopleWorkspace } from "./features/people/PeopleWorkspace";
 import { SavedAlbumsView } from "./features/albums/AlbumsView";
 import { AlbumCreateModal } from "./features/albums/AlbumCreateModal";
 import { MediaImportModal } from "./features/media/MediaImportModal";
+import { MediaImportProgress } from "./features/media/MediaImportProgress";
 import { FirstRunGuide, FIRST_RUN_KEY } from "./components/FirstRunGuide";
 import { ChangeEvent, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { LoaderCircle, Plus, Search, Settings, X } from "lucide-react";
@@ -310,6 +311,7 @@ export function App() {
             onNext={() => viewer.move(1)}
           />
         )}
+        {library.importProgress && <MediaImportProgress progress={library.importProgress} />}
       </section>
     </main>
   );
