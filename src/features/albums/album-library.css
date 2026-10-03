@@ -4,7 +4,7 @@
 .savedAlbums .savedAlbumCard { display: block; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .savedAlbums .savedAlbumCard:has(.actionMenuPanel) { z-index: 5; }
 .savedAlbums .savedAlbumCover { width: 100%; }
-.savedAlbums .savedAlbumOpen { width: 100%; border: 0; border-radius: 3px; overflow: hidden; }
+.savedAlbums .savedAlbumOpen { width: 100%; border: 0; border-radius: 3px; }
 .savedAlbums .savedAlbumOpen { overflow: visible; background: transparent; }
 .savedAlbums .savedAlbumOpen .frontAlbum { width: 100%; aspect-ratio: 3 / 4; }
 .savedAlbums .frontAlbumTitle { width: 84%; font-size: clamp(15px, 1.3vw, 20px); }

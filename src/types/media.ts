@@ -16,12 +16,13 @@ export interface MediaItem {
   comment: string;
   favorite: boolean;
   viewCount: number;
-  tags: string[];
   thumbnail: string;
   /** Session-only URL for files selected in the browser preview. */
   previewUrl?: string;
   metadataStatus: "ready" | "queued" | "missing-date";
   locationSource?: "gps" | "manual";
+  /** Original EXIF region; manual map edits never populate or overwrite this. */
+  gpsRegionCode?: string;
   latitude?: number;
   longitude?: number;
   regionCode?: string;

@@ -24,6 +24,7 @@ interface BackendMediaItem {
   view_count?: number;
   metadata_status: "ready" | "queued" | "missing-date";
   location_source?: "gps" | "manual";
+  gps_region_code?: string | null;
   latitude?: number | null;
   longitude?: number | null;
   region_code?: string | null;
@@ -91,11 +92,6 @@ export async function analyzeLocationBatch(): Promise<LocationOverview> {
 export async function queueFailedLocations(): Promise<LocationOverview> {
   return invoke<LocationOverview>("queue_failed_locations");
 }
-export async function loadRegionMedia(regionCode: string, offset: number, limit = 48): Promise<MediaItem[]> {
-  const rows = await invoke<BackendMediaItem[]>("list_region_media", { regionCode, offset, limit });
-  return rows.map(toMediaItem);
-}
-
 export interface RegionFilters { fileType: "all" | "image" | "video"; year: string; oldest: boolean; district: string }
 export interface RegionPage { items: MediaItem[]; total: number; years: string[] }
 export async function loadRegionPage(regionCode: string, offset: number, filters: RegionFilters): Promise<RegionPage> {
@@ -245,7 +241,6 @@ function toMediaItem(row: BackendMediaItem): MediaItem {
     comment: row.comment,
     favorite: row.favorite,
     viewCount: row.view_count ?? 0,
-    tags: [],
     thumbnail: placeholders[row.file_type],
     metadataStatus: row.metadata_status,
     latitude: row.latitude ?? undefined,
@@ -255,6 +250,7 @@ function toMediaItem(row: BackendMediaItem): MediaItem {
     district: row.district ?? undefined, country: row.country ?? undefined, city: row.city ?? undefined,
     locationStatus: row.location_status ?? "queued",
     locationSource: row.location_source ?? "gps",
+    gpsRegionCode: row.gps_region_code ?? undefined,
   };
 }
 

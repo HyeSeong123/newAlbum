@@ -1,0 +1,108 @@
+.characterBook { max-width: 1160px; margin: 0 auto; }
+.characterBookIntro { margin-bottom: 22px; }
+.characterBookIntro h2 { margin: 0 0 8px; color: #514536; font-size: 22px; }
+.characterBookIntro p { margin: 0 0 10px; color: var(--muted); line-height: 1.7; }
+.characterBookIntro span, .characterRegion { color: #677654; font-size: 13px; }
+.characterGrid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 16px; }
+.characterCard { min-width: 0; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.characterCardArt { display: grid; place-items: center; min-height: 154px; background: #f4f2e9; border-radius: 8px; }
+.characterCardArt button { border: 0; background: none; cursor: pointer; }
+.characterVisual { width: min(100%, 160px); height: auto; object-fit: contain; }
+.potatoGrowth { position: relative; display: inline-block; aspect-ratio: 1; vertical-align: middle; }
+.potatoGrowthRoots { position: absolute; inset: 0; width: 100%; height: 100%; }
+.potatoGrowth img { position: absolute; left: 50%; transform: translateX(-50%); object-fit: contain; }
+.homeMascot .potatoGrowth { width: 100%; height: 100%; }
+.homeMascot .potatoGrowth img { animation: none; transition: none; }
+.homeMascot:hover .potatoGrowth img, .homeMascot:active .potatoGrowth img { transform: translateX(-50%); }
+.characterPersonality { display: grid; gap: 3px; }
+.characterPersonality strong { color: #64523f; font-weight: 550; }
+.characterPersonality span { font-size: 12px; }
+.characterGrowth { padding: 12px 0; border-top: 1px solid var(--border); }
+.characterCard .characterGrowthState { margin: 0 0 6px; font-weight: 600; color: #5f7351; font-size: 12px; }
+.characterCard .characterGrowthWaiting { margin: 0 0 8px; color: #8b715b; }
+.characterCard .characterGrowthComplete { margin: 0 0 8px; color: #62784d; }
+.characterGrowthProgress { display: grid; gap: 6px; font-size: 12px; line-height: 1.7; }
+.characterGrowthProgress progress { display: block; width: 100%; height: 5px; accent-color: #81996a; }
+.characterGrowthProgress small { color: var(--muted); font-size: 12px; }
+.characterGrowthJourney { margin-top: 10px; font-size: 12px; }
+.characterGrowthJourney summary { color: #667951; cursor: pointer; }
+.characterGrowthJourney ol { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px; margin: 10px 0 4px; padding: 0; list-style: none; }
+.characterGrowthJourney ol li { display: grid; align-content: start; justify-items: center; padding: 4px 2px; min-width: 0; border-radius: 6px; text-align: center; background: #f5f3ed; }
+.characterGrowthJourney ol li[aria-current] { background: #e8ecdf; outline: 1px solid #a4b294; }
+.characterGrowthJourney ol .characterVisual { width: 100%; aspect-ratio: 1; }
+.characterGrowthJourney ol li > span:not(.characterVisual) { margin-top: 4px; color: #687652; font-size: 12px; }
+.characterGrowthJourney ol strong { font-size: 12px; line-height: 1.5; font-weight: 500; word-break: keep-all; overflow-wrap: anywhere; }
+.characterGrowthDescriptions { padding-left: 16px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.characterGrowthDescriptions li { margin: 5px 0; }
+.characterCard h3 { margin: 8px 0; font-size: 19px; }
+.characterCard p { color: var(--muted); font-size: 13px; line-height: 1.7; }
+.characterCard .characterStats { color: #586548; }
+.characterCardActions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.characterCardActions button, .characterCard form button, .characterModal button { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: #fffefa; color: var(--text); cursor: pointer; }
+.characterMainBadge { color: #607450; font-size: 13px; }
+.characterCard form { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.characterCard form label { flex-basis: 100%; font-size: 13px; }
+.characterCard input { min-width: 90px; flex: 1; padding: 7px; border: 1px solid var(--border); border-radius: 6px; }
+.characterSilhouette { display: grid; place-items: center; width: 140px; height: 140px; border-radius: 48% 48% 44% 44%; background: #d8d9cc; filter: blur(2px); color: white; font-size: 55px; }
+.characterModalBackdrop { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 20px; background: #30291f99; }
+.characterModal { width: min(100%,420px); padding: 22px; text-align: center; border-radius: 18px; background: #fffefa; box-shadow: 0 20px 60px #30291f33; }
+.characterModal .characterVisual { animation: characterArrive .6s ease-out; }
+.characterModal h2 { color: #514536; font-size: 21px; }
+.characterModal p { color: var(--muted); line-height: 1.7; }
+.characterModal > div { display: flex; justify-content: center; gap: 10px; }
+.characterModal .primary { background: #657b55; color: white; }
+.homeCharacterMeta { display: grid; gap: 4px; color: #677654; font-size: 13px; }
+.homeCharacterMeta strong { color: #514536; font-size: 18px; }
+.homeCharacterLink { margin-top: 12px; color: #5b704d; text-decoration: underline; border: 0; background: none; cursor: pointer; }
+@keyframes characterHop { 50% { transform: translateY(-16px) scale(1.08); } }
+@keyframes characterArrive { 0% { transform: scale(.65); opacity: 0; } 70% { transform: scale(1.08); opacity: 1; } }
+@media(max-width: 1000px) { .characterGrid { grid-template-columns: repeat(3,minmax(0,1fr)); } }
+@media(max-width: 760px) { .characterGrid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media(max-width: 520px) { .characterGrid { grid-template-columns: minmax(0,1fr); } }
+@media(prefers-reduced-motion: reduce) { .homeMascot.happy img, .characterModal .characterVisual, .characterCardArt button:hover .characterVisual { animation: none; } }
+
+/* Each core sprout owns a different movement language. Motion is intentionally subtle
+   so the warm journal mood stays stronger than the game-like feedback. */
+.characterCardArt button:hover .characterMotion--soft-bounce,
+.characterMotion--soft-bounce[data-expression="happy"],
+.homeMascot.happy .characterMotion--soft-bounce { animation: characterSoftBounce .72s ease-out; }
+.characterCardArt button:hover .characterMotion--slow-sway,
+.characterMotion--slow-sway[data-expression="happy"],
+.homeMascot.happy .characterMotion--slow-sway { animation: characterSlowSway .9s ease-in-out; }
+.characterCardArt button:hover .characterMotion--quick-hop,
+.characterMotion--quick-hop[data-expression="happy"],
+.homeMascot.happy .characterMotion--quick-hop { animation: characterQuickHop .48s ease-out; }
+.characterCardArt button:hover .characterMotion--playful-wiggle,
+.characterMotion--playful-wiggle[data-expression="happy"],
+.homeMascot.happy .characterMotion--playful-wiggle { animation: characterPlayfulWiggle .58s ease-out; }
+@keyframes characterSoftBounce { 35% { transform: translateY(-7px) scale(1.025,.975); } 68% { transform: translateY(1px) scale(.99,1.01); } }
+@keyframes characterSlowSway { 30% { transform: rotate(-3deg) scaleY(1.025); } 65% { transform: rotate(3deg) scaleY(.99); } }
+@keyframes characterQuickHop { 42% { transform: translateY(-17px) scale(.97,1.04); } 72% { transform: translateY(1px) scale(1.025,.975); } }
+@keyframes characterPlayfulWiggle { 22% { transform: translateX(-5px) rotate(-5deg); } 45% { transform: translateX(5px) rotate(5deg) translateY(-4px); } 68% { transform: translateX(-3px) rotate(-3deg); } }
+.characterMotion--quiet-nod[data-expression="happy"] { animation: characterQuietNod .7s ease; }
+.characterMotion--fan-flutter[data-expression="happy"] { animation: characterFanFlutter .85s ease; }
+.characterMotion--petal-nod[data-expression="happy"] { animation: characterPetalNod .8s ease; }
+.characterMotion--shy-peek[data-expression="happy"] { animation: characterShyPeek .85s ease; }
+.characterMotion--gentle-drift[data-expression="happy"] { animation: characterGentleDrift 1s ease; }
+.characterMotion--berry-bob[data-expression="happy"] { animation: characterBerryBob .7s ease; }
+.characterMotion--neat-tilt[data-expression="happy"] { animation: characterNeatTilt .65s ease; }
+.characterMotion--rose-turn[data-expression="happy"] { animation: characterRoseTurn .85s ease; }
+.characterMotion--curious-tilt[data-expression="happy"] { animation: characterCuriousTilt .8s ease; }
+.characterMotion--shell-tuck[data-expression="happy"] { animation: characterShellTuck .9s ease; }
+.characterMotion--grain-wave[data-expression="happy"] { animation: characterGrainWave .85s ease; }
+.characterMotion--cozy-roll[data-expression="happy"] { animation: characterCozyRoll 1s ease; }
+.characterMotion--peach-sway[data-expression="happy"] { animation: characterPeachSway .8s ease; }
+@keyframes characterQuietNod { 45% { transform: translateY(3px) scaleY(.98); } }
+@keyframes characterFanFlutter { 30% { transform: rotate(-4deg); } 65% { transform: rotate(2deg); } }
+@keyframes characterPetalNod { 45% { transform: translateY(-4px) rotate(2deg); } }
+@keyframes characterShyPeek { 30% { transform: scale(.96) rotate(-2deg); } 75% { transform: translateY(-3px); } }
+@keyframes characterGentleDrift { 50% { transform: translateY(-5px) rotate(-1deg); } }
+@keyframes characterBerryBob { 25%,65% { transform: translateY(-6px); } 45% { transform: translateY(2px); } }
+@keyframes characterNeatTilt { 45% { transform: rotate(3deg); } }
+@keyframes characterRoseTurn { 35% { transform: rotate(-4deg) translateY(-3px); } 70% { transform: rotate(3deg); } }
+@keyframes characterCuriousTilt { 30% { transform: rotate(6deg); } 65% { transform: rotate(-2deg) translateY(-2px); } }
+@keyframes characterShellTuck { 25% { transform: scale(.93) translateY(4px); } 75% { transform: scale(1.02); } }
+@keyframes characterGrainWave { 25% { transform: rotate(-5deg); } 65% { transform: rotate(5deg) translateY(-2px); } }
+@keyframes characterCozyRoll { 45% { transform: rotate(4deg) translateX(3px); } }
+@keyframes characterPeachSway { 35% { transform: rotate(-3deg) scale(1.015); } 65% { transform: rotate(3deg); } }
+@media(prefers-reduced-motion: reduce) { .characterVisual { animation: none !important; } }

@@ -11,5 +11,3 @@ CREATE INDEX IF NOT EXISTS idx_detected_face_media ON detected_face(media_id);
 CREATE INDEX IF NOT EXISTS idx_person_cover_face ON person(cover_face_id);
 CREATE INDEX IF NOT EXISTS idx_pet_media_media ON pet_media(media_id);
 CREATE INDEX IF NOT EXISTS idx_pet_cover_media ON pet(cover_media_id);
-CREATE INDEX IF NOT EXISTS idx_media_tag_tag ON media_tag(tag_id);
-CREATE INDEX IF NOT EXISTS idx_media_person_person ON media_person(person_id);

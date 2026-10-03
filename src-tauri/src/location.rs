@@ -252,7 +252,7 @@ fn resolve_district(latitude: f64, longitude: f64) -> Option<&'static DistrictBo
     })
 }
 
-fn from_coordinates(latitude: f64, longitude: f64) -> LocationResult {
+pub(crate) fn from_coordinates(latitude: f64, longitude: f64) -> LocationResult {
     if !latitude.is_finite()
         || !longitude.is_finite()
         || !(-90.0..=90.0).contains(&latitude)
@@ -318,6 +318,7 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
         ("district", "TEXT"),
         ("country", "TEXT"),
         ("city", "TEXT"),
+        ("gps_region_code", "TEXT"),
     ] {
         let exists: bool = conn
             .query_row(
@@ -344,7 +345,7 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
 
 #[cfg(test)]
 pub fn save(conn: &Connection, id: i64, result: &LocationResult) -> Result<(), String> {
-    conn.execute("UPDATE media SET latitude=?1, longitude=?2, region_code=?3, region_name=?4, district=?5, location_status=?6 WHERE id=?7",
+    conn.execute("UPDATE media SET latitude=?1, longitude=?2, region_code=?3, gps_region_code=?3, region_name=?4, district=?5, location_status=?6 WHERE id=?7",
         params![result.latitude, result.longitude, result.region_code, result.region_name, result.district, result.status, id])
         .map_err(|error| format!("위치 정보 저장 실패: {error}"))?;
     Ok(())
@@ -377,7 +378,7 @@ pub fn analyze_batch(conn: &Connection, batch_size: i64) -> Result<Overview, Str
         let tx = conn.unchecked_transaction().map_err(|error| error.to_string())?;
         {
             let mut update = tx.prepare("UPDATE media SET latitude=?1, longitude=?2, region_code=?3,
-                region_name=?4, district=?5, location_status=?6 WHERE id=?7 AND location_status='queued' AND location_source!='manual'")
+                region_name=?4, district=?5, location_status=?6, gps_region_code=?3 WHERE id=?7 AND location_status='queued' AND location_source!='manual'")
                 .map_err(|error| error.to_string())?;
             for (id, result) in results {
                 // A concurrent import/analysis may already have completed this row.
@@ -588,7 +589,7 @@ mod tests {
         let districts: Vec<Option<String>> = conn.prepare("SELECT district FROM media ORDER BY id").unwrap()
             .query_map([], |row| row.get(0)).unwrap().collect::<Result<_, _>>().unwrap();
         assert_eq!(districts, vec![Some("담양군".into()), Some("담양군".into()), None]);
-        assert_eq!(conn.query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0)).unwrap(), 5);
+        assert_eq!(conn.query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0)).unwrap(), crate::database::VERSION);
     }
 
     #[test]

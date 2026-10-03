@@ -55,11 +55,5 @@ export function selectMediaCollection(items: MediaItem[], options: CollectionOpt
 export function searchMedia(items: MediaItem[], query: string): MediaItem[] {
   if (!query) return items;
   const needle = query.toLowerCase();
-  return items.filter((item) => `${item.title ?? ""} ${item.fileName} ${item.comment} ${item.tags.join(" ")}`.toLowerCase().includes(needle));
-}
-
-export function anniversaryMemories(items: MediaItem[], today: string): MediaItem[] {
-  const year = today.slice(0, 4);
-  const monthDay = today.slice(5);
-  return items.filter((item) => item.takenAt?.slice(5) === monthDay && item.takenAt.slice(0, 4) !== year);
+  return items.filter((item) => `${item.title ?? ""} ${item.fileName} ${item.comment}`.toLowerCase().includes(needle));
 }

@@ -229,6 +229,7 @@ export function useMediaLibrary() {
       publish({ items: current.current.items.map(item => {
         const location = records.get(item.id);
         return location ? { ...item, latitude: location.latitude, longitude: location.longitude,
+          gpsRegionCode: location.gpsRegionCode,
           regionCode: location.regionCode, regionName: location.regionName,
           district: location.district, country: location.country, city: location.city,
           locationSource: location.locationSource, locationStatus: location.locationStatus } : item;

@@ -10,7 +10,7 @@ fn temp_db() -> std::path::PathBuf {
 fn snapshot(conn: &Connection) -> Vec<Vec<Vec<Value>>> {
     ["media", "album", "album_item", "album_page", "tag", "media_tag", "person",
         "media_person", "detected_face", "face_scan", "excluded_face", "pet", "pet_media"]
-        .iter().map(|table| {
+        .iter().filter(|table| table_exists(conn, table).unwrap()).map(|table| {
             let mut statement = conn.prepare(&format!("SELECT * FROM {table} ORDER BY rowid")).unwrap();
             let count = statement.column_count();
             statement.query_map([], |row| (0..count).map(|column| row.get(column)).collect())
@@ -23,6 +23,7 @@ fn existing_library_survives_migration_reopen_and_read_only_fast_path() {
     let path = temp_db();
     let mut conn = Connection::open(&path).unwrap();
     conn.execute_batch(include_str!("../database/schema.sql")).unwrap();
+    conn.execute_batch(include_str!("test_fixtures/legacy-unused-tables.sql")).unwrap();
     conn.execute_batch("PRAGMA foreign_keys=ON;
         INSERT INTO media(id,file_path,file_type,size_bytes,title,rating,comment,favorite,view_count,
             latitude,longitude,region_code,region_name,location_status)
@@ -43,8 +44,9 @@ fn existing_library_survives_migration_reopen_and_read_only_fast_path() {
         INSERT INTO pet_media VALUES(1,1);").unwrap();
     let before = snapshot(&conn);
     let mut expected = before.clone();
-    // The district backfill is the sole change to an existing GPS photo.
+    // Both caches are derived from the existing original GPS, without editing user data.
     expected[0][0][21] = Value::Text("제주시".into());
+    *expected[0][0].last_mut().unwrap() = Value::Text("KR-49".into());
     initialize(&mut conn).unwrap();
     assert_eq!(snapshot(&conn), expected);
     assert_eq!(version(&conn).unwrap(), VERSION);
@@ -149,6 +151,67 @@ fn list_and_reverse_relationship_queries_use_indexes() {
         assert!(plan.contains(index), "{plan}");
         assert!(!plan.contains("TEMP B-TREE"), "{plan}");
     }
+}
+
+#[test]
+fn fresh_and_empty_legacy_databases_omit_unused_tables_and_indexes() {
+    let mut fresh = Connection::open_in_memory().unwrap();
+    initialize(&mut fresh).unwrap();
+    let mut legacy = Connection::open_in_memory().unwrap();
+    legacy.execute_batch(include_str!("../database/schema.sql")).unwrap();
+    legacy.execute_batch(include_str!("test_fixtures/legacy-unused-tables.sql")).unwrap();
+    legacy.execute_batch("CREATE INDEX idx_media_tag_tag ON media_tag(tag_id);
+        CREATE INDEX idx_media_person_person ON media_person(person_id);
+        PRAGMA user_version=5;").unwrap();
+    initialize(&mut legacy).unwrap();
+    for conn in [&fresh, &legacy] {
+        for name in ["tag", "media_tag", "media_person", "idx_media_tag_tag", "idx_media_person_person"] {
+            let exists: bool = conn.query_row("SELECT EXISTS(SELECT 1 FROM sqlite_schema WHERE name=?1)",
+                [name], |row| row.get(0)).unwrap();
+            assert!(!exists, "{name} should not exist in an empty library");
+        }
+        assert_eq!(version(conn).unwrap(), VERSION);
+    }
+    legacy.pragma_update(None, "query_only", true).unwrap();
+    initialize(&mut legacy).unwrap();
+}
+
+#[test]
+fn populated_legacy_tag_group_is_retained_while_empty_person_links_are_removed() {
+    let mut conn = Connection::open_in_memory().unwrap();
+    conn.execute_batch(include_str!("../database/schema.sql")).unwrap();
+    conn.execute_batch(include_str!("test_fixtures/legacy-unused-tables.sql")).unwrap();
+    conn.execute_batch("INSERT INTO tag(id,name) VALUES(1,'보존할 태그'); PRAGMA user_version=5;").unwrap();
+    initialize(&mut conn).unwrap();
+    assert_eq!(conn.query_row("SELECT name FROM tag", [], |row| row.get::<_, String>(0)).unwrap(), "보존할 태그");
+    assert!(table_exists(&conn, "media_tag").unwrap());
+    assert!(!table_exists(&conn, "media_person").unwrap());
+    let index: bool = conn.query_row("SELECT EXISTS(SELECT 1 FROM sqlite_schema WHERE type='index' AND name='idx_media_tag_tag')",
+        [], |row| row.get(0)).unwrap();
+    assert!(index);
+}
+
+#[test]
+fn failed_unused_table_cleanup_rolls_back_drops_and_version_before_retry() {
+    let mut conn = Connection::open_in_memory().unwrap();
+    conn.execute_batch(include_str!("../database/schema.sql")).unwrap();
+    conn.execute_batch(include_str!("test_fixtures/legacy-unused-tables.sql")).unwrap();
+    conn.execute_batch("INSERT INTO media(id,file_path,file_type,size_bytes) VALUES(1,'original.jpg','image',1);
+        INSERT INTO person(id,name) VALUES(1,'가족'); INSERT INTO media_person VALUES(1,1,0.9,1);
+        CREATE TABLE idx_media_person_person(id INTEGER); PRAGMA user_version=5;").unwrap();
+    let before = snapshot(&conn);
+    assert!(initialize(&mut conn).is_err());
+    assert_eq!(snapshot(&conn), before);
+    assert_eq!(version(&conn).unwrap(), 5);
+    assert!(table_exists(&conn, "tag").unwrap());
+    conn.execute("DROP TABLE idx_media_person_person", []).unwrap();
+    initialize(&mut conn).unwrap();
+    assert!(!table_exists(&conn, "tag").unwrap());
+    assert!(table_exists(&conn, "media_person").unwrap());
+    assert_eq!(conn.query_row("SELECT confirmed FROM media_person", [], |row| row.get::<_, i64>(0)).unwrap(), 1);
+    delete_media(&mut conn, &[1]).unwrap();
+    assert_eq!(conn.query_row("SELECT COUNT(*) FROM media_person", [], |row| row.get::<_, i64>(0)).unwrap(), 0);
+    assert!(conn.prepare("PRAGMA foreign_key_check").unwrap().query([]).unwrap().next().unwrap().is_none());
 }
 
 #[test]

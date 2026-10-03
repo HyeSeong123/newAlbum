@@ -143,7 +143,6 @@ button:disabled {
 .favorite:hover,
 .mediaTile:hover,
 .calendarGrid button:hover,
-.memoryGrid button:hover,
 .monthControls button:hover {
   background: rgba(179, 107, 56, .12);
 }
@@ -211,7 +210,6 @@ h2 {
 }
 
 .toolbar,
-.panelActions,
 .importActions,
 .selectionActions,
 .pagination div {
@@ -221,7 +219,6 @@ h2 {
   flex-wrap: wrap;
 }
 
-.panelActions,
 .importActions,
 .selectionActions,
 .pagination div {
@@ -403,7 +400,7 @@ h2 {
   box-shadow: 0 0 0 4px rgba(179, 107, 56, .18), var(--shadow);
 }
 
-.thumb, .calendarGrid i, .memoryGrid button {
+.thumb, .calendarGrid i {
   position: relative;
   overflow: hidden;
 }
@@ -866,13 +863,9 @@ textarea {
   background: var(--secondary);
 }
 
-.calendarPanel, .albumReader, .savedAlbums, .memories, .settingsPanel {
+.calendarPanel, .savedAlbums, .memories, .settingsPanel {
   min-height: 520px;
 }
-
-
-
-
 
 .yearlyCheck { grid-column: 1 / -1; }
 .annualDateFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; min-width: 0; }
@@ -902,25 +895,6 @@ textarea {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 14px;
-}
-
-.memoryGrid button {
-  min-height: 150px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
-  padding: 16px;
-  color: #FFFFFF;
-  text-align: left;
-  display: flex;
-  align-items: flex-end;
-  background: var(--primary);
-  box-shadow: var(--shadow);
-}
-
-.memoryGrid span, .memoryGrid strong {
-  position: relative;
-  z-index: 2;
-  text-shadow: 0 2px 14px rgba(51, 46, 43, .32);
 }
 
 .calendarGrid {
@@ -1092,21 +1066,6 @@ textarea {
 .calendarGrid small strong {
   color: var(--primary);
   font-size: 12px;
-}
-
-.dayMemo {
-  padding: 18px 20px 0;
-}
-
-.dayMemo label {
-  color: var(--secondary);
-  font-size: 13px;
-  font-weight: 850;
-}
-
-.dayMemo textarea {
-  min-height: 82px;
-  margin-bottom: 0;
 }
 
 .eventModal {
@@ -1355,30 +1314,6 @@ textarea {
   background: var(--surface-soft);
 }
 
-.memoryGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 16px;
-}
-
-.memoryGrid button {
-  min-height: 240px;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-
-.memoryGrid div {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-}
-
-.memoryGrid strong {
-  font-family: "SUIT", "Segoe UI", system-ui, sans-serif;
-  font-size: 28px;
-  font-weight: 800;
-}
-
 .settingsPanel {
   display: grid;
   align-content: start;
@@ -1476,12 +1411,10 @@ textarea {
 
   .toolbar,
   .importActions,
-  .panelActions,
   .selectionActions {
     width: 100%;
   }
 
-  .panelActions button,
   .importActions button,
   .selectionActions button {
     flex: 1 1 130px;
@@ -1566,9 +1499,6 @@ textarea {
     padding: 18px;
     overflow: visible;
   }
-
-
-
 
   .calendarGrid {
     gap: 5px;
@@ -1672,5 +1602,3 @@ textarea {
 .app.largeLayout .calendarPanel .calendarGrid .dayNumber { font-size:18px; }
 .app.largeLayout .calendarPanel .calendarGrid .dayEvents small,.app.largeLayout .calendarPanel .calendarGrid b { font-size:14px; }
 .layoutToggle { margin-left:auto; white-space:nowrap; padding:10px 14px; border:1px solid #bbb; border-radius:8px; }
-.importAlbumDialog { display:grid; gap:20px; width:min(490px,100%); padding:30px; border-radius:16px; background:#fffdf8; }
-.importAlbumDialog label { display:grid; gap:10px; }.importAlbumDialog input { padding:12px; font:inherit; }.importAlbumDialog div { display:flex; justify-content:flex-end; gap:12px; }

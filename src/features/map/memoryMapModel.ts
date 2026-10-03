@@ -51,17 +51,6 @@ export function browserLocationOverview(items: MediaItem[], names: Record<string
   return { total, analyzed: total, pending: 0, failed: 0, unclassified, regions };
 }
 
-export function groupByMonth<T extends { takenAt: string | null }>(items: T[]): Array<{ month: string; items: T[] }> {
-  const groups = new Map<string, T[]>();
-  for (const item of items) {
-    const month = item.takenAt?.slice(0, 7) ?? "날짜 없음";
-    const entries = groups.get(month);
-    if (entries) entries.push(item);
-    else groups.set(month, [item]);
-  }
-  return [...groups].map(([month, entries]) => ({ month, items: entries }));
-}
-
 export function groupByDistrict<T extends { district?: string; country?: string; city?: string }>(items: T[], regionCode: string): Array<{ place: string; items: T[] }> {
   const groups = new Map<string, T[]>();
   for (const item of items) {
