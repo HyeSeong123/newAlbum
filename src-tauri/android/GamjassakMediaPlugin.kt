@@ -71,6 +71,12 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
             override fun handleOnBackPressed() {
                 webView.evaluateJavascript("window.__gamjassakBack ? window.__gamjassakBack() : false") { handled ->
                     if (handled != "true") {
+                        // Keep the root task alive, matching modern Android
+                        // launcher back behavior instead of closing Tauri's window.
+                        if (component.isTaskRoot) {
+                            component.moveTaskToBack(true)
+                            return@evaluateJavascript
+                        }
                         isEnabled = false
                         component.onBackPressedDispatcher.onBackPressed()
                         isEnabled = true

@@ -46,11 +46,8 @@ async function disconnect() {
   if (device) await device.close();
   device = undefined;
 }
-async function startApp(recreateActivity = false) {
-  // CLEAR_TASK | NEW_TASK recreates the activity; a launcher back press on
-  // Android 12+ can merely background the task and keep its activity alive.
-  const flags = recreateActivity ? ['-f', '0x10008000'] : [];
-  const started = await adb('shell', 'am', 'start', '-W', '-n', `${appId}/.MainActivity`, ...flags);
+async function startApp() {
+  const started = await adb('shell', 'am', 'start', '-W', '-n', `${appId}/.MainActivity`);
   await writeFile(join(output, 'activity-start.txt'), started);
   assert.ok(!/Error:|Status:\s*(?:timeout|error)/i.test(started), started);
 }
@@ -151,27 +148,29 @@ try {
   await expect(page.getByRole('heading', { name:'홈', exact:true })).toBeVisible();
   await page.screenshot({ path:join(output, 'home.png') });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-  const processBeforeRecreation = await adb('shell', 'pidof', appId);
-  const activityBeforeRecreation = await activityRecord('before-recreation');
+  const processBeforeResume = await adb('shell', 'pidof', appId);
+  const activityBeforeResume = await activityRecord('before-resume');
   await disconnect();
-  // Finish only the activity, keeping the process alive. Old Tauri releases
-  // retained an unregistered result launcher when the activity was recreated.
+  // Home back backgrounds the root task. Returning must keep the native
+  // activity alive and its document picker and back handler usable.
   await adb('shell', 'input', 'keyevent', '4');
-  await startApp(true);
+  await nativeNode(/package="com.google.android.apps.nexuslauncher"/);
+  await startApp();
   connection = await connect(); context = connection.context; page = connection.page;
-  assert.equal(await adb('shell', 'pidof', appId), processBeforeRecreation, 'Activity recreation must keep the app process alive');
-  // Tauri can reattach its existing WebView. Verify the native activity changed
-  // instead of requiring JavaScript state to be discarded.
-  const activityAfterRecreation = await activityRecord('after-recreation');
-  assert.notEqual(activityAfterRecreation, activityBeforeRecreation, 'The native activity must actually be recreated');
-  await writeFile(join(output, 'activity-recreation.json'), JSON.stringify({
-    process:processBeforeRecreation, before:activityBeforeRecreation, after:activityAfterRecreation
+  assert.equal(await adb('shell', 'pidof', appId), processBeforeResume, 'Returning from the launcher must keep the app process alive');
+  const activityAfterResume = await activityRecord('after-resume');
+  assert.equal(activityAfterResume, activityBeforeResume, 'Home back must preserve the native root activity');
+  await writeFile(join(output, 'warm-resume.json'), JSON.stringify({
+    process:processBeforeResume, before:activityBeforeResume, after:activityAfterResume
   }, null, 2));
   await page.evaluate(() => {
     window.lifecyclePicker = { completed:false };
     window.__TAURI_INTERNALS__.invoke('choose_android_directory').then(result => {
       window.lifecyclePicker = { completed:true, cancelled:result === null };
-    }).catch(error => { window.lifecyclePicker = { completed:true, error:String(error) }; });
+    }).catch(error => {
+      console.error(String(error));
+      window.lifecyclePicker = { completed:true, error:String(error) };
+    });
   });
   await nativeNode(/package="com.google.android.documentsui"/);
   for (let attempts = 0; attempts < 8; attempts++) {
@@ -189,8 +188,10 @@ try {
   connection = await connect(); context = connection.context; page = connection.page;
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_media'))).length, 2);
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_albums')))[0].title, '안드로이드에서 담은 추억');
-  console.log('Android installation, real folder picker/content URI copying, byte progress, activity recreation, SQLite persistence and back navigation: OK');
+  console.log('Android installation, real folder picker/content URI copying, byte progress, warm resume, SQLite persistence and back navigation: OK');
 } catch (error) {
+  if (context) await context.pages()[0]?.evaluate(() => ({ picker:window.lifecyclePicker }))
+    .then(state => writeFile(join(output, 'webview-state.json'), JSON.stringify(state, null, 2))).catch(() => {});
   await writeFile(join(output, 'logcat.txt'), await adb('logcat', '-d', '-t', '5000')).catch(() => {});
   await writeFile(join(output, 'crashes.txt'), await adb('logcat', '-b', 'crash', '-d')).catch(() => {});
   await adb('shell', 'screencap', '-p', '/sdcard/failure.png').catch(() => {});
