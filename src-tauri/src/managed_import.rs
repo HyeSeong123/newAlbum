@@ -12,7 +12,9 @@ pub fn safe_file_name(name: &str, mime: &str) -> String {
         name.truncate(boundary);
         if let Some(extension) = extension { name.push('.'); name.push_str(&extension); }
     }
-    if Path::new(&name).extension().is_none() {
+    let has_extension = Path::new(&name).extension().and_then(|value| value.to_str())
+        .is_some_and(|value| !value.is_empty() && value.len() <= 16 && value.bytes().all(|byte| byte.is_ascii_alphanumeric()));
+    if !has_extension {
         let extension = match mime {
             "image/jpeg" => "jpg", "image/png" => "png", "image/webp" => "webp",
             "image/heic" | "image/heif" => "heic", "video/mp4" => "mp4",
