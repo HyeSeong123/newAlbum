@@ -1,0 +1,96 @@
+name: Android preview APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/warm-journal-v2, master]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'src-tauri/**'
+      - 'scripts/prepare-android.mjs'
+      - 'scripts/smoke-android.mjs'
+      - 'package*.json'
+      - 'vite.config.ts'
+      - 'index.html'
+      - '.github/workflows/android-preview.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      RUSTUP_TOOLCHAIN: stable
+      NDK_VERSION: '28.2.13676358'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Prepare SDK and Rust targets
+        run: |
+          sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;36.0.0' "ndk;$NDK_VERSION"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+          rustup target add aarch64-linux-android x86_64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Install and validate frontend
+        run: |
+          npm ci
+          npm run version:check
+          npm run test:unit
+          node --test tests/android-prepare.test.mjs
+      - name: Initialize Android project and approved icon
+        run: |
+          npx tauri android init --ci --skip-targets-install
+          npm run android:prepare
+          npx tauri icon public/brand/gamjassak-symbol.png
+      - name: Build installable preview APKs
+        run: npx tauri android build --debug --apk --ci --features custom-protocol --target aarch64 x86_64 --split-per-abi
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Check installed app on Android
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          arch: x86_64
+          target: google_apis
+          profile: pixel_7
+          disable-animations: true
+          script: node scripts/smoke-android.mjs
+      - name: Prepare APK downloads
+        run: |
+          mkdir -p release-output/android
+          find src-tauri/gen/android/app/build/outputs/apk -name '*.apk' -exec cp {} release-output/android/ \;
+          cp test-results/android-smoke/*.png release-output/android/
+          cd release-output/android
+          sha256sum *.apk > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Gamjassak-Android-preview-${{ github.sha }}
+          path: release-output/android/
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: Android-failure-diagnostics
+          path: test-results/android-smoke/
+          if-no-files-found: ignore

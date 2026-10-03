@@ -40,3 +40,12 @@ release-output/
 # Python test cache
 __pycache__/
 *.pyc
+
+# Android generated project, local SDK settings and signing credentials
+src-tauri/gen/android/
+*.apk
+*.aab
+*.jks
+*.keystore
+keystore.properties
+local.properties

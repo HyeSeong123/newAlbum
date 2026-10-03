@@ -15,6 +15,7 @@ import { SavedAlbumsView } from "./features/albums/AlbumsView";
 import { AlbumCreateModal } from "./features/albums/AlbumCreateModal";
 import { MediaImportModal } from "./features/media/MediaImportModal";
 import { MediaImportProgress } from "./features/media/MediaImportProgress";
+import { useAndroidBack } from "./hooks/useAndroidBack";
 import { FirstRunGuide, FIRST_RUN_KEY } from "./components/FirstRunGuide";
 import { ChangeEvent, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { LoaderCircle, Plus, Search, Settings, X } from "lucide-react";
@@ -147,6 +148,8 @@ export function App() {
     selection.reset(); setSelectionNotice("");
     if (view === "Home" || view === "Characters") void characters.refresh();
   }
+
+  useAndroidBack(activeView === "Home", Boolean(importing), () => navigate("Home"));
 
   function startAlbum() {
     navigate("Library"); setSelectedMonth("all"); selection.reset(true);

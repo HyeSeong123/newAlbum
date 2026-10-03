@@ -6,6 +6,7 @@ import type { MediaImportOptions } from "./useMediaLibrary";
 import { REGION_NAMES } from "../map/regions";
 import { KOREAN_DISTRICTS } from "../map/koreanDistricts";
 import "./media-import.css";
+import { isAndroidRuntime } from "../../services/tauriMediaService";
 
 export function MediaImportModal({ onClose, onImport }: { onClose: () => void; onImport: (options: MediaImportOptions) => Promise<void> }) {
   const [kind, setKind] = useState<"files" | "folder">("files");
@@ -33,6 +34,7 @@ export function MediaImportModal({ onClose, onImport }: { onClose: () => void; o
     <section className="mediaImportDialog" role="dialog" aria-modal="true" aria-labelledby="mediaImportTitle">
       <header className="mediaImportHeader"><div><h2 id="mediaImportTitle">사진·영상 가져오기</h2><p>간직하고 싶은 순간을 기록에 담아보세요.</p></div><button type="button" className="closeButton" aria-label="닫기" disabled={busy} onClick={onClose}><X size={18} /></button></header>
       <form onSubmit={event => void submit(event)}>
+        {isAndroidRuntime() && <p className="mediaImportStorageHint">선택한 사진과 영상은 앱에 복사해 보관해요. 원본은 그대로 두며, 선택한 파일 크기만큼 휴대폰 저장 공간을 사용해요.</p>}
         <fieldset disabled={busy} className="mediaImportFields">
           <fieldset className="mediaImportMethods"><legend>가져오기 방식</legend>
             {([{ value: "files", label: "사진·영상 가져오기", description: "원하는 파일을 골라 담아요", Icon: Images }, { value: "folder", label: "폴더 가져오기", description: "폴더 안의 기록을 함께 담아요", Icon: FolderOpen }] as const).map(method => <label key={method.value} className={kind === method.value ? "selected" : ""}>

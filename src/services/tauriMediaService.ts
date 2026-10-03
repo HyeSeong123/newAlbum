@@ -55,6 +55,10 @@ export function isTauriRuntime(): boolean {
   return "__TAURI_INTERNALS__" in window;
 }
 
+export function isAndroidRuntime(): boolean {
+  return isTauriRuntime() && /Android/i.test(navigator.userAgent);
+}
+
 export async function loadRegisteredMedia(): Promise<MediaItem[]> {
   const rows = await invoke<BackendMediaItem[]>("list_media");
   return rows.map(toMediaItem);

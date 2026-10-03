@@ -8,6 +8,7 @@ import "./mediaImportProgress.css";
 const phaseLabels: Record<Progress["phase"], string> = {
   selecting: "파일 선택을 기다리고 있어요",
   scanning: "사진과 영상을 찾고 있어요",
+  copying: "선택한 사진과 영상을 안전하게 보관하고 있어요",
   registering: "사진과 영상을 가져오고 있어요",
   region: "촬영 지역을 저장하고 있어요",
   album: "앨범에 추억을 담고 있어요",
@@ -37,7 +38,7 @@ export function MediaImportProgress({ progress }: { progress: Progress }) {
       if (previousFocus?.isConnected) previousFocus.focus();
     };
   }, []);
-  const determinate = progress.phase === "registering" && progress.total > 0;
+  const determinate = (progress.phase === "registering" || progress.phase === "copying") && progress.total > 0;
   const ratio = progress.totalBytes ? (progress.bytesProcessed ?? 0) / progress.totalBytes : progress.processed / Math.max(1, progress.total);
   const percentage = Math.max(0, Math.min(100, Math.floor(ratio * 100)));
   return createPortal(

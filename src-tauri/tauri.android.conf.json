@@ -1,0 +1,13 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "app": {
+    "windows": [{ "label": "main", "title": "감자싹", "create": true }],
+    "security": {
+      "assetProtocol": { "enable": true, "scope": ["$APPDATA/**", "$APPCACHE/**"] }
+    }
+  },
+  "bundle": {
+    "targets": "all",
+    "android": { "minSdkVersion": 28 }
+  }
+}

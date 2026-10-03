@@ -1,0 +1,7 @@
+html[data-platform="android"] .app { min-height:100dvh; }
+html[data-platform="android"] .sidebar { padding-top:max(16px,env(safe-area-inset-top)); }
+html[data-platform="android"] .workspace { padding-bottom:max(24px,env(safe-area-inset-bottom)); }
+html[data-platform="android"] .modalBackdrop,
+html[data-platform="android"] .mediaImportScreen { padding-top:max(20px,env(safe-area-inset-top)); padding-bottom:max(20px,env(safe-area-inset-bottom)); padding-left:max(16px,env(safe-area-inset-left)); padding-right:max(16px,env(safe-area-inset-right)); }
+html[data-platform="android"] button { touch-action:manipulation; }
+.mediaImportStorageHint { margin:0 0 16px; color:var(--muted); font-size:13px; line-height:1.7; }

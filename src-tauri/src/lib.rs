@@ -22,7 +22,11 @@ mod album_content;
 mod database;
 mod diary;
 mod characters;
-#[cfg(any(feature = "custom-protocol", test))]
+#[cfg(any(target_os = "android", test))]
+mod managed_import;
+#[cfg(target_os = "android")]
+mod android_media;
+#[cfg(any(all(desktop, feature = "custom-protocol"), test))]
 mod localhost;
 
 #[derive(Serialize)]
@@ -76,6 +80,8 @@ async fn save_diary(app: AppHandle, entry: diary::Entry) -> Result<(), String> {
 #[tauri::command]
 async fn import_diary_photos(app: AppHandle, paths: Vec<String>) -> Result<Vec<diary::Photo>, String> {
     tauri::async_runtime::spawn_blocking(move || {
+        #[cfg(target_os = "android")]
+        let paths = android_media::prepare_paths(&app, paths, |_| {})?;
         let mut conn = open_database(&app)?;
         let photos = diary::import_photos(&mut conn, paths)?;
         characters::reconcile(&mut conn)?;
@@ -267,6 +273,8 @@ async fn register_paths(app: AppHandle, webview: tauri::Webview, paths: Vec<Stri
         let mut status = ImportProgressDto { phase: "scanning", processed: 0, total: 0,
             file_name: None, bytes_processed: 0, total_bytes: 0 };
         send(status.clone());
+        #[cfg(target_os = "android")]
+        let paths = android_media::prepare_paths(&app, paths, &send)?;
         let mut conn = open_database(&app)?;
         let mut scan_update = Instant::now();
         let files = collect_supported_files_with_progress(paths, |found| {
@@ -365,16 +373,24 @@ fn delete_albums(app: AppHandle, ids: Vec<i64>) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn export_media_group(
+async fn export_media_group(
+    app: AppHandle,
     source_paths: Vec<String>,
     destination_root: String,
     folder_name: String,
 ) -> Result<ExportResultDto, String> {
-    let sources = source_paths
+    tauri::async_runtime::spawn_blocking(move || {
+      let sources = source_paths
         .into_iter()
         .map(PathBuf::from)
         .collect::<Vec<_>>();
-    export_media_files(&sources, Path::new(&destination_root), &folder_name)
+      #[cfg(target_os = "android")]
+      if destination_root.starts_with("content://") {
+          return android_media::export_files(&app, &sources, &destination_root, &folder_name);
+      }
+      let _ = app;
+      export_media_files(&sources, Path::new(&destination_root), &folder_name)
+    }).await.map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
@@ -385,6 +401,10 @@ async fn download_media(app: AppHandle, id: i64, destination: String) -> Result<
             "SELECT file_path FROM media WHERE id = ?1 AND file_type = 'image'",
             [id], |row| row.get(0),
         ).map_err(|_| "다운로드할 원본 사진을 찾을 수 없습니다.".to_owned())?;
+        #[cfg(target_os = "android")]
+        if destination.starts_with("content://") {
+            return android_media::copy_to_uri(&app, Path::new(&source), &destination);
+        }
         copy_media_file(Path::new(&source), Path::new(&destination))
     }).await.map_err(|error| format!("사진 저장을 완료하지 못했습니다: {error}"))?
 }
@@ -1092,19 +1112,26 @@ fn civil_from_days(days_since_epoch: i64) -> Option<String> {
     Some(format!("{year:04}-{m:02}-{d:02}"))
 }
 
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    #[cfg(feature = "custom-protocol")]
+    #[cfg(all(desktop, feature = "custom-protocol"))]
     localhost::trace("application starting");
-    let app = tauri::Builder::default()
+    let builder = tauri::Builder::default().plugin(tauri_plugin_dialog::init());
+    #[cfg(desktop)]
+    let builder = builder
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.unminimize();
                 let _ = window.show();
                 let _ = window.set_focus();
             }
-        }))
-        .plugin(tauri_plugin_dialog::init())
+        }));
+    #[cfg(target_os = "android")]
+    let builder = builder.plugin(tauri_plugin_fs::init()).plugin(android_media::init());
+    let app = builder
         .setup(|app| {
+            #[cfg(desktop)]
+            {
             #[cfg(feature = "custom-protocol")]
             localhost::trace("application setup");
             #[cfg(feature = "custom-protocol")]
@@ -1140,6 +1167,9 @@ pub fn run() {
                 .build()?;
             #[cfg(feature = "custom-protocol")]
             localhost::trace("main webview created");
+            }
+            #[cfg(mobile)]
+            let _ = app;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -1179,11 +1209,11 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("failed to run app");
     app.run(|app, event| {
-        #[cfg(feature = "custom-protocol")]
+        #[cfg(all(desktop, feature = "custom-protocol"))]
         if let tauri::RunEvent::Exit = event {
             if let Some(server) = app.try_state::<localhost::LocalServer>() { server.stop(); }
         }
-        #[cfg(not(feature = "custom-protocol"))]
+        #[cfg(not(all(desktop, feature = "custom-protocol")))]
         let _ = (app, event);
     });
 }
