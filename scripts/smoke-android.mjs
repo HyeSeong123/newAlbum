@@ -51,18 +51,23 @@ async function nativeTree() {
   if (!/dumped to:/i.test(status)) return '';
   const xml = await adb('shell', 'cat', '/sdcard/window.xml');
   await writeFile(join(output, 'native-picker.xml'), xml);
+  assert.ok(!xml.includes('unregistered ActivityResultLauncher'), 'Android activity result launcher was not restored');
   return xml;
 }
-async function tapNative(label, timeout = 60_000) {
+async function nativeNode(label, timeout = 60_000) {
   const start = Date.now();
   do {
     const nodes = (await nativeTree()).match(/<node\b[^>]+>/g) ?? [];
     const node = nodes.find(node => label.test(node));
-    const bounds = node?.match(/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/);
-    if (bounds) { await adb('shell', 'input', 'tap', String(Math.floor((+bounds[1] + +bounds[3]) / 2)), String(Math.floor((+bounds[2] + +bounds[4]) / 2))); return; }
+    if (node) return node;
     await pause(300);
   } while (Date.now() - start < timeout);
   throw new Error(`Native picker entry was missing: ${label}`);
+}
+async function tapNative(label) {
+  const bounds = (await nativeNode(label)).match(/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/);
+  assert.ok(bounds, 'Native picker control must have screen bounds');
+  await adb('shell', 'input', 'tap', String(Math.floor((+bounds[1] + +bounds[3]) / 2)), String(Math.floor((+bounds[2] + +bounds[4]) / 2)));
 }
 async function downloads() {
   // ACTION_OPEN_DOCUMENT_TREE on API 36 starts at internal storage and has
@@ -129,12 +134,31 @@ try {
   await page.screenshot({ path:join(output, 'home.png') });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   await context.close(); context = undefined;
+  // Finish only the activity, keeping the process alive. Old Tauri releases
+  // retained an unregistered result launcher when the activity was recreated.
+  await adb('shell', 'input', 'keyevent', '4');
+  await startApp();
+  connection = await connect(); context = connection.context; page = connection.page;
+  await page.evaluate(() => {
+    window.lifecyclePicker = { completed:false };
+    window.__TAURI_INTERNALS__.invoke('choose_android_directory').then(result => {
+      window.lifecyclePicker = { completed:true, cancelled:result === null };
+    }).catch(error => { window.lifecyclePicker = { completed:true, error:String(error) }; });
+  });
+  await nativeNode(/package="com.google.android.documentsui"/);
+  for (let attempts = 0; attempts < 8; attempts++) {
+    await adb('shell', 'input', 'keyevent', '4');
+    await pause(800);
+    if (await page.evaluate(() => window.lifecyclePicker.completed)) break;
+  }
+  assert.deepEqual(await page.evaluate(() => window.lifecyclePicker), { completed:true, cancelled:true });
+  await context.close(); context = undefined;
   await adb('shell', 'am', 'force-stop', appId);
   await startApp();
   connection = await connect(); context = connection.context; page = connection.page;
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_media'))).length, 2);
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_albums')))[0].title, '안드로이드에서 담은 추억');
-  console.log('Android installation, real folder picker/content URI copying, byte progress, SQLite persistence and back navigation: OK');
+  console.log('Android installation, real folder picker/content URI copying, byte progress, activity recreation, SQLite persistence and back navigation: OK');
 } catch (error) {
   await writeFile(join(output, 'logcat.txt'), await adb('logcat', '-d', '-t', '5000')).catch(() => {});
   await writeFile(join(output, 'crashes.txt'), await adb('logcat', '-b', 'crash', '-d')).catch(() => {});

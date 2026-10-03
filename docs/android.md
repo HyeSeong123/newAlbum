@@ -5,6 +5,7 @@ PC와 Android는 같은 저장·앨범·일기·캐릭터 코드를 사용한다
 ## 구현 범위
 
 - 모바일 진입점과 Tauri의 앱 내부 화면을 사용한다. Windows 단일 실행 플러그인과 127.0.0.1 고정 서버는 Android에 포함하지 않는다.
+- Rust 런타임은 Tauri 2.12.1로 고정한다. [Android Activity 재생성 후 선택기·권한 연결 수정](https://github.com/tauri-apps/tauri/releases/tag/tauri-v2.12.0)을 포함한다. Android 프로젝트 생성은 SDK 36과 Gradle 8.14.3을 제공하는 잠금 파일의 CLI 2.11.4를 유지한다.
 - Android 파일 선택기의 content URI를 문서 API로 읽고, 원본을 건드리지 않고 앱의 `imported-media-v1`에 스트리밍 복사한다. 현재 dialog 플러그인은 Android 폴더 선택을 지원하지 않으므로 폴더 가져오기와 내보내기 위치는 연결부의 `ACTION_OPEN_DOCUMENT_TREE`를 사용한다. 하위 폴더를 탐색하며 지원하는 미디어만 보관한다. 기존 보관본은 다시 복사하지 않는다.
 - 복사 → 중복 해시·EXIF 분석 → SQLite → 지역·앨범 저장 중 전체 화면 진행 표시를 유지한다. 원본 파일 전체를 JS 메모리에 올리지 않는다.
 - 사진 원본 저장과 앨범 내보내기는 사용자가 고른 Android 문서 위치에 복사한다. 일기 첨부도 같은 보관 방식을 사용한다.
@@ -41,6 +42,8 @@ npm run android:apk
 ```
 
 ARM64 휴대폰용 **debug 서명 APK**가 `src-tauri/gen/android/app/build/outputs/apk`에 생성된다. Play 제출용 서명과 다르다. `Android preview APK` Actions는 ARM64·x86_64 APK를 만들고 에뮬레이터 설치, 실제 폴더 선택·URI 복사·진행률·재실행 후 SQLite 보존을 검사한 뒤 APK와 화면 캡처를 제공한다. 삼성 실기기의 선택기·HEIC/HDR·영상 코덱·메모리 사용도 별도 확인해야 한다.
+
+CI 미리보기는 개발용 키를 별도로 캐시하고 APK를 같은 키로 서명한다. 키 캐시를 삭제하거나 잃으면 기존 테스트 APK에 덮어 설치할 수 없으므로 테스트용 키와 Play 업로드 키를 구분한다. 실제 배포 키는 아래 안내에 따라 사용자가 보관한다.
 
 ## Play용 AAB
 

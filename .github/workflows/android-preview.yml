@@ -46,8 +46,8 @@ jobs:
       - uses: actions/cache/restore@v4
         id: preview-key
         with:
-          path: ~/.android/debug.keystore
-          key: gamjassak-android-preview-key-v1
+          path: .preview-keys/android-debug.keystore
+          key: gamjassak-android-preview-key-v2
       - name: Prepare SDK and Rust targets
         run: |
           sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;36.0.0' "ndk;$NDK_VERSION"
@@ -77,12 +77,22 @@ jobs:
       - name: Build installable preview APKs
         if: steps.preview-apks.outputs.cache-hit != 'true'
         run: npx tauri android build --debug --apk --ci --features custom-protocol --target aarch64 x86_64 --split-per-abi
+      - name: Sign previews with the persistent development key
+        run: |
+          mkdir -p .preview-keys
+          if [ ! -f .preview-keys/android-debug.keystore ]; then
+            keytool -genkeypair -noprompt -keystore .preview-keys/android-debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=Gamjassak Preview,O=Android,C=KR'
+          fi
+          while IFS= read -r -d '' preview_apk; do
+            "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks .preview-keys/android-debug.keystore --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android "$preview_apk"
+            "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify "$preview_apk"
+          done < <(find src-tauri/gen/android/app/build/outputs/apk -name '*.apk' -print0)
       - name: Preserve preview signing key
         if: steps.preview-key.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
-          path: ~/.android/debug.keystore
-          key: gamjassak-android-preview-key-v1
+          path: .preview-keys/android-debug.keystore
+          key: gamjassak-android-preview-key-v2
       - name: Preserve successful APK build for emulator checks
         if: steps.preview-apks.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
