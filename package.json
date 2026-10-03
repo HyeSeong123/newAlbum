@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@fontsource/noto-serif-kr": "^5.2.7",
-    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/api": "2.12.1",
     "@tauri-apps/plugin-dialog": "^2.7.3",
     "@tensorflow-models/coco-ssd": "^2.2.3",
     "@tensorflow/tfjs": "^4.22.0",
