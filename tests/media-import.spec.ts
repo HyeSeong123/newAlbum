@@ -182,7 +182,7 @@ test('canceling the native picker leaves no empty album or stale album settings'
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: () => '/favicon.svg', invoke: async (command: string) => {
         if (command === 'list_media') return registered;
-        if (command === 'plugin:dialog|open') return ++attempts === 1 ? null : ['C:/cancel.jpg'];
+        if (command === 'plugin:dialog|open' || command === 'choose_android_directory') return ++attempts === 1 ? null : ['C:/cancel.jpg'];
         if (command === 'register_paths') { registered = media; return registered; }
         if (command === 'create_album_from_media') document.documentElement.dataset.unwantedAlbum = 'true';
         if (command === 'assign_media_region') document.documentElement.dataset.unwantedRegion = 'true';
