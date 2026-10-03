@@ -255,7 +255,8 @@ struct ImportProgressDto {
 }
 
 #[tauri::command]
-async fn register_paths(app: AppHandle, paths: Vec<String>, progress: Option<tauri::ipc::Channel<ImportProgressDto>>) -> Result<Vec<MediaItemDto>, String> {
+async fn register_paths(app: AppHandle, webview: tauri::Webview, paths: Vec<String>, progress: Option<tauri::ipc::JavaScriptChannelId>) -> Result<Vec<MediaItemDto>, String> {
+    let progress: Option<tauri::ipc::Channel<ImportProgressDto>> = progress.map(|id| id.channel_on(webview));
     tauri::async_runtime::spawn_blocking(move || {
         let send = |value: ImportProgressDto| {
             if let Some(channel) = progress.as_ref() {
@@ -563,6 +564,13 @@ fn migrate_album_concept(conn: &Connection) -> Result<(), String> {
 #[cfg(test)]
 mod album_concept_tests {
     use super::*;
+
+    #[test]
+    fn import_progress_accepts_an_optional_javascript_channel_id() {
+        assert!(serde_json::from_str::<Option<tauri::ipc::JavaScriptChannelId>>("null").unwrap().is_none());
+        assert!(serde_json::from_str::<Option<tauri::ipc::JavaScriptChannelId>>("\"__CHANNEL__:7\"").unwrap().is_some());
+        assert!(serde_json::from_str::<Option<tauri::ipc::JavaScriptChannelId>>("\"invalid\"").is_err());
+    }
 
     #[test]
     fn import_hash_progress_keeps_existing_deduplication_hash_and_reports_bytes() {
