@@ -43,7 +43,8 @@ jobs:
         with:
           packages: platform-tools
           log-accepted-android-sdk-licenses: false
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
+        id: preview-key
         with:
           path: ~/.android/debug.keystore
           key: gamjassak-android-preview-key-v1
@@ -67,8 +68,27 @@ jobs:
           npx tauri android init --ci --skip-targets-install
           npm run android:prepare
           npx tauri icon public/brand/gamjassak-symbol.png
+      - name: Restore identical preview APKs
+        id: preview-apks
+        uses: actions/cache/restore@v4
+        with:
+          path: src-tauri/gen/android/app/build/outputs/apk
+          key: android-debug-v1-${{ runner.os }}-${{ hashFiles('src/**', 'public/**', 'src-tauri/*.*', 'src-tauri/android/**', 'src-tauri/capabilities/**', 'src-tauri/permissions/**', 'package*.json', 'scripts/prepare-android.mjs', 'scripts/generate-character-assets.mjs', 'scripts/prepare-face-models.mjs', 'scripts/prepare-pet-models.mjs', 'vite.config.ts', 'index.html', 'rust-toolchain.toml') }}
       - name: Build installable preview APKs
+        if: steps.preview-apks.outputs.cache-hit != 'true'
         run: npx tauri android build --debug --apk --ci --features custom-protocol --target aarch64 x86_64 --split-per-abi
+      - name: Preserve preview signing key
+        if: steps.preview-key.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: gamjassak-android-preview-key-v1
+      - name: Preserve successful APK build for emulator checks
+        if: steps.preview-apks.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: src-tauri/gen/android/app/build/outputs/apk
+          key: ${{ steps.preview-apks.outputs.cache-primary-key }}
       - name: Enable emulator acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules

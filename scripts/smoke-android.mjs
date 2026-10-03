@@ -44,12 +44,16 @@ async function startApp() {
   assert.ok(!/Error:|Status:\s*(?:timeout|error)/i.test(started), started);
 }
 async function nativeTree() {
-  await adb('shell', 'uiautomator', 'dump', '/sdcard/window.xml');
+  const status = await adb('shell', 'uiautomator', 'dump', '--compressed', '/sdcard/window.xml');
+  await appendFile(join(output, 'uiautomator.txt'), `${status}\n`);
+  // First launch of DocumentsUI can still be loading its providers. ADB may
+  // return success with "could not get idle state" and no hierarchy file.
+  if (!/dumped to:/i.test(status)) return '';
   const xml = await adb('shell', 'cat', '/sdcard/window.xml');
   await writeFile(join(output, 'native-picker.xml'), xml);
   return xml;
 }
-async function tapNative(label, timeout = 15_000) {
+async function tapNative(label, timeout = 60_000) {
   const start = Date.now();
   do {
     const nodes = (await nativeTree()).match(/<node\b[^>]+>/g) ?? [];
