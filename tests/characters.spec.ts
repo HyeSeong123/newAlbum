@@ -154,9 +154,11 @@ test('all sixteen companions show their own four forms and personalities', async
     }
   }
   const apple = page.locator('.characterCard').filter({ has:page.getByRole('heading',{ name:'사과싹',exact:true }) });
-  await apple.getByRole('button',{ name:'사과싹에게 말 걸기' }).click();
+  await apple.getByRole('button',{ name:'사과싹과 교감하기' }).click();
   await expect(apple.locator('.characterCardArt img')).toHaveClass(/characterMotion--quiet-nod/);
-  await expect(apple.locator('.characterDialogue')).toBeVisible();
+  await expect(apple.locator('.characterDialogue')).toHaveCount(0);
+  await expect(apple).toContainText('추억 60장');
+  await expect(apple.getByRole('button',{ name:'이름 바꾸기' })).toBeVisible();
 });
 
 test('potato keeps the original artwork after growth and clicking', async ({ page }) => {
