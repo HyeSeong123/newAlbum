@@ -16,6 +16,7 @@ export type CharacterDefinition = {
   id: string; type: string; regionCode: string; regionName: string; regionLabel: string;
   defaultName: string; description: string; maxStage: number; assetPath: string;
   originalAssetPath?: string;
+  stageAssetPaths?: string[];
   defaultUnlocked?: boolean;
   companionRole?: "younger-brother" | "older-brother";
   growthPrerequisite?: { characterId: string; stage: number };
@@ -39,6 +40,11 @@ export function growthStage(definition: CharacterDefinition, stage: number) {
 }
 export function growthStageName(definition: CharacterDefinition, stage: number) {
   return growthStage(definition, stage).name;
+}
+export function characterAsset(definition: CharacterDefinition, stage: number, expression: "idle" | "happy" | "sad" | "grow" = "idle") {
+  const current = Math.max(1, Math.min(definition.maxStage, stage));
+  return definition.stageAssetPaths?.[current - 1]
+    || (definition.originalAssetPath && current === definition.maxStage ? definition.originalAssetPath : `${definition.assetPath}/stage${current}-${expression}.svg`);
 }
 export function companionLabel(definition: CharacterDefinition) {
   return definition.companionRole === "younger-brother" ? "처음부터 함께 · 동생" :

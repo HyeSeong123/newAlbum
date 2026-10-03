@@ -7,7 +7,7 @@ const source = readFileSync(new URL('../src/features/characters/models.ts', impo
 const { outputText } = ts.transpileModule(source.replace('import definitions from "./data/characterDefinitions.json";',
   `const definitions = ${readFileSync(new URL('../src/features/characters/data/characterDefinitions.json', import.meta.url),'utf8')};`),
   { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } });
-const { characterDefinitions, nextDialogue, characterName, starterSnapshot, companionLabel, dialogueLines, growthStageName, stageNames } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
+const { characterDefinitions, nextDialogue, characterName, starterSnapshot, companionLabel, dialogueLines, growthStageName, stageNames, characterAsset } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
 const regionSource = readFileSync(new URL('../src/features/map/regions.ts', import.meta.url),'utf8');
 const { REGION_NAMES } = await import(`data:text/javascript;base64,${Buffer.from(ts.transpileModule(regionSource,
   { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText).toString('base64')}`);
@@ -19,9 +19,9 @@ test('each region has one definition, six increasing thresholds and complete loc
     assert.deepEqual(Object.values(def.growthConditions), [def.defaultUnlocked ? 0 : 1,3,10,30,45,60]);
     assert.ok(def.dialogues.all.length >= 2);
     for (let stage=1; stage<=6; stage++) for (const expression of ['idle','happy','sad','grow']) {
-      const asset = new URL(`../public${(def.originalAssetPath && stage === def.maxStage) ? def.originalAssetPath : `${def.assetPath}/stage${stage}-${expression}.svg`}`, import.meta.url);
+      const asset = new URL(`../public${characterAsset(def, stage, expression)}`, import.meta.url);
       assert.ok(existsSync(asset));
-      if (!(def.originalAssetPath && stage === def.maxStage)) assert.match(readFileSync(asset,'utf8'), /^<svg[\s\S]*<\/svg>$/);
+      if (!def.stageAssetPaths && !(def.originalAssetPath && stage === def.maxStage)) assert.match(readFileSync(asset,'utf8'), /^<svg[\s\S]*<\/svg>$/);
     }
     assert.equal(characterName(def),def.defaultName);
     assert.equal(characterName(def,{customName:'별이'}),'별이');
@@ -50,12 +50,29 @@ test('every species has six unique stages, a distinct personality and complete s
 test('growth changes geometry, beyond colours, titles and metadata', () => {
   const geometry = svg => svg.replace(/<title>[\s\S]*?<\/title>/g,'').replace(/(?:fill|stroke|data-stage|data-character)="[^"]*"/g,'');
   const finals = [];
-  for (const def of characterDefinitions.filter(d => !d.originalAssetPath)) {
+  for (const def of characterDefinitions.filter(d => !d.originalAssetPath && !d.stageAssetPaths)) {
     const assets = [1,2,3,4,5,6].map(stage => readFileSync(new URL(`../public${def.assetPath}/stage${stage}-idle.svg`, import.meta.url),'utf8'));
     assert.equal(new Set(assets.map(geometry)).size, 6, def.id);
     finals.push(geometry(assets[5]));
   }
   assert.equal(new Set(finals).size, finals.length);
+});
+
+test('the brothers use six different transparent PNG stages and never fall back to rejected SVG bodies', () => {
+  for (const def of characterDefinitions.filter(d => d.companionRole)) {
+    assert.equal(def.stageAssetPaths.length, 6);
+    const files = def.stageAssetPaths.map(path => readFileSync(new URL(`../public${path}`, import.meta.url)));
+    assert.equal(new Set(files.map(buffer => buffer.toString('base64'))).size, 6);
+    for (const [i,buffer] of files.entries()) {
+      assert.equal(buffer.subarray(0,8).toString('hex'), '89504e470d0a1a0a');
+      assert.equal(buffer.readUInt32BE(16), 512);
+      assert.equal(buffer.readUInt32BE(20), 512);
+      assert.equal(buffer[25], 6, 'RGBA keeps the background transparent');
+      for (const expression of ['idle','happy','sad','grow']) assert.equal(characterAsset(def,i+1,expression), def.stageAssetPaths[i]);
+    }
+    assert.equal(characterAsset(def,0),def.stageAssetPaths[0]);
+    assert.equal(characterAsset(def,99),def.stageAssetPaths[5]);
+  }
 });
 
 test('dialogue never gives away future growth or discovery requirements', () => {
@@ -83,7 +100,7 @@ test('the two brothers are available without photographs, with potato as the def
   assert.ok(snapshot.characters.every(c => c.growthStage === 1 && c.regionPhotoCount === 0));
   const potato = characterDefinitions.find(c => c.id === 'potato');
   const sweet = characterDefinitions.find(c => c.id === 'sweet-potato');
-  assert.equal(potato.originalAssetPath, '/brand/gamjassak-symbol.png');
+  assert.equal(characterAsset(potato,6), '/characters/potato/stage6-idle.png');
   assert.match(companionLabel(potato), /동생/);
   assert.match(companionLabel(sweet), /형/);
   assert.ok(dialogueLines(potato, 1).some(line => line.includes('같이')));

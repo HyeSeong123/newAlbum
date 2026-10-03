@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-const definitions = JSON.parse(readFileSync('src/features/characters/data/characterDefinitions.json','utf8')) as Array<{ id:string; defaultName:string; regionLabel:string; maxStage:number }>;
+const definitions = JSON.parse(readFileSync('src/features/characters/data/characterDefinitions.json','utf8')) as Array<{ id:string; defaultName:string; regionLabel:string; maxStage:number; stageAssetPaths?:string[] }>;
 
 type Companion = { id:string; customName:string|null; growthStage:number; regionPhotoCount:number; growthPhotoCount:number; affection:number; isMain:boolean; unlockedAt:string; createdAt:string; updatedAt:string };
 const companion = (id:string,stage=1,isMain=false):Companion => ({ id,customName:null,growthStage:stage,regionPhotoCount:0,growthPhotoCount:0,affection:0,isMain,unlockedAt:'2026-10-03',createdAt:'2026-10-03',updatedAt:'2026-10-03' });
@@ -35,7 +35,7 @@ test('the starter potato has a visible portrait and the book reveals no discover
   await page.getByRole('button',{name:'새싹 도감 보기'}).click();
   const book=page.locator('.characterBook');
   const potato=cardFor(page,'감자싹');
-  await expect(potato.locator('.characterCardArt img')).toHaveAttribute('src','/characters/potato/stage1-idle.svg');
+  await expect(potato.locator('.characterCardArt img')).toHaveAttribute('src','/characters/potato/stage1-idle.png');
   await potato.locator('img').evaluate((img:HTMLImageElement)=>img.decode());
   const box=(await potato.locator('.characterVisual').boundingBox())!;
   expect(box.width).toBeGreaterThan(160);
@@ -95,7 +95,7 @@ test('each of the six current forms loads without showing any future form',async
     await expect(page.locator('.characterBook img')).toHaveCount(16);
     for(const def of definitions) {
       const image=cardFor(page,def.defaultName).locator('.characterCardArt img');
-      await expect(image).toHaveAttribute('src',def.id === 'potato' && stage === 6 ? '/brand/gamjassak-symbol.png' : `/characters/${def.id}/stage${stage}-idle.svg`);
+      await expect(image).toHaveAttribute('src',def.stageAssetPaths?.[stage-1] ?? `/characters/${def.id}/stage${stage}-idle.svg`);
       await image.evaluate((img:HTMLImageElement)=>img.decode());
     }
     expect(await page.evaluate(()=>document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -103,16 +103,16 @@ test('each of the six current forms loads without showing any future form',async
   }
 });
 
-test('completed potato keeps its original picture and reduced motion still permits Home affection',async({page}) => {
+test('redesigned completed potato uses its new picture and reduced motion still permits Home affection',async({page}) => {
   await page.emulateMedia({reducedMotion:'reduce'});
   await installSnapshot(page,[companion('potato',6,true),companion('sweet-potato')]);
   await page.goto('/');
   const mascot=page.getByRole('button',{name:'감자싹에게 말 걸기'});
-  await expect(mascot.locator('img')).toHaveAttribute('src','/brand/gamjassak-symbol.png');
+  await expect(mascot.locator('img')).toHaveAttribute('src','/characters/potato/stage6-idle.png');
   await expect(mascot.locator('.characterVisual')).toHaveAttribute('data-reduced-motion','true');
   await mascot.click();
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
-  await expect(mascot.locator('img')).toHaveAttribute('src','/brand/gamjassak-symbol.png');
+  await expect(mascot.locator('img')).toHaveAttribute('src','/characters/potato/stage6-idle.png');
   await expect(mascot.locator('.characterHeart')).toHaveCount(0);
   await expect(mascot.locator('img')).toHaveAttribute('data-expression','idle',{timeout:2500});
 });
