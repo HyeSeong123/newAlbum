@@ -5,11 +5,14 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
+import android.view.View
+import android.view.ViewGroup
 import android.webkit.MimeTypeMap
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResult
+import androidx.appcompat.app.AppCompatActivity
 import app.tauri.annotation.ActivityCallback
 import app.tauri.annotation.Command
 import app.tauri.annotation.InvokeArg
@@ -35,8 +38,35 @@ class CreateDocumentArgs {
 @TauriPlugin
 class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
     private var back: OnBackPressedCallback? = null
+    private var backOwner: ComponentActivity? = null
+    private var backView: WebView? = null
     override fun load(webView: WebView) {
         val component = activity as? ComponentActivity ?: return
+        attachBack(component, webView)
+    }
+    override fun onResume(activity: AppCompatActivity) {
+        // Plugins survive activity recreation. Bind to the resumed activity's
+        // WebView rather than the activity passed to the plugin's constructor.
+        activity.window.decorView.post {
+            if (activity.isDestroyed) return@post
+            val webView = findWebView(activity.window.decorView) ?: return@post
+            attachBack(activity, webView)
+        }
+    }
+    private fun findWebView(view: View): WebView? {
+        if (view is WebView) return view
+        if (view is ViewGroup) {
+            for (index in 0 until view.childCount) {
+                findWebView(view.getChildAt(index))?.let { return it }
+            }
+        }
+        return null
+    }
+    private fun attachBack(component: ComponentActivity, webView: WebView) {
+        if (backOwner === component && backView === webView && back != null) return
+        back?.remove()
+        backOwner = component
+        backView = webView
         back = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 webView.evaluateJavascript("window.__gamjassakBack ? window.__gamjassakBack() : false") { handled ->
@@ -50,7 +80,14 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
         }
         component.onBackPressedDispatcher.addCallback(component, back!!)
     }
-    override fun onDestroy() { back?.remove(); back = null }
+    override fun onDestroy(activity: AppCompatActivity) {
+        if (backOwner === activity) {
+            back?.remove()
+            back = null
+            backOwner = null
+            backView = null
+        }
+    }
 
     @Command
     fun pickDirectory(invoke: Invoke) {

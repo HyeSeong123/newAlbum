@@ -54,6 +54,13 @@ async function startApp(recreateActivity = false) {
   await writeFile(join(output, 'activity-start.txt'), started);
   assert.ok(!/Error:|Status:\s*(?:timeout|error)/i.test(started), started);
 }
+async function activityRecord(label) {
+  const snapshot = await adb('shell', 'dumpsys', 'activity', 'activities');
+  await writeFile(join(output, `activity-${label}.txt`), snapshot);
+  const record = snapshot.match(/ActivityRecord\{([0-9a-f]+) u\d+ com\.oraedameun\.album\/(?:\.|com\.oraedameun\.album\.)?MainActivity\b/);
+  assert.ok(record, 'The native MainActivity must have an activity record');
+  return record[1];
+}
 async function nativeTree() {
   const status = await adb('shell', 'uiautomator', 'dump', '--compressed', '/sdcard/window.xml');
   await appendFile(join(output, 'uiautomator.txt'), `${status}\n`);
@@ -144,8 +151,8 @@ try {
   await expect(page.getByRole('heading', { name:'홈', exact:true })).toBeVisible();
   await page.screenshot({ path:join(output, 'home.png') });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-  await page.evaluate(() => { window.beforeActivityRecreation = true; });
   const processBeforeRecreation = await adb('shell', 'pidof', appId);
+  const activityBeforeRecreation = await activityRecord('before-recreation');
   await disconnect();
   // Finish only the activity, keeping the process alive. Old Tauri releases
   // retained an unregistered result launcher when the activity was recreated.
@@ -153,7 +160,13 @@ try {
   await startApp(true);
   connection = await connect(); context = connection.context; page = connection.page;
   assert.equal(await adb('shell', 'pidof', appId), processBeforeRecreation, 'Activity recreation must keep the app process alive');
-  assert.equal(await page.evaluate(() => window.beforeActivityRecreation), undefined, 'Activity recreation must create a fresh WebView');
+  // Tauri can reattach its existing WebView. Verify the native activity changed
+  // instead of requiring JavaScript state to be discarded.
+  const activityAfterRecreation = await activityRecord('after-recreation');
+  assert.notEqual(activityAfterRecreation, activityBeforeRecreation, 'The native activity must actually be recreated');
+  await writeFile(join(output, 'activity-recreation.json'), JSON.stringify({
+    process:processBeforeRecreation, before:activityBeforeRecreation, after:activityAfterRecreation
+  }, null, 2));
   await page.evaluate(() => {
     window.lifecyclePicker = { completed:false };
     window.__TAURI_INTERNALS__.invoke('choose_android_directory').then(result => {
@@ -167,6 +180,9 @@ try {
     if (await page.evaluate(() => window.lifecyclePicker.completed)) break;
   }
   assert.deepEqual(await page.evaluate(() => window.lifecyclePicker), { completed:true, cancelled:true });
+  await page.locator('.navList').getByRole('button', { name:'사진 기록', exact:true }).click();
+  await adb('shell', 'input', 'keyevent', '4');
+  await expect(page.getByRole('heading', { name:'홈', exact:true })).toBeVisible();
   await disconnect();
   await adb('shell', 'am', 'force-stop', appId);
   await startApp();
