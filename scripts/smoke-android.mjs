@@ -38,8 +38,19 @@ async function connect() {
   await page.locator('main.app').waitFor();
   return { context, page };
 }
-async function startApp() {
-  const started = await adb('shell', 'am', 'start', '-W', '-n', `${appId}/.MainActivity`);
+async function disconnect() {
+  if (context) await context.close();
+  context = undefined;
+  // Playwright caches WebView.page() by the process's devtools socket. A new
+  // activity can reuse that socket, so discard the adapter before reconnecting.
+  if (device) await device.close();
+  device = undefined;
+}
+async function startApp(recreateActivity = false) {
+  // CLEAR_TASK | NEW_TASK recreates the activity; a launcher back press on
+  // Android 12+ can merely background the task and keep its activity alive.
+  const flags = recreateActivity ? ['-f', '0x10008000'] : [];
+  const started = await adb('shell', 'am', 'start', '-W', '-n', `${appId}/.MainActivity`, ...flags);
   await writeFile(join(output, 'activity-start.txt'), started);
   assert.ok(!/Error:|Status:\s*(?:timeout|error)/i.test(started), started);
 }
@@ -133,12 +144,16 @@ try {
   await expect(page.getByRole('heading', { name:'홈', exact:true })).toBeVisible();
   await page.screenshot({ path:join(output, 'home.png') });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-  await context.close(); context = undefined;
+  await page.evaluate(() => { window.beforeActivityRecreation = true; });
+  const processBeforeRecreation = await adb('shell', 'pidof', appId);
+  await disconnect();
   // Finish only the activity, keeping the process alive. Old Tauri releases
   // retained an unregistered result launcher when the activity was recreated.
   await adb('shell', 'input', 'keyevent', '4');
-  await startApp();
+  await startApp(true);
   connection = await connect(); context = connection.context; page = connection.page;
+  assert.equal(await adb('shell', 'pidof', appId), processBeforeRecreation, 'Activity recreation must keep the app process alive');
+  assert.equal(await page.evaluate(() => window.beforeActivityRecreation), undefined, 'Activity recreation must create a fresh WebView');
   await page.evaluate(() => {
     window.lifecyclePicker = { completed:false };
     window.__TAURI_INTERNALS__.invoke('choose_android_directory').then(result => {
@@ -152,7 +167,7 @@ try {
     if (await page.evaluate(() => window.lifecyclePicker.completed)) break;
   }
   assert.deepEqual(await page.evaluate(() => window.lifecyclePicker), { completed:true, cancelled:true });
-  await context.close(); context = undefined;
+  await disconnect();
   await adb('shell', 'am', 'force-stop', appId);
   await startApp();
   connection = await connect(); context = connection.context; page = connection.page;
@@ -166,6 +181,5 @@ try {
   await adb('pull', '/sdcard/failure.png', join(output, 'failure.png')).catch(() => {});
   throw error;
 } finally {
-  if (context) await context.close();
-  if (device) await device.close();
+  await disconnect();
 }
