@@ -8,10 +8,15 @@ use std::sync::OnceLock;
 pub struct GrowthConditions { pub stage1: i64, pub stage2: i64, pub stage3: i64, pub stage4: i64 }
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct GrowthPrerequisite { pub character_id: String, pub stage: i64 }
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Definition {
     pub id: String, pub region_code: String, pub growth_conditions: GrowthConditions,
     #[serde(default)]
     pub default_unlocked: bool,
+    #[serde(default)]
+    pub growth_prerequisite: Option<GrowthPrerequisite>,
 }
 
 pub fn definitions() -> &'static [Definition] {
@@ -30,6 +35,7 @@ pub fn stage_for(count: i64, conditions: &GrowthConditions) -> i64 {
 pub struct OwnedCharacter {
     pub id: String, pub custom_name: Option<String>, pub growth_stage: i64,
     pub region_photo_count: i64, pub affection: i64, pub is_main: bool,
+    pub growth_photo_count: i64,
     pub unlocked_at: String, pub created_at: String, pub updated_at: String,
 }
 #[derive(Debug, Serialize)]
@@ -75,14 +81,22 @@ pub fn ensure_starters(conn: &Connection) -> Result<(), String> {
 pub fn snapshot(conn: &Connection) -> Result<Snapshot, String> {
     let mut stmt = conn.prepare("SELECT c.character_id,c.custom_name,c.growth_stage,
         (SELECT COUNT(*) FROM media m WHERE m.file_type='image' AND m.gps_region_code=?1),
-        c.affection,c.is_main,c.unlocked_at,c.created_at,c.updated_at FROM owned_character c WHERE c.character_id=?2")
+        c.affection,c.is_main,c.unlocked_at,c.created_at,c.updated_at,
+        (SELECT retained_photo_count + (SELECT COUNT(*) FROM media m WHERE m.file_type='image'
+            AND m.gps_region_code=?1 AND m.id>last_media_id)
+            FROM character_growth_start WHERE character_id=c.character_id)
+        FROM owned_character c WHERE c.character_id=?2")
         .map_err(|e| e.to_string())?;
     let mut characters = Vec::new();
     for def in definitions() {
-        if let Some(character) = stmt.query_row(params![def.region_code,def.id], |r| Ok(OwnedCharacter {
-            id:r.get(0)?,custom_name:r.get(1)?,growth_stage:r.get(2)?,region_photo_count:r.get(3)?,
+        if let Some(character) = stmt.query_row(params![def.region_code,def.id], |r| {
+            let total: i64 = r.get(3)?;
+            let started_count: Option<i64> = r.get(9)?;
+            Ok(OwnedCharacter {
+            id:r.get(0)?,custom_name:r.get(1)?,growth_stage:r.get(2)?,region_photo_count:total,
+            growth_photo_count: if def.growth_prerequisite.is_some() { started_count.unwrap_or(0) } else { total },
             affection:r.get(4)?,is_main:r.get(5)?,unlocked_at:r.get(6)?,created_at:r.get(7)?,updated_at:r.get(8)?
-        })).optional().map_err(|e| e.to_string())? { characters.push(character); }
+        }) }).optional().map_err(|e| e.to_string())? { characters.push(character); }
     }
     let mut stmt = conn.prepare("SELECT id,character_id,kind,stage FROM character_event ORDER BY id").map_err(|e| e.to_string())?;
     let events = stmt.query_map([],|r| Ok(CharacterEvent {id:r.get(0)?,character_id:r.get(1)?,kind:r.get(2)?,stage:r.get(3)?}))
@@ -96,10 +110,30 @@ pub fn reconcile(conn: &mut Connection) -> Result<Snapshot, String> {
     for def in definitions() {
         let count: i64 = tx.query_row("SELECT COUNT(*) FROM media WHERE file_type='image' AND gps_region_code=?1",
             [&def.region_code],|r| r.get(0)).map_err(|e| e.to_string())?;
-        let stage = stage_for(count,&def.growth_conditions);
-        if stage == 0 { continue; }
         let previous: Option<i64> = tx.query_row("SELECT growth_stage FROM owned_character WHERE character_id=?1",
             [&def.id],|r| r.get(0)).optional().map_err(|e| e.to_string())?;
+        let mut growth_count = count;
+        if let Some(required) = &def.growth_prerequisite {
+            let ready: bool = tx.query_row("SELECT EXISTS(SELECT 1 FROM owned_character WHERE character_id=?1 AND growth_stage>=?2)",
+                params![required.character_id, required.stage], |r| r.get(0)).map_err(|e| e.to_string())?;
+            if !ready { continue; }
+            // Preserve earlier progress on upgrade, while fresh companions start
+            // at zero and do not instantly mature from previously collected photos.
+            let retained = match previous.unwrap_or(1) {
+                4 => def.growth_conditions.stage4, 3 => def.growth_conditions.stage3,
+                2 => def.growth_conditions.stage2, _ => 0,
+            };
+            // An import boundary remains valid even if older photos are deleted.
+            tx.execute("INSERT OR IGNORE INTO character_growth_start(character_id,last_media_id,retained_photo_count)
+                SELECT ?1,COALESCE(MAX(id),0),?2 FROM media",
+                params![def.id, retained]).map_err(|e| e.to_string())?;
+            growth_count = tx.query_row("SELECT retained_photo_count + (SELECT COUNT(*) FROM media
+                WHERE file_type='image' AND gps_region_code=?2 AND id>last_media_id)
+                FROM character_growth_start WHERE character_id=?1",
+                params![def.id, def.region_code], |r| r.get(0)).map_err(|e| e.to_string())?;
+        }
+        let stage = stage_for(growth_count,&def.growth_conditions);
+        if stage == 0 { continue; }
         if previous.is_none() {
             tx.execute("INSERT INTO owned_character(character_id,growth_stage,is_main)
                 VALUES(?1,?2,NOT EXISTS(SELECT 1 FROM owned_character WHERE is_main=1))",params![def.id,stage]).map_err(|e| e.to_string())?;

@@ -157,3 +157,58 @@ fn starters_still_grow_only_from_their_own_gps_photos() {
     assert_eq!(result.events[0].character_id, "potato");
     assert_eq!(reconcile(&mut conn).unwrap().events.len(), 1);
 }
+
+#[test]
+fn sweet_potato_waits_for_potato_completion_then_counts_only_new_photos() {
+    let mut conn = database();
+    for id in 0..60 { photo(&conn, id, Some("KR-46")); }
+    let waiting = reconcile(&mut conn).unwrap();
+    let sweet = waiting.characters.iter().find(|c| c.id == "sweet-potato").unwrap();
+    assert_eq!(sweet.growth_stage, 1);
+    assert_eq!(sweet.region_photo_count, 60);
+    assert_eq!(sweet.growth_photo_count, 0);
+    assert!(waiting.events.is_empty());
+    for id in 100..160 { photo(&conn, id, Some("KR-42")); }
+    let ready = reconcile(&mut conn).unwrap();
+    assert_eq!(ready.characters.iter().find(|c| c.id == "potato").unwrap().growth_stage, 4);
+    let sweet = ready.characters.iter().find(|c| c.id == "sweet-potato").unwrap();
+    assert_eq!(sweet.growth_stage, 1);
+    assert_eq!(sweet.growth_photo_count, 0);
+    // Tidying old memories must not consume credit for later imports.
+    conn.execute("DELETE FROM media WHERE id IN (SELECT id FROM media WHERE gps_region_code='KR-46' ORDER BY id LIMIT 10)", []).unwrap();
+    for id in 200..210 { photo(&conn, id, Some("KR-46")); }
+    let grown = reconcile(&mut conn).unwrap();
+    let sweet = grown.characters.iter().find(|c| c.id == "sweet-potato").unwrap();
+    assert_eq!(sweet.growth_stage, 2);
+    assert_eq!(sweet.growth_photo_count, 10);
+    assert_eq!(sweet.region_photo_count, 60);
+    assert_eq!(grown.events.iter().filter(|e| e.character_id == "sweet-potato").count(), 1);
+    let repeated = reconcile(&mut conn).unwrap();
+    assert_eq!(repeated.events.len(), grown.events.len());
+    assert_eq!(repeated.characters.iter().find(|c| c.id == "sweet-potato").unwrap().growth_photo_count, 10);
+}
+
+#[test]
+fn growth_upgrade_preserves_existing_sweet_potato_progress_and_resumes_without_a_jump() {
+    let mut conn = database();
+    for id in 0..30 { photo(&conn, id, Some("KR-46")); }
+    conn.execute_batch("UPDATE owned_character SET growth_stage=3,custom_name='든든한 형',affection=22 WHERE character_id='sweet-potato';
+        DROP TABLE character_growth_start; PRAGMA user_version=8;").unwrap();
+    crate::database::initialize(&mut conn).unwrap();
+    set_main(&mut conn, "sweet-potato").unwrap();
+    let waiting = reconcile(&mut conn).unwrap();
+    let sweet = waiting.characters.iter().find(|c| c.id == "sweet-potato").unwrap();
+    assert_eq!(sweet.growth_stage, 3);
+    assert_eq!(sweet.custom_name.as_deref(), Some("든든한 형"));
+    assert_eq!(sweet.affection, 22);
+    assert!(sweet.is_main);
+    conn.execute("UPDATE owned_character SET growth_stage=4 WHERE character_id='potato'", []).unwrap();
+    let resumed = reconcile(&mut conn).unwrap();
+    let sweet = resumed.characters.iter().find(|c| c.id == "sweet-potato").unwrap();
+    assert_eq!(sweet.growth_stage, 3);
+    assert_eq!(sweet.growth_photo_count, 30);
+    assert!(resumed.events.is_empty());
+    for id in 100..130 { photo(&conn, id, Some("KR-46")); }
+    let completed = reconcile(&mut conn).unwrap();
+    assert_eq!(completed.characters.iter().find(|c| c.id == "sweet-potato").unwrap().growth_stage, 4);
+}

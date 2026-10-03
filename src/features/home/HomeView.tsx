@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, BookHeart, Images, NotebookPen } from "lucide-react";
 import { CharacterVisual } from "../characters/CharacterVisual";
-import { characterDefinitions, characterName, companionLabel, dialogueLines, nextDialogue, stageNames, type OwnedCharacter } from "../characters/models";
+import { characterDefinitions, characterName, companionLabel, dialogueLines, growthStageName, nextDialogue, type OwnedCharacter } from "../characters/models";
 import "../characters/characters.css";
 import "./home.css";
 
@@ -74,7 +74,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
           {definition && mainCharacter ? <CharacterVisual definition={definition} stage={mainCharacter.growthStage} expression={happy ? "happy" : "idle"} />
             : <img key={messageIndex} src="/brand/gamjassak-symbol.png" alt="" width={1254} height={1254} draggable={false} />}
         </button>
-        {definition && mainCharacter && <p className="homeCharacterMeta"><strong>{characterName(definition, mainCharacter)}</strong><span>{definition.defaultUnlocked ? companionLabel(definition) : `${definition.regionLabel}에서 만난 ${stageNames[mainCharacter.growthStage]}`}</span><span>{definition.defaultUnlocked ? `${stageNames[mainCharacter.growthStage]} · ${definition.regionLabel} ` : ""}추억 {mainCharacter.regionPhotoCount}장 · 친밀도 {mainCharacter.affection}</span></p>}
+        {definition && mainCharacter && <p className="homeCharacterMeta"><strong>{characterName(definition, mainCharacter)}</strong><span>{definition.defaultUnlocked ? companionLabel(definition) : `${definition.regionLabel}에서 만난 친구`}</span><span>{growthStageName(definition, mainCharacter.growthStage)} · {definition.defaultUnlocked ? `${definition.regionLabel} ` : ""}추억 {mainCharacter.regionPhotoCount}장 · 친밀도 {mainCharacter.affection}</span></p>}
         <p id="homeMascotHint" className="homeMascotHint">새싹을 톡 눌러 말을 걸어보세요</p>
         <button className="homeCharacterLink" type="button" onClick={onShowCharacters}>새싹 도감 보기</button>
       </div>
