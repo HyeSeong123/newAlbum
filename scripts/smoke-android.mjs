@@ -84,6 +84,8 @@ try {
   await expect(page.getByRole('heading', { name:'홈', exact:true })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-platform', 'android');
   assert.equal(await page.evaluate(() => Boolean(window.__TAURI_INTERNALS__?.invoke)), true);
+  await page.screenshot({ path:join(output, 'initial-home.png') });
+  console.log('Installed Android app launched and rendered its native home.');
   await page.locator('.navList').getByRole('button', { name:'사진 기록', exact:true }).click();
   await page.getByRole('button', { name:'사진·영상 가져오기', exact:true }).click();
   let dialog = page.getByRole('dialog', { name:'사진·영상 가져오기', exact:true });
@@ -93,13 +95,15 @@ try {
   await dialog.getByRole('checkbox', { name:/가져오면서 앨범 만들기/ }).check();
   await dialog.getByLabel('앨범 제목').fill('안드로이드에서 담은 추억');
   await page.evaluate(() => {
-    const internals = window.__TAURI_INTERNALS__;
-    const transform = internals.transformCallback;
+    // Tauri's public functions are read-only in the real native runtime.
+    // Observe its debugging callback Map without replacing native IPC behavior.
+    const callbacks = window.__TAURI_INTERNALS__.callbacks;
+    const set = callbacks.set.bind(callbacks);
     window.androidImportUpdates = [];
-    internals.transformCallback = (callback, once) => transform.call(internals, message => {
-      if (message?.message?.phase) window.androidImportUpdates.push(message.message);
-      callback(message);
-    }, once);
+    Object.defineProperty(callbacks, 'set', { value:(id, callback) => set(id, message => {
+        if (message?.message?.phase) window.androidImportUpdates.push(message.message);
+        return callback(message);
+      }) });
   });
   await dialog.getByRole('button', { name:'폴더 선택' }).click();
   await downloads();
