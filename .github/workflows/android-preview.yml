@@ -112,6 +112,9 @@ jobs:
           arch: x86_64
           target: google_apis
           profile: pixel_7
+          # Vulkan can terminate the headless emulator while WebView renders
+          # the album. Keep CPU acceleration and use software GLES instead.
+          emulator-options: -no-window -gpu swiftshader -feature -Vulkan -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
           script: node scripts/smoke-android.mjs
       - name: Prepare APK downloads

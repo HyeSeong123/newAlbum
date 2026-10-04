@@ -175,7 +175,9 @@ try {
   assert.ok(updates.some(update => update.phase === 'registering' && update.processed === 2));
   assert.equal((await page.evaluate(() => JSON.parse(localStorage.getItem('oraedameun.calendarRegistrations-v1'))))[0].mediaIds.length, 2);
   await writeFile(join(output, 'import-progress.json'), JSON.stringify(updates, null, 2));
+  console.log('Real native folder import, album creation and calendar registration completed.');
   await page.screenshot({ path:join(output, 'installed-album.png') });
+  console.log('Opening the bound album in three-button navigation mode.');
   await page.getByRole('button', { name:'안드로이드에서 담은 추억 앨범 열기', exact:true }).click();
   const reader = page.getByRole('dialog', { name:'앨범 전체창', exact:true });
   await expect(reader.locator('.albumBookBase')).toBeVisible();
@@ -184,6 +186,7 @@ try {
   assert.ok(Math.abs(left.y - right.y) < 1 && left.x + left.width <= right.x + 1);
   await expect(reader.getByLabel('앨범 책장 이동')).toBeInViewport();
   await captureScreen('system-bars-book-threebutton');
+  console.log('Bound album and pager fit the three-button viewport; checking gesture navigation.');
   const beforeGesture = await page.evaluate(() => innerHeight);
   await adb('shell', 'cmd', 'overlay', 'enable-exclusive', '--category', 'com.android.internal.systemui.navbar.gestural');
   await expect.poll(() => page.evaluate(() => innerHeight)).toBeGreaterThan(beforeGesture);
@@ -238,12 +241,25 @@ try {
   assert.equal((await page.evaluate(() => JSON.parse(localStorage.getItem('oraedameun.calendarRegistrations-v1')))).length, 1);
   console.log('Android installation, system-bar bounds (three-button and gesture), import controls, bound album, real folder picker/content URI copying, byte progress, warm resume, SQLite/calendar persistence and back navigation: OK');
 } catch (error) {
-  if (context) await context.pages()[0]?.evaluate(() => ({ picker:window.lifecyclePicker }))
-    .then(state => writeFile(join(output, 'webview-state.json'), JSON.stringify(state, null, 2))).catch(() => {});
-  await writeFile(join(output, 'logcat.txt'), await adb('logcat', '-d', '-t', '5000')).catch(() => {});
-  await writeFile(join(output, 'crashes.txt'), await adb('logcat', '-b', 'crash', '-d')).catch(() => {});
-  await adb('shell', 'screencap', '-p', '/sdcard/failure.png').catch(() => {});
-  await adb('pull', '/sdcard/failure.png', join(output, 'failure.png')).catch(() => {});
+  console.error(error);
+  await writeFile(join(output, 'failure.txt'), String(error.stack ?? error));
+  const connectedDevices = await adb('devices').catch(() => 'ADB is unavailable');
+  await writeFile(join(output, 'devices.txt'), connectedDevices);
+  if (connectedDevices.includes('\tdevice')) {
+    if (context) {
+      let timer;
+      await Promise.race([
+        context.pages()[0]?.evaluate(() => ({ picker:window.lifecyclePicker }))
+          .then(state => writeFile(join(output, 'webview-state.json'), JSON.stringify(state, null, 2))).catch(() => {}),
+        new Promise(resolve => { timer = setTimeout(resolve, 3000); }),
+      ]);
+      clearTimeout(timer);
+    }
+    await adb('logcat', '-d', '-t', '5000').then(log => writeFile(join(output, 'logcat.txt'), log)).catch(() => {});
+    await adb('logcat', '-b', 'crash', '-d').then(log => writeFile(join(output, 'crashes.txt'), log)).catch(() => {});
+    await adb('shell', 'screencap', '-p', '/sdcard/failure.png').catch(() => {});
+    await adb('pull', '/sdcard/failure.png', join(output, 'failure.png')).catch(() => {});
+  }
   throw error;
 } finally {
   await disconnect();
