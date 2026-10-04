@@ -114,6 +114,9 @@ try {
   const apk = (await apkFiles('src-tauri/gen/android/app/build/outputs/apk')).find(path => /x86[_-]64/i.test(path));
   assert.ok(apk, 'x86_64 debug APK is required for the emulator');
   await adb('install', '-r', apk);
+  // Preserve the Pixel 7's CSS viewport while reducing headless GPU buffers.
+  await adb('shell', 'wm', 'size', '720x1600');
+  await adb('shell', 'wm', 'density', '280');
   await adb('shell', 'cmd', 'overlay', 'enable-exclusive', '--category', 'com.android.internal.systemui.navbar.threebutton');
   await adb('shell', 'mkdir', '-p', '/sdcard/Download/GamjassakSmoke');
   await adb('push', resolve('tests/fixtures/pet-dog.jpg'), '/sdcard/Download/GamjassakSmoke/gamjassak-smoke.jpg');
@@ -181,6 +184,12 @@ try {
   await page.getByRole('button', { name:'안드로이드에서 담은 추억 앨범 열기', exact:true }).click();
   const reader = page.getByRole('dialog', { name:'앨범 전체창', exact:true });
   await expect(reader.locator('.albumBookBase')).toBeVisible();
+  await captureScreen('system-bars-book-opening-threebutton');
+  await writeFile(join(output, 'book-viewport.json'), JSON.stringify(await page.evaluate(() => ({
+    width:innerWidth, height:innerHeight, visualHeight:visualViewport?.height,
+    canvas:document.querySelector('.albumJournalCanvas').getBoundingClientRect().toJSON(),
+    stage:document.querySelector('.albumBookStage').getBoundingClientRect().toJSON(),
+  })), null, 2));
   const left = await reader.locator('.albumPaper.left').boundingBox();
   const right = await reader.locator('.albumPaper.right').boundingBox();
   assert.ok(Math.abs(left.y - right.y) < 1 && left.x + left.width <= right.x + 1);

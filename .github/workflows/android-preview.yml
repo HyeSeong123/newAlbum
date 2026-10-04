@@ -112,11 +112,20 @@ jobs:
           arch: x86_64
           target: google_apis
           profile: pixel_7
+          ram-size: 2048M
           # Vulkan can terminate the headless emulator while WebView renders
           # the album. Keep CPU acceleration and use software GLES instead.
-          emulator-options: -no-window -gpu swiftshader -feature -Vulkan -no-snapshot -noaudio -no-boot-anim
+          emulator-options: -no-window -memory 2048 -gpu swiftshader -feature -Vulkan -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
           script: node scripts/smoke-android.mjs
+      - name: Capture emulator host diagnostics
+        if: failure()
+        run: |
+          mkdir -p test-results/android-smoke
+          free -h > test-results/android-smoke/host-memory.txt
+          df -h > test-results/android-smoke/host-disk.txt
+          sudo dmesg -T > test-results/android-smoke/host-kernel.txt || true
+          find /tmp/android-runner -maxdepth 4 -type f > test-results/android-smoke/emulator-crash-files.txt || true
       - name: Prepare APK downloads
         run: |
           mkdir -p release-output/android
