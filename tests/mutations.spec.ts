@@ -164,8 +164,12 @@ test('comment storage failure retains the draft and retry adds only one comment'
 test('calendar unregister failure keeps the label and retry removes it', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('oraedameun.calendarRegistrations-v1', JSON.stringify([
-      { id: 'record', title: '저장 확인', startDate: '2026-09-25', endDate: '2026-09-25', mediaIds: [], color: '#2F4058' },
+      { id: 'record', title: '저장 확인', startDate: '2026-09-25', endDate: '2026-09-25', mediaIds: ['1'], color: '#2F4058' },
     ]));
+    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
+      convertFileSrc: () => '/favicon.svg',
+      invoke: async (command: string) => command === 'list_media' ? [{ id: 1, file_path: 'C:/calendar.jpg', file_type: 'image', taken_at: '2026-09-25', width: 640, height: 480, size_bytes: 1000, rating: 0, comment: '', favorite: false, metadata_status: 'ready' }] : [],
+    } });
   });
   await page.goto('/');
   await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
@@ -188,7 +192,7 @@ test('calendar unregister failure keeps the label and retry removes it', async (
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('oraedameun.calendarRegistrations-v1')!).length)).toBe(1);
   await page.evaluate(() => window.dispatchEvent(new Event('restore-storage')));
   await dialog.getByRole('button', { name: '등록 해제' }).click();
-  await expect(dialog).toBeHidden();
+  await expect(dialog.getByRole('heading', { name: '저장 확인', exact: true })).toHaveCount(0);
   await expect(page.locator('.calendarPeriodBar')).toHaveCount(0);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('oraedameun.calendarRegistrations-v1')!).length)).toBe(0);
 });

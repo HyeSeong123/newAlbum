@@ -11,6 +11,7 @@ src-tauri/target/
 
 # Playwright and visual QA output
 test-results/
+preview-results/
 playwright-report/
 screenshots/
 

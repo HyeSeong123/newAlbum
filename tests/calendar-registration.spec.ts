@@ -50,6 +50,7 @@ test('file import assigns both photos and video districts and persists consecuti
   await form.getByLabel('가져올 기록의 시군구').selectOption('서귀포시');
   await form.getByRole('checkbox', { name: /달력에 등록하기/ }).check();
   await form.getByLabel('달력 라벨', { exact: true }).fill('제주 여행');
+  await page.screenshot({ path: `preview-results/calendar-import-${testInfo.project.name}.png`, fullPage: true });
   await form.getByRole('button', { name: '파일 선택' }).click();
   await expect(form).toBeHidden();
   expect(JSON.parse((await page.locator('html').getAttribute('data-import-regions'))!).ids).toEqual([1, 2, 3, 4]);
@@ -60,7 +61,7 @@ test('file import assigns both photos and video districts and persists consecuti
   await expect(page.locator('.calendarPeriodBar.continuesBefore')).toHaveAttribute('data-span', '1');
   await expect(page.getByRole('button', { name: '2026년 6월 1일, 영상 1개', exact: true }).locator('.calendarVideoCount')).toHaveText('영상 1개');
   await expect(page.locator('.calendarGrid img')).toHaveCount(0);
-  await page.screenshot({ path: `test-results/calendar-registration-${testInfo.project.name}.png`, fullPage: true });
+  await page.screenshot({ path: `preview-results/calendar-registration-${testInfo.project.name}.png`, fullPage: true });
   await page.reload();
   await photoView(page);
   await month(page, '2026', '05');
@@ -125,7 +126,7 @@ test('overlapping period labels remain separate and wrap through weeks on a narr
   expect(second.x).toBeGreaterThanOrEqual(cell.x);
   expect(second.x + second.width).toBeLessThanOrEqual(cell.x + cell.width + 1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: `test-results/calendar-periods-${test.info().project.name}.png`, fullPage: true });
+  await page.screenshot({ path: `preview-results/calendar-periods-${test.info().project.name}.png`, fullPage: true });
 });
 
 test('calendar persistence failure keeps the successfully imported media', async ({ page }) => {

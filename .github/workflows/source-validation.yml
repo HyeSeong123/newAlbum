@@ -97,7 +97,7 @@ jobs:
         with:
           name: calendar-previews
           path: |
-            test-results/calendar-*.png
+            preview-results/calendar-*.png
             test-results/**/test-failed-*.png
             test-results/**/error-context.md
           if-no-files-found: ignore

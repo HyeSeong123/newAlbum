@@ -58,7 +58,7 @@ test('calendar and day viewer follow the compact reference layout', async ({ pag
     expect(Math.abs(bounds.x - (1694 - bounds.width) / 2)).toBeLessThan(2);
     expect(bounds.height).toBeLessThan(600);
   }
-  await page.screenshot({ path: `test-results/calendar-month-${testInfo.project.name}.png`, fullPage: true });
+  await page.screenshot({ path: `preview-results/calendar-month-${testInfo.project.name}.png`, fullPage: true });
 
   await grid.getByRole('button', { name: '2025년 5월 31일, 사진 150장, 메모 있음' }).click();
   const dialog = page.getByRole('dialog', { name: '2025-05-31 기록' });
@@ -75,7 +75,7 @@ test('calendar and day viewer follow the compact reference layout', async ({ pag
   expect(memo.y).toBeGreaterThan(strip.y + strip.height);
   expect((await dialog.boundingBox())!.width).toBeLessThanOrEqual(page.viewportSize()!.width - 24);
   await expect(dialog.getByRole('button', { name: '대표사진으로 설정' })).toBeInViewport();
-  await page.screenshot({ path: `test-results/calendar-day-${testInfo.project.name}.png` });
+  await page.screenshot({ path: `preview-results/calendar-day-${testInfo.project.name}.png` });
 
   await dialog.getByRole('button', { name: '다음 썸네일', exact: true }).click();
   await expect.poll(() => dialog.locator('.calendarThumbnails').evaluate((element) => element.scrollLeft)).toBeGreaterThan(100);
