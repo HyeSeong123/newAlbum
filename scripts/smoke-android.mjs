@@ -7,7 +7,9 @@ import { appendFile, mkdir, readdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
 const run = promisify(execFile);
-const adb = async (...args) => (await run('adb', args, { maxBuffer:8 * 1024 * 1024 })).stdout.trim();
+// A stuck emulator command must produce diagnostics instead of holding the
+// whole release job indefinitely (including accessibility hierarchy dumps).
+const adb = async (...args) => (await run('adb', args, { maxBuffer:8 * 1024 * 1024, timeout:60_000 })).stdout.trim();
 const output = 'test-results/android-smoke';
 const appId = 'com.oraedameun.album';
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -90,6 +92,7 @@ async function downloads() {
   await tapNative(/text="Download"/);
 }
 async function safeWebViewBounds() {
+  console.log('Checking native WebView bounds against the Android system bars.');
   const node = await nativeNode(/class="android.webkit.WebView"/);
   const match = node.match(/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/);
   assert.ok(match, 'The WebView must have native screen bounds');
