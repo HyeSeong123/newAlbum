@@ -126,15 +126,15 @@ test('both faces remain attached to the binding and swap slowly without duplicat
   }
 });
 
-test('scrubbing, list view and closing cancel the slower turn; reduced motion stays immediate', async ({ page }, testInfo) => {
+test('scrubbing, list view and closing cancel the slower turn; reduced motion stays immediate', async ({ page }) => {
   await page.clock.install();
   await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
   const reader = page.getByRole('dialog', { name: '앨범 전체창' });
   const label = reader.locator('.albumPagerActions p');
   await reader.getByTitle('다음 책장', { exact: true }).click();
-  if (testInfo.project.name === 'mobile') {
-    for (const entry of await reader.locator('.albumPhotoEntry').all()) await expect(entry).toHaveCSS('opacity', '1');
-  }
+  await expect(reader.locator('.albumTurnLayer')).toBeVisible();
+  await expect(reader.locator('.albumPaper.right .albumPhotoEntry').first()).toHaveCSS('opacity', '0');
+  await expect(reader.locator('.albumTurnFace.front [data-turn-media-id]')).toHaveCount(2);
   await reader.getByLabel('앨범 책장 이동').fill('3');
   await page.clock.runFor(ALBUM_TURN_TIMING.duration + 100);
   await expect(label).toHaveText('3 / 3 펼침');

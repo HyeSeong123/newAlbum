@@ -92,10 +92,10 @@ test('bottom album menu stays visible after resize and remains usable with keybo
 test('album trim follows saved color while paper stays white after edits and reload', async ({ page }) => {
   await page.getByRole('button', { name: '색상 앨범 6 앨범 열기', exact: true }).click();
   const reader = page.getByRole('dialog', { name: '앨범 전체창' });
-  const mobile = page.viewportSize()!.width <= 520;
-  const trim = mobile ? reader.locator('.albumPaper').first() : reader.locator('.albumBookTrim');
+  const trim = reader.locator('.albumBookTrim');
   await expect(trim).toHaveCSS('border-top-color', 'rgb(47, 64, 88)');
-  if (mobile) await expect(reader.locator('.albumPaper').first()).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(reader.locator('.albumBookBase')).toBeVisible();
+  await expect(reader.locator('.albumPaper').first()).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   await reader.getByRole('button', { name: '앨범 수정', exact: true }).click();
   const editor = page.getByRole('dialog', { name: '앨범 수정', exact: true });
   await editor.getByRole('button', { name: '앨범 정보', exact: true }).click();
@@ -103,7 +103,8 @@ test('album trim follows saved color while paper stays white after edits and rel
   await editor.getByRole('button', { name: '저장', exact: true }).click();
   await expect(editor).toBeHidden();
   await expect(trim).toHaveCSS('border-top-color', 'rgb(138, 46, 53)');
-  if (mobile) await expect(reader.locator('.albumPaper').first()).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(reader.locator('.albumBookBase')).toBeVisible();
+  await expect(reader.locator('.albumPaper').first()).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   await reader.locator('.albumBookBase').evaluate((image: HTMLImageElement) => image.decode());
   await reader.locator('.albumSpread').screenshot({ path: `test-results/album-appearance-pages-${test.info().project.name}.png` });
   await page.reload();

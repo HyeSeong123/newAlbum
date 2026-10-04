@@ -107,7 +107,7 @@ test('portrait grids keep four uncropped photos per leaf through turns, detail a
   for (const photo of await photos.all()) await expectUncroppedPhoto(photo);
 });
 
-test('mixed orientations group four portraits and two landscapes without losing photos or page navigation', async ({ page }, testInfo) => {
+test('mixed orientations group four portraits and two landscapes without losing photos or page navigation', async ({ page }) => {
   await page.route('**/orientation-*.jpg', (route) => {
     const id = Number(route.request().url().match(/orientation-(\d+)/)![1]);
     if ([1, 5, 6, 7].includes(id)) {
@@ -183,8 +183,8 @@ test('mixed orientations group four portraits and two landscapes without losing 
   await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
   await page.getByTitle('다음 책장', { exact: true }).click();
   await expect(page.locator('.albumSpread')).toHaveAttribute('data-turn-phase', 'departing');
-  await expect(right.locator('.albumPhotoEntry').first()).toHaveCSS('opacity', testInfo.project.name === 'mobile' ? '1' : '0');
-  if (testInfo.project.name === 'mobile') await expect(page.locator('.albumTurnLayer')).toHaveCSS('display', 'none');
+  await expect(right.locator('.albumPhotoEntry').first()).toHaveCSS('opacity', '0');
+  await expect(page.locator('.albumTurnLayer')).toBeVisible();
   await page.clock.runFor(ALBUM_TURN_TIMING.swap);
   await expect(page.locator('.albumSpread')).toHaveAttribute('data-turn-phase', 'arriving');
   expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-5.jpg 상세보기', 'orientation-6.jpg 상세보기', 'orientation-7.jpg 상세보기']);
@@ -345,7 +345,7 @@ test('empty, single and extreme-ratio albums fit both book leaves', async ({ pag
   }
 });
 
-test('phone book pages keep one, two and four photos with readable dates and navigation', async ({ page }) => {
+test('phone bound book keeps one, two and four photos per leaf with dates and navigation', async ({ page }) => {
   await page.route('**/phone-page-*.jpg', route => route.fulfill({
     path: 'node_modules/@vladmandic/face-api/demo/sample1.jpg', contentType: 'image/jpeg',
   }));
@@ -372,15 +372,22 @@ test('phone book pages keep one, two and four photos with readable dates and nav
       const photos = reader.locator('.albumPagePhoto');
       await expect(photos).toHaveCount(count);
       const [first, second] = await pages.evaluateAll(elements => elements.map(element => element.getBoundingClientRect().toJSON()));
-      expect(first.y + first.height).toBeLessThan(second.y);
-      expect(first.x).toBeCloseTo(second.x, 0);
+      await expect(reader.locator('.albumBookBase')).toBeVisible();
+      expect(first.x + first.width).toBeLessThan(second.x);
+      expect(first.y).toBeCloseTo(second.y, 0);
+      expect(first.height).toBeCloseTo(second.height, 0);
       for (const photo of await photos.all()) {
         const box = (await photo.boundingBox())!;
-        expect(box.height).toBeGreaterThan(35);
+        expect(box.width).toBeGreaterThan(20);
+        expect(box.height).toBeGreaterThan(20);
+        await expectUncroppedPhoto(photo);
       }
       const dates = await reader.locator('.albumPageCaption time').evaluateAll(elements => elements.map(element => ({ text: element.textContent, width: element.clientWidth, scroll: element.scrollWidth })));
       expect(dates).toHaveLength(count);
       expect(dates.every(date => date.text === '2026.09.21' && date.scroll <= date.width)).toBe(true);
+      const pager = (await reader.locator('.albumJournalPager').boundingBox())!;
+      expect(pager.y).toBeGreaterThan(first.y + first.height);
+      expect(pager.y + pager.height).toBeLessThanOrEqual(size.height);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
       if (count === 8) {
         await reader.locator('.albumPagePhoto').first().click();
