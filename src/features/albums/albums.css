@@ -87,6 +87,7 @@
 
 .albumJournalCanvas {
   min-height: 0;
+  container-type: size;
   display: grid;
   place-items: center;
   padding: 28px 48px 32px;
@@ -94,7 +95,7 @@
 .albumBookStage {
   --spread-ratio: 2.2;
   position: relative;
-  width: min(100%, calc((100dvh - var(--app-header-height, 70px) - 206px) * var(--spread-ratio)));
+  width: min(100%, calc(100cqh * var(--spread-ratio)));
   aspect-ratio: var(--spread-ratio);
 }
 .albumEdgeNav { position: absolute; z-index: 10; top: 50%; transform: translateY(-50%); width: 36px; height: 70px; padding: 0; display: grid; place-items: center; color: #686a63; background: transparent; }
@@ -278,7 +279,6 @@
   .albumJournalTools button { width: auto; min-height: 38px; padding: 0 7px; font-size: 13px; gap: 4px; }
   .albumJournalTools button > span { display: inline; }
   .albumJournalTools .actionMenuPanel button { width: 100%; }
-  .albumBookStage { width: min(100%, calc((100dvh - var(--app-header-height, 70px) - 230px) * var(--spread-ratio))); }
   .albumPageImages, .albumTurnFace { --caption-line: 15px; --caption-gap: 2px; }
   .albumLeafLayout { gap: 8px; }
   .albumLeafLayout.layout-grid { gap: 4px; }
@@ -294,28 +294,37 @@
 }
 @media (max-width: 520px) { .savedAlbumGrid { grid-template-columns: minmax(0, 1fr); gap: 24px; } .savedAlbumOpen { padding: 0; } .frontAlbum { width: min(100%, 330px); } }
 
-/* Two full-width leaves fit a phone more legibly than a scaled two-page spread. */
+/* Keep the same bound, side-by-side book on phones and fit its canvas. */
 @media (max-width: 520px) {
-  .albumBookStage { --spread-ratio: .68; width: min(100%, calc((100dvh - var(--app-header-height, 70px) - 210px) * var(--spread-ratio))); }
-  .albumSpread { filter: none; }
-  .albumHardback { inset: 0; transform-style: flat; }
-  .albumBookBase { display: none; }
-  .albumBookTrim { display: none; }
-  .albumPaper, .albumPaper.landscape-page {
-    top: 0; bottom: auto; left: 0; right: auto; width: 100%; height: 48.5%;
-    padding: 5% 6% 9%; border: 2px solid var(--album-color); border-radius: 3px;
-    background: #fff; box-shadow: 0 3px 8px #2b291d16;
-  }
-  .albumPaper.right, .albumPaper.right.landscape-page { top: 51.5%; }
-  .albumPaper.left { left: 0; }
-  .albumPageNumber { bottom: 2%; }
-  .albumEdgeNav { top: 50%; bottom: auto; transform: translateY(-50%); width: 18px; height: 38px; padding: 0; background: transparent; }
-  .albumEdgeNav.prev { left: -18px; }
-  .albumEdgeNav.next { right: -18px; }
-  .albumEdgeNav svg { width: 18px; }
-  .albumTurnLayer { display: none; }
-  .albumSpread:is(.departing-next, .departing-prev, .arriving-next, .arriving-prev, .settling-next, .settling-prev) .albumPhotoEntry[data-side] { opacity: 1; animation: none; }
-  .albumPageCaption time, .albumTurnCaption time { letter-spacing: -.02em; }
+  .albumJournalCanvas { padding: 12px 28px; }
+  .albumPageImages, .albumTurnFace { --caption-line: clamp(9px, 3cqw, 14px); --caption-gap: 2px; }
+  .albumLeafLayout, .albumLeafLayout.layout-grid, .landscape-page .albumLeafLayout { gap: clamp(2px, 1cqw, 5px); }
+  .albumPageCaption, .albumTurnCaption, .albumPageCaption time, .albumTurnCaption time { font-size: clamp(7px, 2.4cqw, 11px); }
+  .albumPageNumber { bottom: 1%; font-size: clamp(8px, 2.6cqw, 11px); }
+  .albumEdgeNav { width: 28px; height: 44px; background: transparent; }
+  .albumEdgeNav.prev { left: auto; right: 100%; }
+  .albumEdgeNav.next { right: auto; left: 100%; }
+  .albumEdgeNav svg { width: 22px; }
+}
+@media (max-width: 760px), (max-width: 1000px) and (max-height: 520px) {
+  .app:has(.albumJournal) > .sidebar { visibility: hidden; pointer-events: none; }
+  .albumJournal { inset: 0; height: 100dvh; }
+  .albumJournalPager { padding: 8px 0; }
+}
+@media (max-width: 1000px) and (max-height: 520px) {
+  .albumJournal { grid-template-rows: auto minmax(0, 1fr) auto; }
+  .albumJournalHeader { grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; padding: 4px 12px; }
+  .albumJournalHeading { min-width: 0; text-align: left; }
+  .albumJournalHeading h2 { font-size: 16px; }
+  .albumJournalHeading > span { display: none; }
+  .albumJournalBack { min-height: 34px; font-size: 12px; }
+  .albumJournalTools { grid-column: auto; justify-self: end; flex-wrap: nowrap; gap: 2px; }
+  .albumJournalTools button { min-height: 34px; padding: 0 7px; }
+  .albumJournalTools button > span { display: none; }
+  .albumJournalCanvas { padding: 6px 28px; }
+  .albumJournalPager { gap: 4px; padding: 4px 0; }
+  .albumPagerActions button { min-height: 30px; }
+  .albumProgress { height: 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .frontAlbum { transition: none; }

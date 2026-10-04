@@ -15,6 +15,6 @@
 .petFields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .petFields label { display: grid; gap: 8px; min-width: 0; }
 .petFields input, .petFields select { width: 100%; min-width: 0; height: 42px; padding: 8px 12px; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
-.petGrid.selecting { touch-action: none; user-select: none; }
+.petGrid.selecting { touch-action: pan-y pinch-zoom; user-select: none; }
 .petEditor .peopleActions { justify-content: flex-end; }
 @media (max-width: 600px) { .petGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .petEditor form { padding: 16px; } .petFields { grid-template-columns: 1fr; } }

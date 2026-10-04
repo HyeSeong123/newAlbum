@@ -89,6 +89,21 @@ async function downloads() {
   // no roots drawer. Navigate the visible directory rather than a file-picker UI.
   await tapNative(/text="Download"/);
 }
+async function safeWebViewBounds() {
+  const node = await nativeNode(/class="android.webkit.WebView"/);
+  const match = node.match(/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/);
+  assert.ok(match, 'The WebView must have native screen bounds');
+  const bounds = match.slice(1).map(Number);
+  const sizes = [...(await adb('shell', 'wm', 'size')).matchAll(/(\d+)x(\d+)/g)];
+  const height = Number(sizes.at(-1)[2]);
+  assert.ok(bounds[1] > 0, 'The WebView must start below the status bar/cutout');
+  assert.ok(bounds[3] < height, 'The WebView must end above the Android navigation bar');
+  return bounds;
+}
+async function captureScreen(name) {
+  await adb('shell', 'screencap', '-p', '/sdcard/gamjassak-layout.png');
+  await adb('pull', '/sdcard/gamjassak-layout.png', join(output, `${name}.png`));
+}
 
 let device, context;
 await mkdir(output, { recursive:true });
@@ -96,6 +111,7 @@ try {
   const apk = (await apkFiles('src-tauri/gen/android/app/build/outputs/apk')).find(path => /x86[_-]64/i.test(path));
   assert.ok(apk, 'x86_64 debug APK is required for the emulator');
   await adb('install', '-r', apk);
+  await adb('shell', 'cmd', 'overlay', 'enable-exclusive', '--category', 'com.android.internal.systemui.navbar.threebutton');
   await adb('shell', 'mkdir', '-p', '/sdcard/Download/GamjassakSmoke');
   await adb('push', resolve('tests/fixtures/pet-dog.jpg'), '/sdcard/Download/GamjassakSmoke/gamjassak-smoke.jpg');
   const video = join(output, 'large-smoke.mp4');
@@ -110,15 +126,27 @@ try {
   await expect(page.locator('html')).toHaveAttribute('data-platform', 'android');
   assert.equal(await page.evaluate(() => Boolean(window.__TAURI_INTERNALS__?.invoke)), true);
   await page.screenshot({ path:join(output, 'initial-home.png') });
+  await safeWebViewBounds();
+  await captureScreen('system-bars-home-threebutton');
   console.log('Installed Android app launched and rendered its native home.');
   await page.locator('.navList').getByRole('button', { name:'사진 기록', exact:true }).click();
   await page.getByRole('button', { name:'사진·영상 가져오기', exact:true }).click();
   let dialog = page.getByRole('dialog', { name:'사진·영상 가져오기', exact:true });
   await expect(dialog).toContainText('앱에 복사해 보관해요');
+  await expect(dialog.getByRole('heading', { name:'사진·영상 가져오기', exact:true })).toBeInViewport();
+  await expect(dialog.getByRole('button', { name:'파일 선택', exact:true })).toBeInViewport();
+  await captureScreen('system-bars-import-threebutton');
   // Use the real Android document picker and the real Rust/Channel pipeline.
   await dialog.getByRole('radio', { name:/폴더 가져오기/ }).check();
   await dialog.getByRole('checkbox', { name:/가져오면서 앨범 만들기/ }).check();
   await dialog.getByLabel('앨범 제목').fill('안드로이드에서 담은 추억');
+  await dialog.getByRole('checkbox', { name:/달력에 등록하기/ }).check();
+  await dialog.getByLabel('달력 등록 날짜 방식').selectOption('range');
+  await dialog.getByLabel('달력 시작일').fill('2026-10-03');
+  await dialog.getByLabel('달력 종료일').fill('2026-10-04');
+  await expect(dialog.getByRole('heading', { name:'사진·영상 가져오기', exact:true })).toBeInViewport();
+  await expect(dialog.getByRole('button', { name:'폴더 선택', exact:true })).toBeInViewport();
+  await captureScreen('system-bars-import-options-threebutton');
   await page.evaluate(() => {
     // Tauri's public functions are read-only in the real native runtime.
     // Observe its debugging callback Map without replacing native IPC behavior.
@@ -142,8 +170,24 @@ try {
   const updates = await page.evaluate(() => window.androidImportUpdates);
   assert.ok(updates.some(update => update.phase === 'copying' && update.bytesProcessed > 0));
   assert.ok(updates.some(update => update.phase === 'registering' && update.processed === 2));
+  assert.equal((await page.evaluate(() => JSON.parse(localStorage.getItem('oraedameun.calendarRegistrations-v1'))))[0].mediaIds.length, 2);
   await writeFile(join(output, 'import-progress.json'), JSON.stringify(updates, null, 2));
   await page.screenshot({ path:join(output, 'installed-album.png') });
+  await page.getByRole('button', { name:'안드로이드에서 담은 추억 앨범 열기', exact:true }).click();
+  const reader = page.getByRole('dialog', { name:'앨범 전체창', exact:true });
+  await expect(reader.locator('.albumBookBase')).toBeVisible();
+  const left = await reader.locator('.albumPaper.left').boundingBox();
+  const right = await reader.locator('.albumPaper.right').boundingBox();
+  assert.ok(Math.abs(left.y - right.y) < 1 && left.x + left.width <= right.x + 1);
+  await expect(reader.getByLabel('앨범 책장 이동')).toBeInViewport();
+  await captureScreen('system-bars-book-threebutton');
+  const beforeGesture = await page.evaluate(() => innerHeight);
+  await adb('shell', 'cmd', 'overlay', 'enable-exclusive', '--category', 'com.android.internal.systemui.navbar.gestural');
+  await expect.poll(() => page.evaluate(() => innerHeight)).toBeGreaterThan(beforeGesture);
+  await safeWebViewBounds();
+  await expect(reader.getByLabel('앨범 책장 이동')).toBeInViewport();
+  await captureScreen('system-bars-book-gestural');
+  await reader.getByTitle('닫기', { exact:true }).click();
   await adb('shell', 'input', 'keyevent', '4');
   await expect(page.getByRole('heading', { name:'홈', exact:true })).toBeVisible();
   await page.screenshot({ path:join(output, 'home.png') });
@@ -188,7 +232,8 @@ try {
   connection = await connect(); context = connection.context; page = connection.page;
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_media'))).length, 2);
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_albums')))[0].title, '안드로이드에서 담은 추억');
-  console.log('Android installation, real folder picker/content URI copying, byte progress, warm resume, SQLite persistence and back navigation: OK');
+  assert.equal((await page.evaluate(() => JSON.parse(localStorage.getItem('oraedameun.calendarRegistrations-v1')))).length, 1);
+  console.log('Android installation, system-bar bounds (three-button and gesture), import controls, bound album, real folder picker/content URI copying, byte progress, warm resume, SQLite/calendar persistence and back navigation: OK');
 } catch (error) {
   if (context) await context.pages()[0]?.evaluate(() => ({ picker:window.lifecyclePicker }))
     .then(state => writeFile(join(output, 'webview-state.json'), JSON.stringify(state, null, 2))).catch(() => {});

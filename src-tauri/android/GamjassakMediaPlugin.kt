@@ -2,6 +2,7 @@ package com.oraedameun.album
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
@@ -13,6 +14,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResult
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.graphics.Insets
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import app.tauri.annotation.ActivityCallback
 import app.tauri.annotation.Command
 import app.tauri.annotation.InvokeArg
@@ -40,8 +44,10 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
     private var back: OnBackPressedCallback? = null
     private var backOwner: ComponentActivity? = null
     private var backView: WebView? = null
+    private var insetRoot: View? = null
     override fun load(webView: WebView) {
         val component = activity as? ComponentActivity ?: return
+        attachInsets(component)
         attachBack(component, webView)
     }
     override fun onResume(activity: AppCompatActivity) {
@@ -50,8 +56,28 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
         activity.window.decorView.post {
             if (activity.isDestroyed) return@post
             val webView = findWebView(activity.window.decorView) ?: return@post
+            attachInsets(activity)
             attachBack(activity, webView)
         }
+    }
+    private fun attachInsets(component: ComponentActivity) {
+        val root = component.findViewById<View>(android.R.id.content) ?: return
+        if (insetRoot !== root) {
+            insetRoot?.let { ViewCompat.setOnApplyWindowInsetsListener(it, null) }
+            insetRoot = root
+            root.setBackgroundColor(Color.rgb(248, 247, 242))
+            ViewCompat.setOnApplyWindowInsetsListener(root) { view, windowInsets ->
+                // Resize the native WebView container so every fixed web panel,
+                // including dialogs and the album pager, stays inside system UI.
+                val handled = WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+                val safe = windowInsets.getInsets(handled)
+                view.setPadding(safe.left, safe.top, safe.right, safe.bottom)
+                // Forward zeroed bar/cutout insets to avoid double padding in
+                // newer WebViews. Keep IME updates flowing when keyboards hide.
+                WindowInsetsCompat.Builder(windowInsets).setInsets(handled, Insets.NONE).build()
+            }
+        }
+        root.post { ViewCompat.requestApplyInsets(root) }
     }
     private fun findWebView(view: View): WebView? {
         if (view is WebView) return view
@@ -92,6 +118,8 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
             back = null
             backOwner = null
             backView = null
+            insetRoot?.let { ViewCompat.setOnApplyWindowInsetsListener(it, null) }
+            insetRoot = null
         }
     }
 

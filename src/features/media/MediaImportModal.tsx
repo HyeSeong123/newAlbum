@@ -38,12 +38,13 @@ export function MediaImportModal({ onClose, onImport }: { onClose: () => void; o
     <section className="mediaImportDialog" role="dialog" aria-modal="true" aria-labelledby="mediaImportTitle">
       <header className="mediaImportHeader"><div><h2 id="mediaImportTitle">사진·영상 가져오기</h2><p>간직하고 싶은 순간을 기록에 담아보세요.</p></div><button type="button" className="closeButton" aria-label="닫기" disabled={busy} onClick={onClose}><X size={18} /></button></header>
       <form onSubmit={event => void submit(event)}>
+        <div className="mediaImportBody">
         <CameraLocationNotice />
         {isAndroidRuntime() && <p className="mediaImportStorageHint">선택한 사진과 영상은 앱에 복사해 보관해요. 원본은 그대로 두며, 선택한 파일 크기만큼 휴대폰 저장 공간을 사용해요.</p>}
         <fieldset disabled={busy} className="mediaImportFields">
           <fieldset className="mediaImportMethods"><legend>가져오기 방식</legend>
             {([{ value: "files", label: "사진·영상 가져오기", description: "원하는 파일을 골라 담아요", Icon: Images }, { value: "folder", label: "폴더 가져오기", description: "폴더 안의 기록을 함께 담아요", Icon: FolderOpen }] as const).map(method => <label key={method.value} className={kind === method.value ? "selected" : ""}>
-              <input autoFocus={method.value === "files"} type="radio" name="importMethod" value={method.value} checked={kind === method.value} onChange={() => setKind(method.value)} /><method.Icon size={21} aria-hidden="true" /><span><strong>{method.label}</strong><small>{method.description}</small></span>
+              <input type="radio" name="importMethod" value={method.value} checked={kind === method.value} onChange={() => setKind(method.value)} /><method.Icon size={21} aria-hidden="true" /><span><strong>{method.label}</strong><small>{method.description}</small></span>
             </label>)}
           </fieldset>
           <fieldset className="mediaImportRegion"><legend>촬영 지역 <span>선택 사항</span></legend>
@@ -62,8 +63,9 @@ export function MediaImportModal({ onClose, onImport }: { onClose: () => void; o
           {makeAlbum && <div className="mediaImportAlbumFields"><label className="albumTitleField">앨범 제목<input required maxLength={80} value={title} placeholder="예: 우리가 함께한 봄" onChange={event => setTitle(event.target.value)} /></label><AlbumColorPicker value={color} onChange={setColor} items={[]} title={title.trim() || "나의 추억"} /></div>}
           <CalendarRegistrationFields value={calendar} onChange={setCalendar} title={makeAlbum ? title : "사진·영상 기록"} />
           {error && <p role="alert">{error}</p>}
-          <footer className="mediaImportActions"><button type="button" onClick={onClose}>취소</button><button className="primary" type="submit" disabled={(makeAlbum && !title.trim()) || Boolean(calendar && calendarRegistrationError(calendar))}>{busy ? <LoaderCircle className="spinIcon" size={17} /> : <Plus size={17} />}{busy ? "가져오는 중" : kind === "folder" ? "폴더 선택" : "파일 선택"}</button></footer>
         </fieldset>
+        </div>
+        <footer className="mediaImportActions"><button type="button" disabled={busy} onClick={onClose}>취소</button><button className="primary" type="submit" disabled={busy || (makeAlbum && !title.trim()) || Boolean(calendar && calendarRegistrationError(calendar))}>{busy ? <LoaderCircle className="spinIcon" size={17} /> : <Plus size={17} />}{busy ? "가져오는 중" : kind === "folder" ? "폴더 선택" : "파일 선택"}</button></footer>
       </form>
     </section>
   </div>;

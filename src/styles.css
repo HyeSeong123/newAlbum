@@ -391,7 +391,7 @@ h2 {
 
 .galleryGrid.selecting {
   user-select: none;
-  touch-action: none;
+  touch-action: pan-y pinch-zoom;
 }
 
 .mediaTile.multiSelected {

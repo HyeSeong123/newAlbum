@@ -33,7 +33,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('both faces remain attached to the binding and swap slowly without duplicate interactive photos', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name === 'mobile', 'The stacked mobile pages use the pager and omit the turning sheet.');
+  test.skip(testInfo.project.name === 'mobile', 'Detailed animation alignment is checked at desktop print sizes; mobile geometry has separate coverage.');
   await page.clock.install();
   await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
   const spread = page.locator('.albumSpread');

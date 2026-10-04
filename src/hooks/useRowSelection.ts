@@ -3,6 +3,7 @@ import { useRef, type PointerEvent } from 'react';
 // Across rows, include every tile in the row band, not only pointer-hit tiles.
 export function useRowSelection(enabled: boolean, toggle: (id: string) => void, isSelected: (id: string) => boolean) {
   const gesture = useRef<{ start: string; seen: Set<string>; pointer: number; select: boolean } | null>(null);
+  const suppressMouseClick = useRef(false);
   function visit(element: HTMLElement) {
     const id = element.dataset.selectionId!;
     if (!gesture.current || gesture.current.seen.has(id)) return;
@@ -38,9 +39,13 @@ export function useRowSelection(enabled: boolean, toggle: (id: string) => void, 
   }
   return {
     onPointerDown(event: PointerEvent<HTMLDivElement>) {
-      if (!enabled || event.button !== 0) return;
+      suppressMouseClick.current = false;
+      // Touch and pen taps use the tile's click handler. A swipe must remain a
+      // native scroll gesture and must not select its starting tile.
+      if (!enabled || event.pointerType !== 'mouse' || event.button !== 0) return;
       const tile = (event.target as HTMLElement).closest<HTMLElement>('[data-selection-id]');
       if (!tile) return;
+      suppressMouseClick.current = true;
       gesture.current = { start: tile.dataset.selectionId!, seen: new Set(), pointer: event.pointerId, select: !isSelected(tile.dataset.selectionId!) };
       event.currentTarget.setPointerCapture(event.pointerId);
       visit(tile);
@@ -50,7 +55,8 @@ export function useRowSelection(enabled: boolean, toggle: (id: string) => void, 
     onPointerCancel: end,
     onLostPointerCapture() { gesture.current = null; },
     onClickCapture(event: React.MouseEvent<HTMLDivElement>) {
-      if (enabled && event.detail > 0) { event.preventDefault(); event.stopPropagation(); }
+      if (enabled && suppressMouseClick.current && event.detail > 0) { event.preventDefault(); event.stopPropagation(); }
+      suppressMouseClick.current = false;
     },
   };
 }

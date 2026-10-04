@@ -12,8 +12,10 @@ import "./brand.css";
 import "./features/albums/album-library.css";
 import "./android.css";
 import { isAndroidRuntime } from "./services/tauriMediaService";
+import { observeMobileViewport } from "./services/mobileViewport";
 
 document.documentElement.dataset.platform = isAndroidRuntime() ? "android" : "desktop";
+if (isAndroidRuntime()) observeMobileViewport();
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
