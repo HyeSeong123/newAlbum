@@ -48,14 +48,9 @@ test("empty library flow works", async ({ page }) => {
   await page.locator(".modalBackdrop").click({ position: { x: 8, y: 8 } });
   await expect(page.getByRole("dialog", { name: /\d{4}-\d{2}-\d{2} 기록/ })).toBeVisible();
   await page.getByTitle("닫기").click();
-  await page.getByRole("button", { name: "일정 등록" }).click();
-  await expect(page.getByRole("dialog", { name: "일정 등록" })).toBeVisible();
-  await page.getByPlaceholder("예: 엄마 생신, 가족 저녁 약속").fill("엄마 생신");
-  await page.getByRole("button", { name: "일정 추가" }).click();
-  await expect(page.getByRole("dialog", { name: "일정 등록" })).toBeHidden();
+  await expect(page.getByRole("button", { name: "일정 등록" })).toHaveCount(0);
   await page.locator(".calendarGrid button[aria-current=\"date\"]").click();
-  await expect(page.getByText("엄마 생신")).toBeVisible();
-  await expect(page.getByText(/생일 · D/)).toBeVisible();
+  await expect(page.getByRole("dialog", { name: /\d{4}-\d{2}-\d{2} 기록/ })).toBeVisible();
   await page.getByTitle("닫기").click();
 
   await page.getByRole("tab", { name: /책 보기/ }).click();

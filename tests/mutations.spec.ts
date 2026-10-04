@@ -161,28 +161,36 @@ test('comment storage failure retains the draft and retry adds only one comment'
   await expect(form.getByLabel('내용')).toHaveValue('');
 });
 
-test('calendar event storage failure keeps the form open for retry', async ({ page }) => {
+test('calendar unregister failure keeps the label and retry removes it', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('oraedameun.calendarRegistrations-v1', JSON.stringify([
+      { id: 'record', title: '저장 확인', startDate: '2026-09-25', endDate: '2026-09-25', mediaIds: [], color: '#2F4058' },
+    ]));
+  });
   await page.goto('/');
   await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.getByRole('tab', { name: '달력' }).click();
-  await page.getByRole('button', { name: '일정 등록', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: '일정 등록', exact: true });
-  await dialog.getByPlaceholder('예: 엄마 생신, 가족 저녁 약속').fill('저장 확인');
+  await page.locator('.monthPicker').getByLabel('연도', { exact: true }).selectOption('2026');
+  await page.locator('.monthPicker').getByLabel('월', { exact: true }).selectOption('09');
+  await page.locator('.calendarPeriodBar').click();
+  const dialog = page.getByRole('dialog');
   await page.evaluate(() => {
     const original = Storage.prototype.setItem;
     Storage.prototype.setItem = function(key, value) {
-      if (key === 'oraedameun.calendarEvents') throw new Error('quota');
+      if (key === 'oraedameun.calendarRegistrations-v1') throw new Error('quota');
       original.call(this, key, value);
     };
     window.addEventListener('restore-storage', () => { Storage.prototype.setItem = original; }, { once: true });
   });
-  await dialog.getByRole('button', { name: '일정 추가' }).click();
-  await expect(dialog.getByRole('alert')).toContainText('일정을 저장하지 못했습니다');
-  await expect(dialog.getByPlaceholder('예: 엄마 생신, 가족 저녁 약속')).toHaveValue('저장 확인');
+  await dialog.getByRole('button', { name: '등록 해제' }).click();
+  await expect(dialog.getByRole('alert')).toContainText('달력 등록을 해제하지 못했습니다');
+  await expect(page.locator('.calendarPeriodBar')).toHaveCount(1);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('oraedameun.calendarRegistrations-v1')!).length)).toBe(1);
   await page.evaluate(() => window.dispatchEvent(new Event('restore-storage')));
-  await dialog.getByRole('button', { name: '일정 추가' }).click();
+  await dialog.getByRole('button', { name: '등록 해제' }).click();
   await expect(dialog).toBeHidden();
-  expect(await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('oraedameun.calendarEvents') || '{}')).flat().length)).toBe(1);
+  await expect(page.locator('.calendarPeriodBar')).toHaveCount(0);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('oraedameun.calendarRegistrations-v1')!).length)).toBe(0);
 });
 
 test('export ignores duplicate submits and retains inputs after a failed copy', async ({ page }) => {

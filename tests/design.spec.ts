@@ -68,9 +68,8 @@ test('redesigned views fit and retain photo workflows', async ({ page }) => {
   await page.getByTitle('닫기').click();
   await page.getByRole('tab', { name: '달력' }).click();
   await capture('calendar');
-  await page.getByRole('button', { name: '일정 등록', exact: true }).click();
-  await page.getByLabel('매년 반복').check();
-  await capture('event');
+  await page.locator('.calendarDay').first().click();
+  await capture('day-record');
   await page.getByTitle('닫기').click();
   await page.getByRole('tab', { name: '책 보기' }).click();
   const totalPages = Number(await page.getByRole('slider', { name: '앨범 책장 이동' }).getAttribute('max'));

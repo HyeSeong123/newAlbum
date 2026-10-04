@@ -174,6 +174,7 @@ test('calendar opens today regardless of the latest photo month', async ({ page 
   await expect(page.locator('.calendarPanel h2')).toHaveText(`${today.year}년 ${today.month}월`);
   await expect(page.locator('.calendarGrid [aria-current="date"] .dayNumber')).toHaveText(String(today.day));
   await expect(page.locator('.calendarGrid [aria-current="date"]')).toBeInViewport();
-  await page.getByRole('button', { name: '일정 등록', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: '일정 등록' }).locator('input[type="date"]')).toHaveValue(today.key);
+  await expect(page.getByRole('button', { name: '일정 등록', exact: true })).toHaveCount(0);
+  await page.locator('.calendarGrid [aria-current="date"]').click();
+  await expect(page.getByRole('dialog', { name: `${today.key} 기록`, exact: true })).toBeVisible();
 });
