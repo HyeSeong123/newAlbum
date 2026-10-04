@@ -13,6 +13,7 @@ import { localDateKey } from "./features/calendar/calendarModel";
 import { PeopleWorkspace } from "./features/people/PeopleWorkspace";
 import { SavedAlbumsView } from "./features/albums/AlbumsView";
 import { AlbumCreateModal } from "./features/albums/AlbumCreateModal";
+import type { CalendarRegistrationOptions } from "./features/calendar/calendarModel";
 import { MediaImportModal } from "./features/media/MediaImportModal";
 import { MediaImportProgress } from "./features/media/MediaImportProgress";
 import { useAndroidBack } from "./hooks/useAndroidBack";
@@ -166,10 +167,10 @@ export function App() {
     }
   }
 
-  async function createAlbumFromSelectedItems(title: string, coverColor: string) {
+  async function createAlbumFromSelectedItems(title: string, coverColor: string, calendar?: CalendarRegistrationOptions) {
     const albumItems = albumDraftItems ?? [];
     if (!albumItems.length || !title.trim()) return;
-    await library.createAlbum(title.trim(), coverColor, albumItems);
+    await library.createAlbum(title.trim(), coverColor, albumItems, calendar);
     navigate("Albums");
     setSelectionNotice(`'${title.trim()}' 앨범에 ${albumItems.length}개 항목을 담았습니다.`);
     selection.reset();

@@ -19,46 +19,18 @@ test("past memories count appears in the menu", async ({ page }) => {
   await expect(page.locator(".memoryGroupCard")).toHaveCount(2);
 });
 
-test("annual events use month and day and persist across years", async ({ page }) => {
-  await page.goto("/");
+test("calendar has no schedule or D-day controls", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('oraedameun.calendarEvents', JSON.stringify({
+    '2026-10-04': [{ id: 'old', date: '2026-10-04', title: '옛 일정', kind: 'appointment', showDday: true }],
+  })));
+  await page.goto('/');
   await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
-  await page.getByRole("tab", { name: "달력" }).click();
-  await page.getByRole("button", { name: "일정 등록", exact: true }).click();
-  const form = page.getByRole("dialog", { name: "일정 등록" });
-  await form.getByLabel("매년 반복").check();
-  await expect(form.locator('input[type="date"]')).toHaveCount(0);
-  await form.getByLabel("행사 월").selectOption("01");
-  await form.getByLabel("행사 일").selectOption("31");
-  await form.getByLabel("행사 월").selectOption("02");
-  await expect(form.getByLabel("행사 일")).toHaveValue("29");
-  await form.getByLabel("행사 월").selectOption("09");
-  await form.getByLabel("행사 일").selectOption("06");
-  await form.getByPlaceholder("예: 엄마 생신, 가족 저녁 약속").fill("매년 생일");
-  await page.screenshot({ path: `test-results/annual-event-${test.info().project.name}.png` });
-  await form.getByRole("button", { name: "일정 추가" }).click();
-  await page.reload();
-  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
-  await page.getByRole("tab", { name: "달력" }).click();
-  await page.locator(".monthPicker").getByLabel("연도").selectOption("2028");
-  await page.locator(".monthPicker select").nth(1).selectOption("09");
-  const eventCell = page.locator(".calendarGrid .hasEvent");
-  const eventBadge = eventCell.locator(".dayEvents");
-  await expect(eventBadge).toBeVisible();
-  expect((await eventBadge.boundingBox())!.y).toBeLessThan((await eventCell.boundingBox())!.y + (await eventCell.boundingBox())!.height / 2);
-  await page.screenshot({ path: `test-results/calendar-event-top-${test.info().project.name}.png`, fullPage: true });
-  await page.locator(".calendarGrid button").filter({ has: page.locator(".dayNumber", { hasText: /^6$/ }) }).click();
-  await expect(page.locator(".eventItem")).toContainText("매년 생일");
-  await expect(page.locator(".eventItem")).toContainText("매년");
-  await page.locator(".eventItem").getByLabel("D-day").uncheck();
-  await page.getByTitle("닫기").click();
-  await page.locator(".monthPicker").getByLabel("연도").selectOption("2029");
-  await page.locator(".calendarGrid button").filter({ has: page.locator(".dayNumber", { hasText: /^6$/ }) }).click();
-  await expect(page.locator(".eventItem").getByLabel("D-day")).not.toBeChecked();
-  await page.getByTitle("일정 삭제").click();
-  await expect(page.locator(".eventItem")).toHaveCount(0);
-  await page.getByTitle("닫기").click();
-  await page.locator(".monthPicker").getByLabel("연도").selectOption("2028");
-  await expect(page.locator(".calendarGrid .hasEvent")).toHaveCount(0);
+  await page.getByRole('tab', { name: '달력', exact: true }).click();
+  await expect(page.getByRole('button', { name: '일정 등록', exact: true })).toHaveCount(0);
+  await expect(page.locator('.dayEvents')).toHaveCount(0);
+  await page.locator('.calendarDay').first().click();
+  await expect(page.getByRole('checkbox', { name: /D-day|디데이/ })).toHaveCount(0);
+  await expect(page.getByText('옛 일정', { exact: true })).toHaveCount(0);
 });
 
 test("empty library flow works", async ({ page }) => {

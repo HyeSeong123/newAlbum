@@ -24,7 +24,10 @@ const { browserImportItems, browserImportItemsAsync, retainMediaEdits } = await 
 }));
 const { makeAlbumSpreads } = await import(await modelUrl('features/media/journalModel.ts'));
 const { replaceMediaComments, saveMediaComments } = await import(await modelUrl('features/media/mediaComments.ts'));
-const { updateCalendarEvent, saveCalendarEvents } = await import(await modelUrl('features/calendar/calendarModel.ts'));
+const { saveStringMap } = await import(await modelUrl('features/calendar/calendarModel.ts'));
+const { loadCalendarRegistrations, saveCalendarRegistrations, CALENDAR_REGISTRATION_KEY } = await import(await modelUrl('features/calendar/calendarRegistrationStore.ts', {
+  './calendarModel': await modelUrl('features/calendar/calendarModel.ts'),
+}));
 const { exportFolderName } = await import(await modelUrl('features/export/exportModel.ts'));
 const file = (name, extra = {}) => ({ name, lastModified: Date.UTC(2026, 8, 25), size: 1000, ...extra });
 
@@ -142,28 +145,15 @@ test('comment replacement removes empty buckets and preserves unrelated comments
   assert.equal(original.a.length, 1);
 });
 
-test('annual event changes retain their original storage date and do not mutate other dates', () => {
-  for (const date of ['09-25', '2020-09-25']) {
-    const original = { [date]: [{ id: 'annual', date, showDday: true, yearly: true }], '2026-09-25': [{ id: 'once' }] };
-    const updated = updateCalendarEvent(original, 'annual', event => ({ ...event, showDday: false }));
-    assert.equal(updated[date][0].date, date);
-    assert.equal(updated[date][0].showDday, false);
-    assert.equal(original[date][0].showDday, true);
-    assert.strictEqual(updated['2026-09-25'], original['2026-09-25']);
-    assert.deepEqual(updateCalendarEvent(updated, 'annual', () => null), { '2026-09-25': original['2026-09-25'] });
-    assert.strictEqual(updateCalendarEvent(original, 'missing', () => null), original);
-  }
-});
-
-test('comment and event persistence report failure instead of pretending to save', () => {
+test('comment and day-note persistence report failure instead of pretending to save', () => {
   const previous = globalThis.window;
   try {
     globalThis.window = { localStorage: { setItem() { throw new Error('quota'); } } };
     assert.equal(saveMediaComments({}), false);
-    assert.equal(saveCalendarEvents({}), false);
+    assert.equal(saveStringMap("oraedameun.dayNotes", {}), false);
     globalThis.window.localStorage.setItem = () => {};
     assert.equal(saveMediaComments({}), true);
-    assert.equal(saveCalendarEvents({}), true);
+    assert.equal(saveStringMap("oraedameun.dayNotes", {}), true);
   } finally { globalThis.window = previous; }
 });
 
@@ -171,4 +161,26 @@ test('export folder suggestions sanitize separators and retain readable names', 
   assert.equal(exportFolderName('  제주 / 가을: 사진..  '), '제주 가을 사진');
   assert.equal(exportFolderName('...'), '내보낸 사진');
   assert.equal(exportFolderName('가족 앨범'), '가족 앨범');
+});
+
+test('calendar registration storage ignores corrupt entries and reports failed writes without publishing', () => {
+  const previous = globalThis.window;
+  const values = new Map();
+  let published = 0;
+  globalThis.window = { localStorage: { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) }, dispatchEvent: () => { published++; } };
+  const record = { id: 'one', title: '기록', startDate: '2026-10-04', endDate: '2026-10-04', mediaIds: ['1'], color: '#ccc' };
+  try {
+    for (const invalid of ['null', '{}', '[true,null,{}]', '{broken']) {
+      values.set(CALENDAR_REGISTRATION_KEY, invalid);
+      assert.deepEqual(loadCalendarRegistrations(), []);
+    }
+    values.set(CALENDAR_REGISTRATION_KEY, JSON.stringify([record, { ...record, startDate: '2026-02-30' }, { ...record, mediaIds: [1] }]));
+    assert.deepEqual(loadCalendarRegistrations(), [record]);
+    saveCalendarRegistrations([record]);
+    assert.equal(published, 1);
+    globalThis.window.localStorage.setItem = () => { throw new Error('quota'); };
+    assert.throws(() => saveCalendarRegistrations([]), /quota/);
+    assert.equal(published, 1);
+    assert.deepEqual(loadCalendarRegistrations(), [record]);
+  } finally { globalThis.window = previous; }
 });

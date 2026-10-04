@@ -1,0 +1,12 @@
+.calendarRegistrationFields { padding-top: 18px; border-top: 1px solid var(--border); }
+.calendarRegistrationToggle { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+.calendarRegistrationToggle input { width: 16px; height: 16px; margin: 0; flex: none; accent-color: var(--primary); }
+.calendarRegistrationToggle strong { display: block; font-size: 14px; font-weight: 600; }
+.calendarRegistrationToggle small { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.calendarRegistrationInputs { display: grid; gap: 12px; margin-top: 16px; }
+.calendarRegistrationInputs label { display: grid; min-width: 0; gap: 8px; font-size: 14px; }
+.calendarRegistrationInputs input, .calendarRegistrationInputs select { box-sizing: border-box; width: 100%; min-width: 0; min-height: 44px; padding: 10px; border: 1px solid var(--border); border-radius: 5px; color: var(--text); background: var(--surface); font: inherit; }
+.calendarRegistrationInputs p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.calendarRegistrationInputs [role="alert"] { color: #a44336; }
+.calendarRegistrationDates { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 420px) { .calendarRegistrationDates { grid-template-columns: 1fr; } }

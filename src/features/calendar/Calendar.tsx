@@ -1,27 +1,30 @@
-import { MONTH_LABELS, formatDateKo, localDateKey, formatMediaCount, calendarYears, monthCells, eventsOnDate } from "./calendarModel";
+import { MONTH_LABELS, formatDateKo, localDateKey, formatMediaCount, calendarYears, monthCells, calendarWeekSegments, formatCalendarPeriod } from "./calendarModel";
 import { useCalendarRecords } from "./useCalendarRecords";
 import { DayDetailModal } from "./DayDetailModal";
-import { CalendarEventModal } from "./CalendarEventModal";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { ChevronLeft, ChevronRight, Music, Play, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Image, Music, Play } from "lucide-react";
 import type { MediaItem } from "../../types/media";
-import { MediaImage, EmptyState } from "../../components/MediaVisual";
+import { EmptyState } from "../../components/MediaVisual";
 import { journalMonths } from "../media/journalModel";
 
 type CalendarViewMode = "month" | "recorded";
 
-export function Calendar({ items, onOpen }: { items: MediaItem[]; onOpen: (item: MediaItem) => void }) {
+export function Calendar({ items, onOpen }: { items: MediaItem[]; onOpen: (item: MediaItem, collection?: MediaItem[]) => void }) {
   const availableMonths = useMemo(() => journalMonths(items), [items]);
   const currentYear = new Date().getFullYear();
-  const monthCalendarYears = useMemo(() => calendarYears(items, currentYear), [items, currentYear]);
   const recordedYears = useMemo(() => {
     return Array.from(new Set(availableMonths.map((monthLabel) => monthLabel.slice(0, 4)))).sort().reverse();
   }, [availableMonths]);
   const today = localDateKey(new Date());
   const [visibleMonth, setVisibleMonth] = useState(today.slice(0, 7));
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [eventModalOpen, setEventModalOpen] = useState(false);
-  const { dayNotes, dayCovers, eventIndex, error, updateDayNote, updateDayCover, addDayEvent, toggleEventDday, deleteDayEvent } = useCalendarRecords();
+  const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
+  const { dayNotes, dayCovers, registrations, error, updateDayNote, updateDayCover, removeRegistration } = useCalendarRecords();
+  const itemsById = useMemo(() => new Map(items.map(item => [item.id, item])), [items]);
+  const activeRegistrations = useMemo(() => registrations.filter(record => record.mediaIds.some(id => itemsById.has(id))), [registrations, itemsById]);
+  const recordSummaries = useMemo(() => new Map(activeRegistrations.map(record => [record.id, formatMediaCount(record.mediaIds.flatMap(id => itemsById.get(id) ? [itemsById.get(id)!] : []))])), [activeRegistrations, itemsById]);
+  const selectedRecord = activeRegistrations.find(record => record.id === selectedRecordId);
+  const monthCalendarYears = useMemo(() => calendarYears(items, currentYear, activeRegistrations.flatMap(record => [record.startDate, record.endDate])), [items, currentYear, activeRegistrations]);
   const [calendarViewMode, setCalendarViewMode] = useState<CalendarViewMode>("month");
   const todayCell = useRef<HTMLButtonElement>(null);
   const [selectedYear, selectedMonth] = visibleMonth.split("-");
@@ -36,13 +39,20 @@ export function Calendar({ items, onOpen }: { items: MediaItem[]; onOpen: (item:
     const grouped = new Map<string, MediaItem[]>();
     for (const item of items) {
       if (!item.takenAt) continue;
-      const matches = grouped.get(item.takenAt) ?? [];
+      const date = item.takenAt.slice(0, 10);
+      const matches = grouped.get(date) ?? [];
       matches.push(item);
-      grouped.set(item.takenAt, matches);
+      grouped.set(date, matches);
     }
     return grouped;
   }, [items]);
-  const selectedDayItems = selectedDate ? itemsByDate.get(selectedDate) ?? [] : [];
+  const selectedDayItems = selectedRecord ? selectedRecord.mediaIds.flatMap(id => itemsById.get(id) ? [itemsById.get(id)!] : []) : selectedDate ? itemsByDate.get(selectedDate) ?? [] : [];
+  const selectedRegistrations = selectedDate ? activeRegistrations.filter(record => selectedRecord ? record.id === selectedRecord.id : record.startDate <= selectedDate && record.endDate >= selectedDate) : [];
+  const calendarWeeks = useMemo(() => Array.from({ length: calendarCells.length / 7 }, (_, index) => {
+    const cells = calendarCells.slice(index * 7, index * 7 + 7);
+    const dates = cells.map(cell => cell.kind === "day" ? `${visibleMonth}-${String(cell.day).padStart(2, "0")}` : null);
+    return { cells, dates, hasAudio: dates.some(date => date && itemsByDate.get(date)?.some(item => item.fileType === "audio")), segments: calendarWeekSegments(activeRegistrations, dates) };
+  }), [calendarCells, visibleMonth, activeRegistrations, itemsByDate]);
   const recordedDates = useMemo(() => [...itemsByDate.keys()].sort().reverse(), [itemsByDate]);
   const visibleRecordedDates = recordedDates.filter((date) => date.startsWith(visibleMonth));
 
@@ -119,9 +129,6 @@ export function Calendar({ items, onOpen }: { items: MediaItem[]; onOpen: (item:
             <button onClick={() => { setCalendarViewMode("month"); setVisibleMonth(today.slice(0, 7)); todayCell.current?.scrollIntoView({ block: "nearest" }); }}>오늘</button>
             <button onClick={() => moveMonth(1)} title="다음 달">다음 달<ChevronRight size={17} /></button>
           </div>
-          <button className="primaryControl" onClick={() => setEventModalOpen(true)}>
-            <Plus size={17} />일정 등록
-          </button>
         </div>
       </div>
       <div className="calendarModeTabs" role="tablist" aria-label="달력 보기 방식">
@@ -136,62 +143,55 @@ export function Calendar({ items, onOpen }: { items: MediaItem[]; onOpen: (item:
         </button>
       </div>
       {calendarViewMode === "month" ? (
-        <div className="calendarGrid" style={{ "--calendar-weeks": calendarCells.length / 7 } as CSSProperties}>
-          {["일", "월", "화", "수", "목", "금", "토"].map((label, index) => (
-            <span className={`weekday ${index === 0 ? "sunday" : index === 6 ? "saturday" : ""}`} key={label}>{label}</span>
-          ))}
-          {calendarCells.map((cell, cellIndex) => {
-            if (cell.kind === "blank") return <span className="emptyDay" key={cell.id} />;
-            const date = `${visibleMonth}-${String(cell.day).padStart(2, "0")}`;
-            const matches = itemsByDate.get(date) ?? [];
-            const cover = matches.find((item) => item.id === dayCovers[date]) ?? matches[0];
-            const events = eventsOnDate(eventIndex, date);
-            const weekday = cellIndex % 7;
-            return (
-              <button
-                key={cell.id}
-                ref={date === today ? todayCell : undefined}
-                className={[matches.length ? "hasMedia" : "", dayNotes[date] ? "hasNote" : "", events.length ? "hasEvent" : "", weekday === 0 ? "sunday" : weekday === 6 ? "saturday" : ""].filter(Boolean).join(" ")}
-                aria-label={`${formatDateKo(date)}, ${formatMediaCount(matches)}${events.length ? `, 일정 ${events.length}개` : ""}${dayNotes[date] ? ", 메모 있음" : ""}`}
+        <div className="calendarGrid">
+          <div className="calendarWeekdays">
+            {["일", "월", "화", "수", "목", "금", "토"].map((label, index) => <span className={`weekday ${index === 0 ? "sunday" : index === 6 ? "saturday" : ""}`} key={label}>{label}</span>)}
+          </div>
+          {calendarWeeks.map((week, weekIndex) => <div className={`calendarWeek${week.hasAudio ? " calendarWeekHasAudio" : ""}`} key={weekIndex} style={{ "--calendar-lanes": week.segments.reduce((lanes, segment) => Math.max(lanes, segment.lane + 1), 0) } as CSSProperties}>
+            {week.cells.map((cell, weekday) => {
+              if (cell.kind === "blank") return <span className="emptyDay" key={cell.id} />;
+              const date = week.dates[weekday]!;
+              const matches = itemsByDate.get(date) ?? [];
+              const photos = matches.filter(item => item.fileType === "image").length;
+              const videos = matches.filter(item => item.fileType === "video").length;
+              const audio = matches.length - photos - videos;
+              return <button key={cell.id} ref={date === today ? todayCell : undefined}
+                className={["calendarDay", matches.length ? "hasMedia" : "", dayNotes[date] ? "hasNote" : "", weekday === 0 ? "sunday" : weekday === 6 ? "saturday" : ""].filter(Boolean).join(" ")}
+                aria-label={`${formatDateKo(date)}, ${formatMediaCount(matches)}${dayNotes[date] ? ", 메모 있음" : ""}`}
                 aria-current={date === today ? "date" : undefined}
-                onClick={() => setSelectedDate(date)}
-              >
-                <span className="calendarCellHeader">
-                  <span className="dayNumber">{cell.day}</span>
-                  {events.length > 0 && <span className="dayEvents" title={events.map(event => event.title).join(" · ")}>
-                    <small className="calendarCompactEvent" aria-hidden="true"><span className="calendarEventWord">일정</span>{events.length}</small>
-                  </span>}
+                onClick={() => { setSelectedRecordId(null); setSelectedDate(date); }}>
+                <span className="calendarCellHeader"><span className="dayNumber">{cell.day}</span>{dayNotes[date] && <em className="dayNoteBadge" title="메모 있음">메모</em>}</span>
+                <span className="calendarMediaCounts">
+                  {photos > 0 && <span className="calendarPhotoCount"><Image className="calendarCountIcon" size={10} aria-hidden="true" /><span className="calendarCountKind">사진 </span><span>{photos}장</span></span>}
+                  {videos > 0 && <span className="calendarVideoCount"><Play className="calendarCountIcon" size={10} aria-hidden="true" /><span className="calendarCountKind">영상 </span><span>{videos}개</span></span>}
+                  {audio > 0 && <span className="calendarAudioCount"><Music className="calendarCountIcon" size={10} aria-hidden="true" /><span className="calendarCountKind">음성 </span><span>{audio}개</span></span>}
                 </span>
-                {cover && (
-                  <i style={{ background: "#eeede7" }} data-media-id={cover.id}>
-                    <MediaImage item={cover} />
-                    {cover.fileType === "video" && <Play size={18} />}
-                    {cover.fileType === "audio" && <Music size={18} />}
-                  </i>
-                )}
-                <span className="calendarDayMeta">
-                  {dayNotes[date] && <em className="dayNoteBadge">메모</em>}
-                  {matches.length > 0 && <b>{matches.length}장</b>}
-                </span>
-              </button>
-            );
-          })}
+              </button>;
+            })}
+            <div className="calendarWeekLabels">
+              {week.segments.map(segment => {
+                const summary = recordSummaries.get(segment.record.id);
+                return <button key={segment.record.id} className={`calendarPeriodBar${segment.continuesBefore ? " continuesBefore" : ""}${segment.continuesAfter ? " continuesAfter" : ""}`}
+                  style={{ gridColumn: `${segment.startColumn + 1} / span ${segment.length}`, gridRow: segment.lane + 1, "--record-color": segment.record.color } as CSSProperties}
+                  data-record-id={segment.record.id} data-start-column={segment.startColumn} data-span={segment.length}
+                  aria-label={`${segment.record.title}, ${formatCalendarPeriod(segment.record)}, ${summary}`}
+                  title={`${segment.record.title} · ${formatCalendarPeriod(segment.record)} · ${summary}`}
+                  onClick={() => { setSelectedRecordId(segment.record.id); setSelectedDate(week.dates[segment.startColumn]); }}>
+                  <span className="calendarRecordText">{segment.record.title}</span>
+                </button>;
+              })}
+            </div>
+          </div>)}
         </div>
       ) : (
         <div className="recordedDayGrid">
           {!visibleRecordedDates.length && <EmptyState text="이 연월에는 사진이 찍힌 날이 없습니다." />}
           {visibleRecordedDates.map((date) => {
             const matches = itemsByDate.get(date) ?? [];
-            const cover = matches.find((item) => item.id === dayCovers[date]) ?? matches[0];
             return (
-              <button key={date} onClick={() => setSelectedDate(date)}>
+              <button key={date} onClick={() => { setSelectedRecordId(null); setSelectedDate(date); }}>
                 <span>{formatDateKo(date)}</span>
-                <strong>{matches.length}장</strong>
-                {cover && (
-                  <i style={{ background: "#eeede7" }} data-media-id={cover.id}>
-                    <MediaImage item={cover} />
-                  </i>
-                )}
+                <strong>{formatMediaCount(matches)}</strong>
               </button>
             );
           })}
@@ -199,29 +199,24 @@ export function Calendar({ items, onOpen }: { items: MediaItem[]; onOpen: (item:
       )}
       {selectedDate && (
         <DayDetailModal
-          eventError={error}
-          key={selectedDate}
+          recordError={error}
+          key={selectedRecordId ?? selectedDate}
           date={selectedDate}
           note={dayNotes[selectedDate] ?? ""}
           items={selectedDayItems}
-          events={eventsOnDate(eventIndex, selectedDate)}
+          title={selectedRecord?.title}
+          period={selectedRecord ? formatCalendarPeriod(selectedRecord) : undefined}
+          registrations={selectedRegistrations}
+          onOpenRegistration={(record) => { setSelectedRecordId(record.id); setSelectedDate(record.startDate); }}
+          onRemoveRegistration={(id) => { if (removeRegistration(id) && selectedRecordId === id) setSelectedRecordId(null); }}
           onNoteChange={(note) => updateDayNote(selectedDate, note)}
           coverId={dayCovers[selectedDate] ?? ""}
           onCoverChange={(itemId) => updateDayCover(selectedDate, itemId)}
-          onToggleEventDday={(eventId) => toggleEventDday(eventId)}
-          onDeleteEvent={(eventId) => deleteDayEvent(eventId)}
-          onOpen={onOpen}
-          onClose={() => setSelectedDate(null)}
+          onOpen={(item) => onOpen(item, selectedDayItems)}
+          onClose={() => { setSelectedDate(null); setSelectedRecordId(null); }}
         />
       )}
-      {eventModalOpen && (
-        <CalendarEventModal
-          error={error}
-          initialDate={visibleMonth === today.slice(0, 7) ? today : `${visibleMonth}-01`}
-          onAddEvent={addDayEvent}
-          onClose={() => setEventModalOpen(false)}
-        />
-      )}
+
     </div>
   );
 }

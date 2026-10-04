@@ -6,9 +6,11 @@ import { browserImportItemsAsync, retainMediaEdits } from "./browserImport";
 import { initialImportProgress, type MediaImportProgress } from "./importProgress";
 import { syncAlbumMedia } from "./journalModel";
 import { REGION_NAMES } from "../map/regions";
+import { createCalendarRegistrations, type CalendarRegistrationOptions } from "../calendar/calendarModel";
+import { addCalendarRegistrations } from "../calendar/calendarRegistrationStore";
 
 type LibraryState = { items: MediaItem[]; albums: SavedAlbum[]; loaded: boolean };
-export type MediaImportOptions = { kind: "files" | "folder"; album?: { title: string; color: string }; region?: { code: string; district: string } };
+export type MediaImportOptions = { kind: "files" | "folder"; album?: { title: string; color: string }; region?: { code: string; district: string }; calendar?: CalendarRegistrationOptions };
 
 export function useMediaLibrary() {
   const desktop = api.isTauriRuntime();
@@ -122,22 +124,29 @@ export function useMediaLibrary() {
     return [];
   }
 
-  async function finishImportedAlbum(added: MediaItem[], album?: MediaImportOptions["album"]) {
+  async function finishImportedAlbum(added: MediaItem[], album?: MediaImportOptions["album"], calendar?: CalendarRegistrationOptions) {
     if (!album) return false;
     if (!added.length) return false;
     importPhase("album");
-    try { await createAlbum(album.title.trim(), album.color, added); return true; } catch { setError("사진은 등록했지만 앨범을 만들지 못했습니다. 다시 앨범을 만들어 주세요."); return false; }
+    try { await createAlbum(album.title.trim(), album.color, added, calendar); return true; } catch { setError("사진은 등록했지만 앨범을 만들지 못했습니다. 다시 앨범을 만들어 주세요."); return false; }
   }
 
   async function finishImportedMedia(added: MediaItem[], options?: MediaImportOptions) {
     const located = added.filter(item => item.fileType === "image" || item.fileType === "video");
-    if (located.length && options?.kind === "folder" && options.region) {
+    if (located.length && options?.region) {
       importPhase("region");
       try { await assignRegion(located.map(item => item.id), options.region.code, options.region.district); }
       catch { setError("사진은 가져왔지만 촬영 지역을 저장하지 못했습니다. 가져온 기록을 선택해 지역을 다시 지정해 주세요."); }
     }
     const latest = new Map(current.current.items.map(item => [item.id, item]));
-    return finishImportedAlbum(added.map(item => latest.get(item.id) ?? item), options?.album);
+    const imported = added.map(item => latest.get(item.id) ?? item);
+    if (options?.album) return finishImportedAlbum(imported, options.album, options.calendar);
+    if (imported.length && options?.calendar) {
+      importPhase("calendar");
+      try { addCalendarRegistrations(createCalendarRegistrations(imported, options.calendar, "사진·영상 기록", "#DCE5CA")); }
+      catch (cause) { setError(`사진과 영상은 가져왔지만 달력에 등록하지 못했습니다. ${cause instanceof Error ? cause.message : "저장 공간을 확인해 주세요."}`); }
+    }
+    return false;
   }
 
   async function requestImport(options: MediaImportOptions) {
@@ -288,16 +297,23 @@ export function useMediaLibrary() {
     finally { locked.current = false; setClearing(false); }
   }
 
-  async function createAlbum(title: string, coverColor: string, items: MediaItem[]) {
+  async function createAlbum(title: string, coverColor: string, items: MediaItem[], calendar?: CalendarRegistrationOptions) {
     await write.current("albums", async () => {
+      let albumId: string;
       if (desktop) {
-        await api.createAlbumFromMedia(title, items.map((item) => item.id), coverColor);
+        albumId = String(await api.createAlbumFromMedia(title, items.map((item) => item.id), coverColor));
         const albums = await api.loadSavedAlbums();
         albumRevision.current++;
         publish({ albums });
       } else {
+        albumId = `local-album-${crypto.randomUUID()}`;
         albumRevision.current++;
-        publish({ albums: [{ id: `local-album-${crypto.randomUUID()}`, title, description: "", createdAt: new Date().toISOString(), coverColor, items }, ...current.current.albums] });
+        publish({ albums: [{ id: albumId, title, description: "", createdAt: new Date().toISOString(), coverColor, items }, ...current.current.albums] });
+      }
+      if (calendar) {
+        if (locked.current) importPhase("calendar");
+        try { addCalendarRegistrations(createCalendarRegistrations(items, calendar, title, coverColor, albumId)); }
+        catch (cause) { setError(`앨범은 만들었지만 달력에 등록하지 못했습니다. ${cause instanceof Error ? cause.message : "저장 공간을 확인해 주세요."}`); }
       }
     });
   }

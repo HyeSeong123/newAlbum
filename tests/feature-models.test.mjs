@@ -105,25 +105,11 @@ test('calendar years handle large libraries without spreading arguments or accep
   assert.equal(years.length, 151);
 });
 
-const event = (id, date, yearly = false) => ({ id, date, title: id, kind: 'birthday', showDday: true, yearly });
-test('indexed annual and dated events retain stored order without modifying saved dates', () => {
-  const events = { first: [event('annual', '2020-09-24', true), event('other', '2026-09-25')], next: [event('exact', '2026-09-24'), event('annual2', '2021-09-24', true)] };
-  const lookup = calendar.indexCalendarEvents(events);
-  assert.deepEqual(calendar.eventsOnDate(lookup, '2026-09-24').map((item) => item.id), ['annual', 'exact', 'annual2']);
-  assert.ok(calendar.eventsOnDate(lookup, '2026-09-24').every((item) => item.date === '2026-09-24'));
-  assert.deepEqual(calendar.eventsOnDate(lookup, '2027-09-24').map((item) => item.id), ['annual', 'annual2']);
-  assert.deepEqual(calendar.eventsOnDate(lookup, '2026-09-26'), []);
-  assert.equal(events.first[0].date, '2020-09-24');
-});
-
 test('calendar counts and local date calculations retain display behavior', () => {
   assert.equal(calendar.formatMediaCount([]), '사진 0장');
   assert.equal(calendar.formatMediaCount([photo(1), photo(2, { fileType: 'video' }), photo(3, { fileType: 'audio' })]), '사진 1장 · 영상 1개 · 음성 1개');
   const today = new Date(2026, 8, 24, 23, 59);
   assert.equal(calendar.localDateKey(today), '2026-09-24');
-  assert.equal(calendar.formatDday('2026-09-24', today), 'D-day');
-  assert.equal(calendar.formatDday('2026-09-25', today), 'D-1');
-  assert.equal(calendar.formatDday('2026-09-23', today), 'D+1');
 });
 
 test('face indexes separate unnamed people, retain order and deduplicate original photos', () => {
@@ -158,9 +144,7 @@ test('comments and calendar storage reject corrupt values while retaining valid 
     const saved = { id: 'c', author: '나', content: '기록', createdAt: '' };
     for (const invalid of ['null', '[]', 'true', '{broken']) {
       values.set('oraedameun.mediaComments', invalid);
-      values.set('oraedameun.calendarEvents', invalid);
       assert.deepEqual(comments.loadMediaComments(), {});
-      assert.deepEqual(calendar.loadCalendarEvents(), {});
     }
     values.set('oraedameun.mediaComments', JSON.stringify({ 1: [saved, null, {}], 2: 'wrong' }));
     assert.deepEqual(comments.loadMediaComments(), { 1: [saved] });
@@ -168,16 +152,50 @@ test('comments and calendar storage reject corrupt values while retaining valid 
     assert.deepEqual(comments.getMediaComments(photo(1, { comment: 'old' }), comments.loadMediaComments()), [saved]);
     assert.equal(comments.getMediaComments(photo(2, { comment: 'legacy' }), {})[0].id, 'legacy-comment-2');
     assert.deepEqual(comments.getMediaComments(photo(2), {}), []);
-    values.set('oraedameun.calendarEvents', JSON.stringify({ date: [event('valid', '2026-09-24'), { ...event('bad', '2026-09-24'), kind: 'invalid' }, null] }));
-    assert.equal(calendar.loadCalendarEvents().date.length, 1);
     assert.equal(calendar.saveStringMap('oraedameun.dayNotes', { day: 'memo' }), true);
     assert.deepEqual(calendar.loadDayNotes(), { day: 'memo' });
     globalThis.window.localStorage.setItem = () => { throw new Error('quota'); };
     assert.equal(calendar.saveStringMap('dayNotes', {}), false);
     assert.doesNotThrow(() => comments.saveMediaComments({}));
-    assert.doesNotThrow(() => calendar.saveCalendarEvents({}));
   } finally {
     if (previous === undefined) delete globalThis.window;
     else globalThis.window = previous;
   }
+});
+
+test('calendar registration joins consecutive photo/video dates and separates gaps across year boundaries', () => {
+  const items = [photo(1, { takenAt: '2025-12-31' }), photo(2, { takenAt: '2026-01-01', fileType: 'video' }), photo(3, { takenAt: '2026-01-03' }), photo(4, { takenAt: '2026-01-03' })];
+  const entries = calendar.createCalendarRegistrations(items, { title: '겨울 여행', dateMode: 'taken' }, '기본', '#ccc');
+  assert.deepEqual(entries.map(({ startDate, endDate, mediaIds }) => ({ startDate, endDate, mediaIds })), [
+    { startDate: '2025-12-31', endDate: '2026-01-01', mediaIds: ['1', '2'] },
+    { startDate: '2026-01-03', endDate: '2026-01-03', mediaIds: ['3', '4'] },
+  ]);
+  assert.ok(entries.every(entry => entry.title === '겨울 여행'));
+  assert.equal(items[0].takenAt, '2025-12-31');
+});
+
+test('calendar registration requires explicit dates for undated files and validates reversed/invalid ranges', () => {
+  assert.throws(() => calendar.createCalendarRegistrations([photo(1)], { dateMode: 'taken', title: '' }, '기록', '#ccc'), /촬영 날짜/);
+  for (const [startDate, endDate] of [['2026-02-30', '2026-03-01'], ['2026-06-03', '2026-06-01']]) {
+    assert.ok(calendar.calendarRegistrationError({ dateMode: 'range', startDate, endDate }));
+  }
+  const entries = calendar.createCalendarRegistrations([photo(1), photo(2, { fileType: 'video' })], { dateMode: 'range', title: '', startDate: '2024-02-29', endDate: '2024-02-29' }, '하루 앨범', '#ccc', 'album-1');
+  assert.equal(entries.length, 1);
+  assert.deepEqual(entries[0].mediaIds, ['1', '2']);
+  assert.equal(entries[0].title, '하루 앨범');
+  assert.equal(entries[0].albumId, 'album-1');
+});
+
+test('weekly calendar bars clip at week/month boundaries and place overlapping ranges on separate lanes', () => {
+  const record = (id, startDate, endDate) => ({ id, startDate, endDate, title: id, mediaIds: ['1'], color: '#ccc' });
+  const records = [record('long', '2026-05-29', '2026-06-03'), record('day', '2026-06-01', '2026-06-01'), record('later', '2026-06-03', '2026-06-03')];
+  const week = ['2026-05-31', '2026-06-01', '2026-06-02', '2026-06-03', '2026-06-04', '2026-06-05', '2026-06-06'];
+  const segments = calendar.calendarWeekSegments(records, week);
+  assert.deepEqual(segments.map(segment => [segment.record.id, segment.startColumn, segment.length, segment.lane]), [['long', 0, 4, 0], ['day', 1, 1, 1], ['later', 3, 1, 1]]);
+  assert.equal(segments[0].continuesBefore, true);
+  assert.equal(segments[0].continuesAfter, false);
+  const end = calendar.calendarWeekSegments(records, ['2026-05-24', '2026-05-25', '2026-05-26', '2026-05-27', '2026-05-28', '2026-05-29', '2026-05-30']);
+  assert.equal(end[0].length, 2);
+  assert.equal(end[0].continuesAfter, true);
+  assert.equal(calendar.calendarWeekSegments(records, [null, '2026-06-01', '2026-06-02', '2026-06-03', '2026-06-04', '2026-06-05', '2026-06-06'])[0].startColumn, 1);
 });

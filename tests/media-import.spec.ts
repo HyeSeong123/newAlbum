@@ -46,7 +46,7 @@ test('large native import shows full-screen byte progress through region and alb
   await page.locator('.navList').getByRole('button', { name:'사진 기록', exact:true }).click();
   const dialog = await openImport(page);
   await dialog.getByRole('radio', { name:/폴더 가져오기/ }).check();
-  await dialog.getByLabel('가져올 폴더의 시도').selectOption('KR-50');
+  await dialog.getByLabel('가져올 기록의 시도').selectOption('KR-50');
   await dialog.getByRole('checkbox', { name:/가져오면서 앨범 만들기/ }).check();
   await dialog.getByLabel('앨범 제목').fill('큰 영상의 추억');
   await dialog.getByRole('button', { name:'폴더 선택' }).click();
@@ -130,20 +130,20 @@ for (const kind of ['files', 'folder'] as const) {
     const dialog = await openImport(page);
     await dialog.getByRole('radio', { name: kind === 'folder' ? /폴더 가져오기/ : /사진·영상 가져오기/ }).check();
     if (kind === 'folder') {
-      await expect(dialog.getByLabel('가져올 폴더의 시군구')).toBeDisabled();
-      await dialog.getByLabel('가져올 폴더의 시도').selectOption('KR-11');
-      await dialog.getByLabel('가져올 폴더의 시군구').selectOption('강남구');
-      await dialog.getByLabel('가져올 폴더의 시도').selectOption('KR-41');
-      await expect(dialog.getByLabel('가져올 폴더의 시군구')).toHaveValue('');
-      await expect(dialog.getByLabel('가져올 폴더의 시군구').locator('option[value="강남구"]')).toHaveCount(0);
-      await dialog.getByLabel('가져올 폴더의 시도').selectOption('KR-11');
-      await dialog.getByLabel('가져올 폴더의 시군구').selectOption('강남구');
+      await expect(dialog.getByLabel('가져올 기록의 시군구')).toBeDisabled();
+      await dialog.getByLabel('가져올 기록의 시도').selectOption('KR-11');
+      await dialog.getByLabel('가져올 기록의 시군구').selectOption('강남구');
+      await dialog.getByLabel('가져올 기록의 시도').selectOption('KR-41');
+      await expect(dialog.getByLabel('가져올 기록의 시군구')).toHaveValue('');
+      await expect(dialog.getByLabel('가져올 기록의 시군구').locator('option[value="강남구"]')).toHaveCount(0);
+      await dialog.getByLabel('가져올 기록의 시도').selectOption('KR-11');
+      await dialog.getByLabel('가져올 기록의 시군구').selectOption('강남구');
     } else {
       await dialog.getByRole('radio', { name:/폴더 가져오기/ }).check();
-      await dialog.getByLabel('가져올 폴더의 시도').selectOption('KR-11');
-      await dialog.getByLabel('가져올 폴더의 시군구').selectOption('강남구');
+      await dialog.getByLabel('가져올 기록의 시도').selectOption('KR-11');
+      await dialog.getByLabel('가져올 기록의 시군구').selectOption('강남구');
       await dialog.getByRole('radio', { name:/사진·영상 가져오기/ }).check();
-      await expect(dialog.getByLabel('가져올 폴더의 시도')).toHaveCount(0);
+      await expect(dialog.getByLabel('가져올 기록의 시도')).toHaveValue('KR-11');
     }
     await dialog.getByRole('checkbox', { name: /가져오면서 앨범 만들기/ }).check();
     await expect(dialog.getByRole('button', { name: kind === 'folder' ? '폴더 선택' : '파일 선택' })).toBeDisabled();
@@ -165,12 +165,12 @@ for (const kind of ['files', 'folder'] as const) {
       expect(options.directory).toBe(kind === 'folder');
       expect(options.multiple).toBe(kind === 'files');
     }
-    if (kind === 'folder') {
+    {
       expect(JSON.parse((await page.locator('html').getAttribute('data-assigned-import-region'))!)).toEqual({ ids:[2], regionCode:'KR-11', district:'강남구', country:'', city:'' });
       await page.getByRole('button', { name:'가을 산책 앨범 열기', exact:true }).click();
       await page.locator('.albumPagePhoto').first().click();
       await expect(page.getByRole('dialog', { name:'사진 상세' }).locator('.regionEditor')).toContainText('서울특별시 · 강남구');
-    } else { await expect(page.locator('html')).not.toHaveAttribute('data-assigned-import-region'); }
+    }
   });
 }
 
@@ -194,8 +194,8 @@ test('canceling the native picker leaves no empty album or stale album settings'
   await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   let dialog = await openImport(page);
   await dialog.getByRole('radio', { name:/폴더 가져오기/ }).check();
-  await dialog.getByLabel('가져올 폴더의 시도').selectOption('KR-11');
-  await dialog.getByLabel('가져올 폴더의 시군구').selectOption('강남구');
+  await dialog.getByLabel('가져올 기록의 시도').selectOption('KR-11');
+  await dialog.getByLabel('가져올 기록의 시군구').selectOption('강남구');
   await dialog.getByRole('checkbox', { name: /가져오면서 앨범 만들기/ }).check();
   await dialog.getByLabel('앨범 제목').fill('취소할 앨범');
   await dialog.getByRole('button', { name: '폴더 선택' }).click();
@@ -244,8 +244,8 @@ test('browser folder imports create an album and ignore unsupported files', asyn
     await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
     const dialog = await openImport(page);
     await dialog.getByRole('radio', { name: /폴더 가져오기/ }).check();
-    await dialog.getByLabel('가져올 폴더의 시도').selectOption('KR-49');
-    await dialog.getByLabel('가져올 폴더의 시군구').selectOption('서귀포시');
+    await dialog.getByLabel('가져올 기록의 시도').selectOption('KR-49');
+    await dialog.getByLabel('가져올 기록의 시군구').selectOption('서귀포시');
     await dialog.getByRole('checkbox', { name: /가져오면서 앨범 만들기/ }).check();
     await dialog.getByLabel('앨범 제목').fill('폴더의 기억');
     await dialog.getByRole('button', { name: '브라운 색상' }).click();
@@ -286,8 +286,8 @@ for (const failRegion of [false, true]) {
     await expect(page.locator('.mediaTile')).toHaveCount(1);
     const dialog = await openImport(page);
     await dialog.getByRole('radio', { name:/폴더 가져오기/ }).check();
-    await dialog.getByLabel('가져올 폴더의 시도').selectOption('KR-50');
-    await expect(dialog.getByLabel('가져올 폴더의 시군구')).toBeDisabled();
+    await dialog.getByLabel('가져올 기록의 시도').selectOption('KR-50');
+    await expect(dialog.getByLabel('가져올 기록의 시군구')).toBeDisabled();
     await dialog.getByRole('button', { name:'폴더 선택' }).click();
     await expect(dialog).toBeHidden();
     await page.getByRole('button', { name:'기록 1개 더보기', exact:true }).click();

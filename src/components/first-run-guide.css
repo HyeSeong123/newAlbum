@@ -1,6 +1,8 @@
 .firstRunBackdrop { z-index: 30; }
 .firstRunGuide {
   width: min(460px, 100%);
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
   padding: clamp(24px, 5vw, 38px);
   border-radius: var(--radius-card);
   background: var(--surface);

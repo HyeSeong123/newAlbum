@@ -1,5 +1,5 @@
 export type MediaImportProgress = {
-  phase: "selecting" | "scanning" | "copying" | "registering" | "region" | "album" | "finishing" | "recovering";
+  phase: "selecting" | "scanning" | "copying" | "registering" | "region" | "album" | "calendar" | "finishing" | "recovering";
   processed: number;
   total: number;
   fileName?: string;

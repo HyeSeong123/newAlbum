@@ -12,6 +12,7 @@ const phaseLabels: Record<Progress["phase"], string> = {
   registering: "사진과 영상을 가져오고 있어요",
   region: "촬영 지역을 저장하고 있어요",
   album: "앨범에 추억을 담고 있어요",
+  calendar: "달력에 기록을 등록하고 있어요",
   finishing: "가져온 기록을 정리하고 있어요",
   recovering: "가져온 기록을 확인하고 있어요",
 };

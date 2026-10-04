@@ -1,0 +1,5 @@
+.cameraLocationNotice { display: flex; align-items: flex-start; gap: 9px; margin: 0 0 18px; padding: 13px; border: 1px solid #d5dcc7; border-radius: 7px; color: var(--text); background: #edf1e5; }
+.cameraLocationNotice > svg { flex: none; margin-top: 2px; color: #567142; }
+.cameraLocationNotice strong { display: block; font-size: 13px; line-height: 1.5; }
+.cameraLocationNotice p, .firstRunGuide .cameraLocationNotice p { margin: 6px 0; font-size: 12px; line-height: 1.65; }
+.cameraLocationNotice small { display: block; color: var(--muted); font-size: 11px; line-height: 1.6; }

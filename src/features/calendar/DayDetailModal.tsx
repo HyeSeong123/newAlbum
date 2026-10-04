@@ -3,33 +3,36 @@ import { ChevronLeft, ChevronRight, Image, Music, Play, Trash2, X } from "lucide
 import type { MediaItem } from "../../types/media";
 import { MediaVisual } from "../../components/MediaVisual";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
-import { formatDateKo, formatDday, formatMediaCount, type CalendarEvent } from "./calendarModel";
-import { calendarEventMeta } from "./calendarPresentation";
+import { formatDateKo, formatCalendarPeriod, formatMediaCount, type CalendarRegistration } from "./calendarModel";
 
 export function DayDetailModal({
   date,
   note,
   items,
-  events,
+  registrations,
+  title,
+  period,
+  onOpenRegistration,
+  onRemoveRegistration,
   onNoteChange,
   coverId,
   onCoverChange,
-  onToggleEventDday,
-  onDeleteEvent,
   onOpen,
   onClose,
-  eventError,
+  recordError,
 }: {
-  eventError?: string;
+  recordError?: string;
   date: string;
   note: string;
   items: MediaItem[];
-  events: CalendarEvent[];
+  registrations: CalendarRegistration[];
+  title?: string;
+  period?: string;
+  onOpenRegistration: (record: CalendarRegistration) => void;
+  onRemoveRegistration: (id: string) => void;
   onNoteChange: (note: string) => boolean;
   coverId: string;
   onCoverChange: (itemId: string) => boolean;
-  onToggleEventDday: (eventId: string) => void;
-  onDeleteEvent: (eventId: string) => void;
   onOpen: (item: MediaItem) => void;
   onClose: () => void;
 }) {
@@ -126,8 +129,8 @@ export function DayDetailModal({
       }}>
         <header className="calendarDayHeader">
           <div>
-            <h2>{formatDateKo(date)} {new Date(`${date}T12:00:00`).toLocaleDateString("ko-KR", { weekday: "long" })}</h2>
-            <p>{formatMediaCount(items)}</p>
+            <h2>{title || `${formatDateKo(date)} ${new Date(`${date}T12:00:00`).toLocaleDateString("ko-KR", { weekday: "long" })}`}</h2>
+            <p>{period && `${period} · `}{formatMediaCount(items)}</p>
           </div>
           <button className="calendarDayClose" aria-label="닫기" title="닫기" onClick={onClose}><X size={22} /></button>
         </header>
@@ -172,31 +175,22 @@ export function DayDetailModal({
             {canScrollForward && <button className="calendarStripArrow next" aria-label="다음 썸네일" title="다음 썸네일" onClick={() => scrollThumbnails(1)}><ChevronRight size={19} /></button>}
           </div>}
         </div>
-        <section className="calendarDayMemo">
+        {!title && <section className="calendarDayMemo">
           <div className="calendarMemoHeader">
             <label htmlFor="dayNote">그날의 메모</label>
             <span>{Number(date.slice(5, 7))}월 {Number(date.slice(8))}일의 기록</span>
             <button onClick={saveNote}>메모 저장</button>
           </div>
           <textarea id="dayNote" value={draftNote} onChange={(event) => { setDraftNote(event.target.value); setSaveMessage(""); setSaveError(""); }} placeholder="어떤 날이었는지 적어두세요." />
-        </section>
-        {events.length > 0 && <section className="calendarDaySchedule" aria-label="일정">
-          {eventError && <p role="alert">{eventError}</p>}
-          <h3>이날의 일정</h3>
-          <div className="eventList">
-            {events.map((event) => {
-              const EventIcon = calendarEventMeta[event.kind].icon;
-              return <article key={event.id} className={`eventItem ${event.kind}`}>
-                <span className="eventIcon"><EventIcon size={17} /></span>
-                <div>
-                  <strong>{event.title}</strong>
-                  <small>{calendarEventMeta[event.kind].label}{event.yearly && " · 매년"}{event.showDday && ` · ${formatDday(event.date)}`}</small>
-                </div>
-                <label><input type="checkbox" checked={event.showDday} onChange={() => onToggleEventDday(event.id)} />D-day</label>
-                <button title="일정 삭제" onClick={() => onDeleteEvent(event.id)}><Trash2 size={16} />삭제</button>
-              </article>;
-            })}
-          </div>
+        </section>}
+        {registrations.length > 0 && <section className="calendarDayRegistrations" aria-label="달력에 등록한 기록">
+          <h3>달력에 등록한 기록</h3>
+          {recordError && <p role="alert">{recordError}</p>}
+          {registrations.map(record => <article key={record.id}>
+            <div><strong>{record.title}</strong><small>{formatCalendarPeriod(record)}</small></div>
+            {!title && <button onClick={() => onOpenRegistration(record)}>기록 보기</button>}
+            <button onClick={() => onRemoveRegistration(record.id)}><Trash2 size={15} />등록 해제</button>
+          </article>)}
         </section>}
         <footer className="calendarDayFooter">
           <div className="calendarSaveStatus">
@@ -204,7 +198,7 @@ export function DayDetailModal({
             {saveError && <span role="alert">{saveError}</span>}
           </div>
           <button onClick={onClose}>닫기</button>
-          <button className="calendarSetCover" disabled={!mainItem || mainItem.id === representative?.id} onClick={setRepresentative}>대표사진으로 설정</button>
+          {!title && <button className="calendarSetCover" disabled={!mainItem || mainItem.id === representative?.id} onClick={setRepresentative}>대표사진으로 설정</button>}
         </footer>
       </section>
     </div>
