@@ -188,7 +188,7 @@ try {
   await page.screenshot({ path:join(output, 'installed-album.png') });
   console.log('Opening the bound album in three-button navigation mode.');
   await page.getByRole('button', { name:'안드로이드에서 담은 추억 앨범 열기', exact:true }).click();
-  const reader = page.getByRole('dialog', { name:'앨범 전체창', exact:true });
+  let reader = page.getByRole('dialog', { name:'앨범 전체창', exact:true });
   await expect(reader.locator('.albumBookBase')).toBeVisible();
   await captureScreen('system-bars-book-opening-threebutton');
   await writeFile(join(output, 'book-viewport.json'), JSON.stringify(await page.evaluate(() => ({
@@ -202,10 +202,22 @@ try {
   await expect(reader.getByLabel('앨범 책장 이동')).toBeInViewport();
   await captureScreen('system-bars-book-threebutton');
   console.log('Bound album and pager fit the three-button viewport; checking gesture navigation.');
-  const beforeGesture = await page.evaluate(() => innerHeight);
+  const threeButtonBounds = await safeWebViewBounds();
+  // Changing this Android resource recreates MainActivity and its WebView.
+  // Reconnect instead of polling the detached page's cached layout metrics.
+  await disconnect();
   await adb('shell', 'cmd', 'overlay', 'enable-exclusive', '--category', 'com.android.internal.systemui.navbar.gestural');
-  await expect.poll(() => page.evaluate(() => innerHeight)).toBeGreaterThan(beforeGesture);
-  await safeWebViewBounds();
+  const overlays = await adb('shell', 'cmd', 'overlay', 'list');
+  await writeFile(join(output, 'navigation-overlays.txt'), overlays);
+  assert.ok(overlays.includes('[x] com.android.internal.systemui.navbar.gestural'), 'Gesture navigation must actually be enabled');
+  await startApp();
+  connection = await connect(); context = connection.context; page = connection.page;
+  const gestureBounds = await safeWebViewBounds();
+  await writeFile(join(output, 'navigation-bounds.json'), JSON.stringify({ threeButton:threeButtonBounds, gesture:gestureBounds }, null, 2));
+  await page.locator('.navList').getByRole('button', { name:'내 앨범', exact:true }).click();
+  await page.getByRole('button', { name:'안드로이드에서 담은 추억 앨범 열기', exact:true }).click();
+  reader = page.getByRole('dialog', { name:'앨범 전체창', exact:true });
+  await expect(reader.locator('.albumBookBase')).toBeVisible();
   await expect(reader.getByLabel('앨범 책장 이동')).toBeInViewport();
   await captureScreen('system-bars-book-gestural');
   await reader.getByTitle('닫기', { exact:true }).click();
