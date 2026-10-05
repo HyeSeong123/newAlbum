@@ -4,6 +4,7 @@ async function checkHeader(page: Page, header: Locator) {
   await expect(header).toBeVisible();
   const heading = await header.locator('.entityHeading').boundingBox();
   const actions = await header.locator('.entityActions').boundingBox();
+  expect(heading!.height).toBeLessThan(100);
   expect(heading!.x + heading!.width).toBeLessThanOrEqual(actions!.x - 4);
   expect(Math.abs(heading!.y + heading!.height / 2 - actions!.y - actions!.height / 2)).toBeLessThan(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);

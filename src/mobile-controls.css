@@ -41,7 +41,7 @@
     padding-bottom: 16px; border-bottom: 1px solid var(--border);
   }
   .peopleView > .entityHeader > .entityActions, .petsView > .entityHeader > .entityActions { width: auto; margin: 0; justify-content: flex-end; gap: 8px; }
-  .entityHeadingCopy h2 { font-size: 22px; line-height: 1.35; }
+  .entityHeadingCopy h2 { font-size: 22px; line-height: 1.35; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
   .entityHeading { gap: 4px; }
   .entityActionFull { display: none; }
   .entityActionShort { display: inline; }
