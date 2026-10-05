@@ -31,9 +31,26 @@ async function connect() {
     assert.ok(device, 'The Android emulator must be connected through ADB');
   }
   const webView = await device.webView({ pkg:appId }, { timeout:60_000 });
-  const page = await webView.page();
-  const context = page.context();
+  const firstPage = await webView.page();
+  const context = firstPage.context();
   context.setDefaultTimeout(45_000);
+  // Android can retain the detached WebView's CDP target after recreation.
+  // page() returns the first target, which can still contain the old book.
+  // Every connection here starts at the native home; pick its current app page.
+  let page;
+  await expect.poll(async () => {
+    for (const candidate of context.pages().reverse()) {
+      if (await candidate.locator('main.app .navList').isVisible().catch(() => false)) {
+        page = candidate;
+        return true;
+      }
+    }
+    return false;
+  }, { timeout:60_000 }).toBe(true);
+  await appendFile(join(output, 'webview-targets.jsonl'), JSON.stringify(await Promise.all(context.pages().map(async candidate => ({
+    url:candidate.url(), selected:candidate === page,
+    state:await candidate.evaluate(() => ({ visible:document.visibilityState, focused:document.hasFocus(), book:Boolean(document.querySelector('.albumJournal')) })).catch(() => null),
+  })))) + '\n');
   const log = message => void appendFile(join(output, 'webview-console.txt'), `${message}\n`).catch(() => {});
   page.on('pageerror', error => log(error.stack ?? error.message));
   page.on('console', message => { if (message.type() === 'error') log(message.text()); });
