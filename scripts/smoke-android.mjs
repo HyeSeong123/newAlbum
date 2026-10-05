@@ -125,6 +125,17 @@ async function captureScreen(name) {
   await adb('shell', 'screencap', '-p', '/sdcard/gamjassak-layout.png');
   await adb('pull', '/sdcard/gamjassak-layout.png', join(output, `${name}.png`));
 }
+async function keyboardSafeWebView() {
+  const nodes = (await nativeTree()).match(/<node\b[^>]+>/g) ?? [];
+  const bounds = node => node?.match(/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/)?.slice(1).map(Number);
+  const keyboard = nodes.filter(node => /package="com.google.android.inputmethod.latin"/.test(node)).map(bounds).filter(Boolean);
+  assert.ok(keyboard.length, 'The real Android keyboard must be visible during the layout check');
+  const top = Math.min(...keyboard.filter(box => box[3] > box[1]).map(box => box[1]));
+  const webView = bounds(nodes.find(node => /class="android.webkit.WebView"/.test(node)));
+  assert.ok(webView, 'The keyboard layout check must include the native WebView');
+  assert.ok(webView[3] <= top + 1, `The native WebView must end above the keyboard: ${webView[3]} > ${top}`);
+  await writeFile(join(output, 'keyboard-bounds.json'), JSON.stringify({ webView, keyboardTop:top }, null, 2));
+}
 async function loadedAlbumPhoto(reader) {
   const photos = reader.locator('.albumPagePhoto img.mediaImage');
   await expect(photos).toHaveCount(1);
@@ -248,7 +259,7 @@ try {
   await loadedAlbumPhoto(reader);
   await expect(reader.getByLabel('앨범 책장 이동')).toBeInViewport();
   await captureScreen('system-bars-book-gestural');
-  await reader.locator('.albumPagePhoto').first().click();
+  await reader.locator('.albumPagePhoto:has(img.mediaImage)').first().click();
   const detail = page.getByRole('dialog', { name:'사진 상세', exact:true });
   await expect(detail).toBeVisible();
   await expect(detail.locator('.commentBox, .commentForm, .commentList')).toHaveCount(0);
@@ -260,8 +271,12 @@ try {
   await page.getByRole('button', { name:'첫 일기 쓰기', exact:true }).click();
   const diary = page.getByRole('dialog', { name:'새 일기', exact:true });
   await expect(diary.locator('form')).toBeFocused();
+  const fullHeight = await page.evaluate(() => innerHeight);
+  await captureScreen('diary-full-frame');
   await diary.getByLabel('제목', { exact:true }).fill('휴대폰 한 화면의 일기');
   await diary.getByLabel('내용', { exact:true }).fill(Array.from({ length:100 }, (_, i) => `${i + 1}번째 줄의 안드로이드 기록`).join('\n'));
+  await expect.poll(() => page.evaluate(() => innerHeight)).toBeLessThan(fullHeight - 100);
+  await keyboardSafeWebView();
   await expect.poll(() => diary.evaluate(element => {
     const viewport = visualViewport;
     const limit = (viewport?.offsetTop ?? 0) + (viewport?.height ?? innerHeight);

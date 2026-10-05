@@ -8,6 +8,7 @@ import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.webkit.MimeTypeMap
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
@@ -61,6 +62,7 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
         }
     }
     private fun attachInsets(component: ComponentActivity) {
+        component.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         val root = component.findViewById<View>(android.R.id.content) ?: return
         if (insetRoot !== root) {
             insetRoot?.let { ViewCompat.setOnApplyWindowInsetsListener(it, null) }
@@ -69,11 +71,11 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
             ViewCompat.setOnApplyWindowInsetsListener(root) { view, windowInsets ->
                 // Resize the native WebView container so every fixed web panel,
                 // including dialogs and the album pager, stays inside system UI.
-                val handled = WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+                val handled = WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.ime()
                 val safe = windowInsets.getInsets(handled)
                 view.setPadding(safe.left, safe.top, safe.right, safe.bottom)
-                // Forward zeroed bar/cutout insets to avoid double padding in
-                // newer WebViews. Keep IME updates flowing when keyboards hide.
+                // Consume the insets already applied to the native container so
+                // WebView doesn't apply the keyboard or system bars twice.
                 WindowInsetsCompat.Builder(windowInsets).setInsets(handled, Insets.NONE).build()
             }
         }
