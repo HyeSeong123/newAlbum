@@ -99,6 +99,23 @@ jobs:
         with:
           path: src-tauri/gen/android/app/build/outputs/apk
           key: ${{ steps.preview-apks.outputs.cache-primary-key }}
+      - name: Prepare APK downloads
+        run: |
+          mkdir -p release-output/android
+          find src-tauri/gen/android/app/build/outputs/apk -name '*.apk' -exec cp {} release-output/android/ \;
+          cat > release-output/android/INSTALL.txt <<'INSTALL'
+          휴대폰에는 app-arm64-debug.apk를 설치합니다. x86_64 APK는 에뮬레이터용입니다.
+          기존 앱을 지우지 않고 업데이트로 설치하세요.
+          이 파일은 개인 테스트용 APK입니다. Android 설치 검사 결과는 다운로드한 GitHub Actions 실행에서 확인하세요.
+          INSTALL
+          cd release-output/android
+          sha256sum *.apk > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Gamjassak-Android-preview-${{ github.sha }}
+          path: release-output/android/
+          if-no-files-found: error
+          retention-days: 30
       - name: Enable emulator acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -114,8 +131,9 @@ jobs:
           profile: pixel_7
           # Pin the emulator binary independently of the Android 16 image.
           emulator-build: '15507667'
+          # Isolate the SwiftShader renderer exits with Mesa's software backend.
           # Keep kernel output when the guest exits before ADB can collect logs.
-          emulator-options: -no-window -gpu swiftshader -feature -Vulkan -no-snapshot -noaudio -no-boot-anim -show-kernel
+          emulator-options: -no-window -gpu lavapipe -no-snapshot -noaudio -no-boot-anim -show-kernel
           disable-animations: true
           script: node scripts/smoke-android.mjs
       - name: Capture emulator host diagnostics
@@ -126,24 +144,11 @@ jobs:
           df -h > test-results/android-smoke/host-disk.txt
           sudo dmesg -T > test-results/android-smoke/host-kernel.txt || true
           find /tmp/android-runner -maxdepth 4 -type f > test-results/android-smoke/emulator-crash-files.txt || true
-      - name: Prepare APK downloads
-        run: |
-          mkdir -p release-output/android
-          find src-tauri/gen/android/app/build/outputs/apk -name '*.apk' -exec cp {} release-output/android/ \;
-          cp test-results/android-smoke/*.png release-output/android/
-          cd release-output/android
-          sha256sum *.apk > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
           name: Android-screens-${{ github.sha }}
           path: test-results/android-smoke/*.png
           if-no-files-found: error
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Gamjassak-Android-preview-${{ github.sha }}
-          path: release-output/android/
-          if-no-files-found: error
-          retention-days: 30
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
