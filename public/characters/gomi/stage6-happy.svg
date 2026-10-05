@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" fill="none" data-character="gomi" data-stage="6">
+    <title>고미</title>
+    <defs><linearGradient id="fur" x1="110" y1="40" x2="110" y2="190" gradientUnits="userSpaceOnUse"><stop stop-color="#e8cfad"/><stop offset="1" stop-color="#c29a75"/></linearGradient><linearGradient id="ear" x1="60" y1="65" x2="62" y2="137" gradientUnits="userSpaceOnUse"><stop stop-color="#d6b58e"/><stop offset="1" stop-color="#ba906c"/></linearGradient></defs>
+    <ellipse cx="110" cy="200" rx="52" ry="5" fill="#bda78e" opacity=".13"/>
+    <g stroke="#977456" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M141 158c22-15 22-34 12-40-8-4-13 5-7 10 6 5 4 14-9 19" fill="url(#fur)"/>
+      <path d="M88 119c-9 15-13 27-17 44-6 20 3 31 22 32h35c19-1 28-12 22-30-4-16-9-31-17-46Z" fill="url(#fur)"/>
+      <path d="M77 169c-13 4-13 23 1 27h17m47-27c14 5 12 24-2 27h-17" fill="#c8a27b"/>
+      <path d="M93 137c-1 17-4 35-4 51-7 1-10 8-5 11h23l1-60m19-2c1 17 4 35 4 51 7 1 10 8 5 11h-23l-1-60" fill="#dfbf9a"/>
+      <path d="M91 195v4m9-4v4m21-4v4m9-4v4" stroke="#b5916f"/>
+      <path d="M77 66c-11-8-23 0-26 14-8 5-8 15-6 23-6 10-2 23 6 27 5 13 21 14 28 4 8-10 10-47-2-68Z" fill="url(#ear)"/>
+      <path d="M143 66c11-8 23 0 26 14 8 5 8 15 6 23 6 10 2 23-6 27-5 13-21 14-28 4-8-10-10-47 2-68Z" fill="url(#ear)"/>
+      <path d="M80 66c-5 14-9 31-3 46 4 15 15 22 33 22s29-7 33-22c6-15 2-32-3-46Z" fill="#e0bd96"/>
+      <path d="M71 76c-10-5-7-18 3-22-2-11 9-19 19-17 6-10 19-9 26-3 11-6 23 1 25 11 12 0 19 13 12 22 7 10-4 20-15 16-6 7-18 5-23 0-8 7-20 6-25-1-9 7-20 3-22-6Z" fill="url(#fur)"/>
+      <path d="M80 60q1-7 7-8m12-6q6-4 11 1m16-1q7 0 8 6m-45 18q5-5 11-1m17 3q6-5 12 0" stroke="#d3b18d" stroke-width="1.6"/>
+      <path d="M54 92q5-7 11-2m-14 17q4-5 10-2m-5 18q5-3 9 1m101-34q-5-7-11-2m14 17q-4-5-10-2m5 18q-5-3-9 1" stroke="#ae815e" stroke-width="1.5"/>
+      <path d="M96 104c1-5 7-9 14-9s13 4 14 9l5 13c-1 12-10 18-19 18s-18-6-19-18Z" fill="#edcfab" stroke="#c5a07b"/>
+      <path d="M103 111q7-5 14 0c0 7-4 10-7 10s-7-3-7-10Z" fill="#514038" stroke="#514038"/>
+      <path d="M110 121v5m-7 0q7 8 14 0" stroke="#6e5141" stroke-width="1.8"/>
+    </g>
+    <path d="M83 92q6-7 12 0m30 0q6-7 12 0" fill="none" stroke="#493930" stroke-width="3.2" stroke-linecap="round"/>
+    <ellipse cx="82" cy="105" rx="7" ry="3" fill="#df9e8e" opacity=".45"/><ellipse cx="138" cy="105" rx="7" ry="3" fill="#df9e8e" opacity=".45"/>
+  </svg>

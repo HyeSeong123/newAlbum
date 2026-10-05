@@ -81,7 +81,7 @@ try {
   await page.reload();
   await page.locator('.app').waitFor();
   await expect(page.getByRole('heading', { name: '홈', exact: true })).toBeVisible();
-  const mascot = page.getByRole('button', { name: '감자싹에게 말 걸기' });
+  const mascot = page.locator('.homeMascot');
   const greeting = await page.locator('.homeSpeech').innerText();
   await mascot.click();
   await expect(page.locator('.homeSpeech')).not.toHaveText(greeting);

@@ -13,11 +13,27 @@ test('first run explains the workflow, opens the existing file picker, and stays
   await expect(guide).toContainText('원본 사진과 영상 파일을 삭제하거나 수정하지 않습니다.');
   const chooser = page.waitForEvent('filechooser');
   await guide.getByRole('button', { name: '사진 가져오기' }).click();
+  await page.getByRole('dialog', {name:'사진·영상 가져오기'}).getByRole('button', {name:'파일 선택'}).click();
   await (await chooser).setFiles({ name: 'first.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('photo') });
   await expect(guide).toBeHidden();
   await expect(page.getByText('사진과 영상 1개를 가져왔습니다.')).toBeVisible();
   await page.reload();
   await expect(guide).toBeHidden();
+});
+
+test('first run can start Gomi tutorial and the tutorial can be reopened after dismissal', async ({page}) => {
+  await page.addInitScript(() => localStorage.removeItem('geuruteogi.first-run-completed-v1'));
+  await page.goto('/');
+  const firstRun = page.getByRole('dialog',{name:'감자싹에 사진을 담아보세요'});
+  await expect(firstRun).toContainText('난 고미야');
+  await firstRun.getByRole('button',{name:'고미와 사용 방법 살펴보기'}).click();
+  const guide = page.getByRole('dialog',{name:'고미 도움말'});
+  await expect(guide).toBeVisible();
+  await expect(firstRun).toBeHidden();
+  await guide.getByRole('button',{name:'도움말 닫기'}).click();
+  await page.getByRole('button',{name:'고미 도움말 열기'}).click();
+  await expect(guide).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('geuruteogi.first-run-completed-v1'))).toBe('true');
 });
 
 test('later and existing diary data suppress the first run guide', async ({ page }) => {

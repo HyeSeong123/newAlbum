@@ -26,7 +26,7 @@ test('startup, every logo link, the first menu item and reload all lead to Home'
 
 test('the mascot chooses different messages and supports Enter and Space without network requests', async ({ page }) => {
   await page.goto('/');
-  const mascot = page.getByRole('button', { name: '감자싹에게 말 걸기', exact: true });
+  const mascot = page.getByRole('button', { name: '고미에게 말 걸기', exact: true });
   const speech = page.getByRole('status');
   await mascot.locator('img').evaluate((image: HTMLImageElement) => image.decode());
   await expect(speech).toHaveAttribute('aria-live', 'polite');
@@ -41,7 +41,7 @@ test('the mascot chooses different messages and supports Enter and Space without
   await expect(speech).not.toHaveText(second);
   await page.evaluate(() => { Math.random = () => 0.999999; });
   await mascot.press('Space');
-  await expect(speech).toContainText('잠든 씨감자싹');
+  await expect(speech).toContainText('이 사진은 마음에 들어');
   const last = await speech.innerText();
   await mascot.click();
   await expect(speech).not.toHaveText(last);
@@ -89,7 +89,7 @@ test('Home and the 16px logo gap fit narrow windows and larger text', async ({ p
       const nav = (await page.locator('.navList').boundingBox())!;
       if (width > 1000) expect(logo.x + logo.width).toBeLessThanOrEqual(nav.x);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
-      await expect(page.getByRole('button', { name: '감자싹에게 말 걸기' })).toBeVisible();
+      await expect(page.getByRole('button', { name: '고미에게 말 걸기' })).toBeVisible();
       await page.screenshot({ path: `test-results/home-${width}-${large ? 'large' : 'default'}.png`, fullPage: true, animations: 'disabled' });
     }
   }

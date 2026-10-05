@@ -8,12 +8,13 @@ const reactions: Record<string, [number, number]> = {
   "berry-bob": [12, 5], "neat-tilt": [2, 3], "rose-turn": [6, 7], "curious-tilt": [4, 8],
   "shell-tuck": [2, 4], "grain-wave": [8, 6], "cozy-roll": [2, 5], "peach-sway": [7, 4],
   "bashful-peek": [7, 3], "brother-wink": [5, 6],
+  "poised-ear-tilt": [2, 5],
 };
 export function CharacterVisual({ definition, stage, expression = "idle", className = "", reactionKey = 0 }: {
   definition: CharacterDefinition; stage: number; expression?: Expression; className?: string; reactionKey?: number;
 }) {
   const reduced = useReducedMotion();
-  const currentStage = Math.max(1, Math.min(definition.maxStage, stage));
+  const currentStage = definition.fixedGrowthStage || Math.max(1, Math.min(definition.maxStage, stage));
   const signature = definition.personality?.signatureAnimation || "soft-bounce";
   const [hop, tilt] = reactions[signature] || [4, 2];
   const excited = expression === "happy" || expression === "grow";

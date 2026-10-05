@@ -1,15 +1,18 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PawPrint, Users } from 'lucide-react';
 import type { MediaItem } from '../../types/media';
 import { PeopleView } from './PeopleView';
 import { PetsView } from '../pets/PetsView';
 
-export function PeopleWorkspace(props: { items: MediaItem[]; onOpen: (item: MediaItem, collection?: MediaItem[]) => void; query?: string; onCreateAlbum: (items: MediaItem[]) => void }) {
-  const [tab, setTab] = useState(0);
-  const [petsVisited, setPetsVisited] = useState(false);
+export function PeopleWorkspace(props: { items: MediaItem[]; onOpen: (item: MediaItem, collection?: MediaItem[]) => void; query?: string; onCreateAlbum: (items: MediaItem[]) => void; activeTab?: 'people' | 'pets'; onTabChange?: (tab: 'people' | 'pets') => void }) {
+  const [localTab, setTab] = useState(0);
+  const tab = props.activeTab ? Number(props.activeTab === 'pets') : localTab;
+  const [petsVisited, setPetsVisited] = useState(props.activeTab === 'pets');
+  useEffect(() => { if (tab === 1) setPetsVisited(true); }, [tab]);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   function select(next: number) {
     setTab(next);
+    props.onTabChange?.(next === 1 ? 'pets' : 'people');
     if (next === 1) setPetsVisited(true);
   }
   return <section className="peopleWorkspace">

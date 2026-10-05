@@ -1,0 +1,33 @@
+.gomiHelpEntry { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+.gomiHelpButton { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 4px 12px 4px 6px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: #69533f; font-size: 13px; }
+.gomiHelpButton img { width: 32px; height: 32px; object-fit: contain; }
+.gomiGuideBackdrop { z-index: 120; }
+.gomiGuide { display: flex; flex-direction: column; width: min(580px, 100%); max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px); overflow: hidden; border-radius: 18px; background: var(--surface); box-shadow: var(--shadow-strong); }
+.gomiGuideHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 24px 12px; }
+.gomiGuideHeader small { color: var(--muted); font-size: 12px; }
+.gomiGuideHeader h2 { margin: 4px 0 0; color: #574536; font-size: 23px; }
+.gomiGuideHeader .closeButton { flex: none; min-width: 44px; min-height: 44px; }
+.gomiGuideTopics { display: flex; flex: none; gap: 6px; overflow-x: auto; padding: 4px 24px 12px; border-bottom: 1px solid var(--border); }
+.gomiGuideTopics button { flex: none; min-height: 44px; padding: 8px 13px; border-radius: 999px; background: var(--surface-soft); color: var(--muted); font-size: 13px; }
+.gomiGuideTopics button[aria-pressed="true"] { color: #fff; background: #806349; }
+.gomiGuideBody { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 20px 24px 24px; }
+.gomiGuideCompanion { display: flex; align-items: center; gap: 14px; }
+.gomiGuideCompanion .characterVisual { flex: none; width: 100px; height: 100px; }
+.gomiGuideSpeech { margin: 0; padding: 14px 16px; border: 1px solid #e2d7c8; border-radius: 16px; background: #fbf6ed; color: #69533f; font-size: 14px; line-height: 1.8; word-break: keep-all; }
+.gomiGuideStep { margin-top: 22px; }
+.gomiGuideStep small { color: var(--muted); font-size: 12px; }
+.gomiGuideStep h3 { margin: 8px 0 10px; color: var(--text); font-size: 19px; }
+.gomiGuideStep p { margin: 0; color: var(--text); font-size: 14px; line-height: 1.9; word-break: keep-all; }
+.gomiGuideAction { display: flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 18px; padding: 10px 14px; color: #69533f; background: #f1e8dc; border-radius: 8px; font-size: 14px; }
+.gomiGuideFooter { display: flex; flex: none; justify-content: space-between; gap: 12px; padding: 14px 24px; border-top: 1px solid var(--border); }
+.gomiGuideFooter button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 10px 16px; border-radius: 8px; }
+.firstRunMascot .characterVisual { width: 100%; height: 100%; }
+@media (max-width: 760px) {
+  .gomiGuideHeader { padding: 16px 16px 10px; }
+  .gomiGuideTopics { padding-inline: 16px; }
+  .gomiGuideBody { padding: 16px; }
+  .gomiGuideCompanion { gap: 8px; }
+  .gomiGuideCompanion .characterVisual { width: 80px; height: 80px; }
+  .gomiGuideSpeech { padding: 12px; font-size: 13px; }
+  .gomiGuideFooter { padding: 12px 16px; }
+}

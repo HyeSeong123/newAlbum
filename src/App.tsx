@@ -29,6 +29,8 @@ import { HomeView } from "./features/home/HomeView";
 import { CharacterBook } from "./features/characters/CharacterBook";
 import { CharacterEventModal } from "./features/characters/CharacterEventModal";
 import { useCharacters } from "./features/characters/useCharacters";
+import { GomiGuide } from "./features/characters/GomiGuide";
+import type { GuideTopic } from "./features/characters/guideTopics";
 
 type View = "Home" | "Library" | "Albums" | "Memories" | "People" | "Diary" | "Characters" | "Settings";
 
@@ -89,6 +91,9 @@ export function App() {
   const [query, setQuery] = useState("");
   const [selectionNotice, setSelectionNotice] = useState("");
   const [firstRunOpen, setFirstRunOpen] = useState(false);
+  const [guideTopic, setGuideTopic] = useState<GuideTopic | null>(null);
+  const [peopleTab, setPeopleTab] = useState<"people" | "pets">("people");
+  const currentGuideTopic: GuideTopic = activeView === "People" ? peopleTab : ({ Library: "photos", Albums: "albums", Diary: "diary", Memories: "memories", Characters: "characters" } as Partial<Record<View, GuideTopic>>)[activeView] || "photos";
 
   useEffect(() => {
     if (!library.loaded || !diary.loaded || localStorage.getItem(FIRST_RUN_KEY)) return;
@@ -242,6 +247,7 @@ export function App() {
 
         <section className="contentGrid">
           <div className="mainPanel">
+            <div className="gomiHelpEntry"><button type="button" className="gomiHelpButton" aria-label="고미 도움말 열기" onClick={() => setGuideTopic(currentGuideTopic)}><img src="/characters/gomi/stage6-idle.svg" alt="" draggable={false} />고미 도움말</button></div>
             {activeView === "Home" && <HomeView today={today} itemCount={items.length} albumCount={savedAlbums.length} diaryCount={diary.entries.length}
               mainCharacter={mainCharacter} onInteract={id => { void characters.interact(id); }} onShowCharacters={() => navigate("Characters")}
               onShowLibrary={() => navigate("Library")} onShowAlbums={() => navigate("Albums")} onShowDiary={() => navigate("Diary")} />}
@@ -283,12 +289,20 @@ export function App() {
               onSectionChange={(section) => { setMemorySection(section); if (section === "map") setQuery(""); }}
               onAssignRegion={library.assignRegion} onLocationsAnalyzed={library.refreshLocations}
               onCreateAlbum={(records, title = "") => { setAlbumDraftItems(records); setAlbumDraftTitle(title); }} />}
-            {activeView === "People" && <PeopleWorkspace items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} />}
+            {activeView === "People" && <PeopleWorkspace items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} activeTab={peopleTab} onTabChange={setPeopleTab} />}
             {activeView === "Settings" && <SettingsPanel itemCount={items.length} clearing={clearing} onClear={clearAllRegisteredMedia} />}
           </div>
         </section>
-        {firstRunOpen && <FirstRunGuide onLater={closeFirstRun} onImport={() => { closeFirstRun(); setImportOpen(true); }} />}
-        {!firstRunOpen && pendingCharacterEvent && <CharacterEventModal event={pendingCharacterEvent}
+        {firstRunOpen && <FirstRunGuide onLater={closeFirstRun} onGuide={() => { closeFirstRun(); setGuideTopic("photos"); }} onImport={() => { closeFirstRun(); setImportOpen(true); }} />}
+        {guideTopic && <GomiGuide initialTopic={guideTopic} onClose={() => setGuideTopic(null)} onAction={topic => {
+          setGuideTopic(null);
+          if (topic === "photos") { navigate("Library"); setImportOpen(true); }
+          else {
+            if (topic === "people" || topic === "pets") setPeopleTab(topic);
+            navigate(({ people: "People", pets: "People", albums: "Albums", diary: "Diary", memories: "Memories", characters: "Characters" } as const)[topic]);
+          }
+        }} />}
+        {!firstRunOpen && !guideTopic && pendingCharacterEvent && <CharacterEventModal event={pendingCharacterEvent}
           onMeet={() => { void characters.dismiss(pendingCharacterEvent.id).then(saved => { if (saved) navigate("Characters"); }); }}
           onLater={() => { void characters.dismiss(pendingCharacterEvent.id); }} />}
         {importOpen && <MediaImportModal onClose={() => setImportOpen(false)} onImport={async options => {

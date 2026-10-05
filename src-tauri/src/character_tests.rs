@@ -15,14 +15,14 @@ fn gps_photos_unlock_once_and_raise_stage_at_defined_thresholds() {
     let mut conn = database();
     photo(&conn, 1, None);
     conn.execute("UPDATE media SET region_code='KR-49',location_source='manual' WHERE file_path='photo-1.jpg'",[]).unwrap();
-    assert_eq!(reconcile(&mut conn).unwrap().characters.len(), 2);
+    assert_eq!(reconcile(&mut conn).unwrap().characters.len(), 3);
     for id in 2..=61 {
         photo(&conn,id,Some("KR-49"));
         let current = reconcile(&mut conn).unwrap();
         let orange = current.characters.iter().find(|c| c.id=="orange").unwrap();
         assert_eq!(orange.growth_stage, if id < 4 {1} else if id < 11 {2} else if id < 31 {3} else if id < 46 {4} else if id < 61 {5} else {6});
         assert_eq!(orange.region_photo_count,id-1);
-        assert_eq!(current.characters.len(),3);
+        assert_eq!(current.characters.len(),4);
     }
     let before = snapshot(&conn).unwrap();
     let after = reconcile(&mut conn).unwrap();
@@ -46,27 +46,27 @@ fn manual_region_and_video_do_not_unlock_or_grow() {
     conn.execute("INSERT INTO media(file_path,file_type,size_bytes,gps_region_code,location_status)
         VALUES('video.mp4','video',1,'KR-42','ready')",[]).unwrap();
     let initial = reconcile(&mut conn).unwrap();
-    assert_eq!(initial.characters.len(), 2);
+    assert_eq!(initial.characters.len(), 3);
     let potato = initial.characters.iter().find(|c| c.id == "potato").unwrap();
     assert_eq!(potato.growth_stage, 1);
     assert_eq!(potato.region_photo_count, 0);
     assert!(initial.events.is_empty());
     photo(&conn,3,Some("KR-42"));
-    assert_eq!(reconcile(&mut conn).unwrap().characters[0].region_photo_count,1);
+    assert_eq!(reconcile(&mut conn).unwrap().characters.iter().find(|c| c.id=="potato").unwrap().region_photo_count,1);
 }
 
 #[test]
 fn every_map_region_has_a_distinct_gps_companion() {
     let mut conn = database();
-    let definitions = definitions();
+    let definitions: Vec<_> = definitions().iter().filter(|def| !def.region_code.is_empty()).collect();
     assert_eq!(definitions.len(), 16);
     for (index, definition) in definitions.iter().enumerate() {
         photo(&conn, index as i64, Some(&definition.region_code));
     }
     let result = reconcile(&mut conn).unwrap();
-    assert_eq!(result.characters.len(), definitions.len());
+    assert_eq!(result.characters.len(), definitions.len() + 1);
     assert_eq!(result.events.len(), definitions.iter().filter(|def| !def.default_unlocked).count());
-    for definition in definitions {
+    for definition in &definitions {
         let character = result.characters.iter().find(|item| item.id == definition.id).unwrap();
         assert_eq!(character.growth_stage, 1);
         assert_eq!(character.region_photo_count, 1);
@@ -106,10 +106,10 @@ fn migration_derives_gps_region_even_when_map_label_was_manual() {
 fn starters_are_immediately_owned_without_unlock_events_and_can_be_selected() {
     let mut conn = database();
     let initial = snapshot(&conn).unwrap();
-    assert_eq!(initial.characters.len(), 2);
+    assert_eq!(initial.characters.len(), 3);
     assert!(initial.events.is_empty());
-    assert_eq!(initial.characters.iter().find(|c| c.is_main).unwrap().id, "potato");
-    assert!(initial.characters.iter().all(|c| c.growth_stage == 1 && c.region_photo_count == 0));
+    assert_eq!(initial.characters.iter().find(|c| c.is_main).unwrap().id, "gomi");
+    assert!(initial.characters.iter().all(|c| (c.growth_stage == if c.id == "gomi" { 6 } else { 1 }) && c.region_photo_count == 0));
     rename(&mut conn, "sweet-potato", "고구마 형").unwrap();
     set_main(&mut conn, "sweet-potato").unwrap();
     interact(&mut conn, "sweet-potato").unwrap();
@@ -135,7 +135,7 @@ fn version_seven_upgrade_keeps_existing_progress_and_main_and_only_adds_missing_
     crate::database::initialize(&mut conn).unwrap();
     crate::database::initialize(&mut conn).unwrap();
     let result = reconcile(&mut conn).unwrap();
-    assert_eq!(result.characters.len(), 3);
+    assert_eq!(result.characters.len(), 4);
     let potato = result.characters.iter().find(|c| c.id == "potato").unwrap();
     assert_eq!(potato.custom_name.as_deref(), Some("감자 동생"));
     assert_eq!(potato.growth_stage, 4);
@@ -257,4 +257,29 @@ fn version_nine_upgrade_preserves_completed_appearance_pending_events_and_foreig
     assert!(!conn.prepare("PRAGMA foreign_key_check").unwrap().exists([]).unwrap());
     conn.execute("DELETE FROM owned_character WHERE character_id='sweet-potato'", []).unwrap();
     assert_eq!(conn.query_row("SELECT COUNT(*) FROM character_growth_start", [], |r| r.get::<_,i64>(0)).unwrap(), 0);
+}
+
+#[test]
+fn gomi_upgrade_is_idempotent_preserves_main_and_never_grows_from_photos() {
+    let mut conn = database();
+    set_main(&mut conn, "sweet-potato").unwrap();
+    conn.execute("DELETE FROM owned_character WHERE character_id='gomi'", []).unwrap();
+    for id in 0..60 { photo(&conn, id, Some("KR-42")); }
+    let result = reconcile(&mut conn).unwrap();
+    let gomi = result.characters.iter().find(|c| c.id == "gomi").unwrap();
+    assert_eq!(gomi.growth_stage, 6);
+    assert_eq!(gomi.region_photo_count, 0);
+    assert_eq!(gomi.affection, 0);
+    assert_eq!(result.characters.iter().find(|c| c.is_main).unwrap().id, "sweet-potato");
+    assert!(!result.events.iter().any(|e| e.character_id == "gomi"));
+    set_main(&mut conn, "gomi").unwrap();
+    interact(&mut conn, "gomi").unwrap();
+    interact(&mut conn, "gomi").unwrap();
+    conn.execute("UPDATE owned_character SET growth_stage=1 WHERE character_id='gomi'", []).unwrap();
+    let repeated = reconcile(&mut conn).unwrap();
+    let gomi = repeated.characters.iter().find(|c| c.id == "gomi").unwrap();
+    assert_eq!(gomi.growth_stage, 6);
+    assert_eq!(gomi.affection, 1);
+    assert!(gomi.is_main);
+    assert!(!repeated.events.iter().any(|e| e.character_id == "gomi"));
 }

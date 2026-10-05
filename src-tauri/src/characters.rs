@@ -19,6 +19,10 @@ pub struct Definition {
     #[serde(default)]
     pub default_unlocked: bool,
     #[serde(default)]
+    pub default_main: bool,
+    #[serde(default)]
+    pub fixed_growth_stage: Option<i64>,
+    #[serde(default)]
     pub growth_prerequisite: Option<GrowthPrerequisite>,
 }
 
@@ -68,12 +72,18 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
 pub fn ensure_starters(conn: &Connection) -> Result<(), String> {
     for def in definitions().iter().filter(|def| def.default_unlocked) {
         conn.execute("INSERT OR IGNORE INTO owned_character(character_id,growth_stage,is_main)
-            VALUES(?1,1,0)", [&def.id])
+            VALUES(?1,?2,0)", params![def.id, def.fixed_growth_stage.unwrap_or(1)])
             .map_err(|e| e.to_string())?;
+        if let Some(stage) = def.fixed_growth_stage {
+            conn.execute("UPDATE owned_character SET growth_stage=?1 WHERE character_id=?2 AND growth_stage!=?1",
+                params![stage, def.id]).map_err(|e| e.to_string())?;
+            conn.execute("DELETE FROM character_event WHERE character_id=?1", [&def.id]).map_err(|e| e.to_string())?;
+        }
         conn.execute("DELETE FROM character_event WHERE character_id=?1 AND kind='unlock'", [&def.id])
             .map_err(|e| e.to_string())?;
     }
-    if let Some(first) = definitions().iter().find(|def| def.default_unlocked) {
+    if let Some(first) = definitions().iter().find(|def| def.default_unlocked && def.default_main)
+        .or_else(|| definitions().iter().find(|def| def.default_unlocked)) {
         conn.execute("UPDATE owned_character SET is_main=1 WHERE character_id=?1
             AND NOT EXISTS(SELECT 1 FROM owned_character WHERE is_main=1)", [&first.id])
             .map_err(|e| e.to_string())?;
@@ -96,8 +106,8 @@ pub fn snapshot(conn: &Connection) -> Result<Snapshot, String> {
             let total: i64 = r.get(3)?;
             let started_count: Option<i64> = r.get(9)?;
             Ok(OwnedCharacter {
-            id:r.get(0)?,custom_name:r.get(1)?,growth_stage:r.get(2)?,region_photo_count:total,
-            growth_photo_count: if def.growth_prerequisite.is_some() { started_count.unwrap_or(0) } else { total },
+            id:r.get(0)?,custom_name:r.get(1)?,growth_stage:r.get(2)?,region_photo_count:if def.fixed_growth_stage.is_some() { 0 } else { total },
+            growth_photo_count: if def.fixed_growth_stage.is_some() { 0 } else if def.growth_prerequisite.is_some() { started_count.unwrap_or(0) } else { total },
             affection:r.get(4)?,is_main:r.get(5)?,unlocked_at:r.get(6)?,created_at:r.get(7)?,updated_at:r.get(8)?
         }) }).optional().map_err(|e| e.to_string())? { characters.push(character); }
     }
@@ -111,6 +121,8 @@ pub fn reconcile(conn: &mut Connection) -> Result<Snapshot, String> {
     let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate).map_err(|e| e.to_string())?;
     ensure_starters(&tx)?;
     for def in definitions() {
+        // Guide companions are already adults and never receive photo growth events.
+        if def.fixed_growth_stage.is_some() { continue; }
         let count: i64 = tx.query_row("SELECT COUNT(*) FROM media WHERE file_type='image' AND gps_region_code=?1",
             [&def.region_code],|r| r.get(0)).map_err(|e| e.to_string())?;
         let previous: Option<i64> = tx.query_row("SELECT growth_stage FROM owned_character WHERE character_id=?1",

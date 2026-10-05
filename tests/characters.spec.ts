@@ -1,10 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-const definitions = JSON.parse(readFileSync('src/features/characters/data/characterDefinitions.json','utf8')) as Array<{ id:string; defaultName:string; regionLabel:string; maxStage:number; stageAssetPaths?:string[] }>;
+const definitions = JSON.parse(readFileSync('src/features/characters/data/characterDefinitions.json','utf8')) as Array<{ id:string; defaultName:string; regionLabel:string; maxStage:number; fixedGrowthStage?:number; stageAssetPaths?:string[] }>;
 
 type Companion = { id:string; customName:string|null; growthStage:number; regionPhotoCount:number; growthPhotoCount:number; affection:number; isMain:boolean; unlockedAt:string; createdAt:string; updatedAt:string };
 const companion = (id:string,stage=1,isMain=false):Companion => ({ id,customName:null,growthStage:stage,regionPhotoCount:0,growthPhotoCount:0,affection:0,isMain,unlockedAt:'2026-10-03',createdAt:'2026-10-03',updatedAt:'2026-10-03' });
 async function installSnapshot(page:Page,initial:Companion[],event?:{ id:number; characterId:string; kind:string; stage:number }) {
+  if (!initial.some(c => c.id === 'gomi')) initial = [...initial, companion('gomi', 6)];
   await page.addInitScript(({ initial,event }) => {
     let characters = initial;
     let events = event ? [event] : [];
@@ -41,11 +42,11 @@ test('the starter potato has a visible portrait and the book reveals no discover
   expect(box.width).toBeGreaterThan(160);
   expect(box.height).toBeGreaterThan(160);
   await expect(page.locator('.characterCard.locked')).toHaveCount(14);
-  await expect(book.locator('img')).toHaveCount(2);
+  await expect(book.locator('img')).toHaveCount(3);
   await expect(book.locator('details,progress,.characterStats,.characterPersonality,.characterRegion')).toHaveCount(0);
   await expect(book.getByRole('button',{name:/교감|말 걸기/})).toHaveCount(0);
   await expect(book).not.toContainText(/GPS|친밀도|성장 과정|완성하면|10장|30장|60장/);
-  for(const def of definitions) await expect(book).not.toContainText(def.regionLabel);
+  for(const def of definitions.filter(d => d.regionLabel)) await expect(book).not.toContainText(def.regionLabel);
   await page.screenshot({path:`test-results/character-book-${test.info().project.name}.png`,fullPage:true});
 });
 
@@ -91,11 +92,11 @@ test('each of the six current forms loads without showing any future form',async
   await page.getByRole('button',{name:'새싹 도감 보기'}).click();
   for(const stage of [1,2,3,4,5,6]) {
     await page.evaluate(stage=>(window as unknown as {setSproutStage:(stage:number)=>void}).setSproutStage(stage),stage);
-    await expect(page.locator('.characterCardArt .characterVisual').first()).toHaveAttribute('data-stage',String(stage));
-    await expect(page.locator('.characterBook img')).toHaveCount(16);
+    await expect(cardFor(page,'감자싹').locator('.characterVisual')).toHaveAttribute('data-stage',String(stage));
+    await expect(page.locator('.characterBook img')).toHaveCount(17);
     for(const def of definitions) {
       const image=cardFor(page,def.defaultName).locator('.characterCardArt img');
-      await expect(image).toHaveAttribute('src',def.stageAssetPaths?.[stage-1] ?? `/characters/${def.id}/stage${stage}-idle.svg`);
+      await expect(image).toHaveAttribute('src',def.stageAssetPaths?.[stage-1] ?? `/characters/${def.id}/stage${def.fixedGrowthStage || stage}-idle.svg`);
       await image.evaluate((img:HTMLImageElement)=>img.decode());
     }
     expect(await page.evaluate(()=>document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -115,4 +116,90 @@ test('redesigned completed potato uses its new picture and reduced motion still 
   await expect(mascot.locator('img')).toHaveAttribute('src','/characters/potato/stage6-idle.png');
   await expect(mascot.locator('.characterHeart')).toHaveCount(0);
   await expect(mascot.locator('img')).toHaveAttribute('data-expression','idle',{timeout:2500});
+});
+
+test('Gomi starts as an adult main; help and book never award affection and home changes her expression', async ({page}) => {
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.goto('/');
+  const mascot = page.getByRole('button', {name:'고미에게 말 걸기'});
+  await expect(mascot.locator('img')).toHaveAttribute('src', '/characters/gomi/stage6-idle.svg');
+  await expect(mascot.locator('.characterVisual')).toHaveAttribute('data-stage', '6');
+  await page.getByRole('button', {name:'고미 도움말 열기'}).click();
+  const guide = page.getByRole('dialog', {name:'고미 도움말'});
+  await guide.getByRole('button', {name:'친구들', exact:true}).click();
+  await expect(guide).toContainText('친밀도만 쌓을 수 있어요');
+  await guide.getByRole('button', {name:'다음', exact:true}).click();
+  await guide.getByRole('button', {name:'새싹 도감 열기'}).click();
+  await expect(cardFor(page,'고미')).toBeVisible();
+  await expect(cardFor(page,'고미').locator('.characterVisual')).toHaveAttribute('data-stage','6');
+  await page.getByRole('button', {name:'감자싹 홈으로 이동'}).click();
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
+  await mascot.click();
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
+  await expect(mascot.locator('img')).toHaveAttribute('src', '/characters/gomi/stage6-happy.svg');
+  await mascot.click();
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
+  await expect(mascot.locator('.characterVisual')).toHaveAttribute('data-stage', '6');
+  await page.screenshot({path:`test-results/gomi-home-${test.info().project.name}.png`,fullPage:true});
+});
+
+test('Gomi help follows the current screen, supports keyboard focus and opens the import flow', async ({page}) => {
+  await page.goto('/');
+  await page.locator('.navList').getByRole('button',{name:'사람과 반려동물',exact:true}).click();
+  const opener = page.getByRole('button', {name:'고미 도움말 열기'});
+  await opener.click();
+  const guide = page.getByRole('dialog',{name:'고미 도움말'});
+  await expect(guide.getByRole('button',{name:'인물 등록',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(guide).toContainText('사진 속 얼굴부터 찾자');
+  await page.keyboard.press('Shift+Tab');
+  await expect(guide.getByRole('button',{name:'다음',exact:true})).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(guide.getByRole('button',{name:'도움말 닫기'})).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(guide).toBeHidden();
+  await expect(opener).toBeFocused();
+  await opener.click();
+  await guide.getByRole('button',{name:'반려동물',exact:true}).click();
+  await guide.getByRole('button',{name:'사람과 반려동물 열기'}).click();
+  await expect(page.getByRole('tab',{name:'반려동물',exact:true})).toHaveAttribute('aria-selected','true');
+  await opener.click();
+  await expect(guide.getByRole('button',{name:'반려동물',exact:true})).toHaveAttribute('aria-pressed','true');
+  await guide.getByRole('button',{name:'사진 등록',exact:true}).click();
+  await page.screenshot({path:`test-results/gomi-guide-${test.info().project.name}.png`});
+  const box = (await guide.boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.y).toBeGreaterThanOrEqual(0);
+  expect(box.x+box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  expect(box.y+box.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+  await guide.getByRole('button',{name:'사진 등록 시작하기'}).click();
+  await expect(page.getByRole('dialog',{name:'사진·영상 가져오기'})).toBeVisible();
+});
+
+test('Gomi tutorial navigation fits a short narrow phone with larger text', async ({page, isMobile}) => {
+  test.skip(!isMobile, 'Phone geometry.');
+  await page.setViewportSize({width:320,height:480});
+  await page.goto('/');
+  await page.getByRole('button',{name:'크게 보기',exact:true}).click();
+  await page.getByRole('button',{name:'고미 도움말 열기'}).click();
+  const guide = page.getByRole('dialog',{name:'고미 도움말'});
+  await guide.getByRole('button',{name:'인물 등록',exact:true}).click();
+  const box = (await guide.boundingBox())!;
+  const next = (await guide.getByRole('button',{name:'다음',exact:true}).boundingBox())!;
+  expect(box.y).toBeGreaterThanOrEqual(0);
+  expect(box.y+box.height).toBeLessThanOrEqual(480);
+  expect(next.y+next.height).toBeLessThanOrEqual(480);
+  expect(await guide.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await guide.getByRole('button',{name:'다음',exact:true}).click();
+  await expect(guide).toContainText('누구인지 확인하고 이름을 붙여');
+  await page.screenshot({path:'test-results/gomi-guide-short-phone.png'});
+});
+
+test('Gomi help remains available when another character is selected as main', async ({page}) => {
+  await page.goto('/');
+  await page.getByRole('button',{name:'새싹 도감 보기'}).click();
+  await cardFor(page,'감자싹').getByRole('button',{name:'대표로 설정'}).click();
+  await page.getByRole('button',{name:'감자싹 홈으로 이동'}).click();
+  await expect(page.getByRole('button',{name:'감자싹에게 말 걸기'})).toBeVisible();
+  await page.getByRole('button',{name:'고미 도움말 열기'}).click();
+  await expect(page.getByRole('dialog',{name:'고미 도움말'}).locator('.characterVisual')).toHaveAttribute('data-character','gomi');
 });
