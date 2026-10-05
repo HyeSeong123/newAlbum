@@ -64,7 +64,8 @@ export function DiaryView({ entries, albums, query = "", onQueryChange, onSave, 
   useEffect(() => {
     if (!draft) return;
     const previous = document.activeElement as HTMLElement | null;
-    form.current?.querySelector<HTMLInputElement>(".diaryTitleInput")?.focus();
+    if (window.matchMedia("(max-width: 999px)").matches) form.current?.focus();
+    else form.current?.querySelector<HTMLInputElement>(".diaryTitleInput")?.focus();
     return () => { previous?.focus(); };
   }, [Boolean(draft)]);
 
@@ -151,11 +152,11 @@ export function DiaryView({ entries, albums, query = "", onQueryChange, onSave, 
     </article>)}</div>
     {draft && <div className="modalBackdrop diaryBackdrop"><section className="diaryDialog" role="dialog" aria-modal="true" aria-label={draft.id ? "일기 상세" : "새 일기"}>
       <Bookmark className="diaryBookmark" size={30} fill="currentColor" strokeWidth={0} aria-hidden="true" />
-      <form ref={form} onSubmit={submit} onKeyDown={event => {
+      <form ref={form} tabIndex={-1} onSubmit={submit} onKeyDown={event => {
         if (event.key !== "Tab") return;
         const focusable = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled):not([hidden]), select:not(:disabled), textarea:not(:disabled)')).filter(el => el.getClientRects().length > 0);
         const first = focusable[0], last = focusable.at(-1);
-        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        if (event.shiftKey && (document.activeElement === first || document.activeElement === form.current)) { event.preventDefault(); last?.focus(); }
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
       }}><fieldset disabled={busy || adding}>
         <div className="diaryDialogTop"><span>{draft.id ? "그날의 기록" : "오늘의 기록"}</span><button className="diaryIconButton" type="button" aria-label="닫기" onClick={close}><X size={21} /></button></div>

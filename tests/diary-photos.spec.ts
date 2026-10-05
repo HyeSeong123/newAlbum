@@ -73,3 +73,42 @@ test('legacy text diary migrates when saved without changing its backup', async 
   await expect(page.locator('.diaryCard')).toContainText('이어서 쓴 기록');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('warm-journal-diaries-v1')!)[0].body)).toBe('이전 내용');
 });
+
+test('phone diary keeps its full paper frame and actions visible with long text and six photos', async ({ page }, info) => {
+  test.skip(info.project.name !== 'mobile', 'Phone viewport and keyboard regression.');
+  await page.goto('/');
+  await page.getByRole('button', { name: '일기장', exact: true }).click();
+  await page.getByRole('button', { name: '첫 일기 쓰기', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: '새 일기' });
+  await expect(dialog.locator('form')).toBeFocused();
+  await dialog.getByLabel('제목', { exact: true }).fill('한 화면에 담은 기록');
+  const body = Array.from({ length: 180 }, (_, i) => `${i + 1}번째 줄에 남겨 둔 오늘의 기억`).join('\n');
+  const writing = dialog.getByLabel('내용', { exact: true });
+  await writing.fill(body);
+  await dialog.getByLabel('일기 사진 파일').setInputFiles(photos.slice(0, 6));
+  await expect(dialog.locator('.diaryAttachmentPrint')).toHaveCount(6);
+  for (const size of [{ width: 360, height: 640 }, { width: 393, height: 851 }, { width: 851, height: 393 }]) {
+    await page.setViewportSize(size);
+    const paper = (await dialog.boundingBox())!;
+    expect(paper.y).toBeGreaterThanOrEqual(0);
+    expect(paper.y + paper.height).toBeLessThanOrEqual(size.height);
+    for (const control of [dialog.getByRole('button', { name: '닫기', exact: true }), dialog.getByRole('button', { name: '일기 저장', exact: true })]) {
+      const box = (await control.boundingBox())!;
+      expect(box.y).toBeGreaterThanOrEqual(paper.y);
+      expect(box.y + box.height).toBeLessThanOrEqual(paper.y + paper.height);
+    }
+    expect(await writing.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
+    await writing.evaluate(element => { element.scrollTop = element.scrollHeight; });
+    await expect(writing).toHaveValue(body);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    await page.screenshot({ path: `preview-results/mobile-diary-${size.width}x${size.height}.png` });
+  }
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.evaluate(() => document.documentElement.style.setProperty('--app-viewport-height', '390px'));
+  const save = (await dialog.getByRole('button', { name: '일기 저장', exact: true }).boundingBox())!;
+  expect(save.y + save.height).toBeLessThanOrEqual(390);
+  expect((await dialog.boundingBox())!.y + (await dialog.boundingBox())!.height).toBeLessThanOrEqual(390);
+  await page.screenshot({ path: 'preview-results/mobile-diary-keyboard.png' });
+  await dialog.getByRole('button', { name: '일기 저장', exact: true }).click();
+  await expect(dialog).toBeHidden();
+});

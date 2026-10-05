@@ -1,4 +1,4 @@
-/* A stable viewing area beside a scrollable information and comments panel. */
+/* A stable viewing area beside a scrollable information panel. */
 .photoInspector .detailLayout { grid-template-columns: minmax(0, 1fr) 340px; grid-template-rows: minmax(0, 1fr); }
 .photoInspector .detailPhotoPane { padding: 16px 24px; grid-template-rows: auto minmax(0, 1fr) auto; gap: 16px; }
 .detailDownloadFeedback { flex-basis: 100%; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
@@ -44,26 +44,11 @@
 .photoInspector .photoMetadata > div { display: flex; justify-content: space-between; gap: 16px; }
 .photoInspector .photoMetadata dt { color: var(--muted); flex-shrink: 0; }
 .photoInspector .photoMetadata dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
-.photoInspector .detailBody { max-height: none; overflow: visible; padding: 24px; background: transparent; }
-.photoInspector .commentBox { padding: 0; display: flex; flex-direction: column; gap: 16px; background: transparent; }
-.photoInspector .commentBox h2 { margin: 0; }
-.photoInspector .commentList { max-height: none; overflow: visible; gap: 12px; }
-.photoInspector .commentList > p { padding: 16px; border-radius: 6px; background: var(--surface-soft); line-height: 1.6; }
-.photoInspector .commentItem { padding: 12px; border-radius: 6px; background: var(--surface-soft); }
-.photoInspector .commentAvatar { display: none; }
-.photoInspector .commentItem .commentItemHeading { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 4px 8px; }
-.photoInspector .commentItem .commentActions { width: 100%; margin: 4px 0; justify-content: flex-end; }
-.photoInspector .commentActions button { min-height: 42px; padding: 0 6px; border: 0; background: transparent; border-radius: 4px; font-size: 14px; }
-.photoInspector .commentForm, .photoInspector .commentEditForm { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
-.photoInspector .commentForm label, .photoInspector .commentEditForm label { display: grid; gap: 6px; font-size: 14px; font-weight: 500; }
-.photoInspector .commentForm input, .photoInspector .commentEditForm input { width: 100%; min-height: 38px; height: 38px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
-.photoInspector .commentForm textarea, .photoInspector .commentEditForm textarea { width: 100%; min-height: 96px; height: 96px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); resize: vertical; }
-.photoInspector .commentForm button { grid-column: auto; height: 38px; min-height: 38px; border-radius: 6px; font-size: 13px; }
 .photoInspector button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 @media (max-width: 900px) {
   .photoInspector .detailLayout { grid-template-columns: minmax(0, 1fr) 300px; }
   .photoInspector .detailPhotoPane { padding: 12px; gap: 12px; }
-  .photoInspector .photoInformation, .photoInspector .detailBody { padding: 20px; }
+  .photoInspector .photoInformation { padding: 20px; }
 }
 @media (max-width: 700px) {
   .photoInspector .detailLayout { display: block; overflow-y: auto; }

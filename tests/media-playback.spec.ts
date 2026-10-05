@@ -60,20 +60,3 @@ test('unsupported video data shows recovery guidance and can be retried', async 
   await detail.getByTitle('닫기', { exact: true }).click();
   await expect(page.locator('.mediaTile')).toHaveCount(1);
 });
-
-test('moving to another photo clears the comment draft while retaining the author', async ({ page }) => {
-  await page.goto('/');
-  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
-  await page.locator('input[type="file"]').first().setInputFiles(['tests/fixtures/test-photo.jpg', 'tests/fixtures/test-photo-2.jpg']);
-  await page.getByRole('button', { name: 'test-photo.jpg 상세보기', exact: true }).click();
-  const detail = page.getByRole('dialog', { name: '사진 상세' });
-  await detail.getByRole('button', { name: '댓글 0', exact: true }).click();
-  await detail.locator('.commentForm').getByLabel('작성자').fill('나');
-  await detail.locator('.commentForm').getByLabel('내용').fill('첫 사진에 쓰던 기록');
-  await detail.getByTitle('다음', { exact: true }).click();
-  await expect(detail.locator('.detailFileName')).toHaveText('test-photo-2.jpg');
-  await expect(detail.locator('.commentForm').getByLabel('내용')).toHaveValue('');
-  await expect(detail.locator('.commentForm').getByLabel('작성자')).toHaveValue('나');
-  await expect(detail.getByRole('button', { name: '댓글 등록', exact: true })).toBeDisabled();
-});
-

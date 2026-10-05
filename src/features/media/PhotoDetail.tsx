@@ -1,7 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type FormEvent, type CSSProperties } from "react";
-import { CheckSquare, ChevronLeft, ChevronRight, Download, Heart, MessageCircle, Minus, Plus, RotateCcw, Star, X, ZoomIn, ZoomOut } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type CSSProperties } from "react";
+import { ChevronLeft, ChevronRight, Download, Heart, Minus, Plus, RotateCcw, Star, X, ZoomIn, ZoomOut } from "lucide-react";
 import type { MediaItem } from "../../types/media";
-import type { MediaComment } from "./mediaComments";
 import { getMediaSource, MediaImage } from "../../components/MediaVisual";
 import { MediaPlayback } from "../../components/MediaPlayback";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
@@ -11,27 +10,17 @@ import { RegionEditor } from "../map/RegionEditor";
 
 export function DetailModal({
   item,
-  comments,
-  commentError,
   onChange,
   onSaveTitle,
   onAssignRegion,
-  onAddComment,
-  onUpdateComment,
-  onDeleteComment,
   onClose,
   onPrev,
   onNext,
 }: {
   item: MediaItem;
-  comments: MediaComment[];
-  commentError?: string;
   onChange: (patch: Partial<MediaItem>) => void;
   onSaveTitle: (id: string, title: string) => Promise<void>;
   onAssignRegion: (ids: string[], region: string, district?: string, country?: string, city?: string) => Promise<void>;
-  onAddComment: (author: string, content: string) => boolean;
-  onUpdateComment: (commentId: string, author: string, content: string) => boolean;
-  onDeleteComment: (commentId: string) => void;
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
@@ -41,22 +30,12 @@ export function DetailModal({
   const dialogRef = useRef<HTMLElement>(null);
   const photoViewportRef = useRef<HTMLDivElement>(null);
   const zoomTriggerRef = useRef<HTMLButtonElement>(null);
-  const commentInputRef = useRef<HTMLTextAreaElement>(null);
   const previousZoom = useRef(100);
   const photoDrag = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
-  const [commentAuthor, setCommentAuthor] = useState("");
-  const [commentContent, setCommentContent] = useState("");
-  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
-  const [editingAuthor, setEditingAuthor] = useState("");
-  const [editingContent, setEditingContent] = useState("");
   const mediaDownload = useMediaDownload(item);
   useModalBehavior(onClose, { onPrev, onNext });
 
   useEffect(() => {
-    setCommentContent("");
-    setEditingCommentId(null);
-    setEditingAuthor("");
-    setEditingContent("");
     setZoomViewerOpen(false);
     setPhotoZoom(100);
     photoDrag.current = null;
@@ -81,35 +60,6 @@ export function DetailModal({
 
   function changePhotoZoom(value: number) {
     setPhotoZoom(Math.max(25, Math.min(400, value)));
-  }
-
-  function submitComment(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const author = commentAuthor.trim();
-    const content = commentContent.trim();
-    if (!author || !content) return;
-    if (onAddComment(author, content)) setCommentContent("");
-  }
-
-  function startEditComment(comment: MediaComment) {
-    setEditingCommentId(comment.id);
-    setEditingAuthor(comment.author);
-    setEditingContent(comment.content);
-  }
-
-  function cancelEditComment() {
-    setEditingCommentId(null);
-    setEditingAuthor("");
-    setEditingContent("");
-  }
-
-  function submitEditedComment(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!editingCommentId) return;
-    const author = editingAuthor.trim();
-    const content = editingContent.trim();
-    if (!author || !content) return;
-    if (onUpdateComment(editingCommentId, author, content)) cancelEditComment();
   }
 
   return (
@@ -138,7 +88,6 @@ export function DetailModal({
               <button className={item.favorite ? "detailFavorite active" : "detailFavorite"} title="즐겨찾기" aria-pressed={item.favorite} onClick={() => onChange({ favorite: !item.favorite })}>
                 <Heart size={18} fill={item.favorite ? "currentColor" : "none"} /><span>즐겨찾기</span>
               </button>
-              <button onClick={() => { commentInputRef.current?.focus(); commentInputRef.current?.scrollIntoView({ block: "nearest" }); }}><MessageCircle size={18} /><span>댓글 {comments.length}</span></button>
               {item.fileType === "image" && <button ref={zoomTriggerRef} className="detailExpand" title="확대 보기" onClick={() => setZoomViewerOpen(true)}><ZoomIn size={18} /><span>확대 보기</span></button>}
               {item.fileType === "image" && <button title="원본 다운로드" aria-label="원본 다운로드" disabled={mediaDownload.busy || !mediaDownload.available} onClick={() => void mediaDownload.download()}><Download size={18} /><span>{mediaDownload.busy ? "저장 중" : "다운로드"}</span></button>}
               </div>
@@ -210,59 +159,6 @@ export function DetailModal({
                 <div><dt>파일 크기</dt><dd>{item.sizeLabel}</dd></div>
                 <div><dt>조회 수</dt><dd>{item.viewCount ?? 0}회</dd></div>
               </dl>
-            </aside>
-            <aside className="detailBody" aria-label="댓글">
-              <section id="photoComments" className="commentBox">
-                {commentError && <p role="alert">{commentError}</p>}
-                <h2><MessageCircle size={25} /><span>댓글 {comments.length}</span></h2>
-                <div className="commentList">
-                  {!comments.length && <p>아직 남긴 댓글이 없습니다.</p>}
-                  {comments.map((comment) => (
-                    <article key={comment.id} className="commentItem">
-                      {editingCommentId === comment.id ? (
-                        <form className="commentEditForm" onSubmit={submitEditedComment}>
-                          <label>
-                            <span>작성자</span>
-                            <input value={editingAuthor} onChange={(event) => setEditingAuthor(event.target.value)} placeholder="이름" />
-                          </label>
-                          <label>
-                            <span>내용</span>
-                            <textarea value={editingContent} onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setEditingContent(event.target.value)} placeholder="이 사진에 대한 이야기를 남겨보세요." />
-                          </label>
-                          <div className="commentEditActions">
-                            <button type="submit" disabled={!editingAuthor.trim() || !editingContent.trim()}><CheckSquare size={16} />저장</button>
-                            <button type="button" onClick={cancelEditComment}><X size={16} />취소</button>
-                          </div>
-                        </form>
-                      ) : (
-                        <>
-                          <span className="commentAvatar" aria-hidden="true">{Array.from(comment.author.trim())[0] || "나"}</span>
-                          <div className="commentItemHeading">
-                            <strong>{comment.author}</strong>
-                            {comment.createdAt && <time dateTime={comment.createdAt}>{formatDateTimeKo(comment.createdAt)}</time>}
-                            <div className="commentActions">
-                              <button title="댓글 수정" onClick={() => startEditComment(comment)}>수정</button>
-                              <button title="댓글 삭제" onClick={() => onDeleteComment(comment.id)}>삭제</button>
-                            </div>
-                          </div>
-                          <p>{comment.content}</p>
-                        </>
-                      )}
-                    </article>
-                  ))}
-                </div>
-                <form className="commentForm" onSubmit={submitComment}>
-                  <label>
-                    <span>작성자</span>
-                    <input value={commentAuthor} onChange={(event) => setCommentAuthor(event.target.value)} placeholder="이름" />
-                  </label>
-                  <label>
-                    <span>내용</span>
-                    <textarea ref={commentInputRef} value={commentContent} onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setCommentContent(event.target.value)} placeholder="이 사진에 대한 이야기를 남겨보세요." />
-                  </label>
-                  <button type="submit" disabled={!commentAuthor.trim() || !commentContent.trim()}>댓글 등록</button>
-                </form>
-              </section>
             </aside>
           </div>
         </div>
@@ -340,10 +236,4 @@ function PhotoZoomViewer({ item, onClose }: { item: MediaItem; onClose: () => vo
       </section>
     </div>
   );
-}
-
-function formatDateTimeKo(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}.${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }

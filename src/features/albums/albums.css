@@ -339,22 +339,39 @@
 .is-single-page :is(.albumPageImages, .albumTurnFace) { --caption-line: clamp(13px, 4.5cqw, 18px); --caption-gap: 3px; }
 .is-single-page .albumLeafLayout { gap: clamp(5px, 2cqw, 9px); }
 .is-single-page :is(.albumPageCaption, .albumTurnCaption, .albumPageCaption time, .albumTurnCaption time) { font-size: clamp(10px, 3.6cqw, 13px); }
-.is-single-page .albumPageNumber { left: auto; right: 4%; bottom: 1%; font-size: 12px; }
+.is-single-page .albumPaper.left .albumPageNumber { left: auto; right: 4%; bottom: 1%; font-size: 12px; }
 .is-single-page .albumEdgeNav { width: 28px; height: 44px; background: transparent; }
 .is-single-page .albumEdgeNav.prev { left: auto; right: 100%; }
 .is-single-page .albumEdgeNav.next { right: auto; left: 100%; }
 .is-single-page .albumEdgeNav svg { width: 22px; }
-.is-single-page .albumTurnLayer { perspective: 2400px; }
-.is-single-page .albumTurnLayer .albumTurningSheet { inset: 3% 5% 4.5%; width: auto; transform-origin: center; }
-.is-single-page .albumTurnLayer.next .albumTurningSheet { animation-name: journalSingleTurnNext; }
-.is-single-page .albumTurnLayer.prev .albumTurningSheet { animation-name: journalSingleTurnPrev; }
+.is-single-page .albumTurnLayer { perspective: none; transform-style: flat; }
+.is-single-page .albumTurnLayer .albumTurningSheet { inset: 3% 5% 4.5%; width: auto; transform: none; transform-style: flat; animation: none; }
 .is-single-page .albumTurnFace.left { padding: 4.4444% 4.4444% 7.7778%; background-position: 85% 45.3333%; }
 .is-single-page .albumTurnFace.landscape-page { padding: 3.3333% 3.3333% 6.6667%; }
-.is-single-page .albumTurnFace.back .albumTurnImages { animation: none; }
-.is-single-page .albumTurnShadow { display: none; }
-.is-single-page .albumSpread[aria-busy="true"] .albumPhotoEntry { opacity: 0; animation: none; }
-@keyframes journalSingleTurnNext { from { transform: rotateY(0); } to { transform: rotateY(-180deg); } }
-@keyframes journalSingleTurnPrev { from { transform: rotateY(0); } to { transform: rotateY(180deg); } }
+/* Peel a curved corner across the stationary next page; no card-like rotation. */
+.is-single-page .albumTurnFace { transform: none; animation-duration: var(--album-turn-duration); animation-timing-function: ease-in-out; animation-fill-mode: both; }
+.is-single-page .albumTurnFace.front { animation-name: journalPagePeel; }
+.is-single-page .albumTurnFace.front::after { display: none; }
+.is-single-page .albumTurnFace.back { animation-name: journalPageFold; }
+.is-single-page .albumTurnFace.back .albumTurnImages { opacity: .3; transform: scaleX(-1); animation: none; }
+.is-single-page .albumTurnFace.back::after { transform: none; opacity: 1; animation: none; background: linear-gradient(115deg, #fffef8b3, #eee9dc55 46%, #918b7c66 69%, #fffef8dd 79%); }
+.is-single-page .albumTurnLayer .albumTurnShadow { display: block; inset: 3% 5% 4.5%; width: auto; transform: translateX(7px); background: #34372e40; filter: blur(5px); animation-name: journalPageFold; }
+.is-single-page .albumTurnLayer.prev :is(.albumTurnFace, .albumTurnShadow) { animation-direction: reverse; }
+.is-single-page .albumSpread[aria-busy="true"] .albumPhotoEntry { opacity: 1; animation: none; }
+@keyframes journalPagePeel {
+  0% { clip-path: polygon(0 0, 100% 0, 100% 33%, 100% 66%, 100% 100%, 0 100%); }
+  18% { clip-path: polygon(0 0, 100% 0, 99% 33%, 93% 66%, 78% 100%, 0 100%); }
+  50% { clip-path: polygon(0 0, 68% 0, 56% 33%, 39% 66%, 16% 100%, 0 100%); }
+  82% { clip-path: polygon(0 0, 14% 0, 7% 33%, 0 66%, 0 100%, 0 100%); }
+  100% { clip-path: polygon(0 0, 0 0, 0 33%, 0 66%, 0 100%, 0 100%); }
+}
+@keyframes journalPageFold {
+  0% { clip-path: polygon(100% 0, 100% 33%, 100% 66%, 100% 100%, 100% 100%, 100% 66%, 100% 33%, 100% 0); }
+  18% { clip-path: polygon(100% 0, 99% 33%, 93% 66%, 78% 100%, 66% 100%, 79% 66%, 90% 33%, 100% 0); }
+  50% { clip-path: polygon(68% 0, 56% 33%, 39% 66%, 16% 100%, 0 100%, 20% 66%, 36% 33%, 50% 0); }
+  82% { clip-path: polygon(14% 0, 7% 33%, 0 66%, 0 100%, 0 100%, 0 66%, 0 33%, 0 0); }
+  100% { clip-path: polygon(0 0, 0 33%, 0 66%, 0 100%, 0 100%, 0 66%, 0 33%, 0 0); }
+}
 @media (max-width: 1000px) and (max-height: 520px) {
   .albumJournal.is-single-page .albumJournalCanvas { padding: 6px 28px; }
 }

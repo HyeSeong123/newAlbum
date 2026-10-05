@@ -2,11 +2,10 @@ import { PhotoView, type PhotoMode } from "./features/media/PhotoWorkspace";
 import { useMediaLibrary } from "./features/media/useMediaLibrary";
 import { useMediaViewer } from "./features/media/useMediaViewer";
 import { useMediaSelection } from "./features/media/useMediaSelection";
-import { useMediaComments } from "./features/media/useMediaComments";
+import { useMediaCommentCounts } from "./features/media/useMediaComments";
 import { DetailModal } from "./features/media/PhotoDetail";
 import { MemoriesWorkspace } from "./features/memories/MemoriesWorkspace";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
-import { getMediaComments } from "./features/media/mediaComments";
 import { searchMedia } from "./features/media/collectionModel";
 import { memoryGroups } from "./features/memories/memoriesModel";
 import { localDateKey } from "./features/calendar/calendarModel";
@@ -83,8 +82,7 @@ export function App() {
   const { selected } = viewer;
   const selection = useMediaSelection(itemsById);
   const { enabled: selectionMode, ids: selectedIds, toggle: toggleMediaSelection } = selection;
-  const comments = useMediaComments(items, library.patchMedia);
-  const { comments: mediaComments, counts: commentCounts } = comments;
+  const commentCounts = useMediaCommentCounts(items);
   const [albumDraftItems, setAlbumDraftItems] = useState<MediaItem[] | null>(null);
   const [albumDraftTitle, setAlbumDraftTitle] = useState("");
   const [query, setQuery] = useState("");
@@ -302,14 +300,9 @@ export function App() {
         {selected && (
           <DetailModal
             item={selected}
-            comments={getMediaComments(selected, mediaComments)}
             onChange={updateSelected}
             onSaveTitle={library.saveTitle}
             onAssignRegion={library.assignRegion}
-            onAddComment={(author, content) => comments.add(selected, author, content)}
-            commentError={comments.error}
-            onUpdateComment={(id, author, content) => comments.edit(selected, id, author, content)}
-            onDeleteComment={(id) => comments.remove(selected, id)}
             onClose={viewer.close}
             onPrev={() => viewer.move(-1)}
             onNext={() => viewer.move(1)}

@@ -136,7 +136,7 @@ test('scrubbing, list view and closing cancel the slower turn; reduced motion st
   const label = reader.locator('.albumPagerActions p');
   await reader.getByTitle('다음 책장', { exact: true }).click();
   await expect(reader.locator('.albumTurnLayer')).toBeVisible();
-  await expect(reader.locator(`.albumPaper.${single ? 'left' : 'right'} .albumPhotoEntry`).first()).toHaveCSS('opacity', '0');
+  await expect(reader.locator(`.albumPaper.${single ? 'left' : 'right'} .albumPhotoEntry`).first()).toHaveCSS('opacity', single ? '1' : '0');
   await expect(reader.locator('.albumTurnFace.front [data-turn-media-id]')).toHaveCount(2);
   await reader.getByLabel('앨범 책장 이동').fill(String(total));
   await page.clock.runFor(ALBUM_TURN_TIMING.duration + 100);
@@ -145,8 +145,8 @@ test('scrubbing, list view and closing cancel the slower turn; reduced motion st
   await expect(reader.locator('.albumPagePhoto')).toHaveCount(1);
   await reader.getByTitle('이전 책장', { exact: true }).click();
   // Returning from the odd final spread still carries the correct photo on each face.
-  await expect(reader.locator('.albumTurnFace.front [data-turn-media-id]')).toHaveAttribute('data-turn-media-id', '9');
-  expect(await reader.locator('.albumTurnFace.back [data-turn-media-id]').evaluateAll(elements => elements.map(element => element.getAttribute('data-turn-media-id')))).toEqual(['7', '8']);
+  expect(await reader.locator('.albumTurnFace.front [data-turn-media-id]').evaluateAll(elements => elements.map(element => element.getAttribute('data-turn-media-id')))).toEqual(single ? ['7', '8'] : ['9']);
+  expect(await reader.locator('.albumTurnFace.back [data-turn-media-id]').evaluateAll(elements => elements.map(element => element.getAttribute('data-turn-media-id')))).toEqual(single ? ['9'] : ['7', '8']);
   await reader.getByTitle('사진 목록', { exact: true }).click();
   await page.clock.runFor(ALBUM_TURN_TIMING.duration + 100);
   await expect(reader.locator('.albumPhotoList > button')).toHaveCount(9);
@@ -162,4 +162,38 @@ test('scrubbing, list view and closing cancel the slower turn; reduced motion st
   await expect(label).toHaveText(`2 / ${total} ${unit}`);
   await expect(reader.locator('.albumTurnLayer')).toHaveCount(0);
   for (const entry of await reader.locator('.albumPhotoEntry').all()) await expect(entry).toHaveCSS('opacity', '1');
+});
+
+test('phone turns peel a folded paper edge over the destination and reverse cleanly', async ({ page }, info) => {
+  test.skip(info.project.name !== 'mobile', 'Single-page phone animation.');
+  await page.clock.install();
+  await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
+  const reader = page.getByRole('dialog', { name: '앨범 전체창' });
+  const layer = reader.locator('.albumTurnLayer');
+  const ids = () => reader.locator('.albumPagePhoto').evaluateAll(elements => elements.map(element => element.getAttribute('data-media-id')));
+  for (const direction of ['next', 'prev'] as const) {
+    await reader.getByTitle(direction === 'next' ? '다음 책장' : '이전 책장', { exact: true }).click();
+    await setAnimationTime(layer, 0);
+    await expect(layer).toHaveAttribute('inert', '');
+    await expect(layer).toHaveAttribute('aria-hidden', 'true');
+    expect(await ids()).toEqual(['3', '4']);
+    expect(await layer.locator('.front [data-turn-media-id]').evaluateAll(elements => elements.map(element => element.getAttribute('data-turn-media-id')))).toEqual(['1', '2']);
+    for (const photo of await reader.locator('.albumPagePhoto').all()) await expect(photo).toBeDisabled();
+    await expect(layer.locator('.albumTurningSheet')).toHaveCSS('transform', 'none');
+    await expect(layer.locator('.front')).toHaveCSS('transform', 'none');
+    const initialClip = await layer.locator('.front').evaluate(element => getComputedStyle(element).clipPath);
+    await setAnimationTime(layer, 550);
+    expect(await layer.locator('.front').evaluate(element => getComputedStyle(element).clipPath)).not.toBe(initialClip);
+    await expect(layer.locator('.back')).toHaveCSS('animation-direction', direction === 'next' ? 'normal' : 'reverse');
+    await expect(layer.locator('.albumTurnShadow')).toHaveCSS('display', 'block');
+    const sheet = (await layer.locator('.albumTurningSheet').boundingBox())!;
+    const paper = (await reader.locator('.albumPaper').boundingBox())!;
+    expect(Math.abs(sheet.width - paper.width)).toBeLessThan(2);
+    expect(Math.abs(sheet.height - paper.height)).toBeLessThan(2);
+    await page.screenshot({ path: `preview-results/mobile-paper-turn-${direction}.png` });
+    await page.clock.runFor(ALBUM_TURN_TIMING.duration);
+    await expect(layer).toHaveCount(0);
+    expect(await ids()).toEqual(direction === 'next' ? ['3', '4'] : ['1', '2']);
+    for (const photo of await reader.locator('.albumPagePhoto').all()) await expect(photo).toBeEnabled();
+  }
 });

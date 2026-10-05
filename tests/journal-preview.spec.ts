@@ -176,9 +176,6 @@ for (const entry of ['saved albums', 'journal shortcut']) {
     const detail = page.getByRole('dialog', { name: '사진 상세' });
     await detail.getByTitle('즐겨찾기', { exact: true }).click();
     await detail.getByTitle('5점', { exact: true }).click();
-    await detail.locator('.commentForm').getByLabel('작성자').fill('나');
-    await detail.locator('.commentForm').getByLabel('내용').fill('바람이 좋았던 날');
-    await detail.getByRole('button', { name: '댓글 등록', exact: true }).click();
     await detail.getByRole('textbox', { name: '사진 제목', exact: true }).fill('바람이 좋았던 날');
     await detail.getByRole('button', { name: '사진 제목 저장', exact: true }).click();
     await expect(detail.locator('.photoTitleForm').getByRole('status')).toHaveText('제목을 저장했습니다.');
@@ -190,7 +187,7 @@ for (const entry of ['saved albums', 'journal shortcut']) {
     await expect(detail.getByTitle('즐겨찾기', { exact: true })).toHaveAttribute('aria-pressed', 'true');
     await expect(detail.getByTitle('5점', { exact: true }).locator('svg')).toHaveAttribute('fill', 'currentColor');
     await expect(detail.locator('.photoMetadata')).toContainText('2회');
-    await expect(detail.locator('.commentItem')).toContainText('바람이 좋았던 날');
+    await expect(detail.getByRole('textbox', { name: '사진 제목', exact: true })).toHaveValue('바람이 좋았던 날');
   });
 }
 

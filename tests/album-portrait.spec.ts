@@ -227,10 +227,7 @@ test('mixed orientations group four portraits and two landscapes without losing 
   await expect(detail).toBeVisible();
   await detail.getByTitle('즐겨찾기', { exact: true }).click();
   await detail.getByTitle('5점', { exact: true }).click();
-  await detail.locator('.commentForm').getByLabel('작성자').fill('나');
-  await detail.locator('.commentForm').getByLabel('내용').fill('다시 보아도 좋은 순간');
-  await detail.getByRole('button', { name: '댓글 등록', exact: true }).click();
-  await expect(detail.locator('.commentItem')).toContainText('다시 보아도 좋은 순간');
+  await expect(detail.locator('.commentBox, .commentForm')).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: '앨범 전체창', exact: true })).toBeVisible();
   await expect(pageLabel).toHaveText('1 / 2 펼침');
@@ -328,7 +325,7 @@ test('empty, single and extreme-ratio albums fit their book pages', async ({ pag
   const reader = page.getByRole('dialog', { name: '앨범 전체창' });
   for (const [title, count] of [['다양한 비율', 3], ['한 장', 1], ['빈 앨범', 0]] as const) {
     await page.getByRole('button', { name: `${title} 앨범 열기`, exact: true }).click();
-    const expectedPages = single && count === 3 ? [['1'], ['2', '3']] : count ? [Array.from({ length: count }, (_, i) => String(i + 1))] : [];
+    const expectedPages = single && count === 3 ? [['1', '2'], ['3']] : count ? [Array.from({ length: count }, (_, i) => String(i + 1))] : [];
     const total = expectedPages.length;
     await expect(reader.locator('.albumPagePhoto')).toHaveCount(expectedPages[0]?.length ?? 0);
     await expect(reader.locator('.albumPagerActions p')).toHaveText(`${count ? 1 : 0} / ${total} ${single ? '페이지' : '펼침'}`);

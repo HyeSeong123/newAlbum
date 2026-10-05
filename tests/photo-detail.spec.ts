@@ -7,6 +7,7 @@ test('album overview and photo tools preserve the full frame and editing workflo
     return route.fulfill({ contentType: 'image/svg+xml', body: `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="#d8ddcb"/><rect x="10" y="10" width="${w - 20}" height="${h - 20}" fill="none" stroke="#8a805a" stroke-width="20"/><circle cx="${w / 2}" cy="${h / 2}" r="160" fill="#b9c58e"/></svg>` });
   });
   await page.addInitScript(() => {
+    localStorage.setItem('oraedameun.mediaComments', JSON.stringify({ '1': [{ id: 'old-note', author: '나', content: '보관할 이전 기록', createdAt: '2026-09-20' }] }));
     const media = [1, 2].map(id => ({ id, file_path: `C:/detail-${id}.jpg`, file_type: 'image', taken_at: '2026-09-20', width: id === 1 ? 600 : 1600, height: id === 1 ? 900 : 600, size_bytes: 102400, rating: 0, comment: '', favorite: false, metadata_status: 'ready' }));
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: (path: string) => '/' + path.split('/').pop(),
@@ -35,16 +36,9 @@ test('album overview and photo tools preserve the full frame and editing workflo
   await expect(detail.getByRole('button', { name: '즐겨찾기', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await detail.getByTitle('4점', { exact: true }).click();
   await expect(detail.getByTitle('4점', { exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await detail.getByRole('button', { name: '댓글 0', exact: true }).click();
-  await expect(detail.locator('.commentForm textarea')).toBeFocused();
-  await detail.locator('.commentForm').getByLabel('작성자').fill('우리');
-  await detail.locator('.commentForm').getByLabel('내용').fill('함께 남긴 가을의 추억');
-  await detail.getByRole('button', { name: '댓글 등록', exact: true }).click();
-  await expect(detail.locator('.commentItem')).toContainText('함께 남긴 가을의 추억');
-  await detail.getByTitle('댓글 수정').click();
-  await detail.locator('.commentEditForm').getByLabel('내용').fill('오래 기억하고 싶은 하루');
-  await detail.locator('.commentEditForm').getByRole('button', { name: '저장' }).click();
-  await expect(detail.locator('.commentItem')).toContainText('오래 기억하고 싶은 하루');
+  await expect(detail.getByRole('button', { name: /댓글/ })).toHaveCount(0);
+  await expect(detail.locator('.commentBox, .commentForm, .commentList')).toHaveCount(0);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('oraedameun.mediaComments')!)['1'][0].content)).toBe('보관할 이전 기록');
   await detail.getByTitle('확대 보기', { exact: true }).click();
   const zoomDialog = page.getByRole('dialog', { name: '사진 확대 보기', exact: true });
   await expect(zoomDialog).toBeVisible();
@@ -60,7 +54,6 @@ test('album overview and photo tools preserve the full frame and editing workflo
   await detail.getByTitle('다음', { exact: true }).click();
   await expect(detail.locator('.detailFileName')).toHaveText('detail-2.jpg');
   await detail.getByTitle('이전', { exact: true }).click();
-  await expect(detail.locator('.commentItem')).toContainText('오래 기억하고 싶은 하루');
   await detail.locator('.detailPhotoPane').scrollIntoViewIfNeeded();
   await page.screenshot({ path: `test-results/photo-detail-${test.info().project.name}.png` });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -69,8 +62,6 @@ test('album overview and photo tools preserve the full frame and editing workflo
     expect(box.x).toBeGreaterThanOrEqual(0);
     expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
   }
-  await detail.getByTitle('댓글 삭제').click();
-  await expect(detail.locator('.commentItem')).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(page.locator('.albumPhotoList > button')).toHaveCount(2);
 });

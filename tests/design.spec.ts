@@ -64,9 +64,7 @@ test('redesigned views fit and retain photo workflows', async ({ page }, info) =
   else expect(sidebar!.x).toBeGreaterThanOrEqual(photo!.x + photo!.width - 1);
   const heart = await page.getByTitle('즐겨찾기', { exact: true }).locator('svg').boundingBox();
   expect(heart!.width).toBeGreaterThanOrEqual(18);
-  await page.getByRole('button', { name: '댓글 0', exact: true }).click();
-  await expect(page.locator('.commentForm textarea')).toBeFocused();
-  await expect(page.locator('#photoComments')).toBeVisible();
+  await expect(page.locator('.commentBox, .commentForm')).toHaveCount(0);
   await page.getByTitle('닫기').click();
   await page.getByRole('tab', { name: '달력' }).click();
   await capture('calendar');
@@ -89,7 +87,7 @@ test('redesigned views fit and retain photo workflows', async ({ page }, info) =
   await page.getByTitle('다음 책장', { exact: true }).click();
   await expect(page.locator('.albumSpread')).toHaveAttribute('data-turn-phase', 'departing');
   if (!single) await expect(page.locator('.albumPhotoEntry[data-side="right"]').first()).toHaveCSS('opacity', '0');
-  await expect(page.locator('.albumPhotoEntry[data-side="left"]').first()).toHaveCSS('opacity', single ? '0' : '1');
+  await expect(page.locator('.albumPhotoEntry[data-side="left"]').first()).toHaveCSS('opacity', '1');
   await expect(page.locator('.albumTurnFace')).toHaveCount(2);
   await capture('reader-turn-start');
   await page.clock.runFor(ALBUM_TURN_TIMING.swap);

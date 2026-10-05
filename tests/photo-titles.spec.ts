@@ -50,7 +50,7 @@ test('title saves independently, appears above its own date and survives reopeni
   await detail.getByRole('button', { name: '사진 제목 저장', exact: true }).click();
   await expect(detail.locator('.photoTitleForm').getByRole('status')).toHaveText('제목을 저장했습니다.');
   await expect(input).toHaveValue('바람이 좋았던 오후 🌿');
-  await expect(detail.locator('.commentItem')).toContainText('기존 댓글');
+  await expect(detail.locator('.commentItem, .commentForm')).toHaveCount(0);
   await detail.getByTitle('4점', { exact: true }).click();
   await detail.getByTitle('닫기', { exact: true }).click();
   await expect(photo.locator('figcaption p')).toHaveText('바람이 좋았던 오후 🌿');

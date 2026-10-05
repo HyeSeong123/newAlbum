@@ -37,15 +37,15 @@ export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () =>
   const oppositeSide = turn?.direction === "next" ? "left" : "right";
   const oppositePage = oppositeSide === "left" ? "leftPage" : "rightPage";
   // Keep the opposite print in place until the turning leaf is almost flat.
-  const visibleSpread = !singlePage && turn && turnPhase !== "settling" && pages[currentPage] ? {
+  const visibleSpread = singlePage && turn ? pages[turn.direction === "next" ? turn.to : turn.from] : turn && turnPhase !== "settling" && pages[currentPage] ? {
     ...pages[currentPage], [oppositeSide]: pages[turn.from]?.[oppositeSide] ?? [],
     [`${oppositeSide}Page`]: pages[turn.from]?.[`${oppositeSide}Page`],
   } : pages[currentPage];
   const turningLeaves = turn ? {
-    front: pages[turn.from]?.[singlePage || turn.direction === "prev" ? "left" : "right"] ?? [],
-    back: pages[turn.to]?.[singlePage ? "left" : oppositeSide] ?? [],
-    frontPage: pages[turn.from]?.[singlePage || turn.direction === "prev" ? "leftPage" : "rightPage"],
-    backPage: pages[turn.to]?.[singlePage ? "leftPage" : oppositePage],
+    front: pages[singlePage && turn.direction === "prev" ? turn.to : turn.from]?.[singlePage || turn.direction === "prev" ? "left" : "right"] ?? [],
+    back: pages[singlePage && turn.direction === "prev" ? turn.from : turn.to]?.[singlePage ? "left" : oppositeSide] ?? [],
+    frontPage: pages[singlePage && turn.direction === "prev" ? turn.to : turn.from]?.[singlePage || turn.direction === "prev" ? "leftPage" : "rightPage"],
+    backPage: pages[singlePage && turn.direction === "prev" ? turn.from : turn.to]?.[singlePage ? "leftPage" : oppositePage],
   } : null;
 
   function cancelTurn() {

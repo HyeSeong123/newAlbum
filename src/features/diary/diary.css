@@ -161,3 +161,38 @@
   .diaryEmpty p { font-size: 15px; }
   .diaryEditorSide .diaryAttachmentList { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+/* Keep the complete paper frame and its actions inside the phone's safe viewport. */
+@media (max-width: 999px) {
+  .diaryBackdrop { height: var(--app-viewport-height, 100dvh); padding: 12px; }
+  .diaryDialog { height: 100%; max-height: 100%; padding: 16px; overflow: hidden; }
+  .diaryDialog form { min-height: 0; outline: none; }
+  .diaryDialog fieldset { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; min-height: 0; gap: 0; }
+  .diaryDialogTop { margin-bottom: 8px; }
+  .diaryMetadata { padding-bottom: 8px; }
+  .diaryEditorBody { display: flex; flex-direction: column; gap: 12px; min-height: 0; padding-block: 12px; overflow-y: auto; overscroll-behavior: contain; }
+  .diaryEditorBody .diaryWriting { flex: 1; min-height: 128px; margin: 0; padding-left: 12px; }
+  .diaryDialog .diaryTitleInput { padding-bottom: 6px; font-size: 20px; }
+  .diaryDialog .diaryEditorBody textarea { flex: 1; min-height: 60px; resize: none; }
+  .diaryEditorSide { flex-shrink: 0; padding: 0; border: 0; }
+  .diaryAttachments { margin-bottom: 8px; }
+  .diaryAttachmentHeading { margin-bottom: 8px; }
+  .diaryAttachmentHeading button { min-height: 32px; }
+  .diaryEditorSide .diaryAttachmentList { display: flex; gap: 10px; padding: 8px 6px 6px; overflow-x: auto; overscroll-behavior: contain; }
+  .diaryAttachmentPrint, .diaryDialog .diaryAddPhoto { flex: 0 0 88px; height: 70px; aspect-ratio: auto; }
+  .diaryDialog .diaryAddPhoto { gap: 4px; font-size: 12px; }
+  .diaryPhotoHint { margin-top: 4px; font-size: 12px; }
+  .diaryEditorSide .diaryAlbumChoice { margin: 8px 0 0; gap: 8px; font-size: 13px; }
+  .diaryEditorSide .diaryAlbumChoice select { flex: 1; min-width: 0; width: auto; }
+  .diaryDialogActions { padding-top: 8px; gap: 8px; }
+}
+@media (max-width: 999px) and (max-height: 520px) and (min-width: 600px) {
+  .diaryBackdrop { padding: 8px 12px; }
+  .diaryDialog { padding: 10px 16px; }
+  .diaryDialogTop { margin-bottom: 4px; }
+  .diaryMetadata { flex-wrap: nowrap; padding-bottom: 4px; }
+  .diaryDateInput { flex-basis: auto; }
+  .diaryEditorBody { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, 240px); padding-block: 8px; overflow: hidden; }
+  .diaryEditorBody .diaryWriting { min-height: 0; }
+  .diaryEditorSide { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+}

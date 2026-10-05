@@ -134,32 +134,7 @@ test('browser imports release session URLs after unregistering without touching 
   await expect.poll(async () => JSON.parse(await page.locator('html').getAttribute('data-revoked-urls') || '[]')).toEqual(created);
 });
 
-test('comment storage failure retains the draft and retry adds only one comment', async ({ page }) => {
-  await page.goto('/');
-  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
-  await page.locator('input[type="file"]').first().setInputFiles('tests/fixtures/test-photo.jpg');
-  await page.locator('.mediaTile').click();
-  const detail = page.getByRole('dialog', { name: '사진 상세', exact: true });
-  const form = detail.locator('.commentForm');
-  await form.getByLabel('작성자').fill('나');
-  await form.getByLabel('내용').fill('다시 저장할 기록');
-  await page.evaluate(() => {
-    const original = Storage.prototype.setItem;
-    Storage.prototype.setItem = function(key, value) {
-      if (key === 'oraedameun.mediaComments') throw new Error('quota');
-      original.call(this, key, value);
-    };
-    window.addEventListener('restore-storage', () => { Storage.prototype.setItem = original; }, { once: true });
-  });
-  await form.getByRole('button', { name: '댓글 등록' }).click();
-  await expect(detail.getByRole('alert')).toContainText('댓글을 저장하지 못했습니다');
-  await expect(form.getByLabel('내용')).toHaveValue('다시 저장할 기록');
-  await expect(detail.locator('.commentItem')).toHaveCount(0);
-  await page.evaluate(() => window.dispatchEvent(new Event('restore-storage')));
-  await form.getByRole('button', { name: '댓글 등록' }).click();
-  await expect(detail.locator('.commentItem')).toHaveCount(1);
-  await expect(form.getByLabel('내용')).toHaveValue('');
-});
+
 
 test('calendar unregister failure keeps the label and retry removes it', async ({ page }) => {
   await page.addInitScript(() => {
