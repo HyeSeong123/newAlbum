@@ -259,6 +259,18 @@ try {
   await loadedAlbumPhoto(reader);
   await expect(reader.getByLabel('앨범 책장 이동')).toBeInViewport();
   await captureScreen('system-bars-book-gestural');
+  const albumMenuTrigger = reader.getByRole('button', { name:'앨범 보기 옵션', exact:true });
+  await albumMenuTrigger.click();
+  await expect(page.locator('.actionMenuPanel')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const trigger = document.querySelector('.albumJournalTools .actionMenuTrigger').getBoundingClientRect();
+    const menu = document.querySelector('.actionMenuPanel').getBoundingClientRect();
+    return Math.min(Math.abs(menu.top - trigger.bottom - 6), Math.abs(trigger.top - menu.bottom - 6)) < 8
+      && menu.left >= 9 && menu.right <= innerWidth - 9 && menu.bottom <= innerHeight - 9;
+  })).toBe(true);
+  await captureScreen('album-anchored-menu');
+  await page.keyboard.press('Escape');
+  await expect(reader).toBeVisible();
   await reader.locator('.albumPagePhoto:has(img.mediaImage)').first().click();
   const detail = page.getByRole('dialog', { name:'사진 상세', exact:true });
   await expect(detail).toBeVisible();
@@ -288,6 +300,18 @@ try {
   await diary.getByRole('button', { name:'일기 저장', exact:true }).click();
   await expect(diary).toBeHidden();
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_diary'))).length, 1);
+  await page.locator('.diaryCardMenu .actionMenuTrigger').first().click();
+  await expect(page.locator('.actionMenuPanel')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const trigger = document.querySelector('.diaryCardMenu .actionMenuTrigger').getBoundingClientRect();
+    const menu = document.querySelector('.actionMenuPanel').getBoundingClientRect();
+    return Math.min(Math.abs(menu.top - trigger.bottom - 6), Math.abs(trigger.top - menu.bottom - 6)) < 8
+      && menu.left >= 9 && menu.right <= innerWidth - 9 && menu.bottom <= innerHeight - 9;
+  })).toBe(true);
+  await captureScreen('diary-anchored-menu');
+  await page.getByRole('button', { name:'일기 수정', exact:true }).click();
+  await expect(page.getByRole('dialog', { name:'일기 상세', exact:true })).toBeVisible();
+  await page.getByRole('dialog', { name:'일기 상세', exact:true }).getByRole('button', { name:'닫기', exact:true }).click();
   console.log('Diary frame and save actions fit the Android visual viewport; long text saved through native storage.');
   await adb('shell', 'input', 'keyevent', '4');
   await expect(page.getByRole('heading', { name:'홈', exact:true })).toBeVisible();

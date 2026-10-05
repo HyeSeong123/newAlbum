@@ -1,0 +1,82 @@
+/* Menus are portalled out of transformed cards and clipped scroll containers. */
+.actionMenuPanel {
+  z-index: 2000;
+  width: max-content;
+  min-width: min(200px, calc(100vw - 20px));
+  top: auto;
+  right: auto;
+  box-sizing: border-box;
+}
+.actionMenuPanel button { min-height: 44px; height: auto; padding: 10px 12px; font-size: 14px; line-height: 1.5; white-space: normal; text-align: left; }
+.actionMenuPanel button svg { flex-shrink: 0; }
+.primaryActionShort { display: none; }
+.diaryView > .diarySearch { width: 100%; margin-bottom: 16px; }
+
+@media (max-width: 999px) {
+  /* Page titles and primary actions share the first row; search stays below. */
+  .topbar.view-library, .topbar.view-albums,
+  .workspace:has(.photoWorkspace.mode-grid) .topbar.view-library {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px;
+    margin-bottom: 20px;
+  }
+  .topbar.view-library > .collectionHeading,
+  .topbar.view-albums > .collectionHeading,
+  .workspace:has(.photoWorkspace.mode-grid) .topbar.view-library > .collectionHeading {
+    grid-column: 1; grid-row: 1; flex-wrap: wrap; gap: 2px 8px;
+  }
+  .topbar.view-library h1, .topbar.view-albums h1 { margin: 0; font-size: 23px; }
+  .topbar.view-library .collectionCount, .topbar.view-albums .collectionCount { width: 100%; font-size: 12px; }
+  .topbar.view-library .toolbar, .topbar.view-albums .toolbar,
+  .workspace:has(.photoWorkspace.mode-grid) .topbar.view-library .toolbar { display: contents; }
+  .topbar.view-library .importActions, .topbar.view-albums .importActions,
+  .workspace:has(.photoWorkspace.mode-grid) .topbar.view-library .importActions {
+    grid-column: 2; grid-row: 1; justify-self: end; margin: 0;
+  }
+  .topbar.view-library .primary, .topbar.view-albums .primary { min-height: 44px; height: auto; padding: 0 12px; gap: 5px; }
+  .primaryActionLabel { display: none; }
+  .primaryActionShort { display: inline; }
+  .topbar.view-library .searchBox, .topbar.view-albums .searchBox {
+    grid-column: 1 / -1; grid-row: 2; width: 100%; min-width: 0; min-height: 44px;
+  }
+  .diaryHeading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 0 0 16px; }
+  .diaryHeadingCopy { min-width: 0; }
+  .diaryHeading h1 { margin: 0; font: 600 23px/1.4 "SUIT", sans-serif; }
+  .diaryHeading .diaryEyebrow, .diaryHeading p { display: none; }
+  .diaryHeadingActions { width: auto; padding: 0; }
+  .diaryHeadingActions .diaryPrimary { padding-inline: 12px; font-size: 13px; }
+  .diaryView > .diarySearch { min-height: 44px; }
+  .diaryListTools { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 0 0 12px; }
+  .diaryMonthNav { gap: 4px; flex-wrap: wrap; }
+  .diaryMonthNav .diaryAllMonths { position: static; margin-left: 4px; }
+  .diaryMonthNav label { min-width: 122px; font-size: 15px; }
+  .diaryListCount { position: static; margin-left: auto; gap: 8px; }
+  .diaryCardMenu .actionMenuTrigger, .savedAlbumFooter .actionMenuTrigger { width: 44px; min-height: 44px; }
+  .diaryCardMenu { top: 16px; right: 12px; }
+  .diaryOpen time { padding-right: 44px; }
+  .albumJournal { grid-template-rows: auto minmax(0, 1fr) auto; }
+  .albumJournal.is-list { grid-template-rows: auto minmax(0, 1fr); }
+  .albumJournalHeader { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; padding: 12px 16px; }
+  .albumJournalHeading { min-width: 0; text-align: left; }
+  .albumJournalBack { min-height: 44px; }
+  .albumJournalTools { grid-column: 1 / -1; display: flex; justify-self: stretch; justify-content: space-between; flex-wrap: nowrap; gap: 8px; }
+  .albumJournalTools button { width: auto; min-height: 44px; padding: 0 12px; font-size: 13px; gap: 6px; }
+  .albumJournalTools button > span { display: inline; }
+  .albumJournalTools > .actionMenu { margin-left: auto; }
+  .memoriesWorkspace > .memoryPeriod { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; padding: 3px; border-radius: 6px; background: #eeede8; }
+  .memoriesWorkspace > .memoryPeriod button { min-width: 0; min-height: 44px; padding: 6px 4px; border: 0; font-size: 13px; }
+  .librarySearchHead { gap: 8px; }
+  .librarySearchHead > div:first-child > span { display: none; }
+  .librarySearchHead h2 { white-space: nowrap; }
+  .librarySearchActions { flex-wrap: nowrap; margin-left: auto; }
+  .librarySearchActions button { min-height: 44px; padding-inline: 10px; }
+}
+@media (max-width: 700px) {
+  .photoInspector .detailActionButtons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: 6px; }
+  .photoInspector .detailActionButtons button { min-width: 0; min-height: 44px; padding-inline: 6px; gap: 4px; font-size: 12px; }
+  .photoInspector .detailZoomControls button { min-width: 44px; min-height: 44px; }
+  .photoInspector .detailZoomReset span { display: none; }
+  .photoInspector .detailZoomControls input { width: auto; min-width: 24px; }
+}
+@media (hover: none) {
+  .diaryCard:hover { transform: none; }
+}

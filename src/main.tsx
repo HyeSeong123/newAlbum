@@ -11,6 +11,7 @@ import "./components/media-visual.css";
 import "./brand.css";
 import "./features/albums/album-library.css";
 import "./android.css";
+import "./mobile-controls.css";
 import { isAndroidRuntime } from "./services/tauriMediaService";
 import { observeMobileViewport } from "./services/mobileViewport";
 

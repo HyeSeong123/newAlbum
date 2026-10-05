@@ -204,7 +204,7 @@ export function App() {
 
       <section className="workspace">
         <header className={`topbar view-${activeView.toLowerCase()}`}>
-          <div>
+          <div className="collectionHeading">
             <h1 aria-label={viewLabels[activeView]}>{topbarTitle}</h1>
             <span className="collectionCount">{topbarCount}</span>
           </div>
@@ -215,9 +215,10 @@ export function App() {
               {query && <button className="searchClear" aria-label="검색 지우기" onClick={() => setQuery("")}><X size={15} /></button>}
             </label>}
             {(activeView === "Library" || activeView === "Albums") && <div className="importActions">
-              <button className="primary" onClick={activeView === "Albums" ? startAlbum : () => setImportOpen(true)} disabled={Boolean(importing)}>
+              <button className="primary" aria-label={importing ? "사진과 영상을 가져오는 중" : activeView === "Albums" ? "새 앨범 만들기" : "사진·영상 가져오기"} onClick={activeView === "Albums" ? startAlbum : () => setImportOpen(true)} disabled={Boolean(importing)}>
                 {importing ? <LoaderCircle className="spinIcon" size={18} /> : <Plus size={18} />}
-                {importing ? "사진과 영상을 가져오는 중" : activeView === "Albums" ? "새 앨범 만들기" : "사진·영상 가져오기"}
+                <span className="primaryActionLabel">{importing ? "사진과 영상을 가져오는 중" : activeView === "Albums" ? "새 앨범 만들기" : "사진·영상 가져오기"}</span>
+                <span className="primaryActionShort" aria-hidden="true">{importing ? "가져오는 중" : activeView === "Albums" ? "새 앨범" : "가져오기"}</span>
               </button>
               {importing && (
                 <div className="importStatus" role="status" aria-live="polite">

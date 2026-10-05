@@ -42,13 +42,15 @@ export function AlbumFullscreenReader({ title, items, contents, color, open, onO
       <button className="albumJournalBack" onClick={onClose} title="닫기"><ChevronLeft size={22} />{backLabel}</button>
       <div className="albumJournalHeading"><h2>{title}</h2><span>{[
         orderedItems.length ? mediaSummary(orderedItems) : "", diaryCount ? `글·일기 ${diaryCount}편` : "", chapterCount ? `챕터 ${chapterCount}개` : "",
-      ].filter(Boolean).join(" · ") || "기록 없음"}{!listView && orderedItems.length > 0 && " · 세로 4장 / 가로 2장"}</span></div>
+      ].filter(Boolean).join(" · ") || "기록 없음"}{!singlePage && !listView && orderedItems.length > 0 && " · 세로 4장 / 가로 2장"}</span></div>
       <div className="albumJournalTools">
-        {onEdit && <button className="albumJournalEdit" onClick={onEdit} aria-label="앨범 수정" title="앨범 수정"><Pencil size={18} /><span>앨범 수정</span></button>}
+        {!singlePage && onEdit && <button className="albumJournalEdit" onClick={onEdit} aria-label="앨범 수정" title="앨범 수정"><Pencil size={18} /><span>앨범 수정</span></button>}
         <button aria-pressed={listView} onClick={toggleListView} aria-label={listView ? "책으로 보기" : "사진 목록"} title={listView ? "책으로 보기" : "사진 목록"}>{listView ? <BookOpen size={18} /> : <Images size={18} />}<span>{listView ? "책으로 보기" : "사진 목록"}</span></button>
-        <button onClick={() => void toggleFullscreen()} disabled={!document.fullscreenEnabled} aria-pressed={fullscreen} title={fullscreen ? "전체화면 종료" : "전체화면"}>{fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}<span>{fullscreen ? "전체화면 종료" : "전체화면"}</span></button>
+        {!singlePage && <button onClick={() => void toggleFullscreen()} disabled={!document.fullscreenEnabled} aria-pressed={fullscreen} title={fullscreen ? "전체화면 종료" : "전체화면"}>{fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}<span>{fullscreen ? "전체화면 종료" : "전체화면"}</span></button>}
         <ActionMenu label="앨범 보기 옵션" triggerText="더 보기" icon={<MoreVertical size={18} />} actions={[
+          ...(singlePage && onEdit ? [{ label: "앨범 수정", icon: <Pencil size={16} />, onSelect: onEdit }] : []),
           ...(onExport ? [{ label: "내보내기", icon: <FolderOutput size={16} />, disabled: !items.length, onSelect: onExport }] : []),
+          ...(singlePage ? [{ label: fullscreen ? "전체화면 종료" : "전체화면", icon: <Maximize size={16} />, disabled: !document.fullscreenEnabled, onSelect: () => void toggleFullscreen() }] : []),
           { label: "사진 순서 섞기", icon: <Shuffle size={16} />, disabled: orderedItems.length < 2 || contents?.some(entry => !entry.mediaId), onSelect: () => resetOrder(true) },
           { label: "원래 순서로 보기", icon: <RotateCcw size={16} />, disabled: !order, onSelect: () => resetOrder(false) },
         ]} />
