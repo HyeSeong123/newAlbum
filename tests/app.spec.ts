@@ -264,7 +264,7 @@ test("created albums are visible from saved albums menu", async ({ page }) => {
   await expect(page.locator(".galleryGrid .mediaTile")).toHaveCount(2);
 });
 
-test("album view opens immersive reader", async ({ page }) => {
+test("album view opens immersive reader", async ({ page }, info) => {
   await page.goto("/");
   await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.locator('input[type="file"]').first().setInputFiles([
@@ -274,7 +274,7 @@ test("album view opens immersive reader", async ({ page }) => {
 
   await page.getByRole("tab", { name: /책 보기/ }).click();
   await expect(page.getByRole("dialog", { name: "앨범 전체창" })).toBeVisible();
-  await expect(page.locator(".albumJournal .albumPagerActions")).toContainText("펼침");
+  await expect(page.locator(".albumJournal .albumPagerActions")).toContainText(info.project.name === "mobile" ? "페이지" : "펼침");
   await page.getByTitle("닫기").click();
   await expect(page.getByRole("dialog", { name: "앨범 전체창" })).toBeHidden();
   await expect(page.getByRole("tab", { name: "사진 모아보기" })).toHaveAttribute("aria-selected", "true");

@@ -18,7 +18,10 @@ async function expectUncroppedPhoto(photo: Locator) {
   expect(imageBox.height).toBeCloseTo(box.height, 0);
 }
 
-test('portrait grids keep four uncropped photos per leaf through turns, detail and reopening', async ({ page }) => {
+test('portrait grids keep four uncropped photos per leaf through turns, detail and reopening', async ({ page }, info) => {
+  const single = info.project.name === 'mobile';
+  const total = single ? 5 : 3;
+  const unit = single ? '페이지' : '펼침';
   await page.route('**/portrait-grid-*.jpg', route => route.fulfill({
     contentType: 'image/svg+xml',
     body: '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900"><rect width="600" height="900" fill="#52957e"/><rect x="12" y="12" width="576" height="876" fill="none" stroke="#eac173" stroke-width="24"/></svg>',
@@ -43,8 +46,8 @@ test('portrait grids keep four uncropped photos per leaf through turns, detail a
   const reader = page.getByRole('dialog', { name: '앨범 전체창', exact: true });
   const photos = reader.locator('.albumPagePhoto');
   const ids = () => photos.evaluateAll(elements => elements.map(element => element.getAttribute('data-media-id')));
-  await expect(reader.locator('.albumPagerActions p')).toHaveText('1 / 3 펼침');
-  await expect(photos).toHaveCount(8);
+  await expect(reader.locator('.albumPagerActions p')).toHaveText(`1 / ${total} ${unit}`);
+  await expect(photos).toHaveCount(single ? 4 : 8);
   for (const side of await reader.locator('.albumPaper').all()) {
     await expect(side.locator('.albumPageImages')).toHaveClass(/layout-grid/);
     await expect(side.locator('.albumPagePhoto')).toHaveCount(4);
@@ -68,7 +71,7 @@ test('portrait grids keep four uncropped photos per leaf through turns, detail a
     expect(boxes[0].y + boxes[0].height).toBeLessThanOrEqual(boxes[2].y);
   }
   const slots = await photos.evaluateAll(elements => elements.map(element => element.getAttribute('data-slot')));
-  expect(new Set(slots).size).toBe(8);
+  expect(new Set(slots).size).toBe(single ? 4 : 8);
   await reader.locator('.albumBookBase').evaluate((image: HTMLImageElement) => image.decode());
   await page.screenshot({ path: `test-results/album-portrait-grid-${test.info().project.name}.png` });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
@@ -79,13 +82,13 @@ test('portrait grids keep four uncropped photos per leaf through turns, detail a
     await expect(reader.locator(`.albumTurnFace.${face} .albumTurnImages`)).toHaveClass(/layout-grid/);
     await expect(reader.locator(`.albumTurnFace.${face} .albumTurnPrint`)).toHaveCount(4);
   }
-  expect(await reader.locator('.albumTurnFace.front [data-turn-media-id]').evaluateAll(elements => elements.map(element => element.getAttribute('data-turn-media-id')))).toEqual(['5', '6', '7', '8']);
-  expect(await reader.locator('.albumTurnFace.back [data-turn-media-id]').evaluateAll(elements => elements.map(element => element.getAttribute('data-turn-media-id')))).toEqual(['9', '10', '11', '12']);
+  expect(await reader.locator('.albumTurnFace.front [data-turn-media-id]').evaluateAll(elements => elements.map(element => element.getAttribute('data-turn-media-id')))).toEqual(single ? ['1', '2', '3', '4'] : ['5', '6', '7', '8']);
+  expect(await reader.locator('.albumTurnFace.back [data-turn-media-id]').evaluateAll(elements => elements.map(element => element.getAttribute('data-turn-media-id')))).toEqual(single ? ['5', '6', '7', '8'] : ['9', '10', '11', '12']);
   await page.clock.runFor(ALBUM_TURN_TIMING.duration);
   await page.clock.resume();
-  expect(await ids()).toEqual(['9', '10', '11', '12', '13', '14', '15', '16']);
+  expect(await ids()).toEqual(single ? ['5', '6', '7', '8'] : ['9', '10', '11', '12', '13', '14', '15', '16']);
   const seen: (string | null)[] = [];
-  for (let spread = 1; spread <= 3; spread++) {
+  for (let spread = 1; spread <= total; spread++) {
     await reader.getByLabel('앨범 책장 이동').fill(String(spread));
     seen.push(...await ids());
   }
@@ -94,20 +97,25 @@ test('portrait grids keep four uncropped photos per leaf through turns, detail a
   await photos.nth(3).click();
   await expect(page.getByRole('dialog', { name: '사진 상세', exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
-  await expect(photos).toHaveCount(8);
+  await expect(photos).toHaveCount(single ? 4 : 8);
   await reader.getByTitle('닫기', { exact: true }).click();
   await page.getByRole('button', { name: '세로 네 장 앨범 열기', exact: true }).click();
-  expect(await ids()).toEqual(['1', '2', '3', '4', '5', '6', '7', '8']);
+  expect(await ids()).toEqual(single ? ['1', '2', '3', '4'] : ['1', '2', '3', '4', '5', '6', '7', '8']);
   await reader.getByTitle('닫기', { exact: true }).click();
   await page.getByRole('button', { name: '세로 다섯 장 앨범 열기', exact: true }).click();
   await expect(reader.locator('.albumPaper.left .albumPagePhoto')).toHaveCount(4);
-  await expect(reader.locator('.albumPaper.right .albumPagePhoto')).toHaveCount(1);
-  expect(await ids()).toEqual(['1', '2', '3', '4', '5']);
-  await expect(reader.locator('.albumPagerActions p')).toHaveText('1 / 1 펼침');
+  await expect(reader.locator('.albumPaper.right .albumPagePhoto')).toHaveCount(single ? 0 : 1);
+  expect(await ids()).toEqual(single ? ['1', '2', '3', '4'] : ['1', '2', '3', '4', '5']);
+  await expect(reader.locator('.albumPagerActions p')).toHaveText(single ? '1 / 2 페이지' : '1 / 1 펼침');
+  if (single) {
+    await reader.getByLabel('앨범 책장 이동').fill('2');
+    expect(await ids()).toEqual(['5']);
+  }
   for (const photo of await photos.all()) await expectUncroppedPhoto(photo);
 });
 
-test('mixed orientations group four portraits and two landscapes without losing photos or page navigation', async ({ page }) => {
+test('mixed orientations group four portraits and two landscapes without losing photos or page navigation', async ({ page }, info) => {
+  test.skip(info.project.name === 'mobile', 'Two-page spread geometry; single-page mixed content has dedicated coverage.');
   await page.route('**/orientation-*.jpg', (route) => {
     const id = Number(route.request().url().match(/orientation-(\d+)/)![1]);
     if ([1, 5, 6, 7].includes(id)) {
@@ -250,7 +258,8 @@ test('mixed orientations group four portraits and two landscapes without losing 
   expect(shuffled).toEqual(Array.from({ length: 8 }, (_, index) => `orientation-${index + 1}.jpg 상세보기`));
 });
 
-test('duplicate album records do not repeat photos or create empty spreads after reopening', async ({ page }) => {
+test('duplicate album records do not repeat photos or create empty spreads after reopening', async ({ page }, info) => {
+  const single = info.project.name === 'mobile';
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.route('**/duplicate-*.jpg', route => route.fulfill({ path: 'node_modules/@vladmandic/face-api/demo/sample1.jpg', contentType: 'image/jpeg' }));
   await page.addInitScript(() => {
@@ -272,12 +281,17 @@ test('duplicate album records do not repeat photos or create empty spreads after
     await page.getByRole('button', { name: '중복 확인 앨범 열기', exact: true }).click();
     const reader = page.getByRole('dialog', { name: '앨범 전체창' });
     await expect(reader.locator('.albumJournalHeading')).toContainText('사진 4장');
-    await expect(reader.locator('.albumPagerActions p')).toHaveText('1 / 1 펼침');
-    await expect(reader.getByLabel('앨범 책장 이동')).toBeDisabled();
+    await expect(reader.locator('.albumPagerActions p')).toHaveText(single ? '1 / 2 페이지' : '1 / 1 펼침');
+    if (!single) await expect(reader.getByLabel('앨범 책장 이동')).toBeDisabled();
     const photos = reader.locator('.albumPagePhoto');
-    await expect(photos).toHaveCount(4);
-    expect(await photos.evaluateAll(elements => elements.map(element => element.getAttribute('data-media-id'))))
-      .toEqual(['1', '2', '3', '4']);
+    await expect(photos).toHaveCount(single ? 2 : 4);
+    const seen = await photos.evaluateAll(elements => elements.map(element => element.getAttribute('data-media-id')));
+    if (single) {
+      await reader.getByLabel('앨범 책장 이동').fill('2');
+      seen.push(...await photos.evaluateAll(elements => elements.map(element => element.getAttribute('data-media-id'))));
+      await expect(reader.getByTitle('다음 책장', { exact: true })).toBeDisabled();
+    }
+    expect(seen).toEqual(['1', '2', '3', '4']);
     for (const photo of await photos.all()) await expectUncroppedPhoto(photo);
     await reader.getByTitle('사진 목록', { exact: true }).click();
     await expect(reader.locator('.albumPhotoList > button')).toHaveCount(4);
@@ -285,7 +299,8 @@ test('duplicate album records do not repeat photos or create empty spreads after
   }
 });
 
-test('empty, single and extreme-ratio albums fit both book leaves', async ({ page }) => {
+test('empty, single and extreme-ratio albums fit their book pages', async ({ page }, info) => {
+  const single = info.project.name === 'mobile';
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.route('**/ratio-*.jpg', route => {
     const id = Number(route.request().url().match(/ratio-(\d+)/)![1]);
@@ -313,16 +328,17 @@ test('empty, single and extreme-ratio albums fit both book leaves', async ({ pag
   const reader = page.getByRole('dialog', { name: '앨범 전체창' });
   for (const [title, count] of [['다양한 비율', 3], ['한 장', 1], ['빈 앨범', 0]] as const) {
     await page.getByRole('button', { name: `${title} 앨범 열기`, exact: true }).click();
-    const total = Math.ceil(count / 4);
-    await expect(reader.locator('.albumPagePhoto')).toHaveCount(Math.min(4, count));
-    await expect(reader.locator('.albumPagerActions p')).toHaveText(`${count ? 1 : 0} / ${total} 펼침`);
+    const expectedPages = single && count === 3 ? [['1'], ['2', '3']] : count ? [Array.from({ length: count }, (_, i) => String(i + 1))] : [];
+    const total = expectedPages.length;
+    await expect(reader.locator('.albumPagePhoto')).toHaveCount(expectedPages[0]?.length ?? 0);
+    await expect(reader.locator('.albumPagerActions p')).toHaveText(`${count ? 1 : 0} / ${total} ${single ? '페이지' : '펼침'}`);
     if (total <= 1) await expect(reader.getByLabel('앨범 책장 이동')).toBeDisabled();
     else await expect(reader.getByLabel('앨범 책장 이동')).toBeEnabled();
     const seen: string[] = [];
     for (let spread = 1; spread <= total; spread++) {
       if (total > 1) await reader.getByLabel('앨범 책장 이동').fill(String(spread));
       const photos = reader.locator('.albumPagePhoto');
-      await expect(photos).toHaveCount(Math.min(4, count - (spread - 1) * 4));
+      await expect(photos).toHaveCount(expectedPages[spread - 1].length);
       seen.push(...await photos.evaluateAll(elements => elements.map(element => element.getAttribute('data-media-id')!)));
       for (const side of await reader.locator('.albumPaper').all()) {
         const bounds = (await side.locator('.albumPageImages').boundingBox())!;
@@ -345,7 +361,7 @@ test('empty, single and extreme-ratio albums fit both book leaves', async ({ pag
   }
 });
 
-test('phone bound book keeps one, two and four photos per leaf with dates and navigation', async ({ page }) => {
+test('phone single pages keep one, two and four photos with legible dates and navigation', async ({ page }) => {
   await page.route('**/phone-page-*.jpg', route => route.fulfill({
     path: 'node_modules/@vladmandic/face-api/demo/sample1.jpg', contentType: 'image/jpeg',
   }));
@@ -370,12 +386,11 @@ test('phone bound book keeps one, two and four photos per leaf with dates and na
       await page.getByRole('button', { name: `${count}장 앨범 앨범 열기` }).click();
       const pages = reader.locator('.albumPaper');
       const photos = reader.locator('.albumPagePhoto');
-      await expect(photos).toHaveCount(count);
-      const [first, second] = await pages.evaluateAll(elements => elements.map(element => element.getBoundingClientRect().toJSON()));
+      await expect(photos).toHaveCount(Math.min(4, count));
+      await expect(pages).toHaveCount(1);
+      const [first] = await pages.evaluateAll(elements => elements.map(element => element.getBoundingClientRect().toJSON()));
       await expect(reader.locator('.albumBookBase')).toBeVisible();
-      expect(first.x + first.width).toBeLessThan(second.x);
-      expect(first.y).toBeCloseTo(second.y, 0);
-      expect(first.height).toBeCloseTo(second.height, 0);
+      expect(first.height).toBeGreaterThan(first.width);
       for (const photo of await photos.all()) {
         const box = (await photo.boundingBox())!;
         expect(box.width).toBeGreaterThan(20);
@@ -383,7 +398,7 @@ test('phone bound book keeps one, two and four photos per leaf with dates and na
         await expectUncroppedPhoto(photo);
       }
       const dates = await reader.locator('.albumPageCaption time').evaluateAll(elements => elements.map(element => ({ text: element.textContent, width: element.clientWidth, scroll: element.scrollWidth })));
-      expect(dates).toHaveLength(count);
+      expect(dates).toHaveLength(Math.min(4, count));
       expect(dates.every(date => date.text === '2026.09.21' && date.scroll <= date.width)).toBe(true);
       const pager = (await reader.locator('.albumJournalPager').boundingBox())!;
       expect(pager.y).toBeGreaterThan(first.y + first.height);

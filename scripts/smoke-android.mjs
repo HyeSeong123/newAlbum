@@ -211,7 +211,7 @@ try {
   await writeFile(join(output, 'import-progress.json'), JSON.stringify(updates, null, 2));
   console.log('Real native folder import, album creation and calendar registration completed.');
   await page.screenshot({ path:join(output, 'installed-album.png') });
-  console.log('Opening the bound album in three-button navigation mode.');
+  console.log('Opening the single-page album in three-button navigation mode.');
   await page.getByRole('button', { name:'안드로이드에서 담은 추억 앨범 열기', exact:true }).click();
   let reader = page.getByRole('dialog', { name:'앨범 전체창', exact:true });
   await expect(reader.locator('.albumBookBase')).toBeVisible();
@@ -222,12 +222,13 @@ try {
     canvas:document.querySelector('.albumJournalCanvas').getBoundingClientRect().toJSON(),
     stage:document.querySelector('.albumBookStage').getBoundingClientRect().toJSON(),
   })), null, 2));
-  const left = await reader.locator('.albumPaper.left').boundingBox();
-  const right = await reader.locator('.albumPaper.right').boundingBox();
-  assert.ok(Math.abs(left.y - right.y) < 1 && left.x + left.width <= right.x + 1);
+  await expect(reader.locator('.albumPaper')).toHaveCount(1);
+  await expect(reader.locator('.albumPagerActions p')).toHaveText(/페이지$/);
+  const leaf = await reader.locator('.albumPaper').boundingBox();
+  assert.ok(leaf.height > leaf.width, 'The mobile book leaf must have portrait proportions');
   await expect(reader.getByLabel('앨범 책장 이동')).toBeInViewport();
   await captureScreen('system-bars-book-threebutton');
-  console.log('Bound album and pager fit the three-button viewport; checking gesture navigation.');
+  console.log('Single-page album and pager fit the three-button viewport; checking gesture navigation.');
   const threeButtonBounds = await safeWebViewBounds();
   // Changing this Android resource recreates MainActivity and its WebView.
   // Reconnect instead of polling the detached page's cached layout metrics.

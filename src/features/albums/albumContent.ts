@@ -30,6 +30,16 @@ export function moveContent(entries: AlbumContent[], index: number, target: numb
 }
 
 export type BookSpread = { left: MediaItem[]; right: MediaItem[]; leftPage?: AlbumContent; rightPage?: AlbumContent };
+
+// A phone reads the same leaves in order, without the empty half of the last spread.
+export function singleBookPages(spreads: BookSpread[]): BookSpread[] {
+  return spreads.flatMap(spread => (["left", "right"] as const).flatMap(side => {
+    const items = spread[side];
+    const page = spread[`${side}Page`];
+    return items.length || page ? [{ left: items, right: [], leftPage: page }] : [];
+  }));
+}
+
 export function makeBookSpreads(items: MediaItem[], contents?: AlbumContent[]): BookSpread[] {
   if (!contents?.some(entry => entry.kind === "CHAPTER" || entry.kind === "TEXT")) return makeAlbumSpreads(items);
   const byId = new Map(items.map(item => [item.id, item]));

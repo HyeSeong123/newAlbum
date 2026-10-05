@@ -126,18 +126,21 @@ test('both faces remain attached to the binding and swap slowly without duplicat
   }
 });
 
-test('scrubbing, list view and closing cancel the slower turn; reduced motion stays immediate', async ({ page }) => {
+test('scrubbing, list view and closing cancel the slower turn; reduced motion stays immediate', async ({ page }, info) => {
+  const single = info.project.name === 'mobile';
+  const total = single ? 5 : 3;
+  const unit = single ? '페이지' : '펼침';
   await page.clock.install();
   await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
   const reader = page.getByRole('dialog', { name: '앨범 전체창' });
   const label = reader.locator('.albumPagerActions p');
   await reader.getByTitle('다음 책장', { exact: true }).click();
   await expect(reader.locator('.albumTurnLayer')).toBeVisible();
-  await expect(reader.locator('.albumPaper.right .albumPhotoEntry').first()).toHaveCSS('opacity', '0');
+  await expect(reader.locator(`.albumPaper.${single ? 'left' : 'right'} .albumPhotoEntry`).first()).toHaveCSS('opacity', '0');
   await expect(reader.locator('.albumTurnFace.front [data-turn-media-id]')).toHaveCount(2);
-  await reader.getByLabel('앨범 책장 이동').fill('3');
+  await reader.getByLabel('앨범 책장 이동').fill(String(total));
   await page.clock.runFor(ALBUM_TURN_TIMING.duration + 100);
-  await expect(label).toHaveText('3 / 3 펼침');
+  await expect(label).toHaveText(`${total} / ${total} ${unit}`);
   await expect(reader.locator('.albumTurnLayer')).toHaveCount(0);
   await expect(reader.locator('.albumPagePhoto')).toHaveCount(1);
   await reader.getByTitle('이전 책장', { exact: true }).click();
@@ -148,15 +151,15 @@ test('scrubbing, list view and closing cancel the slower turn; reduced motion st
   await page.clock.runFor(ALBUM_TURN_TIMING.duration + 100);
   await expect(reader.locator('.albumPhotoList > button')).toHaveCount(9);
   await reader.getByTitle('책으로 보기', { exact: true }).click();
-  await expect(label).toHaveText('3 / 3 펼침');
+  await expect(label).toHaveText(`${total} / ${total} ${unit}`);
   await reader.getByTitle('이전 책장', { exact: true }).click();
   await reader.getByTitle('닫기', { exact: true }).click();
   await page.clock.runFor(ALBUM_TURN_TIMING.duration + 100);
   await page.getByRole('button', { name: '책장 넘김 앨범 열기', exact: true }).click();
-  await expect(label).toHaveText('1 / 3 펼침');
+  await expect(label).toHaveText(`1 / ${total} ${unit}`);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await reader.getByTitle('다음 책장', { exact: true }).click();
-  await expect(label).toHaveText('2 / 3 펼침');
+  await expect(label).toHaveText(`2 / ${total} ${unit}`);
   await expect(reader.locator('.albumTurnLayer')).toHaveCount(0);
   for (const entry of await reader.locator('.albumPhotoEntry').all()) await expect(entry).toHaveCSS('opacity', '1');
 });

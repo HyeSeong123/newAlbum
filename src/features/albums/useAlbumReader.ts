@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AlbumContent, MediaItem } from "../../types/media";
 import { shuffleAlbumItems, uniqueAlbumItems } from "../media/journalModel";
-import { makeBookSpreads } from "./albumContent";
+import { makeBookSpreads, singleBookPages } from "./albumContent";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
 import { ALBUM_TURN_TIMING } from "./albumAnimation";
 
+const SINGLE_PAGE_QUERY = "(max-width: 760px), (max-width: 1000px) and (max-height: 520px)";
+
 export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () => void, contents?: AlbumContent[]) {
   const [order, setOrder] = useState<string[] | null>(null);
-  const [pageIndex, setPageIndex] = useState(0);
+  const [singlePage, setSinglePage] = useState(() => window.matchMedia(SINGLE_PAGE_QUERY).matches);
+  // Keep a leaf position so a viewport change preserves the page being read.
+  const [leafIndex, setLeafIndex] = useState(0);
   const [turn, setTurn] = useState<{ direction: "next" | "prev"; from: number; to: number } | null>(null);
   const turning = turn?.direction ?? null;
   const [turnPhase, setTurnPhase] = useState<"departing" | "arriving" | "settling" | null>(null);
@@ -25,20 +29,23 @@ export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () =>
     const shuffled = order.flatMap((id) => byId.has(id) ? [byId.get(id)!] : []);
     return shuffled.length === albumItems.length ? shuffled : albumItems;
   }, [albumItems, order]);
-  const pages = useMemo(() => makeBookSpreads(orderedItems, contents), [orderedItems, contents]);
-  const pageLayoutKey = JSON.stringify(pages.map(({ left, right, leftPage, rightPage }) => [left.map(item => item.id), right.map(item => item.id), leftPage?.id, rightPage?.id]));
-  const currentPage = Math.min(pageIndex, Math.max(0, pages.length - 1));
+  const spreads = useMemo(() => makeBookSpreads(orderedItems, contents), [orderedItems, contents]);
+  const pages = useMemo(() => singlePage ? singleBookPages(spreads) : spreads, [singlePage, spreads]);
+  const pageLayoutKey = JSON.stringify(spreads.map(({ left, right, leftPage, rightPage }) => [left.map(item => item.id), right.map(item => item.id), leftPage?.id, rightPage?.id]));
+  const leavesPerView = singlePage ? 1 : 2;
+  const currentPage = Math.min(Math.floor(leafIndex / leavesPerView), Math.max(0, pages.length - 1));
   const oppositeSide = turn?.direction === "next" ? "left" : "right";
+  const oppositePage = oppositeSide === "left" ? "leftPage" : "rightPage";
   // Keep the opposite print in place until the turning leaf is almost flat.
-  const visibleSpread = turn && turnPhase !== "settling" && pages[currentPage] ? {
+  const visibleSpread = !singlePage && turn && turnPhase !== "settling" && pages[currentPage] ? {
     ...pages[currentPage], [oppositeSide]: pages[turn.from]?.[oppositeSide] ?? [],
     [`${oppositeSide}Page`]: pages[turn.from]?.[`${oppositeSide}Page`],
   } : pages[currentPage];
   const turningLeaves = turn ? {
-    front: pages[turn.from]?.[turn.direction === "next" ? "right" : "left"] ?? [],
-    back: pages[turn.to]?.[oppositeSide] ?? [],
-    frontPage: pages[turn.from]?.[turn.direction === "next" ? "rightPage" : "leftPage"],
-    backPage: pages[turn.to]?.[`${oppositeSide}Page`],
+    front: pages[turn.from]?.[singlePage || turn.direction === "prev" ? "left" : "right"] ?? [],
+    back: pages[turn.to]?.[singlePage ? "left" : oppositeSide] ?? [],
+    frontPage: pages[turn.from]?.[singlePage || turn.direction === "prev" ? "leftPage" : "rightPage"],
+    backPage: pages[turn.to]?.[singlePage ? "leftPage" : oppositePage],
   } : null;
 
   function cancelTurn() {
@@ -48,14 +55,23 @@ export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () =>
   }
 
   useEffect(() => {
-    cancelTurn(); setOrder(null); setPageIndex(0); setTurn(null); setTurnPhase(null);
+    cancelTurn(); setOrder(null); setLeafIndex(0); setTurn(null); setTurnPhase(null);
     return cancelTurn;
   }, [mediaOrderKey]);
 
   // Late dimension metadata can regroup pages. Never finish a turn against the old grouping.
   useEffect(() => {
-    cancelTurn(); setPageIndex(0); setTurn(null); setTurnPhase(null);
+    cancelTurn(); setLeafIndex(0); setTurn(null); setTurnPhase(null);
   }, [pageLayoutKey]);
+
+  useEffect(() => {
+    const query = window.matchMedia(SINGLE_PAGE_QUERY);
+    const syncLayout = () => {
+      cancelTurn(); setTurn(null); setTurnPhase(null); setSinglePage(query.matches);
+    };
+    query.addEventListener("change", syncLayout);
+    return () => query.removeEventListener("change", syncLayout);
+  }, []);
 
   useEffect(() => {
     const syncFullscreen = () => setFullscreen(Boolean(document.fullscreenElement));
@@ -69,13 +85,13 @@ export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () =>
   useModalBehavior(onClose, { enabled: open, onPrev: () => { if (!listView) turnPage(-1); }, onNext: () => { if (!listView) turnPage(1); } });
 
   function resetOrder(shuffle: boolean) {
-    cancelTurn(); setTurn(null); setTurnPhase(null); setPageIndex(0);
+    cancelTurn(); setTurn(null); setTurnPhase(null); setLeafIndex(0);
     setOrder(shuffle ? shuffleAlbumItems(albumItems).map((item) => item.id) : null);
   }
 
   function jumpToPage(next: number) {
     cancelTurn(); setTurn(null); setTurnPhase(null);
-    setPageIndex(Math.min(Math.max(next, 0), Math.max(0, pages.length - 1)));
+    setLeafIndex(Math.min(Math.max(next, 0), Math.max(0, pages.length - 1)) * leavesPerView);
   }
 
   function turnPage(direction: -1 | 1) {
@@ -85,7 +101,7 @@ export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () =>
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { jumpToPage(nextIndex); return; }
     turnLock.current = true;
     setTurn({ direction: direction > 0 ? "next" : "prev", from: currentPage, to: nextIndex }); setTurnPhase("departing");
-    timers.current.push(window.setTimeout(() => { setTurnPhase("arriving"); setPageIndex(nextIndex); }, ALBUM_TURN_TIMING.swap));
+    timers.current.push(window.setTimeout(() => { setTurnPhase("arriving"); setLeafIndex(nextIndex * leavesPerView); }, ALBUM_TURN_TIMING.swap));
     timers.current.push(window.setTimeout(() => { setTurnPhase("settling"); }, ALBUM_TURN_TIMING.oppositeSwap));
     timers.current.push(window.setTimeout(() => { setTurnPhase(null); setTurn(null); cancelTurn(); }, ALBUM_TURN_TIMING.duration));
   }
@@ -102,6 +118,6 @@ export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () =>
     cancelTurn(); setTurn(null); setTurnPhase(null); setListView((current) => !current);
   }
 
-  return { order, orderedItems, pages, currentPage, visibleSpread, turning, turningLeaves, turnPhase,
+  return { order, orderedItems, pages, currentPage, singlePage, visibleSpread, turning, turningLeaves, turnPhase,
     listView, fullscreen, notice, resetOrder, jumpToPage, turnPage, toggleFullscreen, toggleListView };
 }

@@ -29,7 +29,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('legacy album accepts a chapter at a chosen position, reloads, moves and deletes it without losing photos', async ({ page }) => {
+test('legacy album accepts a chapter at a chosen position, reloads, moves and deletes it without losing photos', async ({ page }, info) => {
   await page.goto('/');
   await page.getByRole('button', { name:'내 앨범', exact:true }).click();
   const openEditor = async () => {
@@ -49,8 +49,14 @@ test('legacy album accepts a chapter at a chosen position, reloads, moves and de
   await page.getByRole('button', { name:'내 앨범', exact:true }).click();
   await page.getByRole('button', { name:'제주 여행 앨범 열기', exact:true }).click();
   const reader = page.getByRole('dialog', { name:'앨범 전체창' });
-  await expect(reader.locator('.albumPaper.right .albumWrittenPage')).toContainText('DAY 2 · 성산일출봉');
   await expect(reader.locator('.albumPaper.left .albumPagePhoto')).toHaveCount(2);
+  if (info.project.name === 'mobile') {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await reader.getByTitle('다음 책장', { exact: true }).click();
+    await expect(reader.locator('.albumPagerActions p')).toHaveText('2 / 4 페이지');
+    await expect(reader.locator('.albumPaper')).toHaveCount(1);
+  }
+  await expect(reader.locator('.albumWrittenPage')).toContainText('DAY 2 · 성산일출봉');
   await reader.getByRole('button', { name:'앨범 수정', exact:true }).click();
   await page.getByRole('dialog', { name:'앨범 수정' }).getByRole('button', { name:'챕터·감상문', exact:true }).click();
   await expect(page.getByRole('dialog', { name:'앨범 수정' }).getByLabel('챕터 제목')).toHaveValue('DAY 2 · 성산일출봉');
@@ -102,6 +108,38 @@ test('text-only album can be saved, read, edited and removed after reload', asyn
   await editor.getByRole('button', { name:'저장', exact:true }).click();
   await expect(editor).toBeHidden();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('album-content-test')!).contents)).toEqual([]);
+});
+
+test('mobile pages keep photo, chapter and text leaves in sequence without an empty final page', async ({ page }, info) => {
+  test.skip(info.project.name !== 'mobile', 'Single-page reading sequence.');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.addInitScript(() => {
+    const media = Array.from({ length: 3 }, (_, i) => ({ id: i + 1, file_path: `C:/chapter-photo-${i + 1}.jpg`, file_type: 'image',
+      taken_at: '2026-05-15', width: 900, height: 600, title: `사진 ${i + 1}`, rating: 0, comment: '', favorite: false }));
+    const photo = (id: number) => ({ id: `photo-${id}`, kind: 'PHOTO', media_id: id, title: '', body: '', display_duration: 5, transition_type: 'fade', comment_visible: true });
+    localStorage.setItem('album-content-test', JSON.stringify({ id: 1, title: '제주 여행', description: '', created_at: '2026-05-15', items: media,
+      contents: [photo(1), { ...photo(0), id: 'chapter', kind: 'CHAPTER', title: '둘째 날', body: '아침 바다' }, photo(2), photo(3),
+        { ...photo(0), id: 'text', kind: 'TEXT', title: '여행 기록', body: '함께 걸었던 날' }] }));
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: '내 앨범', exact: true }).click();
+  await page.getByRole('button', { name: '제주 여행 앨범 열기', exact: true }).click();
+  const reader = page.getByRole('dialog', { name: '앨범 전체창' });
+  await expect(reader.locator('.albumPaper')).toHaveCount(1);
+  await expect(reader.locator('.albumPagerActions p')).toHaveText('1 / 4 페이지');
+  await expect(reader.locator('.albumPagePhoto')).toHaveAttribute('data-media-id', '1');
+  await reader.getByTitle('다음 책장', { exact: true }).click();
+  await expect(reader.getByRole('article', { name: '챕터: 둘째 날' })).toContainText('아침 바다');
+  await reader.getByTitle('다음 책장', { exact: true }).click();
+  expect(await reader.locator('.albumPagePhoto').evaluateAll(elements => elements.map(element => element.getAttribute('data-media-id')))).toEqual(['2', '3']);
+  await reader.getByTitle('다음 책장', { exact: true }).click();
+  await expect(reader.getByRole('article', { name: '글·일기: 여행 기록' })).toContainText('함께 걸었던 날');
+  await expect(reader.locator('.albumPagerActions p')).toHaveText('4 / 4 페이지');
+  await expect(reader.getByTitle('다음 책장', { exact: true })).toBeDisabled();
+  await reader.getByTitle('이전 책장', { exact: true }).click();
+  await expect(reader.locator('.albumPageNumber')).toHaveText('03');
+  await reader.getByLabel('앨범 책장 이동').fill('2');
+  await expect(reader.getByRole('article', { name: '챕터: 둘째 날' })).toBeVisible();
 });
 
 test('album cover colors appear after saving and reloading without story controls', async ({ page }) => {

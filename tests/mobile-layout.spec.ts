@@ -96,7 +96,7 @@ test('import header and actions stay visible when options scroll on short phones
   expect((await dialog.boundingBox())!.y + (await dialog.boundingBox())!.height).toBeLessThanOrEqual(390);
 });
 
-test('phones retain the bound two-page album and keep pager controls inside the screen', async ({ page }, info) => {
+test('phones show one leaf at a time and keep pager controls inside the screen', async ({ page }, info) => {
   test.skip(info.project.name !== 'mobile', 'Phone portrait and landscape regression.');
   await fixture(page);
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
@@ -105,10 +105,9 @@ test('phones retain the bound two-page album and keep pager controls inside the 
   for (const size of [{ width: 320, height: 740 }, { width: 393, height: 851 }, { width: 851, height: 393 }]) {
     await page.setViewportSize(size);
     await expect(reader.locator('.albumBookBase')).toBeVisible();
-    const left = (await reader.locator('.albumPaper.left').boundingBox())!;
-    const right = (await reader.locator('.albumPaper.right').boundingBox())!;
-    expect(Math.abs(left.y - right.y)).toBeLessThan(1);
-    expect(left.x + left.width).toBeLessThanOrEqual(right.x + 1);
+    await expect(reader.locator('.albumPaper')).toHaveCount(1);
+    await expect(reader.locator('.albumPagePhoto')).toHaveCount(4);
+    await expect(reader.locator('.albumPagerActions p')).toHaveText('1 / 3 페이지');
     const book = (await reader.locator('.albumBookStage').boundingBox())!;
     const header = (await reader.locator('.albumJournalHeader').boundingBox())!;
     const footer = (await reader.locator('.albumJournalPager').boundingBox())!;
@@ -119,9 +118,46 @@ test('phones retain the bound two-page album and keep pager controls inside the 
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     await page.screenshot({ path: `preview-results/mobile-album-${size.width}x${size.height}.png` });
   }
+  const ids = () => reader.locator('.albumPagePhoto').evaluateAll(elements => elements.map(element => element.getAttribute('data-media-id')));
+  expect(await ids()).toEqual(['1', '2', '3', '4']);
   await reader.getByRole('button', { name: '다음', exact: true }).click();
-  await expect(reader.locator('.albumPagerActions p')).toHaveText('2 / 2 펼침');
+  await expect(reader.locator('.albumPagerActions p')).toHaveText('2 / 3 페이지');
   await expect(reader.locator('.albumSpread')).toHaveAttribute('aria-busy', 'false');
+  expect(await ids()).toEqual(['5', '6', '7', '8']);
+  await expect(reader.locator('.albumPageNumber')).toHaveText('02');
+  await reader.getByRole('button', { name: '다음', exact: true }).click();
+  await expect(reader.locator('.albumSpread')).toHaveAttribute('aria-busy', 'false');
+  expect(await ids()).toEqual(['9', '10', '11']);
+  await expect(reader.getByRole('button', { name: '다음', exact: true })).toBeDisabled();
   await reader.locator('.albumPagePhoto').first().click();
   await expect(page.getByRole('dialog', { name: '사진 상세', exact: true })).toBeVisible();
+});
+
+test('changing between single pages and desktop spreads retains the reading position and cancels a turn', async ({ page }) => {
+  await page.setViewportSize({ width: 393, height: 851 });
+  await fixture(page);
+  await page.getByRole('button', { name: '내 앨범', exact: true }).click();
+  await page.getByRole('button', { name: '모바일 앨범 앨범 열기', exact: true }).click();
+  const reader = page.getByRole('dialog', { name: '앨범 전체창' });
+  const slider = reader.getByLabel('앨범 책장 이동');
+  await slider.fill('2');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await expect(reader.locator('.albumPaper')).toHaveCount(2);
+  await expect(reader.locator('.albumPagerActions p')).toHaveText('1 / 2 펼침');
+  await expect(reader.locator('.albumPagePhoto')).toHaveCount(8);
+  await page.setViewportSize({ width: 393, height: 851 });
+  await expect(reader.locator('.albumPagerActions p')).toHaveText('2 / 3 페이지');
+  await expect(reader.locator('.albumPagePhoto').first()).toHaveAttribute('data-media-id', '5');
+  await page.clock.install();
+  await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
+  await reader.getByTitle('다음 책장', { exact: true }).click();
+  await expect(reader.locator('.albumTurnLayer')).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await expect(reader.locator('.albumTurnLayer')).toHaveCount(0);
+  await page.clock.runFor(1600);
+  await expect(reader.locator('.albumPagerActions p')).toHaveText('1 / 2 펼침');
+  await slider.fill('2');
+  await page.setViewportSize({ width: 851, height: 393 });
+  await expect(reader.locator('.albumPagerActions p')).toHaveText('3 / 3 페이지');
+  await expect(reader.locator('.albumPagePhoto')).toHaveCount(3);
 });
