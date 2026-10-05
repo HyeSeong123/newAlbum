@@ -57,7 +57,9 @@ test('legacy album accepts a chapter at a chosen position, reloads, moves and de
     await expect(reader.locator('.albumPaper')).toHaveCount(1);
   }
   await expect(reader.locator('.albumWrittenPage')).toContainText('DAY 2 · 성산일출봉');
-  await reader.getByRole('button', { name:'앨범 수정', exact:true }).click();
+  if (!await reader.getByRole('button', { name:'앨범 수정', exact:true }).isVisible())
+    await reader.getByRole('button', { name:'앨범 보기 옵션', exact:true }).click();
+  await page.getByRole('button', { name:'앨범 수정', exact:true }).click();
   await page.getByRole('dialog', { name:'앨범 수정' }).getByRole('button', { name:'챕터·감상문', exact:true }).click();
   await expect(page.getByRole('dialog', { name:'앨범 수정' }).getByLabel('챕터 제목')).toHaveValue('DAY 2 · 성산일출봉');
   await page.getByRole('dialog', { name:'앨범 수정' }).getByRole('button', { name:'취소', exact:true }).click();

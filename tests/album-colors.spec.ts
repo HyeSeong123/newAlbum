@@ -96,7 +96,9 @@ test('album trim follows saved color while paper stays white after edits and rel
   await expect(trim).toHaveCSS('border-top-color', 'rgb(47, 64, 88)');
   await expect(reader.locator('.albumBookBase')).toBeVisible();
   await expect(reader.locator('.albumPaper').first()).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-  await reader.getByRole('button', { name: '앨범 수정', exact: true }).click();
+  if (!await reader.getByRole('button', { name: '앨범 수정', exact: true }).isVisible())
+    await reader.getByRole('button', { name: '앨범 보기 옵션', exact: true }).click();
+  await page.getByRole('button', { name: '앨범 수정', exact: true }).click();
   const editor = page.getByRole('dialog', { name: '앨범 수정', exact: true });
   await editor.getByRole('button', { name: '앨범 정보', exact: true }).click();
   await editor.getByRole('button', { name: '버건디 색상', exact: true }).click();
