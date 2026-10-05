@@ -77,7 +77,8 @@ jobs:
           npx playwright install --with-deps chromium
           npx playwright test tests/people-controls.spec.ts tests/people.spec.ts tests/pets.spec.ts tests/unknown-faces.spec.ts tests/export-media.spec.ts --workers=2
           npx playwright test tests/usability-recovery.spec.ts --grep "person management" --workers=2
-          npx playwright test tests/mobile-layout.spec.ts tests/menu-position.spec.ts --workers=2
+          npx playwright test tests/mobile-layout.spec.ts tests/mobile-polish.spec.ts tests/menu-position.spec.ts --workers=2
+          npx playwright test tests/app.spec.ts --grep 'gallery sorting' --workers=2
           npx playwright test tests/photo-titles.spec.ts tests/photo-detail.spec.ts tests/journal-preview.spec.ts tests/memory-map.spec.ts tests/memory-map-v2.spec.ts tests/map-district.spec.ts tests/calendar.spec.ts --project=desktop --workers=2
           npx playwright test tests/memory-map.spec.ts tests/memory-map-v2.spec.ts tests/map-district.spec.ts tests/calendar.spec.ts --project=mobile --workers=1
           npx playwright test tests/search-diary.spec.ts tests/trip-discovery.spec.ts tests/diary-photos.spec.ts --workers=2

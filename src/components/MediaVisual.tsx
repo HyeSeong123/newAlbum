@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Image } from "lucide-react";
+import { Heart, Image } from "lucide-react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { isTauriRuntime } from "../services/tauriMediaService";
 import type { MediaItem } from "../types/media";
@@ -36,8 +36,13 @@ export function MediaVisual({ item, className, children, original = false, fit =
     <div className={`mediaVisual fit-${fit}${className ? ` ${className}` : ""}`} style={{ background: fit === "contain" ? "#eeede7" : item.thumbnail }}>
       <MediaImage item={item} original={original} />
       {children}
+      <FavoriteBadge item={item} />
     </div>
   );
+}
+
+export function FavoriteBadge({ item }: { item: Pick<MediaItem, 'favorite'> }) {
+  return item.favorite ? <span className="favoritePhotoBadge" role="img" aria-label="즐겨찾기 사진"><Heart size={18} fill="currentColor" aria-hidden="true" style={{ color: '#d83e52' }} /></span> : null;
 }
 
 export function MediaImage({ item, original = false }: { item: MediaItem; original?: boolean }) {

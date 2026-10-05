@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ArrowUpDown, CheckSquare, ChevronLeft, ChevronRight, Heart, ImagePlus, MapPin, Music, Play, Plus, Search, SlidersHorizontal, Trash2, X } from "lucide-react";
+import { ArrowUpDown, CheckSquare, ChevronLeft, ChevronRight, ImagePlus, MapPin, Music, Play, Plus, Search, SlidersHorizontal, Trash2, X } from "lucide-react";
 import type { MediaItem } from "../../types/media";
 import { EmptyState, MediaVisual } from "../../components/MediaVisual";
 import { useRowSelection } from "../../hooks/useRowSelection";
+import { useMobileLayout } from "../../hooks/useMobileLayout";
 import { loadDayNotes } from "../calendar/calendarModel";
 import { groupByTakenDate } from "./mediaService";
 import { arrangeJournalItems, formatJournalDate, mediaSummary } from "./journalModel";
@@ -58,6 +59,8 @@ export function Library({
 }) {
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<LibrarySort>("date-desc");
+  const mobile = useMobileLayout();
+  useEffect(() => { if (mobile && sort === 'views') setSort('date-desc'); }, [mobile, sort]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [bulkRegionOpen, setBulkRegionOpen] = useState(false);
   const [mediaType, setMediaType] = useState<LibraryMediaType>("all");
@@ -114,7 +117,7 @@ export function Library({
         setStartDate(start); setEndDate(end); onDateSearch();
           }} />
           <label className="sortControl"><ArrowUpDown size={17} /><select aria-label="정렬 기준" value={sort} onChange={(event) => setSort(event.target.value as LibrarySort)}>
-            <option value="date-desc">날짜 최신순</option><option value="date-asc">날짜 오래된순</option><option value="comments">댓글 많은순</option><option value="rating">별점 높은순</option><option value="views">조회수 많은순</option><option value="name">이름순</option>
+            <option value="date-desc">날짜 최신순</option><option value="date-asc">날짜 오래된순</option><option value="comments">댓글 많은순</option><option value="rating">별점 높은순</option>{!mobile && <option value="views">조회수 많은순</option>}<option value="name">이름순</option>
           </select></label>
         </div>
       {filtersOpen && <section id="libraryFilters" className="filterPanel" aria-label="사진 필터">
@@ -176,7 +179,6 @@ export function Library({
             <MediaVisual item={item} className="thumb">
               {item.fileType === "video" && <span className="videoDuration"><Play size={12} fill="currentColor" />{item.duration || "영상"}</span>}
               {item.fileType === "audio" && <Music className="mediaBadge" size={24} />}
-              {item.favorite && <Heart className="fav" size={17} fill="currentColor" />}
               {selectionMode && (
                 <span className="selectMark" aria-label={selectedIds.has(item.id) ? "선택됨" : "선택 안 됨"}>
                 </span>

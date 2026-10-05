@@ -177,6 +177,11 @@ try {
   await safeWebViewBounds();
   await captureScreen('system-bars-home-threebutton');
   console.log('Installed Android app launched and rendered its native home.');
+  await expect(page.getByRole('button', { name:'다음 메뉴 보기', exact:true })).toBeEnabled();
+  await page.getByRole('button', { name:'다음 메뉴 보기', exact:true }).click();
+  await expect.poll(() => page.locator('.navList').evaluate(element => element.scrollLeft)).toBeGreaterThan(20);
+  await expect(page.getByRole('button', { name:'이전 메뉴 보기', exact:true })).toBeEnabled();
+  await captureScreen('mobile-navigation-arrows');
   await page.locator('.navList').getByRole('button', { name:'사진 기록', exact:true }).click();
   await page.getByRole('button', { name:'사진·영상 가져오기', exact:true }).click();
   let dialog = page.getByRole('dialog', { name:'사진·영상 가져오기', exact:true });
@@ -262,6 +267,7 @@ try {
   const albumMenuTrigger = reader.getByRole('button', { name:'앨범 보기 옵션', exact:true });
   await albumMenuTrigger.click();
   await expect(page.locator('.actionMenuPanel')).toBeVisible();
+  await expect(page.getByRole('button', { name:'전체화면', exact:true })).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => {
     const trigger = document.querySelector('.albumJournalTools .actionMenuTrigger').getBoundingClientRect();
     const menu = document.querySelector('.actionMenuPanel').getBoundingClientRect();
@@ -271,6 +277,17 @@ try {
   await captureScreen('album-anchored-menu');
   await page.keyboard.press('Escape');
   await expect(reader).toBeVisible();
+  await reader.locator('.albumPagePhoto:has(.mediaImage)').first().click();
+  const photoDetail = page.getByRole('dialog', { name:'사진 상세', exact:true });
+  for (const label of ['해상도', '파일 크기', '조회 수']) await expect(photoDetail.getByText(label, { exact:true })).toHaveCount(0);
+  const favoriteControl = photoDetail.getByRole('button', { name:'즐겨찾기', exact:true });
+  await favoriteControl.click();
+  await expect(photoDetail.locator('.favoritePhotoBadge svg')).toHaveCSS('color', 'rgb(216, 62, 82)');
+  await expect.poll(() => page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_media')).some(item => item.favorite))).toBe(true);
+  await captureScreen('mobile-photo-favorite');
+  await photoDetail.getByTitle('닫기', { exact:true }).click();
+  await expect(reader.locator('.albumPaper .favoritePhotoBadge')).toBeVisible();
+  console.log('Mobile navigation arrows, hidden technical photo metadata/fullscreen and red favorite badges: OK');
   await reader.locator('.albumPagePhoto:has(img.mediaImage)').first().click();
   const detail = page.getByRole('dialog', { name:'사진 상세', exact:true });
   await expect(detail).toBeVisible();

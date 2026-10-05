@@ -38,6 +38,7 @@ export function useRowSelection(enabled: boolean, toggle: (id: string) => void, 
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   }
   return {
+    style: enabled ? { touchAction: 'pan-y pinch-zoom' as const, userSelect: 'none' as const } : undefined,
     onPointerDown(event: PointerEvent<HTMLDivElement>) {
       suppressMouseClick.current = false;
       // Touch and pen taps use the tile's click handler. A swipe must remain a

@@ -1,5 +1,5 @@
 .peopleView { display: grid; gap: 20px; }
-.personPhotoGrid.selecting { touch-action: none; user-select: none; }
+.personPhotoGrid.selecting { touch-action: pan-y pinch-zoom; user-select: none; }
 .faceMatchReview { width: min(880px, 100%); max-height: calc(100dvh - 48px); display: flex; flex-direction: column; background: #fff; border-radius: 8px; overflow: hidden; }
 .faceMatchBody { padding: 20px; overflow: auto; }
 .faceMatchGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 20px; }

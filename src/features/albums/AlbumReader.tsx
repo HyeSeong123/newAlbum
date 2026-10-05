@@ -6,6 +6,7 @@ import { EmptyState, MediaVisual } from "../../components/MediaVisual";
 import { ActionMenu } from "../../components/ActionMenu";
 import { albumLeafLayout, isLandscapeMedia, isPortraitMedia, mediaSummary } from "../media/journalModel";
 import { useAlbumReader } from "./useAlbumReader";
+import { useMobileLayout } from "../../hooks/useMobileLayout";
 import { ALBUM_TURN_TIMING } from "./albumAnimation";
 import albumOpenBase from "../../assets/album-open-white-thin.png";
 import { AlbumContentsList } from "./AlbumContentsList";
@@ -25,6 +26,7 @@ export function AlbumFullscreenReader({ title, items, contents, color, open, onO
 }) {
   const diaryCount = contents?.filter(entry => entry.kind === "TEXT").length ?? 0;
   const chapterCount = contents?.filter(entry => entry.kind === "CHAPTER").length ?? 0;
+  const mobile = useMobileLayout();
   const { order, orderedItems, pages, currentPage, singlePage, visibleSpread, turning, turningLeaves, turnPhase, listView,
     fullscreen, notice, resetOrder, jumpToPage, turnPage, toggleFullscreen, toggleListView } = useAlbumReader(items, open, onClose, contents);
 
@@ -46,11 +48,11 @@ export function AlbumFullscreenReader({ title, items, contents, color, open, onO
       <div className="albumJournalTools">
         {!singlePage && onEdit && <button className="albumJournalEdit" onClick={onEdit} aria-label="앨범 수정" title="앨범 수정"><Pencil size={18} /><span>앨범 수정</span></button>}
         <button aria-pressed={listView} onClick={toggleListView} aria-label={listView ? "책으로 보기" : "사진 목록"} title={listView ? "책으로 보기" : "사진 목록"}>{listView ? <BookOpen size={18} /> : <Images size={18} />}<span>{listView ? "책으로 보기" : "사진 목록"}</span></button>
-        {!singlePage && <button onClick={() => void toggleFullscreen()} disabled={!document.fullscreenEnabled} aria-pressed={fullscreen} title={fullscreen ? "전체화면 종료" : "전체화면"}>{fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}<span>{fullscreen ? "전체화면 종료" : "전체화면"}</span></button>}
+        {!mobile && !singlePage && <button onClick={() => void toggleFullscreen()} disabled={!document.fullscreenEnabled} aria-pressed={fullscreen} title={fullscreen ? "전체화면 종료" : "전체화면"}>{fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}<span>{fullscreen ? "전체화면 종료" : "전체화면"}</span></button>}
         <ActionMenu label="앨범 보기 옵션" triggerText="더 보기" icon={<MoreVertical size={18} />} actions={[
           ...(singlePage && onEdit ? [{ label: "앨범 수정", icon: <Pencil size={16} />, onSelect: onEdit }] : []),
           ...(onExport ? [{ label: "내보내기", icon: <FolderOutput size={16} />, disabled: !items.length, onSelect: onExport }] : []),
-          ...(singlePage ? [{ label: fullscreen ? "전체화면 종료" : "전체화면", icon: <Maximize size={16} />, disabled: !document.fullscreenEnabled, onSelect: () => void toggleFullscreen() }] : []),
+          ...(!mobile && singlePage ? [{ label: fullscreen ? "전체화면 종료" : "전체화면", icon: <Maximize size={16} />, disabled: !document.fullscreenEnabled, onSelect: () => void toggleFullscreen() }] : []),
           { label: "사진 순서 섞기", icon: <Shuffle size={16} />, disabled: orderedItems.length < 2 || contents?.some(entry => !entry.mediaId), onSelect: () => resetOrder(true) },
           { label: "원래 순서로 보기", icon: <RotateCcw size={16} />, disabled: !order, onSelect: () => resetOrder(false) },
         ]} />

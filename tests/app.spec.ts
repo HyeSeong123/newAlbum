@@ -59,7 +59,7 @@ test("empty library flow works", async ({ page }) => {
   await expect(page.getByRole("tab", { name: "사진 모아보기" })).toHaveAttribute("aria-selected", "true");
 });
 
-test("gallery sorting, combined filters and persistent view counts work", async ({ page }) => {
+test("gallery sorting, combined filters and persistent view counts work", async ({ page, isMobile }) => {
   await page.addInitScript(() => {
     const media = [
       { id: 1, file_path: 'C:/z-last.jpg', file_type: 'image', taken_at: '2026-09-14', width: 640, height: 480, duration: null, size_bytes: 1000, rating: 5, comment: '', favorite: true, view_count: 1, metadata_status: 'ready' },
@@ -96,8 +96,10 @@ test("gallery sorting, combined filters and persistent view counts work", async 
   await expect.poll(order).toEqual(['2', '1', '3']);
   await page.getByLabel('정렬 기준').selectOption('rating');
   await expect.poll(order).toEqual(['1', '2', '3']);
-  await page.getByLabel('정렬 기준').selectOption('views');
-  await expect.poll(order).toEqual(['2', '3', '1']);
+  if (!isMobile) {
+    await page.getByLabel('정렬 기준').selectOption('views');
+    await expect.poll(order).toEqual(['2', '3', '1']);
+  } else await expect(page.getByLabel('정렬 기준').locator('option[value="views"]')).toHaveCount(0);
 
   await page.getByRole('button', { name: '필터', exact: true }).click();
   await page.getByLabel('미디어 종류').selectOption('video');
@@ -111,7 +113,8 @@ test("gallery sorting, combined filters and persistent view counts work", async 
   await expect(page.locator('.mediaTile')).toHaveCount(3);
 
   await page.locator('.mediaTile[data-media-id="1"]').click();
-  await expect(page.getByText('2회', { exact: true })).toBeVisible();
+  if (!isMobile) await expect(page.getByText('2회', { exact: true })).toBeVisible();
+  else await expect(page.getByText('조회 수', { exact: true })).toHaveCount(0);
   await expect(page.locator('html')).toHaveAttribute('data-viewed-id', '1');
   await page.screenshot({ path: `test-results/gallery-view-count-${test.info().project.name}.png`, fullPage: true });
 });

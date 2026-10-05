@@ -24,6 +24,7 @@ import { filterJournalMonth, journalMonthTitle, resolveJournalMonth } from "./fe
 import type { MediaItem } from "./types/media";
 import { DiaryView, useDiary } from "./features/diary/DiaryView";
 import { BrandLogo } from "./components/BrandLogo";
+import { MainNavigation } from "./components/MainNavigation";
 import { HomeView } from "./features/home/HomeView";
 import { CharacterBook } from "./features/characters/CharacterBook";
 import { CharacterEventModal } from "./features/characters/CharacterEventModal";
@@ -181,7 +182,7 @@ export function App() {
           <BrandLogo />
         </button>
 
-        <nav className="navList" aria-label="주 메뉴">
+        <MainNavigation activeKey={`${activeView}:${largeLayout}`}>
           {navItems.map(({ name, label, accessibleLabel }) => (
             <button
               key={name}
@@ -197,7 +198,7 @@ export function App() {
               )}
             </button>
           ))}
-        </nav>
+        </MainNavigation>
         <button className="layoutToggle" aria-pressed={largeLayout} onClick={() => { setLargeLayout(!largeLayout); localStorage.setItem("warm-journal-large-layout", String(!largeLayout)); }}>{largeLayout ? "기본 크기" : "크게 보기"}</button>
         <button className="globalSettings" aria-label="설정" title="설정" aria-pressed={activeView === "Settings"} onClick={() => navigate("Settings")}><Settings size={20} /><span>설정</span></button>
       </header>

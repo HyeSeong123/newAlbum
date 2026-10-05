@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type CSSProperties } from "react";
 import { ChevronLeft, ChevronRight, Download, Heart, Minus, Plus, RotateCcw, Star, X, ZoomIn, ZoomOut } from "lucide-react";
 import type { MediaItem } from "../../types/media";
-import { getMediaSource, MediaImage } from "../../components/MediaVisual";
+import { FavoriteBadge, getMediaSource, MediaImage } from "../../components/MediaVisual";
+import { useMobileLayout } from "../../hooks/useMobileLayout";
 import { MediaPlayback } from "../../components/MediaPlayback";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
 import { formatJournalDate } from "./journalModel";
@@ -26,6 +27,7 @@ export function DetailModal({
   onNext: () => void;
 }) {
   const [zoomViewerOpen, setZoomViewerOpen] = useState(false);
+  const mobile = useMobileLayout();
   const [photoZoom, setPhotoZoom] = useState(100);
   const dialogRef = useRef<HTMLElement>(null);
   const photoViewportRef = useRef<HTMLDivElement>(null);
@@ -95,6 +97,7 @@ export function DetailModal({
               {mediaDownload.notice && <p className="detailDownloadFeedback" role="status">{mediaDownload.notice}</p>}
             </div>
             <div className="detailStage">
+              <FavoriteBadge item={item} />
               {item.fileType === "image" ? <>
                 <div
                   key={item.id}
@@ -154,10 +157,10 @@ export function DetailModal({
               <dl className="photoMetadata">
                 <div><dt>촬영일</dt><dd>{item.takenAt?.replaceAll("-", ".") ?? "날짜 없음"}</dd></div>
                 {item.latitude != null && item.longitude != null && <div><dt>원본 GPS</dt><dd>{item.latitude.toFixed(5)}, {item.longitude.toFixed(5)}</dd></div>}
-                <div><dt>해상도</dt><dd>{item.width && item.height ? `${item.width} × ${item.height}` : "-"}</dd></div>
+                {!mobile && <div><dt>해상도</dt><dd>{item.width && item.height ? `${item.width} × ${item.height}` : "-"}</dd></div>}
                 {item.fileType !== "image" && <div><dt>재생 시간</dt><dd>{item.duration || "-"}</dd></div>}
-                <div><dt>파일 크기</dt><dd>{item.sizeLabel}</dd></div>
-                <div><dt>조회 수</dt><dd>{item.viewCount ?? 0}회</dd></div>
+                {!mobile && <><div><dt>파일 크기</dt><dd>{item.sizeLabel}</dd></div>
+                <div><dt>조회 수</dt><dd>{item.viewCount ?? 0}회</dd></div></>}
               </dl>
             </aside>
           </div>
@@ -224,6 +227,7 @@ function PhotoZoomViewer({ item, onClose }: { item: MediaItem; onClose: () => vo
           <button className="photoZoomClose" title="확대 보기 닫기" autoFocus onClick={onClose}><X size={20} /></button>
         </div>
         <div className="photoZoomStage">
+          <FavoriteBadge item={item} />
           <button
             className="photoZoomCanvas"
             style={{ width: `${scale * 100}%`, height: `${scale * 100}%` }}

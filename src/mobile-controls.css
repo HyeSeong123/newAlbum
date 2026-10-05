@@ -12,6 +12,29 @@
 .primaryActionShort { display: none; }
 .diaryView > .diarySearch { width: 100%; margin-bottom: 16px; }
 
+.sidebar .navScroll { display: flex; align-items: stretch; justify-self: center; min-width: 0; max-width: 100%; }
+.sidebar .navScroll .navList { order: 0; flex: 1 1 auto; min-width: 0; width: auto; overflow-x: auto; }
+.sidebar .navScrollArrow { flex: 0 0 44px; width: 44px; min-height: 44px; padding: 0; display: grid; place-items: center; background: transparent; color: var(--text); border-radius: 6px; }
+.sidebar .navScrollArrow[hidden] { display: none; }
+.sidebar .navScrollArrow:disabled { opacity: .25; }
+.sidebar .navScrollArrow:hover:not(:disabled) { background: var(--surface-soft); }
+.mediaVisual { position: relative; }
+.favoritePhotoBadge { position: absolute; top: 8px; right: 8px; z-index: 3; }
+.mediaVisual .favoritePhotoBadge, .detailStage > .favoritePhotoBadge, .personOriginal > .favoritePhotoBadge, .photoZoomStage > .favoritePhotoBadge {
+  display: grid; place-items: center; width: 28px; height: 28px; margin: 0; padding: 0;
+  border-radius: 50%; background: #fffffff2; color: #d83e52; box-shadow: 0 1px 6px #0002;
+  pointer-events: none; line-height: 1;
+}
+.favoritePhotoBadge > svg { position: static; width: 18px; height: 18px; margin: 0; transform: none; }
+.photoZoomStage { position: relative; }
+.photoInspector .detailPhotoActions .detailFavorite.active { color: #d83e52; }
+.personPhoto:has(.favoritePhotoBadge) .personCoverBadge { top: 44px; }
+
+@media (max-width: 1000px) {
+  .sidebar .navScroll { order: 3; flex: 0 0 100%; width: 100%; min-height: 44px; }
+  .sidebar .navScroll .navList { width: 100%; }
+}
+
 /* People and pets use the same title, back and action positions. */
 .peopleWorkspace, .peopleWorkspace > [role="tabpanel"] { min-width: 0; }
 .entityHeader { scroll-margin-top: calc(var(--app-header-height, 70px) + 16px); }
