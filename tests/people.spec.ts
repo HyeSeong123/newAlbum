@@ -105,6 +105,7 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
   }, { thumbnail });
   await page.goto('/');
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
+  await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
   await page.getByRole('button', { name: '미확인 얼굴 보기' }).click();
   await expect(page.locator('.personTile')).toHaveCount(2);
   const unknownSection = page.getByRole('region', { name: '미확인 얼굴', exact: true });
@@ -167,6 +168,7 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
   await page.getByTitle('닫기').click();
   await expect(page.locator('.personPhoto')).toHaveCount(2);
   await page.getByRole('button', { name: '사람 목록' }).click();
+  await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
   await page.getByRole('button', { name: '미확인 얼굴 보기' }).click();
   await page.getByRole('button', { name: '미확인 얼굴 1장', exact: true }).click();
   await page.getByLabel('인물 이름').fill(' 가족 ');
@@ -178,6 +180,7 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
   await page.getByRole('button', { name: '같은 이름 합치기', exact: true }).click();
   await expect(page.getByRole('heading', { name: '가족', exact: true })).toBeVisible();
   await expect(page.locator('.personPhoto')).toHaveCount(3);
+  await page.getByRole('button', { name: '사람 목록', exact: true }).click();
   await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
   await page.getByRole('button', { name: '모든 얼굴 보기' }).click();
   const faceBox = await page.locator('.faceOverviewGrid .personOriginal').first().boundingBox();
@@ -216,6 +219,7 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
   await page.reload();
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '가족 1장', exact: true }).click();
+  await page.getByRole('button', { name: '사람 관리', exact: true }).click();
   await page.getByRole('button', { name: '이름 수정' }).click();
   await expect(page.getByRole('button', { name: '같은 이름 합치기', exact: true })).toBeEnabled();
   await page.screenshot({ path: `test-results/people-duplicate-${test.info().project.name}.png` });

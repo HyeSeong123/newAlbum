@@ -313,6 +313,39 @@ try {
   await expect(page.getByRole('dialog', { name:'일기 상세', exact:true })).toBeVisible();
   await page.getByRole('dialog', { name:'일기 상세', exact:true }).getByRole('button', { name:'닫기', exact:true }).click();
   console.log('Diary frame and save actions fit the Android visual viewport; long text saved through native storage.');
+  await page.locator('.navList').getByRole('button', { name:'사람과 반려동물', exact:true }).click();
+  await expect(page.locator('.peopleView > .entityHeader')).toBeVisible();
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+  await captureScreen('people-controls-overview');
+  await page.getByRole('tab', { name:'반려동물', exact:true }).click();
+  await page.getByRole('button', { name:'반려동물 등록', exact:true }).click();
+  const petEditor = page.getByRole('dialog', { name:'반려동물 등록', exact:true });
+  await petEditor.getByLabel('이름', { exact:true }).fill('안드로이드 보리');
+  await petEditor.getByRole('button', { name:'사진 선택', exact:true }).first().click();
+  await petEditor.getByRole('button', { name:'저장', exact:true }).click();
+  await expect(petEditor).toBeHidden();
+  const petHeader = page.locator('.petsView > .entityHeader');
+  await expect(petHeader.getByRole('heading', { name:'안드로이드 보리', exact:true })).toBeVisible();
+  await expect(petHeader.getByText('사진 1장', { exact:true })).toBeVisible();
+  assert.equal(await petHeader.evaluate(element => {
+    const heading = element.querySelector('.entityHeading').getBoundingClientRect();
+    const actions = element.querySelector('.entityActions').getBoundingClientRect();
+    return heading.right < actions.left && actions.right <= innerWidth;
+  }), true);
+  await petHeader.getByRole('button', { name:'반려동물 관리', exact:true }).click();
+  await expect(page.locator('.actionMenuPanel')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const trigger = document.querySelector('.petsView .actionMenuTrigger').getBoundingClientRect();
+    const menu = document.querySelector('.actionMenuPanel').getBoundingClientRect();
+    return Math.min(Math.abs(menu.top - trigger.bottom - 6), Math.abs(trigger.top - menu.bottom - 6)) < 8
+      && menu.left >= 9 && menu.right <= innerWidth - 9 && menu.bottom <= innerHeight - 9;
+  })).toBe(true);
+  await captureScreen('pet-anchored-menu');
+  await petHeader.getByRole('button', { name:'반려동물 관리', exact:true }).click();
+  await petHeader.getByRole('button', { name:'이름·사진 수정', exact:true }).click();
+  await expect(page.getByRole('dialog', { name:'반려동물 편집', exact:true })).toBeVisible();
+  await page.getByRole('dialog', { name:'반려동물 편집', exact:true }).getByTitle('닫기', { exact:true }).click();
+  console.log('People overview and pet detail controls fit Android; pet registration, anchored menu and editing use native storage.');
   await adb('shell', 'input', 'keyevent', '4');
   await expect(page.getByRole('heading', { name:'홈', exact:true })).toBeVisible();
   await page.screenshot({ path:join(output, 'home.png') });
@@ -358,6 +391,7 @@ try {
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_media'))).length, 2);
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_albums')))[0].title, '안드로이드에서 담은 추억');
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_diary')))[0].title, '휴대폰 한 화면의 일기');
+  assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_pets')))[0].name, '안드로이드 보리');
   assert.equal((await page.evaluate(() => JSON.parse(localStorage.getItem('oraedameun.calendarRegistrations-v1')))).length, 1);
   await page.locator('.navList').getByRole('button', { name:'내 앨범', exact:true }).click();
   await page.getByRole('button', { name:'안드로이드에서 담은 추억 앨범 열기', exact:true }).click();

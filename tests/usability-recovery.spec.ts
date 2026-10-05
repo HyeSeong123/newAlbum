@@ -225,6 +225,7 @@ test('person management preserves a failed name draft and keeps cover selection 
   await page.goto('/');
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '가족 2장', exact: true }).click();
+  await page.getByRole('button', { name: '사람 관리', exact: true }).click();
   await page.getByRole('button', { name: '이름 수정', exact: true }).click();
   await page.getByLabel('인물 이름').fill('우리 가족');
   await page.getByRole('button', { name: '이름 저장', exact: true }).click();

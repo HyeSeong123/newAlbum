@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { ArrowLeft, Check, ChevronLeft, ChevronRight, LoaderCircle, PawPrint, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, LoaderCircle, MoreVertical, PawPrint, Pencil, Plus, Trash2, X } from 'lucide-react';
 import type { MediaItem } from '../../types/media';
 import { MediaVisual } from '../../components/MediaVisual';
 import { EmptyState } from '../../components/MediaVisual';
@@ -22,6 +22,7 @@ export function PetsView({ items, onOpen, query = "" }: { items: MediaItem[]; qu
   const [editing, setEditing] = useState<Pet | null>(null);
   const [page, setPage] = useState(0);
   const [reviewing, setReviewing] = useState(false);
+  const heading = useRef<HTMLDivElement>(null);
   const desktop = isTauriRuntime();
   const photos = useMemo(() => items.filter((item) => item.fileType === 'image'), [items]);
   const covers = useMemo(() => petCovers(photos, pets), [photos, pets]);
@@ -32,6 +33,11 @@ export function PetsView({ items, onOpen, query = "" }: { items: MediaItem[]; qu
   const linked = useMemo(() => petPhotos(photos, pet), [photos, pet]);
   const pages = Math.max(1, Math.ceil((pet ? linked.length : matchingPets.length) / 24));
   const currentPage = Math.min(page, pages - 1);
+  useEffect(() => {
+    const header = heading.current;
+    const navigationBottom = document.querySelector('.sidebar')?.getBoundingClientRect().bottom ?? 0;
+    if (header && header.getBoundingClientRect().top < navigationBottom) header.scrollIntoView({ block: 'start' });
+  }, [active]);
   useEffect(() => {
     let alive = true;
     if (desktop) loadPets().then((result) => { if (alive) setPets(result); })
@@ -48,15 +54,17 @@ export function PetsView({ items, onOpen, query = "" }: { items: MediaItem[]; qu
     finally { setBusy(false); }
   }
   return <section className="petsView">
-    <div className="panelHeader">
-      <h2>{pet?.name ?? '반려동물'}</h2>
-      <div className="peopleActions">
-        {pet && <button onClick={() => { setActive(null); setPage(0); }}><ArrowLeft size={18} />반려동물 목록</button>}
-        {pet && <><button disabled={busy} onClick={() => setEditing(pet)}><Pencil size={18} />이름·사진 수정</button><ActionMenu label="반려동물 관리" triggerText="반려동물 관리" icon={<PawPrint size={16} />} disabled={busy} actions={[
+    <div className="panelHeader entityHeader" ref={heading}>
+      <div className="entityHeading">
+        {pet && <button className="entityBack" aria-label="반려동물 목록" title="반려동물 목록" disabled={busy} onClick={() => { setActive(null); setPage(0); }}><ArrowLeft size={20} /></button>}
+        <div className="entityHeadingCopy"><h2>{pet?.name ?? '반려동물'}</h2>{pet && <span>사진 {linked.length}장</span>}</div>
+      </div>
+      <div className="peopleActions entityActions">
+        {pet && <><button className="primaryControl entityPrimary" aria-label="이름·사진 수정" disabled={busy} onClick={() => setEditing(pet)}><Pencil size={18} /><span className="entityActionFull">이름·사진 수정</span><span className="entityActionShort" aria-hidden="true">수정</span></button><ActionMenu label="반려동물 관리" icon={<MoreVertical size={20} />} disabled={busy} actions={[
           { label: '비슷한 사진 찾기', icon: <ScanSearch size={16} />, disabled: !linked.length, onSelect: () => setReviewing(true) },
           { label: '반려동물 등록 삭제', icon: <Trash2 size={16} />, danger: true, onSelect: () => void remove() },
         ]} /></>}
-        {!pet && <button className="primaryControl" disabled={loading || !desktop} onClick={() => setEditing({ id: 0, name: '', cover_media_id: null, media_ids: [] })}><Plus size={18} />반려동물 등록</button>}
+        {!pet && <button className="primaryControl entityPrimary" aria-label="반려동물 등록" disabled={loading || !desktop} onClick={() => setEditing({ id: 0, name: '', cover_media_id: null, media_ids: [] })}><Plus size={18} /><span className="entityActionFull">반려동물 등록</span><span className="entityActionShort" aria-hidden="true">등록</span></button>}
       </div>
     </div>
     {!desktop && <p role="status">반려동물 등록은 데스크톱 앱에서 사용할 수 있습니다.</p>}

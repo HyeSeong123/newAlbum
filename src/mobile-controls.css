@@ -12,7 +12,49 @@
 .primaryActionShort { display: none; }
 .diaryView > .diarySearch { width: 100%; margin-bottom: 16px; }
 
+/* People and pets use the same title, back and action positions. */
+.peopleWorkspace, .peopleWorkspace > [role="tabpanel"] { min-width: 0; }
+.entityHeader { scroll-margin-top: calc(var(--app-header-height, 70px) + 16px); }
+.entityHeading { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.entityHeadingCopy { min-width: 0; }
+.entityHeadingCopy h2 { overflow-wrap: anywhere; margin: 0; }
+.entityHeadingCopy > span { display: block; color: var(--muted); font-size: 13px; margin-top: 4px; }
+.entityBack { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 44px; height: 44px; padding: 0; border-radius: 6px; background: transparent; color: var(--text); }
+.entityBack:hover:not(:disabled) { background: var(--surface-soft); }
+.entityBack:disabled { opacity: .45; }
+.entityActions .actionMenuTrigger { width: 44px; height: 44px; min-height: 44px; padding: 0; }
+.entityActionShort { display: none; }
+.peopleWorkspace .peopleActions button, .peopleWorkspace .peopleActions input, .peopleWorkspace .peopleActions select { min-height: 44px; }
+.peopleWorkspace .entityActions { flex-wrap: nowrap; }
+.personEditor form { width: 100%; }
+.personEditor form input { flex: 1 1 160px; }
+
 @media (max-width: 999px) {
+  .topbar.view-people { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .topbar.view-people > .collectionHeading { flex-wrap: wrap; gap: 4px 8px; }
+  .topbar.view-people .toolbar, .topbar.view-people .searchBox { width: 100%; min-width: 0; }
+  .topbar.view-people .searchBox { min-height: 44px; }
+  .peopleWorkspace > .viewTabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 20px; }
+  .peopleWorkspace > .viewTabs button { min-width: 0; min-height: 44px; }
+  .peopleView > .panelHeader.entityHeader, .petsView > .panelHeader.entityHeader {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; flex-wrap: nowrap; align-items: center;
+    padding-bottom: 16px; border-bottom: 1px solid var(--border);
+  }
+  .peopleView > .entityHeader > .entityActions, .petsView > .entityHeader > .entityActions { width: auto; margin: 0; justify-content: flex-end; gap: 8px; }
+  .entityHeadingCopy h2 { font-size: 22px; line-height: 1.35; }
+  .entityHeading { gap: 4px; }
+  .entityActionFull { display: none; }
+  .entityActionShort { display: inline; }
+  .peopleWorkspace .entityPrimary { padding: 0 10px; font-size: 13px; }
+  .personDetailShell { display: block; }
+  .personDirectory { display: flex; gap: 8px; padding: 0 0 12px; margin-bottom: 16px; border-right: 0; border-bottom: 1px solid var(--border); overflow-x: auto; overscroll-behavior-x: contain; }
+  .personDirectory h3 { display: none; }
+  .personDirectory > button { width: 144px; min-width: 144px; flex: 0 0 144px; min-height: 64px; grid-template-columns: 40px minmax(0, 1fr); gap: 8px; }
+  .personDirectory img { width: 40px; height: 40px; }
+  .personDirectory .unknownDirectory { margin: 0; padding: 8px; border: 0; grid-template-columns: minmax(0, 1fr); }
+  .personEditor form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  .personEditor form input { grid-column: 1 / -1; width: 100%; }
+  .personEditor form button { min-width: 0; }
   /* Page titles and primary actions share the first row; search stays below. */
   .topbar.view-library, .topbar.view-albums,
   .workspace:has(.photoWorkspace.mode-grid) .topbar.view-library {
