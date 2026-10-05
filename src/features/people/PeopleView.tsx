@@ -186,7 +186,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
           ]} />
         </> : <>
         <div className="toolbarGroup" role="group" aria-label="얼굴 분석">
-          {running ? <button onClick={() => { stop.current = true; setStatus('현재 사진을 마치고 중단합니다.'); }}><Pause size={18} />중단</button> : <button className="primaryControl entityPrimary" aria-label={index.scanned.length ? '새 사진에서 사람 찾기' : '사진에서 사람 찾기'} disabled={blocked || !desktop || !remaining.length} onClick={() => void start()}><Play size={18} /><span className="entityActionFull">{index.scanned.length ? '새 사진에서 사람 찾기' : '사진에서 사람 찾기'}</span><span className="entityActionShort" aria-hidden="true">사람 찾기</span></button>}
+          <button className="primaryControl entityPrimary" aria-label={index.scanned.length ? '새 사진에서 사람 찾기' : '사진에서 사람 찾기'} disabled={blocked || !desktop || !remaining.length} onClick={() => void start()}><Play size={18} /><span className="entityActionFull">{index.scanned.length ? '새 사진에서 사람 찾기' : '사진에서 사람 찾기'}</span><span className="entityActionShort" aria-hidden="true">사람 찾기</span></button>
         </div>
         <ActionMenu label="얼굴 관리" icon={<MoreVertical size={20} />} disabled={blocked} actions={[
           { label: showUnknownGroups ? '미확인 얼굴 닫기' : '미확인 얼굴 보기', icon: <Users size={16} />, disabled: !unidentifiedFaces.length, onSelect: () => { openFaceView('people'); setShowUnknownGroups(value => !value); } },
@@ -203,7 +203,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
     </div>
     {!desktop && <p role="status">얼굴 찾기는 감자싹 데스크톱 앱에서 사용할 수 있습니다.</p>}
     {loading && <p role="status"><LoaderCircle size={18} className="spinIcon" />인물 불러오는 중</p>}
-    {(running || status) && <div className="faceProgress" role="status"><span>{status}</span>{running && <span>{progress.done} / {progress.total}장</span>}{running && <progress value={progress.done} max={progress.total || 1} />}</div>}
+    {(running || status) && <div className="faceProgress" role="status"><span>{status}</span>{running && <><span>{progress.done} / {progress.total}장</span><div className="peopleActions"><button onClick={() => { stop.current = true; setStatus('현재 사진을 마치고 중단합니다.'); }}><Pause size={18} />중단</button></div><progress value={progress.done} max={progress.total || 1} /></>}</div>}
     {error && <p role="alert" className="faceError">{error}</p>}
     {lastExcluded.length > 0 && <div className="peopleActions"><span>{lastExcluded.length}개 얼굴 제외됨</span><button disabled={blocked} onClick={() => void edit(async () => { await setFacesExcluded(lastExcluded, false); setLastExcluded([]); })}>제외 되돌리기</button></div>}
     {!person && !showFaceThumbnails ? <>
