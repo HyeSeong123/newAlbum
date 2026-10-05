@@ -113,11 +113,9 @@ jobs:
           target: google_apis
           profile: pixel_7
           # Pin the emulator binary independently of the Android 16 image.
-          # The latest 37.2.12 process exits during WebView checks on this runner.
           emulator-build: '15507667'
-          # Vulkan can terminate the headless emulator while WebView renders
-          # the album. Keep CPU acceleration and use software GLES instead.
-          emulator-options: -no-window -gpu swiftshader -feature -Vulkan -no-snapshot -noaudio -no-boot-anim
+          # Keep kernel output when the guest exits before ADB can collect logs.
+          emulator-options: -no-window -gpu swiftshader -feature -Vulkan -no-snapshot -noaudio -no-boot-anim -show-kernel
           disable-animations: true
           script: node scripts/smoke-android.mjs
       - name: Capture emulator host diagnostics

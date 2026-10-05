@@ -1,7 +1,8 @@
 import { expect } from '@playwright/test';
 import { _android as android } from 'playwright';
 import assert from 'node:assert/strict';
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
+import { closeSync, openSync } from 'node:fs';
 import { promisify } from 'node:util';
 import { appendFile, mkdir, readdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
@@ -110,6 +111,14 @@ async function captureScreen(name) {
 
 let device, context;
 await mkdir(output, { recursive:true });
+// Capture the guest continuously: once the emulator exits, a final `logcat -d`
+// cannot retrieve the reason it stopped. Keep it independent of WebView/CDP.
+const logcatFile = openSync(join(output, 'live-logcat.txt'), 'w');
+const logcat = spawn('adb', ['logcat', '-b', 'all', '-v', 'threadtime'], {
+  stdio:['ignore', logcatFile, logcatFile],
+});
+logcat.on('error', error => { void appendFile(join(output, 'logcat-start-error.txt'), String(error)); });
+closeSync(logcatFile);
 try {
   const apk = (await apkFiles('src-tauri/gen/android/app/build/outputs/apk')).find(path => /x86[_-]64/i.test(path));
   assert.ok(apk, 'x86_64 debug APK is required for the emulator');
@@ -268,5 +277,6 @@ try {
   }
   throw error;
 } finally {
+  logcat.kill();
   await disconnect();
 }
