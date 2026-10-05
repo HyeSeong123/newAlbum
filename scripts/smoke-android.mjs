@@ -125,6 +125,14 @@ async function captureScreen(name) {
   await adb('shell', 'screencap', '-p', '/sdcard/gamjassak-layout.png');
   await adb('pull', '/sdcard/gamjassak-layout.png', join(output, `${name}.png`));
 }
+async function loadedAlbumPhoto(reader) {
+  const photos = reader.locator('.albumPagePhoto img.mediaImage');
+  await expect(photos).toHaveCount(1);
+  // Native file URLs are asynchronous. A visible <img> or book background
+  // alone does not prove the imported photo decoded after activity recreation.
+  await expect.poll(() => photos.evaluateAll(images => images.every(image => image.complete && image.naturalWidth > 0)), { timeout:45_000 }).toBe(true);
+  await reader.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+}
 
 let device, context;
 await mkdir(output, { recursive:true });
@@ -207,6 +215,7 @@ try {
   await page.getByRole('button', { name:'안드로이드에서 담은 추억 앨범 열기', exact:true }).click();
   let reader = page.getByRole('dialog', { name:'앨범 전체창', exact:true });
   await expect(reader.locator('.albumBookBase')).toBeVisible();
+  await loadedAlbumPhoto(reader);
   await captureScreen('system-bars-book-opening-threebutton');
   await writeFile(join(output, 'book-viewport.json'), JSON.stringify(await page.evaluate(() => ({
     width:innerWidth, height:innerHeight, visualHeight:visualViewport?.height,
@@ -235,6 +244,7 @@ try {
   await page.getByRole('button', { name:'안드로이드에서 담은 추억 앨범 열기', exact:true }).click();
   reader = page.getByRole('dialog', { name:'앨범 전체창', exact:true });
   await expect(reader.locator('.albumBookBase')).toBeVisible();
+  await loadedAlbumPhoto(reader);
   await expect(reader.getByLabel('앨범 책장 이동')).toBeInViewport();
   await captureScreen('system-bars-book-gestural');
   await reader.getByTitle('닫기', { exact:true }).click();
@@ -283,6 +293,10 @@ try {
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_media'))).length, 2);
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_albums')))[0].title, '안드로이드에서 담은 추억');
   assert.equal((await page.evaluate(() => JSON.parse(localStorage.getItem('oraedameun.calendarRegistrations-v1')))).length, 1);
+  await page.locator('.navList').getByRole('button', { name:'내 앨범', exact:true }).click();
+  await page.getByRole('button', { name:'안드로이드에서 담은 추억 앨범 열기', exact:true }).click();
+  await loadedAlbumPhoto(page.getByRole('dialog', { name:'앨범 전체창', exact:true }));
+  await captureScreen('system-bars-book-after-restart');
   console.log('Android installation, system-bar bounds (three-button and gesture), import controls, bound album, real folder picker/content URI copying, byte progress, warm resume, SQLite/calendar persistence and back navigation: OK');
 } catch (error) {
   console.error(error);
