@@ -22,6 +22,12 @@
       "stage6": 0
     },
     "assetPath": "/characters/gomi",
+    "expressionAssetPaths": {
+      "idle": "/characters/gomi/idle.png",
+      "happy": "/characters/gomi/happy.png",
+      "sad": "/characters/gomi/sad.png",
+      "grow": "/characters/gomi/happy.png"
+    },
     "growthStages": [
       {
         "name": "함께하는 고미",
@@ -42,9 +48,9 @@
       "signatureAnimation": "poised-ear-tilt",
       "emotionalRole": "tutorial-guide",
       "visualTraits": [
-        "몸보다 밝은 연한 살구 갈색 얼굴과 곱슬 털",
+        "색연필 손그림 질감의 연한 살구 갈색 곱슬 털",
         "좁게 늘어진 귀와 위로 솟은 앞머리 곱슬털",
-        "가늘고 긴 주둥이와 살짝 치켜뜬 도도한 눈매",
+        "부드럽고 둥근 얼굴과 은은하게 도도한 눈매",
         "보통 체형과 가지런히 모은 앞발"
       ],
       "growthVisualTraits": [

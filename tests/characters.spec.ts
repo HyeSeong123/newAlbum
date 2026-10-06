@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-const definitions = JSON.parse(readFileSync('src/features/characters/data/characterDefinitions.json','utf8')) as Array<{ id:string; defaultName:string; regionLabel:string; maxStage:number; fixedGrowthStage?:number; stageAssetPaths?:string[] }>;
+const definitions = JSON.parse(readFileSync('src/features/characters/data/characterDefinitions.json','utf8')) as Array<{ id:string; defaultName:string; regionLabel:string; maxStage:number; fixedGrowthStage?:number; stageAssetPaths?:string[]; expressionAssetPaths?:Record<string,string> }>;
 
 type Companion = { id:string; customName:string|null; growthStage:number; regionPhotoCount:number; growthPhotoCount:number; affection:number; isMain:boolean; unlockedAt:string; createdAt:string; updatedAt:string };
 const companion = (id:string,stage=1,isMain=false):Companion => ({ id,customName:null,growthStage:stage,regionPhotoCount:0,growthPhotoCount:0,affection:0,isMain,unlockedAt:'2026-10-03',createdAt:'2026-10-03',updatedAt:'2026-10-03' });
@@ -96,7 +96,7 @@ test('each of the six current forms loads without showing any future form',async
     await expect(page.locator('.characterBook img')).toHaveCount(17);
     for(const def of definitions) {
       const image=cardFor(page,def.defaultName).locator('.characterCardArt img');
-      await expect(image).toHaveAttribute('src',def.stageAssetPaths?.[stage-1] ?? `/characters/${def.id}/stage${def.fixedGrowthStage || stage}-idle.svg`);
+      await expect(image).toHaveAttribute('src',def.expressionAssetPaths?.idle ?? def.stageAssetPaths?.[stage-1] ?? `/characters/${def.id}/stage${def.fixedGrowthStage || stage}-idle.svg`);
       await image.evaluate((img:HTMLImageElement)=>img.decode());
     }
     expect(await page.evaluate(()=>document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -122,7 +122,7 @@ test('Gomi starts as an adult main; help and book never award affection and home
   await page.emulateMedia({reducedMotion:'reduce'});
   await page.goto('/');
   const mascot = page.getByRole('button', {name:'고미에게 말 걸기'});
-  await expect(mascot.locator('img')).toHaveAttribute('src', '/characters/gomi/stage6-idle.svg');
+  await expect(mascot.locator('img')).toHaveAttribute('src', '/characters/gomi/idle.png');
   await expect(mascot.locator('.characterVisual')).toHaveAttribute('data-stage', '6');
   await page.getByRole('button', {name:'고미 도움말 열기'}).click();
   const guide = page.getByRole('dialog', {name:'고미 도움말'});
@@ -136,7 +136,7 @@ test('Gomi starts as an adult main; help and book never award affection and home
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
   await mascot.click();
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
-  await expect(mascot.locator('img')).toHaveAttribute('src', '/characters/gomi/stage6-happy.svg');
+  await expect(mascot.locator('img')).toHaveAttribute('src', '/characters/gomi/happy.png');
   await mascot.click();
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
   await expect(mascot.locator('.characterVisual')).toHaveAttribute('data-stage', '6');
@@ -147,6 +147,8 @@ test('Gomi help follows the current screen, supports keyboard focus and opens th
   await page.goto('/');
   await page.locator('.navList').getByRole('button',{name:'사람과 반려동물',exact:true}).click();
   const opener = page.getByRole('button', {name:'고미 도움말 열기'});
+  await expect(opener.locator('img')).toHaveAttribute('src','/characters/gomi/idle.png');
+  await opener.locator('img').evaluate((image:HTMLImageElement)=>image.decode());
   await opener.click();
   const guide = page.getByRole('dialog',{name:'고미 도움말'});
   await expect(guide.getByRole('button',{name:'인물 등록',exact:true})).toHaveAttribute('aria-pressed','true');
@@ -202,4 +204,107 @@ test('Gomi help remains available when another character is selected as main', a
   await expect(page.getByRole('button',{name:'감자싹에게 말 걸기'})).toBeVisible();
   await page.getByRole('button',{name:'고미 도움말 열기'}).click();
   await expect(page.getByRole('dialog',{name:'고미 도움말'}).locator('.characterVisual')).toHaveAttribute('data-character','gomi');
+});
+
+test('Gomi rests without affection, wakes with a cat-like stretch, and then greets on Home', async ({page}) => {
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await installSnapshot(page,[companion('gomi',6,true)]);
+  await page.clock.install();
+  await page.goto('/');
+  await page.evaluate(()=>{Math.random=()=>.1;});
+  const mascot=page.getByRole('button',{name:'고미에게 말 걸기'});
+  const visual=mascot.locator('.characterVisual');
+  await expect(visual).toHaveAttribute('data-motion','idle');
+  await page.clock.fastForward(24_000);
+  await expect(visual).toHaveAttribute('data-motion','sleep-curled');
+  await page.clock.runFor(100);
+  await expect(mascot.locator('img')).toHaveAttribute('src','/characters/gomi/sleep-curled.png');
+  await mascot.locator('img').evaluate((img:HTMLImageElement)=>img.decode());
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
+  expect(await page.evaluate(()=>(window as unknown as {sproutCommands:Array<{command:string}>}).sproutCommands.filter(c=>c.command==='interact_character'))).toHaveLength(0);
+  await page.screenshot({path:`test-results/gomi-sleep-curled-${test.info().project.name}.png`});
+  await mascot.click();
+  await expect(visual).toHaveAttribute('data-motion','stretch');
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
+  await page.clock.runFor(100);
+  await expect(mascot.locator('img')).toHaveAttribute('src','/characters/gomi/stretch.png');
+  await page.screenshot({path:`test-results/gomi-stretch-${test.info().project.name}.png`});
+  await page.clock.fastForward(2_400);
+  await expect(visual).toHaveAttribute('data-motion','happy');
+  await page.clock.fastForward(1_000);
+  await expect(visual).toHaveAttribute('data-motion','idle');
+});
+
+test('Gomi sometimes sleeps stretched out and stops the rest clock in the background', async ({page}) => {
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await installSnapshot(page,[companion('gomi',6,true)]);
+  await page.clock.install();
+  await page.goto('/');
+  const visual=page.locator('.homeMascot .characterVisual');
+  await expect(visual).toHaveAttribute('data-motion','idle');
+  await page.evaluate(()=>{
+    Math.random=()=>.9;
+    Object.defineProperty(document,'hidden',{configurable:true,value:true});
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.clock.fastForward(120_000);
+  await expect(visual).toHaveAttribute('data-motion','idle');
+  await page.evaluate(()=>{
+    Object.defineProperty(document,'hidden',{configurable:true,value:false});
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.clock.fastForward(24_000);
+  await expect(visual).toHaveAttribute('data-motion','sleep-stretched');
+  await page.clock.runFor(100);
+  await expect(visual.locator('img')).toHaveAttribute('src','/characters/gomi/sleep-stretched.png');
+  await visual.locator('img').evaluate((img:HTMLImageElement)=>img.decode());
+  await page.screenshot({path:`test-results/gomi-sleep-stretched-${test.info().project.name}.png`});
+  await page.clock.fastForward(42_000);
+  await expect(visual).toHaveAttribute('data-motion','stretch');
+  await page.clock.fastForward(2_400);
+  await expect(visual).toHaveAttribute('data-motion','idle');
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
+});
+
+test('Gomi never waves or licks before the bond; reaching 20 unlocks them without repeated affection awards', async ({page}) => {
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await installSnapshot(page,[{...companion('gomi',6,true),affection:19}]);
+  await page.goto('/');
+  const mascot=page.getByRole('button',{name:'고미에게 말 걸기'});
+  const visual=mascot.locator('.characterVisual');
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 19');
+  await mascot.click();
+  await expect(visual).toHaveAttribute('data-motion','happy');
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 20');
+  await mascot.click();
+  await expect(visual).toHaveAttribute('data-motion','lick');
+  await expect(mascot.locator('img')).toHaveAttribute('src','/characters/gomi/lick.png');
+  await mascot.click();
+  await expect(visual).toHaveAttribute('data-motion','happy');
+  await mascot.click();
+  await expect(visual).toHaveAttribute('data-motion','paw-wave');
+  await expect(mascot.locator('img')).toHaveAttribute('src','/characters/gomi/paw-wave-up.png');
+  await expect(visual).toHaveAttribute('data-frame','0');
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 20');
+  await page.getByRole('button',{name:'고미 도움말 열기'}).click();
+  await expect(page.getByRole('dialog',{name:'고미 도움말'}).locator('.characterVisual')).toHaveAttribute('data-motion','idle');
+});
+
+test('bonded Gomi actually alternates paw and tongue drawings while her adult stage stays fixed', async ({page}) => {
+  await installSnapshot(page,[{...companion('gomi',6,true),affection:20}]);
+  await page.goto('/');
+  const mascot=page.getByRole('button',{name:'고미에게 말 걸기'});
+  const visual=mascot.locator('.characterVisual');
+  await mascot.click();
+  await expect(visual).toHaveAttribute('data-motion','paw-wave');
+  await expect(mascot.locator('img')).toHaveAttribute('src','/characters/gomi/paw-wave-down.png');
+  await expect(mascot.locator('img')).toHaveAttribute('src','/characters/gomi/paw-wave-up.png');
+  await page.screenshot({path:`test-results/gomi-paw-wave-${test.info().project.name}.png`});
+  await mascot.click();
+  await expect(visual).toHaveAttribute('data-motion','lick');
+  await expect(mascot.locator('img')).toHaveAttribute('src','/characters/gomi/lick.png');
+  await expect(mascot.locator('img')).toHaveAttribute('src','/characters/gomi/happy.png');
+  await expect(visual).toHaveAttribute('data-stage','6');
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 21');
+  await page.screenshot({path:`test-results/gomi-lick-${test.info().project.name}.png`});
 });

@@ -16,6 +16,7 @@ export type CharacterDefinition = {
   id: string; type: string; regionCode: string; regionName: string; regionLabel: string;
   defaultName: string; description: string; maxStage: number; assetPath: string;
   originalAssetPath?: string;
+  expressionAssetPaths?: Partial<Record<"idle" | "happy" | "sad" | "grow", string>>;
   stageAssetPaths?: string[];
   defaultUnlocked?: boolean;
   defaultMain?: boolean;
@@ -49,7 +50,7 @@ export function growthStageName(definition: CharacterDefinition, stage: number) 
 }
 export function characterAsset(definition: CharacterDefinition, stage: number, expression: "idle" | "happy" | "sad" | "grow" = "idle") {
   const current = definition.fixedGrowthStage || Math.max(1, Math.min(definition.maxStage, stage));
-  return definition.stageAssetPaths?.[current - 1]
+  return definition.expressionAssetPaths?.[expression] || definition.stageAssetPaths?.[current - 1]
     || (definition.originalAssetPath && current === definition.maxStage ? definition.originalAssetPath : `${definition.assetPath}/stage${current}-${expression}.svg`);
 }
 export function companionLabel(definition: CharacterDefinition) {

@@ -50,7 +50,7 @@ test('new users meet Gomi and dismissing the guide survives a reload', async ({ 
   const guide = page.getByRole('dialog', { name: '감자싹에 사진을 담아보세요' });
   await expect(guide).toBeVisible();
   await guide.locator('.firstRunMascot img').evaluate((image: HTMLImageElement) => image.decode());
-  await expect(guide.locator('.firstRunMascot img')).toHaveAttribute('src', '/characters/gomi/stage6-idle.svg');
+  await expect(guide.locator('.firstRunMascot img')).toHaveAttribute('src', '/characters/gomi/idle.png');
   await expect(guide).toContainText('감자싹은 원본 사진과 영상 파일을 삭제하거나 수정하지 않습니다.');
   await page.screenshot({ path: `test-results/branding-guide-${test.info().project.name}.png` });
   await guide.getByRole('button', { name: '나중에 하기' }).click();

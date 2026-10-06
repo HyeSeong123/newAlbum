@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, BookHeart, Heart, Images, NotebookPen } from "lucide-react";
 import { CharacterVisual } from "../characters/CharacterVisual";
 import { characterDefinitions, characterName, dialogueLines, nextDialogue, type OwnedCharacter } from "../characters/models";
+import { GOMI_BOND_AFFECTION, isGomiSleeping } from "../characters/gomiBehavior";
+import { useGomiBehavior } from "../characters/useGomiBehavior";
 import "../characters/characters.css";
 import "./home.css";
 
@@ -44,7 +46,9 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   const lastLine = useRef(0);
   const timer = useRef<number | undefined>(undefined);
   const definition = characterDefinitions.find(item => item.id === mainCharacter?.id);
-  const lines = definition && mainCharacter ? dialogueLines(definition, mainCharacter.growthStage, mainCharacter.affection >= 20 ? "highAffection" : "idle") : messages;
+  const isGomi = definition?.type === "gomi";
+  const gomi = useGomiBehavior(isGomi, mainCharacter?.affection || 0, mainCharacter?.id);
+  const lines = definition && mainCharacter ? dialogueLines(definition, mainCharacter.growthStage, mainCharacter.affection >= GOMI_BOND_AFFECTION ? "highAffection" : "idle") : messages;
   useEffect(() => { lastLine.current=0; setMessageIndex(0); setSpokenLine(undefined); }, [mainCharacter?.id,mainCharacter?.growthStage]);
   useEffect(() => () => window.clearTimeout(timer.current), []);
   const dateLabel = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long" })
@@ -56,6 +60,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     lastLine.current=next;
     setMessageIndex(next);
     setSpokenLine(lines[next]);
+    if (isGomi) gomi.react();
     setHappy(true);
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setHappy(false), 1000);
@@ -76,11 +81,14 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
       <div className="homeCompanion">
         <p id="homeMessage" className="homeSpeech" role="status" aria-live="polite" aria-atomic="true">{spokenLine || lines[0]}</p>
         <button className={`homeMascot${happy ? " happy" : ""}`} type="button" aria-label={`${definition ? characterName(definition, mainCharacter) : "감자싹"}에게 말 걸기`} aria-describedby="homeMascotHint" onClick={talk}>
-          {definition && mainCharacter ? <CharacterVisual definition={definition} stage={mainCharacter.growthStage} expression={happy ? "happy" : "idle"} reactionKey={messageIndex} />
+          {definition && mainCharacter ? <CharacterVisual definition={definition} stage={mainCharacter.growthStage} expression={happy ? "happy" : "idle"}
+            gomiMotion={isGomi ? gomi.motion : undefined} affection={mainCharacter.affection} reactionKey={isGomi ? gomi.sequence : messageIndex} />
             : <img key={messageIndex} src="/brand/gamjassak-symbol.png" alt="" width={1254} height={1254} draggable={false} />}
         </button>
         {definition && mainCharacter && <p className="homeCharacterMeta"><strong>{characterName(definition, mainCharacter)}</strong><span className="homeAffection"><Heart size={14} aria-hidden="true" />친밀도 {mainCharacter.affection}</span></p>}
-        <p id="homeMascotHint" className="homeMascotHint">홈에서 톡, 쓰다듬으며 말을 걸어 주세요</p>
+        <p id="homeMascotHint" className="homeMascotHint">{isGomi && isGomiSleeping(gomi.motion)
+          ? "고미가 쉬고 있어요. 톡, 말을 걸면 기지개를 켜고 일어나요"
+          : isGomi && gomi.motion === "stretch" ? "고미가 쭉, 기지개를 켜고 있어요" : "홈에서 톡, 쓰다듬으며 말을 걸어 주세요"}</p>
         <button className="homeCharacterLink" type="button" onClick={onShowCharacters}>새싹 도감 보기</button>
       </div>
     </div>

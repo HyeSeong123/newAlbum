@@ -1,5 +1,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { characterAsset, type CharacterDefinition } from "./models";
+import { GomiVisual } from "./GomiVisual";
+import type { GomiMotion } from "./gomiBehavior";
 
 export type Expression = "idle" | "happy" | "sad" | "grow";
 const reactions: Record<string, [number, number]> = {
@@ -10,9 +12,16 @@ const reactions: Record<string, [number, number]> = {
   "bashful-peek": [7, 3], "brother-wink": [5, 6],
   "poised-ear-tilt": [2, 5],
 };
-export function CharacterVisual({ definition, stage, expression = "idle", className = "", reactionKey = 0 }: {
+type CharacterVisualProps = {
   definition: CharacterDefinition; stage: number; expression?: Expression; className?: string; reactionKey?: number;
-}) {
+  gomiMotion?: GomiMotion; affection?: number;
+};
+export function CharacterVisual(props: CharacterVisualProps) {
+  if (props.definition.type === "gomi") return <GomiVisual motion={props.gomiMotion || props.expression}
+    affection={props.affection} className={props.className} reactionKey={props.reactionKey} />;
+  return <BotanicalVisual {...props} />;
+}
+function BotanicalVisual({ definition, stage, expression = "idle", className = "", reactionKey = 0 }: CharacterVisualProps) {
   const reduced = useReducedMotion();
   const currentStage = definition.fixedGrowthStage || Math.max(1, Math.min(definition.maxStage, stage));
   const signature = definition.personality?.signatureAnimation || "soft-bounce";

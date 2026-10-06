@@ -21,7 +21,7 @@ test('each region has one definition, six increasing thresholds and complete loc
     for (let stage=1; stage<=6; stage++) for (const expression of ['idle','happy','sad','grow']) {
       const asset = new URL(`../public${characterAsset(def, stage, expression)}`, import.meta.url);
       assert.ok(existsSync(asset));
-      if (!def.stageAssetPaths && !(def.originalAssetPath && stage === def.maxStage)) assert.match(readFileSync(asset,'utf8'), /^<svg[\s\S]*<\/svg>$/);
+      if (!def.expressionAssetPaths && !def.stageAssetPaths && !(def.originalAssetPath && stage === def.maxStage)) assert.match(readFileSync(asset,'utf8'), /^<svg[\s\S]*<\/svg>$/);
     }
     assert.equal(characterName(def),def.defaultName);
     assert.equal(characterName(def,{customName:'별이'}),'별이');
@@ -113,7 +113,7 @@ test('Gomi and the two brothers are available without photographs, with adult Go
   assert.equal(gomi.characterRole, 'guide');
   assert.equal(gomi.fixedGrowthStage, 6);
   for (const stage of [0,1,3,6,99]) {
-    assert.equal(characterAsset(gomi, stage), '/characters/gomi/stage6-idle.svg');
+    assert.equal(characterAsset(gomi, stage), '/characters/gomi/idle.png');
     assert.equal(growthStageName(gomi, stage), '함께하는 고미');
   }
   assert.deepEqual(dialogueLines(gomi, 6, 'highAffection'), gomi.dialogues.situations.highAffection);

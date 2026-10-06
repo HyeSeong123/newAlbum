@@ -1,13 +1,13 @@
 // Raster growth stages are source assets; other species use botanical SVGs.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { renderCharacterSvg } from './character-art.mjs';
-import { renderGomiSvg } from './gomi-art.mjs';
 const definitions = JSON.parse(readFileSync('src/features/characters/data/characterDefinitions.json', 'utf8'));
 for (const definition of definitions) {
-  if (definition.id === 'gomi') {
-    mkdirSync(`public${definition.assetPath}`, { recursive: true });
+  if (definition.expressionAssetPaths) {
     for (const expression of ['idle', 'happy', 'sad', 'grow']) {
-      writeFileSync(`public${definition.assetPath}/stage6-${expression}.svg`, renderGomiSvg(expression));
+      if (!definition.expressionAssetPaths[expression] || !existsSync(`public${definition.expressionAssetPaths[expression]}`)) {
+        throw new Error(`${definition.id}: ${expression} 표정 그림이 누락되었습니다.`);
+      }
     }
     continue;
   }

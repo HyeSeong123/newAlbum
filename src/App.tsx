@@ -247,7 +247,7 @@ export function App() {
 
         <section className="contentGrid">
           <div className="mainPanel">
-            <div className="gomiHelpEntry"><button type="button" className="gomiHelpButton" aria-label="고미 도움말 열기" onClick={() => setGuideTopic(currentGuideTopic)}><img src="/characters/gomi/stage6-idle.svg" alt="" draggable={false} />고미 도움말</button></div>
+            <div className="gomiHelpEntry"><button type="button" className="gomiHelpButton" aria-label="고미 도움말 열기" onClick={() => setGuideTopic(currentGuideTopic)}><img src="/characters/gomi/idle.png" alt="" draggable={false} />고미 도움말</button></div>
             {activeView === "Home" && <HomeView today={today} itemCount={items.length} albumCount={savedAlbums.length} diaryCount={diary.entries.length}
               mainCharacter={mainCharacter} onInteract={id => { void characters.interact(id); }} onShowCharacters={() => navigate("Characters")}
               onShowLibrary={() => navigate("Library")} onShowAlbums={() => navigate("Albums")} onShowDiary={() => navigate("Diary")} />}
