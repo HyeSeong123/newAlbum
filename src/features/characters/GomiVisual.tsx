@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion as animated, useReducedMotion } from "motion/react";
-import { allowedGomiMotion, gomiMotionFrames, isGomiSleeping, type GomiMotion } from "./gomiBehavior";
+import { allowedGomiMotion, gomiMotionFrames, isGomiAngry, isGomiSleeping, isGomiSleepReaction, type GomiMotion } from "./gomiBehavior";
 
 export function GomiVisual({ motion = "idle", affection = 0, className = "", reactionKey = 0 }: {
   motion?: GomiMotion; affection?: number; className?: string; reactionKey?: number;
@@ -10,6 +10,8 @@ export function GomiVisual({ motion = "idle", affection = 0, className = "", rea
   const frames = gomiMotionFrames[action];
   const [frame, setFrame] = useState(0);
   const sleeping = isGomiSleeping(action);
+  const sleepReaction = isGomiSleepReaction(action);
+  const angry = isGomiAngry(action);
   useEffect(() => {
     setFrame(0);
     if (frames.length < 2 || reduced) return;
@@ -24,7 +26,7 @@ export function GomiVisual({ motion = "idle", affection = 0, className = "", rea
     });
     return () => { active = false; window.clearInterval(timer); };
   }, [frames, action, reduced, reactionKey]);
-  const expression = action === "idle" || sleeping || action === "stretch" ? "idle" : action === "sad" ? "sad" : "happy";
+  const expression = angry ? "angry" : action.endsWith("-peek") ? "peek" : action === "idle" || sleeping || action === "stretch" ? "idle" : action === "sad" ? "sad" : "happy";
   return <span className={`characterVisual characterVisual--gomi characterMotion--poised-ear-tilt ${className}`.trim()}
     data-character="gomi" data-stage="6" data-expression={expression} data-motion={action} data-frame={reduced ? 0 : frame}
     data-reduced-motion={Boolean(reduced)}>
@@ -33,12 +35,15 @@ export function GomiVisual({ motion = "idle", affection = 0, className = "", rea
       style={{ transformOrigin: "50% 90%" }}
       animate={reduced ? { opacity:1, y:0, rotate:0, scaleX:1, scaleY:1 } : sleeping
         ? { opacity:1, y:[0,-.5,0], rotate:0, scaleX:[1,1.012,1], scaleY:[1,1.025,1] }
+        : angry ? { opacity:1, y:0, rotate:[0,-.7,.7,0], scaleX:1, scaleY:1 }
+        : sleepReaction ? { opacity:1, y:0, rotate:0, scaleX:1, scaleY:1 }
         : action === "stretch" ? { opacity:1, y:0, rotate:0, scaleX:[.98,1.04,1.04,1], scaleY:[1,.96,.96,1] }
         : action === "paw-wave" ? { opacity:1, y:[0,-1,0], rotate:[-.6,.6,-.6], scaleX:1, scaleY:1 }
         : action === "lick" ? { opacity:1, y:0, rotate:[0,-2,0], scaleX:1, scaleY:1 }
         : action === "happy" || action === "grow" ? { opacity:1, y:[0,-3,0], rotate:[0,-2,0], scaleX:1, scaleY:1 }
         : { opacity:1, y:[0,-1,0], rotate:[0,.4,0], scaleX:1, scaleY:1 }}
-      transition={reduced ? { duration:0 } : action === "stretch" ? { duration:2.4, ease:"easeInOut", opacity:{ duration:.16, repeat:0 } }
+      transition={reduced ? { duration:0 } : angry || sleepReaction ? { duration:angry ? .35 : .2, repeat:0, ease:"easeInOut", opacity:{ duration:.16, repeat:0 } }
+        : action === "stretch" ? { duration:2.4, ease:"easeInOut", opacity:{ duration:.16, repeat:0 } }
         : { duration:sleeping ? 3.8 : action === "paw-wave" ? .36 : action === "lick" ? .46 : 4.6, repeat:Infinity, ease:"easeInOut", opacity:{ duration:.16, repeat:0 } }}>
       <img className="characterIllustration gomiIllustration" src={frames[(reduced ? 0 : frame) % frames.length]}
         data-stage="6" data-expression={expression} alt="" draggable={false} width={220} height={220} />

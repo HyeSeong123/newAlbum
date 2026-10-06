@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, BookHeart, Heart, Images, NotebookPen } from "lucide-react";
 import { CharacterVisual } from "../characters/CharacterVisual";
 import { characterDefinitions, characterName, dialogueLines, nextDialogue, type OwnedCharacter } from "../characters/models";
-import { GOMI_BOND_AFFECTION, isGomiSleeping } from "../characters/gomiBehavior";
+import { GOMI_BOND_AFFECTION, isGomiAngry, isGomiSleeping, isGomiSleepReaction } from "../characters/gomiBehavior";
 import { useGomiBehavior } from "../characters/useGomiBehavior";
 import "../characters/characters.css";
 import "./home.css";
@@ -47,7 +47,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   const timer = useRef<number | undefined>(undefined);
   const definition = characterDefinitions.find(item => item.id === mainCharacter?.id);
   const isGomi = definition?.type === "gomi";
-  const gomi = useGomiBehavior(isGomi, mainCharacter?.affection || 0, mainCharacter?.id);
+  const gomi = useGomiBehavior(isGomi, mainCharacter?.affection || 0, today, mainCharacter?.id);
   const lines = definition && mainCharacter ? dialogueLines(definition, mainCharacter.growthStage, mainCharacter.affection >= GOMI_BOND_AFFECTION ? "highAffection" : "idle") : messages;
   useEffect(() => { lastLine.current=0; setMessageIndex(0); setSpokenLine(undefined); }, [mainCharacter?.id,mainCharacter?.growthStage]);
   useEffect(() => () => window.clearTimeout(timer.current), []);
@@ -59,9 +59,9 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     const next = nextDialogue(lines,lastLine.current);
     lastLine.current=next;
     setMessageIndex(next);
-    setSpokenLine(lines[next]);
-    if (isGomi) gomi.react();
-    setHappy(true);
+    const restLine = isGomi ? gomi.react() : undefined;
+    setSpokenLine(restLine || lines[next]);
+    setHappy(!restLine);
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setHappy(false), 1000);
     if (mainCharacter) onInteract(mainCharacter.id);
@@ -86,8 +86,10 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
             : <img key={messageIndex} src="/brand/gamjassak-symbol.png" alt="" width={1254} height={1254} draggable={false} />}
         </button>
         {definition && mainCharacter && <p className="homeCharacterMeta"><strong>{characterName(definition, mainCharacter)}</strong><span className="homeAffection"><Heart size={14} aria-hidden="true" />친밀도 {mainCharacter.affection}</span></p>}
-        <p id="homeMascotHint" className="homeMascotHint">{isGomi && isGomiSleeping(gomi.motion)
-          ? "고미가 쉬고 있어요. 톡, 말을 걸면 기지개를 켜고 일어나요"
+        <p id="homeMascotHint" className="homeMascotHint">{isGomi && isGomiAngry(gomi.motion)
+          ? "잠을 여러 번 깨워서 고미가 뾰로통해졌어요. 잠시 쉬게 해 주세요"
+          : isGomi && isGomiSleepReaction(gomi.motion) ? "고미가 한쪽 눈을 살짝 떴어요. 아직 졸린가 봐요"
+          : isGomi && isGomiSleeping(gomi.motion) ? "고미가 자고 있어요. 살짝 톡, 건드리면 실눈으로 쳐다봐요"
           : isGomi && gomi.motion === "stretch" ? "고미가 쭉, 기지개를 켜고 있어요" : "홈에서 톡, 쓰다듬으며 말을 걸어 주세요"}</p>
         <button className="homeCharacterLink" type="button" onClick={onShowCharacters}>새싹 도감 보기</button>
       </div>

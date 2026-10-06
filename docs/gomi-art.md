@@ -23,3 +23,102 @@
 | `public/characters/gomi/lick.png` | 앉은 몸·머리·귀·앞발·위치를 유지한다. 행복하게 감은 눈과 주둥이 옆으로 조금 올라간 작은 분홍 혀로 얼굴만 바꾼다. 웃는 닫힌 입 그림과 번갈아 재생한다. |
 
 친밀도·타이머 규칙과 재생 시점은 [characters-growth.md](characters-growth.md)에 정리했습니다.
+
+
+## 0.6.14 계절 수면과 잠 방해 표정
+
+사용 도구: 내장 이미지 생성(image_gen), 실제 투명 배경 RGBA PNG. 기존 그림을 편집 대상으로 사용하고 결과 픽셀을 그대로 복사했습니다.
+
+공통 프롬프트:
+
+```text
+Use case: precise-object-edit. Asset type: transparent PNG animation pose for the Korean diary app Gomi. Edit target: the supplied local Gomi drawing. Preserve her identity, pale apricot curly forehead tufts raised slightly upward, brown/apricot poodle ears, soft warm crayon grain, irregular gray-brown pencil outline and tiny dark nose. Keep the simple adorable children's-book look, no realistic fur, no 3D, no glossy eyes, no clothing, no text. ONE isolated character pose on a square genuinely transparent canvas with generous margins. Preserve original canvas and baseline scale.
+```
+
+### `public/characters/gomi/sleep-cool.png`
+
+입력: `public/characters/gomi/sleep-curled.png`
+
+```text
+Change only the bedding: add a thin pale icy-blue cooling quilt spread UNDER this curled sleeping poodle at the bottom. Quilt forms a low rounded slightly wider pad, soft tiny quilting lines, still simple colored pencil grain. Keep the dog curled and fully visible, sleeping with both eyes closed, her long rear paw passes slightly in front of her muzzle. Preserve dog pose, face position and original scale. Canvas transparent outside dog and quilt.
+```
+
+### `public/characters/gomi/sleep-warm.png`
+
+입력: `public/characters/gomi/sleep-curled.png`
+
+```text
+Wrap this curled sleeping poodle in a thick warm muted oatmeal / dusty rose blanket pulled up OVER her head like a loose hood. ONLY HER FACE is visible in a small opening: sleepy closed eyes, tiny muzzle and little apricot forehead curls. All body, ears, legs and tail are concealed under the soft rounded blanket mound. Face remains centered a little left at the same position as original sleeping face; blanket follows rounded curled body footprint. Heavy soft blanket folds, sparse crayon texture. Cozy adorable sleeping face. Keep square canvas and bottom baseline identical; transparent outside blanket and face.
+```
+
+### `public/characters/gomi/angry.png`
+
+입력: `public/characters/gomi/idle.png`
+
+```text
+Change ONLY the eyes, eyebrows and small mouth; keep seated body, ears, raised forehead curls, head angle, paws, scale, canvas and position identical. Both eyes become small sharply slanted TRIANGULAR eyes, inner corners angled downward with a fierce haughty glare. Small dark pupils and short slanted eyebrows. Closed tiny displeased mouth. She looks irritable and sharp because her sleep was interrupted, but still charming and adorable, not monstrous. No teeth, no symbols or red marks.
+```
+
+### `public/characters/gomi/sleep-curled-peek.png`
+
+입력: `public/characters/gomi/sleep-curled.png`
+
+```text
+Change ONLY ONE eye on the viewer's left to a narrow half-open sleepy slit with tiny dark pupil peeking suspiciously. Other eye stays completely closed. Keep muzzle, mouth, forehead, curled body, long rear leg passing in front of muzzle, all paws, ears, baseline and position EXACTLY identical. This is the first annoyed peek when her owner lightly touches her in sleep.
+```
+
+### `public/characters/gomi/sleep-curled-angry.png`
+
+입력: `public/characters/gomi/sleep-curled.png`
+
+```text
+Change ONLY eyes, eyebrows and small mouth. Open both eyes into tiny sharply slanted triangular eyes with dark pupils, inner corners steeply down, haughty fierce irritated glare, small displeased mouth. Keep whole curled sleeping body and long hind paw in front of muzzle, forehead, ears, all paws, baseline and position EXACTLY identical. Cute but noticeably angry about repeated sleep interruption; no teeth, no angry red marks.
+```
+
+### `public/characters/gomi/sleep-stretched-peek.png`
+
+입력: `public/characters/gomi/sleep-stretched.png`
+
+```text
+Change ONLY ONE eye on viewer's left into a narrow half-open sleepy slit with tiny dark pupil. Other eye stays completely closed. Keep head angle, muzzle, mouth and entire stretched sideways sleeping body, paws, ears, tail, baseline, canvas, size and position EXACTLY identical.
+```
+
+### `public/characters/gomi/sleep-stretched-angry.png`
+
+입력: `public/characters/gomi/sleep-stretched.png`
+
+```text
+Change ONLY eyes, eyebrows and tiny mouth: small sharply slanted TRIANGULAR eyes with dark pupils, angry inner corners down and haughty fierce glare, small displeased mouth. Keep head angle and entire stretched sideways lying sleeping body, paws, ears, tail, baseline, canvas, size and position EXACTLY identical. Cute poodle with irritated eyes; no teeth, no red angry marks.
+```
+
+### `public/characters/gomi/sleep-cool-peek.png`
+
+입력: `public/characters/gomi/sleep-cool.png`
+
+```text
+Edit ONLY ONE eye on viewer's left into a tiny narrow half-open sleepy slit with small dark pupil peeking suspiciously. Other eye remains completely closed. Keep every blanket/quilt fold, bedding outline, color, texture, visible face, all forehead curls, muzzle, mouth, whole pose, baseline, canvas size and position EXACTLY unchanged. No change outside the eye.
+```
+
+### `public/characters/gomi/sleep-cool-angry.png`
+
+입력: `public/characters/gomi/sleep-cool.png`
+
+```text
+Edit ONLY the eyes, eyebrows and tiny mouth. Both eyes small sharply slanted TRIANGULAR narrowed eyes with tiny dark pupils; inner corners down, haughty fierce irritated glare, short steep eyebrows and a small displeased closed mouth. She is cute but clearly irritable after repeated touches during sleep. Keep every blanket/quilt fold, bedding silhouette, body and face position, forehead curls, muzzle, baseline, canvas size and scale EXACTLY unchanged. No red marks, no teeth.
+```
+
+### `public/characters/gomi/sleep-warm-peek.png`
+
+입력: `public/characters/gomi/sleep-warm.png`
+
+```text
+Edit ONLY ONE eye on viewer's left into a tiny narrow half-open sleepy slit with small dark pupil peeking suspiciously. Other eye remains completely closed. Keep every blanket/quilt fold, bedding outline, color, texture, visible face, all forehead curls, muzzle, mouth, whole pose, baseline, canvas size and position EXACTLY unchanged. No change outside the eye.
+```
+
+### `public/characters/gomi/sleep-warm-angry.png`
+
+입력: `public/characters/gomi/sleep-warm.png`
+
+```text
+Edit ONLY the eyes, eyebrows and tiny mouth. Both eyes small sharply slanted TRIANGULAR narrowed eyes with tiny dark pupils; inner corners down, haughty fierce irritated glare, short steep eyebrows and a small displeased closed mouth. She is cute but clearly irritable after repeated touches during sleep. Keep every blanket/quilt fold, bedding silhouette, body and face position, forehead curls, muzzle, baseline, canvas size and scale EXACTLY unchanged. No red marks, no teeth.
+```

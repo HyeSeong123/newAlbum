@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 const definitions = JSON.parse(readFileSync('src/features/characters/data/characterDefinitions.json','utf8')) as Array<{ id:string; defaultName:string; regionLabel:string; maxStage:number; fixedGrowthStage?:number; stageAssetPaths?:string[]; expressionAssetPaths?:Record<string,string> }>;
+test.beforeEach(async ({page}) => { await page.addInitScript(()=>{Math.random=()=>.1;}); });
 
 type Companion = { id:string; customName:string|null; growthStage:number; regionPhotoCount:number; growthPhotoCount:number; affection:number; isMain:boolean; unlockedAt:string; createdAt:string; updatedAt:string };
 const companion = (id:string,stage=1,isMain=false):Companion => ({ id,customName:null,growthStage:stage,regionPhotoCount:0,growthPhotoCount:0,affection:0,isMain,unlockedAt:'2026-10-03',createdAt:'2026-10-03',updatedAt:'2026-10-03' });
@@ -206,62 +207,88 @@ test('Gomi help remains available when another character is selected as main', a
   await expect(page.getByRole('dialog',{name:'고미 도움말'}).locator('.characterVisual')).toHaveAttribute('data-character','gomi');
 });
 
-test('Gomi rests without affection, wakes with a cat-like stretch, and then greets on Home', async ({page}) => {
+for (const scenario of [
+  { name:'curled', date:'2026-03-01T12:00:00', roll:.5, pose:'sleep-curled' },
+  { name:'stretched', date:'2026-04-01T12:00:00', roll:.65, pose:'sleep-stretched' },
+  { name:'cool quilt', date:'2026-05-01T12:00:00', roll:.8, pose:'sleep-cool' },
+  { name:'warm blanket', date:'2027-02-01T12:00:00', roll:.8, pose:'sleep-warm' },
+]) test(`Gomi ${scenario.name} stays asleep, peeks with one eye, gets angry and settles without extra affection`, async ({page}) => {
   await page.emulateMedia({reducedMotion:'reduce'});
-  await installSnapshot(page,[companion('gomi',6,true)]);
-  await page.clock.install();
+  await installSnapshot(page,[{...companion('gomi',6,true),affection:20}]);
+  await page.addInitScript(roll=>{Math.random=()=>roll;},scenario.roll);
+  await page.clock.install({time:new Date(scenario.date)});
   await page.goto('/');
-  await page.evaluate(()=>{Math.random=()=>.1;});
   const mascot=page.getByRole('button',{name:'고미에게 말 걸기'});
   const visual=mascot.locator('.characterVisual');
-  await expect(visual).toHaveAttribute('data-motion','idle');
-  await page.clock.fastForward(24_000);
-  await expect(visual).toHaveAttribute('data-motion','sleep-curled');
-  await page.clock.runFor(100);
-  await expect(mascot.locator('img')).toHaveAttribute('src','/characters/gomi/sleep-curled.png');
+  await expect(visual).toHaveAttribute('data-motion',scenario.pose);
+  await expect(mascot.locator('img')).toHaveAttribute('src',`/characters/gomi/${scenario.pose}.png`);
   await mascot.locator('img').evaluate((img:HTMLImageElement)=>img.decode());
-  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
+  await page.clock.fastForward(600_000);
+  await expect(visual).toHaveAttribute('data-motion',scenario.pose);
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 20');
   expect(await page.evaluate(()=>(window as unknown as {sproutCommands:Array<{command:string}>}).sproutCommands.filter(c=>c.command==='interact_character'))).toHaveLength(0);
-  await page.screenshot({path:`test-results/gomi-sleep-curled-${test.info().project.name}.png`});
+  await page.screenshot({path:`test-results/gomi-${scenario.pose}-${test.info().project.name}.png`});
   await mascot.click();
-  await expect(visual).toHaveAttribute('data-motion','stretch');
-  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
-  await page.clock.runFor(100);
-  await expect(mascot.locator('img')).toHaveAttribute('src','/characters/gomi/stretch.png');
-  await page.screenshot({path:`test-results/gomi-stretch-${test.info().project.name}.png`});
-  await page.clock.fastForward(2_400);
-  await expect(visual).toHaveAttribute('data-motion','happy');
-  await page.clock.fastForward(1_000);
-  await expect(visual).toHaveAttribute('data-motion','idle');
+  await expect(visual).toHaveAttribute('data-motion',`${scenario.pose}-peek`);
+  await expect(visual).toHaveAttribute('data-expression','peek');
+  await expect(mascot.locator('img')).toHaveAttribute('src',`/characters/gomi/${scenario.pose}-peek.png`);
+  await expect(page.locator('#homeMessage')).toContainText('아직 자는 중');
+  await page.clock.fastForward(1_800);
+  await expect(visual).toHaveAttribute('data-motion',scenario.pose);
+  await mascot.click();
+  await expect(visual).toHaveAttribute('data-motion',`${scenario.pose}-peek`);
+  await mascot.click();
+  await expect(visual).toHaveAttribute('data-motion',`${scenario.pose}-angry`);
+  await expect(visual).toHaveAttribute('data-expression','angry');
+  await expect(mascot.locator('img')).toHaveAttribute('src',`/characters/gomi/${scenario.pose}-angry.png`);
+  await expect(page.locator('#homeMessage')).toContainText('그만 톡톡');
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 21');
+  await expect(visual).toHaveAttribute('data-stage','6');
+  await page.screenshot({path:`test-results/gomi-${scenario.pose}-angry-${test.info().project.name}.png`});
+  await page.clock.fastForward(2_600);
+  await expect(visual).toHaveAttribute('data-motion',scenario.pose);
+  await page.clock.fastForward(10_001);
+  await mascot.click();
+  await expect(visual).toHaveAttribute('data-motion',`${scenario.pose}-peek`);
+  await expect(page.locator('#homeMessage')).toContainText('아직 자는 중');
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 21');
 });
 
-test('Gomi sometimes sleeps stretched out and stops the rest clock in the background', async ({page}) => {
+test('Gomi draws a new pose only on Home entry; visibility, help and data refresh do not reroll', async ({page}) => {
   await page.emulateMedia({reducedMotion:'reduce'});
   await installSnapshot(page,[companion('gomi',6,true)]);
-  await page.clock.install();
+  await page.clock.install({time:new Date('2026-10-01T12:00:00')});
   await page.goto('/');
   const visual=page.locator('.homeMascot .characterVisual');
   await expect(visual).toHaveAttribute('data-motion','idle');
+  await page.evaluate(()=>{Math.random=()=>.8;});
+  await page.clock.fastForward(600_000);
+  await expect(visual).toHaveAttribute('data-motion','idle');
+  await page.getByRole('button',{name:'새싹 도감 보기'}).click();
+  await page.getByRole('button',{name:'감자싹 홈으로 이동'}).click();
+  await expect(visual).toHaveAttribute('data-motion','sleep-warm');
   await page.evaluate(()=>{
-    Math.random=()=>.9;
+    Math.random=()=>.95;
     Object.defineProperty(document,'hidden',{configurable:true,value:true});
     document.dispatchEvent(new Event('visibilitychange'));
   });
   await page.clock.fastForward(120_000);
-  await expect(visual).toHaveAttribute('data-motion','idle');
   await page.evaluate(()=>{
     Object.defineProperty(document,'hidden',{configurable:true,value:false});
     document.dispatchEvent(new Event('visibilitychange'));
+    window.dispatchEvent(new Event('focus'));
   });
-  await page.clock.fastForward(24_000);
-  await expect(visual).toHaveAttribute('data-motion','sleep-stretched');
-  await page.clock.runFor(100);
-  await expect(visual.locator('img')).toHaveAttribute('src','/characters/gomi/sleep-stretched.png');
-  await visual.locator('img').evaluate((img:HTMLImageElement)=>img.decode());
-  await page.screenshot({path:`test-results/gomi-sleep-stretched-${test.info().project.name}.png`});
-  await page.clock.fastForward(42_000);
+  await expect(visual).toHaveAttribute('data-motion','sleep-warm');
+  await page.getByRole('button',{name:'고미 도움말 열기'}).click();
+  await page.clock.fastForward(120_000);
+  await page.getByRole('button',{name:'도움말 닫기'}).click();
+  await expect(visual).toHaveAttribute('data-motion','sleep-warm');
+  await page.getByRole('button',{name:'새싹 도감 보기'}).click();
+  await page.getByRole('button',{name:'감자싹 홈으로 이동'}).click();
   await expect(visual).toHaveAttribute('data-motion','stretch');
   await page.clock.fastForward(2_400);
+  await expect(visual).toHaveAttribute('data-motion','idle');
+  await page.clock.fastForward(600_000);
   await expect(visual).toHaveAttribute('data-motion','idle');
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
 });

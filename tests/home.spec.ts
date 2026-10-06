@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+test.beforeEach(async ({page}) => { await page.addInitScript(()=>{Math.random=()=>.1;}); });
 
 test('startup, every logo link, the first menu item and reload all lead to Home', async ({ page }) => {
   await page.goto('/');
