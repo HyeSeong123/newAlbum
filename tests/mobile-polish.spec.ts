@@ -30,6 +30,22 @@ async function swipe(page: Page, tile: Locator) {
   }
   await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await client.detach();
+  // A tap during native scroll inertia stops scrolling instead of activating a tile.
+  // Finish the swipe before testing a separate tap, for document and modal scrolls.
+  await tile.evaluate(async el => {
+    const scroller = el.closest('.petEditor') || document.scrollingElement!;
+    await new Promise<void>(resolve => {
+      let previous = scroller.scrollTop, stableFrames = 0;
+      const frame = () => {
+        const current = scroller.scrollTop;
+        stableFrames = Math.abs(current - previous) < .25 ? stableFrames + 1 : 0;
+        previous = current;
+        if (stableFrames >= 12) resolve();
+        else requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    });
+  });
 }
 
 async function selectPerson(page: Page) {
