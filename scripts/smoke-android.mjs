@@ -218,9 +218,15 @@ try {
   await page.getByRole('button', { name:'고미 도움말 열기', exact:true }).click();
   const gomiGuide = page.getByRole('dialog', { name:'고미 도움말', exact:true });
   await expect(gomiGuide.locator('.gomiGuideSpeech')).toHaveText('…휴. 사진은 직접 골라.');
+  await expect(gomiGuide.locator('.gomiGuideStep p')).toHaveText(/^…가져오기부터\./);
   await expect(gomiGuide.locator('.characterVisual')).toHaveAttribute('data-expression', 'cynical');
   await expect.poll(() => gomiGuide.locator('img').evaluate(el => el.complete && el.naturalWidth === 1254)).toBe(true);
   await captureScreen('gomi-cynical-guide');
+  await gomiGuide.getByRole('button', { name:'인물 등록', exact:true }).click();
+  await expect(gomiGuide.locator('.gomiGuideStep p')).toHaveText(/^…사람 탭\./);
+  await gomiGuide.getByRole('button', { name:'다음', exact:true }).click();
+  await expect(gomiGuide.locator('.gomiGuideStep p')).toHaveText(/^…네가 확인해\./);
+  await captureScreen('gomi-varied-help');
   await gomiGuide.getByRole('button', { name:'도움말 닫기', exact:true }).click();
   const gomiState = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('sync_characters'));
   assert.equal(gomiState.characters.find(character => character.id === 'gomi').affection, 0);

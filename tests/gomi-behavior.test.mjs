@@ -75,6 +75,7 @@ test('20, 30, 60 and 90 boundaries change every dialogue context, description an
   for (const touches of [1,2,3,4]) assert.equal(new Set([0,20,30,60,90].map(score=>gomiSleepLine(touches,score))).size,5);
 });
 test('every help topic and step has distinct usable copy across all five tiers', () => {
+  const openings = [[],[],[],[],[]];
   for (const [topic, steps] of Object.entries(affinity.gomiGuideLines)) {
     assert.equal(steps.length,3);
     for (let step=0;step<steps.length;step++) {
@@ -82,6 +83,13 @@ test('every help topic and step has distinct usable copy across all five tiers',
       assert.equal(new Set(copies.map(copy=>copy.line)).size,5,`${topic}:${step}`);
       assert.equal(new Set(copies.map(copy=>copy.detail)).size,5);
       for (const copy of copies) assert.ok(copy.detail.includes('필요한 기능 안내'));
+      copies.forEach((copy,tier) => openings[tier].push(copy.detail.replace('필요한 기능 안내','').trim()));
     }
+  }
+  for (const tier of openings) {
+    assert.equal(tier.length,21);
+    assert.equal(new Set(tier).size,21,'Each help step needs its own opening, not a shared catchphrase.');
+    assert.equal(new Set(tier.map(line=>line.split(/[.!?]/)[0])).size,21,'Vary the first sentence too.');
+    assert.ok(tier.every(line=>!line.includes('여기에 적어놨잖아')));
   }
 });
