@@ -203,7 +203,9 @@ async function checkPhotoGps(page) {
   const denied = rows.find(item => item.file_path.endsWith('gps-smoke.jpg') && !item.file_path.endsWith('no-gps-smoke.jpg'));
   assert.ok(denied);
   assert.equal(denied.latitude, null); assert.equal(denied.gps_region_code, null);
-  assert.equal(denied.location_status, 'no-gps');
+  // Android can zero GPS tags instead of removing their IFD. The parser then
+  // reports unreadable GPS; neither state may expose coordinates or a region.
+  assert.ok(['no-gps', 'failed'].includes(denied.location_status));
   await captureScreen('gps-permission-denied');
   await page.evaluate(async id => {
     await window.__TAURI_INTERNALS__.invoke('update_media_details', { id, rating:4, comment:'GPS 복구 확인', favorite:true });
@@ -214,7 +216,7 @@ async function checkPhotoGps(page) {
     }).then(rows => { window.gpsRecovery = { completed:true, rows }; })
       .catch(error => { window.gpsRecovery = { completed:true, error:String(error) }; });
   }, denied.id);
-  await tapNative(/resource-id="com.android.permissioncontroller:id\/permission_allow_button"/);
+  await tapNative(/resource-id="com.android.permissioncontroller:id\/permission_allow(?:_all)?_button"/);
   await expect.poll(() => page.evaluate(() => window.gpsRecovery.completed)).toBe(true);
   const recovery = await page.evaluate(() => window.gpsRecovery);
   assert.equal(recovery.error, undefined);
