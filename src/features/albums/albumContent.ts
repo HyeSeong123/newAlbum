@@ -16,7 +16,7 @@ export function writtenPage(kind: "CHAPTER" | "TEXT"): AlbumContent {
 }
 
 export function albumListContents(items: MediaItem[], contents?: AlbumContent[], diariesOnly = false): AlbumContent[] {
-  // Written albums retain their saved sequence; photo-only albums retain shuffle order.
+  // Written albums retain their saved sequence; photo-only albums retain saved media order.
   const hasWrittenPages = contents?.some(entry => entry.kind === "TEXT" || entry.kind === "CHAPTER");
   const entries = albumContents({ items, contents: hasWrittenPages ? contents : undefined });
   return diariesOnly ? entries.filter(entry => entry.kind === "TEXT") : entries;

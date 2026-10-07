@@ -88,6 +88,8 @@ test('text-only album can be saved, read, edited and removed through its letter 
   await page.getByRole('button', { name:'제주 여행 앨범 열기', exact:true }).click();
   await expect(reader.locator('.albumPaper.left .albumWrittenPage')).toContainText('이 날이 가장 기억에 남는다.');
   await reader.getByRole('button', { name:'편지 상세보기', exact:true }).click();
+  await expect(letter).toBeVisible();
+  expect(await page.evaluate(() => document.activeElement?.matches('input,textarea'))).toBe(false);
   await letter.getByLabel('편지 내용', { exact:true }).fill('다시 쓴 기록');
   await letter.getByRole('button', { name:'저장', exact:true }).click();
   await expect(letter).toBeHidden();

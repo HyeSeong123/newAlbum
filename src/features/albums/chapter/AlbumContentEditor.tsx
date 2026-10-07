@@ -37,8 +37,8 @@ export function AlbumContentEditor({ contents, items, onChange, selectedId }: {
     <div className="albumContentWorkspace">
       <div className="albumEntryEditor" aria-label={`${name} 내용 편집`}>
         <div className="albumWritingFields">
-          <label htmlFor={`page-title-${active.id}`}>{name} 제목<input id={`page-title-${active.id}`} maxLength={120} value={active.title} placeholder={active.kind === "CHAPTER" ? "예: 첫 번째 여행" : "예: 오래 기억하고 싶은 하루"} onChange={event => edit({ title: event.target.value })} /></label>
-          <label htmlFor={`page-body-${active.id}`}>{active.kind === "CHAPTER" ? "부제목 또는 설명" : "편지 내용"}<textarea id={`page-body-${active.id}`} maxLength={4000} value={active.body} placeholder={active.kind === "CHAPTER" ? "이 장면을 소개하는 짧은 글을 적어보세요." : "이때 느꼈던 마음과 기억을 편하게 적어보세요."} onChange={event => edit({ body: event.target.value })} /></label>
+          <div className="albumWritingField"><label htmlFor={`page-title-${active.id}`}>{name} 제목</label><input id={`page-title-${active.id}`} maxLength={120} value={active.title} placeholder={active.kind === "CHAPTER" ? "예: 첫 번째 여행" : "예: 오래 기억하고 싶은 하루"} onChange={event => edit({ title: event.target.value })} /></div>
+          <div className="albumWritingField"><label htmlFor={`page-body-${active.id}`}>{active.kind === "CHAPTER" ? "부제목 또는 설명" : "편지 내용"}</label><textarea id={`page-body-${active.id}`} maxLength={4000} value={active.body} placeholder={active.kind === "CHAPTER" ? "이 장면을 소개하는 짧은 글을 적어보세요." : "이때 느꼈던 마음과 기억을 편하게 적어보세요."} onChange={event => edit({ body: event.target.value })} /></div>
           <small className="albumWritingCount">{active.body.length} / 4,000자</small>
         </div>
       </div>

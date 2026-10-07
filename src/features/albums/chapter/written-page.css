@@ -39,6 +39,7 @@
 .albumEntryActions { display: flex; flex-wrap: wrap; gap: 5px; margin-left: auto; }
 .albumEntryActions button { min-height: 38px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; border: 1px solid var(--border); border-radius: 7px; color: var(--text); background: #fff; font-size: 13px; }
 .albumEntryActions .albumEntryDelete { color: var(--danger); }
+.albumWritingField { display: grid; gap: 7px; }
 .albumWritingFields { display: grid; gap: 17px; margin-top: 20px; }
 .albumWritingCount { justify-self: end; margin-top: -12px; }
 .albumEntryHint { display: flex; align-items: start; gap: 8px; padding: 20px 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
