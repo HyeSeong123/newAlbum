@@ -47,7 +47,11 @@ export async function prepareAndroid(projectRoot = root, requireSigning = false)
   // Do not include personal photo copies/SQLite in automatic cloud backup.
   const manifest = resolve(android, 'app/src/main/AndroidManifest.xml');
   const original = await readFile(manifest, 'utf8');
-  const updated = original.replace(/\sandroid:networkSecurityConfig="[^"]*"/, '').replace(/\sandroid:allowBackup="[^"]*"/, '').replace('<application', '<application android:allowBackup="false" android:networkSecurityConfig="@xml/gamjassak_network_security"');
+  let updated = original.replace(/\sandroid:networkSecurityConfig="[^"]*"/, '').replace(/\sandroid:allowBackup="[^"]*"/, '').replace('<application', '<application android:allowBackup="false" android:networkSecurityConfig="@xml/gamjassak_network_security"');
+  // Android 10+ otherwise redacts GPS even for user-selected photo documents.
+  if (!updated.includes('android.permission.ACCESS_MEDIA_LOCATION')) {
+    updated = updated.replace(/<manifest\b[^>]*>/, '$&\n    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />');
+  }
   if (updated !== original) await writeFile(manifest, updated);
 }
 

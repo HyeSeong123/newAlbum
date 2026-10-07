@@ -21,6 +21,10 @@ struct UriPayload<'a> { uri: &'a str }
 struct Document { uri: String, name: String, mime: String, size: Option<u64>, modified: Option<u64> }
 #[derive(Deserialize)]
 struct Documents { files: Vec<Document> }
+#[derive(Deserialize)]
+struct PhotoLocationPermission { granted: bool }
+#[derive(Deserialize)]
+struct OriginalPhoto { uri: String, notice: Option<String> }
 
 #[derive(Deserialize)]
 struct PickedDirectory { uri: Option<String> }
@@ -47,15 +51,40 @@ pub fn prepare_paths(app: &tauri::AppHandle, paths: Vec<String>, mut on_progress
     }
     let root = app.path().app_data_dir().map_err(|error| error.to_string())?.join("imported-media-v1");
     let total_bytes = if documents.iter().all(|document| document.size.is_some()) { documents.iter().filter_map(|document| document.size).sum() } else { 0 };
-    let mut status = ImportProgressDto { phase:"copying", processed:0, total:documents.len(), file_name:None, bytes_processed:0, total_bytes };
+    let photo_location = if documents.iter().any(|document| crate::media_type(Path::new(&document.name)) == Some("image")) {
+        let permission: PhotoLocationPermission = bridge.0.run_mobile_plugin("requestPhotoLocation", serde_json::json!({}))
+            .map_err(|error| format!("사진 위치정보 권한을 확인하지 못했습니다: {error}"))?;
+        Some(permission.granted)
+    } else { None };
+    let notice = (photo_location == Some(false)).then(|| "사진 위치정보 권한이 꺼져 있어 촬영 위치를 읽지 못할 수 있습니다. 앱 설정에서 사진 위치정보를 허용한 뒤 원본을 다시 가져와 주세요.".to_string());
+    let mut status = ImportProgressDto { phase:"copying", processed:0, total:documents.len(), file_name:None, bytes_processed:0, total_bytes, notice };
     on_progress(status.clone());
     let mut copied = 0;
     for (index, document) in documents.iter().enumerate() {
         status.file_name = Some(document.name.clone()); on_progress(status.clone());
         let target = managed_import::document_target(&root, &document.uri, &document.name);
-        let bytes = if target.is_file() { fs::metadata(&target).map_err(|error| error.to_string())?.len() } else {
+        let image = crate::media_type(Path::new(&document.name)) == Some("image");
+        // Refresh originals after permission is granted: an older app copy may
+        // have had its GPS redacted. Preserve the stable path/album references.
+        let bytes = if target.is_file() && !(image && photo_location == Some(true)) { fs::metadata(&target).map_err(|error| error.to_string())?.len() } else {
+            let source = if image {
+                let original: OriginalPhoto = bridge.0.run_mobile_plugin("originalPhotoUri", UriPayload { uri: &document.uri })
+                    .map_err(|error| format!("원본 사진을 준비하지 못했습니다: {error}"))?;
+                if original.notice.is_some() {
+                    status.notice = original.notice; on_progress(status.clone());
+                    // An unavailable original must not replace a good stored
+                    // photo with a potentially redacted fallback on reimport.
+                    if target.is_file() {
+                        copied += fs::metadata(&target).map_err(|error| error.to_string())?.len();
+                        status.bytes_processed = copied; status.processed = index + 1; on_progress(status.clone());
+                        local.push(target.to_string_lossy().into_owned());
+                        continue;
+                    }
+                }
+                original.uri
+            } else { document.uri.clone() };
             let mut options = OpenOptions::new(); options.read(true);
-            let input = app.fs().open(FilePath::Url(document.uri.parse().map_err(|error| format!("잘못된 사진 주소입니다: {error}"))?), options).map_err(|error| format!("{} 파일을 열 수 없습니다: {error}", document.name))?;
+            let input = app.fs().open(FilePath::Url(source.parse().map_err(|error| format!("잘못된 사진 주소입니다: {error}"))?), options).map_err(|error| format!("{} 파일을 열 수 없습니다: {error}", document.name))?;
             let count = managed_import::copy_document(input, &target, |bytes| { status.bytes_processed = copied + bytes; on_progress(status.clone()); })
                 .map_err(|error| format!("{} 파일을 보관하지 못했습니다: {error}", document.name))?;
             if let Some(modified) = document.modified.filter(|value| *value > 0) {

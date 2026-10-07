@@ -622,6 +622,57 @@ mod tests {
         fs::remove_file(path).unwrap();
     }
 
+    #[test]
+    fn refreshed_original_recovers_gps_without_losing_media_edits_or_album_links() {
+        for manual in [false, true] {
+            let path = temp_path("jpg");
+            fs::write(&path, include_bytes!("../../tests/fixtures/pet-dog.jpg")).unwrap();
+            let mut conn = Connection::open_in_memory().unwrap();
+            crate::database::initialize(&mut conn).unwrap();
+            crate::register_file(&conn, &path).unwrap();
+            let id: i64 = conn.query_row("SELECT id FROM media", [], |r| r.get(0)).unwrap();
+            let old_hash: String = conn.query_row("SELECT content_hash FROM media", [], |r| r.get(0)).unwrap();
+            conn.execute("UPDATE media SET rating=4, favorite=1, title='내 사진', comment='기억', view_count=3 WHERE id=?1", [id]).unwrap();
+            conn.execute("INSERT INTO album(id,title,cover_media_id) VALUES(1,'추억',?1)", [id]).unwrap();
+            conn.execute("INSERT INTO album_item(album_id,media_id,sequence) VALUES(1,?1,0)", [id]).unwrap();
+            if manual { assign_region(&conn, &[id], "KR-49").unwrap(); }
+            fs::write(&path, gps_jpeg()).unwrap();
+            crate::register_file(&conn, &path).unwrap();
+            let media = crate::read_media(&conn).unwrap();
+            assert_eq!(media.len(), 1);
+            assert_eq!(media[0].id, id);
+            assert_eq!((media[0].rating, media[0].favorite, media[0].view_count), (4, true, 3));
+            assert_eq!(media[0].title, "내 사진"); assert_eq!(media[0].comment, "기억");
+            assert!((media[0].latitude.unwrap() - 37.56638888).abs() < 0.00001);
+            assert_eq!(media[0].gps_region_code.as_deref(), Some("KR-11"));
+            assert_eq!(media[0].region_code.as_deref(), Some(if manual { "KR-49" } else { "KR-11" }));
+            assert_eq!(media[0].location_status, "ready");
+            assert_ne!(conn.query_row("SELECT content_hash FROM media", [], |r| r.get::<_,String>(0)).unwrap(), old_hash);
+            assert_eq!(conn.query_row("SELECT media_id FROM album_item", [], |r| r.get::<_,i64>(0)).unwrap(), id);
+            assert_eq!(conn.query_row("SELECT cover_media_id FROM album", [], |r| r.get::<_,i64>(0)).unwrap(), id);
+            fs::remove_file(&path).unwrap();
+        }
+    }
+
+    #[test]
+    fn refreshed_hash_collision_preserves_existing_album_references() {
+        let a = temp_path("jpg"); let b = temp_path("jpg");
+        let mut conn = Connection::open_in_memory().unwrap();
+        crate::database::initialize(&mut conn).unwrap();
+        fs::write(&a, gps_jpeg()).unwrap();
+        fs::write(&b, include_bytes!("../../tests/fixtures/pet-dog.jpg")).unwrap();
+        crate::register_file(&conn, &a).unwrap(); crate::register_file(&conn, &b).unwrap();
+        let id: i64 = conn.query_row("SELECT id FROM media WHERE file_path=?1", [crate::normalize_file_path(&b)], |r| r.get(0)).unwrap();
+        conn.execute("INSERT INTO album(id,title) VALUES(1,'겹친 원본')", []).unwrap();
+        conn.execute("INSERT INTO album_item(album_id,media_id,sequence) VALUES(1,?1,0)", [id]).unwrap();
+        fs::write(&b, gps_jpeg()).unwrap();
+        crate::register_file(&conn, &b).unwrap();
+        assert_eq!(crate::read_media(&conn).unwrap().len(), 2);
+        assert_eq!(conn.query_row("SELECT media_id FROM album_item", [], |r| r.get::<_,i64>(0)).unwrap(), id);
+        assert_eq!(conn.query_row("SELECT gps_region_code FROM media WHERE id=?1", [id], |r| r.get::<_,String>(0)).unwrap(), "KR-11");
+        fs::remove_file(a).unwrap(); fs::remove_file(b).unwrap();
+    }
+
     fn temp_path(extension: &str) -> std::path::PathBuf {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)

@@ -28,6 +28,7 @@ export function useMediaLibrary() {
   const [clearing, setClearing] = useState(false);
   const [error, setError] = useState("");
   const [importNotice, setImportNotice] = useState("");
+  const importWarning = useRef("");
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
   const pendingImport = useRef<MediaImportOptions | null>(null);
@@ -79,6 +80,7 @@ export function useMediaLibrary() {
     if (locked.current) return false;
     locked.current = true;
     setImporting(kind); setError(""); setImportNotice("");
+    importWarning.current = "";
     setImportProgress(initialImportProgress(phase));
     return true;
   }
@@ -89,6 +91,7 @@ export function useMediaLibrary() {
   }
 
   function updateImportProgress(progress: MediaImportProgress) {
+    if (locked.current && progress.notice) importWarning.current = progress.notice;
     if (locked.current) setImportProgress(progress);
   }
 
@@ -99,14 +102,16 @@ export function useMediaLibrary() {
   async function register(kind: "files" | "folder"): Promise<MediaItem[]> {
     try {
       const registered = kind === "files" ? await api.chooseAndRegisterFiles(updateImportProgress) : await api.chooseAndRegisterFolder(updateImportProgress);
-      const before = new Set(current.current.items.map(item => item.id));
+      const beforeItems = new Map(current.current.items.map(item => [item.id, item]));
+      const before = new Set(beforeItems.keys());
       if (registered.length) {
         mediaRevision.current++;
         const items = retainMediaEdits(registered, current.current.items).map((item) => ({ ...item, ...pendingMediaEdits.current.get(item.id) }));
         publish({ items, loaded: true });
         pendingMediaEdits.current.clear();
         const added = items.filter(item => !before.has(item.id));
-        setImportNotice(added.length ? `사진과 영상 ${added.length}개를 가져왔습니다.` : "새로 가져올 사진과 영상이 없습니다.");
+        const refreshed = items.filter(item => before.has(item.id) && (item.latitude !== beforeItems.get(item.id)?.latitude || item.longitude !== beforeItems.get(item.id)?.longitude)).length;
+        setImportNotice([(added.length ? `사진과 영상 ${added.length}개를 가져왔습니다.` : refreshed ? "기존 사진의 촬영 위치를 갱신했습니다." : "선택한 기록을 확인했습니다."), importWarning.current].filter(Boolean).join(" "));
         return added;
       }
     } catch (cause) {

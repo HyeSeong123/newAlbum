@@ -38,6 +38,8 @@ test('preparation installs the bridge, excludes backups, and requires signing on
     assert.equal((manifest.match(/allowBackup/g) ?? []).length, 1);
     assert.match(manifest, /allowBackup="false"/);
     assert.equal((manifest.match(/networkSecurityConfig/g) ?? []).length, 1);
+    assert.equal((manifest.match(/android.permission.ACCESS_MEDIA_LOCATION/g) ?? []).length, 1);
+    assert.ok(manifest.indexOf('ACCESS_MEDIA_LOCATION') < manifest.indexOf('<application'));
     const network = await readFile(join(root, 'src-tauri/gen/android/app/src/main/res/xml/gamjassak_network_security.xml'), 'utf8');
     assert.match(network, /base-config cleartextTrafficPermitted="false"/);
     assert.match(network, /<domain>127.0.0.1<\/domain>/);

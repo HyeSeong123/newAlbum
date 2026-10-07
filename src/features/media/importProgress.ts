@@ -5,6 +5,7 @@ export type MediaImportProgress = {
   fileName?: string;
   bytesProcessed?: number;
   totalBytes?: number;
+  notice?: string;
 };
 
 export function initialImportProgress(phase: MediaImportProgress["phase"]): MediaImportProgress {

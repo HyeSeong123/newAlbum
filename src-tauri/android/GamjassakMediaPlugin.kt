@@ -1,10 +1,13 @@
 package com.oraedameun.album
 
 import android.app.Activity
+import android.Manifest
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.provider.DocumentsContract
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.view.View
 import android.view.ViewGroup
@@ -21,7 +24,10 @@ import androidx.core.view.WindowInsetsCompat
 import app.tauri.annotation.ActivityCallback
 import app.tauri.annotation.Command
 import app.tauri.annotation.InvokeArg
+import app.tauri.annotation.Permission
+import app.tauri.annotation.PermissionCallback
 import app.tauri.annotation.TauriPlugin
+import app.tauri.PermissionState
 import app.tauri.plugin.Invoke
 import app.tauri.plugin.JSObject
 import app.tauri.plugin.Plugin
@@ -40,7 +46,7 @@ class CreateDocumentArgs {
 
 /** Rust owns copying/hashing/storage. This bridge only describes SAF documents
  *  and creates user-requested export destinations; it never deletes originals. */
-@TauriPlugin
+@TauriPlugin(permissions = [Permission(strings = [Manifest.permission.ACCESS_MEDIA_LOCATION], alias = "photoLocation")])
 class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
     private var back: OnBackPressedCallback? = null
     private var backOwner: ComponentActivity? = null
@@ -139,6 +145,58 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
     fun directoryResult(invoke: Invoke, result: ActivityResult) {
         val uri = if (result.resultCode == Activity.RESULT_OK) result.data?.data?.toString() else null
         invoke.resolve(JSObject().put("uri", uri))
+    }
+
+    @Command
+    fun requestPhotoLocation(invoke: Invoke) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || getPermissionState("photoLocation") == PermissionState.GRANTED
+            || getPermissionState("photoLocation") == PermissionState.DENIED) {
+            photoLocationResult(invoke)
+        } else {
+            requestPermissionForAlias("photoLocation", invoke, "photoLocationResult")
+        }
+    }
+
+    @PermissionCallback
+    fun photoLocationResult(invoke: Invoke) {
+        invoke.resolve(JSObject().put("granted", Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
+            || getPermissionState("photoLocation") == PermissionState.GRANTED))
+    }
+
+    @Command
+    fun originalPhotoUri(invoke: Invoke) {
+        val args = invoke.parseArgs(DescribeArgs::class.java)
+        Thread {
+            try {
+                val document = Uri.parse(args.uri)
+                require(document.scheme == "content") { "파일 선택기로 원본 사진을 선택해 주세요." }
+                var source = document
+                var notice: String? = null
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    // SAF grants are carried to the equivalent MediaStore URI by getMediaUri.
+                    // Do not request broad gallery access or guess paths for cloud providers.
+                    val media = when (document.authority) {
+                        MediaStore.AUTHORITY -> document
+                        "com.android.providers.media.documents", "com.android.externalstorage.documents" ->
+                            try { MediaStore.getMediaUri(activity, document) } catch (_: Exception) { null }
+                        else -> null
+                    }
+                    if (media != null && getPermissionState("photoLocation") != PermissionState.GRANTED) source = media
+                    if (media != null && getPermissionState("photoLocation") == PermissionState.GRANTED) {
+                        try {
+                            val original = MediaStore.setRequireOriginal(media)
+                            activity.contentResolver.openFileDescriptor(original, "r")?.use { source = original }
+                                ?: error("원본 사진을 열 수 없습니다.")
+                        } catch (_: Exception) {
+                            // Some providers cannot supply original bytes. Keep the selected
+                            // photo usable, while reporting that its GPS may be unavailable.
+                            notice = "선택한 저장소에서 원본 위치정보를 읽지 못했습니다. 위치가 빠진 사진은 휴대폰의 원본을 다시 선택해 주세요."
+                        }
+                    }
+                }
+                invoke.resolve(JSObject().put("uri", source.toString()).put("notice", notice))
+            } catch (error: Exception) { invoke.reject(error.message ?: "원본 사진을 준비하지 못했습니다.") }
+        }.start()
     }
 
     @Command

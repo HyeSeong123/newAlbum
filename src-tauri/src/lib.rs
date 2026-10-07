@@ -274,6 +274,8 @@ struct ImportProgressDto {
     file_name: Option<String>,
     bytes_processed: u64,
     total_bytes: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    notice: Option<String>,
 }
 
 #[tauri::command]
@@ -287,7 +289,7 @@ async fn register_paths(app: AppHandle, webview: tauri::Webview, paths: Vec<Stri
             }
         };
         let mut status = ImportProgressDto { phase: "scanning", processed: 0, total: 0,
-            file_name: None, bytes_processed: 0, total_bytes: 0 };
+            file_name: None, bytes_processed: 0, total_bytes: 0, notice: None };
         send(status.clone());
         #[cfg(target_os = "android")]
         let paths = android_media::prepare_paths(&app, paths, &send)?;
@@ -923,36 +925,39 @@ fn register_file_with_progress(conn: &Connection, path: &Path, on_read: impl FnM
     let file_type = media_type(path).ok_or_else(|| "지원하지 않는 파일 형식입니다.".to_string())?;
     let taken_at = modified_date(&metadata);
     let dimensions = if file_type == "image" { media_dimensions::read(path) } else { None };
-    // Re-registering an unchanged library entry must not repeat its EXIF scan.
-    let location_status = conn.query_row(
-        "SELECT CASE WHEN location_source='manual' THEN 'ready' ELSE location_status END FROM media WHERE file_path = ?1", [&file_path], |row| row.get::<_, String>(0),
+    let content_hash =
+        file_hash_with_progress(path, on_read).map_err(|error| format!("파일 해시를 계산할 수 없습니다: {error}"))?;
+    // Skip unchanged EXIF, but rescan a refreshed Android original whose bytes
+    // now contain GPS. Manual map labels remain independent of source GPS.
+    let existing = conn.query_row(
+        "SELECT content_hash, CASE WHEN location_source='manual' THEN 'ready' ELSE location_status END FROM media WHERE file_path = ?1", [&file_path],
+        |row| Ok((row.get::<_, Option<String>>(0)?, row.get::<_, String>(1)?)),
     ).optional().map_err(|error| error.to_string())?;
-    let location = if location_status.as_deref().is_some_and(|status| status != "queued") {
+    let location = if existing.as_ref().is_some_and(|(hash, status)| hash.as_deref() == Some(content_hash.as_str()) && status != "queued") {
         None
     } else {
         Some(location::analyze_path(path, file_type))
     };
-    let content_hash =
-        file_hash_with_progress(path, on_read).map_err(|error| format!("파일 해시를 계산할 수 없습니다: {error}"))?;
 
     conn.execute(
         "INSERT INTO media (file_path, content_hash, file_type, taken_at, size_bytes, width, height, rating, comment, favorite, metadata_status, latitude, longitude, region_code, region_name, district, location_status, gps_region_code)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, '', 0, 'ready', ?8, ?9, ?10, ?11, ?12, ?13, ?10)
          ON CONFLICT(file_path) DO UPDATE SET
            file_type = excluded.file_type,
-           content_hash = COALESCE(media.content_hash, excluded.content_hash),
+           content_hash = CASE WHEN EXISTS(SELECT 1 FROM media AS other WHERE other.content_hash=excluded.content_hash AND other.file_path!=excluded.file_path)
+             THEN NULL ELSE excluded.content_hash END,
            taken_at = COALESCE(media.taken_at, excluded.taken_at),
            size_bytes = excluded.size_bytes,
            width = COALESCE(excluded.width, media.width),
            height = COALESCE(excluded.height, media.height),
            metadata_status = 'ready',
-           latitude = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.latitude ELSE media.latitude END,
-           longitude = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.longitude ELSE media.longitude END,
-           gps_region_code = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.gps_region_code ELSE media.gps_region_code END,
-           region_code = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.region_code ELSE media.region_code END,
-           region_name = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.region_name ELSE media.region_name END,
-           district = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.district ELSE media.district END,
-           location_status = CASE WHEN media.location_status = 'queued' AND media.location_source != 'manual' THEN excluded.location_status ELSE media.location_status END
+           latitude = CASE WHEN ?14 THEN excluded.latitude ELSE media.latitude END,
+           longitude = CASE WHEN ?14 THEN excluded.longitude ELSE media.longitude END,
+           gps_region_code = CASE WHEN ?14 THEN excluded.gps_region_code ELSE media.gps_region_code END,
+           region_code = CASE WHEN ?14 AND media.location_source != 'manual' THEN excluded.region_code ELSE media.region_code END,
+           region_name = CASE WHEN ?14 AND media.location_source != 'manual' THEN excluded.region_name ELSE media.region_name END,
+           district = CASE WHEN ?14 AND media.location_source != 'manual' THEN excluded.district ELSE media.district END,
+           location_status = CASE WHEN ?14 AND media.location_source != 'manual' THEN excluded.location_status ELSE media.location_status END
          ON CONFLICT(content_hash) DO NOTHING",
         params![file_path, content_hash, file_type, taken_at, metadata.len() as i64,
             dimensions.map(|value| value.0), dimensions.map(|value| value.1),
@@ -961,7 +966,7 @@ fn register_file_with_progress(conn: &Connection, path: &Path, on_read: impl FnM
             location.as_ref().and_then(|value| value.region_code.as_deref()),
             location.as_ref().and_then(|value| value.region_name.as_deref()),
             location.as_ref().and_then(|value| value.district.as_deref()),
-            location.as_ref().map_or("queued", |value| value.status)],
+            location.as_ref().map_or("queued", |value| value.status), location.is_some()],
     )
     .map_err(|error| format!("파일을 등록할 수 없습니다: {error}"))?;
 

@@ -1,6 +1,6 @@
 [package]
 name = "oraedameun"
-version = "0.6.19"
+version = "0.6.20"
 description = "감자싹 로컬 사진 앨범"
 authors = ["you"]
 edition = "2021"

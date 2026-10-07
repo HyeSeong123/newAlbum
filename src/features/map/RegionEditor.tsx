@@ -49,7 +49,7 @@ export function RegionEditor({ current, district: initialDistrict = "", country:
       <button disabled={busy || !count || (overseas ? !country.trim() || !city.trim() : !code)} onClick={() => void save()}>{busy ? "저장 중" : "지역 저장"}</button>
       <button disabled={busy} onClick={() => setEditing(false)}>취소</button>
     </>}
-    {!current && locationStatusText(status) && <p className="regionLocationStatus" data-location-status={status}>{locationStatusText(status)}{status === "failed" ? " · 원본 사진은 유지됩니다. 추억 지도에서 다시 분석할 수 있습니다." : status === "no-gps" ? " · 촬영 위치가 저장되지 않은 사진입니다. 직접 지역을 지정할 수 있습니다." : ""}</p>}
+    {!current && locationStatusText(status) && <p className="regionLocationStatus" data-location-status={status}>{locationStatusText(status)}{status === "failed" ? " · 원본 사진은 유지됩니다. 추억 지도에서 다시 분석할 수 있습니다." : status === "no-gps" ? " · 가져온 파일에서 촬영 위치를 찾지 못했습니다. 휴대폰 원본에 위치가 있다면 사진 위치정보 접근을 허용한 뒤 다시 가져와 주세요. 직접 지역을 지정할 수도 있습니다." : ""}</p>}
     {error && <p role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
   </section>;
 }

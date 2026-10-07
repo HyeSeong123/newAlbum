@@ -178,6 +178,70 @@ async function checkVideoPlayback(page, label) {
   console.log(`Actual MP4 playback, decoded frames, byte ranges and seeking (${label}): OK`);
 }
 
+async function checkPhotoGps(page) {
+  console.log('Checking real Android photo GPS redaction, permission and reimport recovery.');
+  await adb('shell', 'mkdir', '-p', '/sdcard/Download/GamjassakGPS');
+  await adb('push', resolve('tests/fixtures/exif-seoul.jpg'), '/sdcard/Download/GamjassakGPS/gps-smoke.jpg');
+  await adb('push', resolve('tests/fixtures/no-gps.jpg'), '/sdcard/Download/GamjassakGPS/no-gps-smoke.jpg');
+  for (const file of ['gps-smoke.jpg', 'no-gps-smoke.jpg']) {
+    await adb('shell', 'am', 'broadcast', '-a', 'android.intent.action.MEDIA_SCANNER_SCAN_FILE', '-d', `file:///sdcard/Download/GamjassakGPS/${file}`);
+  }
+  await expect.poll(async () => (await adb('shell', 'content', 'query', '--uri', 'content://media/external/images/media', '--projection', '_display_name')).includes('gps-smoke.jpg')).toBe(true);
+  await page.locator('.navList').getByRole('button', { name:'사진 기록', exact:true }).click();
+  await page.getByRole('button', { name:'사진·영상 가져오기', exact:true }).click();
+  const dialog = page.getByRole('dialog', { name:'사진·영상 가져오기', exact:true });
+  await dialog.getByRole('radio', { name:/폴더 가져오기/ }).check();
+  await dialog.getByRole('button', { name:'폴더 선택', exact:true }).click();
+  await downloads();
+  await tapNative(/text="GamjassakGPS"/);
+  await tapNative(/text="USE THIS FOLDER"/i);
+  await tapNative(/text="ALLOW"/i);
+  await tapNative(/resource-id="com.android.permissioncontroller:id\/permission_deny_button"/);
+  await expect(page.locator('.mediaTile')).toHaveCount(2);
+  await expect(page.locator('.selectionNotice')).toContainText('사진 위치정보 권한이 꺼져');
+  let rows = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_media'));
+  const denied = rows.find(item => item.file_path.endsWith('gps-smoke.jpg') && !item.file_path.endsWith('no-gps-smoke.jpg'));
+  assert.ok(denied);
+  assert.equal(denied.latitude, null); assert.equal(denied.gps_region_code, null);
+  assert.equal(denied.location_status, 'no-gps');
+  await captureScreen('gps-permission-denied');
+  await page.evaluate(async id => {
+    await window.__TAURI_INTERNALS__.invoke('update_media_details', { id, rating:4, comment:'GPS 복구 확인', favorite:true });
+    window.gpsRecovery = { completed:false };
+    // Reuse the real tree grant selected above; no broad gallery permission.
+    window.__TAURI_INTERNALS__.invoke('register_paths', {
+      paths:['content://com.android.externalstorage.documents/tree/primary%3ADownload%2FGamjassakGPS'],
+    }).then(rows => { window.gpsRecovery = { completed:true, rows }; })
+      .catch(error => { window.gpsRecovery = { completed:true, error:String(error) }; });
+  }, denied.id);
+  await tapNative(/resource-id="com.android.permissioncontroller:id\/permission_allow_button"/);
+  await expect.poll(() => page.evaluate(() => window.gpsRecovery.completed)).toBe(true);
+  const recovery = await page.evaluate(() => window.gpsRecovery);
+  assert.equal(recovery.error, undefined);
+  rows = recovery.rows;
+  assert.equal(rows.length, 2);
+  const located = rows.find(item => item.id === denied.id);
+  assert.ok(Math.abs(located.latitude - 37.56638888) < .00001);
+  assert.ok(Math.abs(located.longitude - 126.97805555) < .00001);
+  assert.equal(located.location_status, 'ready');
+  assert.equal(located.gps_region_code, 'KR-11');
+  assert.ok(located.district);
+  assert.equal(located.rating, 4); assert.equal(located.comment, 'GPS 복구 확인'); assert.equal(located.favorite, true);
+  const absent = rows.find(item => item.file_path.endsWith('no-gps-smoke.jpg'));
+  assert.equal(absent.latitude, null); assert.equal(absent.location_status, 'no-gps');
+  await writeFile(join(output, 'gps-recovery.json'), JSON.stringify({ denied, located, absent }, null, 2));
+  await page.reload();
+  await page.locator('.navList').getByRole('button', { name:'사진 기록', exact:true }).click();
+  await page.getByRole('button', { name:'gps-smoke.jpg 상세보기', exact:true }).click();
+  const detail = page.getByRole('dialog', { name:'사진 상세', exact:true });
+  await expect(detail.locator('.regionEditor')).toContainText('서울특별시');
+  await captureScreen('gps-original-restored');
+  await detail.getByTitle('닫기', { exact:true }).click();
+  await page.evaluate(ids => window.__TAURI_INTERNALS__.invoke('delete_registered_media', { ids }), rows.map(item => item.id));
+  await page.reload();
+  console.log('Denied permission keeps photos usable; allowing recovers original GPS with the same IDs/edits; GPS-free photo stays unclassified: OK');
+}
+
 let device, context;
 await mkdir(output, { recursive:true });
 // Capture the guest continuously: once the emulator exits, a final `logcat -d`
@@ -232,6 +296,7 @@ try {
   assert.equal(gomiState.characters.find(character => character.id === 'gomi').affection, 0);
   console.log('Gomi cynical art, cold low-affection help and no guide affection award: OK');
   console.log('Installed Android app launched and rendered its native home.');
+  await checkPhotoGps(page);
   await expect(page.getByRole('button', { name:'다음 메뉴 보기', exact:true })).toBeEnabled();
   await page.getByRole('button', { name:'다음 메뉴 보기', exact:true }).click();
   await expect.poll(() => page.locator('.navList').evaluate(element => element.scrollLeft)).toBeGreaterThan(20);
