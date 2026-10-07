@@ -15,7 +15,6 @@ export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () =>
   const [turn, setTurn] = useState<{ direction: "next" | "prev"; from: number; to: number } | null>(null);
   const turning = turn?.direction ?? null;
   const [turnPhase, setTurnPhase] = useState<"departing" | "arriving" | "settling" | null>(null);
-  const [listView, setListView] = useState(false);
   const [fullscreen, setFullscreen] = useState(Boolean(document.fullscreenElement));
   const [notice, setNotice] = useState("");
   const timers = useRef<number[]>([]);
@@ -82,7 +81,7 @@ export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () =>
     };
   }, []);
 
-  useModalBehavior(onClose, { enabled: open, onPrev: () => { if (!listView) turnPage(-1); }, onNext: () => { if (!listView) turnPage(1); } });
+  useModalBehavior(onClose, { enabled: open, onPrev: () => { turnPage(-1); }, onNext: () => { turnPage(1); } });
 
   function resetOrder(shuffle: boolean) {
     cancelTurn(); setTurn(null); setTurnPhase(null); setLeafIndex(0);
@@ -114,10 +113,6 @@ export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () =>
     } catch { setNotice("전체화면으로 전환하지 못했습니다. 창 크기를 늘려서 볼 수 있어요."); }
   }
 
-  function toggleListView() {
-    cancelTurn(); setTurn(null); setTurnPhase(null); setListView((current) => !current);
-  }
-
   return { order, orderedItems, pages, currentPage, singlePage, visibleSpread, turning, turningLeaves, turnPhase,
-    listView, fullscreen, notice, resetOrder, jumpToPage, turnPage, toggleFullscreen, toggleListView };
+    fullscreen, notice, resetOrder, jumpToPage, turnPage, toggleFullscreen };
 }

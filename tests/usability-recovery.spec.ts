@@ -307,7 +307,7 @@ test('album creation and editing preserve title and written content after failed
   await page.locator('.savedAlbumFooter .actionMenuTrigger').first().click();
   await page.getByRole('button', { name: '앨범 수정', exact: true }).click();
   const editor = page.getByRole('dialog', { name: '앨범 수정' });
-  await editor.getByRole('button', { name: '감상문 추가', exact: true }).click();
+  await editor.getByRole('button', { name: '편지+', exact: true }).click();
   await editor.getByLabel('감상문 제목', { exact: true }).fill('다시 기억할 하루');
   await editor.getByLabel('감상문 내용', { exact: true }).fill('저장 실패에도 남아 있는 글');
   await editor.getByRole('button', { name: '저장', exact: true }).click();

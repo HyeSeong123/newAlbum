@@ -89,7 +89,6 @@ test('albums loaded before the library remain viewable and edits survive the lat
   await page.goto('/');
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
   await page.getByRole('button', { name: '먼저 열린 앨범 앨범 열기', exact: true }).click();
-  await page.getByRole('button', { name: '사진 목록', exact: true }).click();
   await page.getByRole('button', { name: 'early-1.jpg 상세보기', exact: true }).click();
   const detail = page.getByRole('dialog', { name: '사진 상세', exact: true });
   await detail.getByRole('button', { name: '즐겨찾기', exact: true }).click();

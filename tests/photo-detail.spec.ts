@@ -22,9 +22,8 @@ test('album overview and photo tools preserve the full frame and editing workflo
   await page.goto('/');
   await page.locator('.navList').getByRole('button', { name: '내 앨범', exact: true }).click();
   await page.getByRole('button', { name: '가을의 기록 앨범 열기', exact: true }).click();
-  await page.getByRole('button', { name: '사진 목록', exact: true }).click();
-  await expect(page.locator('.albumPhotoList > button')).toHaveCount(2);
-  for (const image of await page.locator('.albumPhotoList .mediaImage').all()) {
+  await expect(page.locator('.albumPagePhoto').first()).toBeVisible();
+  for (const image of await page.locator('.albumPagePhoto .mediaImage').all()) {
     await expect(image).toHaveCSS('object-fit', 'contain');
   }
   await page.getByRole('button', { name: 'detail-1.jpg 상세보기', exact: true }).click();
@@ -63,5 +62,5 @@ test('album overview and photo tools preserve the full frame and editing workflo
     expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
   }
   await page.keyboard.press('Escape');
-  await expect(page.locator('.albumPhotoList > button')).toHaveCount(2);
+  await expect(page.locator('.albumPagePhoto').first()).toBeVisible();
 });

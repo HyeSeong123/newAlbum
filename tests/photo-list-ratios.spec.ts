@@ -79,12 +79,5 @@ test('journal, person, pet, calendar, memory and album lists show complete photo
   await expectFullPhotos(page.locator('.albumEditPhotos .mediaImage'), 6);
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: '원본 비율 앨범 열기', exact: true }).click();
-  await page.getByTitle('사진 목록', { exact: true }).click();
-  await expectFullPhotos(page.locator('.albumPhotoList .mediaImage'), 6);
-  if (test.info().project.name === 'desktop') {
-    const box = (await page.locator('.albumPhotoList > button > div').first().boundingBox())!;
-    expect(box.width).toBeGreaterThanOrEqual(280);
-  }
-  await page.screenshot({ path: `test-results/full-frames-album-list-${test.info().project.name}.png` });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await expect(page.getByTitle('사진 목록', { exact: true })).toHaveCount(0);
 });

@@ -876,3 +876,12 @@ npm run tauri:dev
 - 중앙에는 얇은 접힘선과 좌우 페이지 안쪽 그림자만 유지.
 - 내 앨범과 사진보기 앨범이 동일한 `AlbumFullscreenReader` 무스프링 구조를 사용하도록 회귀 테스트 추가.
 - 검증: `npm run build`, 앨범 관련 Playwright PC·모바일 6개 통과.
+
+
+## 2026-10-07 — 0.6.15 album writing and reading
+- Split chapter and reflection writing into separate editor tabs. Put writing on the left and the vertical album picker on the right, including phones.
+- Add Chapter+ and Letter+ actions at the reader/editor top left. Reader actions insert a draft after the currently displayed page; cancel leaves saved contents intact.
+- Remove the reader photo-list mode and JOURNAL label. Add a restrained ornament, divider and serif reflection body to written pages.
+- Normalize legacy albums before adding linked diary pages so existing photos remain in the book.
+- Validation: 97 unit tests passed; TypeScript and frontend production build passed. Added browser regression coverage for insertion, tab switching, right picker bounds and cancellation; updated affected reader tests for book navigation.
+- Local browser runs are blocked by the execution environment (Chromium socket creation returns Operation not permitted). Browser regression screenshots and Android APK builds run through repository Actions after push.

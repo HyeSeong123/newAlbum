@@ -57,8 +57,7 @@ test('title saves independently, appears above its own date and survives reopeni
   await expect(photo.locator('time')).toHaveText('2026.09.26');
   expect((await photo.locator('figcaption p').boundingBox())!.y).toBeLessThan((await photo.locator('time').boundingBox())!.y);
   await page.screenshot({ path: `test-results/photo-title-album-${test.info().project.name}.png` });
-  await reader.getByRole('button', { name: '사진 목록', exact: true }).click();
-  await expect(reader.locator('.albumPhotoName').first()).toHaveText('바람이 좋았던 오후 🌿');
+  await expect(reader.getByRole('button', { name: '사진 목록', exact: true })).toHaveCount(0);
   await page.reload();
   await page.locator('.navList').getByRole('button', { name: '내 앨범', exact: true }).click();
   await page.getByRole('button', { name: '제목 확인 앨범 열기', exact: true }).click();

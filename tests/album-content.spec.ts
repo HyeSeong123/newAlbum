@@ -35,12 +35,12 @@ test('legacy album accepts a chapter at a chosen position, reloads, moves and de
   const openEditor = async () => {
     await page.locator('.savedAlbumFooter .actionMenuTrigger').first().click();
     await page.getByRole('button', { name:'앨범 수정', exact:true }).click();
-    await page.getByRole('dialog', { name:'앨범 수정' }).getByRole('button', { name:'챕터·감상문', exact:true }).click();
+
   };
   await openEditor();
   const editor = page.getByRole('dialog', { name:'앨범 수정' });
   await editor.getByLabel('삽입 위치').selectOption('2');
-  await editor.getByRole('button', { name:'챕터 추가', exact:true }).click();
+  await editor.getByRole('button', { name:'챕터+', exact:true }).click();
   await editor.getByLabel('챕터 제목', { exact:true }).fill('DAY 2 · 성산일출봉');
   await editor.getByLabel('부제목 또는 설명').fill('2026.05.15\n아침 바다');
   await editor.getByRole('button', { name:'저장', exact:true }).click();
@@ -60,7 +60,7 @@ test('legacy album accepts a chapter at a chosen position, reloads, moves and de
   if (!await reader.getByRole('button', { name:'앨범 수정', exact:true }).isVisible())
     await reader.getByRole('button', { name:'앨범 보기 옵션', exact:true }).click();
   await page.getByRole('button', { name:'앨범 수정', exact:true }).click();
-  await page.getByRole('dialog', { name:'앨범 수정' }).getByRole('button', { name:'챕터·감상문', exact:true }).click();
+
   await expect(page.getByRole('dialog', { name:'앨범 수정' }).getByLabel('챕터 제목')).toHaveValue('DAY 2 · 성산일출봉');
   await page.getByRole('dialog', { name:'앨범 수정' }).getByRole('button', { name:'취소', exact:true }).click();
   await reader.getByTitle('닫기', { exact:true }).click();
@@ -81,11 +81,11 @@ test('text-only album can be saved, read, edited and removed after reload', asyn
   const openEditor = async () => {
     await page.locator('.savedAlbumFooter .actionMenuTrigger').first().click();
     await page.getByRole('button', { name:'앨범 수정', exact:true }).click();
-    await page.getByRole('dialog', { name:'앨범 수정' }).getByRole('button', { name:'챕터·감상문', exact:true }).click();
+
   };
   await openEditor();
   const editor = page.getByRole('dialog', { name:'앨범 수정' });
-  await editor.getByRole('button', { name:'감상문 추가', exact:true }).click();
+  await editor.getByRole('button', { name:'편지+', exact:true }).click();
   await editor.getByLabel('감상문 제목', { exact:true }).fill('여행 마지막 날');
   await editor.getByLabel('감상문 내용', { exact:true }).fill('별거 하지 않았는데\n이 날이 가장 기억에 남는다.');
   for (let i = 0; i < 6; i++) {
@@ -190,4 +190,40 @@ test('album cover colors appear after saving and reloading without story control
   await expect(editor).toBeHidden();
   await expect(cover.locator('.frontAlbumTone')).toHaveCSS('opacity', '0');
   await expect(cover.locator('.frontAlbumTitle')).toHaveCSS('color', 'rgb(48, 49, 41)');
+});
+
+test('reader adds writing after the current page, keeps the picker on the right, and cancels without saving', async ({ page }, info) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await page.getByRole('button', { name: '내 앨범', exact: true }).click();
+  await page.getByRole('button', { name: '제주 여행 앨범 열기', exact: true }).click();
+  const reader = page.getByRole('dialog', { name: '앨범 전체창' });
+  await expect(reader.getByRole('button', { name: '사진 목록', exact: true })).toHaveCount(0);
+  if (info.project.name === 'mobile') await reader.getByLabel('앨범 책장 이동').fill('2');
+  await reader.getByRole('button', { name: '챕터+', exact: true }).click();
+  const editor = page.getByRole('dialog', { name: '앨범 수정' });
+  await editor.getByLabel('챕터 제목', { exact: true }).fill('새로운 장');
+  await editor.getByLabel('부제목 또는 설명').fill('여행의 다음 순간');
+  const writing = (await editor.locator('.albumEntryEditor').boundingBox())!;
+  const picker = (await editor.getByLabel('앨범 장 선택', { exact: true }).boundingBox())!;
+  expect(picker.x).toBeGreaterThanOrEqual(writing.x + writing.width);
+  expect(picker.x + picker.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  await page.screenshot({ path: `test-results/album-appearance-writing-${info.project.name}.png` });
+  await editor.getByRole('button', { name: '감상문', exact: true }).click();
+  await expect(editor.getByLabel('챕터 제목', { exact: true })).toHaveCount(0);
+  await editor.getByRole('button', { name: '챕터', exact: true }).click();
+  await expect(editor.getByLabel('챕터 제목', { exact: true })).toHaveValue('새로운 장');
+  await editor.getByRole('button', { name: '저장', exact: true }).click();
+  await expect(editor).toBeHidden();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('album-content-test')!));
+  expect(saved.contents[4]).toMatchObject({ kind: 'CHAPTER', title: '새로운 장' });
+  expect(saved.items).toHaveLength(6);
+  await reader.getByRole('button', { name: '편지+', exact: true }).click();
+  await editor.getByLabel('감상문 제목', { exact: true }).fill('저장하지 않은 편지');
+  await editor.getByRole('button', { name: '취소', exact: true }).click();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('album-content-test')!).contents.length)).toBe(7);
+  await reader.getByLabel('앨범 책장 이동').fill(info.project.name === 'mobile' ? '3' : '2');
+  await expect(reader.locator('.albumWrittenPage')).toContainText('새로운 장');
+  await expect(reader.locator('.albumOutline')).toHaveCount(0);
+  await page.screenshot({ path: `test-results/album-appearance-written-reader-${info.project.name}.png` });
 });

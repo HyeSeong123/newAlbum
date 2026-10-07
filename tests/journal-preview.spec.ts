@@ -124,16 +124,14 @@ test('album reader preserves order and supports list, scrubber and nested photo 
   await expect(reader.locator('.albumPagePhoto')).toHaveCount(1);
   await expect(reader.locator('.albumPaper.right .albumPagePhoto')).toHaveCount(0);
   await expect(reader.getByRole('button', { name: 'record-9.jpg 상세보기' })).toBeVisible();
-  await reader.getByRole('button', { name: '사진 목록', exact: true }).click();
-  await expect(reader.locator('.albumPhotoList > button')).toHaveCount(9);
-  await reader.locator('.albumPhotoList > button').first().click();
+  await slider.fill('1');
+  await reader.locator('.albumPagePhoto').first().click();
   await expect(page.getByRole('dialog', { name: '사진 상세' })).toBeVisible();
   await page.keyboard.press('ArrowRight');
   await expect(page.locator('.detailFileName')).toHaveText('record-2.jpg');
   await page.keyboard.press('Escape');
   await expect(reader).toBeVisible();
-  await reader.getByRole('button', { name: '책으로 보기', exact: true }).click();
-  await expect(reader.locator('.albumPagerActions p')).toHaveText(`${total} / ${total} ${unit}`);
+  await expect(reader.locator('.albumPagerActions p')).toHaveText(`1 / ${total} ${unit}`);
   await reader.getByRole('button', { name: '앨범 보기 옵션' }).click();
   await page.getByRole('button', { name: '사진 순서 섞기' }).click();
   await reader.getByRole('button', { name: '앨범 보기 옵션' }).click();
@@ -205,8 +203,7 @@ test('unregistered photos disappear from albums and clearing leaves an empty alb
   const reader = page.getByRole('dialog', { name: '앨범 전체창' });
   await expect(reader.locator('.albumJournalHeading')).toContainText('사진 8장');
   await expect(reader.locator('.albumPagePhoto').first()).toHaveAttribute('aria-label', 'record-2.jpg 상세보기');
-  await reader.getByRole('button', { name: '사진 목록', exact: true }).click();
-  await expect(reader.locator('.albumPhotoList > button')).toHaveCount(8);
+  await expect(reader.getByRole('button', { name: '사진 목록', exact: true })).toHaveCount(0);
   await expect(reader.getByRole('button', { name: 'record-1.jpg 상세보기' })).toHaveCount(0);
 
   await page.getByRole('button', { name: '설정', exact: true }).click();

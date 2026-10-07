@@ -1,5 +1,5 @@
 import { type CSSProperties } from "react";
-import { BookOpen, ChevronLeft, ChevronRight, FolderOutput, Images, Maximize, Minimize, MoreVertical, Music, Pencil, Play, RotateCcw, Shuffle } from "lucide-react";
+import { ChevronLeft, ChevronRight, FolderOutput, Maximize, Minimize, MoreVertical, Music, Plus, Pencil, Play, RotateCcw, Shuffle } from "lucide-react";
 import type { AlbumContent, MediaItem } from "../../types/media";
 import { AlbumWrittenPage } from "./chapter/AlbumWrittenPage";
 import { EmptyState, MediaVisual } from "../../components/MediaVisual";
@@ -9,10 +9,9 @@ import { useAlbumReader } from "./useAlbumReader";
 import { useMobileLayout } from "../../hooks/useMobileLayout";
 import { ALBUM_TURN_TIMING } from "./albumAnimation";
 import albumOpenBase from "../../assets/album-open-white-thin.png";
-import { AlbumContentsList } from "./AlbumContentsList";
 import { DEFAULT_ALBUM_COLOR } from "./AlbumCover";
 
-export function AlbumFullscreenReader({ title, items, contents, color, open, onOpen, onClose, onExport, onEdit, backLabel = "내 앨범" }: {
+export function AlbumFullscreenReader({ title, items, contents, color, open, onOpen, onClose, onExport, onEdit, onAddWritten, backLabel = "내 앨범" }: {
   title: string;
   items: MediaItem[];
   contents?: AlbumContent[];
@@ -22,17 +21,18 @@ export function AlbumFullscreenReader({ title, items, contents, color, open, onO
   onClose: () => void;
   onExport?: () => void;
   onEdit?: () => void;
+  onAddWritten?: (kind: "CHAPTER" | "TEXT", afterId?: string) => void;
   backLabel?: string;
 }) {
   const diaryCount = contents?.filter(entry => entry.kind === "TEXT").length ?? 0;
   const chapterCount = contents?.filter(entry => entry.kind === "CHAPTER").length ?? 0;
   const mobile = useMobileLayout();
-  const { order, orderedItems, pages, currentPage, singlePage, visibleSpread, turning, turningLeaves, turnPhase, listView,
-    fullscreen, notice, resetOrder, jumpToPage, turnPage, toggleFullscreen, toggleListView } = useAlbumReader(items, open, onClose, contents);
+  const { order, orderedItems, pages, currentPage, singlePage, visibleSpread, turning, turningLeaves, turnPhase,
+    fullscreen, notice, resetOrder, jumpToPage, turnPage, toggleFullscreen } = useAlbumReader(items, open, onClose, contents);
 
   if (!open) return null;
   const pageUnit = singlePage ? "페이지" : "펼침";
-  return <div className={`albumJournal${listView ? " is-list" : ""}${singlePage ? " is-single-page" : ""}`} style={{
+  return <div className={`albumJournal${singlePage ? " is-single-page" : ""}`} style={{
     "--album-color": color ?? DEFAULT_ALBUM_COLOR,
     "--album-turn-duration": `${ALBUM_TURN_TIMING.motion}ms`,
     "--album-photo-reveal": `${ALBUM_TURN_TIMING.reveal}ms`,
@@ -41,13 +41,19 @@ export function AlbumFullscreenReader({ title, items, contents, color, open, onO
     "--album-opposite-reveal": `${ALBUM_TURN_TIMING.oppositeReveal}ms`,
   } as CSSProperties} role="dialog" aria-modal="false" aria-label="앨범 전체창">
     <header className="albumJournalHeader">
-      <button className="albumJournalBack" onClick={onClose} title="닫기"><ChevronLeft size={22} />{backLabel}</button>
+      <div className="albumJournalStart"><button className="albumJournalBack" onClick={onClose} title="닫기"><ChevronLeft size={22} />{backLabel}</button>
+      {onAddWritten && <div className="albumJournalAdd">{(["CHAPTER", "TEXT"] as const).map(kind => <button key={kind} disabled={Boolean(turning)} onClick={() => {
+        const spread = pages[currentPage];
+        const written = spread?.rightPage ?? (!spread?.right.length ? spread?.leftPage : undefined);
+        const lastMedia = spread?.right.at(-1) ?? spread?.left.at(-1);
+        const anchor = written?.id ?? contents?.find(entry => entry.mediaId === lastMedia?.id)?.id;
+        onAddWritten(kind, anchor);
+      }}><Plus size={16} />{kind === "CHAPTER" ? "챕터+" : "편지+"}</button>)}</div>}</div>
       <div className="albumJournalHeading"><h2>{title}</h2><span>{[
         orderedItems.length ? mediaSummary(orderedItems) : "", diaryCount ? `글·일기 ${diaryCount}편` : "", chapterCount ? `챕터 ${chapterCount}개` : "",
-      ].filter(Boolean).join(" · ") || "기록 없음"}{!singlePage && !listView && orderedItems.length > 0 && " · 세로 4장 / 가로 2장"}</span></div>
+      ].filter(Boolean).join(" · ") || "기록 없음"}{!singlePage && orderedItems.length > 0 && " · 세로 4장 / 가로 2장"}</span></div>
       <div className="albumJournalTools">
         {!singlePage && onEdit && <button className="albumJournalEdit" onClick={onEdit} aria-label="앨범 수정" title="앨범 수정"><Pencil size={18} /><span>앨범 수정</span></button>}
-        <button aria-pressed={listView} onClick={toggleListView} aria-label={listView ? "책으로 보기" : "사진 목록"} title={listView ? "책으로 보기" : "사진 목록"}>{listView ? <BookOpen size={18} /> : <Images size={18} />}<span>{listView ? "책으로 보기" : "사진 목록"}</span></button>
         {!mobile && !singlePage && <button onClick={() => void toggleFullscreen()} disabled={!document.fullscreenEnabled} aria-pressed={fullscreen} title={fullscreen ? "전체화면 종료" : "전체화면"}>{fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}<span>{fullscreen ? "전체화면 종료" : "전체화면"}</span></button>}
         <ActionMenu label="앨범 보기 옵션" triggerText="더 보기" icon={<MoreVertical size={18} />} actions={[
           ...(singlePage && onEdit ? [{ label: "앨범 수정", icon: <Pencil size={16} />, onSelect: onEdit }] : []),
@@ -59,7 +65,7 @@ export function AlbumFullscreenReader({ title, items, contents, color, open, onO
       </div>
     </header>
     {notice && <p className="albumReaderNotice" role="status">{notice}</p>}
-    {listView ? <AlbumContentsList title={title} items={orderedItems} contents={contents} onOpen={onOpen} /> : <div className="albumJournalCanvas">
+    <div className="albumJournalCanvas">
       {!pages.length ? <EmptyState text="앨범에 담긴 기록이 없습니다." /> : <div className="albumBookStage">
       <button className="albumEdgeNav prev" onClick={() => turnPage(-1)} disabled={Boolean(turning) || currentPage === 0} title="이전 책장"><ChevronLeft size={32} /></button>
       <div className={`albumSpread ${turning ? `turning-${turning}` : ""} ${turning && turnPhase ? `${turnPhase}-${turning}` : ""}`} data-turn-phase={turnPhase ?? undefined} aria-label={singlePage ? "한 페이지 포토앨범 책장" : "양면 포토앨범 책장"} aria-busy={Boolean(turning)}>
@@ -87,15 +93,15 @@ export function AlbumFullscreenReader({ title, items, contents, color, open, onO
       </div>
       <button className="albumEdgeNav next" onClick={() => turnPage(1)} disabled={Boolean(turning) || currentPage >= pages.length - 1} title="다음 책장"><ChevronRight size={32} /></button>
       </div>}
-    </div>}
-    {!listView && <footer className="albumJournalPager">
+    </div>
+    <footer className="albumJournalPager">
       <div className="albumPagerActions">
         <button onClick={() => turnPage(-1)} disabled={Boolean(turning) || currentPage === 0}><ChevronLeft size={17} />이전</button>
         <p aria-live="polite">{pages.length ? currentPage + 1 : 0} / {pages.length} {pageUnit}</p>
         <button onClick={() => turnPage(1)} disabled={Boolean(turning) || currentPage >= pages.length - 1}>다음<ChevronRight size={17} /></button>
       </div>
       <input className="albumProgress" type="range" aria-label="앨범 책장 이동" aria-valuetext={`${pages.length ? currentPage + 1 : 0} / ${pages.length} ${pageUnit}`} min={1} max={Math.max(1, pages.length)} value={currentPage + 1} disabled={pages.length < 2} onChange={(event) => jumpToPage(Number(event.target.value) - 1)} />
-    </footer>}
+    </footer>
   </div>;
 }
 

@@ -126,7 +126,7 @@ test('both faces remain attached to the binding and swap slowly without duplicat
   }
 });
 
-test('scrubbing, list view and closing cancel the slower turn; reduced motion stays immediate', async ({ page }, info) => {
+test('scrubbing and closing cancel the slower turn; reduced motion stays immediate', async ({ page }, info) => {
   const single = info.project.name === 'mobile';
   const total = single ? 5 : 3;
   const unit = single ? '페이지' : '펼침';
@@ -147,11 +147,9 @@ test('scrubbing, list view and closing cancel the slower turn; reduced motion st
   // Returning from the odd final spread still carries the correct photo on each face.
   expect(await reader.locator('.albumTurnFace.front [data-turn-media-id]').evaluateAll(elements => elements.map(element => element.getAttribute('data-turn-media-id')))).toEqual(single ? ['7', '8'] : ['9']);
   expect(await reader.locator('.albumTurnFace.back [data-turn-media-id]').evaluateAll(elements => elements.map(element => element.getAttribute('data-turn-media-id')))).toEqual(single ? ['9'] : ['7', '8']);
-  await reader.getByTitle('사진 목록', { exact: true }).click();
+  await expect(reader.getByTitle('사진 목록', { exact: true })).toHaveCount(0);
   await page.clock.runFor(ALBUM_TURN_TIMING.duration + 100);
-  await expect(reader.locator('.albumPhotoList > button')).toHaveCount(9);
-  await reader.getByTitle('책으로 보기', { exact: true }).click();
-  await expect(label).toHaveText(`${total} / ${total} ${unit}`);
+  await expect(label).toHaveText(`${total - 1} / ${total} ${unit}`);
   await reader.getByTitle('이전 책장', { exact: true }).click();
   await reader.getByTitle('닫기', { exact: true }).click();
   await page.clock.runFor(ALBUM_TURN_TIMING.duration + 100);

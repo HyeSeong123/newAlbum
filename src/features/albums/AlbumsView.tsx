@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { BookPlus, Check, CheckSquare, FolderOutput, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
 import type { MediaItem, SavedAlbum } from "../../types/media";
 import { EmptyState } from "../../components/MediaVisual";
+import { albumContents } from "./albumContent";
 import { AlbumCover } from "./AlbumCover";
 import { ActionMenu } from "../../components/ActionMenu";
 import { ExportModal } from "../../components/ExportModal";
@@ -29,7 +30,7 @@ export function SavedAlbumsView({
 }) {
   const [activeAlbumId, setActiveAlbumId] = useState<string | null>(null);
   const activeAlbum = albums.find((album) => album.id === activeAlbumId);
-  const [editing, setEditing] = useState<{ album: SavedAlbum; section: AlbumEditorSection } | null>(null);
+  const [editing, setEditing] = useState<{ album: SavedAlbum; section: AlbumEditorSection; addition?: { kind: "CHAPTER" | "TEXT"; afterId?: string } } | null>(null);
   const openEditor = (album: SavedAlbum, section: AlbumEditorSection = "contents") => setEditing({ album, section });
   const [exporting, setExporting] = useState<SavedAlbum | null>(null);
   const [selecting, setSelecting] = useState(false);
@@ -101,16 +102,17 @@ export function SavedAlbumsView({
         <AlbumFullscreenReader
           title={activeAlbum.title}
           items={activeAlbum.items}
-          contents={[...(activeAlbum.contents ?? []), ...diaries.filter(d => d.album_id === Number(activeAlbum.id)).map(d => ({ id: `diary-${d.id}`, kind: "TEXT" as const, title: `${d.date} · ${d.title}`, body: `${d.mood} · ${d.weather}\n\n${d.body}`, displayDuration: 5, transitionType: "fade" as const, commentVisible: true }))]}
+          contents={[...albumContents(activeAlbum), ...diaries.filter(d => d.album_id === Number(activeAlbum.id)).map(d => ({ id: `diary-${d.id}`, kind: "TEXT" as const, title: `${d.date} · ${d.title}`, body: `${d.mood} · ${d.weather}\n\n${d.body}`, displayDuration: 5, transitionType: "fade" as const, commentVisible: true }))]}
           color={activeAlbum.coverColor}
           open={true}
           onOpen={onOpen}
           onClose={() => setActiveAlbumId(null)}
           onExport={() => setExporting(activeAlbum)}
           onEdit={() => openEditor(activeAlbum)}
+          onAddWritten={(kind, afterId) => setEditing({ album: activeAlbum, section: "contents", addition: { kind, afterId } })}
         />
       )}
-      {editing && <AlbumEditor key={editing.album.id} album={editing.album} initialSection={editing.section} onClose={() => setEditing(null)} onSave={onSave} />}
+      {editing && <AlbumEditor key={editing.album.id} album={editing.album} initialSection={editing.section} initialAddition={editing.addition} onClose={() => setEditing(null)} onSave={onSave} />}
       {exporting && <ExportModal title={exporting.title} items={exporting.items} onClose={() => setExporting(null)} />}
     </div>
   );

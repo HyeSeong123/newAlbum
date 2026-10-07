@@ -420,3 +420,12 @@
 @media (max-width: 760px) {
   .albumPhotoList { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; padding: 12px; }
 }
+
+.albumJournalStart { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.albumJournalAdd { display: flex; gap: 6px; }
+.albumJournalAdd button { display: inline-flex; align-items: center; gap: 3px; min-height: 40px; padding: 0 8px; border: 1px solid var(--border); border-radius: 7px; font-size: 13px; }
+@media (max-width: 760px) {
+  .albumJournalStart { gap: 3px; }
+  .albumJournalAdd { gap: 3px; }
+  .albumJournalAdd button { padding: 0 5px; font-size: 12px; }
+}

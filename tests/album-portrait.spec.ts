@@ -234,10 +234,7 @@ test('mixed orientations group four portraits and two landscapes without losing 
   await expect(left.locator('.albumPageCaption p').first()).toHaveText('천천히 남겨둔 순간');
   expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-5.jpg 상세보기', 'orientation-6.jpg 상세보기', 'orientation-7.jpg 상세보기']);
   expect(await titles(right)).toEqual(['orientation-2.jpg 상세보기', 'orientation-3.jpg 상세보기']);
-  await page.getByTitle('사진 목록', { exact: true }).click();
-  await expect(page.locator('.albumPhotoList > button')).toHaveCount(8);
-  await expect(page.locator('.albumPhotoList .mediaImage').first()).toHaveCSS('object-fit', 'contain');
-  await page.getByTitle('책으로 보기', { exact: true }).click();
+  await expect(page.getByTitle('사진 목록', { exact: true })).toHaveCount(0);
   await expect(pageLabel).toHaveText('1 / 2 펼침');
   expect(await titles(left)).toEqual(['orientation-1.jpg 상세보기', 'orientation-5.jpg 상세보기', 'orientation-6.jpg 상세보기', 'orientation-7.jpg 상세보기']);
   expect(await titles(right)).toEqual(['orientation-2.jpg 상세보기', 'orientation-3.jpg 상세보기']);
@@ -250,9 +247,12 @@ test('mixed orientations group four portraits and two landscapes without losing 
   await page.clock.resume();
   await page.getByRole('button', { name: '앨범 보기 옵션', exact: true }).click();
   await page.getByRole('button', { name: '사진 순서 섞기', exact: true }).click();
-  await page.getByTitle('사진 목록', { exact: true }).click();
-  const shuffled = await page.locator('.albumPhotoList > button').evaluateAll((buttons) => buttons.map((button) => button.getAttribute('aria-label')).sort());
-  expect(shuffled).toEqual(Array.from({ length: 8 }, (_, index) => `orientation-${index + 1}.jpg 상세보기`));
+  const shuffled: string[] = [];
+  for (let i = 1; i <= 2; i++) {
+    await page.getByLabel('앨범 책장 이동').fill(String(i));
+    shuffled.push(...await page.locator('.albumPagePhoto').evaluateAll(buttons => buttons.map(button => button.getAttribute('aria-label')!)));
+  }
+  expect(shuffled.sort()).toEqual(Array.from({ length: 8 }, (_, index) => `orientation-${index + 1}.jpg 상세보기`));
 });
 
 test('duplicate album records do not repeat photos or create empty spreads after reopening', async ({ page }, info) => {
@@ -290,8 +290,7 @@ test('duplicate album records do not repeat photos or create empty spreads after
     }
     expect(seen).toEqual(['1', '2', '3', '4']);
     for (const photo of await photos.all()) await expectUncroppedPhoto(photo);
-    await reader.getByTitle('사진 목록', { exact: true }).click();
-    await expect(reader.locator('.albumPhotoList > button')).toHaveCount(4);
+    await expect(reader.getByTitle('사진 목록', { exact: true })).toHaveCount(0);
     await reader.getByTitle('닫기', { exact: true }).click();
   }
 });
