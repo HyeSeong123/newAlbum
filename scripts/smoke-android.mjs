@@ -205,13 +205,32 @@ async function checkPhotoGps(page) {
   await expect(page.locator('.mediaTile')).toHaveCount(2, { timeout:60_000 });
   await expect(page.locator('.selectionNotice')).toContainText('사진 위치정보 권한이 꺼져', { timeout:60_000 });
   let rows = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_media'));
-  const denied = rows.find(item => item.file_path.endsWith('gps-smoke.jpg') && !item.file_path.endsWith('no-gps-smoke.jpg'));
+  const selected = rows.find(item => item.file_path.endsWith('gps-smoke.jpg') && !item.file_path.endsWith('no-gps-smoke.jpg'));
+  const gpsFree = rows.find(item => item.file_path.endsWith('no-gps-smoke.jpg'));
+  assert.ok(selected && gpsFree);
+  assert.match(await adb('shell', 'dumpsys', 'package', appId), /android\.permission\.ACCESS_MEDIA_LOCATION: granted=false/);
+  assert.equal(gpsFree.latitude, null); assert.equal(gpsFree.gps_region_code, null);
+  // A SAF provider can expose original bytes through the explicit document
+  // grant even when MediaStore location access is denied. Preserve valid GPS.
+  if (selected.latitude !== null) {
+    assert.ok(Math.abs(selected.latitude - 37.56638888) < .00001);
+    assert.equal(selected.gps_region_code, 'KR-11');
+  }
+  await captureScreen('gps-permission-denied');
+  // Reproduce an older app's GPS-free managed copy independently of provider
+  // redaction. Change only these synthetic app-owned copies, never the source.
+  for (const file of [selected, gpsFree]) {
+    assert.match(file.file_path, /^\/data\/(?:user\/0|data)\/com\.oraedameun\.album\/[A-Za-z0-9_./-]+$/);
+    assert.ok(file.file_path.includes('/imported-media-v1/'));
+  }
+  await adb('shell', 'run-as', appId, 'cp', gpsFree.file_path, selected.file_path);
+  rows = await page.evaluate(path => window.__TAURI_INTERNALS__.invoke('register_paths', { paths:[path] }), selected.file_path);
+  const denied = rows.find(item => item.id === selected.id);
   assert.ok(denied);
   assert.equal(denied.latitude, null); assert.equal(denied.gps_region_code, null);
   // Android can zero GPS tags instead of removing their IFD. The parser then
   // reports unreadable GPS; neither state may expose coordinates or a region.
   assert.ok(['no-gps', 'failed'].includes(denied.location_status));
-  await captureScreen('gps-permission-denied');
   await page.evaluate(async id => {
     await window.__TAURI_INTERNALS__.invoke('update_media_details', { id, rating:4, comment:'GPS 복구 확인', favorite:true });
     window.gpsRecovery = { completed:false };
@@ -236,7 +255,7 @@ async function checkPhotoGps(page) {
   assert.equal(located.rating, 4); assert.equal(located.comment, 'GPS 복구 확인'); assert.equal(located.favorite, true);
   const absent = rows.find(item => item.file_path.endsWith('no-gps-smoke.jpg'));
   assert.equal(absent.latitude, null); assert.equal(absent.location_status, 'no-gps');
-  await writeFile(join(output, 'gps-recovery.json'), JSON.stringify({ denied, located, absent }, null, 2));
+  await writeFile(join(output, 'gps-recovery.json'), JSON.stringify({ selectedWithDeniedPermission:selected, legacyCopy:denied, located, absent }, null, 2));
   await page.reload();
   await page.locator('.navList').getByRole('button', { name:'사진 기록', exact:true }).click();
   await page.getByRole('button', { name:'gps-smoke.jpg 상세보기', exact:true }).click();
