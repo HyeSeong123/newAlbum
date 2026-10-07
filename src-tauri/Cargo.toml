@@ -1,6 +1,6 @@
 [package]
 name = "oraedameun"
-version = "0.6.16"
+version = "0.6.17"
 description = "감자싹 로컬 사진 앨범"
 authors = ["you"]
 edition = "2021"
@@ -22,12 +22,13 @@ tauri = { version = "=2.12.1", features = ["protocol-asset"] }
 tauri-plugin-dialog = "2"
 rusqlite = { version = "0.32", features = ["bundled"] }
 walkdir = "2"
+tiny_http = "=0.12.0"
+uuid = { version = "=1.26.0", features = ["v4"] }
 nom-exif = "=3.8.0"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "gif", "bmp", "tiff"] }
 
 [target.'cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))'.dependencies]
 tauri-plugin-single-instance = "=2.4.5"
-tiny_http = "=0.12.0"
 
 [target.'cfg(target_os = "android")'.dependencies]
 tauri-plugin-fs = "=2.5.2"

@@ -38,11 +38,16 @@ export async function prepareAndroid(projectRoot = root, requireSigning = false)
   const destination = resolve(android, 'app/src/main/java/com/oraedameun/album/GamjassakMediaPlugin.kt');
   await mkdir(dirname(destination), { recursive: true });
   await copyFile(resolve(projectRoot, 'src-tauri/android/GamjassakMediaPlugin.kt'), destination);
+  for (const variant of ['main', 'debug']) {
+    const config = resolve(android, `app/src/${variant}/res/xml/gamjassak_network_security.xml`);
+    await mkdir(dirname(config), { recursive: true });
+    await copyFile(resolve(projectRoot, `src-tauri/android/network-security-${variant}.xml`), config);
+  }
   if (configured !== text) await writeFile(gradle, configured);
   // Do not include personal photo copies/SQLite in automatic cloud backup.
   const manifest = resolve(android, 'app/src/main/AndroidManifest.xml');
   const original = await readFile(manifest, 'utf8');
-  const updated = original.replace(/\sandroid:allowBackup="[^"]*"/, '').replace('<application', '<application android:allowBackup="false"');
+  const updated = original.replace(/\sandroid:networkSecurityConfig="[^"]*"/, '').replace(/\sandroid:allowBackup="[^"]*"/, '').replace('<application', '<application android:allowBackup="false" android:networkSecurityConfig="@xml/gamjassak_network_security"');
   if (updated !== original) await writeFile(manifest, updated);
 }
 

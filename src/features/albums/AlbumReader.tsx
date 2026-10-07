@@ -1,5 +1,5 @@
 import { type CSSProperties } from "react";
-import { ChevronLeft, ChevronRight, FolderOutput, Maximize, Minimize, MoreVertical, Music, Pencil, Play } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, FolderOutput, Mail, Maximize, Minimize, MoreVertical, Music, Pencil, Play } from "lucide-react";
 import type { AlbumContent, MediaItem } from "../../types/media";
 import { AlbumWrittenPage } from "./chapter/AlbumWrittenPage";
 import { EmptyState, MediaVisual } from "../../components/MediaVisual";
@@ -30,7 +30,7 @@ export function AlbumFullscreenReader({ title, items, contents, color, open, onO
   const chapterCount = contents?.filter(entry => entry.kind === "CHAPTER").length ?? 0;
   const mobile = useMobileLayout();
   const { orderedItems, pages, currentPage, singlePage, visibleSpread, turning, turningLeaves, turnPhase,
-    fullscreen, notice, dragOffset, swipeHandlers, jumpToPage, turnPage, toggleFullscreen } = useAlbumReader(items, open, onClose, contents);
+    fullscreen, notice, drag, swipeHandlers, jumpToPage, turnPage, toggleFullscreen } = useAlbumReader(items, open, onClose, contents);
 
   if (!open) return null;
   const pageUnit = singlePage ? "페이지" : "펼침";
@@ -60,16 +60,16 @@ export function AlbumFullscreenReader({ title, items, contents, color, open, onO
     </header>
     {notice && <p className="albumReaderNotice" role="status">{notice}</p>}
     <div className={`albumJournalCanvas${onAddWritten ? " has-writing-actions" : ""}`}>
-      {onAddWritten && <div className="albumJournalAdd">{(["CHAPTER", "TEXT"] as const).map(kind => <button key={kind} disabled={Boolean(turning)} onClick={() => {
+      {onAddWritten && <div className="albumJournalAdd">{(["CHAPTER", "TEXT"] as const).map(kind => <button key={kind} className={`albumWriteAction ${kind === "CHAPTER" ? "chapter" : "letter"}`} aria-label={kind === "CHAPTER" ? "챕터+" : "편지+"} disabled={Boolean(turning)} onClick={() => {
         const spread = pages[currentPage];
         const written = spread?.rightPage ?? (!spread?.right.length ? spread?.leftPage : undefined);
         const lastMedia = spread?.right.at(-1) ?? spread?.left.at(-1);
         const anchor = written?.id ?? contents?.find(entry => entry.mediaId === lastMedia?.id)?.id;
         onAddWritten(kind, anchor);
-      }}>{kind === "CHAPTER" ? "챕터+" : "편지+"}</button>)}</div>}
+      }}><span className="albumWriteActionIcon">{kind === "CHAPTER" ? <BookOpen size={20} /> : <Mail size={20} />}</span><strong>{kind === "CHAPTER" ? "챕터+" : "편지+"}</strong></button>)}</div>}
       {!pages.length ? <EmptyState text="앨범에 담긴 기록이 없습니다." /> : <div className="albumBookStage">
       <button className="albumEdgeNav prev" onClick={() => turnPage(-1)} disabled={Boolean(turning) || currentPage === 0} title="이전 책장"><ChevronLeft size={32} /></button>
-      <div className={`albumSpread ${turning ? `turning-${turning}` : ""} ${turning && turnPhase ? `${turnPhase}-${turning}` : ""}`} data-turn-phase={turnPhase ?? undefined} aria-label={singlePage ? "한 페이지 포토앨범 책장" : "양면 포토앨범 책장"} aria-busy={Boolean(turning)} {...swipeHandlers} style={dragOffset ? { transform: `translateX(${dragOffset}px)` } : undefined} data-dragging={dragOffset !== 0}>
+      <div className={`albumSpread ${turning ? `turning-${turning}` : ""} ${turning && turnPhase ? `${turnPhase}-${turning}` : ""}`} data-turn-phase={turnPhase ?? undefined} aria-label={singlePage ? "한 페이지 포토앨범 책장" : "양면 포토앨범 책장"} aria-busy={Boolean(turning)} {...swipeHandlers} data-dragging={Boolean(drag)}>
         <div className="albumHardback">
           <img className="albumBookBase" src={albumOpenBase} alt="" aria-hidden="true" />
           <span className="albumBookTrim" aria-hidden="true" />
@@ -83,6 +83,7 @@ export function AlbumFullscreenReader({ title, items, contents, color, open, onO
               <span className="albumPageNumber">{String(currentPage * (singlePage ? 1 : 2) + sideIndex + 1).padStart(2, "0")}</span>
             </section>;
           })}
+          {singlePage && drag && drag.progress > 0 && <div className={`albumSwipePreview ${drag.direction}`} style={{ "--swipe-size": `${drag.progress * 100}%` } as CSSProperties} aria-hidden="true" inert><span className="albumSwipeCorner" /></div>}
           {turning && turningLeaves && <div className={`albumTurnLayer ${turning}`} aria-hidden="true" inert>
             <span className="albumTurnShadow" />
             <div className="albumTurningSheet">

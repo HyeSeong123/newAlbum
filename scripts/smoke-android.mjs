@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
 import { closeSync, openSync } from 'node:fs';
 import { promisify } from 'node:util';
-import { appendFile, mkdir, readdir, writeFile } from 'node:fs/promises';
+import { appendFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
 const run = promisify(execFile);
@@ -145,6 +145,39 @@ async function loadedAlbumPhoto(reader) {
   await reader.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 }
 
+async function checkVideoPlayback(page, label) {
+  await page.locator('.navList').getByRole('button', { name:'사진 기록', exact:true }).click();
+  await page.getByRole('button', { name:'large-smoke.mp4 상세보기', exact:true }).click();
+  const detail = page.getByRole('dialog', { name:'사진 상세', exact:true });
+  const video = detail.locator('video');
+  await expect(video).toHaveAttribute('src', /^http:\/\/127\.0\.0\.1:\d+\//);
+  await expect.poll(() => video.evaluate(el => el.readyState), { timeout:45_000 }).toBeGreaterThanOrEqual(2);
+  assert.ok(await video.evaluate(el => el.duration > 9 && el.error === null));
+  await video.evaluate(el => el.play());
+  await expect.poll(() => video.evaluate(el => el.currentTime)).toBeGreaterThan(.5);
+  await video.evaluate(el => { el.pause(); el.currentTime = 6; });
+  await expect.poll(() => video.evaluate(el => !el.seeking && el.readyState >= 2 && Math.abs(el.currentTime - 6) < .2)).toBe(true);
+  await video.evaluate(el => el.play());
+  await expect.poll(() => video.evaluate(el => el.currentTime)).toBeGreaterThan(6.5);
+  const result = await video.evaluate(async el => {
+    el.pause();
+    const response = await fetch(el.src, { headers:{ Range:'bytes=65536-65567' } });
+    return { duration:el.duration, currentTime:el.currentTime, readyState:el.readyState,
+      decodedFrames:el.getVideoPlaybackQuality().totalVideoFrames, error:el.error?.code ?? null,
+      rangeStatus:response.status, range:response.headers.get('Content-Range'), rangeBytes:(await response.arrayBuffer()).byteLength };
+  });
+  assert.equal(result.rangeStatus, 206); assert.equal(result.rangeBytes, 32);
+  assert.equal(result.range, 'bytes 65536-65567/67108864');
+  assert.ok(result.decodedFrames > 0);
+  await writeFile(join(output, `video-playback-${label}.json`), JSON.stringify(result, null, 2));
+  await captureScreen(`video-playback-${label}`);
+  const player = await video.elementHandle();
+  await detail.getByTitle('닫기', { exact:true }).click();
+  assert.equal(await player.evaluate(el => el.paused), true);
+  await page.locator('.navList').getByRole('button', { name:'내 앨범', exact:true }).click();
+  console.log(`Actual MP4 playback, decoded frames, byte ranges and seeking (${label}): OK`);
+}
+
 let device, context;
 await mkdir(output, { recursive:true });
 // Capture the guest continuously: once the emulator exits, a final `logcat -d`
@@ -163,7 +196,13 @@ try {
   await adb('shell', 'mkdir', '-p', '/sdcard/Download/GamjassakSmoke');
   await adb('push', resolve('tests/fixtures/pet-dog.jpg'), '/sdcard/Download/GamjassakSmoke/gamjassak-smoke.jpg');
   const video = join(output, 'large-smoke.mp4');
-  await writeFile(video, Buffer.alloc(64 * 1024 * 1024, 43));
+  const fixture = await readFile('tests/fixtures/playback.mp4');
+  const padded = Buffer.alloc(64 * 1024 * 1024);
+  fixture.copy(padded);
+  // A valid MP4 free box preserves the large-file import/progress regression.
+  padded.writeUInt32BE(padded.length - fixture.length, fixture.length);
+  padded.write('free', fixture.length + 4);
+  await writeFile(video, padded);
   await adb('push', resolve(video), '/sdcard/Download/GamjassakSmoke/large-smoke.mp4');
   await startApp();
   let connection = await connect(); context = connection.context;
@@ -227,6 +266,7 @@ try {
   await writeFile(join(output, 'import-progress.json'), JSON.stringify(updates, null, 2));
   console.log('Real native folder import, album creation and calendar registration completed.');
   await page.screenshot({ path:join(output, 'installed-album.png') });
+  await checkVideoPlayback(page, 'imported');
   console.log('Opening the single-page album in three-button navigation mode.');
   await page.getByRole('button', { name:'안드로이드에서 담은 추억 앨범 열기', exact:true }).click();
   let reader = page.getByRole('dialog', { name:'앨범 전체창', exact:true });
@@ -244,6 +284,19 @@ try {
   assert.ok(leaf.height > leaf.width, 'The mobile book leaf must have portrait proportions');
   await expect(reader.getByLabel('앨범 책장 이동')).toBeInViewport();
   await captureScreen('system-bars-book-threebutton');
+  for (const kind of ['챕터', '편지']) {
+    const height = await page.evaluate(() => innerHeight);
+    await reader.getByRole('button', { name:`${kind}+`, exact:true }).click();
+    const writing = page.getByRole('dialog', { name:`${kind} 상세`, exact:true });
+    await expect(writing).toBeVisible();
+    assert.equal(await page.evaluate(() => document.activeElement.matches('input,textarea')), false);
+    assert.equal(await page.evaluate(() => innerHeight), height);
+    const picker = await writing.getByLabel('앨범 장 선택', { exact:true }).boundingBox();
+    const title = await writing.getByLabel(`${kind} 제목`, { exact:true }).boundingBox();
+    assert.ok(picker.y + picker.height <= title.y && title.width > picker.width * .9);
+    await captureScreen(`horizontal-${kind === '챕터' ? 'chapter' : 'letter'}-editor`);
+    await writing.getByRole('button', { name:'취소', exact:true }).click();
+  }
   console.log('Single-page album and pager fit the three-button viewport; checking gesture navigation.');
   const threeButtonBounds = await safeWebViewBounds();
   // Changing this Android resource recreates MainActivity and its WebView.
@@ -406,6 +459,7 @@ try {
   await startApp();
   connection = await connect(); context = connection.context; page = connection.page;
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_media'))).length, 2);
+  await checkVideoPlayback(page, 'after-restart');
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_albums')))[0].title, '안드로이드에서 담은 추억');
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_diary')))[0].title, '휴대폰 한 화면의 일기');
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_pets')))[0].name, '안드로이드 보리');

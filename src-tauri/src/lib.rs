@@ -24,6 +24,8 @@ mod diary;
 mod characters;
 #[cfg(any(target_os = "android", test))]
 mod managed_import;
+#[cfg(any(target_os = "android", test))]
+mod playback;
 #[cfg(target_os = "android")]
 mod android_media;
 #[cfg(any(all(desktop, feature = "custom-protocol"), test))]
@@ -482,6 +484,31 @@ fn save_media_title(conn: &Connection, id: i64, title: &str) -> Result<(), Strin
         return Err("저장할 사진을 찾을 수 없습니다.".into());
     }
     Ok(())
+}
+
+#[tauri::command]
+async fn media_playback_source(app: AppHandle, window: tauri::WebviewWindow, id: i64) -> Result<String, String> {
+    #[cfg(target_os = "android")]
+    {
+        let origin = window.url().map_err(|error| error.to_string())?.origin().ascii_serialization();
+        tauri::async_runtime::spawn_blocking(move || {
+            let conn = open_database(&app)?;
+            let (path, kind): (String, String) = conn.query_row(
+                "SELECT file_path, file_type FROM media WHERE id = ?1 AND file_type IN ('video', 'audio')",
+                [id], |row| Ok((row.get(0)?, row.get(1)?)),
+            ).map_err(|error| format!("등록된 재생 파일을 찾을 수 없습니다: {error}"))?;
+            let path = fs::canonicalize(path).map_err(|error| format!("재생 파일을 찾을 수 없습니다: {error}"))?;
+            let root = fs::canonicalize(app.path().app_data_dir().map_err(|error| error.to_string())?)
+                .map_err(|error| error.to_string())?;
+            if !path.starts_with(root) { return Err("앱에 보관한 파일만 재생할 수 있습니다.".into()); }
+            app.state::<playback::PlaybackState>().source(id, path, &kind, origin)
+        }).await.map_err(|error| error.to_string())?
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = (app, window, id);
+        Err("이 재생 경로는 Android 전용입니다.".into())
+    }
 }
 
 fn open_database(app: &AppHandle) -> Result<Connection, String> {
@@ -1182,6 +1209,8 @@ pub fn run() {
             #[cfg(feature = "custom-protocol")]
             localhost::trace("main webview created");
             }
+            #[cfg(target_os = "android")]
+            app.manage(playback::PlaybackState::default());
             #[cfg(mobile)]
             let _ = app;
             Ok(())
@@ -1196,6 +1225,7 @@ pub fn run() {
             region_media_page,
             assign_media_region,
             thumbnails::media_thumbnail,
+            media_playback_source,
             list_albums,
             clear_registered_media,
             delete_registered_media,

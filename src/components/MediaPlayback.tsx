@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { CircleAlert, Music, RotateCcw } from "lucide-react";
 
-export function MediaPlayback({ kind, fileName, source }: {
+export function MediaPlayback({ kind, fileName, source, onRetry }: {
   kind: "video" | "audio";
   fileName: string;
   source: string | null;
+  onRetry?: () => void;
 }) {
   const player = useRef<HTMLVideoElement | HTMLAudioElement>(null);
   const [failed, setFailed] = useState(false);
@@ -24,7 +25,7 @@ export function MediaPlayback({ kind, fileName, source }: {
     <CircleAlert size={28} aria-hidden="true" />
     <strong>{kind === "video" ? "영상을" : "음원을"} 재생할 수 없습니다.</strong>
     <p>{source ? "파일 위치와 재생 가능한 형식인지 확인해 주세요." : "파일을 다시 가져온 뒤 열어 주세요."}</p>
-    {source && <button type="button" onClick={() => { setFailed(false); setAttempt((current) => current + 1); }}><RotateCcw size={16} />다시 시도</button>}
+    {(source || onRetry) && <button type="button" onClick={() => { setFailed(false); setAttempt((current) => current + 1); onRetry?.(); }}><RotateCcw size={16} />다시 시도</button>}
   </div>;
 
   return <div className={`mediaPlayback ${kind}`}>

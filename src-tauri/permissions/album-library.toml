@@ -19,6 +19,7 @@ commands.allow = [
   "region_media_page",
   "assign_media_region",
   "media_thumbnail",
+  "media_playback_source",
   "list_albums",
   "clear_registered_media",
   "delete_registered_media",

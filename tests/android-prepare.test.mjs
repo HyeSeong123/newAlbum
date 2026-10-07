@@ -28,6 +28,7 @@ test('preparation installs the bridge, excludes backups, and requires signing on
   try {
     await mkdir(join(root, 'src-tauri/android'), { recursive:true });
     await copyFile('src-tauri/android/GamjassakMediaPlugin.kt', join(root, 'src-tauri/android/GamjassakMediaPlugin.kt'));
+    for (const variant of ['main', 'debug']) await copyFile(`src-tauri/android/network-security-${variant}.xml`, join(root, `src-tauri/android/network-security-${variant}.xml`));
     await mkdir(join(root, 'src-tauri/gen/android/app/src/main'), { recursive:true });
     await writeFile(join(root, 'src-tauri/gen/android/app/build.gradle.kts'), template);
     await writeFile(join(root, 'src-tauri/gen/android/app/src/main/AndroidManifest.xml'), '<manifest><application android:allowBackup="true"></application></manifest>');
@@ -36,6 +37,11 @@ test('preparation installs the bridge, excludes backups, and requires signing on
     const manifest = await readFile(join(root, 'src-tauri/gen/android/app/src/main/AndroidManifest.xml'), 'utf8');
     assert.equal((manifest.match(/allowBackup/g) ?? []).length, 1);
     assert.match(manifest, /allowBackup="false"/);
+    assert.equal((manifest.match(/networkSecurityConfig/g) ?? []).length, 1);
+    const network = await readFile(join(root, 'src-tauri/gen/android/app/src/main/res/xml/gamjassak_network_security.xml'), 'utf8');
+    assert.match(network, /base-config cleartextTrafficPermitted="false"/);
+    assert.match(network, /<domain>127.0.0.1<\/domain>/);
+    assert.match(await readFile(join(root, 'src-tauri/gen/android/app/src/debug/res/xml/gamjassak_network_security.xml'), 'utf8'), /base-config cleartextTrafficPermitted="true"/);
     assert.match(await readFile(join(root, 'src-tauri/gen/android/app/src/main/java/com/oraedameun/album/GamjassakMediaPlugin.kt'), 'utf8'), /class GamjassakMediaPlugin/);
     await assert.rejects(prepareAndroid(root, true), /서명 설정이 없습니다/);
     await writeFile(join(root, 'src-tauri/gen/android/keystore.properties'), 'storeFile=private-upload-key.jks');

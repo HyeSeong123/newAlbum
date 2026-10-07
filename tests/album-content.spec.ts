@@ -191,8 +191,17 @@ test('reader places writing actions above the album and opens distinct unfocused
   const actions = (await reader.locator('.albumJournalCanvas .albumJournalAdd').boundingBox())!;
   const book = (await reader.locator('.albumBookStage').boundingBox())!;
   expect(actions.y + actions.height).toBeLessThanOrEqual(book.y);
-  expect(Math.abs(actions.x - book.x)).toBeLessThan(2);
-  await page.screenshot({ path: `test-results/album-appearance-actions-${info.project.name}.png` });
+  expect(Math.abs(actions.x + actions.width / 2 - book.x - book.width / 2)).toBeLessThan(2);
+  const chapterAction = reader.getByRole('button', { name: '챕터+', exact: true });
+  const letterAction = reader.getByRole('button', { name: '편지+', exact: true });
+  for (const action of [chapterAction, letterAction]) {
+    const bounds = (await action.boundingBox())!;
+    expect(bounds.width).toBeGreaterThanOrEqual(100);
+    expect(bounds.height).toBeGreaterThanOrEqual(44);
+  }
+  expect(await chapterAction.evaluate(el => getComputedStyle(el).backgroundImage))
+    .not.toBe(await letterAction.evaluate(el => getComputedStyle(el).backgroundImage));
+  await page.screenshot({ path: `preview-results/album-appearance-actions-${info.project.name}.png` });
   if (info.project.name === 'mobile') await reader.getByLabel('앨범 책장 이동').fill('2');
   await reader.getByRole('button', { name: '챕터+', exact: true }).click();
   const editor = page.getByRole('dialog', { name: '챕터 상세' });
@@ -206,9 +215,16 @@ test('reader places writing actions above the album and opens distinct unfocused
   await editor.getByLabel('부제목 또는 설명').fill('여행의 다음 순간');
   const writing = (await editor.locator('.albumEntryEditor').boundingBox())!;
   const picker = (await editor.getByLabel('앨범 장 선택', { exact: true }).boundingBox())!;
-  expect(picker.x).toBeGreaterThanOrEqual(writing.x + writing.width);
+  const location = (await editor.locator('.albumContentToolbar').boundingBox())!;
+  expect(picker.y).toBeGreaterThanOrEqual(location.y + location.height);
+  expect(picker.y + picker.height).toBeLessThanOrEqual(writing.y);
+  expect(Math.abs(picker.width - writing.width)).toBeLessThan(2);
+  const field = (await editor.getByLabel('챕터 제목', { exact: true }).boundingBox())!;
+  expect(field.width).toBeGreaterThan(writing.width * .9);
   expect(picker.x + picker.width).toBeLessThanOrEqual(page.viewportSize()!.width);
-  await page.screenshot({ path: `test-results/album-appearance-writing-${info.project.name}.png` });
+  await page.screenshot({ path: `preview-results/album-appearance-writing-${info.project.name}.png` });
+  await editor.locator('.albumContentRow button').last().click();
+  await expect(editor.getByLabel('삽입 위치')).toHaveValue('6');
   await editor.locator('.albumContentRow button').first().click();
   await expect(editor.getByLabel('삽입 위치')).toHaveValue('1');
   await expect(editor.getByLabel('챕터 제목', { exact: true })).toHaveValue('새로운 장');
@@ -230,10 +246,10 @@ test('reader places writing actions above the album and opens distinct unfocused
   await reader.getByLabel('앨범 책장 이동').fill(info.project.name === 'mobile' ? '3' : '2');
   await expect(reader.locator('.albumWrittenPage')).toContainText('새로운 장');
   await expect(reader.locator('.albumOutline')).toHaveCount(0);
-  await page.screenshot({ path: `test-results/album-appearance-written-reader-${info.project.name}.png` });
+  await page.screenshot({ path: `preview-results/album-appearance-written-reader-${info.project.name}.png` });
 });
 
-test('mobile horizontal touch drag follows the finger and turns once without opening a photo', async ({ page, context }, info) => {
+test('mobile touch drag folds only the inner page and turns once without opening a photo', async ({ page, context }, info) => {
   test.skip(info.project.name !== 'mobile', 'Real mobile touch gestures.');
   await page.goto('/');
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
@@ -249,7 +265,12 @@ test('mobile horizontal touch drag follows the finger and turns once without ope
     for (const part of [.25, .5, .75, 1]) await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + dx * part, y: y + dy * part }] });
     if (Math.abs(dx) > 40 && !dy) {
       await expect(spread).toHaveAttribute('data-dragging', 'true');
-      expect(await spread.evaluate(el => new DOMMatrix(getComputedStyle(el).transform).m41)).not.toBe(0);
+      expect(await spread.evaluate(el => new DOMMatrix(getComputedStyle(el).transform).m41)).toBe(0);
+      const current = (await spread.boundingBox())!;
+      for (const property of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(current[property] - box[property])).toBeLessThan(1);
+      if (await page.evaluate(() => !matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        await expect(reader.locator('.albumSwipePreview')).toBeVisible();
+      }
     }
     await client.send('Input.dispatchTouchEvent', { type: cancel ? 'touchCancel' : 'touchEnd', touchPoints: [] });
   }

@@ -18,7 +18,7 @@ export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () =>
   const [notice, setNotice] = useState("");
   const timers = useRef<number[]>([]);
   const turnLock = useRef(false);
-  const [dragOffset, setDragOffset] = useState(0);
+  const [drag, setDrag] = useState<{ direction: "next" | "prev"; progress: number } | null>(null);
   const gesture = useRef<{ id: number; x: number; y: number; width: number; claimed: boolean } | null>(null);
   const suppressClick = useRef(false);
   const ownsFullscreen = useRef(false);
@@ -51,21 +51,21 @@ export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () =>
   }
 
   useEffect(() => {
-    gesture.current = null; setDragOffset(0);
+    gesture.current = null; setDrag(null);
     cancelTurn(); setLeafIndex(0); setTurn(null); setTurnPhase(null);
     return cancelTurn;
   }, [mediaOrderKey]);
 
   // Late dimension metadata can regroup pages. Never finish a turn against the old grouping.
   useEffect(() => {
-    gesture.current = null; setDragOffset(0);
+    gesture.current = null; setDrag(null);
     cancelTurn(); setLeafIndex(0); setTurn(null); setTurnPhase(null);
   }, [pageLayoutKey]);
 
   useEffect(() => {
     const query = window.matchMedia(SINGLE_PAGE_QUERY);
     const syncLayout = () => {
-      gesture.current = null; setDragOffset(0);
+      gesture.current = null; setDrag(null);
       cancelTurn(); setTurn(null); setTurnPhase(null); setSinglePage(query.matches);
     };
     query.addEventListener("change", syncLayout);
@@ -84,7 +84,7 @@ export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () =>
   useModalBehavior(onClose, { enabled: open, onPrev: () => { turnPage(-1); }, onNext: () => { turnPage(1); } });
 
   function jumpToPage(next: number) {
-    gesture.current = null; setDragOffset(0);
+    gesture.current = null; setDrag(null);
     cancelTurn(); setTurn(null); setTurnPhase(null);
     setLeafIndex(Math.min(Math.max(next, 0), Math.max(0, pages.length - 1)) * leavesPerView);
   }
@@ -117,11 +117,11 @@ export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () =>
       event.currentTarget.setPointerCapture(event.pointerId);
     }
     const atEdge = dx > 0 ? currentPage === 0 : currentPage === pages.length - 1;
-    setDragOffset(Math.max(-start.width * .3, Math.min(start.width * .3, dx * (atEdge ? .15 : .6))));
+    setDrag({ direction: dx < 0 ? "next" : "prev", progress: atEdge ? 0 : Math.min(.55, Math.abs(dx) / start.width) });
   }
   function pointerUp(event: PointerEvent<HTMLDivElement>) {
     const start = gesture.current;
-    gesture.current = null; setDragOffset(0);
+    gesture.current = null; setDrag(null);
     if (!start || start.id !== event.pointerId || !start.claimed) return;
     suppressClick.current = true;
     const dx = event.clientX - start.x, dy = event.clientY - start.y;
@@ -129,7 +129,7 @@ export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () =>
   }
   function pointerCancel() {
     suppressClick.current = Boolean(gesture.current?.claimed);
-    gesture.current = null; setDragOffset(0);
+    gesture.current = null; setDrag(null);
   }
   function clickCapture(event: MouseEvent<HTMLDivElement>) {
     if (!suppressClick.current) return;
@@ -145,5 +145,5 @@ export function useAlbumReader(items: MediaItem[], open: boolean, onClose: () =>
   }
 
   return { orderedItems, pages, currentPage, singlePage, visibleSpread, turning, turningLeaves, turnPhase,
-    fullscreen, notice, dragOffset, swipeHandlers: { onPointerDown: pointerDown, onPointerMove: pointerMove, onPointerUp: pointerUp, onPointerCancel: pointerCancel, onClickCapture: clickCapture }, jumpToPage, turnPage, toggleFullscreen };
+    fullscreen, notice, drag, swipeHandlers: { onPointerDown: pointerDown, onPointerMove: pointerMove, onPointerUp: pointerUp, onPointerCancel: pointerCancel, onClickCapture: clickCapture }, jumpToPage, turnPage, toggleFullscreen };
 }

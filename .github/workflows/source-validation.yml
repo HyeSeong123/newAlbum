@@ -75,7 +75,7 @@ jobs:
       - name: Test browser workflows
         run: |
           npx playwright install --with-deps chromium
-          npx playwright test tests/album-content.spec.ts tests/menu-position.spec.ts --workers=2
+          npx playwright test tests/album-content.spec.ts tests/media-playback.spec.ts tests/menu-position.spec.ts --workers=2
           npx playwright test tests/usability-recovery.spec.ts --grep "album creation and editing" --workers=2
           npx playwright test tests/people-controls.spec.ts tests/people.spec.ts tests/pets.spec.ts tests/unknown-faces.spec.ts tests/export-media.spec.ts --workers=2
           npx playwright test tests/usability-recovery.spec.ts --grep "person management" --workers=2
@@ -94,7 +94,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: album-appearance-previews
-          path: test-results/album-appearance-*.png
+          path: |
+            preview-results/album-appearance-*.png
+            test-results/album-appearance-*.png
           if-no-files-found: ignore
           retention-days: 7
       - name: Upload calendar previews and browser failure diagnostics

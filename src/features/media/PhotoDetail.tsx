@@ -1,9 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type CSSProperties } from "react";
 import { ChevronLeft, ChevronRight, Download, Heart, Minus, Plus, RotateCcw, Star, X, ZoomIn, ZoomOut } from "lucide-react";
 import type { MediaItem } from "../../types/media";
-import { FavoriteBadge, getMediaSource, MediaImage } from "../../components/MediaVisual";
+import { FavoriteBadge, MediaImage } from "../../components/MediaVisual";
 import { useMobileLayout } from "../../hooks/useMobileLayout";
-import { MediaPlayback } from "../../components/MediaPlayback";
+import { NativeMediaPlayback } from "../../components/NativeMediaPlayback";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
 import { formatJournalDate } from "./journalModel";
 import { useMediaDownload } from "./useMediaDownload";
@@ -126,7 +126,7 @@ export function DetailModal({
                     <MediaImage item={item} original />
                   </div>
                 </div>
-              </> : <MediaPlayback key={`${item.id}:${item.filePath}:${item.previewUrl ?? ""}`} kind={item.fileType} fileName={item.fileName} source={getMediaSource(item)} />}
+              </> : <NativeMediaPlayback key={`${item.id}:${item.filePath}:${item.previewUrl ?? ""}`} item={item} />}
               <button className="photoNavButton prev" title="이전" onClick={onPrev}><ChevronLeft size={22} /></button>
               <button className="photoNavButton next" title="다음" onClick={onNext}><ChevronRight size={22} /></button>
             </div>
