@@ -68,12 +68,11 @@ pub fn prepare_paths(app: &tauri::AppHandle, paths: Vec<String>, mut on_progress
         // supply them. Keep the stable path and never replace valid GPS with a
         // redacted fallback. Other media can reuse the existing app snapshot.
         let bytes = if target.is_file() && !image { fs::metadata(&target).map_err(|error| error.to_string())?.len() } else {
+            let mut original_notice = None;
             let source = if image {
                 let original: OriginalPhoto = bridge.0.run_mobile_plugin("originalPhotoUri", UriPayload { uri: &document.uri })
                     .map_err(|error| format!("원본 사진을 준비하지 못했습니다: {error}"))?;
-                if original.notice.is_some() {
-                    status.notice = original.notice; on_progress(status.clone());
-                }
+                original_notice = original.notice;
                 original.uri
             } else { document.uri.clone() };
             let mut options = OpenOptions::new(); options.read(true);
@@ -90,6 +89,12 @@ pub fn prepare_paths(app: &tauri::AppHandle, paths: Vec<String>, mut on_progress
                 .map_err(|error| format!("{} 파일을 보관하지 못했습니다: {error}", document.name))?;
             if preserved_gps {
                 status.notice = Some("선택한 사진에서 촬영 위치를 읽지 못해 위치정보가 있는 기존 보관본을 유지했습니다. 휴대폰의 원본을 다시 선택해 주세요.".into());
+                on_progress(status.clone());
+            }
+            // A valid SAF fallback is a successful GPS read. Only show the
+            // provider limitation when the selected photo actually lacks GPS.
+            if !preserved_gps && original_notice.is_some() && crate::location::analyze_path(&target, "image").latitude.is_none() {
+                status.notice = original_notice;
                 on_progress(status.clone());
             }
             if let Some(modified) = document.modified.filter(|value| *value > 0) {

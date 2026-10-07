@@ -190,7 +190,7 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
                             // Some providers cannot open a require-original MediaStore URI
                             // under a SAF grant. Read the explicitly selected document;
                             // Rust verifies GPS before replacing an existing snapshot.
-                            notice = "선택한 저장소에서 원본 위치정보를 읽지 못해 선택한 문서에 포함된 정보를 사용합니다. 위치가 없는 사진은 휴대폰의 원본을 다시 선택해 주세요."
+                            notice = "선택한 사진에서 촬영 위치를 읽지 못했습니다. 갤러리에서 위치가 표시되는 원본 사진을 다시 선택해 주세요."
                         }
                     }
                 }
