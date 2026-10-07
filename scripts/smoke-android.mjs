@@ -186,7 +186,12 @@ async function checkPhotoGps(page) {
   for (const file of ['gps-smoke.jpg', 'no-gps-smoke.jpg']) {
     await adb('shell', 'am', 'broadcast', '-a', 'android.intent.action.MEDIA_SCANNER_SCAN_FILE', '-d', `file:///sdcard/Download/GamjassakGPS/${file}`);
   }
-  await expect.poll(async () => (await adb('shell', 'content', 'query', '--uri', 'content://media/external/images/media', '--projection', '_display_name')).includes('gps-smoke.jpg')).toBe(true);
+  await expect.poll(async () => {
+    const rows = (await adb('shell', 'content', 'query', '--uri', 'content://media/external/images/media', '--projection', '_display_name')).split('\n');
+    // Both documents must be indexed. The GPS filename is also a substring of
+    // the GPS-free filename, so a substring check could race the real scanner.
+    return ['gps-smoke.jpg', 'no-gps-smoke.jpg'].every(name => rows.some(row => row.trim().endsWith(`_display_name=${name}`)));
+  }).toBe(true);
   await page.locator('.navList').getByRole('button', { name:'사진 기록', exact:true }).click();
   await page.getByRole('button', { name:'사진·영상 가져오기', exact:true }).click();
   const dialog = page.getByRole('dialog', { name:'사진·영상 가져오기', exact:true });
