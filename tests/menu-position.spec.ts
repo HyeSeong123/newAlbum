@@ -57,7 +57,7 @@ test('diary overflow stays beside its button after scrolling and remains clickab
   await expect(page.locator('.actionMenuPanel')).toHaveCount(0);
 });
 
-test('album overflow fits at the trigger and keeps edit and ordering actions working', async ({ page }, info) => {
+test('album overflow fits at the trigger and keeps edit available without ordering actions', async ({ page }, info) => {
   await fixture(page);
   await page.locator('.navList').getByRole('button', { name: '내 앨범', exact: true }).click();
   await page.getByRole('button', { name: '가을 앨범 앨범 열기', exact: true }).click();
@@ -73,10 +73,8 @@ test('album overflow fits at the trigger and keeps edit and ordering actions wor
   const width = (await page.locator('.actionMenuPanel').boundingBox())!.width;
   expect(width).toBeLessThan(280);
   await page.screenshot({ path: `preview-results/menu-album-${info.project.name}.png` });
-  await page.getByRole('button', { name: '사진 순서 섞기', exact: true }).click();
-  await expect(page.locator('.actionMenuPanel')).toHaveCount(0);
-  await trigger.click();
-  await expect(page.getByRole('button', { name: '원래 순서로 보기', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: '사진 순서 섞기', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '원래 순서로 보기', exact: true })).toHaveCount(0);
   if (info.project.name === 'mobile') {
     await page.getByRole('button', { name: '앨범 수정', exact: true }).click();
     await expect(page.getByRole('dialog', { name: '앨범 수정', exact: true })).toBeVisible();

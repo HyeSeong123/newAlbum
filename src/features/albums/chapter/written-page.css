@@ -70,3 +70,5 @@
   .albumContentEditor input, .albumContentEditor textarea { padding: 8px; }
   .albumEntryActions { margin-left: 0; }
 }
+.albumWrittenPage { position: relative; }
+.writtenPageEdit { position: absolute; right: 4%; bottom: 1%; display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 8px; border-radius: 6px; background: #fffdf7b3; color: #626b58; font-size: 12px; }

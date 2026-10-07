@@ -245,14 +245,12 @@ test('mixed orientations group four portraits and two landscapes without losing 
   await expect(pageLabel).toHaveText('2 / 2 펼침');
   for (const entry of await page.locator('.albumPhotoEntry').all()) await expect(entry).toHaveCSS('opacity', '1');
   await page.clock.resume();
-  await page.getByRole('button', { name: '앨범 보기 옵션', exact: true }).click();
-  await page.getByRole('button', { name: '사진 순서 섞기', exact: true }).click();
-  const shuffled: string[] = [];
+  const preserved: string[] = [];
   for (let i = 1; i <= 2; i++) {
     await page.getByLabel('앨범 책장 이동').fill(String(i));
-    shuffled.push(...await page.locator('.albumPagePhoto').evaluateAll(buttons => buttons.map(button => button.getAttribute('aria-label')!)));
+    preserved.push(...await page.locator('.albumPagePhoto').evaluateAll(buttons => buttons.map(button => button.getAttribute('aria-label')!)));
   }
-  expect(shuffled.sort()).toEqual(Array.from({ length: 8 }, (_, index) => `orientation-${index + 1}.jpg 상세보기`));
+  expect(preserved.sort()).toEqual(Array.from({ length: 8 }, (_, index) => `orientation-${index + 1}.jpg 상세보기`));
 });
 
 test('duplicate album records do not repeat photos or create empty spreads after reopening', async ({ page }, info) => {

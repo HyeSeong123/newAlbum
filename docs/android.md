@@ -49,7 +49,7 @@ Tauri가 제공하는 `TAURI_DEV_HOST`를 Vite가 사용한다. PC 방화벽과 
 npm run android:apk
 ```
 
-ARM64 휴대폰용 **debug 서명 APK**가 `src-tauri/gen/android/app/build/outputs/apk`에 생성된다. Play 제출용 서명과 다르다. `Android preview APK` Actions는 ARM64·x86_64 APK를 만들고 에뮬레이터 설치, 실제 폴더 선택·URI 복사·진행률·재실행 후 SQLite 보존을 검사한 뒤 APK와 화면 캡처를 제공한다. 삼성 실기기의 선택기·HEIC/HDR·영상 코덱·메모리 사용도 별도 확인해야 한다.
+ARM64 휴대폰용 **debug 서명 APK**가 `src-tauri/gen/android/app/build/outputs/apk`에 생성된다. Play 제출용 서명과 다르다. `Android preview APK` Actions는 휴대폰용 ARM64 APK 한 개만 다운로드로 제공하고, x86_64 빌드는 내부 검사에 사용한다. 에뮬레이터 설치, 실제 폴더 선택·URI 복사·진행률·재실행 후 SQLite 보존을 검사한 뒤 휴대폰용 APK를 제공한다. 삼성 실기기의 선택기·HEIC/HDR·영상 코덱·메모리 사용도 별도 확인해야 한다.
 
 CI 미리보기는 개발용 키를 별도로 캐시하고 APK를 같은 키로 서명한다. 키 캐시를 삭제하거나 잃으면 기존 테스트 APK에 덮어 설치할 수 없으므로 테스트용 키와 Play 업로드 키를 구분한다. 실제 배포 키는 아래 안내에 따라 사용자가 보관한다.
 

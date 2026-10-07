@@ -885,3 +885,12 @@ npm run tauri:dev
 - Normalize legacy albums before adding linked diary pages so existing photos remain in the book.
 - Validation: 97 unit tests passed; TypeScript and frontend production build passed. Added browser regression coverage for insertion, tab switching, right picker bounds and cancellation; updated affected reader tests for book navigation.
 - Local browser runs are blocked by the execution environment (Chromium socket creation returns Operation not permitted). Browser regression screenshots and Android APK builds run through repository Actions after push.
+
+
+## 0.6.16 앨범 상세창과 모바일 넘김 (2026-10-07)
+
+- 챕터+/편지+를 앨범 내지 바로 위로 옮기고 일반 앨범 수정에는 앨범 정보·사진 관리만 유지했다. 챕터와 편지는 각각 개별 상세창을 사용하며 열릴 때 입력란에 자동 초점을 주지 않는다. 상세창 도구에는 추가 위치만 표시하고 장 선택으로 해당 기록을 옮긴다.
+- 모든 현재 감상문 표기를 편지로 바꾸고 사진 순서 섞기와 원래 순서 복원을 UI 및 로직에서 제거했다. 기존 챕터·편지의 수정과 삭제는 앨범 해당 장의 수정 버튼에서 처리한다.
+- 모바일 가로 드래그는 손가락을 따라 내지가 움직인 후 이전·다음 장을 넘긴다. 짧은 드래그, 세로 스크롤, 취소와 마지막 장 경계를 구분하고 사진 상세창의 오작동을 막는다.
+- PC 패키지의 자동 생성을 중지하고 사용자 다운로드에는 휴대폰용 ARM64 APK 한 개만 담는다. 내부 Android 설치 검사용 빌드는 별도로 유지한다.
+- 로컬 단위 검사 96개, TypeScript·프로덕션 빌드와 버전 일치 검사 통과. 모바일 실제 터치·상세창 개별 동작·자동 포커스·사진 보존은 Actions 브라우저 및 Android 설치 검사로 확인한다.

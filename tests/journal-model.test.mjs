@@ -8,7 +8,7 @@ const source = await readFile(new URL('../src/features/media/journalModel.ts', i
 const { outputText } = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } });
 const {
   albumLeafLayout, arrangeJournalItems, filterJournalMonth, formatJournalDate, journalMonths,
-  journalMonthTitle, makeAlbumSpreads, isPortraitMedia, mediaSummary, resolveJournalMonth, shuffleAlbumItems, syncAlbumMedia, uniqueAlbumItems,
+  journalMonthTitle, makeAlbumSpreads, isPortraitMedia, mediaSummary, resolveJournalMonth, syncAlbumMedia, uniqueAlbumItems,
 } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
 
 const photo = (id, takenAt, extra = {}) => ({ id, takenAt, fileType: 'image', ...extra });
@@ -92,14 +92,6 @@ test('duplicate IDs and source paths are displayed once without merging distinct
   assert.equal(items.length, 7);
   assert.deepEqual(makeAlbumSpreads(unique), [{ left: [first, second], right: [third, fourth] }]);
   assert.deepEqual(uniqueAlbumItems([]), []);
-});
-
-test('explicit shuffle does not mutate saved items or lose duplicate-looking photos', () => {
-  const source = ['a', 'b', 'c', 'd', 'e'];
-  const shuffled = shuffleAlbumItems(source, () => 0);
-  assert.notDeepEqual(shuffled, source);
-  assert.deepEqual([...shuffled].sort(), source);
-  assert.deepEqual(source, ['a', 'b', 'c', 'd', 'e']);
 });
 
 test('interleaved portraits fill a four-photo leaf and landscapes fill two-photo leaves', () => {

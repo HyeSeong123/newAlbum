@@ -132,10 +132,8 @@ test('album reader preserves order and supports list, scrubber and nested photo 
   await page.keyboard.press('Escape');
   await expect(reader).toBeVisible();
   await expect(reader.locator('.albumPagerActions p')).toHaveText(`1 / ${total} ${unit}`);
-  await reader.getByRole('button', { name: '앨범 보기 옵션' }).click();
-  await page.getByRole('button', { name: '사진 순서 섞기' }).click();
-  await reader.getByRole('button', { name: '앨범 보기 옵션' }).click();
-  await page.getByRole('button', { name: '원래 순서로 보기' }).click();
+  await expect(reader.getByRole('button', { name: '사진 순서 섞기' })).toHaveCount(0);
+  await expect(reader.getByRole('button', { name: '원래 순서로 보기' })).toHaveCount(0);
   await expect(reader.locator('.albumPagePhoto').first()).toHaveAttribute('aria-label', 'record-1.jpg 상세보기');
 });
 

@@ -9,6 +9,7 @@ import { ExportModal } from "../../components/ExportModal";
 import { mediaSummary } from "../media/journalModel";
 import { AlbumFullscreenReader } from "./AlbumReader";
 import type { DiaryEntry } from "../diary/DiaryView";
+import { AlbumWrittenEditor, type WrittenRequest } from "./chapter/AlbumWrittenEditor";
 import { AlbumEditor, type AlbumEditorSection } from "./AlbumEditor";
 
 export function SavedAlbumsView({
@@ -30,8 +31,9 @@ export function SavedAlbumsView({
 }) {
   const [activeAlbumId, setActiveAlbumId] = useState<string | null>(null);
   const activeAlbum = albums.find((album) => album.id === activeAlbumId);
-  const [editing, setEditing] = useState<{ album: SavedAlbum; section: AlbumEditorSection; addition?: { kind: "CHAPTER" | "TEXT"; afterId?: string } } | null>(null);
-  const openEditor = (album: SavedAlbum, section: AlbumEditorSection = "contents") => setEditing({ album, section });
+  const [editing, setEditing] = useState<{ album: SavedAlbum; section: AlbumEditorSection } | null>(null);
+  const openEditor = (album: SavedAlbum, section: AlbumEditorSection = "details") => setEditing({ album, section });
+  const [writing, setWriting] = useState<{ album: SavedAlbum; request: WrittenRequest } | null>(null);
   const [exporting, setExporting] = useState<SavedAlbum | null>(null);
   const [selecting, setSelecting] = useState(false);
   const [chosen, setChosen] = useState<string[]>([]);
@@ -109,10 +111,13 @@ export function SavedAlbumsView({
           onClose={() => setActiveAlbumId(null)}
           onExport={() => setExporting(activeAlbum)}
           onEdit={() => openEditor(activeAlbum)}
-          onAddWritten={(kind, afterId) => setEditing({ album: activeAlbum, section: "contents", addition: { kind, afterId } })}
+          onEditWritten={entry => { if (albumContents(activeAlbum).some(item => item.id === entry.id)) setWriting({ album: activeAlbum, request: { kind: entry.kind as "CHAPTER" | "TEXT", entryId: entry.id } }); }}
+          canEditWritten={entry => albumContents(activeAlbum).some(item => item.id === entry.id)}
+          onAddWritten={(kind, afterId) => setWriting({ album: activeAlbum, request: { kind, afterId } })}
         />
       )}
-      {editing && <AlbumEditor key={editing.album.id} album={editing.album} initialSection={editing.section} initialAddition={editing.addition} onClose={() => setEditing(null)} onSave={onSave} />}
+      {editing && <AlbumEditor key={editing.album.id} album={editing.album} initialSection={editing.section} onClose={() => setEditing(null)} onSave={onSave} />}
+      {writing && <AlbumWrittenEditor key={writing.request.entryId ?? writing.request.kind} album={writing.album} request={writing.request} onClose={() => setWriting(null)} onSave={onSave} />}
       {exporting && <ExportModal title={exporting.title} items={exporting.items} onClose={() => setExporting(null)} />}
     </div>
   );

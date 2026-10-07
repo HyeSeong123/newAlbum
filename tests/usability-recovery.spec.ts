@@ -306,14 +306,18 @@ test('album creation and editing preserve title and written content after failed
   await expect(creation).toBeHidden();
   await page.locator('.savedAlbumFooter .actionMenuTrigger').first().click();
   await page.getByRole('button', { name: '앨범 수정', exact: true }).click();
-  const editor = page.getByRole('dialog', { name: '앨범 수정' });
-  await editor.getByRole('button', { name: '편지+', exact: true }).click();
-  await editor.getByLabel('감상문 제목', { exact: true }).fill('다시 기억할 하루');
-  await editor.getByLabel('감상문 내용', { exact: true }).fill('저장 실패에도 남아 있는 글');
+  const general = page.getByRole('dialog', { name: '앨범 수정' });
+  await expect(general.getByRole('button', { name: /^(챕터|편지)(\+)?$/ })).toHaveCount(0);
+  await general.getByRole('button', { name: '취소', exact: true }).click();
+  await page.getByRole('button', { name: '우리 앨범 앨범 열기', exact: true }).click();
+  await page.getByRole('dialog', { name: '앨범 전체창' }).getByRole('button', { name: '편지+', exact: true }).click();
+  const editor = page.getByRole('dialog', { name: '편지 상세' });
+  await editor.getByLabel('편지 제목', { exact: true }).fill('다시 기억할 하루');
+  await editor.getByLabel('편지 내용', { exact: true }).fill('저장 실패에도 남아 있는 글');
   await editor.getByRole('button', { name: '저장', exact: true }).click();
   await expect(editor.getByRole('alert')).toBeVisible();
-  await expect(editor.getByLabel('감상문 제목', { exact: true })).toHaveValue('다시 기억할 하루');
-  await expect(editor.getByLabel('감상문 내용', { exact: true })).toHaveValue('저장 실패에도 남아 있는 글');
+  await expect(editor.getByLabel('편지 제목', { exact: true })).toHaveValue('다시 기억할 하루');
+  await expect(editor.getByLabel('편지 내용', { exact: true })).toHaveValue('저장 실패에도 남아 있는 글');
   await editor.getByRole('button', { name: '저장', exact: true }).click();
   await expect(editor).toBeHidden();
   expect(await page.evaluate(() => JSON.parse(document.documentElement.dataset.savedRecoveryArgs!).contents.some(

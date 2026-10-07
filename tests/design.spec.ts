@@ -102,8 +102,8 @@ test('redesigned views fit and retain photo workflows', async ({ page }, info) =
   await page.waitForTimeout(500);
   await expect(page.locator('.albumTurningSheet')).toHaveCount(0);
   await page.getByTitle('다음 책장', { exact: true }).click();
-  await page.getByRole('button', { name: '앨범 보기 옵션' }).click();
-  await page.getByRole('button', { name: '사진 순서 섞기' }).click();
+  await page.getByLabel('앨범 책장 이동').fill('1');
+  await page.getByLabel('앨범 책장 이동').blur();
   await page.waitForTimeout(ALBUM_TURN_TIMING.duration + 100);
   await expect(page.locator('.albumPagerActions p')).toHaveText(`1 / ${totalPages} ${unit}`);
   await page.keyboard.press('ArrowRight');

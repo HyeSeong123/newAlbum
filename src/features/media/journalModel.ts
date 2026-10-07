@@ -118,12 +118,3 @@ export function albumLeafLayout(items: MediaItem[]): "single" | "rows" | "column
     && Number.isFinite(width) && Number.isFinite(height) && width > 0 && height >= width)
     ? "columns" : "rows";
 }
-
-export function shuffleAlbumItems<T>(items: T[], random = Math.random): T[] {
-  const result = [...items];
-  for (let index = result.length - 1; index > 0; index--) {
-    const next = Math.floor(random() * (index + 1));
-    [result[index], result[next]] = [result[next], result[index]];
-  }
-  return result;
-}

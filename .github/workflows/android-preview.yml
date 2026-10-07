@@ -99,21 +99,18 @@ jobs:
         with:
           path: src-tauri/gen/android/app/build/outputs/apk
           key: ${{ steps.preview-apks.outputs.cache-primary-key }}
-      - name: Prepare APK downloads
+      - name: Prepare phone APK download
         run: |
           mkdir -p release-output/android
-          find src-tauri/gen/android/app/build/outputs/apk -name '*.apk' -exec cp {} release-output/android/ \;
-          cat > release-output/android/INSTALL.txt <<'INSTALL'
-          휴대폰에는 app-arm64-debug.apk를 설치합니다. x86_64 APK는 에뮬레이터용입니다.
-          기존 앱을 지우지 않고 업데이트로 설치하세요.
-          이 파일은 개인 테스트용 APK입니다. Android 설치 검사 결과는 다운로드한 GitHub Actions 실행에서 확인하세요.
-          INSTALL
-          cd release-output/android
-          sha256sum *.apk > SHA256SUMS.txt
+          task_version="$(node -p 'require("./package.json").version')"
+          phone_apk="$(find src-tauri/gen/android/app/build/outputs/apk -name '*arm64*debug.apk' -print -quit)"
+          test -n "$phone_apk"
+          cp "$phone_apk" "release-output/android/Gamjassak-${task_version}.apk"
+          echo "APP_VERSION=$task_version" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@v4
         with:
-          name: Gamjassak-Android-preview-${{ github.sha }}
-          path: release-output/android/
+          name: Gamjassak-Android-${{ env.APP_VERSION }}
+          path: release-output/android/*.apk
           if-no-files-found: error
           retention-days: 30
       - name: Enable emulator acceleration

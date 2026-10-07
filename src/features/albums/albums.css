@@ -429,3 +429,24 @@
   .albumJournalAdd { gap: 3px; }
   .albumJournalAdd button { padding: 0 5px; font-size: 12px; }
 }
+
+/* Writing actions belong to the book canvas, immediately above the paper. */
+.albumJournalCanvas { --spread-ratio: 2.2; }
+.is-single-page .albumJournalCanvas { --spread-ratio: .72; }
+.albumJournalCanvas.has-writing-actions { grid-template-rows: max-content max-content; align-content: center; gap: 12px; }
+.has-writing-actions :is(.albumBookStage, .albumJournalAdd) { width: min(100%, calc((100cqh - 54px) * var(--spread-ratio))); }
+.albumJournalCanvas .albumJournalAdd { justify-self: center; justify-content: flex-start; }
+.albumJournalAdd button { background: var(--surface); color: var(--secondary); }
+.is-single-page .albumSpread { touch-action: pan-y; transition: transform 160ms ease-out; }
+.is-single-page .albumSpread[data-dragging="true"] { transition: none; }
+.albumEditorHeader { justify-content: space-between; }
+.albumWrittenEditor .albumContentEditor { gap: 12px; padding: 16px 0; }
+.albumWrittenEditor .albumContentToolbar { padding: 10px 12px; }
+.albumWrittenEditor .albumWritingFields { margin-top: 0; }
+.albumOutlineItem[aria-pressed="true"] { background: var(--surface-soft); box-shadow: inset 3px 0 var(--primary); }
+.albumWrittenEditor .albumEntryDelete { color: var(--danger); margin-right: auto; }
+@media (max-width: 760px) {
+  .albumWrittenEditor .albumContentEditor { padding-top: 12px; }
+  .albumWrittenEditor .albumEntryEditor { min-height: 0; }
+  .albumWrittenEditor .albumOutlineHead span { font-size: 11px; }
+}
