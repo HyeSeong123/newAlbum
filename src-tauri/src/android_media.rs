@@ -64,29 +64,34 @@ pub fn prepare_paths(app: &tauri::AppHandle, paths: Vec<String>, mut on_progress
         status.file_name = Some(document.name.clone()); on_progress(status.clone());
         let target = managed_import::document_target(&root, &document.uri, &document.name);
         let image = crate::media_type(Path::new(&document.name)) == Some("image");
-        // Refresh originals after permission is granted: an older app copy may
-        // have had its GPS redacted. Preserve the stable path/album references.
-        let bytes = if target.is_file() && !(image && photo_location == Some(true)) { fs::metadata(&target).map_err(|error| error.to_string())?.len() } else {
+        // Re-read selected photos, including SAF originals when MediaStore cannot
+        // supply them. Keep the stable path and never replace valid GPS with a
+        // redacted fallback. Other media can reuse the existing app snapshot.
+        let bytes = if target.is_file() && !image { fs::metadata(&target).map_err(|error| error.to_string())?.len() } else {
             let source = if image {
                 let original: OriginalPhoto = bridge.0.run_mobile_plugin("originalPhotoUri", UriPayload { uri: &document.uri })
                     .map_err(|error| format!("원본 사진을 준비하지 못했습니다: {error}"))?;
                 if original.notice.is_some() {
                     status.notice = original.notice; on_progress(status.clone());
-                    // An unavailable original must not replace a good stored
-                    // photo with a potentially redacted fallback on reimport.
-                    if target.is_file() {
-                        copied += fs::metadata(&target).map_err(|error| error.to_string())?.len();
-                        status.bytes_processed = copied; status.processed = index + 1; on_progress(status.clone());
-                        local.push(target.to_string_lossy().into_owned());
-                        continue;
-                    }
                 }
                 original.uri
             } else { document.uri.clone() };
             let mut options = OpenOptions::new(); options.read(true);
             let input = app.fs().open(FilePath::Url(source.parse().map_err(|error| format!("잘못된 사진 주소입니다: {error}"))?), options).map_err(|error| format!("{} 파일을 열 수 없습니다: {error}", document.name))?;
-            let count = managed_import::copy_document(input, &target, |bytes| { status.bytes_processed = copied + bytes; on_progress(status.clone()); })
+            let previous_gps = image && target.is_file() && crate::location::analyze_path(&target, "image").latitude.is_some();
+            let mut preserved_gps = false;
+            let count = managed_import::copy_document_checked(input, &target,
+                |bytes| { status.bytes_processed = copied + bytes; on_progress(status.clone()); },
+                |candidate| {
+                    let replace = !previous_gps || crate::location::analyze_path(candidate, "image").latitude.is_some();
+                    preserved_gps = !replace;
+                    replace
+                })
                 .map_err(|error| format!("{} 파일을 보관하지 못했습니다: {error}", document.name))?;
+            if preserved_gps {
+                status.notice = Some("선택한 사진에서 촬영 위치를 읽지 못해 위치정보가 있는 기존 보관본을 유지했습니다. 휴대폰의 원본을 다시 선택해 주세요.".into());
+                on_progress(status.clone());
+            }
             if let Some(modified) = document.modified.filter(|value| *value > 0) {
                 if let Ok(file) = fs::File::options().write(true).open(&target) {
                     let _ = file.set_times(fs::FileTimes::new().set_modified(UNIX_EPOCH + Duration::from_millis(modified)));

@@ -181,16 +181,16 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
                             try { MediaStore.getMediaUri(activity, document) } catch (_: Exception) { null }
                         else -> null
                     }
-                    if (media != null && getPermissionState("photoLocation") != PermissionState.GRANTED) source = media
                     if (media != null && getPermissionState("photoLocation") == PermissionState.GRANTED) {
                         try {
                             val original = MediaStore.setRequireOriginal(media)
                             activity.contentResolver.openFileDescriptor(original, "r")?.use { source = original }
                                 ?: error("원본 사진을 열 수 없습니다.")
                         } catch (_: Exception) {
-                            // Some providers cannot supply original bytes. Keep the selected
-                            // photo usable, while reporting that its GPS may be unavailable.
-                            notice = "선택한 저장소에서 원본 위치정보를 읽지 못했습니다. 위치가 빠진 사진은 휴대폰의 원본을 다시 선택해 주세요."
+                            // Some providers cannot open a require-original MediaStore URI
+                            // under a SAF grant. Read the explicitly selected document;
+                            // Rust verifies GPS before replacing an existing snapshot.
+                            notice = "선택한 저장소에서 원본 위치정보를 읽지 못해 선택한 문서에 포함된 정보를 사용합니다. 위치가 없는 사진은 휴대폰의 원본을 다시 선택해 주세요."
                         }
                     }
                 }

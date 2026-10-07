@@ -33,7 +33,14 @@ pub fn document_target(root: &Path, uri: &str, name: &str) -> PathBuf {
     root.join(format!("{hash:016x}")).join(name)
 }
 
-pub fn copy_document(mut reader: impl Read, target: &Path, mut on_read: impl FnMut(u64)) -> io::Result<u64> {
+pub fn copy_document(reader: impl Read, target: &Path, on_read: impl FnMut(u64)) -> io::Result<u64> {
+    copy_document_checked(reader, target, on_read, |_| true)
+}
+
+/// Inspect the complete temporary snapshot before replacing the previous one.
+/// A rejected candidate leaves the old file intact and returns its byte count.
+pub fn copy_document_checked(mut reader: impl Read, target: &Path, mut on_read: impl FnMut(u64),
+    mut should_replace: impl FnMut(&Path) -> bool) -> io::Result<u64> {
     on_read(0);
     let parent = target.parent().ok_or_else(|| io::Error::other("보관 위치가 없습니다."))?;
     fs::create_dir_all(parent)?;
@@ -52,6 +59,12 @@ pub fn copy_document(mut reader: impl Read, target: &Path, mut on_read: impl FnM
         }
         writer.sync_all()?;
         drop(writer);
+        if target.is_file() && !should_replace(&temporary) {
+            fs::remove_file(&temporary)?;
+            let retained = fs::metadata(target)?.len();
+            on_read(retained);
+            return Ok(retained);
+        }
         fs::rename(&temporary, target)?;
         on_read(copied);
         Ok(copied)
@@ -105,6 +118,23 @@ mod tests {
         let target = root.join("photo.jpg"); fs::write(&target, b"previous snapshot").unwrap();
         assert!(copy_document(FailingReader(false), &target, |_| {}).is_err());
         assert_eq!(fs::read(&target).unwrap(), b"previous snapshot");
+        assert!(!root.join(".importing").exists());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn selected_original_restores_gps_but_a_redacted_fallback_cannot_erase_it() {
+        let root = root("gps-refresh");
+        let target = root.join("photo.jpg");
+        fs::create_dir_all(&root).unwrap();
+        let original = include_bytes!("../../tests/fixtures/exif-seoul.jpg");
+        let redacted = include_bytes!("../../tests/fixtures/no-gps.jpg");
+        fs::write(&target, redacted).unwrap();
+        let guard = |candidate: &Path| crate::location::analyze_path(candidate, "image").latitude.is_some();
+        assert_eq!(copy_document_checked(io::Cursor::new(original), &target, |_| {}, guard).unwrap(), original.len() as u64);
+        assert_eq!(crate::location::analyze_path(&target, "image").region_code.as_deref(), Some("KR-11"));
+        assert_eq!(copy_document_checked(io::Cursor::new(redacted), &target, |_| {}, guard).unwrap(), original.len() as u64);
+        assert_eq!(fs::read(&target).unwrap(), original);
         assert!(!root.join(".importing").exists());
         fs::remove_dir_all(root).unwrap();
     }
