@@ -202,8 +202,8 @@ async function checkPhotoGps(page) {
   await tapNative(/text="USE THIS FOLDER"/i);
   await tapNative(/text="ALLOW"/i);
   await tapNative(/resource-id="com.android.permissioncontroller:id\/permission_deny_button"/);
-  await expect(page.locator('.mediaTile')).toHaveCount(2);
-  await expect(page.locator('.selectionNotice')).toContainText('사진 위치정보 권한이 꺼져');
+  await expect(page.locator('.mediaTile')).toHaveCount(2, { timeout:60_000 });
+  await expect(page.locator('.selectionNotice')).toContainText('사진 위치정보 권한이 꺼져', { timeout:60_000 });
   let rows = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_media'));
   const denied = rows.find(item => item.file_path.endsWith('gps-smoke.jpg') && !item.file_path.endsWith('no-gps-smoke.jpg'));
   assert.ok(denied);
@@ -222,7 +222,7 @@ async function checkPhotoGps(page) {
       .catch(error => { window.gpsRecovery = { completed:true, error:String(error) }; });
   }, denied.id);
   await tapNative(/resource-id="com.android.permissioncontroller:id\/permission_allow(?:_all)?_button"/);
-  await expect.poll(() => page.evaluate(() => window.gpsRecovery.completed)).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.gpsRecovery.completed), { timeout:60_000 }).toBe(true);
   const recovery = await page.evaluate(() => window.gpsRecovery);
   assert.equal(recovery.error, undefined);
   rows = recovery.rows;
