@@ -261,6 +261,12 @@ async function checkPhotoGps(page) {
   assert.equal(absent.latitude, null); assert.equal(absent.location_status, 'no-gps');
   await writeFile(join(output, 'gps-recovery.json'), JSON.stringify({ selectedWithDeniedPermission:selected, legacyCopy:denied, located, absent }, null, 2));
   await page.reload();
+  // The first real Seoul GPS record unlocks a regional character. Dismiss the
+  // actual notification before checking the photo's location in the UI.
+  const discovery = page.locator('.characterModal');
+  await expect(discovery).toBeVisible();
+  await discovery.getByRole('button', { name:'나중에 보기', exact:true }).click();
+  await expect(page.locator('.characterModalBackdrop')).toHaveCount(0);
   await page.locator('.navList').getByRole('button', { name:'사진 기록', exact:true }).click();
   await page.getByRole('button', { name:'gps-smoke.jpg 상세보기', exact:true }).click();
   const detail = page.getByRole('dialog', { name:'사진 상세', exact:true });
