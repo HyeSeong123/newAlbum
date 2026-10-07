@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CharacterVisual } from "./CharacterVisual";
-import { characterDefinitions, characterName, type OwnedCharacter } from "./models";
+import { characterDefinitions, characterName, characterDescription, type OwnedCharacter } from "./models";
 import "./characters.css";
 
 type Props = {
@@ -17,11 +17,11 @@ export function CharacterBook({ characters, onRename, onSetMain }: Props) {
       const name = characterName(def, owned);
       return <article key={def.id} className={`characterCard${owned ? "" : " locked"}`}>
         <div className="characterCardArt" role="img" aria-label={owned ? `${name}의 현재 모습` : "아직 만나지 않은 친구"}>
-          {owned ? <CharacterVisual definition={def} stage={owned.growthStage} /> : <span className="characterMystery" aria-hidden="true">?</span>}
+          {owned ? <CharacterVisual definition={def} stage={owned.growthStage} affection={owned.affection} /> : <span className="characterMystery" aria-hidden="true">?</span>}
         </div>
         <h3>{owned ? name : "아직 만나지 않은 친구"}</h3>
         {owned ? <>
-          <p className="characterDescription">{def.description}</p>
+          <p className="characterDescription">{characterDescription(def, owned)}</p>
           <div className="characterCardActions">
             {owned.isMain ? <span className="characterMainBadge">대표 새싹</span> : <button type="button" onClick={() => void onSetMain(def.id)}>대표로 설정</button>}
             <button type="button" onClick={() => { setDraft(owned.customName || ""); setEditing(def.id); }}>이름 바꾸기</button>

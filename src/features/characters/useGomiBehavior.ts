@@ -35,7 +35,7 @@ export function useGomiBehavior(enabled: boolean, affection: number, today: stri
       sleepTouches.current = { count:touches, lastAt:now };
       setMotion(gomiSleepReaction(rest.current, touches));
       setSequence(value => value + 1);
-      return gomiSleepLine(touches);
+      return gomiSleepLine(touches, affection);
     }
     setMotion(gomiInteractionMotion(affection, ++interactions.current));
     setSequence(value => value + 1);

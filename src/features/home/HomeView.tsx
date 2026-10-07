@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, BookHeart, Heart, Images, NotebookPen } from "lucide-react";
 import { CharacterVisual } from "../characters/CharacterVisual";
 import { characterDefinitions, characterName, dialogueLines, nextDialogue, type OwnedCharacter } from "../characters/models";
-import { GOMI_BOND_AFFECTION, isGomiAngry, isGomiSleeping, isGomiSleepReaction } from "../characters/gomiBehavior";
+import { isGomiAngry, isGomiSleeping, isGomiSleepReaction } from "../characters/gomiBehavior";
+import { gomiAffinity, gomiInteractionHints } from "../characters/gomiAffinity";
 import { useGomiBehavior } from "../characters/useGomiBehavior";
 import "../characters/characters.css";
 import "./home.css";
@@ -48,8 +49,9 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   const definition = characterDefinitions.find(item => item.id === mainCharacter?.id);
   const isGomi = definition?.type === "gomi";
   const gomi = useGomiBehavior(isGomi, mainCharacter?.affection || 0, today, mainCharacter?.id);
-  const lines = definition && mainCharacter ? dialogueLines(definition, mainCharacter.growthStage, mainCharacter.affection >= GOMI_BOND_AFFECTION ? "highAffection" : "idle") : messages;
-  useEffect(() => { lastLine.current=0; setMessageIndex(0); setSpokenLine(undefined); }, [mainCharacter?.id,mainCharacter?.growthStage]);
+  const lines = definition && mainCharacter ? dialogueLines(definition, mainCharacter.growthStage, mainCharacter.affection >= 20 ? "highAffection" : "idle", mainCharacter.affection) : messages;
+  const affinity = isGomi ? gomiAffinity(mainCharacter?.affection || 0) : undefined;
+  useEffect(() => { lastLine.current=0; setMessageIndex(0); setSpokenLine(undefined); }, [mainCharacter?.id,mainCharacter?.growthStage,affinity]);
   useEffect(() => () => window.clearTimeout(timer.current), []);
   const dateLabel = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long" })
     .format(new Date(`${today}T12:00:00`));
@@ -61,7 +63,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     setMessageIndex(next);
     const restLine = isGomi ? gomi.react() : undefined;
     setSpokenLine(restLine || lines[next]);
-    setHappy(!restLine);
+    setHappy(!isGomi && !restLine);
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setHappy(false), 1000);
     if (mainCharacter) onInteract(mainCharacter.id);
@@ -90,7 +92,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
           ? "잠을 여러 번 깨워서 고미가 뾰로통해졌어요. 잠시 쉬게 해 주세요"
           : isGomi && isGomiSleepReaction(gomi.motion) ? "고미가 한쪽 눈을 살짝 떴어요. 아직 졸린가 봐요"
           : isGomi && isGomiSleeping(gomi.motion) ? "고미가 자고 있어요. 살짝 톡, 건드리면 실눈으로 쳐다봐요"
-          : isGomi && gomi.motion === "stretch" ? "고미가 쭉, 기지개를 켜고 있어요" : "홈에서 톡, 쓰다듬으며 말을 걸어 주세요"}</p>
+          : isGomi && gomi.motion === "stretch" ? "고미가 쭉, 기지개를 켜고 있어요" : isGomi ? gomiInteractionHints[affinity!] : "홈에서 톡, 쓰다듬으며 말을 걸어 주세요"}</p>
         <button className="homeCharacterLink" type="button" onClick={onShowCharacters}>새싹 도감 보기</button>
       </div>
     </div>

@@ -79,6 +79,7 @@ export function App() {
   const [importOpen, setImportOpen] = useState(false);
   const { items, itemsById, albums: savedAlbums, importing, clearing, fileInput, folderInput } = library;
   const characters = useCharacters(items.map(item => `${item.id}:${item.gpsRegionCode || ""}`).join("|"));
+  const gomiAffection = characters.snapshot.characters.find(character => character.id === "gomi")?.affection || 0;
   const mainCharacter = characters.snapshot.characters.find(character => character.isMain);
   const pendingCharacterEvent = characters.snapshot.events[0];
   const viewer = useMediaViewer(itemsById, library.recordView);
@@ -247,7 +248,7 @@ export function App() {
 
         <section className="contentGrid">
           <div className="mainPanel">
-            <div className="gomiHelpEntry"><button type="button" className="gomiHelpButton" aria-label="고미 도움말 열기" onClick={() => setGuideTopic(currentGuideTopic)}><img src="/characters/gomi/idle.png" alt="" draggable={false} />고미 도움말</button></div>
+            <div className="gomiHelpEntry"><button type="button" className="gomiHelpButton" aria-label="고미 도움말 열기" onClick={() => setGuideTopic(currentGuideTopic)}><img src={gomiAffection < 60 ? "/characters/gomi/cynical.png" : "/characters/gomi/idle.png"} alt="" draggable={false} />고미 도움말</button></div>
             {activeView === "Home" && <HomeView today={today} itemCount={items.length} albumCount={savedAlbums.length} diaryCount={diary.entries.length}
               mainCharacter={mainCharacter} onInteract={id => { void characters.interact(id); }} onShowCharacters={() => navigate("Characters")}
               onShowLibrary={() => navigate("Library")} onShowAlbums={() => navigate("Albums")} onShowDiary={() => navigate("Diary")} />}
@@ -293,8 +294,8 @@ export function App() {
             {activeView === "Settings" && <SettingsPanel itemCount={items.length} clearing={clearing} onClear={clearAllRegisteredMedia} />}
           </div>
         </section>
-        {firstRunOpen && <FirstRunGuide onLater={closeFirstRun} onGuide={() => { closeFirstRun(); setGuideTopic("photos"); }} onImport={() => { closeFirstRun(); setImportOpen(true); }} />}
-        {guideTopic && <GomiGuide initialTopic={guideTopic} onClose={() => setGuideTopic(null)} onAction={topic => {
+        {firstRunOpen && <FirstRunGuide affection={gomiAffection} onLater={closeFirstRun} onGuide={() => { closeFirstRun(); setGuideTopic("photos"); }} onImport={() => { closeFirstRun(); setImportOpen(true); }} />}
+        {guideTopic && <GomiGuide affection={gomiAffection} initialTopic={guideTopic} onClose={() => setGuideTopic(null)} onAction={topic => {
           setGuideTopic(null);
           if (topic === "photos") { navigate("Library"); setImportOpen(true); }
           else {

@@ -1,4 +1,5 @@
 import definitions from "./data/characterDefinitions.json";
+import { gomiAffinity, gomiDescriptions, gomiDialogueLines } from "./gomiAffinity";
 
 export type DialogueContext = "greeting" | "photoAdded" | "regionMemory" | "highAffection" | "growth" | "selectedAsMain" | "idle" | "sad";
 export type CharacterPersonality = {
@@ -70,7 +71,11 @@ export function starterSnapshot(): CharacterSnapshot {
 export function characterName(definition: CharacterDefinition, owned?: OwnedCharacter) {
   return owned?.customName || definition.defaultName;
 }
-export function dialogueLines(definition: CharacterDefinition, stage: number, context: DialogueContext = "idle") {
+export function characterDescription(definition: CharacterDefinition, owned?: OwnedCharacter) {
+  return definition.type === "gomi" ? gomiDescriptions[gomiAffinity(owned?.affection || 0)] : definition.description;
+}
+export function dialogueLines(definition: CharacterDefinition, stage: number, context: DialogueContext = "idle", affection = 0) {
+  if (definition.type === "gomi") return gomiDialogueLines(affection, context);
   const contextual = definition.dialogues.situations?.[context] || [];
   const stageLines = definition.dialogues.stages[String(definition.fixedGrowthStage || stage)] || [];
   if (definition.fixedGrowthStage && context === "highAffection" && contextual.length) return contextual;

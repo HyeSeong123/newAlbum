@@ -215,6 +215,16 @@ try {
   await page.screenshot({ path:join(output, 'initial-home.png') });
   await safeWebViewBounds();
   await captureScreen('system-bars-home-threebutton');
+  await page.getByRole('button', { name:'고미 도움말 열기', exact:true }).click();
+  const gomiGuide = page.getByRole('dialog', { name:'고미 도움말', exact:true });
+  await expect(gomiGuide.locator('.gomiGuideSpeech')).toHaveText('…휴. 사진은 직접 골라.');
+  await expect(gomiGuide.locator('.characterVisual')).toHaveAttribute('data-expression', 'cynical');
+  await expect.poll(() => gomiGuide.locator('img').evaluate(el => el.complete && el.naturalWidth === 1254)).toBe(true);
+  await captureScreen('gomi-cynical-guide');
+  await gomiGuide.getByRole('button', { name:'도움말 닫기', exact:true }).click();
+  const gomiState = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('sync_characters'));
+  assert.equal(gomiState.characters.find(character => character.id === 'gomi').affection, 0);
+  console.log('Gomi cynical art, cold low-affection help and no guide affection award: OK');
   console.log('Installed Android app launched and rendered its native home.');
   await expect(page.getByRole('button', { name:'다음 메뉴 보기', exact:true })).toBeEnabled();
   await page.getByRole('button', { name:'다음 메뉴 보기', exact:true }).click();

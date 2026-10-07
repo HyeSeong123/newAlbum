@@ -5,9 +5,10 @@ import { CharacterVisual } from "./CharacterVisual";
 import { characterDefinitions } from "./models";
 import { guideTopics, type GuideTopic } from "./guideTopics";
 import "./gomi-guide.css";
+import { gomiGuideCopy } from "./gomiAffinity";
 
-export function GomiGuide({ initialTopic = "photos", onClose, onAction }: {
-  initialTopic?: GuideTopic; onClose: () => void; onAction: (topic: GuideTopic) => void;
+export function GomiGuide({ initialTopic = "photos", affection = 0, onClose, onAction }: {
+  affection?: number; initialTopic?: GuideTopic; onClose: () => void; onAction: (topic: GuideTopic) => void;
 }) {
   const [topicIndex, setTopicIndex] = useState(() => Math.max(0, guideTopics.findIndex(topic => topic.id === initialTopic)));
   const [stepIndex, setStepIndex] = useState(0);
@@ -16,6 +17,7 @@ export function GomiGuide({ initialTopic = "photos", onClose, onAction }: {
   const gomi = characterDefinitions.find(def => def.id === "gomi")!;
   const topic = guideTopics[topicIndex];
   const step = topic.steps[stepIndex];
+  const copy = gomiGuideCopy(topic.id, stepIndex, affection, step.detail);
   useModalBehavior(onClose);
   useEffect(() => {
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -44,8 +46,8 @@ export function GomiGuide({ initialTopic = "photos", onClose, onAction }: {
       <header className="gomiGuideHeader"><div><small>궁금한 건 고미에게</small><h2 id="gomiGuideTitle">고미 도움말</h2></div><button type="button" className="closeButton" aria-label="도움말 닫기" onClick={onClose}><X size={20} /></button></header>
       <nav className="gomiGuideTopics" aria-label="도움말 주제">{guideTopics.map((item, index) => <button key={item.id} type="button" aria-pressed={index === topicIndex} onClick={() => { setTopicIndex(index); setStepIndex(0); }}>{item.label}</button>)}</nav>
       <div className="gomiGuideBody" ref={body}>
-        <div className="gomiGuideCompanion"><CharacterVisual definition={gomi} stage={6} /><p className="gomiGuideSpeech" role="status" aria-live="polite" aria-atomic="true">{step.line}</p></div>
-        <article className="gomiGuideStep" aria-labelledby="gomiStepTitle"><small>{topic.label} · {stepIndex + 1} / {topic.steps.length}</small><h3 id="gomiStepTitle">{step.title}</h3><p>{step.detail}</p></article>
+        <div className="gomiGuideCompanion"><CharacterVisual definition={gomi} stage={6} affection={affection} /><p className="gomiGuideSpeech" role="status" aria-live="polite" aria-atomic="true">{copy.line}</p></div>
+        <article className="gomiGuideStep" aria-labelledby="gomiStepTitle"><small>{topic.label} · {stepIndex + 1} / {topic.steps.length}</small><h3 id="gomiStepTitle">{step.title}</h3><p>{copy.detail}</p></article>
         <button className="gomiGuideAction" type="button" onClick={() => onAction(topic.id)}>{topic.actionLabel}<ArrowUpRight size={17} aria-hidden="true" /></button>
       </div>
       <footer className="gomiGuideFooter"><button type="button" disabled={topicIndex === 0 && stepIndex === 0} onClick={previous}><ChevronLeft size={16} aria-hidden="true" />이전</button><button type="button" className="primary" onClick={next}>{topicIndex === guideTopics.length - 1 && stepIndex === topic.steps.length - 1 ? "설명 마치기" : "다음"}<ChevronRight size={16} aria-hidden="true" /></button></footer>

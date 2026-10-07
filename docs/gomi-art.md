@@ -122,3 +122,16 @@ Edit ONLY ONE eye on viewer's left into a tiny narrow half-open sleepy slit with
 ```text
 Edit ONLY the eyes, eyebrows and tiny mouth. Both eyes small sharply slanted TRIANGULAR narrowed eyes with tiny dark pupils; inner corners down, haughty fierce irritated glare, short steep eyebrows and a small displeased closed mouth. She is cute but clearly irritable after repeated touches during sleep. Keep every blanket/quilt fold, bedding silhouette, body and face position, forehead curls, muzzle, baseline, canvas size and scale EXACTLY unchanged. No red marks, no teeth.
 ```
+
+
+## 0.6.18 시니컬 표정과 거리감
+
+내장 이미지 생성(image_gen)으로 `public/characters/gomi/idle.png`를 편집했다. 기존 파일을 덮어쓰지 않고 `public/characters/gomi/cynical.png`에 결과를 그대로 복사했다. 1254×1254 RGBA이며 투명 알파(0~255)를 유지한다. 표정은 낮게 내려온 눈꺼풀, 옆을 보는 작은 눈동자, 짧은 눈썹과 한쪽이 처진 닫힌 입이다. 몸·털 색·앉은 자세·색연필 질감을 유지한다.
+
+최종 프롬프트:
+
+```text
+Use case: precise-object-edit. Asset type: transparent PNG facial expression for Gomi, an adult female apricot poodle in a Korean photo diary app. Edit target: supplied seated Gomi PNG. Change ONLY the two eyes, tiny eyebrows and small mouth. Expression: deeply unimpressed, cynical, dismissive and tired of being bothered, as if thinking 'What. Why. Sigh. Don't touch me.' Half-lidded narrowed eyes, tiny pupils glancing slightly away, subtly uneven short brows, tiny flat closed displeased mouth with one corner slightly lowered. A cold weary side-eye, not anger, not a smile; still the same adorable poodle. Keep every other feature identical: pale apricot forehead curls raised slightly upward, head tilt, curly brown ears, nose, muzzle, seated body, paws, tail, soft rough colored-pencil/crayon grain, irregular gray-brown outlines, colors, proportions, position, scale, original square canvas and margins. Preserve actual alpha transparency outside the character. ONE full-body seated Gomi centered exactly as input. No new objects, no clothing, no symbols, no sweat or anger marks, no text, no glossy eyes, no realistic fur, no 3D, no white rectangular background. Existing body and fur must stay unchanged.
+```
+
+호감도 60 미만에서는 웃거나 뛰지 않고 시니컬한 자세를 유지한다. 60부터 투덜대며 앞발을 내주고, 90부터 핥는 교감을 허용한다. 자는 자세의 실눈·여러 번 건드렸을 때 화내는 표정은 계속 사용한다.

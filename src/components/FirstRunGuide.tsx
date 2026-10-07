@@ -5,10 +5,11 @@ import "./first-run-guide.css";
 import { CameraLocationNotice } from "./CameraLocationNotice";
 import { CharacterVisual } from "../features/characters/CharacterVisual";
 import { characterDefinitions } from "../features/characters/models";
+import { gomiAffinity, gomiGuideLines } from "../features/characters/gomiAffinity";
 
 export const FIRST_RUN_KEY = "geuruteogi.first-run-completed-v1";
 
-export function FirstRunGuide({ onImport, onLater, onGuide }: { onImport: () => void; onLater: () => void; onGuide: () => void }) {
+export function FirstRunGuide({ affection = 0, onImport, onLater, onGuide }: { affection?: number; onImport: () => void; onLater: () => void; onGuide: () => void }) {
   const firstButton = useRef<HTMLButtonElement>(null);
   const laterButton = useRef<HTMLButtonElement>(null);
   useModalBehavior(onLater);
@@ -21,10 +22,10 @@ export function FirstRunGuide({ onImport, onLater, onGuide }: { onImport: () => 
         if (event.shiftKey && document.activeElement === firstButton.current) { event.preventDefault(); laterButton.current?.focus(); }
         else if (!event.shiftKey && document.activeElement === laterButton.current) { event.preventDefault(); firstButton.current?.focus(); }
       }}>
-      <div className="firstRunMascot" aria-hidden="true"><CharacterVisual definition={characterDefinitions.find(def => def.id === "gomi")!} stage={6} /></div>
+      <div className="firstRunMascot" aria-hidden="true"><CharacterVisual definition={characterDefinitions.find(def => def.id === "gomi")!} stage={6} affection={affection} /></div>
       <h2 id="firstRunTitle">감자싹에 사진을 담아보세요</h2>
       <div id="firstRunDescription">
-        <p>난 고미야. 사진 등록부터 앨범까지, 중요한 것만 알려줄게.</p>
+        <p>{gomiGuideLines.photos[0][gomiAffinity(affection)]}</p>
         <p>사진과 영상을 가져오면 날짜별로 둘러보고, 앨범과 추억으로 다시 볼 수 있습니다.</p>
         <p>감자싹은 원본 사진과 영상 파일을 삭제하거나 수정하지 않습니다.</p>
       </div>

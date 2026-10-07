@@ -3,8 +3,11 @@ import test from 'node:test';
 import { existsSync, readFileSync } from 'node:fs';
 import ts from 'typescript';
 
+const affinitySource = ts.transpileModule(readFileSync(new URL('../src/features/characters/gomiAffinity.ts', import.meta.url),'utf8'),
+  { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText;
+const affinityUrl = `data:text/javascript;base64,${Buffer.from(affinitySource).toString('base64')}`;
 const source = readFileSync(new URL('../src/features/characters/models.ts', import.meta.url),'utf8');
-const { outputText } = ts.transpileModule(source.replace('import definitions from "./data/characterDefinitions.json";',
+const { outputText } = ts.transpileModule(source.replace('"./gomiAffinity"', JSON.stringify(affinityUrl)).replace('import definitions from "./data/characterDefinitions.json";',
   `const definitions = ${readFileSync(new URL('../src/features/characters/data/characterDefinitions.json', import.meta.url),'utf8')};`),
   { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } });
 const { characterDefinitions, nextDialogue, characterName, starterSnapshot, companionLabel, dialogueLines, growthStageName, stageNames, characterAsset } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
@@ -116,6 +119,6 @@ test('Gomi and the two brothers are available without photographs, with adult Go
     assert.equal(characterAsset(gomi, stage), '/characters/gomi/idle.png');
     assert.equal(growthStageName(gomi, stage), '함께하는 고미');
   }
-  assert.deepEqual(dialogueLines(gomi, 6, 'highAffection'), gomi.dialogues.situations.highAffection);
-  assert.notDeepEqual(dialogueLines(gomi, 6, 'highAffection'), dialogueLines(gomi, 6, 'idle'));
+  assert.notDeepEqual(dialogueLines(gomi, 6, 'highAffection', 90), dialogueLines(gomi, 6, 'highAffection', 0));
+  assert.deepEqual(dialogueLines(gomi, 6, 'highAffection', 0), dialogueLines(gomi, 6, 'idle', 0));
 });

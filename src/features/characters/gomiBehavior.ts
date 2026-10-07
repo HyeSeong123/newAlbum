@@ -1,12 +1,16 @@
-export const GOMI_BOND_AFFECTION = 20;
+import { gomiSleepingLine } from "./gomiAffinity";
+
+export const GOMI_BOND_AFFECTION = 60;
+export const GOMI_LICK_AFFECTION = 90;
 export const GOMI_STRETCH_MS = 2_400;
 export const GOMI_SLEEP_TOUCH_WINDOW_MS = 10_000;
 export const GOMI_ANGRY_TOUCHES = 3;
 
 export type GomiSleepMotion = "sleep-curled" | "sleep-stretched" | "sleep-cool" | "sleep-warm";
-export type GomiMotion = "idle" | "happy" | "sad" | "angry" | "grow" | GomiSleepMotion | `${GomiSleepMotion}-peek` | `${GomiSleepMotion}-angry` | "stretch" | "paw-wave" | "lick";
+export type GomiMotion = "idle" | "cynical" | "happy" | "sad" | "angry" | "grow" | GomiSleepMotion | `${GomiSleepMotion}-peek` | `${GomiSleepMotion}-angry` | "stretch" | "paw-wave" | "lick";
 export const gomiMotionFrames: Record<GomiMotion, string[]> = {
   idle: ["/characters/gomi/idle.png"],
+  cynical: ["/characters/gomi/cynical.png"],
   happy: ["/characters/gomi/happy.png"],
   sad: ["/characters/gomi/sad.png"],
   angry: ["/characters/gomi/angry.png"],
@@ -55,19 +59,21 @@ export function gomiHomeMotion(today: string, random = Math.random): GomiMotion 
 export function gomiSleepReaction(rest: GomiSleepMotion, touches: number): GomiMotion {
   return `${rest}-${touches >= GOMI_ANGRY_TOUCHES ? "angry" : "peek"}`;
 }
-export function gomiSleepLine(touches: number) {
-  if (touches === 1) return "…응? 나 아직 자는 중이야.";
-  if (touches === 2) return "한 번 봐줬잖아. 조금만 더 잘게.";
-  return touches % 2 ? "그만 톡톡 해. 나 자고 있잖아." : "내 잠은 소중하거든. 조금만 조용히 해줘.";
+export function gomiSleepLine(touches: number, affection = 0) {
+  return gomiSleepingLine(touches, affection);
 }
 export function allowedGomiMotion(motion: GomiMotion, affection: number): GomiMotion {
-  return (motion === "paw-wave" || motion === "lick") && affection < GOMI_BOND_AFFECTION ? "happy" : motion;
+  if (motion === "lick" && affection < GOMI_LICK_AFFECTION) return "cynical";
+  if (["idle", "happy", "grow", "paw-wave"].includes(motion) && affection < GOMI_BOND_AFFECTION) return "cynical";
+  return motion;
 }
 export function gomiInteractionMotion(affection: number, interaction: number): GomiMotion {
-  if (affection < GOMI_BOND_AFFECTION) return "happy";
-  return (["paw-wave", "lick", "happy"] as const)[(interaction - 1) % 3];
+  if (affection < GOMI_BOND_AFFECTION) return "cynical";
+  const cycle: GomiMotion[] = affection < GOMI_LICK_AFFECTION
+    ? ["cynical", "happy", "paw-wave"] : ["paw-wave", "lick", "happy", "cynical"];
+  return cycle[Math.max(0, interaction - 1) % cycle.length];
 }
 export function gomiMotionDuration(motion: GomiMotion) {
-  return motion === "stretch" ? GOMI_STRETCH_MS : isGomiAngry(motion) ? 2_600 : motion.endsWith("-peek") ? 1_800
+  return motion === "cynical" ? 1_800 : motion === "stretch" ? GOMI_STRETCH_MS : isGomiAngry(motion) ? 2_600 : motion.endsWith("-peek") ? 1_800
     : motion === "paw-wave" ? 2_200 : motion === "lick" ? 1_800 : 1_000;
 }
