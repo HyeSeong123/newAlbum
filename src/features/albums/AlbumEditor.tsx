@@ -3,13 +3,13 @@ import { Check, ChevronLeft, ChevronRight, Trash2, X } from "lucide-react";
 import type { SavedAlbum } from "../../types/media";
 import { MediaVisual } from "../../components/MediaVisual";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
-import { AlbumColorPicker } from "./AlbumCover";
+import { AlbumColorPicker, DEFAULT_ALBUM_COLOR } from "./AlbumCover";
 import { albumContents } from "./albumContent";
 
 export type AlbumEditorSection = "details" | "photos";
 
 export function AlbumEditor({ album, onClose, onSave, initialSection = "details" }: { album: SavedAlbum; onClose: () => void; onSave: (album: SavedAlbum) => Promise<void>; initialSection?: AlbumEditorSection }) {
-  const [draft, setDraft] = useState(() => ({ ...album, contents: albumContents(album) }));
+  const [draft, setDraft] = useState(() => ({ ...album, coverColor: album.coverColor || DEFAULT_ALBUM_COLOR, contents: albumContents(album) }));
   const [section, setSection] = useState<AlbumEditorSection>(initialSection);
   const [chosen, setChosen] = useState<string[]>([]);
   const [page, setPage] = useState(0);

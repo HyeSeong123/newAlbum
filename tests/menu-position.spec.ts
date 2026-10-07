@@ -77,7 +77,9 @@ test('album overflow fits at the trigger and keeps edit available without orderi
   await expect(page.getByRole('button', { name: '원래 순서로 보기', exact: true })).toHaveCount(0);
   if (info.project.name === 'mobile') {
     await page.getByRole('button', { name: '앨범 수정', exact: true }).click();
-    await expect(page.getByRole('dialog', { name: '앨범 수정', exact: true })).toBeVisible();
+    const editor = page.getByRole('dialog', { name: '앨범 수정', exact: true });
+    await expect(editor).toBeVisible();
+    await expect(editor.getByLabel('직접 색상 선택')).toHaveValue('#e5e1d5');
   }
 });
 
