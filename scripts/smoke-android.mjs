@@ -234,15 +234,19 @@ async function checkPhotoGps(page) {
   await page.evaluate(async id => {
     await window.__TAURI_INTERNALS__.invoke('update_media_details', { id, rating:4, comment:'GPS 복구 확인', favorite:true });
     window.gpsRecovery = { completed:false };
+    window.gpsRecoveryProgress = [];
+    const channel = window.__TAURI_INTERNALS__.transformCallback(message => window.gpsRecoveryProgress.push(message));
     // Reuse the real tree grant selected above; no broad gallery permission.
     window.__TAURI_INTERNALS__.invoke('register_paths', {
-      paths:['content://com.android.externalstorage.documents/tree/primary%3ADownload%2FGamjassakGPS'],
+      paths:['content://com.android.externalstorage.documents/tree/primary%3ADownload%2FGamjassakGPS'], progress:`__CHANNEL__:${channel}`,
     }).then(rows => { window.gpsRecovery = { completed:true, rows }; })
       .catch(error => { window.gpsRecovery = { completed:true, error:String(error) }; });
   }, denied.id);
   await tapNative(/resource-id="com.android.permissioncontroller:id\/permission_allow(?:_all)?_button"/);
   await expect.poll(() => page.evaluate(() => window.gpsRecovery.completed), { timeout:60_000 }).toBe(true);
   const recovery = await page.evaluate(() => window.gpsRecovery);
+  const permission = (await adb('shell', 'dumpsys', 'package', appId)).split('\n').filter(line => /ACCESS_MEDIA_LOCATION|READ_MEDIA/.test(line));
+  console.log('GPS recovery diagnostics:', JSON.stringify({ recovery, progress:await page.evaluate(() => window.gpsRecoveryProgress), permission }));
   assert.equal(recovery.error, undefined);
   rows = recovery.rows;
   assert.equal(rows.length, 2);
