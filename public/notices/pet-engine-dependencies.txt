@@ -11,3 +11,8 @@ Source: https://docs.rs/crate/image/0.25.10/source/Cargo.toml.orig
 
 The complete Apache-2.0 license is included in pet-models-Apache-2.0.txt.
 Dependency and model sources, versions and usage are documented in docs/pet-recognition.md.
+
+sha2 0.10.9 by the RustCrypto contributors: MIT OR Apache-2.0.
+This application uses the Apache-2.0 option for source-content hashing.
+Source: https://docs.rs/crate/sha2/0.10.9
+No sha2-asm optional implementation is enabled.

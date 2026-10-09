@@ -13,12 +13,21 @@ export function comparePets(a: PetFeatures, b: PetFeatures): { score: number; ba
   if (rear) return { score: 0.75 * color + 0.25 * shape, basis };
   const appearance = Math.max(cosine(a.appearance, b.appearance), cosine(a.appearance, b.mirroredAppearance), cosine(a.mirroredAppearance, b.appearance));
   if (!appearance) return { score: 0, basis };
+  const face = Math.max(cosine(a.faceAppearance ?? [], b.faceAppearance ?? []), cosine(a.faceAppearance ?? [], b.mirroredFaceAppearance ?? []), cosine(a.mirroredFaceAppearance ?? [], b.faceAppearance ?? []));
+  if (a.faceAppearance?.length && b.faceAppearance?.length && a.faceAppearance.length === b.faceAppearance.length && a.faceAppearance.every(Number.isFinite) && b.faceAppearance.every(Number.isFinite) && a.view !== 'unknown' && b.view !== 'unknown') {
+    const weight = a.view === 'front' && b.view === 'front' ? 0.65 : 0.45;
+    return { score: weight * face + (0.85-weight) * appearance + 0.10 * color + 0.05 * shape, basis: 'face-appearance' };
+  }
   return { score: 0.8 * appearance + 0.15 * color + 0.05 * shape, basis };
 }
 export function rankPets(query: PetFeatures, references: PetReference[], limit = 3): PetCandidate[] {
   const best = new Map<number, PetCandidate>();
+  // Prefer the available face references for this query; a high generic body
+  // similarity must not outrank a face comparison on the same pet.
+  const facePets = new Set(query.view !== 'rear' && query.view !== 'unknown' && query.faceAppearance?.length ? references.filter(r => r.features.kind === query.kind && r.features.view !== 'rear' && r.features.view !== 'unknown' && r.features.faceAppearance?.length).map(r => r.petId) : []);
   for (const reference of references) {
     const comparison = comparePets(query, reference.features);
+    if (facePets.has(reference.petId) && comparison.basis !== 'face-appearance') continue;
     if (comparison.score <= 0 || comparison.score <= (best.get(reference.petId)?.score ?? 0)) continue;
     best.set(reference.petId, { petId: reference.petId, ...comparison });
   }
@@ -34,5 +43,8 @@ export function recognizePet(query: PetFeatures, references: PetReference[]): Re
 export function withView(features: PetFeatures, view: PetFeatures['view']): PetFeatures {
   return { ...features, view, viewSource: view === 'unknown' ? 'unknown' : 'user',
     appearance: view === 'rear' ? [] : features.appearance,
-    mirroredAppearance: view === 'rear' ? [] : features.mirroredAppearance };
+    mirroredAppearance: view === 'rear' ? [] : features.mirroredAppearance,
+    faceBox: view === 'rear' || view === 'unknown' ? undefined : features.faceBox,
+    faceAppearance: view === 'rear' || view === 'unknown' ? [] : features.faceAppearance,
+    mirroredFaceAppearance: view === 'rear' || view === 'unknown' ? [] : features.mirroredFaceAppearance };
 }

@@ -16,6 +16,8 @@ use export::valid_export_folder_name;
 mod faces;
 mod pets;
 mod pet_recognition;
+mod pet_jobs;
+mod pet_evaluation;
 mod thumbnails;
 mod media_dimensions;
 mod location;
@@ -1232,6 +1234,7 @@ pub fn run() {
             assign_media_region,
             thumbnails::media_thumbnail,
             thumbnails::pet_thumbnail,
+            thumbnails::prepare_pet_input,
             media_playback_source,
             list_albums,
             clear_registered_media,
@@ -1254,6 +1257,15 @@ pub fn run() {
             pet_recognition::list_pet_detections,
             pet_recognition::save_pet_scan,
             pet_recognition::confirm_pet_detection,
+            pet_recognition::replace_pet_scan,
+            pet_recognition::update_pet_features,
+            pet_jobs::enqueue_pet_jobs,
+            pet_jobs::list_pet_jobs,
+            pet_jobs::finish_pet_job,
+            pet_jobs::control_pet_jobs,
+            pet_evaluation::save_pet_evaluation,
+            pet_evaluation::pet_evaluation_summary,
+            pet_evaluation::export_pet_evaluation,
             faces::find_face_matches,
             faces::set_faces_excluded,
             faces::save_face_scan,

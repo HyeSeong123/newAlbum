@@ -17,7 +17,31 @@ pub async fn media_thumbnail(app: AppHandle, id: i64) -> Result<String, String> 
 
 #[tauri::command]
 pub async fn pet_thumbnail(app: AppHandle, id: i64) -> Result<String, String> {
-    cached_thumbnail(app, id, true).await
+    prepare_pet_input(app,id).await.map(|input|input.path)
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all="camelCase")]
+pub struct PetInput { path: String, source_key: String }
+pub(crate) fn content_key(source:&Path)->Result<String,String>{
+    use sha2::{Digest,Sha256};
+    use std::io::Read;
+    let mut file=fs::File::open(source).map_err(|e|e.to_string())?;
+    let mut hash=Sha256::new();let mut buffer=[0u8;65536];
+    loop {let count=file.read(&mut buffer).map_err(|e|e.to_string())?;if count==0 {break;}hash.update(&buffer[..count]);}
+    Ok(format!("sha256:{:x}",hash.finalize()))
+}
+#[tauri::command]
+pub async fn prepare_pet_input(app:AppHandle,id:i64)->Result<PetInput,String>{
+    tauri::async_runtime::spawn_blocking(move||{
+        let conn=super::open_database(&app)?;
+        let source:String=conn.query_row("SELECT file_path FROM media WHERE id=?1 AND file_type='image'",[id],|r|r.get(0)).map_err(|e|e.to_string())?;
+        let key=content_key(Path::new(&source))?;
+        let cache=app.path().app_cache_dir().map_err(|e|e.to_string())?.join("pet-thumbnails-sha256-v1").join(&key[7..]);
+        let path=generate(Path::new(&source),&cache,id,true).map_err(|e|e.to_string())?;
+        if content_key(Path::new(&source))?!=key {return Err("분석 사진이 변경되었습니다. 다시 시도해 주세요.".into());}
+        Ok(PetInput{path:path.to_string_lossy().into_owned(),source_key:key})
+    }).await.map_err(|e|e.to_string())?
 }
 
 async fn cached_thumbnail(app: AppHandle, id: i64, analysis: bool) -> Result<String, String> {
@@ -76,9 +100,12 @@ fn generate(
         return Ok(target);
     }
     fs::create_dir_all(cache)?;
-    let mut decoder = ImageReader::open(source)?
-        .with_guessed_format()?
-        .into_decoder()?;
+    let mut reader = ImageReader::open(source)?.with_guessed_format()?;
+    if analysis {
+        let mut limits=image::Limits::default();limits.max_alloc=Some(96*1024*1024);
+        reader.limits(limits);
+    }
+    let mut decoder = reader.into_decoder()?;
     let orientation = decoder.orientation()?;
     let mut image = DynamicImage::from_decoder(decoder)?;
     image.apply_orientation(orientation);
@@ -108,6 +135,13 @@ fn generate(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test] fn content_hash_detects_same_length_replacements(){
+        let path=std::env::temp_dir().join(format!("pet-hash-{}",std::process::id()));
+        fs::write(&path,b"cat").unwrap();let first=content_key(&path).unwrap();
+        fs::write(&path,b"dog").unwrap();assert_ne!(first,content_key(&path).unwrap());
+        assert_eq!(first,"sha256:77af778b51abd4a3c51c5ddd97204a9c3ae614ebccb75a606c3b6865aed6744e");
+        fs::remove_file(path).unwrap();
+    }
     #[test]
     fn thumbnail_is_small_cached_and_original_is_unchanged() {
         let root = std::env::temp_dir().join(format!(

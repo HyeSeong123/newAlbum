@@ -18,6 +18,10 @@ test('Worker detects dog locally and keeps main thread responsive with cancel/re
     const cancel=new AbortController();const stopped=analyzePetImage('/pet-test.jpg',cancel.signal);setTimeout(()=>cancel.abort(),100);
     let aborted=false;try{await stopped;}catch(e){aborted=(e as Error).name==='AbortError';}
     const features=await analyzePetImage('/pet-test.jpg');const negative=await analyzePetImage('/pet-negative.jpg');const cats=await analyzePetImage('/pet-cat.jpg');const hardCats=await analyzePetImage('/pet-hard-cat.jpg');
+    const object=features[0], [x,y,w,h]=object.box;
+    const front=await analyzePetImage('/pet-test.jpg',undefined,'front',[{...object,view:'front',faceBox:[x+w*0.2,y+h*0.2,w*0.3,h*0.3]}]);
+    const rear=await analyzePetImage('/pet-test.jpg',undefined,'rear',[{...front[0],view:'rear'}]);
+    if(front[0].faceAppearance.length!==1024 || rear[0].appearance.length || rear[0].faceAppearance.length || rear[0].faceBox)throw new Error('face/rear extraction policy failed');
     clearInterval(interval);
     return {hardCatCount:hardCats.length,hardCatAutomaticLinks:hardCats.filter((f:any)=>recognizePet(f,[]).autoPetId!==null).length,catCount:cats.length,catKind:cats[0]?.kind,catLength:cats[0]?.appearance.length,aborted,count:features.length,negative:negative.length,kind:features[0]?.kind,view:features[0]?.view,length:features[0]?.appearance.length,color:features[0]?.color.length,shape:features[0]?.shape.length,score:comparePets(features[0],features[0]).score,auto:recognizePet(features[0],[{petId:1,features:features[0]}]).autoPetId,ticks,elapsedMs:performance.now()-started};
   });

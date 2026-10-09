@@ -44,3 +44,11 @@
 .petReferenceViews { display: grid; gap: 12px; margin-top: 12px; }
 .petReferenceViews label { display: grid; gap: 6px; overflow-wrap: anywhere; }
 .petReferenceViews select { padding: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; }
+.petDetectionPreview.selectFace { touch-action: none; cursor: crosshair; user-select: none; }
+.petDetectionPreview.selectFace img { pointer-events: none; }
+.petFaceBox { position: absolute; border: 2px dashed #c28b44; pointer-events: none; }
+.petFaceControls { display: flex; flex-wrap: wrap; gap: 8px; }
+.petFaceControls small { flex-basis: 100%; }
+.petEvaluationPanel { display: grid; gap: 12px; border: 1px solid var(--border); padding: 16px; border-radius: 8px; }
+.petEvaluationPanel label { display: grid; gap: 6px; }
+.petEvaluationPanel input, .petEvaluationPanel select { min-width: 0; padding: 10px; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }

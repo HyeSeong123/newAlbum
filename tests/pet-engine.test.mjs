@@ -44,3 +44,33 @@ test('spatial color descriptors preserve color differences without pretrained fa
  assert.equal(a.color.length,120);assert.equal(a.shape.length,10);
  assert.ok(a.color.every(Number.isFinite));assert.ok(cosine(a.color,b.color)<0.8);
 });
+test('user-selected front face outweighs conflicting body appearance without enabling auto-link',()=>{
+ const query=feature({faceAppearance:[1,0],mirroredFaceAppearance:[1,0]});
+ const sameFace=feature({appearance:[0.6,0.8],mirroredAppearance:[0.6,0.8],faceAppearance:[1,0],mirroredFaceAppearance:[1,0]});
+ const otherFace=feature({appearance:[1,0],mirroredAppearance:[1,0],faceAppearance:[0,1],mirroredFaceAppearance:[0,1]});
+ const result=recognizePet(query,[{petId:2,features:otherFace},{petId:1,features:sameFace}]);
+ assert.equal(result.candidates[0].petId,1);assert.equal(result.candidates[0].basis,'face-appearance');assert.equal(result.autoPetId,null);
+ assert.equal(comparePets({...query,view:'rear'},otherFace).basis,'shape-color');
+ assert.deepEqual(withView(query,'rear').faceAppearance,[]);assert.deepEqual(withView(query,'unknown').faceAppearance,[]);
+});
+test('a generic body reference cannot override the available face reference for the same pet',()=>{
+ const query=feature({faceAppearance:[1,0],mirroredFaceAppearance:[1,0]});
+ const references=[{petId:1,features:feature()},{petId:1,features:feature({faceAppearance:[0,1],mirroredFaceAppearance:[0,1]})}];
+ assert.equal(rankPets(query,references)[0].basis,'face-appearance');assert.ok(rankPets(query,references)[0].score<0.5);
+});
+const {evaluatePets}=await import(await modelUrl('features/pets/engine/evaluation.ts'));
+const realDimensions=()=>feature({appearance:[1,...Array(1023).fill(0)],mirroredAppearance:[1,...Array(1023).fill(0)],color:[1,...Array(119).fill(0)],shape:[1,...Array(9).fill(0)]});
+const reference=()=>({sampleId:'r',captureGroup:'enroll',sourceKey:'hash1',petId:1,view:'front',kind:'dog',features:realDimensions()});
+const query=(patch={})=>({sampleId:'q',captureGroup:'test',sourceKey:'hash2',petId:1,view:'left',kind:'dog',features:realDimensions(),...patch});
+test('evaluation includes detector misses, unknown pets, rear recall and small-data abstention',()=>{
+ const result=evaluatePets({references:[reference()],queries:[query(),query({sampleId:'miss',sourceKey:'hash3',features:null}),query({sampleId:'rear',sourceKey:'hash4',view:'rear'}),query({sampleId:'novel',sourceKey:'hash5',petId:null})]});
+ assert.equal(result.top1IdentificationAccuracy.side,0.5);assert.equal(result.stats.detectionMisses,1);assert.equal(result.rearTop3Recall,1);assert.equal(result.sideGoalReached,null);assert.equal(result.automaticLinkFalseRate,null);assert.equal(result.novelPetKnownSuggestionRate,1);assert.equal(result.unresolvedRate,1);
+});
+test('evaluation rejects identical contents, sessions, samples and malformed vectors',()=>{
+ for(const patch of [{captureGroup:'enroll'},{sourceKey:'hash1'},{sampleId:'r'},{features:feature()}])assert.throws(()=>evaluatePets({references:[reference()],queries:[query(patch)]}));
+ assert.throws(()=>evaluatePets({references:[reference(),reference()],queries:[]}));
+});
+test('species failures are misses and user corrections are reported separately',()=>{
+ const result=evaluatePets({references:[reference()],queries:[query({features:{...realDimensions(),kind:'cat'}}),query({sampleId:'corrected',features:{...realDimensions(),detectedKind:'cat'}})]});
+ assert.equal(result.top1IdentificationAccuracy.side,0.5);assert.equal(result.stats.species.correct,0);assert.equal(result.stats.humanSpeciesCorrections,1);
+});
