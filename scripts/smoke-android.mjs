@@ -549,6 +549,29 @@ try {
   console.log('People overview and pet detail controls fit Android; pet registration, anchored menu and editing use native storage.');
   const petPhoto = media.find(item => item.file_type === 'image');
   assert.ok(petPhoto, 'A real imported dog photo must be available');
+  const thumbnailPath = await page.evaluate(id => window.__TAURI_INTERNALS__.invoke('media_thumbnail',{id}),petPhoto.id);
+  const thumbnailBytes = await run('adb',['exec-out','run-as',appId,'cat',thumbnailPath],{encoding:null,maxBuffer:4*1024*1024,timeout:30_000});
+  await writeFile(join(output,'pet-native-thumbnail.png'),thumbnailBytes.stdout);
+  const inputPng = await page.evaluate(async path => {
+    const response=await fetch(window.__TAURI_INTERNALS__.convertFileSrc(path,'asset'));
+    const bitmap=await createImageBitmap(await response.blob());
+    const canvas=document.createElement('canvas');canvas.width=bitmap.width;canvas.height=bitmap.height;
+    canvas.getContext('2d',{willReadFrequently:true}).drawImage(bitmap,0,0);bitmap.close();
+    return canvas.toDataURL('image/png').split(',')[1];
+  },thumbnailPath);
+  await writeFile(join(output,'pet-native-input.png'),Buffer.from(inputPng,'base64'));
+  const detectorLock=JSON.parse(await readFile('scripts/pet-model-lock.json','utf8')).models.detector.files;
+  const modelDigests=await page.evaluate(async files=>{
+    const results=[];
+    for(const [name,expected] of Object.entries(files)){
+      const bytes=await (await fetch(new URL('/models/pets/detector/'+name,location.href))).arrayBuffer();
+      const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
+      results.push({name,sha256:hash,bytes:bytes.byteLength,expected});
+    }
+    return results;
+  },detectorLock);
+  await writeFile(join(output,'pet-native-model-digests.json'),JSON.stringify(modelDigests,null,2));
+  assert.ok(modelDigests.every(row=>row.sha256===row.expected.sha256 && row.bytes===row.expected.bytes),'APK detector bytes must match the reviewed model manifest');
   const petWaitStarted = Date.now();
   await expect.poll(async () => {
     const scan = await page.evaluate(id => window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),petPhoto.id);
