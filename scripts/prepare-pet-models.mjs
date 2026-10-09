@@ -1,29 +1,22 @@
 import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 const root = new URL('../public/models/pets/', import.meta.url);
-const models = {
-  detector: 'https://storage.googleapis.com/tfjs-models/savedmodel/ssdlite_mobilenet_v2/model.json',
-  embedding: 'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_1.0_224/model.json',
-};
-for (const [name, url] of Object.entries(models)) {
+const lock = JSON.parse(await readFile(new URL('./pet-model-lock.json', import.meta.url), 'utf8'));
+for (const [name, model] of Object.entries(lock.models)) {
   const dir = new URL(`${name}/`, root);
   await mkdir(dir, { recursive: true });
-  async function download(file) {
+  for (const [file, expected] of Object.entries(model.files)) {
     if (!/^[\w.-]+$/.test(file)) throw new Error('Invalid model filename');
     const target = new URL(file, dir);
-    try { return await readFile(target); } catch {}
-    const response = await fetch(new URL(file, url), { signal: AbortSignal.timeout(120000) });
-    if (!response.ok) throw new Error(`Model download failed: ${response.status}`);
-    const bytes = Buffer.from(await response.arrayBuffer());
+    let bytes;
+    try { bytes = await readFile(target); } catch {
+      const response = await fetch(new URL(file, model.url), { signal: AbortSignal.timeout(120000) });
+      if (!response.ok) throw new Error(`Model download failed: ${response.status}`);
+      bytes = Buffer.from(await response.arrayBuffer());
+    }
+    if (bytes.length !== expected.bytes || createHash('sha256').update(bytes).digest('hex') !== expected.sha256) throw new Error(`Pet model integrity check failed: ${name}/${file}`);
     const temp = new URL(`${file}.tmp`, dir);
-    await writeFile(temp, bytes);
-    await rename(temp, target);
-    return bytes;
+    await writeFile(temp, bytes); await rename(temp, target);
   }
-  const model = JSON.parse((await download('model.json')).toString());
-  for (const group of model.weightsManifest) for (const path of group.paths) await download(path);
 }
-try { await readFile(new URL('LICENSE', root)); } catch {
-  const response = await fetch('https://raw.githubusercontent.com/tensorflow/tfjs-models/master/LICENSE', { signal: AbortSignal.timeout(30000) });
-  if (!response.ok) throw new Error('Model license download failed');
-  await writeFile(new URL('LICENSE', root), await response.text());
-}
+await writeFile(new URL('LICENSE', root), await readFile(new URL('../public/notices/pet-models-Apache-2.0.txt', import.meta.url)));

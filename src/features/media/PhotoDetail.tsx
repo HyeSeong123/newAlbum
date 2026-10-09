@@ -7,6 +7,8 @@ import { NativeMediaPlayback } from "../../components/NativeMediaPlayback";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
 import { formatJournalDate } from "./journalModel";
 import { useMediaDownload } from "./useMediaDownload";
+import { isTauriRuntime } from "../../services/tauriMediaService";
+import { PetPhotoResults } from "../pets/PetRecognitionReview";
 import { RegionEditor } from "../map/RegionEditor";
 
 export function DetailModal({
@@ -154,6 +156,7 @@ export function DetailModal({
                   ))}
                 </div>
               </section>
+              {item.fileType === "image" && isTauriRuntime() && <PetPhotoResults key={`pets-${item.id}`} item={item} />}
               <dl className="photoMetadata">
                 <div><dt>촬영일</dt><dd>{item.takenAt?.replaceAll("-", ".") ?? "날짜 없음"}</dd></div>
                 {item.latitude != null && item.longitude != null && <div><dt>원본 GPS</dt><dd>{item.latitude.toFixed(5)}, {item.longitude.toFixed(5)}</dd></div>}

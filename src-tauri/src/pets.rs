@@ -104,6 +104,9 @@ fn save(
         )
         .map_err(|e| e.to_string())?;
     }
+    // A removed photo must no longer train this pet's recognition profile.
+    tx.execute("UPDATE pet_detection SET pet_id=NULL WHERE pet_id=?1 AND NOT EXISTS
+      (SELECT 1 FROM pet_media WHERE pet_id=?1 AND media_id=pet_detection.media_id)", [pet]).map_err(|e|e.to_string())?;
     tx.commit().map_err(|e| e.to_string())?;
     Ok(pet)
 }
@@ -154,6 +157,7 @@ mod tests {
         conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
         conn.execute_batch(include_str!("../database/schema.sql"))
             .unwrap();
+        conn.execute_batch(include_str!("../database/pet-recognition.sql")).unwrap();
         conn.execute_batch("INSERT INTO media (id, file_path, file_type, size_bytes) VALUES (1, 'a', 'image', 1), (2, 'b', 'image', 1);").unwrap();
         let id = save(&mut conn, None, " 우리 강아지 ".into(), vec![1, 2], Some(2)).unwrap();
         assert_eq!(read_pets(&conn).unwrap()[0].name, "우리 강아지");

@@ -1,0 +1,25 @@
+{
+  "ref": "google/mobilenet-v1",
+  "modelUrl": "https://www.kaggle.com/models/google/mobilenet-v1",
+  "author": "Google",
+  "instance": {
+    "hasBaseModelInstanceInformation": false,
+    "id": 1586,
+    "slug": "100-224-classification",
+    "framework": "tfJs",
+    "fineTunable": false,
+    "overview": "TF.js deployment of google/imagenet/mobilenet_v1_100_224/classification/3.",
+    "usage": "## Origin\n\nThis model is based on [google/imagenet/mobilenet_v1_100_224/classification/3](/models/google/mobilenet-v1/TensorFlow1/100-224-classification/2).\n\nThis model has been automatically converted using the [TF.js converter](https://github.com/tensorflow/tfjs/tree/master/tfjs-converter).\n\n## Example use\nThis model can be loaded using TF.js as:\n\n```javascript\ntf.loadGraphModel(\"${URL}\", { fromTFHub: true })\n```",
+    "downloadUrl": "/models/google/mobilenet-v1/TfJs/100-224-classification/2/download",
+    "versionId": 1952,
+    "versionNumber": 2,
+    "trainingData": [],
+    "url": "https://www.kaggle.com/models/google/mobilenet-v1/TfJs/100-224-classification",
+    "licenseName": "Apache 2.0",
+    "modelInstanceType": "unspecified",
+    "externalBaseModelUrl": "",
+    "totalUncompressedBytes": 16935615
+  },
+  "checkedDate": "2026-10-09",
+  "metadataSource": "https://www.kaggle.com/api/v1/models/list?search=mobilenet_v1"
+}

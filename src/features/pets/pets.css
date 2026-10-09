@@ -18,3 +18,29 @@
 .petGrid.selecting { touch-action: pan-y pinch-zoom; user-select: none; }
 .petEditor .peopleActions { justify-content: flex-end; }
 @media (max-width: 600px) { .petGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .petEditor form { padding: 16px; } .petFields { grid-template-columns: 1fr; } }
+
+.petAnalysisNotice { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.petAnalysisNotice progress { width: 140px; }
+.petDetectionCard { display: grid; grid-template-columns: minmax(0, 240px) minmax(0, 1fr); gap: 20px; border: 1px solid var(--border); padding: 16px; border-radius: 8px; }
+.petDetectionPreview { position: relative; align-self: start; }
+.petDetectionPreview .mediaVisual { aspect-ratio: 1; }
+.petDetectionPreview .mediaImage { object-fit: fill; width: 100%; height: 100%; }
+.petDetectionBox { position: absolute; border: 3px solid #648253; pointer-events: none; }
+.petDetectionTag { position: absolute; top: 6px; left: 6px; background: var(--surface); border-radius: 4px; padding: 4px 8px; font-size: 12px; }
+.petDetectionFields { display: grid; gap: 12px; min-width: 0; }
+.petDetectionFields small { overflow-wrap: anywhere; color: var(--muted); }
+.petDetectionFields label { display: grid; gap: 6px; }
+.petDetectionFields select, .petDetectionFields input { width: 100%; min-width: 0; padding: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 6px; font: inherit; }
+.petPhotoResults { margin-top: 16px; }
+.petPhotoResults .petDetectionCard { grid-template-columns: minmax(0, 1fr); margin: 12px 0; }
+.petPhotoResults .petDetectionPreview { max-width: 240px; }
+@media (max-width: 600px) {
+  .petDetectionCard { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+  .petDetectionPreview { max-width: 280px; width: 100%; justify-self: center; }
+  .petEditor { max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px); }
+  .petMatchBody { padding: 16px; }
+}
+
+.petReferenceViews { display: grid; gap: 12px; margin-top: 12px; }
+.petReferenceViews label { display: grid; gap: 6px; overflow-wrap: anywhere; }
+.petReferenceViews select { padding: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; }

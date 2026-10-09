@@ -1,0 +1,25 @@
+{
+  "ref": "tensorflow/ssdlite-mobilenet-v2",
+  "modelUrl": "https://www.kaggle.com/models/tensorflow/ssdlite-mobilenet-v2",
+  "author": "TensorFlow",
+  "instance": {
+    "hasBaseModelInstanceInformation": false,
+    "id": 2340,
+    "slug": "default",
+    "framework": "tfJs",
+    "fineTunable": false,
+    "overview": "TF.js deployment of tensorflow/ssdlite_mobilenet_v2/1.",
+    "usage": "## Origin\n\nThis model is based on [tensorflow/ssdlite_mobilenet_v2/1](https://www.kaggle.com/models/tensorflow/ssdlite-mobilenet-v2).\n\nThis model is published on NPM as `@tensorflow-models/coco-ssd`.\n\nSee the [NPM documentation](https://www.npmjs.com/package/@tensorflow-models/coco-ssd)\nfor how to load and use the model in JavaScript.",
+    "downloadUrl": "/models/tensorflow/ssdlite-mobilenet-v2/TfJs/default/1/download",
+    "versionId": 3129,
+    "versionNumber": 1,
+    "trainingData": [],
+    "url": "https://www.kaggle.com/models/tensorflow/ssdlite-mobilenet-v2/TfJs/default",
+    "licenseName": "Apache 2.0",
+    "modelInstanceType": "unspecified",
+    "externalBaseModelUrl": "",
+    "totalUncompressedBytes": 29942996
+  },
+  "checkedDate": "2026-10-09",
+  "metadataSource": "https://www.kaggle.com/api/v1/models/list?search=ssdlite_mobilenet_v2"
+}

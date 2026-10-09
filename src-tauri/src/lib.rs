@@ -15,6 +15,7 @@ use export::{copy_media_file, export_media_files, ExportResultDto};
 use export::valid_export_folder_name;
 mod faces;
 mod pets;
+mod pet_recognition;
 mod thumbnails;
 mod media_dimensions;
 mod location;
@@ -1248,6 +1249,10 @@ pub fn run() {
             pets::list_pets,
             pets::save_pet,
             pets::delete_pet,
+            pet_recognition::get_pet_scan,
+            pet_recognition::list_pet_detections,
+            pet_recognition::save_pet_scan,
+            pet_recognition::confirm_pet_detection,
             faces::find_face_matches,
             faces::set_faces_excluded,
             faces::save_face_scan,

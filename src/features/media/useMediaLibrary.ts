@@ -29,6 +29,7 @@ export function useMediaLibrary() {
   const [error, setError] = useState("");
   const [importNotice, setImportNotice] = useState("");
   const importWarning = useRef("");
+  const petImport = useRef<MediaItem[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
   const pendingImport = useRef<MediaImportOptions | null>(null);
@@ -81,6 +82,7 @@ export function useMediaLibrary() {
     locked.current = true;
     setImporting(kind); setError(""); setImportNotice("");
     importWarning.current = "";
+    petImport.current = [];
     setImportProgress(initialImportProgress(phase));
     return true;
   }
@@ -88,6 +90,8 @@ export function useMediaLibrary() {
   function endImport() {
     locked.current = false;
     setImporting(null); setImportProgress(null);
+    if (desktop && petImport.current.length) window.dispatchEvent(new CustomEvent('gamjassak-pet-import', { detail: petImport.current }));
+    petImport.current = [];
   }
 
   function updateImportProgress(progress: MediaImportProgress) {
@@ -110,6 +114,7 @@ export function useMediaLibrary() {
         publish({ items, loaded: true });
         pendingMediaEdits.current.clear();
         const added = items.filter(item => !before.has(item.id));
+        petImport.current = added;
         const refreshed = items.filter(item => before.has(item.id) && (item.latitude !== beforeItems.get(item.id)?.latitude || item.longitude !== beforeItems.get(item.id)?.longitude)).length;
         setImportNotice([(added.length ? `사진과 영상 ${added.length}개를 가져왔습니다.` : refreshed ? "기존 사진의 촬영 위치를 갱신했습니다." : "선택한 기록을 확인했습니다."), importWarning.current].filter(Boolean).join(" "));
         return added;
@@ -119,7 +124,8 @@ export function useMediaLibrary() {
       try {
         const before = new Set(current.current.items.map(item => item.id));
         const latest = await api.loadRegisteredMedia();
-        const added = latest.filter(item => !before.has(item.id)).length;
+        petImport.current = latest.filter(item => !before.has(item.id));
+        const added = petImport.current.length;
         mediaRevision.current++;
         publish({ items: retainMediaEdits(latest, current.current.items), loaded: true });
         const reason = cause instanceof Error ? cause.message : typeof cause === "string" ? cause : "";

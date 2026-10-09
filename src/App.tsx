@@ -30,6 +30,7 @@ import { CharacterBook } from "./features/characters/CharacterBook";
 import { CharacterEventModal } from "./features/characters/CharacterEventModal";
 import { useCharacters } from "./features/characters/useCharacters";
 import { GomiGuide } from "./features/characters/GomiGuide";
+import { usePetAnalysis } from "./features/pets/usePetAnalysis";
 import type { GuideTopic } from "./features/characters/guideTopics";
 
 type View = "Home" | "Library" | "Albums" | "Memories" | "People" | "Diary" | "Characters" | "Settings";
@@ -74,6 +75,7 @@ export function App() {
   const [memorySection, setMemorySection] = useState<"rediscover" | "timeline" | "map">("rediscover");
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const library = useMediaLibrary();
+  const petAnalysis = usePetAnalysis();
   const diary = useDiary();
   const [largeLayout, setLargeLayout] = useState(() => localStorage.getItem("warm-journal-large-layout") === "true");
   const [importOpen, setImportOpen] = useState(false);
@@ -311,6 +313,11 @@ export function App() {
           if (created) navigate("Albums");
         }} />}
         {library.error && <p className="selectionNotice" role="alert">{library.error}</p>}
+        {petAnalysis.progress && <div className="selectionNotice petAnalysisNotice" role="status">
+          <span>{petAnalysis.progress.message}</span>
+          {petAnalysis.progress.running && <progress aria-label="반려동물 분석 진행" value={petAnalysis.progress.done} max={petAnalysis.progress.total || 1} />}
+          {petAnalysis.progress.running ? <button onClick={petAnalysis.cancel}>분석 중단</button> : <><button onClick={() => { setPeopleTab('pets'); navigate('People'); }}>반려동물 확인</button><button onClick={petAnalysis.dismiss}>닫기</button></>}
+        </div>}
         {library.importNotice && !library.error && <p className="selectionNotice" role="status">{library.importNotice}</p>}
         {selectionNotice && <p className="selectionNotice" role="status">{selectionNotice}</p>}
         {albumDraftItems && <AlbumCreateModal items={albumDraftItems} initialTitle={albumDraftTitle} onClose={() => { setAlbumDraftItems(null); setAlbumDraftTitle(""); }} onCreate={createAlbumFromSelectedItems} />}

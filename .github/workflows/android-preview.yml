@@ -9,6 +9,8 @@ on:
       - 'public/**'
       - 'src-tauri/**'
       - 'scripts/prepare-android.mjs'
+      - 'scripts/prepare-pet-models.mjs'
+      - 'scripts/pet-model-lock.json'
       - 'scripts/smoke-android.mjs'
       - 'package*.json'
       - 'vite.config.ts'
@@ -73,7 +75,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: src-tauri/gen/android/app/build/outputs/apk
-          key: android-debug-v1-${{ runner.os }}-${{ hashFiles('src/**', 'public/**', 'src-tauri/*.*', 'src-tauri/src/**', 'src-tauri/android/**', 'src-tauri/capabilities/**', 'src-tauri/permissions/**', 'package*.json', 'scripts/prepare-android.mjs', 'scripts/generate-character-assets.mjs', 'scripts/prepare-face-models.mjs', 'scripts/prepare-pet-models.mjs', 'vite.config.ts', 'index.html', 'rust-toolchain.toml') }}
+          key: android-debug-v1-${{ runner.os }}-${{ hashFiles('src/**', 'public/**', 'src-tauri/*.*', 'src-tauri/src/**', 'src-tauri/android/**', 'src-tauri/capabilities/**', 'src-tauri/permissions/**', 'package*.json', 'scripts/prepare-android.mjs', 'scripts/generate-character-assets.mjs', 'scripts/prepare-face-models.mjs', 'scripts/prepare-pet-models.mjs', 'scripts/pet-model-lock.json', 'vite.config.ts', 'index.html', 'rust-toolchain.toml') }}
       - name: Build installable preview APKs
         if: steps.preview-apks.outputs.cache-hit != 'true'
         run: npx tauri android build --debug --apk --ci --features custom-protocol --target aarch64 x86_64 --split-per-abi

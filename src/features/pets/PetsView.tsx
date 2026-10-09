@@ -9,8 +9,9 @@ import { useRowSelection } from '../../hooks/useRowSelection';
 import { isTauriRuntime } from '../../services/tauriMediaService';
 import { deletePet, loadPets, Pet, savePet } from './petService';
 import './pets.css';
-import { PetMatchReview } from './PetMatchReview';
+import { PetRecognitionReview } from './PetRecognitionReview';
 import { ScanSearch } from 'lucide-react';
+import { VIEW_LABELS, type PetView } from './engine/types';
 import { petCovers, petPhotos } from './petModel';
 
 export function PetsView({ items, onOpen, query = "" }: { items: MediaItem[]; query?: string; onOpen: (item: MediaItem, collection?: MediaItem[]) => void }) {
@@ -61,13 +62,15 @@ export function PetsView({ items, onOpen, query = "" }: { items: MediaItem[]; qu
       </div>
       <div className="peopleActions entityActions">
         {pet && <><button className="primaryControl entityPrimary" aria-label="이름·사진 수정" disabled={busy} onClick={() => setEditing(pet)}><Pencil size={18} /><span className="entityActionFull">이름·사진 수정</span><span className="entityActionShort" aria-hidden="true">수정</span></button><ActionMenu label="반려동물 관리" icon={<MoreVertical size={20} />} disabled={busy} actions={[
-          { label: '비슷한 사진 찾기', icon: <ScanSearch size={16} />, disabled: !linked.length, onSelect: () => setReviewing(true) },
+          { label: '인식 기준·결과 확인', icon: <ScanSearch size={16} />, disabled: false, onSelect: () => setReviewing(true) },
           { label: '반려동물 등록 삭제', icon: <Trash2 size={16} />, danger: true, onSelect: () => void remove() },
         ]} /></>}
         {!pet && <button className="primaryControl entityPrimary" aria-label="반려동물 등록" disabled={loading || !desktop} onClick={() => setEditing({ id: 0, name: '', cover_media_id: null, media_ids: [] })}><Plus size={18} /><span className="entityActionFull">반려동물 등록</span><span className="entityActionShort" aria-hidden="true">등록</span></button>}
       </div>
     </div>
-    {!desktop && <p role="status">반려동물 등록은 데스크톱 앱에서 사용할 수 있습니다.</p>}
+    {!desktop && <p role="status">반려동물 등록·인식은 감자싹 앱에서 사용할 수 있습니다.</p>}
+    {desktop && !pet && <div className="peopleActions"><button onClick={() => setReviewing(true)}><ScanSearch size={18}/>반려동물 인식 결과 확인</button></div>}
+    {desktop && pet && <p className="petMatchNotice">정면·왼쪽·오른쪽 측면·전신 사진을 연결한 뒤, 반려동물 관리의 인식 기준·결과 확인에서 방향과 개체를 확인해 주세요. 한 장으로도 등록할 수 있습니다.</p>}
     {loading && <p role="status"><LoaderCircle className="spinIcon" size={18} />반려동물 정보를 불러오는 중</p>}
     {error && <p role="alert">{error}</p>}
     {!pet && <div className="peopleSummary">등록된 반려동물 {pets.length}마리</div>}
@@ -80,13 +83,14 @@ export function PetsView({ items, onOpen, query = "" }: { items: MediaItem[]; qu
     })}</div>
     {pages > 1 && <div className="peopleActions"><button title="이전 페이지" disabled={!currentPage} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={18} /></button><span>{currentPage + 1} / {pages}</span><button title="다음 페이지" disabled={currentPage === pages - 1} onClick={() => setPage(currentPage + 1)}><ChevronRight size={18} /></button></div>}
     {editing && <PetEditor pet={editing} photos={photos} onClose={() => setEditing(null)} onSaved={async (id) => { setPets(await loadPets()); setActive(id); setPage(0); }} />}
-    {reviewing && pet && <PetMatchReview pet={pet} photos={photos} onClose={() => setReviewing(false)} onSaved={async () => { setPets(await loadPets()); }} />}
+    {reviewing && <PetRecognitionReview pet={pet} photos={photos} onClose={() => setReviewing(false)} onSaved={async () => { setPets(await loadPets()); }} />}
   </section>;
 }
 
 function PetEditor({ pet, photos, onClose, onSaved }: { pet: Pet; photos: MediaItem[]; onClose: () => void; onSaved: (id: number) => Promise<void> }) {
   const [name, setName] = useState(pet.name);
   const [selected, setSelected] = useState(() => pet.media_ids.filter((id) => photos.some((photo) => Number(photo.id) === id)));
+  const [referenceViews,setReferenceViews]=useState<Record<string,PetView>>({});
   const [cover, setCover] = useState(pet.cover_media_id);
   const [page, setPage] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -103,6 +107,7 @@ function PetEditor({ pet, photos, onClose, onSaved }: { pet: Pet; photos: MediaI
     setBusy(true); setError('');
     try {
       const id = await savePet(pet.id || null, name.trim(), selected, actualCover);
+      window.dispatchEvent(new CustomEvent('gamjassak-pet-enroll',{detail:{petId:id,items:photos.filter(photo=>selected.includes(Number(photo.id))).slice(0,12),views:referenceViews}}));
       await onSaved(id); onClose();
     } catch { setError('반려동물 정보를 저장하지 못했습니다. 입력한 이름과 선택한 사진은 화면에 남아 있습니다. 다시 저장해 주세요.'); }
     finally { setBusy(false); }
@@ -113,10 +118,11 @@ function PetEditor({ pet, photos, onClose, onSaved }: { pet: Pet; photos: MediaI
       <fieldset disabled={busy}>
         <div className="petFields"><label>이름<input required maxLength={80} value={name} onChange={(event) => setName(event.target.value)} /></label>
         <label>대표 사진<select aria-label="대표 사진" value={actualCover ?? ''} disabled={!selected.length} onChange={(event) => setCover(Number(event.target.value))}>{!selected.length && <option value="">사진 없음</option>}{selected.map((id, i) => <option key={id} value={id}>{photos.find((photo) => Number(photo.id) === id)?.takenAt ?? '날짜 없음'} · {i + 1}</option>)}</select></label></div>
-        <strong>사진 {selected.length}장 선택</strong>
+        <strong>사진 {selected.length}장 선택</strong><p className="petMatchNotice">사진은 선택 사항입니다. 정면과 양쪽 측면 사진을 함께 연결하면 비교 기준을 보완할 수 있습니다.</p>
         <div className="petGrid selecting" {...drag}>{photos.slice(currentPage * 24, (currentPage + 1) * 24).map((item) => <button type="button" key={item.id} className="petPhoto" data-selection-id={item.id} aria-label="사진 선택" aria-pressed={selected.includes(Number(item.id))} onClick={() => toggle(item.id)}>
           <MediaVisual item={item} /><span className={`faceCheck ${selected.includes(Number(item.id)) ? 'checked' : ''}`} aria-hidden="true">{selected.includes(Number(item.id)) && <Check size={22} />}</span><span>{item.takenAt ?? '날짜 없음'}</span>
         </button>)}</div>
+        {selected.length > 0 && <details><summary>인식 기준 사진의 방향 (선택 사항 · 최대 12장)</summary><div className="petReferenceViews">{photos.filter(photo=>selected.includes(Number(photo.id))).slice(0,12).map(photo=><label key={photo.id}>{photo.fileName}<select aria-label={`${photo.fileName} 촬영 방향`} value={referenceViews[photo.id] ?? 'unknown'} onChange={event=>setReferenceViews(current=>({...current,[photo.id]:event.target.value as PetView}))}>{Object.entries(VIEW_LABELS).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label>)}</div></details>}
         {!photos.length && <p>등록된 사진이 없습니다.</p>}
         <div className="peopleActions">{pages > 1 && <><button type="button" title="이전 페이지" disabled={!currentPage} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={18} /></button><span>{currentPage + 1} / {pages}</span><button type="button" title="다음 페이지" disabled={currentPage === pages - 1} onClick={() => setPage(currentPage + 1)}><ChevronRight size={18} /></button></>}
           <button type="submit" disabled={!name.trim()}>{busy ? <LoaderCircle className="spinIcon" size={18} /> : <Check size={18} />}저장</button></div>
