@@ -552,11 +552,12 @@ try {
   const petWaitStarted = Date.now();
   await expect.poll(async () => {
     const scan = await page.evaluate(id => window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),petPhoto.id);
-    if(scan && !scan.detections.length)throw new Error('Dog detection missed: '+JSON.stringify({scan,progress:await page.locator('.petAnalysisNotice').innerText().catch(()=>''),diagnostics:await page.evaluate(()=>window.petDiagnostics)}));
-    return scan?.detections?.some(detection => detection.kind === 'dog');
+    if (scan) await writeFile(join(output,'pet-scan-before-confirmation.json'),JSON.stringify({photo:petPhoto,scan,progress:await page.locator('.petAnalysisNotice').innerText().catch(()=>''),diagnostics:await page.evaluate(()=>window.petDiagnostics)},null,2));
+    return scan !== null;
   }, {timeout:180_000, intervals:[1000,2000,5000]}).toBe(true);
   let petScan = await page.evaluate(id => window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),petPhoto.id);
   const dog = petScan.detections.find(detection => detection.kind === 'dog');
+  assert.ok(dog, 'The imported dog must be detected as a dog; see pet-scan-before-confirmation.json');
   assert.equal(dog.appearance.length,1024);
   assert.equal(dog.color.length,120);
   assert.equal(dog.shape.length,10);
