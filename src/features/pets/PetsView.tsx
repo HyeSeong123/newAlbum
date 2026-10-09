@@ -41,11 +41,15 @@ export function PetsView({ items, onOpen, query = "" }: { items: MediaItem[]; qu
   }, [active]);
   useEffect(() => {
     let alive = true;
-    if (desktop) loadPets().then((result) => { if (alive) setPets(result); })
-      .catch(() => { if (alive) setError('반려동물 정보를 불러오지 못했습니다.'); })
-      .finally(() => { if (alive) setLoading(false); });
-    else setLoading(false);
-    return () => { alive = false; };
+    const refresh = () => {
+      if (desktop) void loadPets().then((result) => { if (alive) setPets(result); })
+        .catch(() => { if (alive) setError('반려동물 정보를 불러오지 못했습니다.'); })
+        .finally(() => { if (alive) setLoading(false); });
+      else setLoading(false);
+    };
+    refresh();
+    window.addEventListener('gamjassak-pet-results',refresh);
+    return () => { alive = false; window.removeEventListener('gamjassak-pet-results',refresh); };
   }, [desktop, items]);
   async function remove() {
     if (!pet || busy || !window.confirm(`'${pet.name}' 등록을 삭제할까요? 원본 사진은 유지됩니다.`)) return;

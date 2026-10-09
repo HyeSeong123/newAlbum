@@ -517,7 +517,7 @@ h2 {
   align-items: center;
 }
 
-.selectionNotice {
+.selectionNotice, .petAnalysisNotice {
   width: min(780px, 100%);
   margin: 12px auto 0;
   color: var(--secondary);

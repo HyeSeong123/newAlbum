@@ -313,7 +313,7 @@ export function App() {
           if (created) navigate("Albums");
         }} />}
         {library.error && <p className="selectionNotice" role="alert">{library.error}</p>}
-        {petAnalysis.progress && <div className="selectionNotice petAnalysisNotice" role="status">
+        {petAnalysis.progress && <div className="petAnalysisNotice" role="status">
           <span>{petAnalysis.progress.message}</span>
           {petAnalysis.progress.running && <progress aria-label="반려동물 분석 진행" value={petAnalysis.progress.done} max={petAnalysis.progress.total || 1} />}
           {petAnalysis.progress.running ? <button onClick={petAnalysis.cancel}>분석 중단</button> : <><button onClick={() => { setPeopleTab('pets'); navigate('People'); }}>반려동물 확인</button><button onClick={petAnalysis.dismiss}>닫기</button></>}
