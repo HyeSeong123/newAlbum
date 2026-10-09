@@ -77,7 +77,7 @@ test('people and pet controls stay aligned and anchored on narrow screens', asyn
     await checkHeader(page, petHeader);
     await expect(petHeader.getByText('사진 2장', { exact: true })).toBeVisible();
     menu = await checkMenu(page, petHeader.getByRole('button', { name: '반려동물 관리', exact: true }));
-    await expect(menu.getByRole('button', { name: '비슷한 사진 찾기', exact: true })).toBeEnabled();
+    await expect(menu.getByRole('button', { name: '인식 기준·결과 확인', exact: true })).toBeEnabled();
     await page.screenshot({ path: `preview-results/people-controls-pet-${width}-${large ? 'large' : 'normal'}.png`, fullPage: true });
     await page.keyboard.press('Escape');
     await expect(petHeader.getByRole('button', { name: '반려동물 관리', exact: true })).toBeFocused();

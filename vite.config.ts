@@ -3,6 +3,9 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+  // Discover both isolated inference backends before serving pages. Late
+  // dependency optimization would reload a page during an active analysis.
+  optimizeDeps: { include: ['@tensorflow/tfjs', '@tensorflow-models/coco-ssd', '@vladmandic/face-api'] },
   server: {
     port: 5173,
     strictPort: true,

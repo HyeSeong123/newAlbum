@@ -38,5 +38,5 @@ test('multiple animals, rear confirmation, correction and registration preserve 
  await expect(third.getByText('연결 완료 · 변경 가능',{exact:true})).toBeVisible();
  await third.getByRole('button',{name:'반려동물 아님',exact:true}).click();await expect(third.getByText('탐지 제외 · 변경 가능',{exact:true})).toBeVisible();await third.getByRole('button',{name:'확인 저장',exact:true}).click();
  await page.screenshot({path:`test-results/pet-review-${test.info().project.name}.png`});
- await review.getByTitle('닫기').click();await page.getByRole('tab',{name:'사람',exact:true}).click();await expect(page.getByRole('button',{name:'인물 등록',exact:true})).toBeVisible();
+ await review.getByTitle('닫기').click();await page.getByRole('tab',{name:'사람',exact:true}).click();await expect(page.getByRole('button',{name:'사진에서 사람 찾기',exact:true})).toBeVisible();
 });

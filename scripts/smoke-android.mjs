@@ -345,6 +345,9 @@ try {
   await expect(dialog.getByRole('heading', { name:'사진·영상 가져오기', exact:true })).toBeInViewport();
   await expect(dialog.getByRole('button', { name:'파일 선택', exact:true })).toBeInViewport();
   await captureScreen('system-bars-import-threebutton');
+  // Keep this import and pet inference offline; every model must be in the APK.
+  await adb('shell','svc','wifi','disable');
+  await adb('shell','svc','data','disable');
   // Use the real Android document picker and the real Rust/Channel pipeline.
   await dialog.getByRole('radio', { name:/폴더 가져오기/ }).check();
   await dialog.getByRole('checkbox', { name:/가져오면서 앨범 만들기/ }).check();
@@ -533,6 +536,33 @@ try {
   await expect(page.getByRole('dialog', { name:'반려동물 편집', exact:true })).toBeVisible();
   await page.getByRole('dialog', { name:'반려동물 편집', exact:true }).getByTitle('닫기', { exact:true }).click();
   console.log('People overview and pet detail controls fit Android; pet registration, anchored menu and editing use native storage.');
+  const petPhoto = media.find(item => item.file_type === 'image');
+  assert.ok(petPhoto, 'A real imported dog photo must be available');
+  const petWaitStarted = Date.now();
+  await expect.poll(async () => {
+    const scan = await page.evaluate(id => window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),petPhoto.id);
+    return scan?.detections?.some(detection => detection.kind === 'dog');
+  }, {timeout:180_000, intervals:[1000,2000,5000]}).toBe(true);
+  let petScan = await page.evaluate(id => window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),petPhoto.id);
+  const dog = petScan.detections.find(detection => detection.kind === 'dog');
+  assert.equal(dog.appearance.length,1024);
+  assert.equal(dog.color.length,120);
+  assert.equal(dog.shape.length,10);
+  const registeredPet = (await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_pets')))[0];
+  // This is explicit enrollment/confirmation, never an automatic identity claim.
+  await page.evaluate(({id,petId}) => window.__TAURI_INTERNALS__.invoke('confirm_pet_detection',{detectionId:id,petId,view:'rear',excluded:false}),{id:dog.id,petId:registeredPet.id});
+  petScan = await page.evaluate(id => window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),petPhoto.id);
+  assert.equal(petScan.detections.find(detection => detection.id === dog.id).appearance.length,0);
+  assert.equal(petScan.detections.find(detection => detection.id === dog.id).mirroredAppearance.length,0);
+  await writeFile(join(output,'pet-recognition-smoke.json'),JSON.stringify({offline:true,photoCount:1,detectedDogs:petScan.detections.filter(d=>d.kind==='dog').length,analysisWaitMs:Date.now()-petWaitStarted,engineVersion:petScan.engine_version,rearClearsIdentityVectors:true,identityAccuracyMeasured:false},null,2));
+  await page.getByRole('button',{name:'사진 상세보기',exact:true}).first().click();
+  await expect(page.getByRole('button',{name:'인식 결과 확인·수정',exact:true})).toBeVisible();
+  await captureScreen('pet-photo-recognition-results');
+  await page.getByRole('dialog',{name:'사진 상세',exact:true}).getByTitle('닫기',{exact:true}).click();
+  await adb('shell','svc','wifi','enable');
+  await adb('shell','svc','data','enable');
+  console.log('Offline Android Worker dog inference, native feature persistence, explicit confirmation and rear-vector removal passed (not identity accuracy).');
+
   await adb('shell', 'input', 'keyevent', '4');
   await expect(page.getByRole('heading', { name:'홈', exact:true })).toBeVisible();
   await page.screenshot({ path:join(output, 'home.png') });

@@ -128,6 +128,13 @@ mod tests {
         confirm(&mut c,id,Some(2),"front",false).unwrap();
         assert_eq!(c.query_row("SELECT COUNT(*) FROM pet_media",[],|r|r.get::<_,i64>(0)).unwrap(),2);
     }
+    #[test] fn renaming_pet_preserves_recognition_link_provenance() {
+        let mut c=database();let scan=write_scan(&mut c,1,"a",vec![features()]).unwrap();let id=scan.detections[0].id;
+        confirm(&mut c,id,Some(1),"front",false).unwrap();
+        crate::pets::save(&mut c,Some(1),"새 이름".into(),vec![1],Some(1)).unwrap();
+        confirm(&mut c,id,Some(2),"front",false).unwrap();
+        assert_eq!(c.query_row("SELECT COUNT(*) FROM pet_media WHERE pet_id=1",[],|r|r.get::<_,i64>(0)).unwrap(),0);
+    }
     #[test] fn rejects_bad_vectors_and_preserves_negative_scan() {
         let mut c=database();let mut bad=features();bad.shape[0]=f64::NAN;assert!(write_scan(&mut c,1,"a",vec![bad]).is_err());
         assert!(read_scan(&c,1).unwrap().is_none());assert!(write_scan(&mut c,1,"a",vec![]).unwrap().detections.is_empty());

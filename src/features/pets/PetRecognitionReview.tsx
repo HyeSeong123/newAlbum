@@ -62,7 +62,12 @@ export function PetRecognitionReview({ photos, pet, onClose, onSaved }: { photos
     setHasNext(results.length===24); cursors.current[page+1] = results.at(-1)?.id ?? 0;
     setRows(results);setPets(registered);setReferences(refs);
   },[page]);
-  useEffect(() => { alive.current=true;void refresh().catch(()=>{if(alive.current)setError('인식 결과를 불러오지 못했습니다.');});return()=>{alive.current=false;abort.current?.abort();}; },[refresh]);
+  useEffect(() => {
+    alive.current=true;
+    const update=()=>void refresh().catch(()=>{if(alive.current)setError('인식 결과를 불러오지 못했습니다.');});
+    update();window.addEventListener('gamjassak-pet-results',update);
+    return()=>{alive.current=false;abort.current?.abort();window.removeEventListener('gamjassak-pet-results',update);};
+  },[refresh]);
   useModalBehavior(onClose);
   async function start() {
     if (abort.current) return;
@@ -93,7 +98,12 @@ export function PetPhotoResults({ item }: { item: MediaItem }) {
     const [scan,registered,refs]=await Promise.all([getPetScan(Number(item.id)),loadPets(),loadPetReferences()]);
     if(alive.current){setRows(scan?.detections.filter(d=>!d.excluded) ?? []);setPets(registered);setReferences(refs);}
   },[item.id]);
-  useEffect(()=>{alive.current=true;void refresh().catch(()=>{if(alive.current)setError('반려동물 인식 결과를 불러오지 못했습니다.');});return()=>{alive.current=false;};},[refresh]);
+  useEffect(()=>{
+    alive.current=true;
+    const update=()=>void refresh().catch(()=>{if(alive.current)setError('반려동물 인식 결과를 불러오지 못했습니다.');});
+    update();window.addEventListener('gamjassak-pet-results',update);
+    return()=>{alive.current=false;window.removeEventListener('gamjassak-pet-results',update);};
+  },[refresh]);
   if(!rows.length && !error)return null;
   return <section className="petPhotoResults"><h3>반려동물</h3>{error && <p role="alert">{error}</p>}
     {!review ? <><p>{rows.map(row=>row.pet_id ? pets.find(p=>p.id===row.pet_id)?.name ?? '미확인' : row.view==='rear' ? '뒷모습 · 확인 필요' : '반려동물 확인 필요').join(' · ')}</p><button onClick={()=>setReview(true)}>인식 결과 확인·수정</button></> : <>{rows.map(row=><DetectionCard key={`${row.id}:${row.pet_id}:${row.view}`} detection={row} item={item} pets={pets} references={references} onSaved={refresh}/>)}<button onClick={()=>setReview(false)}>접기</button></>}

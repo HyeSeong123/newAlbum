@@ -1,6 +1,6 @@
 use rusqlite::{params, Connection};
 use serde::Serialize;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use tauri::AppHandle;
 
 #[derive(Serialize)]
@@ -47,7 +47,7 @@ fn read_pets(conn: &Connection) -> Result<Vec<Pet>, String> {
     Ok(pets)
 }
 
-fn save(
+pub(crate) fn save(
     conn: &mut Connection,
     id: Option<i64>,
     name: String,
@@ -85,8 +85,19 @@ fn save(
             tx.last_insert_rowid()
         }
     };
-    tx.execute("DELETE FROM pet_media WHERE pet_id = ?1", [pet])
-        .map_err(|e| e.to_string())?;
+    // Preserve provenance for unchanged recognition links, even on name edits.
+    let selected: HashSet<i64> = ids.iter().copied().collect();
+    let existing = {
+        let mut statement = tx.prepare("SELECT media_id FROM pet_media WHERE pet_id=?1").map_err(|e|e.to_string())?;
+        let values = statement.query_map([pet], |row| row.get::<_,i64>(0)).map_err(|e|e.to_string())?
+            .collect::<Result<Vec<_>,_>>().map_err(|e|e.to_string())?;
+        values
+    };
+    for media in existing {
+        if !selected.contains(&media) {
+            tx.execute("DELETE FROM pet_media WHERE pet_id=?1 AND media_id=?2", params![pet,media]).map_err(|e|e.to_string())?;
+        }
+    }
     for media in ids {
         let image: bool = tx
             .query_row(
