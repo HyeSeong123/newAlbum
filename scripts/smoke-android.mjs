@@ -53,9 +53,20 @@ async function connect() {
   })))) + '\n');
   const log = message => void appendFile(join(output, 'webview-console.txt'), `${message}\n`).catch(() => {});
   page.on('pageerror', error => log(error.stack ?? error.message));
-  page.on('console', message => { if (message.type() === 'error') log(message.text()); });
+  page.on('console', message => { if (message.type() === 'error' || message.text().startsWith('Pet inference diagnostics:')) log(message.text()); });
   page.on('requestfailed', request => log(`${request.url()}: ${request.failure()?.errorText}`));
   await page.locator('main.app').waitFor();
+  const capturePetDiagnostics = () => {
+    if (window.petDiagnosticListener) return;
+    window.petDiagnosticListener = true;
+    window.petDiagnostics = [];
+    window.addEventListener('gamjassak-pet-diagnostics', event => {
+      window.petDiagnostics.push(event.detail);
+      console.log('Pet inference diagnostics: ' + JSON.stringify(event.detail));
+    });
+  };
+  await page.addInitScript(capturePetDiagnostics);
+  await page.evaluate(capturePetDiagnostics);
   return { context, page };
 }
 async function disconnect() {
@@ -541,6 +552,7 @@ try {
   const petWaitStarted = Date.now();
   await expect.poll(async () => {
     const scan = await page.evaluate(id => window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),petPhoto.id);
+    if(scan && !scan.detections.length)throw new Error('Dog detection missed: '+JSON.stringify({scan,progress:await page.locator('.petAnalysisNotice').innerText().catch(()=>''),diagnostics:await page.evaluate(()=>window.petDiagnostics)}));
     return scan?.detections?.some(detection => detection.kind === 'dog');
   }, {timeout:180_000, intervals:[1000,2000,5000]}).toBe(true);
   let petScan = await page.evaluate(id => window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),petPhoto.id);
@@ -554,7 +566,7 @@ try {
   petScan = await page.evaluate(id => window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),petPhoto.id);
   assert.equal(petScan.detections.find(detection => detection.id === dog.id).appearance.length,0);
   assert.equal(petScan.detections.find(detection => detection.id === dog.id).mirroredAppearance.length,0);
-  await writeFile(join(output,'pet-recognition-smoke.json'),JSON.stringify({offline:true,photoCount:1,detectedDogs:petScan.detections.filter(d=>d.kind==='dog').length,analysisWaitMs:Date.now()-petWaitStarted,engineVersion:petScan.engine_version,rearClearsIdentityVectors:true,identityAccuracyMeasured:false},null,2));
+  await writeFile(join(output,'pet-recognition-smoke.json'),JSON.stringify({offline:true,photoCount:1,detectedDogs:petScan.detections.filter(d=>d.kind==='dog').length,analysisWaitMs:Date.now()-petWaitStarted,engineVersion:petScan.engine_version,rearClearsIdentityVectors:true,identityAccuracyMeasured:false,diagnostics:await page.evaluate(()=>window.petDiagnostics)},null,2));
   await page.getByRole('button',{name:'사진 상세보기',exact:true}).first().click();
   await expect(page.getByRole('button',{name:'인식 결과 확인·수정',exact:true})).toBeVisible();
   await captureScreen('pet-photo-recognition-results');

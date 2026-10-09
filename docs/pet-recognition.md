@@ -8,7 +8,7 @@
 
 - `src/features/pets/engine/types.ts`: 탐지·방향·특징·후보·결과 계약
 - `pet.worker.ts`: 로컬 COCO-SSD 탐지와 MobileNet 특징 추출, 색상·체형 기초 특징
-- `client.ts`: 1개 Worker, 순차 실행, 최대 640px 입력, 취소·시간 제한·60초 유휴 메모리 해제
+- `client.ts`: 1개 Worker, 순차 실행, 최대 640px CPU 픽셀 전송(Android GPU ImageBitmap 경계 회피), 취소·시간 제한·60초 유휴 메모리 해제
 - `features.ts`: 공간 RGB 분포와 기초 체형 특징
 - `matcher.ts`: 종 구분, 방향별 후보 순위, 좌우 반전 비교, 보수적 연결 정책
 - `manager.ts`: 사진별 캐시·기준 등록·배치 처리
