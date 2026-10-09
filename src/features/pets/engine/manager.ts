@@ -26,7 +26,7 @@ export async function scanPetPhoto(item: MediaItem, signal?: AbortSignal, viewHi
     if (previous.engine_version !== ENGINE_VERSION || previous.source_key !== sourceKey) throw new Error('사진 또는 분석 모델이 변경되었습니다. 기존 확인 결과를 보호하기 위해 재분석을 보류했습니다.');
     return previous;
   }
-  const path = await invoke<string>('media_thumbnail', { id });
+  const path = await invoke<string>('pet_thumbnail', { id });
   if (!path) throw new Error('분석용 사진을 준비하지 못했습니다.');
   const features: PetFeatures[] = await analyzePetImage(convertFileSrc(normalizeLocalFilePath(path)), signal, viewHint);
   signal?.throwIfAborted();

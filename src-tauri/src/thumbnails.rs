@@ -12,6 +12,15 @@ static GENERATION: [Mutex<()>; 2] = [Mutex::new(()), Mutex::new(())];
 
 #[tauri::command]
 pub async fn media_thumbnail(app: AppHandle, id: i64) -> Result<String, String> {
+    cached_thumbnail(app, id, false).await
+}
+
+#[tauri::command]
+pub async fn pet_thumbnail(app: AppHandle, id: i64) -> Result<String, String> {
+    cached_thumbnail(app, id, true).await
+}
+
+async fn cached_thumbnail(app: AppHandle, id: i64, analysis: bool) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let db = app
             .path()
@@ -32,8 +41,8 @@ pub async fn media_thumbnail(app: AppHandle, id: i64) -> Result<String, String> 
             .path()
             .app_cache_dir()
             .map_err(|e| e.to_string())?
-            .join("thumbnails-v1");
-        generate(Path::new(&source), &cache, id)
+            .join(if analysis { "pet-thumbnails-v1" } else { "thumbnails-v1" });
+        generate(Path::new(&source), &cache, id, analysis)
             .map(|path| path.to_string_lossy().into_owned())
             .map_err(|e| e.to_string())
     })
@@ -45,6 +54,7 @@ fn generate(
     source: &Path,
     cache: &Path,
     id: i64,
+    analysis: bool,
 ) -> Result<PathBuf, Box<dyn std::error::Error + Send + Sync>> {
     let metadata = fs::metadata(source)?;
     let modified = metadata.modified()?.duration_since(UNIX_EPOCH)?.as_nanos();
@@ -72,7 +82,17 @@ fn generate(
     let orientation = decoder.orientation()?;
     let mut image = DynamicImage::from_decoder(decoder)?;
     image.apply_orientation(orientation);
-    let thumbnail = image.thumbnail(640, 640);
+    // Grid thumbnails use integer averaging, which can alias fine fur/face
+    // textures. Inference needs a smooth, repeatable resize instead.
+    let thumbnail = if analysis {
+        if image.width() > 640 || image.height() > 640 {
+            image.resize(640, 640, image::imageops::FilterType::Triangle)
+        } else {
+            image
+        }
+    } else {
+        image.thumbnail(640, 640)
+    };
     let temporary = target.with_extension("tmp");
     let writer = std::io::BufWriter::new(fs::File::create(&temporary)?);
     let encoder = image::codecs::png::PngEncoder::new_with_quality(
@@ -102,12 +122,12 @@ mod tests {
         let original = root.join("photo.png");
         DynamicImage::new_rgb8(2000, 1000).save(&original).unwrap();
         let bytes = fs::read(&original).unwrap();
-        let output = generate(&original, &root.join("cache"), 1).unwrap();
+        let output = generate(&original, &root.join("cache"), 1, false).unwrap();
         assert_eq!(image::image_dimensions(&output).unwrap(), (640, 320));
         let time = fs::metadata(&output).unwrap().modified().unwrap();
         // A warm cache must work even while its decode lane is busy.
         let busy = GENERATION[1].lock().unwrap();
-        assert_eq!(generate(&original, &root.join("cache"), 1).unwrap(), output);
+        assert_eq!(generate(&original, &root.join("cache"), 1, false).unwrap(), output);
         drop(busy);
         assert_eq!(fs::metadata(&output).unwrap().modified().unwrap(), time);
         assert_eq!(fs::read(&original).unwrap(), bytes);

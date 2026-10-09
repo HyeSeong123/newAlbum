@@ -13,6 +13,7 @@
 - `matcher.ts`: 종 구분, 방향별 후보 순위, 좌우 반전 비교, 보수적 연결 정책
 - `manager.ts`: 사진별 캐시·기준 등록·배치 처리
 - `src-tauri/src/pet_recognition.rs`: SQLite 영구 저장·확인·수정과 입력 검증
+- `src-tauri/src/thumbnails.rs`: AI 전용 Triangle 축소·별도 캐시. 기존 화면 썸네일은 유지
 - `PetRecognitionReview.tsx`: 개체별 확인/새 등록/제외/수정 화면 및 사진 상세 결과
 
 ## 실제 제공 기능과 한계
@@ -55,6 +56,7 @@
 |---|---|---|---|
 | TensorFlow.js | 4.22.0 | Apache-2.0, 라이선스/저작권 고지 유지 | https://github.com/tensorflow/tfjs |
 | COCO-SSD JS | 2.2.3 | Apache-2.0, 고지 유지 | https://github.com/tensorflow/tfjs-models/tree/master/coco-ssd |
+| image (기존 Rust 의존성, AI 사진 축소) | 0.25.10 | MIT OR Apache-2.0 중 Apache-2.0 선택, 라이선스 동봉 | https://docs.rs/crate/image/0.25.10 |
 | SSDLite MobileNetV2 가중치 | TensorFlow publisher TF.js default v1; 고정 SHA-256 manifest | 게시자가 Apache 2.0 명시, 고지 유지 | https://www.kaggle.com/models/tensorflow/ssdlite-mobilenet-v2/TfJs/default |
 | MobileNetV1 1.0 224 가중치 | Google MobileNetV1 100-224 계열, TF.js Layers 배포; 고정 SHA-256 manifest | 게시자가 Apache 2.0 명시, 고지 유지 | https://www.kaggle.com/models/google/mobilenet-v1/TfJs/100-224-classification |
 | 직접 작성한 비교·방향 정책·색상/체형 특징 | gamjassak-pets-v1 | 프로젝트 소스 정책 적용, 추가 외부 API/모델 없음 | 이 저장소 |
@@ -78,6 +80,8 @@
 - 화면 회귀: 모바일/PC 다중 동물·후면 확인·다른 개체 수정·새 등록·제외와 복구.
 
 실제 탐지 확인에서 흰 고양이 사진 1장은 현재 SSDLite 모델/0.55 탐지 기준으로 놓쳤다. 해당 사진을 실패 사례로 보존하며, 별도의 정면 고양이 사진은 탐지됐다. 이 3장의 동물 사진은 개체 식별 검증 세트가 아니며 탐지 정확도의 통계적 추정에도 부족하다.
+
+Android 검증에서 기존 정수 평균 썸네일 축소가 강아지 샘플을 고양이로 분류하게 하는 사례를 발견했다. APK 모델 파일의 SHA-256은 모두 manifest와 일치했고, 실제 Android 입력 픽셀을 로컬 모델에 넣어 동일 결과를 재현했다. AI 입력은 별도 Triangle 필터로 축소한다. 모델의 종 분류가 항상 정확하다는 의미는 아니며, 최종 Android 성공 여부는 실제 설치 테스트 결과로 판단한다.
 
 실제 정면/측면 개체 식별 검증 세트는 **0개체 / 0장**이다. 고양이 개체 식별, 유사 외형 다른 개체, 실제 측면/뒷모습, 사람+반려동물, 대량 가져오기 및 Android 발열·메모리 성능은 검증 데이터/실기기가 필요하다. 어떤 방향의 정확도도 달성 수치로 보고하지 않는다.
 

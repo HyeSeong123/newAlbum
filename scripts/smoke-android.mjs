@@ -549,7 +549,7 @@ try {
   console.log('People overview and pet detail controls fit Android; pet registration, anchored menu and editing use native storage.');
   const petPhoto = media.find(item => item.file_type === 'image');
   assert.ok(petPhoto, 'A real imported dog photo must be available');
-  const thumbnailPath = await page.evaluate(id => window.__TAURI_INTERNALS__.invoke('media_thumbnail',{id}),petPhoto.id);
+  const thumbnailPath = await page.evaluate(id => window.__TAURI_INTERNALS__.invoke('pet_thumbnail',{id}),petPhoto.id);
   const thumbnailBytes = await run('adb',['exec-out','run-as',appId,'cat',thumbnailPath],{encoding:null,maxBuffer:4*1024*1024,timeout:30_000});
   await writeFile(join(output,'pet-native-thumbnail.png'),thumbnailBytes.stdout);
   const inputPng = await page.evaluate(async path => {

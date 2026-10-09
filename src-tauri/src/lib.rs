@@ -1231,6 +1231,7 @@ pub fn run() {
             region_media_page,
             assign_media_region,
             thumbnails::media_thumbnail,
+            thumbnails::pet_thumbnail,
             media_playback_source,
             list_albums,
             clear_registered_media,

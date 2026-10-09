@@ -20,8 +20,7 @@ export function analyzePetImage(url: string, signal?: AbortSignal, viewHint: Pet
       bitmap.close(); bitmap = resized;
     }
     if (signal?.aborted) { bitmap.close(); signal.throwIfAborted(); }
-    // Transfer CPU pixels instead of a GPU-backed ImageBitmap. Android WebView
-    // can lose the bitmap texture when it crosses a Worker/context boundary.
+    // Pass explicit decoded RGBA pixels across WebView Worker contexts.
     const canvas=document.createElement('canvas');canvas.width=bitmap.width;canvas.height=bitmap.height;
     const context=canvas.getContext('2d',{willReadFrequently:true});
     if(!context){bitmap.close();throw new Error('분석용 사진을 읽지 못했습니다.');}

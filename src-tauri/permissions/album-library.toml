@@ -38,6 +38,7 @@ commands.allow = [
   "save_pet",
   "delete_pet",
   "get_pet_scan",
+  "pet_thumbnail",
   "list_pet_detections",
   "save_pet_scan",
   "confirm_pet_detection",
