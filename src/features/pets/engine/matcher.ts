@@ -22,22 +22,24 @@ export function comparePets(a: PetFeatures, b: PetFeatures): { score: number; ba
 }
 export function rankPets(query: PetFeatures, references: PetReference[], limit = 3): PetCandidate[] {
   const best = new Map<number, PetCandidate>();
+  const priority=(candidate:{basis:PetCandidate['basis']})=>query.view==='rear'?0:candidate.basis==='face-appearance'?0:candidate.basis==='appearance'?1:2;
   // Prefer the available face references for this query; a high generic body
   // similarity must not outrank a face comparison on the same pet.
   const facePets = new Set(query.view !== 'rear' && query.view !== 'unknown' && query.faceAppearance?.length ? references.filter(r => r.features.kind === query.kind && r.features.view !== 'rear' && r.features.view !== 'unknown' && r.features.faceAppearance?.length).map(r => r.petId) : []);
   for (const reference of references) {
     const comparison = comparePets(query, reference.features);
     if (facePets.has(reference.petId) && comparison.basis !== 'face-appearance') continue;
-    if (comparison.score <= 0 || comparison.score <= (best.get(reference.petId)?.score ?? 0)) continue;
+    const existing=best.get(reference.petId);
+    if (comparison.score<=0 || existing && (priority(existing)<priority(comparison) || priority(existing)===priority(comparison) && existing.score>=comparison.score)) continue;
     best.set(reference.petId, { petId: reference.petId, ...comparison });
   }
-  return [...best.values()].sort((a, b) => b.score - a.score || a.petId - b.petId).slice(0, limit);
+  return [...best.values()].sort((a, b) => priority(a)-priority(b) || b.score - a.score || a.petId - b.petId).slice(0, limit);
 }
 // Candidate retrieval cutoff only: 0.60 is NOT a claimed 60% accuracy.
 // No automatic identity linking until independently measured false-link rates
 // and model/view-specific calibration are available. Rear/unknown always abstain.
 export function recognizePet(query: PetFeatures, references: PetReference[]): RecognitionResult {
-  const candidates = rankPets(query, references).filter(candidate => candidate.score >= 0.60);
+  const candidates = rankPets(query, references,Infinity).filter(candidate => candidate.score >= 0.60).slice(0,3);
   return { state: query.view === 'rear' ? 'rear-review' : candidates.length ? 'needs-review' : 'unregistered', candidates, autoPetId: null };
 }
 export function withView(features: PetFeatures, view: PetFeatures['view']): PetFeatures {

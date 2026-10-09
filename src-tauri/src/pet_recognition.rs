@@ -42,11 +42,18 @@ fn validate(f: &Features) -> Result<(), String> {
     Ok(())
 }
 fn read_detections(conn: &Connection, media: Option<i64>, after: i64, limit: i64, references: bool) -> Result<Vec<Detection>, String> {
-    let mut stmt = conn.prepare("SELECT d.id,d.media_id,d.pet_id,d.excluded,d.features FROM pet_detection d
-        WHERE (?1 IS NULL OR d.media_id=?1) AND d.id>?2
-        AND (?4=0 OR (d.pet_id IS NOT NULL AND d.excluded=0 AND
-          (SELECT COUNT(*) FROM pet_detection newer WHERE newer.pet_id=d.pet_id AND newer.excluded=0 AND newer.id>d.id)<12))
-        ORDER BY d.id LIMIT ?3").map_err(|e|e.to_string())?;
+    let sql=if references {
+        "SELECT id,media_id,pet_id,excluded,features FROM (
+          SELECT id,media_id,pet_id,excluded,features,
+            ROW_NUMBER() OVER(PARTITION BY pet_id,json_extract(features,'$.view')
+              ORDER BY CASE WHEN COALESCE(json_array_length(features,'$.faceAppearance'),0)>0 THEN 0 ELSE 1 END,id DESC) AS view_rank
+          FROM pet_detection WHERE pet_id IS NOT NULL AND excluded=0
+        ) WHERE (?1 IS NULL OR media_id=?1) AND id>?2 AND view_rank<=3 AND ?4=1 ORDER BY id LIMIT ?3"
+    } else {
+        "SELECT id,media_id,pet_id,excluded,features FROM pet_detection
+          WHERE (?1 IS NULL OR media_id=?1) AND id>?2 AND ?4=0 ORDER BY id LIMIT ?3"
+    };
+    let mut stmt=conn.prepare(sql).map_err(|e|e.to_string())?;
     let raw = stmt.query_map(params![media,after,limit,references], |row| Ok((row.get::<_,i64>(0)?,row.get::<_,i64>(1)?,row.get::<_,Option<i64>>(2)?,row.get::<_,bool>(3)?,row.get::<_,String>(4)?)))
         .map_err(|e|e.to_string())?.collect::<Result<Vec<_>,_>>().map_err(|e|e.to_string())?;
     raw.into_iter().map(|(id,media_id,pet_id,excluded,json)| Ok(Detection { id,media_id,pet_id,excluded,features: serde_json::from_str(&json).map_err(|e|e.to_string())? })).collect()
@@ -54,6 +61,11 @@ fn read_detections(conn: &Connection, media: Option<i64>, after: i64, limit: i64
 fn read_scan(conn: &Connection, media_id: i64) -> Result<Option<Scan>,String> {
     let header: Option<(String,String)> = conn.query_row("SELECT engine_version,source_key FROM pet_scan WHERE media_id=?1",[media_id],|r|Ok((r.get(0)?,r.get(1)?))).optional().map_err(|e|e.to_string())?;
     header.map(|(engine_version,source_key)| Ok(Scan {media_id,engine_version,source_key,detections:read_detections(conn,Some(media_id),0,20,false)?})).transpose()
+}
+fn verify_source(conn:&Connection,media_id:i64,key:&str)->Result<(),String>{
+    let path:String=conn.query_row("SELECT file_path FROM media WHERE id=?1 AND file_type='image'",[media_id],|r|r.get(0)).map_err(|e|e.to_string())?;
+    if !key.starts_with("sha256:") || super::thumbnails::content_key(std::path::Path::new(&path))?!=key {return Err("사진 내용 또는 사진 지문이 변경되었습니다. 연결 유지하고 재분석을 선택해 주세요.".into());}
+    Ok(())
 }
 #[tauri::command]
 pub fn get_pet_scan(app: AppHandle, media_id: i64) -> Result<Option<Scan>,String> { read_scan(&super::open_database(&app)?,media_id) }
@@ -79,8 +91,8 @@ fn write_scan(conn: &mut Connection, media_id: i64, source_key: &str, features: 
     read_scan(conn,media_id)?.ok_or_else(||"분석 결과 저장 실패".into())
 }
 #[tauri::command]
-pub fn save_pet_scan(app: AppHandle, media_id: i64, source_key: String, features: Vec<Features>) -> Result<Scan,String> {
-    write_scan(&mut super::open_database(&app)?,media_id,&source_key,features)
+pub async fn save_pet_scan(app: AppHandle, media_id: i64, source_key: String, features: Vec<Features>) -> Result<Scan,String> {
+    tauri::async_runtime::spawn_blocking(move||{let mut conn=super::open_database(&app)?;verify_source(&conn,media_id,&source_key)?;write_scan(&mut conn,media_id,&source_key,features)}).await.map_err(|e|e.to_string())?
 }
 fn confirm(conn: &mut Connection, detection_id:i64, pet_id:Option<i64>, view:&str, excluded:bool) -> Result<(),String> {
     confirm_with_features(conn,detection_id,pet_id,view,excluded,None)
@@ -116,12 +128,16 @@ fn confirm_with_features(conn: &mut Connection, detection_id:i64, pet_id:Option<
     tx.commit().map_err(|e|e.to_string())
 }
 #[tauri::command]
-pub fn confirm_pet_detection(app:AppHandle,detection_id:i64,pet_id:Option<i64>,view:String,excluded:bool)->Result<(),String> {
-    confirm(&mut super::open_database(&app)?,detection_id,pet_id,&view,excluded)
+pub async fn confirm_pet_detection(app:AppHandle,detection_id:i64,pet_id:Option<i64>,view:String,excluded:bool)->Result<(),String> {
+    tauri::async_runtime::spawn_blocking(move||{let mut conn=super::open_database(&app)?;verify_detection_source(&conn,detection_id)?;confirm(&mut conn,detection_id,pet_id,&view,excluded)}).await.map_err(|e|e.to_string())?
+}
+fn verify_detection_source(conn:&Connection,detection_id:i64)->Result<(),String>{
+    let (media,key):(i64,String)=conn.query_row("SELECT d.media_id,s.source_key FROM pet_detection d JOIN pet_scan s ON s.media_id=d.media_id WHERE d.id=?1",[detection_id],|r|Ok((r.get(0)?,r.get(1)?))).map_err(|e|e.to_string())?;
+    verify_source(conn,media,&key)
 }
 #[tauri::command]
-pub fn update_pet_features(app:AppHandle,detection_id:i64,pet_id:Option<i64>,view:String,excluded:bool,features:Features)->Result<(),String>{
-    confirm_with_features(&mut super::open_database(&app)?,detection_id,pet_id,&view,excluded,Some(features))
+pub async fn update_pet_features(app:AppHandle,detection_id:i64,pet_id:Option<i64>,view:String,excluded:bool,features:Features)->Result<(),String>{
+    tauri::async_runtime::spawn_blocking(move||{let mut conn=super::open_database(&app)?;verify_detection_source(&conn,detection_id)?;confirm_with_features(&mut conn,detection_id,pet_id,&view,excluded,Some(features))}).await.map_err(|e|e.to_string())?
 }
 
 fn overlap(a:[f64;4],b:[f64;4])->f64 {
@@ -161,8 +177,8 @@ fn replace_scan(conn:&mut Connection,media_id:i64,expected_key:&str,source_key:&
     read_scan(conn,media_id)?.ok_or("재분석 결과를 저장하지 못했습니다.".into())
 }
 #[tauri::command]
-pub fn replace_pet_scan(app:AppHandle,media_id:i64,expected_source_key:String,source_key:String,features:Vec<Features>,allow_source_change:bool)->Result<Scan,String>{
-    replace_scan(&mut super::open_database(&app)?,media_id,&expected_source_key,&source_key,features,allow_source_change)
+pub async fn replace_pet_scan(app:AppHandle,media_id:i64,expected_source_key:String,source_key:String,features:Vec<Features>,allow_source_change:bool)->Result<Scan,String>{
+    tauri::async_runtime::spawn_blocking(move||{let mut conn=super::open_database(&app)?;verify_source(&conn,media_id,&source_key)?;replace_scan(&mut conn,media_id,&expected_source_key,&source_key,features,allow_source_change)}).await.map_err(|e|e.to_string())?
 }
 #[cfg(test)]
 mod tests {
@@ -190,6 +206,24 @@ mod tests {
         assert_eq!(read_scan(&c,1).unwrap().unwrap().detections[0].pet_id,Some(1));
         confirm(&mut c,id,Some(1),"rear",false).unwrap();let saved=read_scan(&c,1).unwrap().unwrap().detections.remove(0).features;
         assert!(saved.face_box.is_none());assert!(saved.appearance.is_empty());assert!(saved.face_appearance.is_empty());assert!(saved.mirrored_face_appearance.is_empty());assert_eq!(saved.detected_kind.as_deref(),Some("dog"));
+    }
+    #[test] fn source_guard_rejects_replaced_bytes_without_changing_saved_results(){
+        let mut c=database();let path=std::env::temp_dir().join(format!("pet-source-{}-{}",std::process::id(),std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        std::fs::write(&path,b"cat").unwrap();c.execute("UPDATE media SET file_path=?1 WHERE id=1",[path.to_string_lossy().as_ref()]).unwrap();
+        let key=crate::thumbnails::content_key(&path).unwrap();write_scan(&mut c,1,&key,vec![features()]).unwrap();verify_source(&c,1,&key).unwrap();
+        std::fs::write(&path,b"dog").unwrap();assert!(verify_source(&c,1,&key).is_err());assert_eq!(read_scan(&c,1).unwrap().unwrap().source_key,key);
+        std::fs::remove_file(path).unwrap();
+    }
+    #[test] fn references_keep_views_balanced_and_retain_an_older_face_region(){
+        let mut c=database();
+        for id in 1..=20 {
+            if id>1 {c.execute("INSERT INTO media(id,file_path,file_type,size_bytes) VALUES(?1,?2,'image',1)",params![id,format!("p{id}")]).unwrap();}
+            let view=if id<=10 {"front"} else {"left"};let mut f=features();f.view=view.into();f.view_source="user".into();
+            if id==1 {f.face_box=Some([0.1,0.1,0.2,0.2]);f.face_appearance=vec![0.0;1024];f.mirrored_face_appearance=vec![0.0;1024];}
+            let scan=write_scan(&mut c,id,"test",vec![f]).unwrap();confirm(&mut c,scan.detections[0].id,Some(1),view,false).unwrap();
+        }
+        let refs=read_detections(&c,None,0,100,true).unwrap();assert_eq!(refs.len(),6);assert!(refs.iter().any(|r|r.media_id==1));
+        assert_eq!(refs.iter().filter(|r|r.features.view=="left").count(),3);
     }
     #[test] fn corrections_remove_only_recognition_links_and_rear_vectors() {
         let mut c=database();let scan=write_scan(&mut c,1,"a",vec![features(),features()]).unwrap();

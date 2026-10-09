@@ -74,3 +74,17 @@ test('species failures are misses and user corrections are reported separately',
  const result=evaluatePets({references:[reference()],queries:[query({features:{...realDimensions(),kind:'cat'}}),query({sampleId:'corrected',features:{...realDimensions(),detectedKind:'cat'}})]});
  assert.equal(result.top1IdentificationAccuracy.side,0.5);assert.equal(result.stats.species.correct,0);assert.equal(result.stats.humanSpeciesCorrections,1);
 });
+test('front face candidates precede less specific body and rear-only retrieval',()=>{
+ const q=feature({faceAppearance:[1,0],mirroredFaceAppearance:[1,0]});
+ const face=feature({appearance:[0.6,0.8],mirroredAppearance:[0.6,0.8],faceAppearance:[1,0],mirroredFaceAppearance:[1,0]});
+ assert.deepEqual(recognizePet(q,[{petId:3,features:feature({view:'rear'})},{petId:2,features:feature()},{petId:1,features:face}]).candidates.map(c=>c.petId),[1,2,3]);
+});
+test('original species errors do not become measured pipeline accuracy through user corrections',()=>{
+ const result=evaluatePets({references:[reference()],queries:[query({features:{...realDimensions(),detectedKind:'cat'}})]});
+ assert.equal(result.top1IdentificationAccuracy.side,1);assert.equal(result.modelSpeciesTop1Accuracy.side,0);
+ assert.equal(evaluatePets({references:[reference()],queries:[query()]}).modelSpeciesTop1Accuracy,null);
+});
+test('a rear color-only reference cannot replace a usable front body reference for the same pet',()=>{
+ const q=feature(),body=feature({appearance:[0.8,0.6],mirroredAppearance:[0.8,0.6]});
+ assert.equal(rankPets(q,[{petId:1,features:body},{petId:1,features:feature({view:'rear'})}])[0].basis,'appearance');
+});

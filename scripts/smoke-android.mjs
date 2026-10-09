@@ -593,6 +593,7 @@ try {
   await page.getByRole('button',{name:'인식 결과 확인·수정',exact:true}).click();
   const faceCard=page.locator('.petPhotoResults .petDetectionCard').first();
   await faceCard.getByRole('button',{name:'얼굴 영역 지정',exact:true}).click();
+  await faceCard.locator('.petDetectionPreview').scrollIntoViewIfNeeded();
   const rectangle=await faceCard.locator('.petDetectionPreview').boundingBox();assert.ok(rectangle);
   const [bx,by,bw,bh]=dog.box;
   await page.mouse.move(rectangle.x+(bx+bw*0.20)*rectangle.width,rectangle.y+(by+bh*0.10)*rectangle.height);
