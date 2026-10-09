@@ -15,6 +15,7 @@ function DetectionCard({ detection, item, pets, references, preferredPet, onSave
   const [view, setView] = useState<PetView>(detection.view);
   const [chosen, setChosen] = useState(detection.pet_id !== null ? String(detection.pet_id) : preferredPet?.media_ids.includes(detection.media_id) ? String(preferredPet.id) : '');
   const [name, setName] = useState('');
+  const [imageRatio,setImageRatio]=useState(1);
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
   const locked = useRef(false);
   const result = recognizePet(withView(detection,view), references.filter(reference => (reference.features as PetDetection).id !== detection.id));
@@ -24,7 +25,7 @@ function DetectionCard({ detection, item, pets, references, preferredPet, onSave
     if (!excluded && chosen === 'new' && !name.trim()) {setError('새 반려동물의 이름을 입력해 주세요.');return;}
     locked.current = true; setBusy(true);setError('');
     try {
-      const id = excluded ? null : chosen === 'new' ? await savePet(null,name.trim(),[detection.media_id],detection.media_id) : chosen ? Number(chosen) : null;
+      const id = excluded ? null : chosen === 'new' ? await savePet(null,name.trim(),[],null) : chosen ? Number(chosen) : null;
       await confirmPetDetection(detection.id,id,view,excluded);
       window.dispatchEvent(new Event('gamjassak-pet-results'));
       await onSaved();
@@ -33,7 +34,7 @@ function DetectionCard({ detection, item, pets, references, preferredPet, onSave
   }
   const state = detection.excluded ? '탐지 제외 · 변경 가능' : detection.pet_id !== null ? '연결 완료 · 변경 가능' : view === 'rear' ? '뒷모습 분석 · 확인 필요' : result.candidates.length ? '반려동물 확인 필요' : '미등록 후보 · 직접 확인';
   return <article className="petDetectionCard">
-    <div className="petDetectionPreview"><MediaVisual item={item} fit="cover" /><span className="petDetectionBox" style={{left:`${x*100}%`,top:`${y*100}%`,width:`${w*100}%`,height:`${h*100}%`}} />
+    <div className="petDetectionPreview" style={{aspectRatio:imageRatio}} onLoadCapture={event=>{const image=event.target;if(image instanceof HTMLImageElement && image.naturalHeight)setImageRatio(image.naturalWidth/image.naturalHeight);}}><MediaVisual item={item} fit="cover" /><span className="petDetectionBox" style={{left:`${x*100}%`,top:`${y*100}%`,width:`${w*100}%`,height:`${h*100}%`}} />
       <span className="petDetectionTag">{detection.kind === 'dog' ? '강아지' : '고양이'}</span></div>
     <div className="petDetectionFields">
       <strong>{state}</strong>

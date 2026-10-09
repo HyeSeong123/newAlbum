@@ -23,7 +23,7 @@
 .petAnalysisNotice progress { width: 140px; }
 .petDetectionCard { display: grid; grid-template-columns: minmax(0, 240px) minmax(0, 1fr); gap: 20px; border: 1px solid var(--border); padding: 16px; border-radius: 8px; }
 .petDetectionPreview { position: relative; align-self: start; }
-.petDetectionPreview .mediaVisual { aspect-ratio: 1; }
+.petDetectionPreview .mediaVisual { aspect-ratio: auto; height: 100%; }
 .petDetectionPreview .mediaImage { object-fit: fill; width: 100%; height: 100%; }
 .petDetectionBox { position: absolute; border: 3px solid #648253; pointer-events: none; }
 .petDetectionTag { position: absolute; top: 6px; left: 6px; background: var(--surface); border-radius: 4px; padding: 4px 8px; font-size: 12px; }

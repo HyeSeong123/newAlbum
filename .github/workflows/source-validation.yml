@@ -112,6 +112,8 @@ jobs:
             preview-results/mobile-*.png
             preview-results/menu-*.png
             preview-results/people-controls-*.png
+            preview-results/pet-worker-smoke.json
+            preview-results/pet-review-*.png
             test-results/**/test-failed-*.png
             test-results/**/error-context.md
           if-no-files-found: ignore
