@@ -19,6 +19,7 @@ test.beforeEach(async ({ page }) => {
     Object.defineProperty(window,'__TAURI_INTERNALS__',{value:{
       convertFileSrc:(path:string)=>'/'+path.split('/').pop(),
       invoke:async(command:string,args:any={})=> {
+        if(command==='get_pet_scan') return null;
         if(command==='list_media') {
           const snapshot = structuredClone(media);
           if(slow) await new Promise(resolve=>window.addEventListener('release-library',resolve,{once:true}));

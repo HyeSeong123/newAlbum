@@ -11,6 +11,7 @@ test.beforeEach(async ({ page }) => {
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: () => '/favicon.svg',
       invoke: async (command: string, args: any) => {
+        if (command === 'get_pet_scan') return null;
         if (command === 'list_media') return structuredClone(media);
         if (command === 'list_albums') return [{ id: 1, title: '제목 확인', description: '', cover_color: '#D8DDCB', created_at: '2026-09-26', items: structuredClone(media) }];
         if (command === 'update_media_title') {
