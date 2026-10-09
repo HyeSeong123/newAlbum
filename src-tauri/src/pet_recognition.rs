@@ -62,7 +62,7 @@ fn read_scan(conn: &Connection, media_id: i64) -> Result<Option<Scan>,String> {
     let header: Option<(String,String)> = conn.query_row("SELECT engine_version,source_key FROM pet_scan WHERE media_id=?1",[media_id],|r|Ok((r.get(0)?,r.get(1)?))).optional().map_err(|e|e.to_string())?;
     header.map(|(engine_version,source_key)| Ok(Scan {media_id,engine_version,source_key,detections:read_detections(conn,Some(media_id),0,20,false)?})).transpose()
 }
-fn verify_source(conn:&Connection,media_id:i64,key:&str)->Result<(),String>{
+pub(crate) fn verify_source(conn:&Connection,media_id:i64,key:&str)->Result<(),String>{
     let path:String=conn.query_row("SELECT file_path FROM media WHERE id=?1 AND file_type='image'",[media_id],|r|r.get(0)).map_err(|e|e.to_string())?;
     if !key.starts_with("sha256:") || super::thumbnails::content_key(std::path::Path::new(&path))?!=key {return Err("사진 내용 또는 사진 지문이 변경되었습니다. 연결 유지하고 재분석을 선택해 주세요.".into());}
     Ok(())

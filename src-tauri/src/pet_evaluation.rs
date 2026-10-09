@@ -38,7 +38,14 @@ fn dataset(conn:&Connection)->Result<Value,String>{
     Ok(json!({"schemaVersion":1,"engineVersion":"gamjassak-pets-v2","references":references,"queries":queries,"automaticLinkingEnabled":false}))
 }
 #[tauri::command]
-pub fn save_pet_evaluation(app:AppHandle,sample:Sample)->Result<(),String>{save(&mut super::open_database(&app)?,sample)}
+pub async fn save_pet_evaluation(app:AppHandle,sample:Sample)->Result<(),String>{
+    tauri::async_runtime::spawn_blocking(move||{
+        let mut conn=super::open_database(&app)?;
+        let key:String=conn.query_row("SELECT source_key FROM pet_scan WHERE media_id=?1",[sample.media_id],|r|r.get(0)).map_err(|_|"사진을 먼저 분석해 주세요.".to_string())?;
+        super::pet_recognition::verify_source(&conn,sample.media_id,&key)?;
+        save(&mut conn,sample)
+    }).await.map_err(|e|e.to_string())?
+}
 #[tauri::command]
 pub fn pet_evaluation_summary(app:AppHandle)->Result<Value,String>{
     let conn=super::open_database(&app)?;
