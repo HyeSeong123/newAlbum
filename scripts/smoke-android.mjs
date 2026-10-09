@@ -599,6 +599,11 @@ try {
   await page.mouse.move(rectangle.x+(bx+bw*0.20)*rectangle.width,rectangle.y+(by+bh*0.10)*rectangle.height);
   await page.mouse.down();await page.mouse.move(rectangle.x+(bx+bw*0.65)*rectangle.width,rectangle.y+(by+bh*0.45)*rectangle.height,{steps:5});await page.mouse.up();
   await faceCard.getByRole('button',{name:'얼굴 지정 마침',exact:true}).click();
+  await faceCard.getByRole('button',{name:'선택한 얼굴로 후보 비교',exact:true}).click();
+  await expect(faceCard.getByText('얼굴 특징으로 후보를 다시 비교했습니다. 반려동물을 선택한 뒤 저장해 주세요.',{exact:true})).toBeVisible({timeout:120_000});
+  const beforeFaceSave=await page.evaluate(id=>window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),petPhoto.id);
+  assert.equal(beforeFaceSave.detections.find(d=>d.id===dog.id).faceAppearance?.length??0,0,'Preview must not save features or change identity links');
+  assert.equal(beforeFaceSave.detections.find(d=>d.id===dog.id).pet_id,registeredPet.id);
   await faceCard.getByRole('button',{name:'확인 저장',exact:true}).click();
   await expect.poll(async()=>{
     const scan=await page.evaluate(id=>window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),petPhoto.id);
