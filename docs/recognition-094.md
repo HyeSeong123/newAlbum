@@ -2,7 +2,7 @@
 
 ## 상태
 
-현재 기준은 `feature/warm-journal-v2`의 `cf7c13d5c944525f7fe352711f0cc5e541386453`이다. 이미 적용된 0.9.4의 쉬운 사람 메뉴를 유지한다. 본 작업은 추가 고도화이며 버전은 요청한 0.9.4를 유지한다.
+개발 시작 기준은 `feature/warm-journal-v2`의 `cf7c13d5c944525f7fe352711f0cc5e541386453`이며, 이번 고도화의 검증된 앱 코드 커밋은 `940a50e22eebdf60153e0bc03e212b27ca1fd0b5`이다. 이미 적용된 0.9.4의 쉬운 사람 메뉴를 유지한다. 본 작업은 추가 고도화이며 버전은 요청한 0.9.4를 유지한다.
 
 **전체 목표 완료가 아니다.** 승인 가능한 실제 512차원 가중치, 강아지·고양이 좌우 자동 모델, 독립 평가 사진 800장과 실제 ARM64 휴대폰이 확보되지 않았다. 사용자는 평가 자료가 아직 없다고 답했다. 아래 구현과 검증 결과를 실제 정확도 달성과 구분한다.
 
@@ -72,13 +72,25 @@ SQLite 15→16은 추가 테이블만 생성한다. `detected_face.descriptor` �
 
 ## 검증 및 빌드
 
-로컬 TypeScript 검사 및 단위 테스트 123개, Python 저장·마이그레이션 테스트 19개 통과. 로컬은 Rust/Chromium 실행 파일이 없어 네이티브·브라우저 검증은 원격 CI에서 실행한다. CI 결과, 실제 APK 지문 및 코드 커밋은 빌드 후 아래에 확정 기록한다.
+개발 당시 로컬 TypeScript 검사 및 단위 테스트 123개, Python 저장·마이그레이션 테스트 19개 통과. 이후 앱 코드 `940a50e`의 원격 CI에서도 단위 검사 123개, TypeScript·프런트엔드 빌드, 데스크톱·모바일 브라우저 검사와 Rust 저장소 검사 105개가 통과했다. Android APK 생성 및 설치 검증도 성공했으며 아래에 확정 기록한다.
 
 Android 반복 검사는 동일한 권리 확인된 테스트 사진 1장을 사람/반려동물 Worker로 번갈아 총 100회 실행한다. 독립 사진 100장 또는 800장 정확도 평가가 아니다. 기존 DB 스냅샷 불변·WASM 실행·텐서 수 안정성을 검사한다. 에뮬레이터 결과를 실제 ARM64 휴대폰 시간·메모리·발열·배터리 측정으로 보고하지 않는다. 저사양 실기기·100장 서로 다른 대용량 사진·열/배터리는 미측정이다.
 
 ### 빌드 확정 기록
 
-CI 실행 결과를 기다리는 중. ARM64 APK는 새 앱 코드 빌드 결과만 제공한다.
+2026-10-11(KST) 이전 작업 재확인 시 다음 결과를 확인했다. 앱 코드 변경 없이 완료된 검증과 다운로드 기록을 보완했다.
+
+- 앱 버전: `0.9.4`
+- 검증된 앱 코드: [`940a50e22eebdf60153e0bc03e212b27ca1fd0b5`](https://github.com/HyeSeong123/newAlbum/commit/940a50e22eebdf60153e0bc03e212b27ca1fd0b5)
+- [Source validation](https://github.com/HyeSeong123/newAlbum/actions/runs/38067265534): 성공. 단위 검사 123개, TypeScript·프로덕션 빌드, 브라우저 회귀 및 Rust 검사 105개 통과.
+- [Android preview APK](https://github.com/HyeSeong123/newAlbum/actions/runs/38067265529): 성공. ARM64 APK 생성·서명 검사, Android API 36 x86_64 에뮬레이터 설치·오프라인 추론·저장 검증 통과.
+- [휴대폰용 APK ZIP 받기](https://github.com/HyeSeong123/newAlbum/actions/runs/38067265529/artifacts/11675880309): `Gamjassak-Android-0.9.4`, ZIP 안의 `Gamjassak-0.9.4.apk` 한 개가 ARM64 휴대폰용이다. 아티팩트 만료 예정은 2026-11-10 01:26(KST).
+- 위 ZIP 아카이브의 GitHub SHA-256: `6aa92f46d5746e9a3094d83c5db7f5a7c710acfe551d8c70e4c6260d3747e429`. 이것은 ZIP 지문이며 APK 자체 지문이 아니다.
+- [Android 검증 결과](https://github.com/HyeSeong123/newAlbum/actions/runs/38067265529/artifacts/11676121146)의 `person-repetition-smoke.json`을 직접 확인했다. 동일한 사진 1장을 사람/반려동물 Worker에 번갈아 총 100회 실행했고, 기존 저장 링크·특징 보존 및 오프라인 실행을 확인했다. 이는 독립 사진 100장 또는 인식 정확도 검증이 아니다.
+- `person-runtime-smoke.json`은 얼굴 3개와 유효 특징, CPU/WASM 출력 일치 및 네이티브 저장을 확인했다. `pet-recognition-smoke.json`과 `pet-cat-face-smoke.json`은 개/고양이 오프라인 추론과 뒷모습 식별 벡터 제거를 확인했다.
+- ARM64 휴대폰 실측, 실제 512차원 가중치, 반려동물 좌우 자동 모델 및 독립 평가 800장은 여전히 미완료다. 성공한 빌드를 전체 목표 달성으로 보고하지 않는다.
+
+다음 단계는 권리와 출처가 확인된 실제 모델 및 독립 평가 자료 확보다. 자료 확보 전에는 기존 128/1024차원 엔진과 사용자 확인 연결 정책을 유지한다.
 
 ## 변경 파일
 
