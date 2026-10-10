@@ -52,3 +52,6 @@
 .petEvaluationPanel { display: grid; gap: 12px; border: 1px solid var(--border); padding: 16px; border-radius: 8px; }
 .petEvaluationPanel label { display: grid; gap: 6px; }
 .petEvaluationPanel input, .petEvaluationPanel select { min-width: 0; padding: 10px; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+.petEvaluationReport { min-width: 0; overflow-wrap: anywhere; }
+.petEvaluationReport table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.petEvaluationReport th, .petEvaluationReport td { padding: 8px 4px; text-align: left; border-bottom: 1px solid var(--border); }

@@ -5,6 +5,7 @@ test('Worker detects dog locally and keeps main thread responsive with cancel/re
   test.setTimeout(240000);
   await page.route('**/pet-test.jpg', route => route.fulfill({path:'tests/fixtures/pet-dog.jpg',contentType:'image/jpeg'}));
   await page.route('**/pet-cat.jpg', route => route.fulfill({path:'tests/fixtures/pet-cat-front.jpg',contentType:'image/jpeg'}));
+  await page.route('**/pet-close-cat.jpg',route=>route.fulfill({path:'tests/fixtures/pet-cat.jpg',contentType:'image/jpeg'}));
   await page.route('**/pet-hard-cat.jpg', route => route.fulfill({path:'tests/fixtures/pet-cat.jpg',contentType:'image/jpeg'}));
   await page.route('**/pet-negative.jpg', route => route.fulfill({path:'node_modules/@vladmandic/face-api/demo/sample1.jpg',contentType:'image/jpeg'}));
   await page.goto('/');
@@ -17,17 +18,20 @@ test('Worker detects dog locally and keeps main thread responsive with cancel/re
     let ticks=0;const interval=setInterval(()=>ticks++,20);const started=performance.now();
     const cancel=new AbortController();const stopped=analyzePetImage('/pet-test.jpg',cancel.signal);setTimeout(()=>cancel.abort(),100);
     let aborted=false;try{await stopped;}catch(e){aborted=(e as Error).name==='AbortError';}
-    const features=await analyzePetImage('/pet-test.jpg');const negative=await analyzePetImage('/pet-negative.jpg');const cats=await analyzePetImage('/pet-cat.jpg');const hardCats=await analyzePetImage('/pet-hard-cat.jpg');
+    const features=await analyzePetImage('/pet-test.jpg');const negative=await analyzePetImage('/pet-negative.jpg');const cats=await analyzePetImage('/pet-cat.jpg');const hardCats=await analyzePetImage('/pet-hard-cat.jpg');const bitmap=await createImageBitmap(await (await fetch('/pet-close-cat.jpg')).blob());
+    const crop=document.createElement('canvas');crop.width=285;crop.height=300;crop.getContext('2d')!.drawImage(bitmap,230,40,285,300,0,0,285,300);bitmap.close();
+    const cropUrl=URL.createObjectURL(await new Promise<Blob>(resolve=>crop.toBlob(blob=>resolve(blob!),'image/jpeg',.95)));
+    let closeCats;try{closeCats=await analyzePetImage(cropUrl);}finally{URL.revokeObjectURL(cropUrl);}
     const object=features[0], [x,y,w,h]=object.box;
     const front=await analyzePetImage('/pet-test.jpg',undefined,'front',[{...object,view:'front',faceBox:[x+w*0.2,y+h*0.2,w*0.3,h*0.3]}]);
     const rear=await analyzePetImage('/pet-test.jpg',undefined,'rear',[{...front[0],view:'rear'}]);
     if(front[0].faceAppearance.length!==1024 || rear[0].appearance.length || rear[0].faceAppearance.length || rear[0].faceBox)throw new Error('face/rear extraction policy failed');
     clearInterval(interval);
-    return {hardCatCount:hardCats.length,hardCatAutomaticLinks:hardCats.filter((f:any)=>recognizePet(f,[]).autoPetId!==null).length,catCount:cats.length,catKind:cats[0]?.kind,catLength:cats[0]?.appearance.length,aborted,count:features.length,negative:negative.length,kind:features[0]?.kind,view:features[0]?.view,length:features[0]?.appearance.length,color:features[0]?.color.length,shape:features[0]?.shape.length,score:comparePets(features[0],features[0]).score,auto:recognizePet(features[0],[{petId:1,features:features[0]}]).autoPetId,ticks,elapsedMs:performance.now()-started};
+    return {catFace:closeCats[0]?.faceBox,catView:closeCats[0]?.view,catViewSource:closeCats[0]?.viewSource,catFaceLength:closeCats[0]?.faceAppearance?.length,hardCatCount:hardCats.length,hardCatAutomaticLinks:hardCats.filter((f:any)=>recognizePet(f,[]).autoPetId!==null).length,catCount:cats.length,catKind:cats[0]?.kind,catLength:cats[0]?.appearance.length,aborted,count:features.length,negative:negative.length,kind:features[0]?.kind,view:features[0]?.view,length:features[0]?.appearance.length,color:features[0]?.color.length,shape:features[0]?.shape.length,score:comparePets(features[0],features[0]).score,auto:recognizePet(features[0],[{petId:1,features:features[0]}]).autoPetId,ticks,elapsedMs:performance.now()-started};
   });
   await mkdir('preview-results',{recursive:true});await writeFile('preview-results/pet-worker-smoke.json',JSON.stringify(result,null,2));
   console.log('Pet Worker smoke (NOT identity accuracy):',JSON.stringify(result));
-  expect(result.hardCatAutomaticLinks).toBe(0);expect(result.aborted).toBe(true);expect(result.count).toBeGreaterThan(0);expect(result.kind).toBe('dog');expect(result.view).toBe('unknown');expect(result.length).toBe(1024);expect(result.color).toBe(120);expect(result.shape).toBe(10);expect(result.score).toBeCloseTo(1,4);expect(result.auto).toBeNull();expect(result.negative).toBe(0);expect(result.catCount).toBeGreaterThan(0);expect(result.catKind).toBe('cat');expect(result.catLength).toBe(1024);expect(result.ticks).toBeGreaterThan(10);expect(external).toEqual([]);
+  expect(result.catView).toBe('front');expect(result.catViewSource).toBe('cat-frontal-cascade');expect(result.catFaceLength).toBe(1024);expect(result.catFace).toHaveLength(4);expect(result.hardCatAutomaticLinks).toBe(0);expect(result.aborted).toBe(true);expect(result.count).toBeGreaterThan(0);expect(result.kind).toBe('dog');expect(result.view).toBe('unknown');expect(result.length).toBe(1024);expect(result.color).toBe(120);expect(result.shape).toBe(10);expect(result.score).toBeCloseTo(1,4);expect(result.auto).toBeNull();expect(result.negative).toBe(0);expect(result.catCount).toBeGreaterThan(0);expect(result.catKind).toBe('cat');expect(result.catLength).toBe(1024);expect(result.ticks).toBeGreaterThan(10);expect(external).toEqual([]);
 });
 
 test('offline WASM matches CPU outputs, reuses corrected body vectors and has bounded tensor counts',async({page,isMobile})=>{
@@ -86,4 +90,18 @@ test('missing offline WASM binary falls back to CPU and still detects the dog',a
     finally{window.removeEventListener('gamjassak-pet-diagnostics',listener);cancelPetInference();}
   });
   expect(result.kind).toBe('dog');expect(result.diagnostics.backend).toBe('cpu');expect(result.diagnostics.wasmFallback).toBe(true);
+});
+
+test('device measurement collects four own runs without identity results',async({page,isMobile})=>{
+  test.skip(isMobile,'Real inference is covered once.');test.setTimeout(120000);
+  await page.route('**/pet-device.jpg',route=>route.fulfill({path:'tests/fixtures/pet-dog.jpg',contentType:'image/jpeg'}));
+  await page.goto('/');
+  const result=await page.evaluate(async()=>{
+    const path='/src/features/pets/engine/deviceBenchmark.ts';
+    const {measurePetRuntime}=await import(/* @vite-ignore */ path);
+    const progress:number[]=[];
+    return {report:await measurePetRuntime('/pet-device.jpg',new AbortController().signal,(n:number)=>progress.push(n)),progress};
+  });
+  expect(result.progress).toEqual([1,2,3,4]);expect(result.report.measurements).toHaveLength(4);expect(result.report.backends).toEqual(['wasm']);expect(result.report.medianInferenceMs).toBeGreaterThan(0);expect(new Set(result.report.tensorCounts).size).toBe(1);
+  expect(result.report.identityAccuracyMeasured).toBe(false);expect(result.report.wholeAppPeakMemoryMeasured).toBe(false);expect(result.report.heatOrBatteryMeasured).toBe(false);expect(JSON.stringify(result.report)).not.toContain('appearance');
 });

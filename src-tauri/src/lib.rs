@@ -1265,6 +1265,7 @@ pub fn run() {
             pet_jobs::control_pet_jobs,
             pet_evaluation::save_pet_evaluation,
             pet_evaluation::pet_evaluation_summary,
+            pet_evaluation::get_pet_evaluation_dataset,
             pet_evaluation::export_pet_evaluation,
             faces::find_face_matches,
             faces::set_faces_excluded,

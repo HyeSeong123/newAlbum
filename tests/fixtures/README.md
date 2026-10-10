@@ -18,3 +18,7 @@ Thumbnail: https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5b/Cat_on_home.
 The white-cat fixture is a known detection miss of SSDLite at the configured
 0.55 threshold. It remains in the smoke test and its result is reported; no
 identity is auto-linked. The positive fixture does not erase this limitation.
+
+The face-detector smoke tests crop (230, 40, 515, 340) from the existing CC0
+`pet-cat.jpg` image at runtime, JPEG quality 95. No additional photo is stored;
+it is the same animal and source photo, not an independent identity evaluation.

@@ -5,15 +5,19 @@ import type { MediaItem } from '../../types/media';
 import type { Pet } from './petService';
 import { getPetScan } from './engine/manager';
 import { VIEW_LABELS,type PetDetection,type PetView } from './engine/types';
+import { evaluatePets,type PetEvaluationDataset } from './engine/evaluation';
 export function PetEvaluationPanel({photos,pets}:{photos:MediaItem[];pets:Pet[]}){
  const [media,setMedia]=useState(photos[0]?.id??''),[rows,setRows]=useState<PetDetection[]>([]),[detection,setDetection]=useState('');
  const [role,setRole]=useState('query'),[pet,setPet]=useState(''),[view,setView]=useState<PetView>('front'),[kind,setKind]=useState('dog');
  const [group,setGroup]=useState(''),[rights,setRights]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
  const [counts,setCounts]=useState({references:0,queries:0});
+ const [report,setReport]=useState<ReturnType<typeof evaluatePets>|null>(null);
+ const percent=(v:number|null)=>v===null?'미측정':`${(v*100).toFixed(1)}%`;
  const refresh=async()=>{const result=await invoke<typeof counts>('pet_evaluation_summary');if(result)setCounts(result);};
  useEffect(()=>{let alive=true;setRows([]);setDetection('');void getPetScan(Number(media)).then(scan=>{if(alive)setRows(scan?.detections.filter(d=>!d.excluded)??[]);}).catch(()=>{if(alive)setMessage('사진을 먼저 분석해 주세요.');});return()=>{alive=false;};},[media]);
  useEffect(()=>{void refresh().catch(()=>setMessage('검증 자료를 불러오지 못했습니다.'));},[]);
- async function add(){if(busy)return;setBusy(true);setMessage('');try{await invoke('save_pet_evaluation',{sample:{mediaId:Number(media),detectionId:detection?Number(detection):null,petId:pet?Number(pet):null,role,captureGroup:group,view,kind,rights}});await refresh();setMessage('검증 자료에 추가했습니다. 사진 연결과 인식 기준은 변경하지 않았습니다.');}catch(error){setMessage(String(error instanceof Error?error.message:error));}finally{setBusy(false);}}
+ async function add(){if(busy)return;setBusy(true);setMessage('');setReport(null);try{await invoke('save_pet_evaluation',{sample:{mediaId:Number(media),detectionId:detection?Number(detection):null,petId:pet?Number(pet):null,role,captureGroup:group,view,kind,rights}});await refresh();setMessage('검증 자료에 추가했습니다. 사진 연결과 인식 기준은 변경하지 않았습니다.');}catch(error){setMessage(String(error instanceof Error?error.message:error));}finally{setBusy(false);}}
+ async function evaluate(){if(busy)return;setBusy(true);setMessage('');setReport(null);try{setReport(evaluatePets(await invoke<PetEvaluationDataset>('get_pet_evaluation_dataset')));}catch(error){setMessage(String(error instanceof Error?error.message:error));}finally{setBusy(false);}}
  async function download(){if(busy)return;setBusy(true);setMessage('');try{const destination=await save({title:'반려동물 검증 자료 저장',defaultPath:'gamjassak-pet-evaluation.json',filters:[{name:'검증 특징 자료',extensions:['json']}]});if(destination){await invoke('export_pet_evaluation',{destination});setMessage('검증 자료를 저장했습니다. 원본 사진은 포함하지 않습니다.');}}catch(error){setMessage(String(error instanceof Error?error.message:error));}finally{setBusy(false);}}
  return <section className="petEvaluationPanel" aria-label="반려동물 검증 자료">
   <strong>인식 성능 검증 자료</strong><p className="petMatchNotice">등록 기준과 평가 사진은 서로 다른 촬영 세션으로 구분해 주세요. 평가 정답은 후보를 보기 전 실제 반려동물을 기준으로 입력합니다. 동일 사진·같은 연속 촬영은 양쪽에 사용하지 않습니다.</p>
@@ -25,7 +29,15 @@ export function PetEvaluationPanel({photos,pets}:{photos:MediaItem[];pets:Pet[]}
   <label>실제 동물 종류<select aria-label="실제 동물 종류" disabled={busy} value={kind} onChange={e=>setKind(e.target.value)}><option value="dog">강아지</option><option value="cat">고양이</option></select></label>
   <label>촬영 세션 이름<input aria-label="촬영 세션 이름" disabled={busy} value={group} maxLength={160} placeholder="예: 10월 10일 오전 산책" onChange={e=>setGroup(e.target.value)}/></label>
   <label>사진 사용 권리·출처<input aria-label="사진 사용 권리·출처" disabled={busy} value={rights} maxLength={500} placeholder="예: 직접 촬영 / 촬영자 사용 허락" onChange={e=>setRights(e.target.value)}/></label>
-  <div className="peopleActions"><button disabled={busy || !media || !group.trim() || !rights.trim() || role==='reference'&&(!detection||!pet)} onClick={()=>void add()}>검증 자료에 추가</button><button disabled={busy || !counts.references&&!counts.queries} onClick={()=>void download()}>검증 자료 JSON 저장</button></div>
+  <div className="peopleActions"><button disabled={busy || !media || !group.trim() || !rights.trim() || role==='reference'&&(!detection||!pet)} onClick={()=>void add()}>검증 자료에 추가</button><button disabled={busy || !counts.references || !counts.queries} onClick={()=>void evaluate()}>검증 결과 확인</button><button disabled={busy || !counts.references&&!counts.queries} onClick={()=>void download()}>검증 자료 JSON 저장</button></div>
+  {report && <div className="petEvaluationReport" role="status">
+    <strong>옆모습 60% 목표: {report.sideGoalReached===null?'자료 부족 · 판단 보류':report.sideGoalReached?'검증 기준 충족':'추가 개선·평가 필요'}</strong>
+    <p>정면 {percent(report.modelSpeciesTop1Accuracy?.front??null)} · 옆모습 {percent(report.modelSpeciesTop1Accuracy?.side??null)} · 뒷모습 후보 3개 안에 포함 {percent(report.rearTop3Recall)}</p>
+    {report.sideAccuracyWilson95 && <p>옆모습 정확도 95% 구간: {percent(report.sideAccuracyWilson95[0])} ~ {percent(report.sideAccuracyWilson95[1])}</p>}
+    <p>측면 개 {report.sideCoverage.dog.pets}마리·{report.sideCoverage.dog.photos}장 / 고양이 {report.sideCoverage.cat.pets}마리·{report.sideCoverage.cat.photos}장 · 탐지 실패 {report.stats.detectionMisses}장</p>
+    {!!report.perPetModelSpeciesAccuracy?.length && <table><caption>반려동물별 정면·측면 평가</caption><thead><tr><th>반려동물</th><th>정답 / 평가</th><th>정확도</th></tr></thead><tbody>{report.perPetModelSpeciesAccuracy.map(row=><tr key={row.petId}><td>{pets.find(p=>p.id===row.petId)?.name??'삭제된 등록'}</td><td>{row.correct} / {row.total}</td><td>{percent(row.accuracy)}</td></tr>)}</tbody></table>}
+    <small>사용자가 지정한 방향으로 후보를 비교한 결과입니다. 원래 종 분류 오류와 탐지 실패도 오답에 포함합니다. 개·고양이 각각 5마리 이상·측면 50장 이상, 좌우 각각 25장 이상이 필요하며 95% 구간의 하한이 60% 이상이어야 목표 충족으로 표시합니다. 자동 방향·자동 연결 정확도를 뜻하지 않습니다.</small>
+  </div>}
   <p role="status">등록 기준 {counts.references}장 · 평가 {counts.queries}장{message?` · ${message}`:''}</p>
  </section>;
 }

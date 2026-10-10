@@ -6,7 +6,7 @@ import { closeSync, openSync } from 'node:fs';
 import { promisify } from 'node:util';
 import { appendFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { benchmarkInstalledPetRuntime } from './pet-runtime-benchmark.mjs';
+import { benchmarkInstalledPetRuntime, verifyInstalledCatFace } from './pet-runtime-benchmark.mjs';
 
 const run = promisify(execFile);
 // A stuck emulator command must produce diagnostics instead of holding the
@@ -627,6 +627,7 @@ try {
   await page.evaluate(destination=>window.__TAURI_INTERNALS__.invoke('export_pet_evaluation',{destination}),exportPath);
   const exportFile=await run('adb',['exec-out','run-as',appId,'cat',exportPath],{encoding:'utf8',maxBuffer:1024*1024,timeout:30_000});
   const exported=JSON.parse(exportFile.stdout);assert.equal(exported.queries.length,1);assert.equal(exported.queries[0].features.faceAppearance.length,1024);assert.equal(exported.automaticLinkingEnabled,false);assert.ok(!exportFile.stdout.includes(petPhoto.file_path));
+  assert.deepEqual(await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('get_pet_evaluation_dataset')),exported);
   // This is explicit enrollment/confirmation, never an automatic identity claim.
   await page.evaluate(({id,petId}) => window.__TAURI_INTERNALS__.invoke('confirm_pet_detection',{detectionId:id,petId,view:'rear',excluded:false}),{id:dog.id,petId:registeredPet.id});
   petScan = await page.evaluate(id => window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),petPhoto.id);
@@ -639,6 +640,8 @@ try {
   await expect(page.getByRole('button',{name:'인식 결과 확인·수정',exact:true})).toBeVisible();
   await captureScreen('pet-photo-recognition-results');
   await page.getByRole('dialog',{name:'사진 상세',exact:true}).getByTitle('닫기',{exact:true}).click();
+  const catFaceSmoke=await verifyInstalledCatFace(page,(await readFile('tests/fixtures/pet-cat.jpg')).toString('base64'));
+  await writeFile(join(output,'pet-cat-face-smoke.json'),JSON.stringify({...catFaceSmoke,offline:true,identityAccuracyMeasured:false},null,2));
   await adb('shell','svc','wifi','enable');
   await adb('shell','svc','data','enable');
   console.log('Offline Android Worker dog inference, native feature persistence, explicit confirmation and rear-vector removal passed (not identity accuracy).');

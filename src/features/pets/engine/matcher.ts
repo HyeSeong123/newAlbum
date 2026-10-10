@@ -10,7 +10,12 @@ export function comparePets(a: PetFeatures, b: PetFeatures): { score: number; ba
   const basis = rear ? 'shape-color' : 'appearance';
   if (a.kind !== b.kind) return { score: 0, basis };
   const color = cosine(a.color, b.color), shape = cosine(a.shape, b.shape);
-  if (rear) return { score: 0.75 * color + 0.25 * shape, basis };
+  if (rear) {
+    const af=a.foreground,bf=b.foreground;
+    if(af?.version==='border-connected-v1' && bf?.version===af.version && af.color.length===120 && bf.color.length===120 && af.shape.length===10 && bf.shape.length===10)
+      return {score:.75*cosine(af.color,bf.color)+.25*cosine(af.shape,bf.shape),basis};
+    return { score: 0.75 * color + 0.25 * shape, basis };
+  }
   const appearance = Math.max(cosine(a.appearance, b.appearance), cosine(a.appearance, b.mirroredAppearance), cosine(a.mirroredAppearance, b.appearance));
   if (!appearance) return { score: 0, basis };
   const face = Math.max(cosine(a.faceAppearance ?? [], b.faceAppearance ?? []), cosine(a.faceAppearance ?? [], b.mirroredFaceAppearance ?? []), cosine(a.mirroredFaceAppearance ?? [], b.faceAppearance ?? []));

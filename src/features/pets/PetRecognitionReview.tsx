@@ -9,6 +9,7 @@ import { recognizePet, withView } from './engine/matcher';
 import { VIEW_LABELS, type PetDetection, type PetReference, type PetView, type PetFeatures, type PetKind } from './engine/types';
 import './pets.css';
 import { PetEvaluationPanel } from './PetEvaluationPanel';
+import { PetDeviceBenchmarkPanel } from './PetDeviceBenchmarkPanel';
 
 function DetectionCard({ detection, item, pets, references, preferredPet, onSaved }: {
   detection: PetDetection; item: MediaItem; pets: Pet[]; references: PetReference[]; preferredPet?: Pet; onSaved: () => Promise<void>;
@@ -34,8 +35,8 @@ function DetectionCard({ detection, item, pets, references, preferredPet, onSave
     if(locked.current)return;
     locked.current=true;setBusy(true);setError('');inference.current=new AbortController();
     try{
-      const features=await extractPetCorrection(item,detection,view,kind,faceBox,inference.current.signal);
-      if(!features.faceAppearance?.length)throw new Error('비교할 얼굴 영역을 지정해 주세요.');
+      const features=await extractPetCorrection(item,detection,view,kind,faceBox,inference.current.signal,view==='rear');
+      if(view!=='rear' && !features.faceAppearance?.length)throw new Error('비교할 얼굴 영역을 지정해 주세요.');
       setPrepared({selection,features});setSelectFace(false);
     }catch(reason){setError(reason instanceof Error?reason.message:String(reason));}
     finally{inference.current=null;locked.current=false;setBusy(false);}
@@ -69,10 +70,13 @@ function DetectionCard({ detection, item, pets, references, preferredPet, onSave
     <div className="petDetectionFields">
       <strong>{state}</strong>
       <small>{item.fileName}</small>
+      {detection.viewSource==='cat-frontal-cascade' && <p className="petMatchNotice">고양이 정면 얼굴을 자동으로 찾았습니다. 얼굴 테두리와 촬영 방향을 확인하고, 다르면 수정해 주세요.</p>}
       <label>종류<select aria-label="반려동물 종류" disabled={busy} value={kind} onChange={event=>setKind(event.target.value as PetKind)}><option value="dog">강아지</option><option value="cat">고양이</option></select></label>
       <label>촬영 방향<select aria-label="촬영 방향" disabled={busy} value={view} onChange={event => {const next=event.target.value as PetView;setView(next);if(next==='rear'||next==='unknown'){setFaceBox(undefined);setSelectFace(false);}}}>{Object.entries(VIEW_LABELS).map(([key,label]) => <option key={key} value={key}>{label}</option>)}</select></label>
       {view!=='rear' && view!=='unknown' && <div className="petFaceControls"><button disabled={busy} aria-pressed={selectFace} onClick={()=>setSelectFace(!selectFace)}>{selectFace?'얼굴 지정 마침':'얼굴 영역 지정'}</button>{faceBox && <><button disabled={busy} onClick={()=>void compareFace()}>선택한 얼굴로 후보 비교</button><button disabled={busy} onClick={()=>{setFaceBox(undefined);setSelectFace(false);}}>얼굴 영역 해제</button></>}<small>{selectFace?'동물 테두리 안에서 얼굴을 둘러싸도록 드래그해 주세요.':'얼굴을 지정한 사진끼리는 얼굴 특징을 우선 비교합니다.'}</small></div>}
-      {preview && <p role="status">얼굴 특징으로 후보를 다시 비교했습니다. 반려동물을 선택한 뒤 저장해 주세요.</p>}
+      {view==='rear' && <button disabled={busy} onClick={()=>void compareFace()}>뒷모습 체형·색상 다시 비교</button>}
+      {preview && <p role="status">{view==='rear'?'체형·색상 후보를 다시 비교했습니다.':'얼굴 특징으로 후보를 다시 비교했습니다.'} 반려동물을 선택한 뒤 저장해 주세요.</p>}
+      {view==='rear' && <small>{query.foreground?'배경으로 추정한 영역을 제외한 체형·색상을 비교합니다.':'배경과 털색을 분리하기 어려워 사진 영역 전체의 체형·색상을 비교합니다.'}</small>}
       <p className="petMatchNotice">{view === 'rear' ? '체형·색상 유사 후보만 비교합니다. 같은 반려동물인지 직접 확인해 주세요.' : view === 'unknown' ? '방향을 확인하지 못했습니다. 사진에서 방향과 반려동물을 직접 선택해 주세요.' : '외형 특징을 비교한 후보입니다. 같은 반려동물인지 직접 확인해 주세요.'}</p>
       {result.candidates.length > 0 && <p className="petMatchNotice">유사 후보: {result.candidates.map(candidate => `${pets.find(pet => pet.id===candidate.petId)?.name ?? '삭제된 등록'} (${candidate.basis === 'shape-color' ? '체형·색상' : candidate.basis==='face-appearance'?'얼굴·외형':'외형'})`).join(', ')}</p>}
       <label>반려동물<select aria-label="인식된 반려동물" disabled={busy} value={chosen} onChange={event => setChosen(event.target.value)}><option value="">미확인 / 연결 해제</option>{pets.map(pet => <option key={pet.id} value={pet.id}>{pet.name}</option>)}<option value="new">새 반려동물 등록</option></select></label>
@@ -119,7 +123,7 @@ export function PetRecognitionReview({ photos, pet, onClose, onSaved }: { photos
       <div className="peopleActions">{progress?.running ? <button onClick={()=>abort.current?.abort()}>분석 중단</button> : <><button onClick={()=>void start()}>사진 분석</button><button onClick={()=>void start(true)}>미확인 결과 재분석</button></>}<span role="status">{progress?.message}</span></div>
       {progress?.running && <progress aria-label="반려동물 분석 진행" value={progress.done} max={progress.total || 1}/>}
       <button disabled={!!progress?.running} onClick={()=>setEvaluation(!evaluation)}>{evaluation?'검증 자료 닫기':'검증 자료 만들기'}</button>
-      {evaluation && <PetEvaluationPanel photos={photos} pets={pets}/>}
+      {evaluation && <><PetEvaluationPanel photos={photos} pets={pets}/><PetDeviceBenchmarkPanel photos={photos} disabled={!!progress?.running}/></>}
       {error && <p role="alert">{error}</p>}
       {!rows.length && <p>아직 확인할 결과가 없습니다. 사진 분석을 시작해 주세요.</p>}
       {rows.map(row=>{const item=byId.get(row.media_id);return item ? <DetectionCard key={`${row.id}:${row.pet_id}:${row.view}:${row.kind}:${row.faceBox}`} detection={row} item={item} pets={pets} references={references} preferredPet={pet} onSaved={async()=>{await refresh();await onSaved();}}/> : null;})}

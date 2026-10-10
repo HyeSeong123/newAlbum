@@ -50,6 +50,8 @@ test('face region controls and independent evaluation labels stay usable',async(
  if(command==='list_pet_detections')return [feature];
  if(command==='get_pet_scan')return {source_key:'sha256:test',detections:[feature]};
  if(command==='pet_evaluation_summary')return {references:1,queries:2};
+ if(command==='get_pet_evaluation_dataset')return {references:[{sampleId:'r',captureGroup:'enroll',sourceKey:'r',petId:1,kind:'dog',view:'front',features:feature}],queries:[{sampleId:'q',captureGroup:'test',sourceKey:'q',petId:1,kind:'dog',view:'left',features:null}]};
+ if(command==='list_pet_jobs')return {pending:1,paused:0,failed:0,jobs:[]};
  if(command==='save_pet_evaluation'){localStorage.setItem('evaluation-sample',JSON.stringify(args.sample));return;}
  if(command==='list_face_index')return {people:[],faces:[],scanned:[]};
  if(command==='list_media'||command==='list_albums'||command==='list_diary')return [];
@@ -63,5 +65,7 @@ test('face region controls and independent evaluation labels stay usable',async(
  await panel.getByLabel('실제 반려동물',{exact:true}).selectOption('1');await panel.getByLabel('실제 촬영 방향',{exact:true}).selectOption('left');await panel.getByLabel('촬영 세션 이름',{exact:true}).fill('별도 산책 세션');await panel.getByLabel('사진 사용 권리·출처',{exact:true}).fill('직접 촬영');await panel.getByRole('button',{name:'검증 자료에 추가',exact:true}).click();
  await expect(panel.getByText(/사진 연결과 인식 기준은 변경하지 않았습니다/)).toBeVisible();
  const sample=await page.evaluate(()=>JSON.parse(localStorage.getItem('evaluation-sample')!));expect(sample.detectionId).toBeNull();expect(sample.petId).toBe(1);expect(sample.view).toBe('left');expect(sample.role).toBe('query');
+ await panel.getByRole('button',{name:'검증 결과 확인',exact:true}).click();await expect(panel.getByText('옆모습 60% 목표: 자료 부족 · 판단 보류',{exact:true})).toBeVisible();
+ const performance=review.getByRole('region',{name:'이 기기 처리 속도 측정'});await performance.getByRole('button',{name:'이 기기에서 측정',exact:true}).click();await expect(performance.getByText('진행 중인 사진 분석을 먼저 마치거나 중단해 주세요.',{exact:true})).toBeVisible();
  await page.screenshot({path:`preview-results/pet-evaluation-${test.info().project.name}.png`});
 });

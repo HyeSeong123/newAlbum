@@ -4,6 +4,9 @@ import * as coco from '@tensorflow-models/coco-ssd';
 import { cropDescriptors, normalize, validPetVector } from './features';
 import { conservativeViewAnalyzer, type PetFeatures, type PetView } from './types';
 import { disablePetWasm, petRuntimeInfo, selectPetBackend, type PetBackendPreference } from './runtime';
+import { detectCatFrontFace } from './catFace';
+import catFaceCascade from './cat-face-cascade.json';
+import { foregroundDescriptors } from './foreground';
 const scope = self as unknown as DedicatedWorkerGlobalScope;
 let models: Promise<{ detector: coco.ObjectDetection; embedding: tf.LayersModel }> | undefined;
 function loadModels(base: string) {
@@ -31,7 +34,7 @@ interface PetRequest { id: number; width: number; height: number; pixels: ArrayB
 async function infer(request: PetRequest) {
   const { width,height, pixels:pixelBuffer,modelBase,viewHint,regions } = request;
   const started=performance.now();
-  const timings = { initializationMs:0, detectionMs:0, bodyEmbeddingMs:0, faceEmbeddingMs:0, descriptorMs:0 };
+  const timings = { initializationMs:0, detectionMs:0, bodyEmbeddingMs:0, faceDetectionMs:0, faceEmbeddingMs:0, descriptorMs:0 };
   let reusedBodies = 0;
   const rgba=new Uint8ClampedArray(pixelBuffer);
   if(width<1 || height<1 || width>640 || height>640 || rgba.length!==width*height*4)throw new PetInputError('올바르지 않은 분석 사진입니다.');
@@ -51,14 +54,29 @@ async function infer(request: PetRequest) {
   const animals = regions ? regions.map(region => ({ class: region.kind, score: region.detectionScore, bbox: [region.box[0]*width,region.box[1]*height,region.box[2]*width,region.box[3]*height] as [number,number,number,number], region })) : objects.filter(object => object.class === 'dog' || object.class === 'cat').sort((a,b) => a.bbox[0] - b.bbox[0] || a.bbox[1] - b.bbox[1]).map(object => ({...object,region:undefined}));
   for (const object of animals) {
     const hint = object.region?.view ?? (animals.length === 1 ? viewHint : 'unknown');
-    const view = hint !== 'unknown' ? { view: hint, viewSource: 'user' as const } : conservativeViewAnalyzer.analyze();
+    let view: Pick<PetFeatures,'view'|'viewSource'> = hint !== 'unknown' ? { view: hint, viewSource: 'user' } : conservativeViewAnalyzer.analyze();
     const [x,y,w,h] = object.bbox;
     const x0 = Math.max(0,x), y0 = Math.max(0,y), x1 = Math.min(width,x+w), y1 = Math.min(height,y+h);
     if (x1-x0 < 8 || y1-y0 < 8) continue;
     const crop = new OffscreenCanvas(224,224), context = crop.getContext('2d')!;
     context.drawImage(canvas,x0,y0,x1-x0,y1-y0,0,0,224,224);
+    let autoFaceBox: PetFeatures['faceBox'];
+    // Run only on detected cats and fresh scans. Corrections (including clearing
+    // a face box) always obey the user's selection. Failure is not rear evidence.
+    if(!object.region && object.class==='cat' && (hint==='unknown' || hint==='front')) {
+      const at=performance.now(),scale=224/Math.max(x1-x0,y1-y0);
+      const faceCanvas=new OffscreenCanvas(Math.max(1,Math.round((x1-x0)*scale)),Math.max(1,Math.round((y1-y0)*scale))),faceContext=faceCanvas.getContext('2d')!;
+      faceContext.drawImage(canvas,x0,y0,x1-x0,y1-y0,0,0,faceCanvas.width,faceCanvas.height);
+      const face=detectCatFrontFace(faceContext.getImageData(0,0,faceCanvas.width,faceCanvas.height).data,faceCanvas.width,faceCanvas.height,catFaceCascade);
+      timings.faceDetectionMs+=performance.now()-at;
+      if(face && face[2]*(x1-x0)>=8 && face[3]*(y1-y0)>=8) {
+        autoFaceBox=[(x0+face[0]*(x1-x0))/width,(y0+face[1]*(y1-y0))/height,face[2]*(x1-x0)/width,face[3]*(y1-y0)/height];
+        if(hint==='unknown')view={view:'front',viewSource:'cat-frontal-cascade'};
+      }
+    }
     const descriptorAt=performance.now();
-    const descriptors = cropDescriptors(context.getImageData(0,0,224,224).data,224,224,(x1-x0)/(y1-y0));
+    const cropData=context.getImageData(0,0,224,224).data,aspect=(x1-x0)/(y1-y0);
+    const descriptors = {...cropDescriptors(cropData,224,224,aspect),foreground:foregroundDescriptors(cropData,224,224,aspect)};
     timings.descriptorMs += performance.now()-descriptorAt;
     // manager.ts verifies the content fingerprint before sending corrections.
     // Only complete, finite body vectors can be reused; rear always clears them.
@@ -69,7 +87,7 @@ async function infer(request: PetRequest) {
     const mirror = view.view === 'rear' ? [] : reuseBody ? object.region!.mirroredAppearance : await appearance(crop,embedding);
     if(reuseBody && view.view!=='rear')reusedBodies++;
     timings.bodyEmbeddingMs += performance.now()-bodyAt;
-    let faceBox = object.region?.faceBox;
+    let faceBox = object.region?.faceBox ?? autoFaceBox;
     let faceAppearance: number[] = [], mirroredFaceAppearance: number[] = [];
     if (view.view === 'rear' || view.view === 'unknown') faceBox = undefined;
     if (faceBox) {

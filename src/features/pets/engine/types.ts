@@ -6,14 +6,15 @@ export interface PetFeatures {
   kind: PetKind;
   detectedKind?: PetKind; // original model species; retained when a user corrects kind
   view: PetView;
-  viewSource: 'unknown' | 'user';
+  viewSource: 'unknown' | 'user' | 'cat-frontal-cascade';
   box: [number, number, number, number]; // normalized x/y/width/height
   detectionScore: number; // dog/cat detection, never identity probability
   appearance: number[]; // whole animal embedding, NOT facial landmarks
   mirroredAppearance: number[];
-  faceBox?: [number, number, number, number]; // user-selected region in the oriented image
+  faceBox?: [number, number, number, number]; // user-selected or estimated cat face in the oriented image
   faceAppearance?: number[]; // same MobileNet extractor, NOT facial landmarks or calibrated identity
   mirroredFaceAppearance?: number[];
+  foreground?: { version: 'border-connected-v1'; color: number[]; shape: number[]; fraction: number };
   color: number[]; // RGB spatial histogram, crop/background can affect it
   shape: number[]; // coarse crop geometry/foreground proxy, NOT anatomy
 }

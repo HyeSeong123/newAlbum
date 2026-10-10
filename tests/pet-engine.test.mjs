@@ -63,6 +63,16 @@ test('a generic body reference cannot override the available face reference for 
  assert.equal(rankPets(query,references)[0].basis,'face-appearance');assert.ok(rankPets(query,references)[0].score<0.5);
 });
 const {evaluatePets}=await import(await modelUrl('features/pets/engine/evaluation.ts'));
+const {foregroundDescriptors}=await import(await modelUrl('features/pets/engine/foreground.ts'));
+test('rear foreground comparison excludes changed backgrounds and preserves black versus white fur',()=>{
+ const make=(background,fur)=>{const rgba=new Uint8ClampedArray(64*64*4);for(let y=0;y<64;y++)for(let x=0;x<64;x++)rgba.set([...((x>16&&x<48&&y>8&&y<56)?fur:background),255],(y*64+x)*4);return foregroundDescriptors(rgba,64,64,1);};
+ const a=make([40,120,220],[140,70,30]),b=make([40,200,70],[140,70,30]);
+ assert.ok(a && b);assert.equal(cosine(a.color,b.color),1);assert.equal(cosine(a.shape,b.shape),1);
+ assert.ok(cosine(make([40,120,220],[30,30,30]).color,make([40,120,220],[230,230,230]).color)<.8);
+ assert.equal(comparePets(feature({view:'rear',foreground:a}),feature({color:[0,1],shape:[0,1],foreground:b})).score,1);
+ assert.equal(foregroundDescriptors(new Uint8ClampedArray(64*64*4).fill(120),64,64,1),undefined);
+ assert.equal(comparePets(feature({view:'rear',foreground:a}),feature()).score,1); // legacy fallback is separate
+});
 const realDimensions=()=>feature({appearance:[1,...Array(1023).fill(0)],mirroredAppearance:[1,...Array(1023).fill(0)],color:[1,...Array(119).fill(0)],shape:[1,...Array(9).fill(0)]});
 const reference=()=>({sampleId:'r',captureGroup:'enroll',sourceKey:'hash1',petId:1,view:'front',kind:'dog',features:realDimensions()});
 const query=(patch={})=>({sampleId:'q',captureGroup:'test',sourceKey:'hash2',petId:1,view:'left',kind:'dog',features:realDimensions(),...patch});
@@ -73,9 +83,10 @@ test('evaluation includes detector misses, unknown pets, rear recall and small-d
 test('evaluation rejects identical contents, sessions, samples and malformed vectors',()=>{
  for(const patch of [{captureGroup:'enroll'},{sourceKey:'hash1'},{sampleId:'r'},{features:feature()}])assert.throws(()=>evaluatePets({references:[reference()],queries:[query(patch)]}));
  assert.throws(()=>evaluatePets({references:[reference(),reference()],queries:[]}));
+ assert.throws(()=>evaluatePets({references:[reference()],queries:[query(),query({sampleId:'duplicate'})]}));
 });
 test('species failures are misses and user corrections are reported separately',()=>{
- const result=evaluatePets({references:[reference()],queries:[query({features:{...realDimensions(),kind:'cat'}}),query({sampleId:'corrected',features:{...realDimensions(),detectedKind:'cat'}})]});
+ const result=evaluatePets({references:[reference()],queries:[query({features:{...realDimensions(),kind:'cat'}}),query({sampleId:'corrected',sourceKey:'hash3',features:{...realDimensions(),detectedKind:'cat'}})]});
  assert.equal(result.top1IdentificationAccuracy.side,0.5);assert.equal(result.stats.species.correct,0);assert.equal(result.stats.humanSpeciesCorrections,1);
 });
 test('front face candidates precede less specific body and rear-only retrieval',()=>{
@@ -91,4 +102,13 @@ test('original species errors do not become measured pipeline accuracy through u
 test('a rear color-only reference cannot replace a usable front body reference for the same pet',()=>{
  const q=feature(),body=feature({appearance:[0.8,0.6],mirroredAppearance:[0.8,0.6]});
  assert.equal(rankPets(q,[{petId:1,features:body},{petId:1,features:feature({view:'rear'})}])[0].basis,'appearance');
+});
+test('side goal requires species balance and a 95 percent lower bound above the target',()=>{
+ const build=(correct)=>{
+  const references=Array.from({length:10},(_,i)=>{const f=realDimensions();f.kind=i<5?'dog':'cat';f.detectedKind=f.kind;f.appearance=Array(1024).fill(0);f.appearance[i]=1;f.mirroredAppearance=[...f.appearance];return {...reference(),sampleId:'r'+i,captureGroup:'enroll'+i,sourceKey:'r-source'+i,petId:i+1,kind:f.kind,features:f};});
+  const queries=Array.from({length:100},(_,i)=>{const ref=references[i%10];const f=structuredClone(ref.features);if(i>=correct){f.appearance=Array(1024).fill(0);f.appearance[100]=1;f.mirroredAppearance=[...f.appearance];}return {...query(),sampleId:'q'+i,captureGroup:'test'+i,sourceKey:'q-source'+i,petId:ref.petId,kind:ref.kind,view:i<50?'left':'right',features:f};});return {references,queries};
+ };
+ const borderline=evaluatePets(build(60));assert.equal(borderline.sideDataSufficient,true);assert.equal(borderline.sidePointGoalReached,true);assert.equal(borderline.sideGoalReached,false);
+ const strong=evaluatePets(build(100));assert.equal(strong.sideGoalReached,true);assert.deepEqual(strong.sideCoverage,{dog:{photos:50,pets:5},cat:{photos:50,pets:5}});
+ const unbalanced=build(100);unbalanced.queries=unbalanced.queries.filter(q=>q.kind==='dog');assert.equal(evaluatePets(unbalanced).sideGoalReached,null);
 });

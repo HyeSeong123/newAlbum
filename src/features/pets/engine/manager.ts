@@ -35,9 +35,9 @@ export async function scanPetPhoto(item: MediaItem, signal?: AbortSignal, viewHi
   signal?.throwIfAborted();
   return previous ? invoke<ScanRecord>('replace_pet_scan',{mediaId:id,expectedSourceKey:previous.source_key,sourceKey,features,allowSourceChange}) : invoke<ScanRecord>('save_pet_scan', { mediaId: id, sourceKey, features });
 }
-export async function extractPetCorrection(item:MediaItem,detection:PetDetection,view:PetView,kind:PetFeatures['kind'],faceBox:PetFeatures['faceBox'],signal?:AbortSignal):Promise<PetFeatures> {
+export async function extractPetCorrection(item:MediaItem,detection:PetDetection,view:PetView,kind:PetFeatures['kind'],faceBox:PetFeatures['faceBox'],signal?:AbortSignal,refreshDescriptors=false):Promise<PetFeatures> {
   let features=withView({...detection,detectedKind:detection.detectedKind ?? detection.kind,kind,faceBox},view);
-  const needsExtraction=view!=='rear' && view!=='unknown' && (!!faceBox || !features.appearance.length);
+  const needsExtraction=refreshDescriptors || view!=='rear' && view!=='unknown' && (!!faceBox || !features.appearance.length);
   if (needsExtraction) {
     const input=await invoke<{path:string;sourceKey:string}>('prepare_pet_input',{id:Number(item.id)});
     const scan=await getPetScan(Number(item.id));

@@ -20,3 +20,9 @@ sha2 0.10.9 by the RustCrypto contributors: MIT OR Apache-2.0.
 This application uses the Apache-2.0 option for source-content hashing.
 Source: https://docs.rs/crate/sha2/0.10.9
 No sha2-asm optional implementation is enabled.
+
+OpenCV 4.12.0 frontal-cat Haar cascade by Joseph Howse: BSD-style 3-clause license.
+Converted unchanged weights are bundled in the pet Worker.
+Full copyright, permission terms and disclaimer: pet-cat-face-license.txt.
+Source: https://github.com/opencv/opencv/blob/4.12.0/data/haarcascades/haarcascade_frontalcatface.xml
+The OpenCV runtime is not included.

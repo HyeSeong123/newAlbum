@@ -1,5 +1,40 @@
 import assert from 'node:assert/strict';
 
+// A single known frontal fixture checks APK integration, not accuracy.
+export async function verifyInstalledCatFace(page, base64) {
+  const result=await page.evaluate(async encoded=>{
+    const entry=document.querySelector('script[type="module"][src]');
+    const bundle=await (await fetch(entry.src)).text();
+    const workerName=bundle.match(/pet\.worker-[\w-]+\.js/)?.[0];
+    if(!workerName)throw new Error('Production pet Worker was not found');
+    const bytes=Uint8Array.from(atob(encoded),c=>c.charCodeAt(0));
+    const source=await createImageBitmap(new Blob([bytes],{type:'image/jpeg'}));
+    const crop=document.createElement('canvas');crop.width=285;crop.height=300;crop.getContext('2d').drawImage(source,230,40,285,300,0,0,285,300);source.close();
+    const bitmap=await createImageBitmap(await new Promise(resolve=>crop.toBlob(resolve,'image/jpeg',.95)));
+    const canvas=document.createElement('canvas');canvas.width=bitmap.width;canvas.height=bitmap.height;
+    const context=canvas.getContext('2d');context.drawImage(bitmap,0,0);bitmap.close();
+    const rgba=context.getImageData(0,0,canvas.width,canvas.height).data;
+    const worker=new Worker(new URL(`/assets/${workerName}`,location.href),{type:'module'});let id=0;
+    const run=regions=>new Promise((resolve,reject)=>{
+      const requestId=++id,pixels=rgba.slice().buffer;
+      const cleanup=()=>{clearTimeout(timer);worker.removeEventListener('message',message);worker.removeEventListener('error',error);};
+      const message=event=>{if(event.data.id!==requestId)return;cleanup();event.data.error?reject(new Error(event.data.error)):resolve(event.data);};
+      const error=()=>{cleanup();reject(new Error('Cat Worker failed'));};
+      const timer=setTimeout(()=>{cleanup();reject(new Error('Cat Worker timed out'));},120000);
+      worker.addEventListener('message',message);worker.addEventListener('error',error);
+      worker.postMessage({id:requestId,width:canvas.width,height:canvas.height,pixels,modelBase:new URL('/models/pets/',location.href).href,viewHint:'unknown',regions,backend:'auto'},[pixels]);
+    });
+    try {
+      const front=await run(),cat=front.features[0];
+      if(!cat)throw new Error('Frontal cat fixture was missed');
+      const rear=await run([{...cat,view:'rear',viewSource:'user'}]);
+      return {kind:cat.kind,view:cat.view,viewSource:cat.viewSource,faceBox:cat.faceBox,faceLength:cat.faceAppearance?.length,backend:front.diagnostics.backend,rearClearsIdentity:rear.features.every(f=>!f.appearance.length&&!f.mirroredAppearance.length&&!f.faceAppearance.length&&!f.faceBox),diagnostics:front.diagnostics};
+    }finally{worker.terminate();}
+  },base64);
+  assert.equal(result.kind,'cat');assert.equal(result.view,'front');assert.equal(result.viewSource,'cat-frontal-cascade');assert.equal(result.faceLength,1024);assert.equal(result.faceBox.length,4);assert.equal(result.rearClearsIdentity,true);assert.equal(result.backend,'wasm');
+  return result;
+}
+
 // Execute the installed production Worker, without a test-only app API.
 export async function benchmarkInstalledPetRuntime(page, inputPath) {
   const result = await page.evaluate(async path => {

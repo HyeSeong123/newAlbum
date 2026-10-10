@@ -4,6 +4,8 @@ use tauri::AppHandle;
 
 const ENGINE: &str = "gamjassak-pets-v2";
 #[derive(Serialize, Deserialize, Clone)]
+pub struct Foreground {version:String,color:Vec<f64>,shape:Vec<f64>,fraction:f64}
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Features {
     kind: String, view: String, view_source: String, #[serde(rename = "box")] box_: [f64; 4], detection_score: f64,
@@ -12,6 +14,7 @@ pub struct Features {
     #[serde(default, skip_serializing_if="Option::is_none")] face_box: Option<[f64;4]>,
     #[serde(default)] face_appearance: Vec<f64>,
     #[serde(default)] mirrored_face_appearance: Vec<f64>,
+    #[serde(default,skip_serializing_if="Option::is_none")] foreground: Option<Foreground>,
 }
 // The wire spelling of the bounding box is `box`.
 
@@ -25,7 +28,7 @@ pub struct Scan { media_id: i64, engine_version: String, source_key: String, det
 fn validate(f: &Features) -> Result<(), String> {
     if !["dog", "cat"].contains(&f.kind.as_str()) || !["front", "left", "right", "rear", "unknown"].contains(&f.view.as_str())
         || f.detected_kind.as_ref().is_some_and(|kind|!["dog","cat"].contains(&kind.as_str()))
-        || !["unknown", "user"].contains(&f.view_source.as_str())
+        || !["unknown", "user", "cat-frontal-cascade"].contains(&f.view_source.as_str())
         || !f.box_.iter().all(|v| v.is_finite() && (0.0..=1.0).contains(v))
         || f.box_[2] <= 0.0 || f.box_[3] <= 0.0
         || f.box_[0]+f.box_[2] > 1.000001 || f.box_[1]+f.box_[3] > 1.000001
@@ -34,6 +37,10 @@ fn validate(f: &Features) -> Result<(), String> {
         || f.color.len() != 120 || f.shape.len() != 10
         || ![&f.appearance,&f.mirrored_appearance,&f.color,&f.shape,&f.face_appearance,&f.mirrored_face_appearance].iter().all(|v| v.iter().all(|x| x.is_finite() && x.abs() <= 1.000001)) {
         return Err("올바르지 않은 반려동물 특징입니다.".into());
+    }
+    if f.view_source=="cat-frontal-cascade" && (f.kind!="cat" || f.view!="front" || f.face_box.is_none()) {return Err("자동 고양이 얼굴 분석을 확인해 주세요.".into());}
+    if let Some(g)=&f.foreground {
+        if g.version!="border-connected-v1" || g.color.len()!=120 || g.shape.len()!=10 || !g.fraction.is_finite() || !(0.05..=0.85).contains(&g.fraction) || ![&g.color,&g.shape].iter().all(|v|v.iter().all(|x|x.is_finite() && x.abs()<=1.000001)) {return Err("배경을 제외한 체형·색상 특징을 확인해 주세요.".into());}
     }
     if f.view == "rear" && (!f.appearance.is_empty() || !f.mirrored_appearance.is_empty() || f.face_box.is_some() || !f.face_appearance.is_empty() || !f.mirrored_face_appearance.is_empty()) { return Err("뒷모습에는 개체 식별 특징을 저장할 수 없습니다.".into()); }
     if let Some(b)=f.face_box {
@@ -184,7 +191,7 @@ pub async fn replace_pet_scan(app:AppHandle,media_id:i64,expected_source_key:Str
 mod tests {
     use super::*;
     fn database()->Connection {let mut c=Connection::open_in_memory().unwrap();crate::database::initialize(&mut c).unwrap();c.execute_batch("INSERT INTO media(id,file_path,file_type,size_bytes) VALUES(1,'a','image',1);INSERT INTO pet(id,name) VALUES(1,'보리'),(2,'초코');").unwrap();c}
-    fn features()->Features {Features{kind:"dog".into(),detected_kind:Some("dog".into()),view:"unknown".into(),view_source:"unknown".into(),box_:[0.0,0.0,0.5,0.5],detection_score:0.9,appearance:vec![0.0;1024],mirrored_appearance:vec![0.0;1024],color:vec![0.0;120],shape:vec![0.0;10],face_box:None,face_appearance:vec![],mirrored_face_appearance:vec![]}}
+    fn features()->Features {Features{kind:"dog".into(),detected_kind:Some("dog".into()),view:"unknown".into(),view_source:"unknown".into(),box_:[0.0,0.0,0.5,0.5],detection_score:0.9,appearance:vec![0.0;1024],mirrored_appearance:vec![0.0;1024],color:vec![0.0;120],shape:vec![0.0;10],face_box:None,face_appearance:vec![],mirrored_face_appearance:vec![],foreground:None}}
     #[test] fn reanalysis_preserves_confirmed_ids_and_explicit_source_change_preserves_photo_links(){
         let mut c=database();let key=format!("sha256:{}","a".repeat(64));let other=format!("sha256:{}","b".repeat(64));
         let scan=write_scan(&mut c,1,&key,vec![features(),features()]).unwrap();let id=scan.detections[0].id;
@@ -213,6 +220,14 @@ mod tests {
         let key=crate::thumbnails::content_key(&path).unwrap();write_scan(&mut c,1,&key,vec![features()]).unwrap();verify_source(&c,1,&key).unwrap();
         std::fs::write(&path,b"dog").unwrap();assert!(verify_source(&c,1,&key).is_err());assert_eq!(read_scan(&c,1).unwrap().unwrap().source_key,key);
         std::fs::remove_file(path).unwrap();
+    }
+    #[test] fn automatic_cat_face_and_optional_foreground_round_trip_without_linking(){
+        let mut c=database();let mut f=features();f.kind="cat".into();f.detected_kind=Some("cat".into());f.view="front".into();f.view_source="cat-frontal-cascade".into();f.face_box=Some([0.1,0.1,0.2,0.2]);f.face_appearance=vec![0.01;1024];f.mirrored_face_appearance=vec![0.01;1024];
+        f.foreground=Some(Foreground{version:"border-connected-v1".into(),color:vec![0.01;120],shape:vec![0.01;10],fraction:0.4});
+        let saved=write_scan(&mut c,1,"test",vec![f.clone()]).unwrap();assert_eq!(saved.detections[0].pet_id,None);assert_eq!(saved.detections[0].features.foreground.as_ref().unwrap().fraction,0.4);
+        f.kind="dog".into();assert!(validate(&f).is_err());f.kind="cat".into();f.foreground.as_mut().unwrap().fraction=f64::NAN;assert!(validate(&f).is_err());
+        confirm(&mut c,saved.detections[0].id,Some(1),"rear",false).unwrap();let rear=read_scan(&c,1).unwrap().unwrap().detections.remove(0).features;
+        assert!(rear.appearance.is_empty() && rear.face_box.is_none());assert!(rear.foreground.is_some());assert_eq!(rear.view_source,"user");
     }
     #[test] fn references_keep_views_balanced_and_retain_an_older_face_region(){
         let mut c=database();

@@ -2,6 +2,10 @@ import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 const root = new URL('../public/models/pets/', import.meta.url);
 const lock = JSON.parse(await readFile(new URL('./pet-model-lock.json', import.meta.url), 'utf8'));
+const catCascade=await readFile(new URL('../src/features/pets/engine/cat-face-cascade.json',import.meta.url));
+if(createHash('sha256').update(catCascade).digest('hex')!=='69cf5c1a84f33860a396b696d44f98ea0f15a3d7e0d6c00e14e5cb8fac2fa2a3')throw new Error('Cat face cascade integrity check failed');
+// The converted cascade is imported into the Worker; preserve its own BSD notice.
+await readFile(new URL('../public/notices/pet-cat-face-license.txt',import.meta.url));
 for (const [name, model] of Object.entries(lock.models)) {
   const dir = new URL(`${name}/`, root);
   await mkdir(dir, { recursive: true });

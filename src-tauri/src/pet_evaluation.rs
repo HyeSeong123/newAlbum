@@ -53,6 +53,8 @@ pub fn pet_evaluation_summary(app:AppHandle)->Result<Value,String>{
     Ok(json!({"references":count("reference")?,"queries":count("query")?}))
 }
 #[tauri::command]
+pub fn get_pet_evaluation_dataset(app:AppHandle)->Result<Value,String>{dataset(&super::open_database(&app)?)}
+#[tauri::command]
 pub async fn export_pet_evaluation(app:AppHandle,destination:String)->Result<(),String>{
     tauri::async_runtime::spawn_blocking(move||{
         let data=serde_json::to_vec_pretty(&dataset(&super::open_database(&app)?)?).map_err(|e|e.to_string())?;

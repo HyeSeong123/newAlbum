@@ -11,6 +11,7 @@ on:
       - 'scripts/prepare-android.mjs'
       - 'scripts/prepare-pet-models.mjs'
       - 'scripts/pet-model-lock.json'
+      - 'scripts/pet-runtime-benchmark.mjs'
       - 'scripts/smoke-android.mjs'
       - 'package*.json'
       - 'vite.config.ts'
@@ -150,6 +151,7 @@ jobs:
             test-results/android-smoke/*.png
             test-results/android-smoke/pet-recognition-smoke.json
             test-results/android-smoke/pet-runtime-benchmark.json
+            test-results/android-smoke/pet-cat-face-smoke.json
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: failure()
