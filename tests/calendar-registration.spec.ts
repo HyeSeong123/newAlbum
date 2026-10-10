@@ -18,7 +18,7 @@ async function fixture(page: Page, initiallyRegistered = false) {
       invoke: async (command: string, args: any) => {
         if (command === 'list_media') return registered;
         if (command === 'list_albums') return albums;
-        if (command === 'plugin:dialog|open') return media.map(item => item.file_path);
+        if ((command === 'plugin:dialog|open' || command === 'choose_android_gallery')) return media.map(item => item.file_path);
         if (command === 'register_paths') { registered = media; localStorage.setItem('registration-test-imported', 'true'); return registered; }
         if (command === 'assign_media_region') {
           document.documentElement.dataset.importRegions = JSON.stringify(args);
@@ -51,7 +51,7 @@ test('file import assigns both photos and video districts and persists consecuti
   await form.getByRole('checkbox', { name: /달력에 등록하기/ }).check();
   await form.getByLabel('달력 라벨', { exact: true }).fill('제주 여행');
   await page.screenshot({ path: `preview-results/calendar-import-${testInfo.project.name}.png`, fullPage: true });
-  await form.getByRole('button', { name: '파일 선택' }).click();
+  await form.getByRole('button', { name: /^(파일 선택|갤러리 열기)$/ }).click();
   await expect(form).toBeHidden();
   expect(JSON.parse((await page.locator('html').getAttribute('data-import-regions'))!).ids).toEqual([1, 2, 3, 4]);
   const records = await page.evaluate(() => JSON.parse(localStorage.getItem('oraedameun.calendarRegistrations-v1')!));
@@ -143,7 +143,7 @@ test('calendar persistence failure keeps the successfully imported media', async
   await page.getByRole('button', { name: '사진·영상 가져오기', exact: true }).click();
   const form = page.getByRole('dialog', { name: '사진·영상 가져오기', exact: true });
   await form.getByRole('checkbox', { name: /달력에 등록하기/ }).check();
-  await form.getByRole('button', { name: '파일 선택' }).click();
+  await form.getByRole('button', { name: /^(파일 선택|갤러리 열기)$/ }).click();
   await expect(form).toBeHidden();
   await expect(page.getByRole('alert')).toContainText('사진과 영상은 가져왔지만 달력에 등록하지 못했습니다');
   await expect(page.getByRole('dialog', { name: '사진·영상 가져오는 중' })).toBeHidden();

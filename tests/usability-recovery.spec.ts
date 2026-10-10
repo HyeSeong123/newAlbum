@@ -52,7 +52,7 @@ async function nativeLibrary(page: Page, options: { existing?: 'media' | 'album'
           return;
         }
         if (command === 'increment_media_view') return 1;
-        if (command === 'plugin:dialog|open') return ['C:/recovery-1.jpg', 'C:/recovery-2.jpg'];
+        if ((command === 'plugin:dialog|open' || command === 'choose_android_gallery')) return ['C:/recovery-1.jpg', 'C:/recovery-2.jpg'];
         if (command === 'register_paths') {
           media = calls[command] === 1 ? records.slice(0, 1) : records;
           if (calls[command] === 1) throw new Error('second file unreadable');
@@ -184,12 +184,12 @@ test('partial native import keeps successful photos and retry does not duplicate
   await page.goto('/');
   await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.getByRole('button', { name: '사진 가져오기', exact: true }).click();
-  await page.getByRole('dialog', { name: '사진·영상 가져오기' }).getByRole('button', { name: '파일 선택' }).click();
+  await page.getByRole('dialog', { name: '사진·영상 가져오기' }).getByRole('button', { name: /^(파일 선택|갤러리 열기)$/ }).click();
   await expect(page.getByRole('alert')).toContainText('1개 파일은 가져왔습니다.');
   await expect(page.getByRole('alert')).toContainText('등록된 사진은 그대로 남아 있습니다.');
   await expect(page.locator('.mediaTile')).toHaveCount(1);
   await page.getByRole('button', { name: '사진·영상 가져오기', exact: true }).click();
-  await page.getByRole('dialog', { name: '사진·영상 가져오기' }).getByRole('button', { name: '파일 선택' }).click();
+  await page.getByRole('dialog', { name: '사진·영상 가져오기' }).getByRole('button', { name: /^(파일 선택|갤러리 열기)$/ }).click();
   await expect(page.locator('.mediaTile')).toHaveCount(2);
   await expect(page.locator('.mediaTile[data-media-id="1"]')).toHaveCount(1);
   await expect(page.locator('.mediaTile[data-media-id="2"]')).toHaveCount(1);

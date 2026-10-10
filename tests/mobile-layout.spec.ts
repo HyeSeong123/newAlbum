@@ -78,21 +78,21 @@ test('import header and actions stay visible when options scroll on short phones
   const dialog = page.getByRole('dialog', { name: '사진·영상 가져오기', exact: true });
   await expect(dialog.locator('.mediaImportHeader')).toBeInViewport();
   await expect(dialog.getByRole('button', { name: '닫기', exact: true })).toBeInViewport();
-  await expect(dialog.getByRole('button', { name: '파일 선택', exact: true })).toBeInViewport();
+  await expect(dialog.getByRole('button', { name: /^(파일 선택|갤러리 열기)$/, exact: true })).toBeInViewport();
   await expect(dialog.getByLabel('촬영 위치 자동 등록 안내')).toBeInViewport();
   await dialog.getByRole('checkbox', { name: /가져오면서 앨범 만들기/ }).check();
   await dialog.getByRole('checkbox', { name: /달력에 등록하기/ }).check();
   await dialog.getByLabel('달력 등록 날짜 방식').selectOption('range');
   await dialog.locator('.mediaImportBody').evaluate(element => { element.scrollTop = element.scrollHeight; });
   await expect(dialog.locator('.mediaImportHeader')).toBeInViewport();
-  await expect(dialog.getByRole('button', { name: '파일 선택', exact: true })).toBeInViewport();
+  await expect(dialog.getByRole('button', { name: /^(파일 선택|갤러리 열기)$/, exact: true })).toBeInViewport();
   const body = (await dialog.locator('.mediaImportBody').boundingBox())!;
   const actions = (await dialog.locator('.mediaImportActions').boundingBox())!;
   expect(body.y + body.height).toBeLessThanOrEqual(actions.y + 1);
   await page.screenshot({ path: 'preview-results/mobile-import-layout.png' });
   // Simulate the smaller visual viewport reported while a keyboard is open.
   await page.evaluate(() => document.documentElement.style.setProperty('--app-viewport-height', '390px'));
-  await expect(dialog.getByRole('button', { name: '파일 선택', exact: true })).toBeInViewport();
+  await expect(dialog.getByRole('button', { name: /^(파일 선택|갤러리 열기)$/, exact: true })).toBeInViewport();
   expect((await dialog.boundingBox())!.y + (await dialog.boundingBox())!.height).toBeLessThanOrEqual(390);
 });
 
