@@ -13,6 +13,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.provider.Settings
 import android.util.LruCache
 import android.util.Size
 import android.view.Gravity
@@ -42,6 +43,7 @@ class GamjassakGalleryActivity : Activity() {
     private lateinit var message: TextView
     private lateinit var done: Button
     private lateinit var more: Button
+    private lateinit var settings: Button
     private val adapter = GalleryAdapter()
     private var loading = false
     private var exhausted = false
@@ -89,6 +91,11 @@ class GamjassakGalleryActivity : Activity() {
         root.addView(actions)
         more = Button(this).apply { text = "접근할 사진 변경"; setOnClickListener { requestGalleryAccess() } }
         root.addView(more)
+        settings = Button(this).apply {
+            text = "휴대폰 권한 설정"
+            setOnClickListener { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }
+        }
+        root.addView(settings)
         grid = GridView(this).apply {
             numColumns = 3; horizontalSpacing = dp(4); verticalSpacing = dp(4)
             stretchMode = GridView.STRETCH_COLUMN_WIDTH; this.adapter = this@GamjassakGalleryActivity.adapter
@@ -98,7 +105,7 @@ class GamjassakGalleryActivity : Activity() {
                     if (selected.size >= 500) Toast.makeText(this@GamjassakGalleryActivity, "한 번에 500개까지 선택해 주세요.", Toast.LENGTH_SHORT).show()
                     else selected.add(uri)
                 }
-                updateSelection(); adapter.notifyDataSetChanged()
+                updateSelection(); this@GamjassakGalleryActivity.adapter.notifyDataSetChanged()
             }
             setOnScrollListener(object : AbsListView.OnScrollListener {
                 override fun onScrollStateChanged(view: AbsListView?, state: Int) {}
@@ -137,6 +144,7 @@ class GamjassakGalleryActivity : Activity() {
         if (!preserveSelection) selected.clear()
         adapter.notifyDataSetChanged(); updateSelection()
         more.visibility = if (fullAccess()) View.GONE else View.VISIBLE
+        settings.visibility = if (accessible()) View.GONE else View.VISIBLE
         if (!accessible()) {
             message.text = "사진·영상 접근을 허용하면 최근 수정 순으로 볼 수 있어요."
             return

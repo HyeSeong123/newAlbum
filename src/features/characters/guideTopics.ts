@@ -1,7 +1,7 @@
 export type GuideTopic = "photos" | "people" | "pets" | "albums" | "diary" | "memories" | "characters";
 export const guideTopics: { id: GuideTopic; label: string; actionLabel: string; steps: { title: string; detail: string }[] }[] = [
   { id: "photos", label: "사진 등록", actionLabel: "사진 등록 시작하기", steps: [
-    { title: "간직할 사진부터 골라", detail: "사진 기록에서 ‘가져오기’를 누르고 사진·영상 가져오기를 선택하세요. 촬영 지역은 선택 사항이며, 가져오면서 앨범을 만들 수도 있어요. ‘파일 선택’을 누르면 사진과 영상을 고를 수 있어요." },
+    { title: "간직할 사진부터 골라", detail: "사진 기록에서 ‘가져오기’를 누르고 사진·영상 가져오기를 선택하세요. 촬영 지역은 선택 사항이며, 가져오면서 앨범을 만들 수도 있어요. 휴대폰에서는 ‘갤러리 열기’를, 컴퓨터에서는 ‘파일 선택’을 누르면 사진과 영상을 고를 수 있어요." },
     { title: "촬영 위치도 함께 남기려면", detail: "휴대폰 카메라의 위치 권한과 위치 태그를 켜고 촬영하세요. 위치가 기록된 사진은 추억 지도에서 볼 수 있어요. 위치가 없는 기록도 직접 지역을 지정할 수 있어요." },
     { title: "좋아하는 순간에 하트", detail: "가져오는 중에는 진행 화면이 나타나요. 완료한 뒤 사진을 열어 날짜와 내용을 살펴보세요. 즐겨찾기한 사진에는 오른쪽 위에 빨간 하트가 표시되고, 사진 기록의 즐겨찾기에서 모아볼 수 있어요." },
   ] },
