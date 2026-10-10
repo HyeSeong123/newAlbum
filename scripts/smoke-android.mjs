@@ -658,6 +658,7 @@ try {
   await writeFile(join(output,'pet-cat-face-smoke.json'),JSON.stringify({...catFaceSmoke,offline:true,identityAccuracyMeasured:false},null,2));
   const personSmoke=await verifyInstalledPersonRuntime(page,(await readFile('node_modules/@vladmandic/face-api/demo/sample1.jpg')).toString('base64'),petPhoto.id);
   await writeFile(join(output,'person-runtime-smoke.json'),JSON.stringify({...personSmoke,environment:'Android API 36 x86_64 emulator'},null,2));
+  console.log('Offline Android person Worker and native persistence (NOT identity accuracy or phone performance): '+JSON.stringify(personSmoke));
   await adb('shell','svc','wifi','enable');
   await adb('shell','svc','data','enable');
   console.log('Offline Android Worker dog inference, native feature persistence, explicit confirmation and rear-vector removal passed (not identity accuracy).');

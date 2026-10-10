@@ -155,6 +155,7 @@ jobs:
             test-results/android-smoke/pet-recognition-smoke.json
             test-results/android-smoke/pet-runtime-benchmark.json
             test-results/android-smoke/pet-cat-face-smoke.json
+            test-results/android-smoke/person-runtime-smoke.json
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: failure()
