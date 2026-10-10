@@ -21,31 +21,42 @@ def evaluate(data):
   if not row.get('sourceKey') or not row.get('session'):raise ValueError('Content fingerprint and shooting session required')
   if row in refs and (not valid(row) or not row.get('personId')):raise ValueError('Invalid reference/model')
  for query in queries:
+  if not isinstance(query.get('detected'),bool):raise ValueError('Ground truth detection outcome required separately from descriptor compatibility')
   if query.get('category') not in CATEGORIES:raise ValueError('Unknown evaluation category')
   if any(ref['sourceKey']==query['sourceKey'] or (ref['personId']==query.get('expectedPersonId') and ref['session']==query['session']) for ref in refs):raise ValueError('Reference/query leakage: use different photos and shooting sessions')
  report={'modelVersion':MODEL,'photos':len({q['sourceKey'] for q in queries}),'labeledFaces':len(queries),'referenceFaces':len(refs),'referencePeople':len({r['personId'] for r in refs}),'conditions':{}}
  for label,subset in [('all',queries)]+[(c,[q for q in queries if q['category']==c]) for c in CATEGORIES]:
-  result={'samples':len(subset),'detectionRecall':None,'analysisFailureRate':None,'baseline':{},'improved':{}}
+  result={'samples':len(subset),'detectionRecall':None,'analysisFailureRate':None,'featureCompatibilityRate':None,'baseline':{},'improved':{}}
   if subset:
-   result['detectionRecall']=sum(valid(q) for q in subset)/len(subset)
+   result['detectionRecall']=sum(q['detected'] for q in subset)/len(subset)
+   result['featureCompatibilityRate']=sum(q['detected'] and valid(q) for q in subset)/len(subset)
    result['analysisFailureRate']=sum(bool(q.get('failed')) for q in subset)/len(subset)
   for engine in ['baseline','improved']:
    known=[q for q in subset if q.get('expectedPersonId') is not None];novel=[q for q in subset if q.get('expectedPersonId') is None]
    correct=wrong=novel_wrong=auto_count=0
+   occupied={}
    for query in subset:
-    if not valid(query):continue
-    references=refs if engine=='baseline' else [r for r in refs if r.get('confirmed')]
+    if not query['detected'] or not valid(query):continue
+    confirmed={r['personId'] for r in refs if r.get('confirmed')}
+    references=refs if engine=='baseline' else [r for r in refs if r.get('confirmed') or (r.get('seed') and r['personId'] not in confirmed)]
+    if engine=='improved':
+     photos=set();counts={};bounded=[]
+     for ref in reversed(references):
+      person=ref['personId'];key=(person,ref['sourceKey'])
+      if key not in photos and counts.get(person,0)<32:bounded.append(ref);photos.add(key);counts[person]=counts.get(person,0)+1
+     references=bounded
     candidates=rank(query,references,engine=='improved')
     target=candidates[0][0] if candidates else None
     if query.get('expectedPersonId') is not None and target==query['expectedPersonId']:correct+=1
     # New automatic policy only uses frozen seeds; confirmed multi-reference
     # ranking is a review aid, never permission to add automatic links.
-    seeds=refs if engine=='baseline' else [r for r in refs if r.get('seed')]
-    auto_candidates=rank(query,seeds)
+    seeds=refs if engine=='baseline' else [r for r in refs if r.get('seed') and r.get('quality')!='review']
+    used=occupied.setdefault(query['sourceKey'],set())
+    auto_candidates=rank(query,[r for r in seeds if r['personId'] not in used])
     auto=auto_candidates and auto_candidates[0][1]<0.45 and (len(auto_candidates)<2 or auto_candidates[1][1]-auto_candidates[0][1]>0.06)
     auto=bool(auto and (engine=='baseline' or query.get('quality')=='usable'))
     if auto:
-     auto_count+=1
+     auto_count+=1;used.add(auto_candidates[0][0])
      if auto_candidates[0][0]!=query.get('expectedPersonId'):wrong+=1
      if query.get('expectedPersonId') is None:novel_wrong+=1
    result[engine]={'top1Known':correct/len(known) if known else None,'falseLinkPerLabeledFace':wrong/len(subset) if subset else None,'falseLinkPerAutoLink':wrong/auto_count if auto_count else None,'unknownFalseAccept':novel_wrong/len(novel) if novel else None,'autoLinks':auto_count}

@@ -57,7 +57,7 @@ DB 버전 13은 기존 person/detected_face/face_scan의 ID·이름·descriptor�
 
 독립 촬영 세션의 사용자 동의/권리 확인된 정답 데이터는 제공되지 않았다. 실제 식별 정확도 평가 규모는 0장이다. 기존 패키지 sample1.jpg 1장·3개 얼굴 및 재실행은 기능·수치 호환성 검사로만 사용했다. 공식 저장소는 demo 사진을 저자가 촬영했다고 설명한다. 신규 얼굴 이미지 수집·사용자 사진 서버 전송은 하지 않았다.
 
-평가 입력은 references와 queries 배열이다. 공통: modelVersion, descriptor(128), sourceKey, session. references: personId, confirmed, seed. queries: expectedPersonId(미등록=null), category, quality, failed, elapsedMs/tensorBytes(실측 시). sourceKey가 겹치거나 동일 인물의 등록/평가 촬영 세션이 같으면 평가를 거부한다. 모델 미호환·미탐지를 성공으로 계산하지 않으며 빈 조건은 null이다. 인물 이름·특징·사진별 결과를 보고서에 출력하지 않는다.
+평가 입력은 references와 queries 배열이다. 공통: modelVersion, descriptor(128), sourceKey, session. references: personId, confirmed, seed. queries: expectedPersonId(미등록=null), category, detected(탐지 결과), quality, failed, elapsedMs/tensorBytes(실측 시). sourceKey가 겹치거나 동일 인물의 등록/평가 촬영 세션이 같으면 평가를 거부한다. 탐지율과 특징 호환율은 별도로 집계하고 모델 미호환·미탐지를 식별 성공으로 계산하지 않으며 빈 조건은 null이다. 인물 이름·특징·사진별 결과를 보고서에 출력하지 않는다.
 
 실행: python3 scripts/evaluate-person.py /local/consented-dataset.json --output /local/report.json
 
