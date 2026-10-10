@@ -20,3 +20,16 @@ for (const [name, model] of Object.entries(lock.models)) {
   }
 }
 await writeFile(new URL('LICENSE', root), await readFile(new URL('../public/notices/pet-models-Apache-2.0.txt', import.meta.url)));
+// Exact npm version and integrity are locked in package-lock.json; no CDN at runtime.
+const wasmPackage = new URL('../node_modules/@tensorflow/tfjs-backend-wasm/', import.meta.url);
+const wasmMetadata = JSON.parse(await readFile(new URL('package.json', wasmPackage), 'utf8'));
+if (wasmMetadata.version !== '4.22.0' || wasmMetadata.license !== 'Apache-2.0') throw new Error('Unexpected pet WASM runtime');
+const runtime = new URL('runtime/', root);
+await mkdir(runtime, { recursive: true });
+const runtimeFiles = {};
+for (const file of ['tfjs-backend-wasm.wasm', 'tfjs-backend-wasm-simd.wasm']) {
+  const bytes = await readFile(new URL(`dist/${file}`, wasmPackage));
+  await writeFile(new URL(file, runtime), bytes);
+  runtimeFiles[file] = { bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
+}
+await writeFile(new URL('manifest.json', runtime), JSON.stringify({ package: wasmMetadata.name, version: wasmMetadata.version, license: wasmMetadata.license, files: runtimeFiles }, null, 2));

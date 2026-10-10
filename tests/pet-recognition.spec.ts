@@ -29,3 +29,61 @@ test('Worker detects dog locally and keeps main thread responsive with cancel/re
   console.log('Pet Worker smoke (NOT identity accuracy):',JSON.stringify(result));
   expect(result.hardCatAutomaticLinks).toBe(0);expect(result.aborted).toBe(true);expect(result.count).toBeGreaterThan(0);expect(result.kind).toBe('dog');expect(result.view).toBe('unknown');expect(result.length).toBe(1024);expect(result.color).toBe(120);expect(result.shape).toBe(10);expect(result.score).toBeCloseTo(1,4);expect(result.auto).toBeNull();expect(result.negative).toBe(0);expect(result.catCount).toBeGreaterThan(0);expect(result.catKind).toBe('cat');expect(result.catLength).toBe(1024);expect(result.ticks).toBeGreaterThan(10);expect(external).toEqual([]);
 });
+
+test('offline WASM matches CPU outputs, reuses corrected body vectors and has bounded tensor counts',async({page,isMobile})=>{
+  test.skip(isMobile,'Runtime comparison runs once; installed Android is measured separately.');
+  test.setTimeout(240000);
+  await page.route('**/pet-runtime.jpg',route=>route.fulfill({path:'tests/fixtures/pet-dog.jpg',contentType:'image/jpeg'}));
+  await page.goto('/');
+  const external:string[]=[];
+  page.on('request',request=>{if(!['localhost','127.0.0.1'].includes(new URL(request.url()).hostname))external.push(request.url());});
+  const result=await page.evaluate(async()=>{
+    const path='/src/features/pets/engine/client.ts';
+    const {analyzePetImage,cancelPetInference}=await import(/* @vite-ignore */ path);
+    const diagnostics:any[]=[];
+    const listener=(event:Event)=>diagnostics.push((event as CustomEvent).detail);
+    window.addEventListener('gamjassak-pet-diagnostics',listener);
+    const samples:any={cpu:[],wasm:[]},results:any={};
+    try {
+      for(const backend of ['cpu','auto'] as const){
+        await analyzePetImage('/pet-runtime.jpg',undefined,'unknown',undefined,backend); // cold run and weights transfer
+        for(let i=0;i<3;i++){
+          results[backend]=await analyzePetImage('/pet-runtime.jpg',undefined,'unknown',undefined,backend);
+          samples[backend==='auto'?'wasm':'cpu'].push(diagnostics.at(-1));
+        }
+      }
+      const cpu=results.cpu[0],wasm=results.auto[0];
+      const cosine=(a:number[],b:number[])=>a.reduce((sum,value,i)=>sum+value*b[i],0)/Math.sqrt(a.reduce((s,v)=>s+v*v,0)*b.reduce((s,v)=>s+v*v,0));
+      const [x,y,w,h]=wasm.box;
+      const [face]=await analyzePetImage('/pet-runtime.jpg',undefined,'front',[{...wasm,view:'front',faceBox:[x+w*.2,y+h*.2,w*.3,h*.3]}]);
+      const faceDiagnostics=diagnostics.at(-1);
+      const [rear]=await analyzePetImage('/pet-runtime.jpg',undefined,'rear',[{...face,view:'rear'}]);
+      const summarize=(rows:any[])=>({runs:rows.length,minMs:Math.min(...rows.map(r=>r.elapsedMs)),medianMs:rows.map(r=>r.elapsedMs).sort((a,b)=>a-b)[1],maxMs:Math.max(...rows.map(r=>r.elapsedMs)),tensorCounts:rows.map(r=>r.tensors)});
+      return {cpuKind:cpu.kind,wasmKind:wasm.kind,cpuCount:results.cpu.length,wasmCount:results.auto.length,bodyCosine:cosine(cpu.appearance,wasm.appearance),mirrorCosine:cosine(cpu.mirroredAppearance,wasm.mirroredAppearance),maxBoxDifference:Math.max(...cpu.box.map((v:number,i:number)=>Math.abs(v-wasm.box[i]))),cpu:summarize(samples.cpu),wasm:summarize(samples.wasm),wasmBackends:samples.wasm.map((r:any)=>r.backend),faceLength:face.faceAppearance.length,bodyReusedExactly:face.appearance.every((v:number,i:number)=>v===wasm.appearance[i]),faceDiagnostics,rearBodyLength:rear.appearance.length,rearFaceLength:rear.faceAppearance.length,diagnostics};
+    }finally{window.removeEventListener('gamjassak-pet-diagnostics',listener);cancelPetInference();}
+  });
+  await mkdir('preview-results',{recursive:true});await writeFile('preview-results/pet-runtime-benchmark.json',JSON.stringify(result,null,2));
+  expect(result.cpuKind).toBe('dog');expect(result.wasmKind).toBe('dog');expect(result.cpuCount).toBe(result.wasmCount);
+  expect(result.bodyCosine).toBeGreaterThan(.9999);expect(result.mirrorCosine).toBeGreaterThan(.9999);expect(result.maxBoxDifference).toBeLessThan(.001);
+  expect(result.wasmBackends).toEqual(['wasm','wasm','wasm']);
+  expect(new Set(result.wasm.tensorCounts).size).toBe(1);expect(new Set(result.cpu.tensorCounts).size).toBe(1);
+  expect(result.faceLength).toBe(1024);expect(result.bodyReusedExactly).toBe(true);expect(result.faceDiagnostics.reusedBodies).toBe(1);
+  expect(result.rearBodyLength).toBe(0);expect(result.rearFaceLength).toBe(0);expect(external).toEqual([]);
+});
+
+test('missing offline WASM binary falls back to CPU and still detects the dog',async({page,isMobile})=>{
+  test.skip(isMobile,'CPU fallback model execution runs once.');test.setTimeout(120000);
+  await page.route('**/pet-fallback.jpg',route=>route.fulfill({path:'tests/fixtures/pet-dog.jpg',contentType:'image/jpeg'}));
+  await page.route('**/models/pets/runtime/*.wasm',route=>route.fulfill({status:404,body:''}));
+  await page.goto('/');
+  const result=await page.evaluate(async()=>{
+    const path='/src/features/pets/engine/client.ts';
+    const {analyzePetImage,cancelPetInference}=await import(/* @vite-ignore */ path);
+    let diagnostics:any;
+    const listener=(event:Event)=>{diagnostics=(event as CustomEvent).detail;};
+    window.addEventListener('gamjassak-pet-diagnostics',listener);
+    try{const features=await analyzePetImage('/pet-fallback.jpg');return {kind:features[0]?.kind,diagnostics};}
+    finally{window.removeEventListener('gamjassak-pet-diagnostics',listener);cancelPetInference();}
+  });
+  expect(result.kind).toBe('dog');expect(result.diagnostics.backend).toBe('cpu');expect(result.diagnostics.wasmFallback).toBe(true);
+});

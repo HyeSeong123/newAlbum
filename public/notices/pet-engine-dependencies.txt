@@ -1,6 +1,10 @@
 Gamjassak pet recognition engine dependencies
 
 TensorFlow.js 4.22.0: Apache-2.0
+TensorFlow.js WASM backend 4.22.0: Apache-2.0
+Source: https://github.com/tensorflow/tfjs/tree/tfjs-v4.22.0/tfjs-backend-wasm
+Bundled vanilla/SIMD runtime binary hashes are in models/pets/runtime/manifest.json.
+The WASM backend includes XNNPACK (BSD-3-Clause); its license is included in pet-wasm-XNNPACK-license.txt.
 COCO-SSD JavaScript 2.2.3: Apache-2.0
 SSDLite MobileNetV2 and MobileNetV1 weights: Apache-2.0
 Publisher license metadata is included in the adjacent *-model-license.json files.

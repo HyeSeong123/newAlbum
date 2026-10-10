@@ -2,7 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { modelUrl } from './model-loader.mjs';
 const {comparePets,rankPets,recognizePet,withView,cosine}=await import(await modelUrl('features/pets/engine/matcher.ts'));
-const {cropDescriptors}=await import(await modelUrl('features/pets/engine/features.ts'));
+const {cropDescriptors,validPetVector}=await import(await modelUrl('features/pets/engine/features.ts'));
+test('body reuse rejects legacy dimensions, zeros and non-finite embeddings',()=>{
+ assert.equal(validPetVector([1,...Array(1023).fill(0)],1024),true);
+ for(const vector of [undefined,[],[1,0],Array(1024).fill(0),[Infinity,...Array(1023).fill(0)],[NaN,...Array(1023).fill(0)]])assert.equal(validPetVector(vector,1024),false);
+});
 const {conservativeViewAnalyzer}=await import(await modelUrl('features/pets/engine/types.ts'));
 const feature=(patch={})=>({kind:'dog',view:'front',viewSource:'user',box:[0,0,1,1],detectionScore:0.99,appearance:[1,0],mirroredAppearance:[0,1],color:[1,0],shape:[1,0],...patch});
 test('rear comparison ignores learned identity vectors on either side',()=>{

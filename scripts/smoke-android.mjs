@@ -6,6 +6,7 @@ import { closeSync, openSync } from 'node:fs';
 import { promisify } from 'node:util';
 import { appendFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import { benchmarkInstalledPetRuntime } from './pet-runtime-benchmark.mjs';
 
 const run = promisify(execFile);
 // A stuck emulator command must produce diagnostics instead of holding the
@@ -641,6 +642,9 @@ try {
   await adb('shell','svc','wifi','enable');
   await adb('shell','svc','data','enable');
   console.log('Offline Android Worker dog inference, native feature persistence, explicit confirmation and rear-vector removal passed (not identity accuracy).');
+  const runtimeBenchmark=await benchmarkInstalledPetRuntime(page,thumbnailPath);
+  await writeFile(join(output,'pet-runtime-benchmark.json'),JSON.stringify({...runtimeBenchmark,environment:'Android API 36 x86_64 emulator',devicePerformanceMeasured:false},null,2));
+  console.log('Android pet runtime benchmark (NOT phone performance): '+JSON.stringify({cpu:runtimeBenchmark.cpu,wasm:runtimeBenchmark.wasm}));
 
   await adb('shell', 'input', 'keyevent', '4');
   await expect(page.getByRole('heading', { name:'홈', exact:true })).toBeVisible();

@@ -2,6 +2,10 @@ export function normalize(vector: number[]): number[] {
   const norm = Math.sqrt(vector.reduce((sum, value) => sum + value * value, 0));
   return norm && vector.every(Number.isFinite) ? vector.map(value => value / norm) : [];
 }
+export function validPetVector(vector: number[] | undefined, length: number): vector is number[] {
+  return !!vector && vector.length === length && vector.every(Number.isFinite)
+    && vector.some(value => value !== 0);
+}
 // Cheap, reproducible descriptors. Border-based foreground is only a proxy;
 // patterned backgrounds and occlusion require a future segmentation model.
 export function cropDescriptors(rgba: Uint8ClampedArray, width: number, height: number, aspect: number) {

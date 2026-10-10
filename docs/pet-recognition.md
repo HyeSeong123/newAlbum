@@ -1,4 +1,4 @@
-# 감자싹 반려동물 인식 엔진 v2 (0.8.0)
+# 감자싹 반려동물 인식 엔진 v2 (0.8.1)
 
 ## 교체 범위
 
@@ -10,7 +10,7 @@
 - `pet.worker.ts`: 로컬 COCO-SSD 탐지와 MobileNet 특징 추출, 색상·체형 기초 특징
 - `evaluation.ts` / `PetEvaluationPanel.tsx` / `pet_evaluation.rs`: 정답·촬영 세션·사용 권리·실제 특징/탐지 실패 수집 및 JSON 내보내기
 - `usePetAnalysis.ts` / `pet_jobs.rs`: 영구 대기열, 중단·재개·실패 재시도
-- `client.ts`: 1개 Worker, 순차 실행, 최대 640px CPU 픽셀 전송(명시적 RGBA 전송), 취소·시간 제한·60초 유휴 메모리 해제
+- `client.ts` / `runtime.ts`: 1개 Worker, 순차 실행, 최대 640px RGBA 전송, 로컬 WASM/SIMD 우선·CPU 복귀, 취소·시간 제한·60초 유휴 메모리 해제
 - `features.ts`: 공간 RGB 분포와 기초 체형 특징
 - `matcher.ts`: 종 구분, 방향별 후보 순위, 좌우 반전 비교, 보수적 연결 정책
 - `manager.ts`: 사진별 캐시·기준 등록·배치 처리
@@ -74,7 +74,7 @@
 
 앱에는 `public/notices/pet-models-Apache-2.0.txt`와 모델 출처 메타데이터를 포함한다. 유료 API, API Key, 외부 사진 전송, AGPL/GPL/비상업적 전용 신규 모델은 추가하지 않았다. 기존 사람 인식 라이브러리는 교체하지 않았다.
 
-모델 파일 총량 약 35MB + Worker 번들 약 1.9MB다. LiteRT는 네이티브 성능 개선 후보이나 이번 구현에는 도입하지 않았다. 현재는 Tauri Android WebView 내부의 JS Worker/CPU 추론을 사용한다. 실제 기기 처리 속도·최대 메모리·발열·배터리는 별도 측정이 필요하다.
+모델 파일 총량 약 35MB다. 0.8.1에서는 약 0.70MiB의 기본/SIMD WASM 런타임을 함께 제공하며 Worker 번들은 약 2.1MB다. LiteRT는 네이티브 성능 개선 후보이며 아직 도입하지 않았다. 현재는 Tauri Android WebView 내부 Worker의 WASM/SIMD 우선 추론과 CPU 복귀를 사용한다. 실제 기기 처리 속도·최대 메모리·발열·배터리는 별도 측정이 필요하다.
 
 ## 테스트·정확도 평가
 
@@ -133,3 +133,21 @@ Android 검증에서 기존 정수 평균 썸네일 축소가 강아지 샘플�
 모델 조사(2026-10-10): `hugocornellier/cat-face-landmarks`는 코드 Apache-2.0이나 가중치 CC BY-NC 4.0이므로 앱에 포함하지 않았다(https://huggingface.co/hugocornellier/cat-face-landmarks). `open-noodle/pet-recognition-small`은 게시자 Apache-2.0, Dogs-World CC0·Cat Individual Images CC BY 학습을 명시한다(https://huggingface.co/open-noodle/pet-recognition-small). 최소 모델도 약 89MB이며 ONNX 런타임/양자화·실기기 검증, 데이터 원출처 고지의 독립 확인이 필요하다. 게시자의 전체 개체 Top-1은 감자싹 측면 정확도와 다르다. 이번 앱에는 추가하지 않았고 기존 고정 가중치만 사용한다.
 
 로컬 확인: 단위 테스트 112개, 반려동물 SQLite 테스트 4개, TypeScript/React 빌드 통과. 로컬 브라우저 실행 파일·Rust/Android 도구가 없어 화면·네이티브 검증은 CI에서 수행한다. CI에는 얼굴 영역 실제 특징 추출·종 수정·동일 내용 재분석 확인 보존·검증 JSON 저장·paused 작업 재시작/재개 검사를 추가했다. 최종 CI 결과는 완료 보고에 기록한다. 실제 독립 개체 식별 검증 데이터는 여전히 0개체/0장이고 자동 연결은 비활성이다.
+
+## 0.8.1 추론 가속·측정
+
+`@tensorflow/tfjs-backend-wasm` 4.22.0을 정확한 버전으로 고정했다. npm lock의 무결성 검증을 거친 기본/SIMD WASM 두 파일을 빌드 시 복사하고 `models/pets/runtime/manifest.json`에 크기·SHA-256을 기록한다. CDN·외부 모델 요청 없이 실행한다. Apache-2.0과 포함된 XNNPACK·FP16·FXdiv·pthreadpool·cpuinfo·clog·psimd의 BSD/MIT 고지는 `public/notices/pet-wasm-XNNPACK-license.txt`에 동봉했다.
+
+WASM은 1개 스레드로 실행하며, 멀티스레드·SharedArrayBuffer·cross-origin isolation에 의존하지 않는다. WebView가 SIMD를 지원하면 SIMD 바이너리를 선택하고, 그렇지 않으면 기본 WASM을 선택한다. 초기화 실패는 CPU로 복귀한다. WASM 추론 실패 시 부분 결과를 저장하지 않고 동일 가중치·픽셀로 CPU에서 한 번만 재시도한다. 해당 Worker의 남은 수명에서는 WASM을 다시 시도하지 않는다. 잘못 지정한 얼굴 영역은 입력 오류로 처리하며 WASM을 비활성화하지 않는다. COCO-SSD의 NMS는 원래 라이브러리 구현대로 CPU에서 수행한다.
+
+얼굴을 다시 지정할 때 원본 지문을 확인한 기존 결과에 유효한 1024차원 몸/반전 벡터가 모두 있으면 그 벡터를 재사용한다. 길이가 다르거나 0·NaN·무한값만 있는 벡터는 재추출한다. 얼굴 벡터는 지정한 영역에서 새로 추출한다. 뒷모습에서는 재사용하지 않고 모든 개체 식별 벡터를 비운다. 가중치·전처리·벡터 차원은 유지하므로 엔진 ID와 기존 기준을 유지한다. CPU·WASM 부동소수점 차이는 있어 실제 사진에서 후보가 완전히 동일하다고 보장하지 않는다.
+
+진단에는 백엔드·SIMD·스레드 수, 초기화/탐지/몸·얼굴 추출/색상·체형 계산 시간, 재사용 수, 텐서 개수·바이트 수를 기록한다. 사진·경로·등록 이름·특징 벡터는 진단에 포함하지 않는다. 텐서 메모리는 JS heap·WASM heap의 여유 공간·디코더·앱 전체 메모리를 포함하지 않으며 최대 메모리 측정값으로 보고하면 안 된다.
+
+브라우저와 설치된 Android 에뮬레이터는 동일 강아지 샘플을 CPU·WASM에서 준비 실행 후 각각 3번 측정한다. 보고서는 중앙값·최솟값·최댓값과 반복 텐서 수를 포함한다. 결과의 종·탐지 수·상자 차이(0.001 미만)와 임베딩 코사인(0.9999 초과)을 비교한다. 설치 검증은 실제 프로덕션 Worker 번들과 APK 내부 모델/런타임을 사용한다. 브라우저에서는 WASM 파일을 차단한 CPU 복귀도 확인한다. `pet-runtime-benchmark.json`은 GitHub Actions 산출물로 저장한다. 이 샘플은 개체 식별 정확도 검증 세트가 아니며 에뮬레이터 수치는 휴대폰 속도·발열·배터리 결과가 아니다.
+
+자동 모델 추가 조사: `hugocornellier/dog-face-landmarks` 가중치는 CC BY-NC 4.0이다(https://huggingface.co/hugocornellier/dog-face-landmarks). `EstevanSL/snapml-quadruped-pose` 코드/가중치는 Apache-2.0이나 NOTICE에 AP-10K CC BY 4.0과 MMPose의 비상업적 사용 문구 간 충돌 및 상업 이용 확인 필요를 기록한다(https://github.com/EstevanSL/snapml-quadruped-pose/blob/main/NOTICE). 이번 변경에 어느 모델도 포함하지 않았다. 자동 얼굴 탐지·자동 방향 판정 및 검증된 측면 60%는 계속 남은 과제다.
+
+0.8.1 로컬 검증(2026-10-10): 단위 테스트 113개·SQLite 9개·React 빌드 통과. Chromium 153에서 반려동물 실제 모델/확인 화면 7개 통과·모바일 중복 모델 검사 3개 제외. CPU 복귀, 취소/재시도, 강아지·고양이/동물 없는 사진, 얼굴/후면 정책과 PC·모바일 수정 화면을 확인했다. 개발 서버가 새 WASM 의존성을 늦게 최적화하며 분석 중 새로고침한 문제를 `optimizeDeps.include`에 추가하여 해결했다.
+
+같은 강아지 사진으로 로컬 배포용 Worker를 준비 실행 후 각각 3회 검사했다. CPU 처리 시간 중앙값 3810.3ms(3767.1–3833.4ms), WASM/SIMD 268.8ms(265.3–362.4ms). CPU/WASM 몸·반전 특징 코사인은 각각 0.9999999999985153·0.9999999999981093이며, 반복 텐서 수는 두 백엔드 모두 399개(텐서 바이트 약 35MB)로 유지됐다. 단일 샘플·단일 로컬 환경의 결과이므로 일반적인 속도 향상이나 앱 전체 메모리 한도를 보장하지 않는다. 0.8.1 Android 빌드·에뮬레이터·실기기 검증은 아직 수행하지 않았다.
