@@ -106,9 +106,9 @@ test('a rear color-only reference cannot replace a usable front body reference f
 test('side goal requires species balance and a 95 percent lower bound above the target',()=>{
  const build=(correct)=>{
   const references=Array.from({length:10},(_,i)=>{const f=realDimensions();f.kind=i<5?'dog':'cat';f.detectedKind=f.kind;f.appearance=Array(1024).fill(0);f.appearance[i]=1;f.mirroredAppearance=[...f.appearance];return {...reference(),sampleId:'r'+i,captureGroup:'enroll'+i,sourceKey:'r-source'+i,petId:i+1,kind:f.kind,features:f};});
-  const queries=Array.from({length:100},(_,i)=>{const ref=references[i%10];const f=structuredClone(ref.features);if(i>=correct){f.appearance=Array(1024).fill(0);f.appearance[100]=1;f.mirroredAppearance=[...f.appearance];}return {...query(),sampleId:'q'+i,captureGroup:'test'+i,sourceKey:'q-source'+i,petId:ref.petId,kind:ref.kind,view:i<50?'left':'right',features:f};});return {references,queries};
+  const queries=Array.from({length:240},(_,i)=>{const ref=references[i%10];const f=structuredClone(ref.features);if(i>=correct){f.appearance=Array(1024).fill(0);f.appearance[100]=1;f.mirroredAppearance=[...f.appearance];}return {...query(),sampleId:'q'+i,captureGroup:'test'+i,sourceKey:'q-source'+i,petId:ref.petId,kind:ref.kind,view:i<120?'left':'right',features:f};});return {references,queries};
  };
- const borderline=evaluatePets(build(60));assert.equal(borderline.sideDataSufficient,true);assert.equal(borderline.sidePointGoalReached,true);assert.equal(borderline.sideGoalReached,false);
- const strong=evaluatePets(build(100));assert.equal(strong.sideGoalReached,true);assert.deepEqual(strong.sideCoverage,{dog:{photos:50,pets:5},cat:{photos:50,pets:5}});
- const unbalanced=build(100);unbalanced.queries=unbalanced.queries.filter(q=>q.kind==='dog');assert.equal(evaluatePets(unbalanced).sideGoalReached,null);
+ const borderline=evaluatePets(build(144));assert.equal(borderline.sideDataSufficient,true);assert.equal(borderline.sidePointGoalReached,true);assert.equal(borderline.sideGoalReached,false);
+ const strong=evaluatePets(build(240));assert.equal(strong.sideGoalReached,true);assert.deepEqual(strong.sideCoverage,{dog:{photos:120,pets:5},cat:{photos:120,pets:5}});
+ const unbalanced=build(240);unbalanced.queries=unbalanced.queries.filter(q=>q.kind==='dog');assert.equal(evaluatePets(unbalanced).sideGoalReached,null);
 });

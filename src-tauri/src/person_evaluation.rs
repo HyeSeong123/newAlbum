@@ -27,13 +27,13 @@ fn save(conn:&mut Connection,s:Sample)->Result<(),String>{
  tx.commit().map_err(|e|e.to_string())
 }
 #[derive(Clone)]
-struct Row { media:i64, person:Option<i64>, reference:bool, session:String, source:String, category:String, detected:bool, vector:Option<Vec<f64>>, quality:String, seed:bool }
+struct Row { media:i64, person:Option<i64>, reference:bool, session:String, source:String, category:String, detected:bool, vector:Option<Vec<f64>>, quality:String, seed:bool, automatic_view:Option<String> }
 fn rows(conn:&Connection)->Result<Vec<Row>,String>{
- let mut stmt=conn.prepare("SELECT e.media_id,e.person_id,e.role,e.capture_group,e.source_key,e.category,e.face_id,f.descriptor,m.quality,m.reference_kind,m.model_version FROM person_evaluation_sample e LEFT JOIN detected_face f ON f.id=e.face_id LEFT JOIN person_face_metadata m ON m.face_id=f.id ORDER BY e.id").map_err(|e|e.to_string())?;
+ let mut stmt=conn.prepare("SELECT e.media_id,e.person_id,e.role,e.capture_group,e.source_key,e.category,e.face_id,f.descriptor,m.quality,m.reference_kind,m.model_version,(SELECT json_extract(automatic,'$.view') FROM person_face_pose WHERE face_id=e.face_id) FROM person_evaluation_sample e LEFT JOIN detected_face f ON f.id=e.face_id LEFT JOIN person_face_metadata m ON m.face_id=f.id ORDER BY e.id").map_err(|e|e.to_string())?;
  let result=stmt.query_map([],|r|{
   let text:Option<String>=r.get(7)?;let version:Option<String>=r.get(10)?;
   let vector=text.and_then(|t|serde_json::from_str::<Vec<f64>>(&t).ok()).filter(|v|version.as_deref()==Some(super::faces::MODEL)&&v.len()==128&&v.iter().all(|x|x.is_finite()));
-  Ok(Row{media:r.get(0)?,person:r.get(1)?,reference:r.get::<_,String>(2)?=="reference",session:r.get(3)?,source:r.get(4)?,category:r.get(5)?,detected:r.get::<_,Option<i64>>(6)?.is_some(),vector,quality:r.get::<_,Option<String>>(8)?.unwrap_or_else(||"review".into()),seed:r.get::<_,Option<String>>(9)?.as_deref()==Some("seed")})
+  Ok(Row{media:r.get(0)?,person:r.get(1)?,reference:r.get::<_,String>(2)?=="reference",session:r.get(3)?,source:r.get(4)?,category:r.get(5)?,detected:r.get::<_,Option<i64>>(6)?.is_some(),vector,quality:r.get::<_,Option<String>>(8)?.unwrap_or_else(||"review".into()),seed:r.get::<_,Option<String>>(9)?.as_deref()==Some("seed"),automatic_view:r.get(11)?})
  }).map_err(|e|e.to_string())?.collect::<Result<Vec<_>,_>>().map_err(|e|e.to_string())?;
  let mut checked=BTreeSet::new();
  for r in &result {if checked.insert((r.media,r.source.clone())){super::pet_recognition::verify_source(conn,r.media,&r.source)?;}}
@@ -44,6 +44,11 @@ fn rank(q:&[f64],refs:&[(i64,Vec<f64>)],robust:bool)->Vec<super::person_engine::
  let mut nearest:BTreeMap<i64,(&Vec<f64>,f64)>=BTreeMap::new();
  for (id,v) in refs {let d=q.iter().zip(v).map(|(x,y)|(x-y).powi(2)).sum::<f64>();if nearest.get(id).is_none_or(|(_,old)|d<*old){nearest.insert(*id,(v,d));}}
  super::person_engine::rank(q,&nearest.into_iter().map(|(id,(v,_))|(id,v.clone())).collect::<Vec<_>>())
+}
+fn metric(correct:usize,total:usize)->Value {
+ if total==0{return json!({"correct":correct,"total":total,"rate":null,"wilson95":null});}
+ let n=total as f64;let p=correct as f64/n;let z=1.959963984540054_f64;let d=1.0+z*z/n;let c=(p+z*z/(2.0*n))/d;let h=z*(p*(1.0-p)/n+z*z/(4.0*n*n)).sqrt()/d;
+ json!({"correct":correct,"total":total,"rate":p,"wilson95":[(c-h).max(0.0),(c+h).min(1.0)]})
 }
 fn evaluate(all:&[Row])->Result<Value,String>{
  let refs:Vec<_>=all.iter().filter(|r|r.reference).collect();let queries:Vec<_>=all.iter().filter(|r|!r.reference).collect();
@@ -58,7 +63,7 @@ fn evaluate(all:&[Row])->Result<Value,String>{
  for label in std::iter::once("all").chain(CATEGORIES){
   let subset:Vec<_>=queries.iter().filter(|q|label=="all"||q.category==label).copied().collect();let total=subset.len();
   let ratio=|n:usize,d:usize|if d==0 {Value::Null}else{json!(n as f64/d as f64)};
-  let mut condition=json!({"samples":total,"detectionRecall":ratio(subset.iter().filter(|q|q.detected).count(),total),"featureCompatibilityRate":ratio(subset.iter().filter(|q|q.vector.is_some()).count(),total)});
+  let mut condition=json!({"samples":total,"detectionRecall":ratio(subset.iter().filter(|q|q.detected).count(),total),"detection":metric(subset.iter().filter(|q|q.detected).count(),total),"featureCompatibilityRate":ratio(subset.iter().filter(|q|q.vector.is_some()).count(),total)});
   for improved in [false,true]{
    let mut correct=0;let mut wrong=0;let mut unknown_wrong=0;let mut auto_count=0;let mut occupied:BTreeMap<String,BTreeSet<i64>>=BTreeMap::new();
    for q in &subset {if let Some(vector)=&q.vector {
@@ -70,25 +75,39 @@ fn evaluate(all:&[Row])->Result<Value,String>{
     }
    }}
    let known=subset.iter().filter(|q|q.person.is_some()).count();let unknown=total-known;
-   condition[if improved {"improved"}else{"baseline"}]=json!({"top1Known":ratio(correct,known),"falseLinkPerLabeledFace":ratio(wrong,total),"falseLinkPerAutoLink":ratio(wrong,auto_count),"unknownFalseAccept":ratio(unknown_wrong,unknown),"autoLinks":auto_count});
+   condition[if improved {"improved"}else{"baseline"}]=json!({"top1Known":ratio(correct,known),"identity":metric(correct,known),"falseLinkPerLabeledFace":ratio(wrong,total),"falseLinkPerAutoLink":ratio(wrong,auto_count),"unknownFalseAccept":ratio(unknown_wrong,unknown),"autoLinks":auto_count});
+  }
+  if ["front","left","right"].contains(&label) {
+   condition["orientation"]=if subset.iter().any(|q|q.detected&&q.automatic_view.is_none()){Value::Null}else{metric(subset.iter().filter(|q|q.detected&&q.automatic_view.as_deref()==Some(label)).count(),total)};
   }
   conditions.insert(label.into(),condition);
  }
- Ok(json!({"modelVersion":super::faces::MODEL,"photos":queries.iter().map(|q|&q.source).collect::<BTreeSet<_>>().len(),"labeledFaces":queries.len(),"referenceFaces":refs.len(),"referencePeople":counts.len(),"conditions":conditions,"automaticLinksWritten":false,"independentSessionsUserDeclared":true,"processingTimeMeasured":false,"wholeAppMemoryMeasured":false}))
+ let mut comparisons=serde_json::Map::new();
+ for (a,b) in [("front","front"),("front","left"),("front","right"),("left","right"),("left","left"),("right","right")] {
+  let (mut total,mut correct,mut unavailable)=(0,0,0);
+  for q in queries.iter().filter(|q|q.person.is_some()) {
+   let target=if q.category==a {b}else if q.category==b {a}else{continue};
+   let selected:Vec<_>=refs.iter().filter(|r|r.category==target).map(|r|(r.person.unwrap(),r.vector.as_ref().unwrap().clone())).collect();
+   if selected.is_empty(){unavailable+=1;continue;}total+=1;
+   if q.vector.as_ref().is_some_and(|v|rank(v,&selected,true).first().is_some_and(|c|Some(c.person_id)==q.person)){correct+=1;}
+  }
+  let mut row=metric(correct,total);row["missingReferenceTrials"]=json!(unavailable);comparisons.insert(format!("{a}-{b}"),row);
+ }
+ Ok(json!({"comparisons":comparisons,"person512":null,"person512Status":"not-installed","orientationValidated":false,"modelVersion":super::faces::MODEL,"photos":queries.iter().map(|q|&q.source).collect::<BTreeSet<_>>().len(),"labeledFaces":queries.len(),"referenceFaces":refs.len(),"referencePeople":counts.len(),"conditions":conditions,"automaticLinksWritten":false,"independentSessionsUserDeclared":true,"processingTimeMeasured":false,"wholeAppMemoryMeasured":false}))
 }
 #[tauri::command]
 pub async fn save_person_evaluation(app:AppHandle,sample:Sample)->Result<(),String>{tauri::async_runtime::spawn_blocking(move||save(&mut super::open_database(&app)?,sample)).await.map_err(|_|"평가 자료를 저장하지 못했습니다.".to_string())?}
 #[tauri::command]
 pub fn person_evaluation_summary(app:AppHandle)->Result<Value,String>{let c=super::open_database(&app)?;let count=|role:&str|c.query_row("SELECT COUNT(*) FROM person_evaluation_sample WHERE role=?1",[role],|r|r.get::<_,i64>(0)).map_err(|e|e.to_string());Ok(json!({"references":count("reference")?,"queries":count("query")?}))}
 #[tauri::command]
-pub async fn evaluate_person_samples(app:AppHandle)->Result<Value,String>{tauri::async_runtime::spawn_blocking(move||evaluate(&rows(&super::open_database(&app)?)?)).await.map_err(|_|"평가를 완료하지 못했습니다.".to_string())?}
+pub async fn evaluate_person_samples(app:AppHandle)->Result<Value,String>{tauri::async_runtime::spawn_blocking(move||{let start=std::time::Instant::now();let mut report=evaluate(&rows(&super::open_database(&app)?)?)?;report["environment"]=json!({"os":std::env::consts::OS,"architecture":std::env::consts::ARCH,"version":env!("CARGO_PKG_VERSION")});report["evaluatedAtUnixSeconds"]=json!(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(|e|e.to_string())?.as_secs());report["featureComparisonMs"]=json!(start.elapsed().as_secs_f64()*1000.0);Ok::<Value,String>(report)}).await.map_err(|_|"평가를 완료하지 못했습니다.".to_string())?}
 #[tauri::command]
 pub fn clear_person_evaluation(app:AppHandle)->Result<(),String>{super::open_database(&app)?.execute("DELETE FROM person_evaluation_sample",[]).map_err(|e|e.to_string())?;Ok(())}
 
 #[cfg(test)]
 mod tests {
  use super::*;
- fn row(person:Option<i64>,reference:bool,category:&str,value:f64)->Row{Row{media:if reference {1}else{2},person,reference,session:if reference {"A"}else{"B"}.into(),source:if reference {"sha256:ref"}else{"sha256:query"}.into(),category:category.into(),detected:true,vector:Some(vec![value;128]),quality:"usable".into(),seed:true}}
+ fn row(person:Option<i64>,reference:bool,category:&str,value:f64)->Row{Row{media:if reference {1}else{2},person,reference,session:if reference {"A"}else{"B"}.into(),source:if reference {"sha256:ref"}else{"sha256:query"}.into(),category:category.into(),detected:true,vector:Some(vec![value;128]),quality:"usable".into(),seed:true,automatic_view:None}}
  #[test]fn empty_and_leaked_data_are_not_accuracy(){assert!(evaluate(&[]).is_err());let r=row(Some(1),true,"front",0.1);let mut q=row(Some(1),false,"left",0.1);q.session="A".into();assert!(evaluate(&[r.clone(),q.clone()]).is_err());q.session="B".into();q.source=r.source.clone();assert!(evaluate(&[r,q]).is_err());}
  #[test]fn misses_unknowns_and_missing_conditions_remain_visible(){let r=row(Some(1),true,"front",0.1);let mut q=row(Some(1),false,"left",0.1);q.detected=false;q.vector=None;let u=row(None,false,"unregistered",0.1);let report=evaluate(&[r,q,u]).unwrap();assert_eq!(report["conditions"]["left"]["improved"]["top1Known"],0.0);assert_eq!(report["conditions"]["unregistered"]["improved"]["unknownFalseAccept"],1.0);assert!(report["conditions"]["right"]["detectionRecall"].is_null());assert!(!report.to_string().contains("sha256:"));assert!(!report.to_string().contains("descriptor"));}
  #[test]fn automatic_candidates_do_not_reuse_person_in_group(){let r=row(Some(1),true,"front",0.1);let q=row(Some(1),false,"group",0.1);let u=row(None,false,"group",0.1);let report=evaluate(&[r,q,u]).unwrap();assert_eq!(report["conditions"]["all"]["improved"]["autoLinks"],1);}

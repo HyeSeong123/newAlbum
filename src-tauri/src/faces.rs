@@ -52,6 +52,10 @@ pub struct FaceInput {
     quality: Option<String>,
     #[serde(default, rename="box")]
     box_: Option<[f64;4]>,
+    #[serde(default)]
+    pose: Option<super::recognition::PoseInput>,
+    #[serde(default,rename="additionalFeatures")]
+    additional_features:Vec<super::recognition::ModelFeature>,
 }
 
 #[derive(Serialize)]
@@ -61,6 +65,7 @@ pub struct FaceRow {
     person_id: i64,
     thumbnail: String,
     confirmed: bool,
+    pose: Option<serde_json::Value>,
 }
 
 #[derive(Serialize)]
@@ -81,8 +86,8 @@ fn read_index(conn: &Connection) -> Result<FaceIndex, String> {
     let people = conn.prepare("SELECT id, name, cover_face_id FROM person WHERE EXISTS (SELECT 1 FROM detected_face WHERE person_id = person.id AND NOT EXISTS (SELECT 1 FROM excluded_face e WHERE e.face_id = detected_face.id)) ORDER BY id")
         .map_err(|e| e.to_string())?.query_map([], |row| Ok(PersonRow { id: row.get(0)?, name: row.get(1)?, cover_face_id: row.get(2)? }))
         .map_err(|e| e.to_string())?.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())?;
-    let faces = conn.prepare("SELECT id, media_id, person_id, thumbnail, confirmed FROM detected_face WHERE NOT EXISTS (SELECT 1 FROM excluded_face e WHERE e.face_id = detected_face.id) ORDER BY id")
-        .map_err(|e| e.to_string())?.query_map([], |row| Ok(FaceRow { id: row.get(0)?, media_id: row.get(1)?, person_id: row.get(2)?, thumbnail: row.get(3)?, confirmed: row.get(4)? }))
+    let faces = conn.prepare("SELECT id, media_id, person_id, thumbnail, confirmed,(SELECT json_object('automatic',json(automatic),'manualView',manual_view) FROM person_face_pose WHERE face_id=detected_face.id) FROM detected_face WHERE NOT EXISTS (SELECT 1 FROM excluded_face e WHERE e.face_id = detected_face.id) ORDER BY id")
+        .map_err(|e| e.to_string())?.query_map([], |row| Ok(FaceRow { id: row.get(0)?, media_id: row.get(1)?, person_id: row.get(2)?, thumbnail: row.get(3)?, confirmed: row.get(4)?, pose: row.get::<_,Option<String>>(5)?.and_then(|v|serde_json::from_str(&v).ok()) }))
         .map_err(|e| e.to_string())?.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())?;
     let scanned = conn
         .prepare("SELECT media_id FROM face_scan WHERE model_version = ?1")
@@ -131,6 +136,7 @@ fn save_scan_with_source(conn: &mut Connection, media_id: i64, faces: Vec<FaceIn
     {
         return Err("얼굴 분석 결과가 올바르지 않습니다.".into());
     }
+    for face in &faces {if let Some(pose)=&face.pose {pose.validate()?;}for feature in &face.additional_features{feature.validate()?;}if !face.additional_features.is_empty()&&source_key.is_none(){return Err("모델 특징의 원본 지문이 없습니다.".into());}}
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     let image: bool = tx
         .query_row(
@@ -207,6 +213,8 @@ fn save_scan_with_source(conn: &mut Connection, media_id: i64, faces: Vec<FaceIn
         used.push(person_id);
         tx.execute("INSERT INTO detected_face (media_id, person_id, descriptor, thumbnail) VALUES (?1, ?2, ?3, ?4)", params![media_id, person_id, serde_json::to_string(&face.descriptor).map_err(|e| e.to_string())?, face.thumbnail]).map_err(|e| e.to_string())?;
         let id=tx.last_insert_rowid();
+        for feature in face.additional_features {tx.execute("INSERT INTO person_model_feature(face_id,model_version,dimensions,descriptor,source_key) VALUES(?1,?2,?3,?4,?5)",params![id,feature.model_version,feature.dimensions as i64,serde_json::to_string(&feature.descriptor).map_err(|e|e.to_string())?,source_key.as_deref().unwrap_or("")]).map_err(|e|e.to_string())?;}
+        if let Some(pose)=face.pose {tx.execute("INSERT INTO person_face_pose(face_id,automatic) VALUES(?1,?2)",params![id,serde_json::to_string(&pose).map_err(|e|e.to_string())?]).map_err(|e|e.to_string())?;}
         tx.execute("INSERT INTO person_face_metadata(face_id,model_version,reference_kind,quality,geometry) VALUES(?1,?2,?3,?4,?5)",params![id,MODEL,if is_seed {"seed"} else {"auto"},face.quality.unwrap_or_else(||"review".into()),serde_json::to_string(&face.box_).map_err(|e|e.to_string())?]).map_err(|e|e.to_string())?;
     }
     tx.execute(
@@ -368,7 +376,7 @@ mod tests {
         FaceInput {
             descriptor: vec![value; 128],
             thumbnail: "data:image/jpeg;base64,AA==".into(),
-            model_version: None, quality: None, box_: None,
+            model_version: None, quality: None, box_: None, pose:None, additional_features:vec![],
         }
     }
     #[test]
@@ -476,7 +484,7 @@ mod tests {
             3,
             vec![FaceInput {
                 descriptor: vec![],
-                thumbnail: String::new(), model_version:None,quality:None,box_:None
+                thumbnail: String::new(), model_version:None,quality:None,box_:None,pose:None,additional_features:vec![]
             }]
         )
         .is_err());
@@ -593,6 +601,20 @@ mod tests {
       set_cover_face(&c,person,cover).unwrap();rename_person(&mut c,person,"가족").unwrap();
       let index=read_index(&c).unwrap();assert!(index.faces[0].confirmed);assert!(!index.faces[1].confirmed);
       reassign(&mut c,vec![rows[1].id,cover],Some(person)).unwrap();let index=read_index(&c).unwrap();assert!(index.faces.iter().all(|f|f.confirmed));assert_eq!(index.people[0].cover_face_id,Some(cover));
+    }
+
+    #[test]
+    fn pose_and_unapproved_feature_do_not_replace_legacy_identity(){
+      let mut c=database();let mut input=face(0.1);
+      input.pose=Some(serde_json::from_value(serde_json::json!({"version":"landmarks-pnp-v1","view":"left","yawDegrees":40,"pitchDegrees":5,"rollDegrees":0,"quality":"estimated","normalizedError":0.01})).unwrap());
+      save_scan(&mut c,1,vec![input]).unwrap();let before=read_index(&c).unwrap();let id=before.faces[0].id;
+      assert_eq!(before.faces[0].pose.as_ref().unwrap()["automatic"]["view"],"left");
+      c.execute("UPDATE person_face_pose SET manual_view='right' WHERE face_id=?1",[id]).unwrap();
+      save_scan(&mut c,1,vec![face(0.9)]).unwrap();let after=read_index(&c).unwrap();assert_eq!(after.faces[0].person_id,before.faces[0].person_id);
+      assert_eq!(after.faces[0].pose.as_ref().unwrap()["automatic"]["view"],"left");assert_eq!(after.faces[0].pose.as_ref().unwrap()["manualView"],"right");
+      let mut forged=face(0.2);forged.additional_features.push(serde_json::from_value(serde_json::json!({"modelVersion":"fake512","dimensions":512,"descriptor":vec![1.0;512]})).unwrap());
+      assert!(save_scan(&mut c,2,vec![forged]).is_err());assert_eq!(read_index(&c).unwrap().faces.len(),1);
+      assert_eq!(c.query_row("SELECT COUNT(*) FROM person_model_feature",[],|r|r.get::<_,i64>(0)).unwrap(),0);
     }
 
 }

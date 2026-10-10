@@ -2,7 +2,7 @@ import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import type { MediaItem } from '../../types/media';
 import { normalizeLocalFilePath } from '../media/mediaSource';
 
-export interface FaceRow { id: number; media_id: number; person_id: number; thumbnail: string; confirmed: boolean }
+export interface FaceRow { id: number; media_id: number; person_id: number; thumbnail: string; confirmed: boolean; pose?:{automatic:import('./engine/pose').FacePose;manualView:import('./engine/pose').FaceView|null}|null }
 export interface FaceIndex { people: { id: number; name: string; cover_face_id?: number | null }[]; faces: FaceRow[]; scanned: number[] }
 export const emptyFaceIndex: FaceIndex = { people: [], faces: [], scanned: [] };
 export const loadFaceIndex = () => invoke<FaceIndex>('list_face_index');

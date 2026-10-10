@@ -25,14 +25,14 @@ fn save(conn:&mut Connection,s:Sample)->Result<(),String>{
     tx.commit().map_err(|e|e.to_string())
 }
 fn dataset(conn:&Connection)->Result<Value,String>{
-    let mut stmt=conn.prepare("SELECT id,media_id,pet_id,role,capture_group,source_key,view,kind,features,rights,engine_version FROM pet_evaluation_sample ORDER BY id").map_err(|e|e.to_string())?;
+    let mut stmt=conn.prepare("SELECT id,media_id,pet_id,role,capture_group,source_key,view,kind,features,rights,engine_version,(SELECT automatic_view FROM pet_direction_observation WHERE detection_id=pet_evaluation_sample.detection_id) FROM pet_evaluation_sample ORDER BY id").map_err(|e|e.to_string())?;
     let mut references=vec![];let mut queries=vec![];
     let mut rows=stmt.query([]).map_err(|e|e.to_string())?;
     while let Some(row)=rows.next().map_err(|e|e.to_string())? {
         let id:i64=row.get(0).map_err(|e|e.to_string())?;let media:i64=row.get(1).map_err(|e|e.to_string())?;
         let pet:Option<i64>=row.get(2).map_err(|e|e.to_string())?;let role:String=row.get(3).map_err(|e|e.to_string())?;
         let text:Option<String>=row.get(8).map_err(|e|e.to_string())?;
-        let sample=json!({"sampleId":format!("sample-{id}"),"mediaKey":format!("media-{media}"),"petId":pet,"captureGroup":row.get::<_,String>(4).map_err(|e|e.to_string())?,"sourceKey":row.get::<_,String>(5).map_err(|e|e.to_string())?,"view":row.get::<_,String>(6).map_err(|e|e.to_string())?,"kind":row.get::<_,String>(7).map_err(|e|e.to_string())?,"features":text.map(|t|serde_json::from_str::<Value>(&t)).transpose().map_err(|e|e.to_string())?,"rights":row.get::<_,String>(9).map_err(|e|e.to_string())?,"engineVersion":row.get::<_,String>(10).map_err(|e|e.to_string())?});
+        let sample=json!({"automaticView":row.get::<_,Option<String>>(11).map_err(|e|e.to_string())?,"sampleId":format!("sample-{id}"),"mediaKey":format!("media-{media}"),"petId":pet,"captureGroup":row.get::<_,String>(4).map_err(|e|e.to_string())?,"sourceKey":row.get::<_,String>(5).map_err(|e|e.to_string())?,"view":row.get::<_,String>(6).map_err(|e|e.to_string())?,"kind":row.get::<_,String>(7).map_err(|e|e.to_string())?,"features":text.map(|t|serde_json::from_str::<Value>(&t)).transpose().map_err(|e|e.to_string())?,"rights":row.get::<_,String>(9).map_err(|e|e.to_string())?,"engineVersion":row.get::<_,String>(10).map_err(|e|e.to_string())?});
         if role=="reference"{references.push(sample);}else{queries.push(sample);}
     }
     Ok(json!({"schemaVersion":1,"engineVersion":"gamjassak-pets-v2","references":references,"queries":queries,"automaticLinkingEnabled":false}))

@@ -33,7 +33,7 @@ export function analyzePersonImage(url: string, signal?: AbortSignal, backend: F
   return runAI('people', async () => {
     const response = await fetch(url, { signal });
     if (!response.ok) throw new Error('사진을 읽지 못했습니다.');
-    let bitmap = await createImageBitmap(await response.blob());
+    let bitmap = await createImageBitmap(await response.blob(), {imageOrientation:'from-image'});
     try {
       const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
       signal?.throwIfAborted();

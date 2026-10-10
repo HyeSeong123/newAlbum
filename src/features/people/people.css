@@ -69,3 +69,6 @@
 .personEditor { flex-direction: column; align-items: flex-start; }
 .existingPersonChoice label { display: grid; gap: 6px; }
 .existingPersonChoice { align-items: flex-end; }
+
+.personEvaluationReport > table { width:100%; table-layout:fixed; border-collapse:collapse; margin:16px 0; }
+.personEvaluationReport > table th,.personEvaluationReport > table td { padding:8px 4px; overflow-wrap:anywhere; text-align:left; border-bottom:1px solid var(--border); }

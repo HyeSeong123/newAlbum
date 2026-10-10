@@ -93,6 +93,7 @@ fn write_scan(conn: &mut Connection, media_id: i64, source_key: &str, features: 
     for (index,feature) in features.into_iter().enumerate() {
         let json=serde_json::to_string(&feature).map_err(|e|e.to_string())?;
         tx.execute("INSERT INTO pet_detection(media_id,object_index,features) VALUES(?1,?2,?3)",params![media_id,index as i64,json]).map_err(|e|e.to_string())?;
+        tx.execute("INSERT INTO pet_direction_observation(detection_id,automatic_view,automatic_source) VALUES(?1,?2,?3)",params![tx.last_insert_rowid(),if feature.view_source=="user" {None} else {Some(&feature.view)},feature.view_source]).map_err(|e|e.to_string())?;
     }
     tx.commit().map_err(|e|e.to_string())?;
     read_scan(conn,media_id)?.ok_or_else(||"분석 결과 저장 실패".into())
@@ -109,11 +110,13 @@ fn confirm_with_features(conn: &mut Connection, detection_id:i64, pet_id:Option<
     let tx=conn.transaction().map_err(|e|e.to_string())?;
     let (media,old,json):(i64,Option<i64>,String)=tx.query_row("SELECT media_id,pet_id,features FROM pet_detection WHERE id=?1",[detection_id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?))).map_err(|e|e.to_string())?;
     let mut features:Features=serde_json::from_str(&json).map_err(|e|e.to_string())?;
+    tx.execute("INSERT OR IGNORE INTO pet_direction_observation(detection_id,automatic_view,automatic_source) VALUES(?1,?2,?3)",params![detection_id,if features.view_source=="user" {None} else {Some(&features.view)},features.view_source]).map_err(|e|e.to_string())?;
     if let Some(replacement)=replacement {
         validate(&replacement)?;
         if replacement.box_!=features.box_ {return Err("분석 영역이 변경되었습니다. 결과를 다시 불러와 주세요.".into());}
         features=replacement;
     }
+    tx.execute("UPDATE pet_direction_observation SET manual_view=?1 WHERE detection_id=?2",params![view,detection_id]).map_err(|e|e.to_string())?;
     features.view=view.into(); features.view_source=if view=="unknown" {"unknown"} else {"user"}.into();
     if view=="rear" {features.appearance.clear();features.mirrored_appearance.clear();}
     if view=="rear" || view=="unknown" {features.face_box=None;features.face_appearance.clear();features.mirrored_face_appearance.clear();}
@@ -272,4 +275,12 @@ mod tests {
         let mut c=database();let mut bad=features();bad.shape[0]=f64::NAN;assert!(write_scan(&mut c,1,"a",vec![bad]).is_err());
         assert!(read_scan(&c,1).unwrap().is_none());assert!(write_scan(&mut c,1,"a",vec![]).unwrap().detections.is_empty());
     }
+    #[test] fn manual_direction_never_becomes_an_automatic_success(){
+      let mut c=database();let mut f=features();f.view="unknown".into();f.view_source="unknown".into();
+      let scan=write_scan(&mut c,1,"a",vec![f]).unwrap();let id=scan.detections[0].id;
+      confirm(&mut c,id,Some(1),"left",false).unwrap();confirm(&mut c,id,Some(1),"right",false).unwrap();
+      let (auto,manual):(String,String)=c.query_row("SELECT automatic_view,manual_view FROM pet_direction_observation WHERE detection_id=?1",[id],|r|Ok((r.get(0)?,r.get(1)?))).unwrap();
+      assert_eq!(auto,"unknown");assert_eq!(manual,"right");assert_eq!(read_scan(&c,1).unwrap().unwrap().detections[0].pet_id,Some(1));
+    }
+
 }

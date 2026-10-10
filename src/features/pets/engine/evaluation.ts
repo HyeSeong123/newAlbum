@@ -1,8 +1,10 @@
+import { rate, VIEW_PAIRS } from '../../ai/metrics';
 import { recognizePet } from './matcher';
 import { ENGINE_VERSION,type PetFeatures,type PetView,type PetKind } from './types';
-interface Sample {sampleId:string;captureGroup:string;sourceKey?:string;engineVersion?:string;petId:number|null;view:PetView;kind?:PetKind;features:PetFeatures|null}
+interface Sample {automaticView?:PetView|null;sampleId:string;captureGroup:string;sourceKey?:string;engineVersion?:string;petId:number|null;view:PetView;kind?:PetKind;features:PetFeatures|null}
 export interface PetEvaluationDataset {engineVersion?:string;references:Sample[];queries:Sample[]}
 export function evaluatePets(data:PetEvaluationDataset){
+ const started=performance.now();
  if(data.engineVersion && data.engineVersion!==ENGINE_VERSION)throw new Error('검증 자료의 엔진 버전이 다릅니다.');
  if(!Array.isArray(data.references)||!Array.isArray(data.queries))throw new Error('references/queries arrays are required');
  const groups=new Set<string>(),ids=new Set<string>(),sources=new Set<string>();
@@ -15,7 +17,7 @@ export function evaluatePets(data:PetEvaluationDataset){
   if(f && (!['dog','cat'].includes(f.kind) || ![f.appearance,f.mirroredAppearance,f.color,f.shape,f.faceAppearance??[],f.mirroredFaceAppearance??[]].every(vector=>Array.isArray(vector)&&vector.every(Number.isFinite)) || ![0,1024].includes(f.appearance.length) || ![0,1024].includes(f.mirroredAppearance.length) || ![0,1024].includes(f.faceAppearance?.length??0) || ![0,1024].includes(f.mirroredFaceAppearance?.length??0) || f.color.length!==120 || f.shape.length!==10))throw new Error('Invalid extracted feature dimensions or values');
  };
  for(const reference of data.references){valid(reference);if(reference.petId===null||!reference.features||ids.has(reference.sampleId))throw new Error('Reference requires a known pet, features and unique sampleId');if(reference.kind && reference.features.kind!==reference.kind)throw new Error('Correct reference species before evaluation');groups.add(reference.captureGroup);ids.add(reference.sampleId);if(reference.sourceKey)sources.add(reference.sourceKey);}
- const refs=data.references.map(r=>({petId:r.petId!,features:r.features!}));
+ const refs=data.references.map(r=>({petId:r.petId!,features:{...r.features!,view:r.view}}));
  const stats={all:{total:0,correct:0},front:{total:0,correct:0},side:{total:0,correct:0},left:{total:0,correct:0},right:{total:0,correct:0},rear:{total:0,candidateHit:0},novel:{total:0,suggestedKnown:0},detectionMisses:0,species:{total:0,correct:0},humanSpeciesCorrections:0,unresolved:0};
  const sidePets=new Set<number>(),sidePhotos=new Set<string>(),sideSpecies=new Set<string>();
  const byKind={dog:{photos:new Set<string>(),pets:new Set<number>()},cat:{photos:new Set<string>(),pets:new Set<number>()}};
@@ -49,9 +51,26 @@ export function evaluatePets(data:PetEvaluationDataset){
   if(query.view==='left'||query.view==='right'){modelSpeciesStats.side.total++;modelSpeciesStats.side.correct+=modelCorrect;}
   if((query.view==='left'||query.view==='right') && query.kind){byKind[query.kind].photos.add(query.sourceKey??query.sampleId);byKind[query.kind].pets.add(query.petId);}
  }
+ const directionMetrics=Object.fromEntries((['dog','cat'] as const).map(kind=>[kind,Object.fromEntries((['front','left','right'] as const).map(view=>{
+  const qs=data.queries.filter(q=>q.kind===kind&&q.view===view),known=qs.filter(q=>q.petId!==null);
+  const identified=known.filter(q=>q.features?.detectedKind===kind && recognizePet({...q.features,view:q.view},refs).candidates[0]?.petId===q.petId).length;
+  const top1=rate(identified,known.length),uniquePhotos=new Set(known.map(q=>q.sourceKey??q.sampleId)).size,uniquePets=new Set(known.map(q=>q.petId)).size;
+  const available=qs.every(q=>!q.features || q.automaticView!==undefined && q.automaticView!==null);
+  return [view,{detection:rate(qs.filter(q=>!!q.features).length,qs.length),orientation:available?rate(qs.filter(q=>q.features&&q.automaticView===view).length,qs.length):null,
+   identityTop1:originalSpeciesAvailable?top1:null,uniquePhotos,uniquePets,goalReached:view==='front'||!originalSpeciesAvailable||uniquePets<5||uniquePhotos<60?null:top1.wilson95![0]>=.6}];
+ }))]));
+ const comparisons=Object.fromEntries((['dog','cat'] as const).map(kind=>[kind,Object.fromEntries(VIEW_PAIRS.map(([a,b])=>{
+  let correct=0,total=0,missingReferenceTrials=0;
+  for(const q of data.queries.filter(q=>q.kind===kind&&q.petId!==null)){
+   const referenceView=q.view===a?b:q.view===b?a:null;if(!referenceView)continue;
+   const selected=data.references.filter(r=>r.kind===kind&&r.view===referenceView).map(r=>({petId:r.petId!,features:{...r.features!,view:r.view}}));
+   if(!selected.length){missingReferenceTrials++;continue;}total++;
+   if(q.features?.detectedKind===kind && recognizePet({...q.features,view:q.view},selected).candidates[0]?.petId===q.petId)correct++;
+  }return [`${a}-${b}`,{...rate(correct,total),missingReferenceTrials}];
+ }))]));
  const accuracy=({total,correct}:{total:number;correct:number})=>total?correct/total:null;
  const sufficient=originalSpeciesAvailable && stats.side.total>=100 && sidePhotos.size>=100 && sidePets.size>=10 && stats.left.total>=25 && stats.right.total>=25 && sideSpecies.size===2 && Object.values(byKind).every(s=>s.photos.size>=50 && s.pets.size>=5);
  const p=originalSpeciesAvailable?accuracy(modelSpeciesStats.side):null,n=stats.side.total,z=1.96;
  const interval=p===null?null:[Math.max(0,(p+z*z/(2*n)-z*Math.sqrt(p*(1-p)/n+z*z/(4*n*n)))/(1+z*z/n)),Math.min(1,(p+z*z/(2*n)+z*Math.sqrt(p*(1-p)/n+z*z/(4*n*n)))/(1+z*z/n))];
- return {engineVersion:ENGINE_VERSION,enrollmentCount:data.references.length,queryCount:data.queries.length,stats,top1IdentificationAccuracy:{overall:accuracy(stats.all),front:accuracy(stats.front),side:accuracy(stats.side),left:accuracy(stats.left),right:accuracy(stats.right)},originalSpeciesAvailable,modelSpeciesTop1Accuracy:originalSpeciesAvailable?{overall:accuracy(modelSpeciesStats.all),front:accuracy(modelSpeciesStats.front),side:accuracy(modelSpeciesStats.side)}:null,sideAccuracyWilson95:interval,sideGoalReached:sufficient?interval![0]>=0.6:null,sidePointGoalReached:sufficient?p!>=0.6:null,sideCoverage:{dog:{photos:byKind.dog.photos.size,pets:byKind.dog.pets.size},cat:{photos:byKind.cat.photos.size,pets:byKind.cat.pets.size}},perPetModelSpeciesAccuracy:originalSpeciesAvailable?[...byPet].map(([petId,rows])=>({petId,...rows,accuracy:accuracy(rows)})):null,sideDataSufficient:sufficient,sideUniquePets:sidePets.size,sideUniquePhotos:sidePhotos.size,rearTop3Recall:stats.rear.total?stats.rear.candidateHit/stats.rear.total:null,automaticLinkingEnabled:false,automaticLinkFalseRate:null,novelPetAutomaticFalseLinkRate:null,novelPetKnownSuggestionRate:stats.novel.total?stats.novel.suggestedKnown/stats.novel.total:null,unresolvedRate:data.queries.length?stats.unresolved/data.queries.length:null,note:'User-labeled view and optional user-selected or estimated cat face regions. top1IdentificationAccuracy uses corrected species; modelSpeciesTop1Accuracy counts original species errors as misses. Side goal requires the Wilson 95% lower bound of modelSpeciesTop1Accuracy to reach 60%. No automatic pose or automatic-link trials. Same-session/content overlap is rejected; near-duplicate sessions require manual audit.'};
+ return {evaluatedAt:new Date().toISOString(),featureComparisonMs:performance.now()-started,inferenceTimeMeasured:false,wholeAppMemoryMeasured:false,directionMetrics,comparisons,modelDimensions:1024,automaticPoseValidated:false,engineVersion:ENGINE_VERSION,enrollmentCount:data.references.length,queryCount:data.queries.length,stats,top1IdentificationAccuracy:{overall:accuracy(stats.all),front:accuracy(stats.front),side:accuracy(stats.side),left:accuracy(stats.left),right:accuracy(stats.right)},originalSpeciesAvailable,modelSpeciesTop1Accuracy:originalSpeciesAvailable?{overall:accuracy(modelSpeciesStats.all),front:accuracy(modelSpeciesStats.front),side:accuracy(modelSpeciesStats.side)}:null,sideAccuracyWilson95:interval,sideGoalReached:Object.values(directionMetrics).some(rows=>rows.left.goalReached===null||rows.right.goalReached===null)?null:Object.values(directionMetrics).every(rows=>rows.left.goalReached&&rows.right.goalReached),sidePointGoalReached:sufficient?p!>=0.6:null,sideCoverage:{dog:{photos:byKind.dog.photos.size,pets:byKind.dog.pets.size},cat:{photos:byKind.cat.photos.size,pets:byKind.cat.pets.size}},perPetModelSpeciesAccuracy:originalSpeciesAvailable?[...byPet].map(([petId,rows])=>({petId,...rows,accuracy:accuracy(rows)})):null,sideDataSufficient:sufficient,sideUniquePets:sidePets.size,sideUniquePhotos:sidePhotos.size,rearTop3Recall:stats.rear.total?stats.rear.candidateHit/stats.rear.total:null,automaticLinkingEnabled:false,automaticLinkFalseRate:null,novelPetAutomaticFalseLinkRate:null,novelPetKnownSuggestionRate:stats.novel.total?stats.novel.suggestedKnown/stats.novel.total:null,unresolvedRate:data.queries.length?stats.unresolved/data.queries.length:null,note:'User-labeled view and optional user-selected or estimated cat face regions. top1IdentificationAccuracy uses corrected species; modelSpeciesTop1Accuracy counts original species errors as misses. Side goal requires the Wilson 95% lower bound of modelSpeciesTop1Accuracy to reach 60%. No automatic pose or automatic-link trials. Same-session/content overlap is rejected; near-duplicate sessions require manual audit.'};
 }

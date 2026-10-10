@@ -3,12 +3,14 @@ export const PERSON_ENGINE = 'gamjassak-people-v1';
 export type FaceBackend = 'auto' | 'cpu' | 'wasm';
 export interface FaceFeatures {
   descriptor: number[];
+  additionalFeatures?:{modelVersion:string;dimensions:512;descriptor:number[]}[];
   thumbnail: string;
   modelVersion: string;
   box: [number, number, number, number];
   quality: 'usable' | 'review';
-  // Landmarks cannot establish a validated left/right pose label.
-  view: 'unknown';
+  // Approximate geometry; actual orientation accuracy is evaluated separately.
+  view: import('./pose').FaceView;
+  pose: import('./pose').FacePose;
   rollDegrees: number;
 }
 export interface FaceDiagnostics {

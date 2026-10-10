@@ -1,0 +1,16 @@
+{
+  "version": "0.9.4",
+  "newWeightsIncluded": false,
+  "person512Installed": false,
+  "personPose": {"method":"landmarks-pnp-v1", "trainedModel":false, "accuracyValidated":false},
+  "petSidePoseInstalled": false,
+  "independentEvaluationPhotos": 0,
+  "candidateReview": [
+    {"name":"InsightFace ArcFace", "code":"MIT", "weightsAndTrainingData":"non-commercial research; separate commercial permission required", "included":false, "source":"https://github.com/deepinsight/insightface"},
+    {"name":"FaceNet VGGFace2 checkpoint", "code":"MIT", "weightsAndTrainingData":"commercial training-data clearance not established", "included":false, "source":"https://github.com/davidsandberg/facenet"},
+    {"name":"OpenCV SFace", "codeAndWeightDirectory":"Apache-2.0", "trainingData":"checkpoint provenance and commercial permission not established for this review", "included":false, "source":"https://github.com/opencv/opencv_zoo/issues/318"},
+    {"name":"PetFace", "codeWeightsAndDataset":"non-commercial research", "included":false, "source":"https://github.com/mapooon/PetFace"}
+  ],
+  "legacyWeightsChanged":false,
+  "legacyCommercialClearanceConfirmed":false
+}

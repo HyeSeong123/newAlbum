@@ -14,6 +14,7 @@ use export::{copy_media_file, export_media_files, ExportResultDto};
 #[cfg(test)]
 use export::valid_export_folder_name;
 mod faces;
+mod recognition;
 mod pets;
 mod pet_recognition;
 mod pet_jobs;
@@ -1280,6 +1281,9 @@ pub fn run() {
             update_media_details,
             update_media_title,
             increment_media_view,
+            recognition::export_recognition_report,
+            recognition::set_person_face_view,
+            recognition::recognition_model_status,
             faces::list_face_index,
             pets::list_pets,
             pets::save_pet,

@@ -24,7 +24,7 @@ export async function verifyInstalledRepetitionMeasurement(page, mediaId, inputP
     });
     bitmap.close();
     const rows = [];
-    for (let cycle = 0; cycle < 20; cycle++) {
+    for (let cycle = 0; cycle < 50; cycle++) {
       for (let domain = 0; domain < 2; domain++) {
         const worker = new Worker(new URL(`/assets/${names[domain]}`, location.href), { type: 'module' });
         try {
@@ -41,7 +41,7 @@ export async function verifyInstalledRepetitionMeasurement(page, mediaId, inputP
     }
     return rows;
   }, inputPath);
-  assert.equal(runs.length, 40);
+  assert.equal(runs.length, 100);
   assert.ok(runs.filter(row => row.domain === 'person').every(row => row.count === 0));
   assert.ok(runs.filter(row => row.domain === 'pet').every(row => row.count > 0));
   assert.ok(runs.every(row => row.diagnostics.backend === 'wasm'));
@@ -55,5 +55,5 @@ export async function verifyInstalledRepetitionMeasurement(page, mediaId, inputP
   await page.screenshot({ path: 'test-results/android-smoke/people-simple-menu.png' });
   await page.keyboard.press('Escape');
   await page.getByRole('tab', { name: '반려동물', exact: true }).click();
-  return { runs, cycles: 20, domainSwitches: 39, execution: 'bundled Workers directly; shared client cancellation covered in development browser tests', identityLinksPreserved: true, offline: true, identityAccuracyMeasured: false, phonePerformanceMeasured: false, wholeAppPeakMemoryMeasured: false };
+  return { runs, cycles: 50, domainSwitches: 99, independentPhotos: 1, analysisCalls:100, execution: 'bundled Workers directly; shared client cancellation covered in development browser tests', identityLinksPreserved: true, offline: true, identityAccuracyMeasured: false, phonePerformanceMeasured: false, wholeAppPeakMemoryMeasured: false };
 }

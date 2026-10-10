@@ -293,7 +293,7 @@ export function App() {
               onAssignRegion={library.assignRegion} onLocationsAnalyzed={library.refreshLocations}
               onCreateAlbum={(records, title = "") => { setAlbumDraftItems(records); setAlbumDraftTitle(title); }} />}
             {activeView === "People" && <PeopleWorkspace items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} activeTab={peopleTab} onTabChange={setPeopleTab} />}
-            {activeView === "Settings" && <SettingsPanel itemCount={items.length} clearing={clearing} onClear={clearAllRegisteredMedia} />}
+            {activeView === "Settings" && <SettingsPanel photos={items.filter(item=>item.fileType==="image")} itemCount={items.length} clearing={clearing} onClear={clearAllRegisteredMedia} />}
           </div>
         </section>
         {firstRunOpen && <FirstRunGuide affection={gomiAffection} onLater={closeFirstRun} onGuide={() => { closeFirstRun(); setGuideTopic("photos"); }} onImport={() => { closeFirstRun(); setImportOpen(true); }} />}

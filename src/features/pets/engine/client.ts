@@ -17,7 +17,7 @@ export function analyzePetImage(url: string, signal?: AbortSignal, viewHint: Pet
     const response = await fetch(url, { signal });
     if (!response.ok) throw new Error('분석용 사진을 읽지 못했습니다.');
     const blob = await response.blob();
-    let bitmap = await createImageBitmap(blob);
+    let bitmap = await createImageBitmap(blob, {imageOrientation:'from-image'});
     if (Math.max(bitmap.width, bitmap.height) > 640) {
       const scale = 640 / Math.max(bitmap.width, bitmap.height);
       const resized = await createImageBitmap(bitmap, { resizeWidth: Math.max(1,Math.round(bitmap.width*scale)), resizeHeight: Math.max(1,Math.round(bitmap.height*scale)) });

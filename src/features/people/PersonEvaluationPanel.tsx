@@ -2,12 +2,14 @@ import {useEffect,useRef,useState} from 'react';
 import {invoke} from '@tauri-apps/api/core';
 import type {MediaItem} from '../../types/media';
 import type {FaceIndex} from './faceService';
+import {exportRecognitionReport} from '../ai/reportExport';
 import {MediaVisual} from '../../components/MediaVisual';
 
 const categories={front:'정면',expression:'다른 표정',left:'좌측 측면',right:'우측 측면',lookalikes:'비슷한 다른 인물',group:'여러 사람',small:'작은 얼굴',glasses:'안경',dark:'어두운 조명',occluded:'일부 가림',unregistered:'미등록 인물','person-pet':'사람과 반려동물'};
 type Metrics={top1Known:number|null;falseLinkPerLabeledFace:number|null;falseLinkPerAutoLink:number|null;unknownFalseAccept:number|null;autoLinks:number};
-type Condition={samples:number;detectionRecall:number|null;featureCompatibilityRate:number|null;baseline:Metrics;improved:Metrics};
-type Report={photos:number;labeledFaces:number;referenceFaces:number;referencePeople:number;conditions:Record<string,Condition>};
+type Metric={correct:number;total:number;rate:number|null;wilson95:number[]|null};
+type Condition={detection?:Metric;orientation?:Metric|null;samples:number;detectionRecall:number|null;featureCompatibilityRate:number|null;baseline:Metrics;improved:Metrics};
+type Report={modelVersion?:string;featureComparisonMs?:number;environment?:{os:string;architecture:string};comparisons?:Record<string,Metric>;photos:number;labeledFaces:number;referenceFaces:number;referencePeople:number;conditions:Record<string,Condition>};
 const percent=(n:number|null)=>n===null?'미측정':`${(n*100).toFixed(1)}%`;
 export function PersonEvaluationPanel({photos,index,disabled,onBusy}:{photos:MediaItem[];index:FaceIndex;disabled:boolean;onBusy:(value:boolean)=>void}){
  const [media,setMedia]=useState(photos[0]?.id??''),[face,setFace]=useState(''),[person,setPerson]=useState(''),[role,setRole]=useState('query');
@@ -27,12 +29,17 @@ export function PersonEvaluationPanel({photos,index,disabled,onBusy}:{photos:Med
   }catch(e){if(alive.current)setMessage(e instanceof Error?e.message:String(e));}
   finally{lock.current=false;if(alive.current)setBusy(false);onBusy(false);}
  }
+ const selectedFace=faces.find(f=>String(f.id)===face);
  const blocked=busy||disabled;
+ const views={front:'정면',left:'왼쪽을 봄',right:'오른쪽을 봄',unknown:'방향 미확인'};
+ async function correctView(view:string){if(blocked||!face)return;setBusy(true);onBusy(true);try{await invoke('set_person_face_view',{faceId:Number(face),view});setMessage('얼굴 방향을 수정했습니다. 자동 추정 결과와 평가 정답은 유지됩니다.');}catch(e){setMessage(String(e));}finally{setBusy(false);onBusy(false);}}
+
  return <section className="personValidationPanel" aria-label="인물 정확도 평가"><h3>인물 정확도 평가</h3>
   <p>후보를 보기 전 실제 사람을 정답으로 입력해 주세요. 등록 기준과 평가는 다른 사진·다른 촬영 세션을 사용합니다. 원본 사진과 인물 연결은 바뀌지 않습니다.</p>
   <label>평가 사진<select aria-label="평가 사진" value={media} disabled={blocked} onChange={e=>setMedia(e.target.value)}>{photos.map(p=><option key={p.id} value={p.id}>{p.fileName}</option>)}</select></label>
   {selected&&<MediaVisual item={selected} className="personEvaluationPhoto"/>}
   <fieldset disabled={blocked}><legend>사진 속 평가 대상 얼굴</legend><label><input type="radio" name="evaluationFace" checked={!face} onChange={()=>setFace('')}/>탐지 실패 — 실제 얼굴이 있지만 놓침</label><div className="personEvaluationFaces">{faces.map((f,i)=><label key={f.id}><input type="radio" name="evaluationFace" aria-label={`평가 얼굴 ${i+1}`} checked={face===String(f.id)} onChange={()=>setFace(String(f.id))}/><img src={f.thumbnail} alt={`평가 얼굴 ${i+1}`}/>얼굴 {i+1}</label>)}</div></fieldset>
+  {selectedFace&&<div><p>자동 방향: {views[selectedFace.pose?.automatic.view??'unknown']} · {selectedFace.pose?.automatic.quality==='estimated'?'기하 추정 · 정확도 미검증':'미확인'}</p><label>이 얼굴의 방향 수정<select aria-label="이 얼굴의 방향 수정" defaultValue={selectedFace.pose?.manualView??selectedFace.pose?.automatic.view??'unknown'} key={face} disabled={blocked} onChange={e=>void correctView(e.target.value)}>{Object.entries(views).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label></div>}
   {!face&&<label>미탐지 얼굴 번호<input aria-label="미탐지 얼굴 번호" type="number" min={1} max={100} value={slot} disabled={blocked} onChange={e=>setSlot(Number(e.target.value))}/></label>}
   <label>인물 자료 용도<select aria-label="인물 자료 용도" value={role} disabled={blocked} onChange={e=>setRole(e.target.value)}><option value="query">평가 사진</option><option value="reference">등록 기준 사진</option></select></label>
   <label>실제 인물<select aria-label="실제 인물" value={person} disabled={blocked} onChange={e=>setPerson(e.target.value)}><option value="">미등록 인물</option>{index.people.filter(p=>p.name.trim()).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
@@ -41,6 +48,9 @@ export function PersonEvaluationPanel({photos,index,disabled,onBusy}:{photos:Med
   <label>인물 사진 사용 권리·출처<input aria-label="인물 사진 사용 권리·출처" maxLength={500} value={rights} disabled={blocked} placeholder="예: 직접 촬영·피촬영자 평가 사용 동의" onChange={e=>setRights(e.target.value)}/></label>
   <div className="peopleActions"><button disabled={blocked||!media||!session.trim()||!rights.trim()||role==='reference'&&(!face||!person)||!Number.isInteger(slot)||slot<1||slot>100} onClick={()=>void action('save')}>인물 평가 자료에 추가</button><button disabled={blocked||!counts.references||!counts.queries} onClick={()=>void action('evaluate')}>인물 평가 결과 확인</button><button disabled={blocked||!counts.references&&!counts.queries} onClick={()=>{if(window.confirm('인물 평가 정답만 삭제할까요? 사진과 인물 연결은 유지됩니다.'))void action('clear');}}>인물 평가 자료 삭제</button></div>
   <p role="status">등록 기준 {counts.references}개 · 평가 {counts.queries}개{busy?' · 평가 작업 중':message?` · ${message}`:''}</p>
-  {report&&<div className="personEvaluationReport" role="status"><p>평가 사진 {report.photos}장 · 정답 얼굴 {report.labeledFaces}개 · 등록 기준 {report.referencePeople}명/{report.referenceFaces}개</p><div className="personEvaluationTable"><table><caption>기존 거리 비교와 확인 기준 비교 — 입력한 정답 자료에 한정</caption><thead><tr><th>조건</th><th>정답 수</th><th>탐지율</th><th>기존 Top-1</th><th>확인 기준 Top-1</th><th>오연결/전체</th><th>미등록 오수락</th></tr></thead><tbody>{Object.entries({all:'전체',...categories}).map(([key,label])=>{const c=report.conditions[key];return c&&<tr key={key}><th>{label}</th><td>{c.samples}</td><td>{percent(c.detectionRecall)}</td><td>{percent(c.baseline.top1Known)}</td><td>{percent(c.improved.top1Known)}</td><td>{percent(c.improved.falseLinkPerLabeledFace)}</td><td>{percent(c.improved.unknownFalseAccept)}</td></tr>;})}</tbody></table></div><small>없는 조건은 미측정입니다. 촬영 세션의 독립성과 정답은 사용자가 확인해야 합니다. 저장된 특징의 비교 정책 평가이며 기존·개선 탐지기의 별도 비교 실험은 아닙니다. 얼굴이 없는 뒷모습은 동일 인물 정답으로 평가하지 않습니다.</small></div>}
+  {report&&<div className="personEvaluationReport" role="status"><p>FaceAPI 128차원 · 512차원 모델 미설치</p><p>{report.modelVersion} · {report.environment?.os??'기기 미확인'} / {report.environment?.architecture??'미확인'} · 저장 특징 비교 {report.featureComparisonMs?.toFixed(1)??'미측정'} ms</p><div className="peopleActions"><button disabled={blocked} onClick={()=>void exportRecognitionReport(report,'people','json').catch(e=>setMessage(String(e)))}>결과 JSON 저장</button><button disabled={blocked} onClick={()=>void exportRecognitionReport(report,'people','csv').catch(e=>setMessage(String(e)))}>결과 CSV 저장</button></div>
+  <table><caption>좌우 분리 · 자동 방향과 수동 정답 비교</caption><thead><tr><th>방향</th><th>탐지 / 전체</th><th>탐지 95% 구간</th><th>자동 방향 / 전체</th></tr></thead><tbody>{(['front','left','right'] as const).map(key=>{const c=report.conditions[key];return <tr key={key}><th>{views[key]}</th><td>{c?.detection?.correct??0} / {c?.samples??0}</td><td>{c?.detection?.wilson95?.map(percent).join(' ~ ')??'미측정'}</td><td>{c?.orientation?`${c.orientation.correct} / ${c.orientation.total}`:'미측정'}</td></tr>;})}</tbody></table>
+  {report.comparisons&&<table><caption>방향별 128차원 Top-1 · 수동 정답 방향 조건</caption><thead><tr><th>등록 ↔ 평가</th><th>정답 / 전체</th><th>95% 구간</th></tr></thead><tbody>{Object.entries(report.comparisons).map(([key,m])=><tr key={key}><th>{key.split('-').map(k=>views[k as keyof typeof views]).join(' ↔ ')}</th><td>{m.correct} / {m.total}</td><td>{m.wilson95?.map(percent).join(' ~ ')??'미측정'}</td></tr>)}</tbody></table>}
+<p>평가 사진 {report.photos}장 · 정답 얼굴 {report.labeledFaces}개 · 등록 기준 {report.referencePeople}명/{report.referenceFaces}개</p><div className="personEvaluationTable"><table><caption>기존 거리 비교와 확인 기준 비교 — 입력한 정답 자료에 한정</caption><thead><tr><th>조건</th><th>정답 수</th><th>탐지율</th><th>기존 Top-1</th><th>확인 기준 Top-1</th><th>오연결/전체</th><th>미등록 오수락</th></tr></thead><tbody>{Object.entries({all:'전체',...categories}).map(([key,label])=>{const c=report.conditions[key];return c&&<tr key={key}><th>{label}</th><td>{c.samples}</td><td>{percent(c.detectionRecall)}</td><td>{percent(c.baseline.top1Known)}</td><td>{percent(c.improved.top1Known)}</td><td>{percent(c.improved.falseLinkPerLabeledFace)}</td><td>{percent(c.improved.unknownFalseAccept)}</td></tr>;})}</tbody></table></div><small>없는 조건은 미측정입니다. 촬영 세션의 독립성과 정답은 사용자가 확인해야 합니다. 저장된 특징의 비교 정책 평가이며 기존·개선 탐지기의 별도 비교 실험은 아닙니다. 얼굴이 없는 뒷모습은 동일 인물 정답으로 평가하지 않습니다.</small></div>}
  </section>;
 }
