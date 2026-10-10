@@ -113,9 +113,22 @@ async function nativeNode(label, timeout = 60_000) {
   throw new Error(`Native picker entry was missing: ${label}`);
 }
 async function tapNative(label) {
-  const bounds = (await nativeNode(label)).match(/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/);
-  assert.ok(bounds, 'Native picker control must have screen bounds');
-  await adb('shell', 'input', 'tap', String(Math.floor((+bounds[1] + +bounds[3]) / 2)), String(Math.floor((+bounds[2] + +bounds[4]) / 2)));
+  // Permission sheets can still be sliding while uiautomator reports their
+  // controls. A coordinate from that frame can miss the settled button. Wait
+  // for two matching snapshots, rather than treating a dispatched tap as a click.
+  let previous;
+  const deadline = Date.now() + 60_000;
+  do {
+    const bounds = (await nativeNode(label)).match(/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/);
+    assert.ok(bounds, 'Native picker control must have screen bounds');
+    if (previous === bounds[0]) {
+      await adb('shell', 'input', 'tap', String(Math.floor((+bounds[1] + +bounds[3]) / 2)), String(Math.floor((+bounds[2] + +bounds[4]) / 2)));
+      return;
+    }
+    previous = bounds[0];
+    await pause(300);
+  } while (Date.now() < deadline);
+  throw new Error(`Native picker control did not settle: ${label}`);
 }
 async function downloads() {
   // ACTION_OPEN_DOCUMENT_TREE on API 36 starts at internal storage and has
