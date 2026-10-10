@@ -102,3 +102,12 @@ Play Console 개발자 계정, 실기기 검증, 개인정보처리방침의 공
 - 첨부·공유 과정에서 GPS가 없는 파일은 좌표를 추측하지 않는다. 휴대폰 원본에 위치가 있다면 권한 허용 후 원본을 다시 가져오도록 안내한다.
 - Android 설치 검사는 공개 좌표(서울시청 근처)를 넣은 합성 JPEG와 GPS 없는 합성 JPEG를 사용한다. 실제 문서 선택 → 위치정보 거부 → 재허용·같은 사진 재가져오기 → 좌표·지역·기존 편집 보존을 검사한다. 사용자 사진은 테스트 저장소에 넣지 않는다.
 - 공식 근거: [사진의 위치정보 접근](https://developer.android.com/training/data-storage/shared/media#media-location-permission), [MediaStore 원본 요청과 SAF 연결](https://developer.android.com/reference/android/provider/MediaStore).
+
+
+## 0.9.3 사진·영상 갤러리
+
+사진·영상 가져오기는 파일 선택기 대신 앱의 네이티브 갤러리를 연다. MediaStore의 사진·영상만 80개씩 읽고 DATE_MODIFIED 내림차순, 동일 시간은 ID 내림차순으로 정렬한다. 수정 시각은 초 → 밀리초로 변환해 기존 원본 복사 흐름에 전달한다. 폴더 가져오기/내보내기는 기존 SAF 폴더 선택기를 사용한다.
+
+Android 13 이상은 READ_MEDIA_IMAGES/VIDEO, Android 14 이상은 READ_MEDIA_VISUAL_USER_SELECTED를 함께 요청해 전체/일부 접근을 구분한다. 일부 접근 시 허용한 항목만 표시하고 접근할 사진 변경 버튼으로 재선택한다. 이전 Android는 READ_EXTERNAL_STORAGE(maxSdkVersion=32)를 사용한다. 갤러리 재개 시 권한과 목록을 새로 확인한다. 권한 거부·빈 목록·읽기 실패는 안내하며 취소는 등록을 변경하지 않는다. 클라우드에만 있고 기기의 MediaStore에 없는 항목은 다운로드 후 갤러리에 표시된다. 선택한 항목만 기존 앱 보관본으로 복사한다.
+
+설치 테스트는 이름과 수정 순서가 반대인 사진 두 장과 영상 한 개의 순서, 다중 선택, 취소, 접근 거부와 실제 Rust 가져오기를 확인한다.

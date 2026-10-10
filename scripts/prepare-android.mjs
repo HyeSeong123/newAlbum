@@ -38,6 +38,7 @@ export async function prepareAndroid(projectRoot = root, requireSigning = false)
   const destination = resolve(android, 'app/src/main/java/com/oraedameun/album/GamjassakMediaPlugin.kt');
   await mkdir(dirname(destination), { recursive: true });
   await copyFile(resolve(projectRoot, 'src-tauri/android/GamjassakMediaPlugin.kt'), destination);
+  await copyFile(resolve(projectRoot, 'src-tauri/android/GamjassakGalleryActivity.kt'), resolve(dirname(destination), 'GamjassakGalleryActivity.kt'));
   for (const variant of ['main', 'debug']) {
     const config = resolve(android, `app/src/${variant}/res/xml/gamjassak_network_security.xml`);
     await mkdir(dirname(config), { recursive: true });
@@ -52,6 +53,13 @@ export async function prepareAndroid(projectRoot = root, requireSigning = false)
   if (!updated.includes('android.permission.ACCESS_MEDIA_LOCATION')) {
     updated = updated.replace(/<manifest\b[^>]*>/, '$&\n    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />');
   }
+  for (const [permission, attributes] of [
+    ['READ_EXTERNAL_STORAGE', ' android:maxSdkVersion="32"'],
+    ['READ_MEDIA_IMAGES', ''], ['READ_MEDIA_VIDEO', ''], ['READ_MEDIA_VISUAL_USER_SELECTED', ''],
+  ]) {
+    if (!updated.includes(`android.permission.${permission}"`)) updated = updated.replace(/<manifest\b[^>]*>/, `$&\n    <uses-permission android:name="android.permission.${permission}"${attributes} />`);
+  }
+  if (!updated.includes('.GamjassakGalleryActivity')) updated = updated.replace('</application>', '<activity android:name=".GamjassakGalleryActivity" android:exported="false" />\n    </application>');
   if (updated !== original) await writeFile(manifest, updated);
 }
 

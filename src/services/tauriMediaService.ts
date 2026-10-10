@@ -143,7 +143,7 @@ export async function deleteAlbums(ids: string[]): Promise<void> {
 }
 
 export async function chooseAndRegisterFiles(onProgress?: (progress: MediaImportProgress) => void): Promise<MediaItem[]> {
-  const selected = await open({
+  const selected = isAndroidRuntime() ? await invoke<string[] | null>("choose_android_gallery") : await open({
     multiple: true,
     directory: false,
     filters: [{ name: "미디어", extensions: ["jpg", "jpeg", "png", "webp", "heic", "mp4", "mov", "avi", "mkv", "webm", "mp3", "wav", "flac", "m4a"] }],

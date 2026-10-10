@@ -6,7 +6,7 @@ import type { MediaImportProgress as Progress } from "./importProgress";
 import "./mediaImportProgress.css";
 
 const phaseLabels: Record<Progress["phase"], string> = {
-  selecting: "파일 선택을 기다리고 있어요",
+  selecting: "사진·영상 선택을 기다리고 있어요",
   scanning: "사진과 영상을 찾고 있어요",
   copying: "선택한 사진과 영상을 안전하게 보관하고 있어요",
   registering: "사진과 영상을 가져오고 있어요",

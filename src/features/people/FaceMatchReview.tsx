@@ -45,6 +45,7 @@ export function FaceMatchReview({ index, onClose, onSaved }: { index: FaceIndex;
         {error && <p role="alert">{error}</p>}
         {!loading && !error && <p role="status">{matches.length ? `확인할 얼굴 ${matches.length}개` : '새로 제안할 얼굴이 없습니다.'}</p>}
         <p>후보를 확인한 뒤 선택해 주세요. 거리는 동일 인물일 확률이 아닙니다.</p>
+        <p>옆모습이 다른 인물로 나뉘면 얼굴을 선택해 등록된 인물로 옮겨 주세요. 직접 확인한 옆모습도 다음 비교에 사용해요.</p>
         <div className="faceMatchGrid">{matches.slice(page * 24, (page + 1) * 24).map((match) => {
           const face = index.faces.find((entry) => entry.id === match.face_id);
           const person = index.people.find((entry) => entry.id === match.person_id);

@@ -43,7 +43,7 @@ export function MediaImportModal({ onClose, onImport }: { onClose: () => void; o
         {isAndroidRuntime() && <p className="mediaImportStorageHint">선택한 사진과 영상은 앱에 복사해 보관해요. 원본은 그대로 두며, 선택한 파일 크기만큼 휴대폰 저장 공간을 사용해요. 사진 위치정보 접근을 허용하면 원본에 저장된 촬영 위치를 읽어요.</p>}
         <fieldset disabled={busy} className="mediaImportFields">
           <fieldset className="mediaImportMethods"><legend>가져오기 방식</legend>
-            {([{ value: "files", label: "사진·영상 가져오기", description: "원하는 파일을 골라 담아요", Icon: Images }, { value: "folder", label: "폴더 가져오기", description: "폴더 안의 기록을 함께 담아요", Icon: FolderOpen }] as const).map(method => <label key={method.value} className={kind === method.value ? "selected" : ""}>
+            {([{ value: "files", label: "사진·영상 가져오기", description: isAndroidRuntime() ? "갤러리에서 최근 수정 순으로 골라요" : "원하는 파일을 골라 담아요", Icon: Images }, { value: "folder", label: "폴더 가져오기", description: "폴더 안의 기록을 함께 담아요", Icon: FolderOpen }] as const).map(method => <label key={method.value} className={kind === method.value ? "selected" : ""}>
               <input type="radio" name="importMethod" value={method.value} checked={kind === method.value} onChange={() => setKind(method.value)} /><method.Icon size={21} aria-hidden="true" /><span><strong>{method.label}</strong><small>{method.description}</small></span>
             </label>)}
           </fieldset>
@@ -65,7 +65,7 @@ export function MediaImportModal({ onClose, onImport }: { onClose: () => void; o
           {error && <p role="alert">{error}</p>}
         </fieldset>
         </div>
-        <footer className="mediaImportActions"><button type="button" disabled={busy} onClick={onClose}>취소</button><button className="primary" type="submit" disabled={busy || (makeAlbum && !title.trim()) || Boolean(calendar && calendarRegistrationError(calendar))}>{busy ? <LoaderCircle className="spinIcon" size={17} /> : <Plus size={17} />}{busy ? "가져오는 중" : kind === "folder" ? "폴더 선택" : "파일 선택"}</button></footer>
+        <footer className="mediaImportActions"><button type="button" disabled={busy} onClick={onClose}>취소</button><button className="primary" type="submit" disabled={busy || (makeAlbum && !title.trim()) || Boolean(calendar && calendarRegistrationError(calendar))}>{busy ? <LoaderCircle className="spinIcon" size={17} /> : <Plus size={17} />}{busy ? "가져오는 중" : kind === "folder" ? "폴더 선택" : isAndroidRuntime() ? "갤러리 열기" : "파일 선택"}</button></footer>
       </form>
     </section>
   </div>;

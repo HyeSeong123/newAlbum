@@ -13,10 +13,10 @@ pub struct FaceMatch {
 }
 
 fn find_matches(conn: &Connection) -> Result<Vec<FaceMatch>, String> {
-    let rows = conn.prepare("SELECT f.id,f.media_id,f.person_id,p.name,f.confirmed,f.descriptor,COALESCE(m.reference_kind,CASE WHEN f.id=(SELECT MIN(id) FROM detected_face WHERE person_id=f.person_id) THEN 'seed' ELSE 'auto' END) FROM detected_face f JOIN person p ON p.id=f.person_id JOIN face_scan s ON s.media_id=f.media_id LEFT JOIN person_face_metadata m ON m.face_id=f.id WHERE s.model_version=?1 AND COALESCE(m.model_version,s.model_version)=?1 AND NOT EXISTS(SELECT 1 FROM excluded_face e WHERE e.face_id=f.id) AND NOT EXISTS(SELECT 1 FROM person_scan_issue i WHERE i.media_id=f.media_id) ORDER BY f.id")
-      .map_err(|e|e.to_string())?.query_map([MODEL],|r|Ok((r.get::<_,i64>(0)?,r.get::<_,i64>(1)?,r.get::<_,i64>(2)?,r.get::<_,String>(3)?,r.get::<_,bool>(4)?,r.get::<_,String>(5)?,r.get::<_,String>(6)?)))
+    let rows = conn.prepare("SELECT f.id,f.media_id,f.person_id,p.name,f.confirmed,f.descriptor,COALESCE(m.reference_kind,CASE WHEN f.id=(SELECT MIN(id) FROM detected_face WHERE person_id=f.person_id) THEN 'seed' ELSE 'auto' END),COALESCE(m.quality,'usable') FROM detected_face f JOIN person p ON p.id=f.person_id JOIN face_scan s ON s.media_id=f.media_id LEFT JOIN person_face_metadata m ON m.face_id=f.id WHERE s.model_version=?1 AND COALESCE(m.model_version,s.model_version)=?1 AND NOT EXISTS(SELECT 1 FROM excluded_face e WHERE e.face_id=f.id) AND NOT EXISTS(SELECT 1 FROM person_scan_issue i WHERE i.media_id=f.media_id) ORDER BY f.id")
+      .map_err(|e|e.to_string())?.query_map([MODEL],|r|Ok((r.get::<_,i64>(0)?,r.get::<_,i64>(1)?,r.get::<_,i64>(2)?,r.get::<_,String>(3)?,r.get::<_,bool>(4)?,r.get::<_,String>(5)?,r.get::<_,String>(6)?,r.get::<_,String>(7)?)))
       .map_err(|e|e.to_string())?.collect::<Result<Vec<_>,_>>().map_err(|e|e.to_string())?;
-    let rows:Vec<_>=rows.into_iter().filter_map(|(id,media,person,name,confirmed,json,kind)|{let vector=serde_json::from_str::<Vec<f64>>(&json).ok()?;(vector.len()==128 && vector.iter().all(|x|x.is_finite())).then_some((id,media,person,name,confirmed,vector,kind))}).collect();
+    let rows:Vec<_>=rows.into_iter().filter_map(|(id,media,person,name,confirmed,json,kind,quality)|{let vector=serde_json::from_str::<Vec<f64>>(&json).ok()?;(vector.len()==128 && vector.iter().all(|x|x.is_finite())).then_some((id,media,person,name,confirmed,vector,kind,quality))}).collect();
     let confirmed:std::collections::HashSet<_>=rows.iter().filter(|r|r.4 && !r.3.trim().is_empty()).map(|r|r.2).collect();
     let mut reference_photos=std::collections::HashSet::new();
     let mut reference_counts=std::collections::HashMap::<i64,usize>::new();
@@ -25,10 +25,11 @@ fn find_matches(conn: &Connection) -> Result<Vec<FaceMatch>, String> {
       if *count>=32 || !reference_photos.insert((r.2,r.1)) {return None;}
       *count+=1;Some((r.2,r.5.clone()))
     }).collect();
+    let confirmed_review:Vec<_>=rows.iter().filter(|r|r.4 && r.7=="review" && references.iter().any(|(person,vector)|*person==r.2 && *vector==r.5)).map(|r|(r.2,r.5.clone())).collect();
     let occupied:std::collections::HashSet<_>=rows.iter().map(|r|(r.1,r.2)).collect();
     let mut proposals=Vec::new();
     for row in rows.iter().filter(|r|r.3.trim().is_empty() && !r.4) {
-      let candidates:Vec<_>=super::person_engine::rank(&row.5,&references).into_iter().filter(|c|c.distance<0.6 && !occupied.contains(&(row.1,c.person_id))).take(3).collect();
+      let candidates:Vec<_>=super::person_engine::rank_for_review(&row.5,&references,&confirmed_review).into_iter().filter(|c|c.distance<0.6 && !occupied.contains(&(row.1,c.person_id))).take(3).collect();
       if let Some(best)=candidates.first() {proposals.push(FaceMatch{face_id:row.0,person_id:best.person_id,state:"needs-review".into(),candidates});}
     }
     Ok(proposals)
@@ -100,6 +101,18 @@ fn read_index(conn: &Connection) -> Result<FaceIndex, String> {
 #[tauri::command]
 pub fn list_face_index(app: AppHandle) -> Result<FaceIndex, String> {
     read_index(&super::open_database(&app)?)
+}
+
+fn reset_empty_scans(conn:&mut Connection)->Result<Vec<i64>,String>{
+    let tx=conn.transaction().map_err(|e|e.to_string())?;
+    let ids=tx.prepare("SELECT media_id FROM face_scan WHERE model_version=?1 AND NOT EXISTS(SELECT 1 FROM detected_face WHERE media_id=face_scan.media_id) ORDER BY media_id").map_err(|e|e.to_string())?
+        .query_map([MODEL],|r|r.get::<_,i64>(0)).map_err(|e|e.to_string())?.collect::<Result<Vec<_>,_>>().map_err(|e|e.to_string())?;
+    for id in &ids {tx.execute("DELETE FROM face_scan WHERE media_id=?1",[id]).map_err(|e|e.to_string())?;}
+    tx.commit().map_err(|e|e.to_string())?;Ok(ids)
+}
+#[tauri::command]
+pub async fn retry_empty_face_scans(app:AppHandle)->Result<Vec<i64>,String>{
+    tauri::async_runtime::spawn_blocking(move||reset_empty_scans(&mut super::open_database(&app)?)).await.map_err(|e|e.to_string())?
 }
 
 #[cfg(test)]
@@ -544,6 +557,35 @@ mod tests {
         assert!(save_scan(&mut c,1,vec![wrong]).is_err());assert!(read_index(&c).unwrap().faces.is_empty());assert!(read_index(&c).unwrap().scanned.is_empty());
     }
 
+    #[test]
+    fn confirmed_side_view_can_suggest_without_changing_automatic_links() {
+        let mut c=database();
+        for (media,value) in [(1,0.1),(2,0.1),(3,0.8),(4,0.81)] {
+            let mut input=face(value);input.quality=Some(if media<3 {"usable"} else {"review"}.into());input.box_=Some([0.1,0.1,0.2,0.2]);
+            save_scan(&mut c,media,vec![input]).unwrap();
+        }
+        let rows=read_index(&c).unwrap().faces;let person=rows[0].person_id;
+        rename_person(&mut c,person,"가족").unwrap();
+        reassign(&mut c,vec![rows[1].id,rows[2].id],Some(person)).unwrap();
+        let before=read_index(&c).unwrap().faces[3].person_id;
+        let suggestions=find_matches(&c).unwrap();assert_eq!(suggestions.len(),1);assert_eq!(suggestions[0].face_id,rows[3].id);assert_eq!(suggestions[0].person_id,person);
+        assert_eq!(read_index(&c).unwrap().faces[3].person_id,before);assert_ne!(before,person);
+        c.execute("UPDATE detected_face SET confirmed=0 WHERE id=?1",[rows[2].id]).unwrap();
+        assert!(find_matches(&c).unwrap().is_empty());
+    }
+    #[test]
+    fn retry_empty_scans_preserves_faces_names_exclusions_and_photos() {
+        let mut c=database();save_scan(&mut c,1,vec![face(0.1)]).unwrap();save_scan(&mut c,2,vec![]).unwrap();
+        let face=read_index(&c).unwrap().faces[0].id;let person=read_index(&c).unwrap().people[0].id;
+        rename_person(&mut c,person,"가족").unwrap();set_excluded(&mut c,vec![face],true).unwrap();
+        assert_eq!(reset_empty_scans(&mut c).unwrap(),vec![2]);
+        assert_eq!(read_index(&c).unwrap().scanned,vec![1]);
+        assert_eq!(c.query_row("SELECT name FROM person WHERE id=?1",[person],|r|r.get::<_,String>(0)).unwrap(),"가족");
+        assert_eq!(c.query_row("SELECT COUNT(*) FROM detected_face WHERE id=?1",[face],|r|r.get::<_,i64>(0)).unwrap(),1);
+        assert_eq!(c.query_row("SELECT COUNT(*) FROM excluded_face WHERE face_id=?1",[face],|r|r.get::<_,i64>(0)).unwrap(),1);
+        assert_eq!(c.query_row("SELECT COUNT(*) FROM media",[],|r|r.get::<_,i64>(0)).unwrap(),4);
+        save_scan(&mut c,2,vec![]).unwrap();assert_eq!(read_index(&c).unwrap().scanned.len(),2);
+    }
     #[test]
     fn naming_only_confirms_cover_and_explicit_confirmation_preserves_cover(){
       let mut c=database();save_scan(&mut c,1,vec![face(0.1)]).unwrap();save_scan(&mut c,2,vec![face(0.11)]).unwrap();

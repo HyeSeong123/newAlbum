@@ -29,6 +29,16 @@ struct OriginalPhoto { uri: String, notice: Option<String> }
 #[derive(Deserialize)]
 struct PickedDirectory { uri: Option<String> }
 
+#[derive(Deserialize)]
+struct PickedGallery { uris: Option<Vec<String>> }
+
+pub fn pick_gallery(app: &tauri::AppHandle) -> Result<Option<Vec<String>>, String> {
+    let bridge = app.state::<AndroidMedia>();
+    let selected: PickedGallery = bridge.0.run_mobile_plugin("pickGallery", serde_json::json!({}))
+        .map_err(|error| format!("갤러리를 열지 못했습니다: {error}"))?;
+    Ok(selected.uris)
+}
+
 pub fn pick_directory(app: &tauri::AppHandle) -> Result<Option<String>, String> {
     let bridge = app.state::<AndroidMedia>();
     let selected: PickedDirectory = bridge.0.run_mobile_plugin("pickDirectory", serde_json::json!({}))

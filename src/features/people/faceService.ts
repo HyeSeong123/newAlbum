@@ -10,6 +10,7 @@ export const renamePerson = (id: number, name: string) => invoke('rename_face_pe
 export const setPersonCoverFace = (personId: number, faceId: number) => invoke('set_person_cover_face', { personId, faceId });
 export const moveFaces = (ids: number[], target: number | null) => invoke('move_faces', { ids, target });
 export const clearFaceIndex = () => invoke('clear_face_index');
+export const retryEmptyFaceScans = () => invoke<number[]>('retry_empty_face_scans');
 export interface FaceMatch { face_id: number; person_id: number; candidates?: {person_id:number;distance:number;references:number}[]; state?: string }
 export const findFaceMatches = () => invoke<FaceMatch[]>('find_face_matches');
 export const setFacesExcluded = (ids: number[], excluded: boolean) => invoke('set_faces_excluded', { ids, excluded });

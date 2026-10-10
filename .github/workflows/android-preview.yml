@@ -17,6 +17,7 @@ on:
       - 'scripts/pet-model-lock.json'
       - 'scripts/pet-runtime-benchmark.mjs'
       - 'scripts/smoke-android.mjs'
+      - 'scripts/gallery-smoke.mjs'
       - 'package*.json'
       - 'vite.config.ts'
       - 'index.html'
@@ -159,6 +160,7 @@ jobs:
             test-results/android-smoke/person-runtime-smoke.json
             test-results/android-smoke/person-repetition-smoke.json
             test-results/android-smoke/person-security-smoke.json
+            test-results/android-smoke/gallery-smoke.json
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: failure()

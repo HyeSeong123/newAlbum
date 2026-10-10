@@ -22,7 +22,7 @@ test('large native import shows full-screen byte progress through region and alb
       invoke: async (command: string, args: any) => {
         if (command === 'list_media') return registered;
         if (command === 'list_albums') return albums;
-        if (command === 'plugin:dialog|open' || command === 'choose_android_directory') return 'C:/memories';
+        if (command === 'plugin:dialog|open' || command === 'choose_android_directory' || command === 'choose_android_gallery') return 'C:/memories';
         if (command === 'register_paths') {
           const callback = callbacks.get(args.progress.id)!;
           callback({ index:0, message:{ phase:'registering', processed:0, total:1, fileName:'big-memory.mp4', bytesProcessed:0, totalBytes:1024 ** 3 } });
@@ -105,6 +105,10 @@ for (const kind of ['files', 'folder'] as const) {
             document.documentElement.dataset.importOptions = JSON.stringify(args.options);
             return args.options.directory ? 'C:/memories' : ['C:/import-2.jpg'];
           }
+          if (command === 'choose_android_gallery') {
+            document.documentElement.dataset.importPicker = command;
+            return ['content://media/external/images/media/2'];
+          }
           if (command === 'choose_android_directory') {
             document.documentElement.dataset.importPicker = command;
             return 'C:/memories';
@@ -145,19 +149,20 @@ for (const kind of ['files', 'folder'] as const) {
       await dialog.getByRole('radio', { name:/사진·영상 가져오기/ }).check();
       await expect(dialog.getByLabel('가져올 기록의 시도')).toHaveValue('KR-11');
     }
+    const android = await page.evaluate(() => /Android/i.test(navigator.userAgent));
+    const pickerLabel = kind === 'folder' ? '폴더 선택' : android ? '갤러리 열기' : '파일 선택';
     await dialog.getByRole('checkbox', { name: /가져오면서 앨범 만들기/ }).check();
-    await expect(dialog.getByRole('button', { name: kind === 'folder' ? '폴더 선택' : '파일 선택' })).toBeDisabled();
+    await expect(dialog.getByRole('button', { name: pickerLabel })).toBeDisabled();
     await dialog.getByLabel('앨범 제목', { exact: true }).fill('  가을 산책  ');
     await dialog.getByRole('button', { name: '네이비 색상' }).click();
     expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
-    await dialog.getByRole('button', { name: kind === 'folder' ? '폴더 선택' : '파일 선택' }).click();
+    await dialog.getByRole('button', { name: pickerLabel }).click();
     await expect(dialog).toBeHidden();
     await expect(page.locator('.savedAlbumCard')).toHaveCount(1);
     await expect(page.locator('.savedAlbumTitle')).toHaveText('가을 산책');
     expect(await page.locator('html').getAttribute('data-created-album')).toBe(JSON.stringify({ title: '가을 산책', mediaIds: [2], coverColor: '#2F4058' }));
-    const android = await page.evaluate(() => /Android/i.test(navigator.userAgent));
-    if (kind === 'folder' && android) {
-      await expect(page.locator('html')).toHaveAttribute('data-import-picker', 'choose_android_directory');
+    if (android) {
+      await expect(page.locator('html')).toHaveAttribute('data-import-picker', kind === 'folder' ? 'choose_android_directory' : 'choose_android_gallery');
       await expect(page.locator('html')).not.toHaveAttribute('data-import-options');
     } else {
       await expect(page.locator('html')).toHaveAttribute('data-import-picker', 'plugin:dialog|open');
@@ -182,7 +187,7 @@ test('canceling the native picker leaves no empty album or stale album settings'
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: () => '/favicon.svg', invoke: async (command: string) => {
         if (command === 'list_media') return registered;
-        if (command === 'plugin:dialog|open' || command === 'choose_android_directory') return ++attempts === 1 ? null : ['C:/cancel.jpg'];
+        if (command === 'plugin:dialog|open' || command === 'choose_android_directory' || command === 'choose_android_gallery') return ++attempts === 1 ? null : ['C:/cancel.jpg'];
         if (command === 'register_paths') { registered = media; return registered; }
         if (command === 'create_album_from_media') document.documentElement.dataset.unwantedAlbum = 'true';
         if (command === 'assign_media_region') document.documentElement.dataset.unwantedRegion = 'true';
@@ -204,7 +209,7 @@ test('canceling the native picker leaves no empty album or stale album settings'
   dialog = await openImport(page);
   await expect(dialog.getByRole('checkbox', { name: /가져오면서 앨범 만들기/ })).not.toBeChecked();
   await expect(dialog.getByLabel('앨범 제목')).toHaveCount(0);
-  await dialog.getByRole('button', { name: '파일 선택' }).click();
+  await dialog.getByRole('button', { name: /^(파일 선택|갤러리 열기)$/ }).click();
   await expect(page.locator('.mediaTile')).toHaveCount(1);
   await expect(page.locator('html')).not.toHaveAttribute('data-unwanted-album');
   await expect(page.locator('html')).not.toHaveAttribute('data-unwanted-region');
@@ -218,7 +223,7 @@ test('browser file imports honor the album toggle and chosen color', async ({ pa
   await dialog.getByLabel('앨범 제목').fill('첫 기록');
   await dialog.getByRole('button', { name: '버건디 색상' }).click();
   const chooser = page.waitForEvent('filechooser');
-  await dialog.getByRole('button', { name: '파일 선택' }).click();
+  await dialog.getByRole('button', { name: /^(파일 선택|갤러리 열기)$/ }).click();
   await (await chooser).setFiles('tests/fixtures/pet-dog.jpg');
   await expect(page.locator('.savedAlbumTitle')).toHaveText('첫 기록');
   await expect(page.locator('.savedAlbumOpen .frontAlbum')).toHaveCSS('--album-color', '#8A2E35');
@@ -228,7 +233,7 @@ test('browser file imports honor the album toggle and chosen color', async ({ pa
   await dialog.getByLabel('앨범 제목').fill('사용하지 않는 이름');
   await dialog.getByRole('checkbox', { name: /가져오면서 앨범 만들기/ }).uncheck();
   const nextChooser = page.waitForEvent('filechooser');
-  await dialog.getByRole('button', { name: '파일 선택' }).click();
+  await dialog.getByRole('button', { name: /^(파일 선택|갤러리 열기)$/ }).click();
   await (await nextChooser).setFiles('node_modules/@vladmandic/face-api/demo/sample1.jpg');
   await expect(page.locator('.mediaTile')).toHaveCount(2);
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
@@ -271,7 +276,7 @@ for (const failRegion of [false, true]) {
         convertFileSrc: () => '/favicon.svg',
         invoke: async (command: string, args: any) => {
           if (command === 'list_media') return registered;
-          if (command === 'plugin:dialog|open' || command === 'choose_android_directory') return 'C:/place';
+          if (command === 'plugin:dialog|open' || command === 'choose_android_directory' || command === 'choose_android_gallery') return 'C:/place';
           if (command === 'register_paths') { registered = media; return registered; }
           if (command === 'assign_media_region') {
             document.documentElement.dataset.assignedImportRegion = JSON.stringify(args);

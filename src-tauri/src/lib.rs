@@ -257,6 +257,20 @@ fn insert_album(
 }
 
 #[tauri::command]
+async fn choose_android_gallery(app: AppHandle) -> Result<Option<Vec<String>>, String> {
+    #[cfg(target_os = "android")]
+    {
+        tauri::async_runtime::spawn_blocking(move || android_media::pick_gallery(&app))
+            .await.map_err(|error| error.to_string())?
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = app;
+        Err("갤러리는 Android 앱에서 사용할 수 있습니다.".into())
+    }
+}
+
+#[tauri::command]
 async fn choose_android_directory(app: AppHandle) -> Result<Option<String>, String> {
     #[cfg(target_os = "android")]
     {
@@ -1261,6 +1275,8 @@ pub fn run() {
             download_media,
             register_paths,
             choose_android_directory,
+            choose_android_gallery,
+            faces::retry_empty_face_scans,
             update_media_details,
             update_media_title,
             increment_media_view,

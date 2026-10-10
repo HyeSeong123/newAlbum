@@ -132,6 +132,20 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
     }
 
     @Command
+    fun pickGallery(invoke: Invoke) {
+        try {
+            startActivityForResult(invoke, Intent(activity, GamjassakGalleryActivity::class.java), "galleryResult")
+        } catch (error: Exception) { invoke.reject(error.message ?: "갤러리를 열지 못했습니다.") }
+    }
+
+    @ActivityCallback
+    fun galleryResult(invoke: Invoke, result: ActivityResult) {
+        val uris = if (result.resultCode == Activity.RESULT_OK)
+            result.data?.getStringArrayListExtra("uris")?.let { JSONArray(it) } else null
+        invoke.resolve(JSObject().put("uris", uris))
+    }
+
+    @Command
     fun pickDirectory(invoke: Invoke) {
         try {
             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
@@ -239,10 +253,18 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
                         if (it.moveToFirst()) { name = it.getString(0) ?: name; if (!it.isNull(1)) size = it.getLong(1) }
                     }
                     var modified: Long? = null
+                    // MediaStore stores modification times in seconds; SAF uses milliseconds.
+                    if (uri.authority == MediaStore.AUTHORITY) {
+                        try {
+                            activity.contentResolver.query(uri, arrayOf(MediaStore.MediaColumns.DATE_MODIFIED), null, null, null)?.use {
+                                if (it.moveToFirst() && !it.isNull(0)) modified = it.getLong(0) * 1000
+                            }
+                        } catch (_: Exception) { }
+                    }
                     // Some photo/cloud providers do not support DocumentsContract columns.
                     try {
                         activity.contentResolver.query(uri, arrayOf(DocumentsContract.Document.COLUMN_LAST_MODIFIED), null, null, null)?.use {
-                            if (it.moveToFirst() && !it.isNull(0)) modified = it.getLong(0)
+                            if (modified == null && it.moveToFirst() && !it.isNull(0)) modified = it.getLong(0)
                         }
                     } catch (_: Exception) { }
                     files.put(document(uri, name, activity.contentResolver.getType(uri) ?: "application/octet-stream", size, modified))

@@ -1,4 +1,5 @@
 import { verifyInstalledPersonRuntime } from './person-runtime-benchmark.mjs';
+import { verifyInstalledGallery } from './gallery-smoke.mjs';
 import { verifyInstalledRepetitionMeasurement } from './person-repetition-smoke.mjs';
 import { expect } from '@playwright/test';
 import { _android as android } from 'playwright';
@@ -361,6 +362,7 @@ try {
   console.log('Gomi cynical art, cold low-affection help and no guide affection award: OK');
   console.log('Installed Android app launched and rendered its native home.');
   const appDataRoot=await checkPhotoGps(page);
+  await verifyInstalledGallery({page,adb,nativeTree,tapNative,captureScreen,output});
   const security=await page.evaluate(async root=>{
     const violations=[];const listener=event=>violations.push(event.effectiveDirective);
     window.addEventListener('securitypolicyviolation',listener);
@@ -383,7 +385,7 @@ try {
   let dialog = page.getByRole('dialog', { name:'사진·영상 가져오기', exact:true });
   await expect(dialog).toContainText('앱에 복사해 보관해요');
   await expect(dialog.getByRole('heading', { name:'사진·영상 가져오기', exact:true })).toBeInViewport();
-  await expect(dialog.getByRole('button', { name:'파일 선택', exact:true })).toBeInViewport();
+  await expect(dialog.getByRole('button', { name:'갤러리 열기', exact:true })).toBeInViewport();
   await captureScreen('system-bars-import-threebutton');
   // Keep this import and pet inference offline; every model must be in the APK.
   await adb('shell','svc','wifi','disable');

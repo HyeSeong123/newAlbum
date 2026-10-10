@@ -95,6 +95,21 @@ pub(crate) fn rank(query:&[f64],references:&[(i64,Vec<f64>)])->Vec<Candidate>{
     result.sort_by(|a,b|a.distance.total_cmp(&b.distance).then(a.person_id.cmp(&b.person_id)));result
 }
 
+// An explicitly confirmed review-quality exemplar (e.g. a side view) can
+// propose a match even when the frontal exemplars disagree. Review only;
+// this function never assigns an identity or changes automatic grouping.
+pub(crate) fn rank_for_review(query:&[f64],references:&[(i64,Vec<f64>)],confirmed_review:&[(i64,Vec<f64>)])->Vec<Candidate>{
+    let mut result=rank(query,references);
+    for (person,vector) in confirmed_review {
+        if vector.len()!=128 || !vector.iter().all(|x|x.is_finite()) {continue;}
+        if let Some(candidate)=result.iter_mut().find(|c|c.person_id==*person) {
+            let distance=query.iter().zip(vector).map(|(a,b)|(a-b).powi(2)).sum::<f64>().sqrt();
+            candidate.distance=candidate.distance.min(distance);
+        }
+    }
+    result.sort_by(|a,b|a.distance.total_cmp(&b.distance).then(a.person_id.cmp(&b.person_id)));result
+}
+
 #[cfg(test)]
 mod tests{
  use super::*;

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, BookPlus, Check, FolderOutput, Image as ImageIcon, LoaderCircle, MoreVertical, Pause, Pencil, Play, RefreshCw, Scissors, Trash2, Users, X } from 'lucide-react';
 import type { MediaItem } from '../../types/media';
 import { isTauriRuntime } from '../../services/tauriMediaService';
-import { clearFaceIndex, controlPersonJobs, enqueuePersonPhotos, finishPersonJob, emptyFaceIndex, FaceIndex, loadFaceEngine, loadFaceIndex, moveFaces, renamePerson, scanPhoto, setFacesExcluded, setPersonCoverFace } from './faceService';
+import { clearFaceIndex, retryEmptyFaceScans, controlPersonJobs, enqueuePersonPhotos, finishPersonJob, emptyFaceIndex, FaceIndex, loadFaceEngine, loadFaceIndex, moveFaces, renamePerson, scanPhoto, setFacesExcluded, setPersonCoverFace } from './faceService';
 import { EmptyState, FavoriteBadge, MediaVisual } from '../../components/MediaVisual';
 import { useRowSelection } from '../../hooks/useRowSelection';
 import './people.css';
@@ -137,34 +137,41 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
     return () => { disposed = true; alive.current = false; stop.current = true; controller.current?.abort(); if (desktop) void controlPersonJobs(false).catch(() => undefined); };
   }, [desktop, items]);
 
-  async function start() {
+  async function start(retryEmpty = false) {
     if (locked.current || !desktop) return;
     locked.current = true; stop.current = false; controller.current = new AbortController();
     setRunning(true); setError(''); setStatus('얼굴 분석 준비 중');
     setProgress({ done: 0, total: remaining.length });
     let failures = 0;
+    let toScan = remaining;
     try {
       const signal=controller.current.signal;
+      if (retryEmpty) {
+        const retryIds = new Set(await retryEmptyFaceScans());
+        toScan = photos.filter(item => retryIds.has(Number(item.id)));
+        setIndex(await loadFaceIndex());
+        setProgress({ done: 0, total: toScan.length });
+      }
       await auditPersonSources(signal,true,()=>{});
       signal.throwIfAborted();
-      await enqueuePersonPhotos(remaining);
+      await enqueuePersonPhotos(toScan);
       signal.throwIfAborted();
       await controlPersonJobs(true);
       signal.throwIfAborted();
       await loadFaceEngine(controller.current.signal);
       let done = 0;
-      for (const item of remaining) {
+      for (const item of toScan) {
         if (stop.current) break;
         if (alive.current) setStatus('사진에서 사람을 찾는 중');
         try { await scanPhoto(item, controller.current.signal); await finishPersonJob(Number(item.id),false); }
         catch { if (stop.current) break; failures += 1; await finishPersonJob(Number(item.id),true); }
         done += 1;
-        if (alive.current) setProgress({ done, total: remaining.length });
+        if (alive.current) setProgress({ done, total: toScan.length });
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
       if (alive.current) {
         setIndex(await loadFaceIndex());
-        setStatus(stop.current ? '사람 찾기를 중단했습니다. 확인한 사진은 그대로 남아 있습니다.' : failures ? `얼굴 찾기를 마쳤습니다. ${remaining.length}장 중 ${done - failures}장을 확인했습니다. ${failures}장은 확인하지 못했습니다. 새 사진에서 사람 찾기를 눌러 다시 시도할 수 있습니다.` : `얼굴 찾기를 마쳤습니다. ${done}장을 확인했습니다.`);
+        setStatus(stop.current ? '사람 찾기를 중단했습니다. 확인한 사진은 그대로 남아 있습니다.' : failures ? `얼굴 찾기를 마쳤습니다. ${toScan.length}장 중 ${done - failures}장을 확인했습니다. ${failures}장은 확인하지 못했습니다. 새 사진에서 사람 찾기를 눌러 다시 시도할 수 있습니다.` : `얼굴 찾기를 마쳤습니다. ${done}장을 확인했습니다.`);
       }
     } catch { if (alive.current && !stop.current) setError('사진에서 사람을 찾는 중 문제가 발생했습니다. 이미 확인한 사진과 원본은 그대로 남아 있습니다. 다시 시도해 주세요.'); }
     finally { if(stop.current) await controlPersonJobs(false).catch(()=>undefined); controller.current = null; locked.current = false; if (alive.current) { setRunning(false); if(stop.current) setStatus('사람 찾기를 중단했습니다. 확인한 사진은 그대로 남아 있습니다.'); } }
@@ -211,6 +218,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
           { label: '얼굴 선택하기', icon: <Check size={16} />, disabled: !index.faces.length, onSelect: () => { if (!showUnknownFaces && !allFaces) openFaceView('all'); setSelecting(true); } },
           { label: '미확인 얼굴 다시 비교', icon: <RefreshCw size={16} />, disabled: !desktop || !index.people.some((entry) => entry.name.trim()), onSelect: () => setReviewing(true) },
           { label: '얼굴 정보 새로고침', icon: <RefreshCw size={16} />, disabled: !desktop, onSelect: () => void edit(async () => {}) },
+          { label: '얼굴 없는 사진 다시 분석', icon: <RefreshCw size={16} />, disabled: !desktop || !index.scanned.some(id => !index.faces.some(face => face.media_id === id)), onSelect: () => void start(true) },
           { label: '얼굴 정보 초기화', icon: <Trash2 size={16} />, danger: true, disabled: !desktop || !index.scanned.length, onSelect: () => {
             if (window.confirm('인물 이름, 얼굴 분석 정보와 제외 설정을 모두 지울까요? 원본 사진은 유지됩니다.')) void edit(async () => { await clearFaceIndex(); openFaceView('people'); setLastExcluded([]); });
           } },

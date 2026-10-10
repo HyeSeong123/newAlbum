@@ -27,7 +27,7 @@ export class FaceApiAdapter implements FaceModelAdapter {
   async detectFaces(image: OffscreenCanvas): Promise<FaceFeatures[]> {
     // Keep FaceAPI's 68-point alignment and original descriptor pipeline.
     const faces = await api.detectAllFaces(image as unknown as HTMLCanvasElement,
-      new api.SsdMobilenetv1Options({ minConfidence: 0.65, maxResults: 100 })).withFaceLandmarks().withFaceDescriptors();
+      new api.SsdMobilenetv1Options({ minConfidence: 0.35, maxResults: 100 })).withFaceLandmarks().withFaceDescriptors();
     return Promise.all(faces.map(async (face) => {
       const { x, y, width, height } = face.detection.box;
       const size = Math.min(Math.max(width, height) * 1.35, image.width, image.height);
@@ -46,7 +46,8 @@ export class FaceApiAdapter implements FaceModelAdapter {
       const nose = face.landmarks.getNose()[3];
       const eyeSpan = Math.abs(eyes[1].x - eyes[0].x);
       const asymmetry = Math.abs(nose.x - (eyes[0].x + eyes[1].x) / 2) / Math.max(eyeSpan, 1);
-      const usable = Math.min(width, height) >= 60 && Math.abs(rollDegrees) <= 25 && asymmetry <= 0.35;
+      // Turned/low-confidence faces stay visible for explicit confirmation.
+      const usable = face.detection.score >= 0.65 && Math.min(width, height) >= 60 && Math.abs(rollDegrees) <= 25 && asymmetry <= 0.35;
       return { descriptor: Array.from(face.descriptor), thumbnail, modelVersion: FACE_MODEL,
         box: [x / image.width, y / image.height, width / image.width, height / image.height],
         quality: usable ? 'usable' : 'review', view: 'unknown', rollDegrees };
