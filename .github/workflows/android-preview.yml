@@ -13,6 +13,7 @@ on:
       - 'scripts/prepare-face-models.mjs'
       - 'scripts/face-models.lock.json'
       - 'scripts/person-runtime-benchmark.mjs'
+      - 'scripts/person-repetition-smoke.mjs'
       - 'scripts/pet-model-lock.json'
       - 'scripts/pet-runtime-benchmark.mjs'
       - 'scripts/smoke-android.mjs'

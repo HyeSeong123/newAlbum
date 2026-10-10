@@ -27,7 +27,9 @@ export async function verifyInstalledRepetitionMeasurement(page, mediaId) {
   }), mediaId);
   assert.deepEqual(after, before, 'Repetition measurement must preserve stored people/pet links and features');
   const summary = await panel.locator('div[role="status"]').innerText();
-  await panel.screenshot({ path: 'test-results/android-smoke/person-repetition-measurement.png' });
+  // Keep the native viewport: Android WebView can tile fixed headers into a
+  // duplicated image when an element capture exceeds the physical screen.
+  await page.screenshot({ path: 'test-results/android-smoke/person-repetition-measurement.png' });
   await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
   await page.getByRole('button', { name: '인식 검증 닫기', exact: true }).click();
   await page.getByRole('tab', { name: '반려동물', exact: true }).click();
