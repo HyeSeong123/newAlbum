@@ -35,9 +35,13 @@ export async function verifyInstalledGallery({page,adb,nativeTree,tapNative,capt
     await adb('shell','touch','-t',file.date,path);
     await adb('shell','am','broadcast','-a','android.intent.action.MEDIA_SCANNER_SCAN_FILE','-d',`file://${path}`);
   }
+  const unsupported = join(output,'unsupported-gallery.gif');
+  await writeFile(unsupported,Buffer.from('R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==','base64'));
+  await adb('push',resolve(unsupported),'/sdcard/Pictures/GamjassakGallery/unsupported-gallery.gif');
+  await adb('shell','am','broadcast','-a','android.intent.action.MEDIA_SCANNER_SCAN_FILE','-d','file:///sdcard/Pictures/GamjassakGallery/unsupported-gallery.gif');
   await expect.poll(async () => {
     const rows=await adb('shell','content','query','--uri','content://media/external/file','--projection','_display_name:date_modified');
-    return fixtures.every(file=>rows.includes(file.name));
+    return fixtures.every(file=>rows.includes(file.name)) && rows.includes('unsupported-gallery.gif');
   }).toBe(true);
   await launch();
   let tree;
@@ -47,6 +51,7 @@ export async function verifyInstalledGallery({page,adb,nativeTree,tapNative,capt
   const order=['M-video-gallery.mp4','Z-new-gallery.jpg','A-old-gallery.jpg'];
   assert.ok(tree.indexOf(order[0])<tree.indexOf(order[1]) && tree.indexOf(order[1])<tree.indexOf(order[2]),'Gallery must order by modified time rather than filename');
   assert.ok(!tree.includes('com.google.android.documentsui'),'Gallery cannot launch the file browser');
+  assert.ok(!tree.includes('unsupported-gallery.gif'),'Unsupported formats must not be offered for import');
   await captureScreen('gallery-recent-modified');
   for (const name of order) await tapNative(new RegExp(`content-desc="${name.replaceAll('.','\\.')}[^\"]*선택 안 됨`));
   await captureScreen('gallery-three-selected');
@@ -59,7 +64,7 @@ export async function verifyInstalledGallery({page,adb,nativeTree,tapNative,capt
   await page.evaluate(ids=>window.__TAURI_INTERNALS__.invoke('delete_registered_media',{ids}),records.map(row=>row.id));
   await launch();await tapNative(/text="취소"/);assert.equal((await wait()).uris,null);
   await page.reload();
-  const report={gallery:true,sort:'date_modified DESC, _id DESC',order,photoCount:2,videoCount:1,deniedPermissionCancels:true,cancelLeavesRecordsUnchanged:true};
+  const report={gallery:true,sort:'date_modified DESC, _id DESC',order,photoCount:2,videoCount:1,unsupportedFormatsHidden:true,deniedPermissionCancels:true,cancelLeavesRecordsUnchanged:true};
   await writeFile(join(output,'gallery-smoke.json'),JSON.stringify(report,null,2));
   console.log('Native gallery sorting, image/video multi-selection, denial, cancellation and Rust import: OK');
 }

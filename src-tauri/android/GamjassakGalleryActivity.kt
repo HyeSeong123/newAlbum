@@ -122,7 +122,7 @@ class GamjassakGalleryActivity : Activity() {
     override fun onResume() {
         super.onResume()
         // Partial permissions can change while this activity is in the background.
-        if (!permissionPending) refresh(!started || permissionsSignature() == accessSignature)
+        if (!permissionPending) refresh(!started || (fullAccess() && permissionsSignature() == accessSignature))
         started = true
     }
     private fun requestGalleryAccess() {
@@ -169,6 +169,10 @@ class GamjassakGalleryActivity : Activity() {
                 val columns = arrayOf(MediaStore.Files.FileColumns._ID, MediaStore.MediaColumns.DISPLAY_NAME,
                     MediaStore.MediaColumns.DATE_MODIFIED, MediaStore.Files.FileColumns.MEDIA_TYPE)
                 val filters = mutableListOf("${MediaStore.Files.FileColumns.MEDIA_TYPE} IN (1,3)")
+                // Match the existing importer so unsupported gallery items
+                // cannot be selected and then silently omitted during import.
+                val extensions = listOf("jpg", "jpeg", "png", "webp", "heic", "mp4", "mov", "avi", "mkv", "webm")
+                filters.add("(" + extensions.joinToString(" OR ") { "LOWER(_display_name) LIKE '%.$it'" } + ")")
                 if (Build.VERSION.SDK_INT >= 29) filters.add("${MediaStore.MediaColumns.IS_PENDING}=0")
                 if (Build.VERSION.SDK_INT >= 30) filters.add("${MediaStore.MediaColumns.IS_TRASHED}=0")
                 val args = if (last == null) null else arrayOf(last.modified.toString(), last.modified.toString(), last.id.toString())
