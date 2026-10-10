@@ -294,6 +294,7 @@ test('analysis keeps saved photos on stop and retries failed photos', async ({ p
         if (command === 'list_albums') return [];
         if (command === 'list_diary') return [];
         // Tauri serializes command results; each invocation returns a fresh snapshot.
+        if(command==='audit_person_scans')return {items:[],nextCursor:0,done:true};
         if (command === 'list_face_index') return structuredClone(state);
         if (command === 'get_person_scan_source') return { source_key:'sha256:test',completed:state.scanned.includes(args.mediaId),legacy:false };
         if (command === 'save_face_scan') {

@@ -21,7 +21,8 @@ fn save(conn:&mut Connection,s:Sample)->Result<(),String>{
  let leak:bool=tx.query_row("SELECT EXISTS(SELECT 1 FROM person_evaluation_sample WHERE NOT (media_id=?1 AND label_key=?2) AND role<>?3 AND (source_key=?4 OR (person_id IS ?5 AND person_id IS NOT NULL AND capture_group=?6)))",params![s.media_id,label,s.role,key,s.person_id,s.capture_group.trim()],|r|r.get(0)).map_err(|e|e.to_string())?;
  if leak{return Err("등록 기준과 평가는 다른 사진·다른 촬영 세션을 사용해 주세요.".into());}
  let count:i64=tx.query_row("SELECT COUNT(*) FROM person_evaluation_sample",[],|r|r.get(0)).map_err(|e|e.to_string())?;
- if count>=2000 {return Err("평가 자료는 한 묶음에 2,000개까지 사용할 수 있습니다.".into());}
+ let editing:bool=tx.query_row("SELECT EXISTS(SELECT 1 FROM person_evaluation_sample WHERE media_id=?1 AND label_key=?2)",params![s.media_id,label],|r|r.get(0)).map_err(|e|e.to_string())?;
+ if count>=2000 && !editing {return Err("평가 자료는 한 묶음에 2,000개까지 사용할 수 있습니다.".into());}
  tx.execute("INSERT INTO person_evaluation_sample(media_id,face_id,person_id,label_key,role,capture_group,category,rights,source_key) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9) ON CONFLICT(media_id,label_key) DO UPDATE SET face_id=excluded.face_id,person_id=excluded.person_id,role=excluded.role,capture_group=excluded.capture_group,category=excluded.category,rights=excluded.rights,source_key=excluded.source_key",params![s.media_id,s.face_id,s.person_id,label,s.role,s.capture_group.trim(),s.category,s.rights.trim(),key]).map_err(|e|e.to_string())?;
  tx.commit().map_err(|e|e.to_string())
 }

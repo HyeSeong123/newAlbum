@@ -6,7 +6,7 @@ let nextId = 0;
 export function disposePersonEngine() { clearTimeout(timer); worker?.terminate(); worker = undefined; }
 registerAIWorker('people', disposePersonEngine);
 
-function request(pixels?: ArrayBuffer, width?: number, height?: number, signal?: AbortSignal, backend: FaceBackend = 'auto'): Promise<FaceFeatures[]> {
+function request(pixels?: ArrayBuffer, width?: number, height?: number, signal?: AbortSignal, backend: FaceBackend = 'auto', onDiagnostics?: (value:FaceDiagnostics)=>void): Promise<FaceFeatures[]> {
   signal?.throwIfAborted();
   if (!globalThis.Worker || !globalThis.OffscreenCanvas || !globalThis.createImageBitmap) throw new Error('이 기기의 WebView에서 얼굴 분석을 지원하지 않습니다. WebView를 업데이트해 주세요.');
   clearTimeout(timer);
@@ -20,7 +20,7 @@ function request(pixels?: ArrayBuffer, width?: number, height?: number, signal?:
       if (event.data.id !== id) return;
       cleanup();
       if (event.data.error) { disposePersonEngine(); reject(new Error(event.data.error)); }
-      else { window.dispatchEvent(new CustomEvent('gamjassak-person-diagnostics', { detail: event.data.diagnostics })); resolve(event.data.faces ?? []); }
+      else { onDiagnostics?.(event.data.diagnostics); window.dispatchEvent(new CustomEvent('gamjassak-person-diagnostics', { detail: event.data.diagnostics })); resolve(event.data.faces ?? []); }
     };
     const timeout = setTimeout(error, 120_000);
     signal?.addEventListener('abort', abort, { once: true });
@@ -29,7 +29,7 @@ function request(pixels?: ArrayBuffer, width?: number, height?: number, signal?:
   });
 }
 export function loadPersonEngine(signal?: AbortSignal) { return runAI('people', () => request(undefined, undefined, undefined, signal), signal); }
-export function analyzePersonImage(url: string, signal?: AbortSignal, backend: FaceBackend = 'auto') {
+export function analyzePersonImage(url: string, signal?: AbortSignal, backend: FaceBackend = 'auto', onDiagnostics?: (value:FaceDiagnostics)=>void) {
   return runAI('people', async () => {
     const response = await fetch(url, { signal });
     if (!response.ok) throw new Error('사진을 읽지 못했습니다.');
@@ -42,7 +42,7 @@ export function analyzePersonImage(url: string, signal?: AbortSignal, backend: F
       context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
       bitmap.close();
       const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data.buffer as ArrayBuffer;
-      return await request(pixels, canvas.width, canvas.height, signal, backend);
+      return await request(pixels, canvas.width, canvas.height, signal, backend, onDiagnostics);
     } finally { bitmap.close(); }
   }, signal);
 }

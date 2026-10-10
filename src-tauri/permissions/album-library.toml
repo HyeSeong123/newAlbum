@@ -2,6 +2,7 @@
 identifier = "album-library"
 description = "Allow the main album window to use the existing photo, album, face and pet commands."
 commands.allow = [
+  "person_runtime_environment",
   "save_person_evaluation",
   "person_evaluation_summary",
   "evaluate_person_samples",
@@ -61,6 +62,7 @@ commands.allow = [
   "set_faces_excluded",
   "save_face_scan",
   "get_person_scan_source",
+  "audit_person_scans",
   "enqueue_person_jobs",
   "control_person_jobs",
   "finish_person_job",

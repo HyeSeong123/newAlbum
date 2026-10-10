@@ -7,6 +7,19 @@ fn temp_db() -> std::path::PathBuf {
         SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos()))
 }
 
+#[test]
+fn deleted_face_values_do_not_remain_in_sqlite_free_pages() {
+    let path=temp_db();let mut conn=Connection::open(&path).unwrap();initialize(&mut conn).unwrap();
+    let marker="synthetic-biometric-delete-canary-7ab09";
+    conn.execute_batch("INSERT INTO media(id,file_path,file_type,size_bytes) VALUES(1,'original-photo','image',1);INSERT INTO person(id,name) VALUES(1,'test-person');").unwrap();
+    conn.execute("INSERT INTO detected_face(media_id,person_id,descriptor,thumbnail) VALUES(1,1,?1,'thumb')",[marker.repeat(400)]).unwrap();
+    assert!(fs::read(&path).unwrap().windows(marker.len()).any(|b|b==marker.as_bytes()));
+    conn.execute("DELETE FROM detected_face",[]).unwrap();
+    assert!(!fs::read(&path).unwrap().windows(marker.len()).any(|b|b==marker.as_bytes()));
+    assert_eq!(conn.query_row("SELECT COUNT(*) FROM media",[],|r|r.get::<_,i64>(0)).unwrap(),1);
+    drop(conn);fs::remove_file(path).unwrap();
+}
+
 fn snapshot(conn: &Connection) -> Vec<Vec<Vec<Value>>> {
     ["media", "album", "album_item", "album_page", "tag", "media_tag", "person",
         "media_person", "detected_face", "face_scan", "excluded_face", "pet", "pet_media"]

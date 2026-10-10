@@ -31,4 +31,8 @@ for (const model of ['ssd_mobilenetv1_model', 'face_landmark_68_model', 'face_re
   }
 }
 const provenance = { modelVersion: 'face-api-1.7.15-ssd-68-resnet-v1', descriptorDimensions: 128, tensorflow: '4.22.0', models };
+const review=JSON.parse(await readFile(new URL('../public/notices/person-model-review.json',import.meta.url),'utf8'));
+if(review.modelVersion!==provenance.modelVersion || review.commercialClearanceConfirmed!==false) throw new Error('Unexpected face model review; confirm weight and dataset rights before changing clearance');
+provenance.commercialClearanceConfirmed=review.commercialClearanceConfirmed;
+provenance.licenseReview='/notices/person-model-review.json';
 await writeFile(new URL('provenance.json', target), JSON.stringify(provenance, null, 2) + '\n');

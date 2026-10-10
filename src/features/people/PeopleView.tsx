@@ -8,6 +8,9 @@ import { useRowSelection } from '../../hooks/useRowSelection';
 import './people.css';
 import { FaceMatchReview } from './FaceMatchReview';
 import { PersonEvaluationPanel } from './PersonEvaluationPanel';
+import { PersonSourceAuditPanel } from './PersonSourceAuditPanel';
+import { auditPersonSources } from './engine/sourceAudit';
+import { PersonDeviceBenchmarkPanel } from './PersonDeviceBenchmarkPanel';
 import { ExportModal } from '../../components/ExportModal';
 import { ActionMenu } from '../../components/ActionMenu';
 import { EMPTY_FACES, indexFaces, mediaForFaces } from './peopleModel';
@@ -18,6 +21,8 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
   const [reviewing, setReviewing] = useState(false);
   const [validating, setValidating] = useState(false);
   const [evaluationBusy, setEvaluationBusy] = useState(false);
+  const [benchmarkBusy, setBenchmarkBusy] = useState(false);
+  const [auditBusy, setAuditBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [faceView, setFaceView] = useState<'people' | 'all' | 'unknown'>('people');
   const [selecting, setSelecting] = useState(false);
@@ -67,7 +72,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
     { title: '등록된 사람', people: matchingPeople.filter((entry) => entry.name.trim()), page: personPage, setPage: setPersonPage },
     ...(showUnknownGroups ? [{ title: '미확인 얼굴', people: matchingPeople.filter((entry) => !entry.name.trim()), page: unknownPage, setPage: setUnknownPage }] : []),
   ];
-  const blocked = running || saving || loading || evaluationBusy;
+  const blocked = running || saving || loading || evaluationBusy || benchmarkBusy || auditBusy;
   const unknownFaceIds = useMemo(() => {
     const selectedPeople = new Set(unknownChosen);
     return unidentifiedFaces.filter((face) => selectedPeople.has(face.person_id)).map((face) => face.id);
@@ -139,8 +144,13 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
     setProgress({ done: 0, total: remaining.length });
     let failures = 0;
     try {
+      const signal=controller.current.signal;
+      await auditPersonSources(signal,true,()=>{});
+      signal.throwIfAborted();
       await enqueuePersonPhotos(remaining);
+      signal.throwIfAborted();
       await controlPersonJobs(true);
+      signal.throwIfAborted();
       await loadFaceEngine(controller.current.signal);
       let done = 0;
       for (const item of remaining) {
@@ -157,7 +167,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
         setStatus(stop.current ? '사람 찾기를 중단했습니다. 확인한 사진은 그대로 남아 있습니다.' : failures ? `얼굴 찾기를 마쳤습니다. ${remaining.length}장 중 ${done - failures}장을 확인했습니다. ${failures}장은 확인하지 못했습니다. 새 사진에서 사람 찾기를 눌러 다시 시도할 수 있습니다.` : `얼굴 찾기를 마쳤습니다. ${done}장을 확인했습니다.`);
       }
     } catch { if (alive.current && !stop.current) setError('사진에서 사람을 찾는 중 문제가 발생했습니다. 이미 확인한 사진과 원본은 그대로 남아 있습니다. 다시 시도해 주세요.'); }
-    finally { controller.current = null; locked.current = false; if (alive.current) { setRunning(false); if(stop.current) setStatus('사람 찾기를 중단했습니다. 확인한 사진은 그대로 남아 있습니다.'); } }
+    finally { if(stop.current) await controlPersonJobs(false).catch(()=>undefined); controller.current = null; locked.current = false; if (alive.current) { setRunning(false); if(stop.current) setStatus('사람 찾기를 중단했습니다. 확인한 사진은 그대로 남아 있습니다.'); } }
   }
 
   async function edit(action: () => Promise<unknown>) {
@@ -212,7 +222,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
     {loading && <p role="status"><LoaderCircle size={18} className="spinIcon" />인물 불러오는 중</p>}
     {(running || status) && <div className="faceProgress" role="status"><span>{status}</span>{running && <><span>{progress.done} / {progress.total}장</span><div className="peopleActions"><button onClick={() => { stop.current = true; controller.current?.abort(); void controlPersonJobs(false).catch(() => undefined); setStatus('분석을 중단하는 중'); }}><Pause size={18} />중단</button></div><progress value={progress.done} max={progress.total || 1} /></>}</div>}
     {error && <p role="alert" className="faceError">{error}</p>}
-    {validating && <PersonEvaluationPanel photos={photos} index={index} disabled={running||saving||loading} onBusy={setEvaluationBusy}/>}
+    {validating && <><PersonEvaluationPanel photos={photos} index={index} disabled={running||saving||loading||benchmarkBusy||auditBusy} onBusy={setEvaluationBusy}/><PersonDeviceBenchmarkPanel photos={photos} disabled={running||saving||loading||evaluationBusy||auditBusy} onBusy={setBenchmarkBusy}/><PersonSourceAuditPanel photos={photos} disabled={running||saving||loading||evaluationBusy||benchmarkBusy} onBusy={setAuditBusy}/></>}
     {lastExcluded.length > 0 && <div className="peopleActions"><span>{lastExcluded.length}개 얼굴 제외됨</span><button disabled={blocked} onClick={() => void edit(async () => { await setFacesExcluded(lastExcluded, false); setLastExcluded([]); })}>제외 되돌리기</button></div>}
     {!person && !showFaceThumbnails ? <>
       <div className="peopleSummary">등록된 사람 {index.people.filter(entry => entry.name.trim()).length}명 · 확인한 사진 {photos.length - remaining.length} / {photos.length}장</div>

@@ -3,7 +3,7 @@ use std::time::Duration;
 
 // Versions before this migration used user_version = 0 (including existing installs).
 // Future schema changes must increment this and add an ordered migration here.
-pub(crate) const VERSION: i64 = 14;
+pub(crate) const VERSION: i64 = 15;
 
 fn version(conn: &Connection) -> Result<i64, String> {
     conn.query_row("PRAGMA user_version", [], |row| row.get(0))
@@ -20,6 +20,9 @@ fn check_version(version: i64) -> Result<(), String> {
 pub fn initialize(conn: &mut Connection) -> Result<(), String> {
     conn.busy_timeout(Duration::from_secs(5)).map_err(|error| error.to_string())?;
     conn.pragma_update(None, "foreign_keys", true).map_err(|error| error.to_string())?;
+    // Deleted biometric values should not survive in SQLite's free pages.
+    // This does not encrypt active rows or erase copies/backups made earlier.
+    conn.pragma_update(None, "secure_delete", true).map_err(|error| error.to_string())?;
     let current = version(conn)?;
     check_version(current)?;
     if current == VERSION { return Ok(()); }
@@ -72,6 +75,7 @@ pub fn initialize(conn: &mut Connection) -> Result<(), String> {
     }
     if current < 13 { tx.execute_batch(include_str!("../database/person-engine.sql")).map_err(|e| e.to_string())?; }
     if current < 14 { tx.execute_batch(include_str!("../database/person-evaluation.sql")).map_err(|e| e.to_string())?; }
+    if current < 15 { tx.execute_batch(include_str!("../database/person-source-audit.sql")).map_err(|e| e.to_string())?; }
     tx.pragma_update(None, "user_version", VERSION).map_err(|error| error.to_string())?;
     tx.commit().map_err(|error| error.to_string())
 }

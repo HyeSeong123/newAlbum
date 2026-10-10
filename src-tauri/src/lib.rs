@@ -111,7 +111,7 @@ async fn list_media(app: AppHandle) -> Result<Vec<MediaItemDto>, String> {
         // Legacy image headers are read only when loading the library, never
         // as a side effect of a delete/import response or a metadata write.
         media_dimensions::backfill(&conn)?;
-        read_media(&conn)
+        read_media_for_app(&app, &conn)
     }).await.map_err(|e| e.to_string())?
 }
 
@@ -187,7 +187,7 @@ async fn clear_registered_media(app: AppHandle) -> Result<Vec<MediaItemDto>, Str
         let conn = open_database(&app)?;
         conn.execute("DELETE FROM media", [])
             .map_err(|error| format!("등록 목록을 비울 수 없습니다: {error}"))?;
-        read_media(&conn)
+        read_media_for_app(&app, &conn)
     }).await.map_err(|error| error.to_string())?
 }
 
@@ -197,7 +197,7 @@ async fn delete_registered_media(app: AppHandle, ids: Vec<i64>) -> Result<Vec<Me
         let mut conn = open_database(&app)?;
         database::delete_media(&mut conn, &ids)?;
         characters::reconcile(&mut conn)?;
-        read_media(&conn)
+        read_media_for_app(&app, &conn)
     }).await.map_err(|error| error.to_string())?
 }
 
@@ -328,7 +328,7 @@ async fn register_paths(app: AppHandle, webview: tauri::Webview, paths: Vec<Stri
         status.file_name = None;
         send(status);
         characters::reconcile(&mut conn)?;
-        read_media(&conn)
+        read_media_for_app(&app, &conn)
     }).await.map_err(|error| error.to_string())?
 }
 
@@ -1007,6 +1007,19 @@ fn media_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MediaItemDto> {
 
 const MEDIA_COLUMNS: &str = "id, file_path, file_type, taken_at, width, height, duration, size_bytes, rating, comment, favorite, metadata_status, view_count, title, latitude, longitude, region_code, region_name, location_status, location_source, district, country, city, gps_region_code";
 
+// Expose exactly registered originals; DB/keys and unrelated local files are
+// outside the asset protocol. Rebuild these grants when the app restarts.
+fn read_media_for_app(app: &AppHandle, conn: &Connection) -> Result<Vec<MediaItemDto>, String> {
+    let media = read_media(conn)?;
+    let scope = app.asset_protocol_scope();
+    for item in &media {
+        if let Ok(path) = fs::canonicalize(&item.file_path) {
+            scope.allow_file(path).map_err(|_| "등록 사진의 접근 권한을 설정하지 못했습니다.".to_string())?;
+        }
+    }
+    Ok(media)
+}
+
 fn read_media(conn: &Connection) -> Result<Vec<MediaItemDto>, String> {
     let mut stmt = conn
         .prepare(&format!("SELECT {MEDIA_COLUMNS} FROM media ORDER BY taken_at DESC NULLS LAST, created_at DESC"))
@@ -1273,6 +1286,8 @@ pub fn run() {
             faces::set_faces_excluded,
             faces::save_face_scan,
             person_engine::get_person_scan_source,
+            person_engine::audit_person_scans,
+            person_engine::person_runtime_environment,
             person_engine::enqueue_person_jobs,
             person_engine::control_person_jobs,
             person_engine::finish_person_job,

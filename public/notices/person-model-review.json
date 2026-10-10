@@ -1,0 +1,15 @@
+{
+  "modelVersion": "face-api-1.7.15-ssd-68-resnet-v1",
+  "commercialClearanceConfirmed": false,
+  "newModelIntroduced": false,
+  "codeLicenses": [
+    {"component": "@vladmandic/face-api@1.7.15", "license": "MIT", "source": "https://github.com/vladmandic/face-api/blob/master/LICENSE"},
+    {"component": "TensorFlow.js and WASM@4.22.0", "license": "Apache-2.0", "source": "https://github.com/tensorflow/tfjs/blob/master/LICENSE"}
+  ],
+  "weights": [
+    {"component": "128-dimensional recognizer", "evidence": "FaceAPI describes the original recognizer as Davis King's dlib model; dlib publishes a public-domain statement.", "source": "https://github.com/davisking/dlib-models#dlib_face_recognition_resnet_model_v1datbz2", "remaining": "Confirm converted-weight provenance and training-image use conditions; public-domain weights do not establish every training-image right."},
+    {"component": "SSD detector", "evidence": "Original FaceAPI documentation describes WIDER FACE training.", "source": "https://github.com/justadudewhohacks/face-api.js#face-detection-models", "remaining": "Confirm commercial implications of the dataset terms and packaged-weight provenance."},
+    {"component": "68-landmark model", "evidence": "Original FaceAPI documentation describes its own approximately 35k-image landmark training.", "source": "https://github.com/justadudewhohacks/face-api.js#68-point-face-landmark-detection-models", "remaining": "Obtain the exact training-data conditions. Do not equate this model with dlib's separate noncommercial 68-landmark predictor."}
+  ],
+  "policy": "Keep the existing pinned models; do not claim commercial clearance from the code license alone. Do not introduce replacement weights without license and independent accuracy review."
+}

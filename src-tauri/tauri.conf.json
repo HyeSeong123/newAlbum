@@ -22,12 +22,49 @@
       }
     ],
     "security": {
-      "csp": null,
+      "csp": {
+        "default-src": "'self'",
+        "script-src": "'self' 'wasm-unsafe-eval'",
+        "connect-src": "'self' ipc: http://ipc.localhost asset: http://asset.localhost https://asset.localhost http://127.0.0.1:* http://localhost:*",
+        "img-src": "'self' asset: http://asset.localhost https://asset.localhost data: blob:",
+        "media-src": "'self' asset: http://asset.localhost https://asset.localhost http://127.0.0.1:* http://localhost:* data: blob:",
+        "style-src": "'self' 'unsafe-inline'",
+        "font-src": "'self' data:",
+        "worker-src": "'self' blob:",
+        "object-src": "'none'",
+        "frame-src": "'none'",
+        "base-uri": "'none'",
+        "form-action": "'none'",
+        "frame-ancestors": "'none'"
+      },
       "assetProtocol": {
         "enable": true,
-        "scope": [
-          "**"
-        ]
+        "scope": {
+          "allow": [
+            "$APPDATA/imported-media-v1/**",
+            "$APPCACHE/thumbnails-v1/**",
+            "$APPCACHE/pet-thumbnails-v1/**",
+            "$APPCACHE/pet-thumbnails-sha256-v1/**"
+          ],
+          "deny": [
+            "$APPDATA/album.sqlite*"
+          ]
+        }
+      },
+      "devCsp": {
+        "default-src": "'self'",
+        "script-src": "'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'",
+        "connect-src": "'self' ipc: http://ipc.localhost asset: http://asset.localhost https://asset.localhost http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:*",
+        "img-src": "'self' asset: http://asset.localhost https://asset.localhost data: blob:",
+        "media-src": "'self' asset: http://asset.localhost https://asset.localhost http://127.0.0.1:* http://localhost:* data: blob:",
+        "style-src": "'self' 'unsafe-inline'",
+        "font-src": "'self' data:",
+        "worker-src": "'self' blob:",
+        "object-src": "'none'",
+        "frame-src": "'none'",
+        "base-uri": "'none'",
+        "form-action": "'none'",
+        "frame-ancestors": "'none'"
       }
     }
   },

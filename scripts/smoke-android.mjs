@@ -359,6 +359,20 @@ try {
   console.log('Gomi cynical art, cold low-affection help and no guide affection award: OK');
   console.log('Installed Android app launched and rendered its native home.');
   await checkPhotoGps(page);
+  const security=await page.evaluate(async()=>{
+    const violations=[];const listener=event=>violations.push(event.effectiveDirective);
+    window.addEventListener('securitypolicyviolation',listener);
+    const script=document.createElement('script');script.textContent='window.__personCspProbe=true';document.body.append(script);script.remove();
+    await fetch('https://example.invalid/gamjassak-csp-probe').catch(()=>undefined);
+    await new Promise(resolve=>setTimeout(resolve,100));window.removeEventListener('securitypolicyviolation',listener);
+    const media=await window.__TAURI_INTERNALS__.invoke('list_media');
+    const root=media[0].file_path.split('/imported-media-v1/')[0];
+    const db=await fetch(window.__TAURI_INTERNALS__.convertFileSrc(root+'/album.sqlite')).then(response=>response.status).catch(()=>0);
+    return {externalNetworkBlocked:violations.includes('connect-src'),inlineScriptBlocked:!window.__personCspProbe&&violations.some(v=>v.startsWith('script-src')),databaseAssetBlocked:db!==200};
+  });
+  assert.equal(security.externalNetworkBlocked,true);assert.equal(security.inlineScriptBlocked,true);assert.equal(security.databaseAssetBlocked,true);
+  await writeFile(join(output,'person-security-smoke.json'),JSON.stringify(security,null,2));
+  console.log('Android CSP and SQLite asset access controls: '+JSON.stringify(security));
   await expect(page.getByRole('button', { name:'다음 메뉴 보기', exact:true })).toBeEnabled();
   await page.getByRole('button', { name:'다음 메뉴 보기', exact:true }).click();
   await expect.poll(() => page.locator('.navList').evaluate(element => element.scrollLeft)).toBeGreaterThan(20);

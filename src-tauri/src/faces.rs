@@ -13,7 +13,7 @@ pub struct FaceMatch {
 }
 
 fn find_matches(conn: &Connection) -> Result<Vec<FaceMatch>, String> {
-    let rows = conn.prepare("SELECT f.id,f.media_id,f.person_id,p.name,f.confirmed,f.descriptor,COALESCE(m.reference_kind,CASE WHEN f.id=(SELECT MIN(id) FROM detected_face WHERE person_id=f.person_id) THEN 'seed' ELSE 'auto' END) FROM detected_face f JOIN person p ON p.id=f.person_id JOIN face_scan s ON s.media_id=f.media_id LEFT JOIN person_face_metadata m ON m.face_id=f.id WHERE s.model_version=?1 AND COALESCE(m.model_version,s.model_version)=?1 AND NOT EXISTS(SELECT 1 FROM excluded_face e WHERE e.face_id=f.id) ORDER BY f.id")
+    let rows = conn.prepare("SELECT f.id,f.media_id,f.person_id,p.name,f.confirmed,f.descriptor,COALESCE(m.reference_kind,CASE WHEN f.id=(SELECT MIN(id) FROM detected_face WHERE person_id=f.person_id) THEN 'seed' ELSE 'auto' END) FROM detected_face f JOIN person p ON p.id=f.person_id JOIN face_scan s ON s.media_id=f.media_id LEFT JOIN person_face_metadata m ON m.face_id=f.id WHERE s.model_version=?1 AND COALESCE(m.model_version,s.model_version)=?1 AND NOT EXISTS(SELECT 1 FROM excluded_face e WHERE e.face_id=f.id) AND NOT EXISTS(SELECT 1 FROM person_scan_issue i WHERE i.media_id=f.media_id) ORDER BY f.id")
       .map_err(|e|e.to_string())?.query_map([MODEL],|r|Ok((r.get::<_,i64>(0)?,r.get::<_,i64>(1)?,r.get::<_,i64>(2)?,r.get::<_,String>(3)?,r.get::<_,bool>(4)?,r.get::<_,String>(5)?,r.get::<_,String>(6)?)))
       .map_err(|e|e.to_string())?.collect::<Result<Vec<_>,_>>().map_err(|e|e.to_string())?;
     let rows:Vec<_>=rows.into_iter().filter_map(|(id,media,person,name,confirmed,json,kind)|{let vector=serde_json::from_str::<Vec<f64>>(&json).ok()?;(vector.len()==128 && vector.iter().all(|x|x.is_finite())).then_some((id,media,person,name,confirmed,vector,kind))}).collect();
@@ -36,7 +36,7 @@ fn find_matches(conn: &Connection) -> Result<Vec<FaceMatch>, String> {
 
 #[tauri::command]
 pub async fn find_face_matches(app: AppHandle) -> Result<Vec<FaceMatch>, String> {
-    tauri::async_runtime::spawn_blocking(move || find_matches(&super::open_database(&app)?))
+    tauri::async_runtime::spawn_blocking(move || {let conn=super::open_database(&app)?;super::person_engine::audit_references(&conn)?;find_matches(&conn)})
         .await
         .map_err(|e| e.to_string())?
 }
@@ -141,7 +141,7 @@ fn save_scan_with_source(conn: &mut Connection, media_id: i64, faces: Vec<FaceIn
     }
     let existing: bool = tx.query_row("SELECT EXISTS(SELECT 1 FROM face_scan WHERE media_id=?1) OR EXISTS(SELECT 1 FROM detected_face WHERE media_id=?1)",[media_id],|r|r.get(0)).map_err(|e|e.to_string())?;
     if existing { return Err("기존 얼굴 연결을 보존했습니다. 모델 재추출에는 별도 연결 마이그레이션이 필요합니다.".into()); }
-    let candidates = tx.prepare("SELECT f.person_id,f.descriptor FROM detected_face f JOIN face_scan s ON s.media_id=f.media_id LEFT JOIN person_face_metadata m ON m.face_id=f.id WHERE s.model_version=?1 AND COALESCE(m.model_version,s.model_version)=?1 AND (m.quality='usable' OR m.geometry IN ('{}','null') OR m.face_id IS NULL) AND (m.reference_kind='seed' OR (m.face_id IS NULL AND f.id=(SELECT MIN(id) FROM detected_face WHERE person_id=f.person_id))) AND NOT EXISTS (SELECT 1 FROM excluded_face e WHERE e.face_id=f.id) ORDER BY f.id")
+    let candidates = tx.prepare("SELECT f.person_id,f.descriptor FROM detected_face f JOIN face_scan s ON s.media_id=f.media_id LEFT JOIN person_face_metadata m ON m.face_id=f.id WHERE s.model_version=?1 AND COALESCE(m.model_version,s.model_version)=?1 AND (m.quality='usable' OR m.geometry IN ('{}','null') OR m.face_id IS NULL) AND (m.reference_kind='seed' OR (m.face_id IS NULL AND f.id=(SELECT MIN(id) FROM detected_face WHERE person_id=f.person_id))) AND NOT EXISTS (SELECT 1 FROM excluded_face e WHERE e.face_id=f.id) AND NOT EXISTS(SELECT 1 FROM person_scan_issue i WHERE i.media_id=f.media_id) ORDER BY f.id")
         .map_err(|e| e.to_string())?.query_map([MODEL], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?)))
         .map_err(|e| e.to_string())?.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())?;
     let candidates: Vec<_> = candidates
@@ -421,6 +421,18 @@ mod tests {
         let ambiguous=find_matches(&conn).unwrap();
         assert_eq!(ambiguous[0].candidates.len(),2);
         assert_eq!(ambiguous[0].state,"needs-review");
+    }
+    #[test]
+    fn quarantine_blocks_both_suggestions_and_automatic_linking() {
+        let mut conn=database();save_scan(&mut conn,1,vec![face(0.1)]).unwrap();
+        let original=read_index(&conn).unwrap().faces[0].person_id;
+        conn.execute("UPDATE person SET name='family' WHERE id=?1",[original]).unwrap();
+        let mut uncertain=face(0.11);uncertain.quality=Some("review".into());uncertain.box_=Some([0.0,0.0,0.1,0.1]);
+        save_scan(&mut conn,2,vec![uncertain]).unwrap();assert_eq!(find_matches(&conn).unwrap().len(),1);
+        conn.execute("INSERT INTO person_scan_issue(media_id,state) VALUES(1,'source_changed')",[]).unwrap();
+        assert!(find_matches(&conn).unwrap().is_empty());save_scan(&mut conn,3,vec![face(0.1)]).unwrap();
+        let index=read_index(&conn).unwrap();assert_eq!(index.faces.len(),3);assert_eq!(index.faces[0].person_id,original);assert_ne!(index.faces[2].person_id,original);
+        conn.execute("DELETE FROM person_scan_issue",[]).unwrap();assert!(!find_matches(&conn).unwrap().is_empty());
     }
     #[test]
     fn grouping_resume_and_manual_moves() {

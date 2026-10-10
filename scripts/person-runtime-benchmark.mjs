@@ -27,9 +27,16 @@ export async function verifyInstalledPersonRuntime(page,base64,mediaId){
    // A dog fixture has no face labels; save an empty functional result only.
    await native.invoke('save_face_scan',{mediaId,faces:[],sourceKey:source.source_key});await native.invoke('finish_person_job',{mediaId,failed:false});
    const duplicate=await native.invoke('get_person_scan_source',{mediaId});
-   return {faces:cpu.faces.length,valid:cpu.faces.every(f=>f.descriptor.length===128&&f.descriptor.every(Number.isFinite)),maxBackendDistance:Math.max(...drift),cpu:cpu.diagnostics,wasm:wasm.diagnostics,auto:warm.diagnostics,nativeSourceVerified:source.source_key.startsWith('sha256:'),completedCache:duplicate.completed,offline:true,identityAccuracyMeasured:false,devicePerformanceMeasured:false};
+   const environment=await native.invoke('person_runtime_environment');
+   const audit=await native.invoke('audit_person_scans',{afterId:0,limit:20,referencesOnly:false});
+   // Explicitly labeled synthetic miss exercises evaluation storage only.
+   // Never treat this dog image as accuracy ground truth for the person model.
+   await native.invoke('save_person_evaluation',{sample:{mediaId,faceId:null,personId:null,missedSlot:1,role:'query',captureGroup:'synthetic-smoke',category:'unregistered',rights:'package test fixture; functional storage only'}});
+   const evaluation=await native.invoke('person_evaluation_summary');await native.invoke('clear_person_evaluation');
+   return {faces:cpu.faces.length,valid:cpu.faces.every(f=>f.descriptor.length===128&&f.descriptor.every(Number.isFinite)),maxBackendDistance:Math.max(...drift),cpu:cpu.diagnostics,wasm:wasm.diagnostics,auto:warm.diagnostics,nativeSourceVerified:source.source_key.startsWith('sha256:'),completedCache:duplicate.completed,sourceAuditVerified:audit.items.some(item=>item.mediaId===mediaId&&item.state==='verified'),evaluationStored:evaluation.queries===1,environment,offline:true,identityAccuracyMeasured:false,devicePerformanceMeasured:false};
   }finally{worker.terminate();}
  },{encoded:base64,mediaId});
  assert.equal(result.faces,3);assert.equal(result.valid,true);assert.ok(result.maxBackendDistance<.001);assert.equal(result.wasm.backend,'wasm');assert.equal(result.auto.backend,'wasm');assert.equal(result.nativeSourceVerified,true);assert.equal(result.completedCache,true);
+ assert.equal(result.sourceAuditVerified,true);assert.equal(result.evaluationStored,true);assert.equal(result.environment.os,'android');assert.equal(result.environment.architecture,'x86_64');
  return result;
 }
