@@ -26,6 +26,18 @@
 .faceProgress { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .faceProgress progress { width: 100%; height: 10px; accent-color: #38775a; }
 .faceError { color: #a32525; }
+.personValidationPanel { border:1px solid var(--border); padding:20px; border-radius:12px; margin:16px 0; display:grid; gap:12px; min-width:0; }
+.personValidationPanel h3,.personValidationPanel p { margin:0; }
+.personValidationPanel > label { display:grid; gap:6px; min-width:0; }
+.personValidationPanel input:not([type=radio]),.personValidationPanel select { min-height:42px; padding:8px; font:inherit; width:100%; border:1px solid var(--border); border-radius:6px; background:var(--surface,#fff); color:var(--text); }
+.personEvaluationPhoto { max-width:320px; height:200px; }
+.personEvaluationFaces { display:flex; flex-wrap:wrap; gap:12px; }
+.personEvaluationFaces label { display:grid; gap:4px; justify-items:center; }
+.personEvaluationFaces img { width:72px; height:72px; object-fit:cover; }
+.personEvaluationTable { max-width:100%; overflow-x:auto; }
+.personEvaluationTable table { border-collapse:collapse; min-width:650px; width:100%; }
+.personEvaluationTable td,.personEvaluationTable th { padding:8px; border-bottom:1px solid var(--border); text-align:left; }
+.personEvaluationReport small { display:block; margin-top:12px; color:var(--muted); }
 .personPhotoGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
 .personPhotoGrid.faceOverviewGrid { grid-template-columns: repeat(auto-fill, 128px); gap: 16px; }
 .personPhotoGrid.personMediaGrid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 24px 16px; }

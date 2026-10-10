@@ -327,6 +327,7 @@ pub fn set_faces_excluded(app: AppHandle, ids: Vec<i64>, excluded: bool) -> Resu
 pub fn clear_face_index(app: AppHandle) -> Result<(), String> {
     let mut conn = super::open_database(&app)?;
     let tx = conn.transaction().map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM person_evaluation_sample", []).map_err(|e|e.to_string())?;
     tx.execute("DELETE FROM detected_face", [])
         .map_err(|e| e.to_string())?;
     tx.execute("DELETE FROM person WHERE profile_type = 'face'", [])

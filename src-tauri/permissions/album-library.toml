@@ -2,6 +2,10 @@
 identifier = "album-library"
 description = "Allow the main album window to use the existing photo, album, face and pet commands."
 commands.allow = [
+  "save_person_evaluation",
+  "person_evaluation_summary",
+  "evaluate_person_samples",
+  "clear_person_evaluation",
   "sync_characters",
   "rename_character",
   "set_main_character",

@@ -18,6 +18,7 @@ mod pets;
 mod pet_recognition;
 mod pet_jobs;
 mod person_engine;
+mod person_evaluation;
 mod pet_evaluation;
 mod thumbnails;
 mod media_dimensions;
@@ -1275,6 +1276,10 @@ pub fn run() {
             person_engine::enqueue_person_jobs,
             person_engine::control_person_jobs,
             person_engine::finish_person_job,
+            person_evaluation::save_person_evaluation,
+            person_evaluation::person_evaluation_summary,
+            person_evaluation::evaluate_person_samples,
+            person_evaluation::clear_person_evaluation,
             faces::rename_face_person,
             faces::set_person_cover_face,
             faces::move_faces,

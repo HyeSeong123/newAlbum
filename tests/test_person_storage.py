@@ -12,4 +12,11 @@ class PersonMigration(unittest.TestCase):
   self.assertEqual(c.execute('SELECT reference_kind FROM person_face_metadata ORDER BY face_id').fetchall(),[('seed',),('auto',)])
   c.execute("INSERT INTO person_analysis_job(media_id,state) VALUES(1,'paused')");c.execute('DELETE FROM detected_face WHERE id=91');self.assertEqual(c.execute('SELECT COUNT(*) FROM person_face_metadata').fetchone()[0],1)
   self.assertEqual(c.execute('SELECT COUNT(*) FROM media').fetchone()[0],1);self.assertEqual(c.execute('PRAGMA foreign_key_check').fetchall(),[])
+ def test_evaluation_migration_keeps_ids_and_cascades_without_photos(self):
+  c=sqlite3.connect(':memory:');c.execute('PRAGMA foreign_keys=ON');c.executescript((ROOT/'src-tauri/database/schema.sql').read_text())
+  c.executescript("INSERT INTO media(id,file_path,file_type,size_bytes) VALUES(1,'photo','image',1);INSERT INTO person(id,name) VALUES(42,'가족');INSERT INTO detected_face(id,media_id,person_id,descriptor,thumbnail,confirmed) VALUES(91,1,42,'[0.1]','jpeg',1);")
+  before=c.execute('SELECT * FROM detected_face').fetchall();ddl=(ROOT/'src-tauri/database/person-evaluation.sql').read_text();c.executescript(ddl);c.executescript(ddl)
+  c.execute("INSERT INTO person_evaluation_sample(media_id,face_id,person_id,label_key,role,capture_group,category,rights,source_key) VALUES(1,91,42,'face-91','reference','A','front','owner','sha256:test')")
+  self.assertEqual(c.execute('SELECT * FROM detected_face').fetchall(),before);c.execute('DELETE FROM person_evaluation_sample');self.assertEqual(c.execute('SELECT * FROM detected_face').fetchall(),before)
+  self.assertEqual(c.execute('SELECT COUNT(*) FROM media').fetchone()[0],1)
 if __name__=='__main__':unittest.main()
