@@ -81,13 +81,16 @@ test('repeated recognition alternates real isolated Workers, cancels and keeps i
  });
  await page.goto('/');
  const external: string[] = [];
- page.on('request', request => { if (!['localhost', '127.0.0.1'].includes(new URL(request.url()).hostname)) external.push(request.url()); });
  await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
  await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
  await page.getByRole('button', { name: '인식 검증·기기 측정', exact: true }).click();
  const panel = page.getByRole('region', { name: '이 기기 인물 처리 속도' });
  await panel.getByLabel('인물 기기 측정 방식').selectOption('alternating');
  await panel.getByLabel('반려동물 전환 측정 사진').selectOption('2');
+ // The development UI loads its own fonts. Observe inference only after the
+ // selected measurement screen has finished loading those display resources.
+ await page.evaluate(() => document.fonts.ready);
+ page.on('request', request => { if (!['localhost', '127.0.0.1'].includes(new URL(request.url()).hostname)) external.push(request.url()); });
  await panel.getByRole('button', { name: '이 기기 인물 속도 측정', exact: true }).click();
  await expect(panel.getByLabel('인물 기기 측정 방식')).toBeDisabled();
  await expect.poll(() => page.evaluate(() => (window as unknown as { __repetitionState: { completed: number } }).__repetitionState.completed), { timeout: 30_000 }).toBeGreaterThan(0);
