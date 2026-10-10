@@ -21,6 +21,8 @@ pub async fn get_person_scan_source(app:AppHandle,media_id:i64)->Result<Source,S
 fn enqueue(conn:&mut Connection,ids:Vec<i64>)->Result<(),String>{
     if ids.len()>1000 {return Err("사진 1,000장씩 대기열에 등록해 주세요.".into());}
     let tx=conn.transaction().map_err(|e|e.to_string())?;
+    // Recover a crash after scan commit but before finish_person_job.
+    tx.execute("DELETE FROM person_analysis_job WHERE EXISTS(SELECT 1 FROM face_scan WHERE media_id=person_analysis_job.media_id)",[]).map_err(|e|e.to_string())?;
     for id in ids {tx.execute("INSERT OR IGNORE INTO person_analysis_job(media_id) SELECT ?1 WHERE EXISTS(SELECT 1 FROM media WHERE id=?1 AND file_type='image') AND NOT EXISTS(SELECT 1 FROM face_scan WHERE media_id=?1)",[id]).map_err(|e|e.to_string())?;}
     tx.commit().map_err(|e|e.to_string())
 }
@@ -66,5 +68,7 @@ mod tests{
   enqueue(&mut c,vec![1,1,2]).unwrap();assert_eq!(c.query_row("SELECT COUNT(*) FROM person_analysis_job",[],|r|r.get::<_,i64>(0)).unwrap(),1);
   c.execute("UPDATE person_analysis_job SET state='failed'",[]).unwrap();enqueue(&mut c,vec![1]).unwrap();assert_eq!(c.query_row("SELECT state FROM person_analysis_job",[],|r|r.get::<_,String>(0)).unwrap(),"failed");
   assert_eq!(c.query_row("SELECT COUNT(*) FROM media",[],|r|r.get::<_,i64>(0)).unwrap(),2);
+  c.execute("INSERT INTO face_scan(media_id,model_version) VALUES(1,'legacy')",[]).unwrap();enqueue(&mut c,vec![1]).unwrap();
+  assert_eq!(c.query_row("SELECT COUNT(*) FROM person_analysis_job",[],|r|r.get::<_,i64>(0)).unwrap(),0);
  }
 }
