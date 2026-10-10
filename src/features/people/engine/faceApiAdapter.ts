@@ -2,6 +2,7 @@ import * as api from '@vladmandic/face-api/dist/face-api.esm-nobundle.js';
 import * as tf from '@tensorflow/tfjs';
 import { setThreadsCount, setWasmPaths } from '@tensorflow/tfjs-backend-wasm';
 import { FACE_MODEL, type FaceBackend, type FaceFeatures, type FaceModelAdapter } from './types';
+import { FACE_DETECTION_MIN_CONFIDENCE, FACE_AUTOMATIC_MIN_CONFIDENCE, retainFaceDetection } from './detectionPolicy';
 
 // No second bundled TF registry. These exact versions are pinned together.
 export class FaceApiAdapter implements FaceModelAdapter {
@@ -27,8 +28,8 @@ export class FaceApiAdapter implements FaceModelAdapter {
   async detectFaces(image: OffscreenCanvas): Promise<FaceFeatures[]> {
     // Keep FaceAPI's 68-point alignment and original descriptor pipeline.
     const faces = await api.detectAllFaces(image as unknown as HTMLCanvasElement,
-      new api.SsdMobilenetv1Options({ minConfidence: 0.35, maxResults: 100 })).withFaceLandmarks().withFaceDescriptors();
-    return Promise.all(faces.map(async (face) => {
+      new api.SsdMobilenetv1Options({ minConfidence: FACE_DETECTION_MIN_CONFIDENCE, maxResults: 100 })).withFaceLandmarks().withFaceDescriptors();
+    return Promise.all(faces.filter(face => retainFaceDetection(face.detection)).map(async (face) => {
       const { x, y, width, height } = face.detection.box;
       const size = Math.min(Math.max(width, height) * 1.35, image.width, image.height);
       const left = Math.max(0, Math.min(image.width - size, x + width / 2 - size / 2));
@@ -47,7 +48,7 @@ export class FaceApiAdapter implements FaceModelAdapter {
       const eyeSpan = Math.abs(eyes[1].x - eyes[0].x);
       const asymmetry = Math.abs(nose.x - (eyes[0].x + eyes[1].x) / 2) / Math.max(eyeSpan, 1);
       // Turned/low-confidence faces stay visible for explicit confirmation.
-      const usable = face.detection.score >= 0.65 && Math.min(width, height) >= 60 && Math.abs(rollDegrees) <= 25 && asymmetry <= 0.35;
+      const usable = face.detection.score >= FACE_AUTOMATIC_MIN_CONFIDENCE && Math.min(width, height) >= 60 && Math.abs(rollDegrees) <= 25 && asymmetry <= 0.35;
       return { descriptor: Array.from(face.descriptor), thumbnail, modelVersion: FACE_MODEL,
         box: [x / image.width, y / image.height, width / image.width, height / image.height],
         quality: usable ? 'usable' : 'review', view: 'unknown', rollDegrees };
