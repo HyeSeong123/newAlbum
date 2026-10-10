@@ -1,6 +1,25 @@
 import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
+test('additional reference faces require explicit selection and retain the person cover',async({page})=>{
+ await page.addInitScript(()=>{
+  const state={people:[{id:7,name:'가족',cover_face_id:11}],faces:[{id:11,media_id:1,person_id:7,thumbnail:'/favicon.svg',confirmed:true},{id:12,media_id:2,person_id:7,thumbnail:'/favicon.svg',confirmed:false}],scanned:[1,2]};
+  Object.defineProperty(window,'__TAURI_INTERNALS__',{value:{convertFileSrc:()=>'/favicon.svg',invoke:async(command:string,args:{ids:number[];target:number})=>{
+   if(command==='list_media')return [1,2].map(id=>({id,file_path:`photo${id}.jpg`,file_type:'image',taken_at:'2026-10-10',size_bytes:1,rating:0,comment:'',favorite:false,metadata_status:'ready'}));
+   if(command==='list_face_index')return structuredClone(state);
+   if(command==='move_faces'){if(args.target!==7)throw new Error('Unexpected person change');state.faces.forEach(face=>{if(args.ids.includes(face.id))face.confirmed=true;});document.documentElement.dataset.personReferenceIds=JSON.stringify(args.ids);}
+   return [];
+  }}});
+ });
+ await page.goto('/');await page.getByRole('button',{name:'사람과 반려동물',exact:true}).click();
+ await page.getByRole('button',{name:'가족 2장',exact:true}).click();await page.getByRole('button',{name:'사람 관리',exact:true}).click();
+ await page.getByRole('button',{name:'얼굴 선택·분리·합치기'}).click();
+ await expect(page.getByRole('button',{name:'기준 얼굴로 확인',exact:true})).toBeDisabled();
+ await page.getByRole('button',{name:'얼굴 선택',exact:true}).nth(1).click();await page.getByRole('button',{name:'기준 얼굴로 확인',exact:true}).click();
+ await expect(page.locator('html')).toHaveAttribute('data-person-reference-ids','[12]');await expect(page.getByText('선택한 얼굴을 이 인물의 기준으로 확인했습니다.')).toBeVisible();
+ await expect(page.locator('.personCoverBadge')).toHaveCount(1);await expect(page.locator('.personPhotoMeta').filter({hasText:'확인'})).toHaveCount(2);
+});
+
 test('local models detect faces without remote requests', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Run real inference once; management UI is covered on both viewports.');
   test.setTimeout(120_000);

@@ -268,6 +268,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
       {selecting && <div className="peopleActions faceSelectionActions">
         <span>{chosen.length}개 선택</span>
         {person && !allFaces && <button disabled={blocked || !chosenAlbumItems.length} onClick={() => onCreateAlbum(chosenAlbumItems)}><BookPlus size={18} />앨범 만들기 ({chosenAlbumItems.length})</button>}
+        {person?.name.trim() && <button disabled={blocked || !chosen.length} onClick={() => void edit(() => moveFaces(chosen,person.id)).then((saved)=>{if(saved && alive.current) setStatus('선택한 얼굴을 이 인물의 기준으로 확인했습니다.');})}><Check size={18} />기준 얼굴로 확인</button>}
         <button disabled={blocked || !chosen.length} onClick={() => {
           if (window.confirm(`선택한 얼굴 ${chosen.length}개를 인물 목록과 얼굴 비교에서 제외할까요? 원본 사진은 유지됩니다.`)) void edit(async () => { await setFacesExcluded(chosen, true); setLastExcluded(chosen); });
         }}><X size={18} />얼굴 제외</button>
@@ -292,7 +293,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
           </button>
           {person?.cover_face_id === face.id && <span className="personCoverBadge">대표</span>}
           {selecting && <span className={`faceCheck ${chosen.includes(face.id) ? 'checked' : ''}`} aria-hidden="true">{chosen.includes(face.id) && <Check size={22} strokeWidth={3} />}</span>}
-          <div className="personPhotoMeta">{showFaceThumbnails && <img src={face.thumbnail} alt="분류된 얼굴" />}<span>{item?.takenAt ?? '날짜 없음'}</span></div>
+          <div className="personPhotoMeta">{showFaceThumbnails && <img src={face.thumbnail} alt="분류된 얼굴" />}<span>{item?.takenAt ?? '날짜 없음'}</span>{face.confirmed && <span>확인</span>}</div>
         </article>;
       })}</div>
       {facePages > 1 && <div className="peopleActions"><button disabled={currentFacePage === 0} onClick={() => setFacePage(currentFacePage - 1)}>이전</button><span>{currentFacePage + 1} / {facePages}</span><button disabled={currentFacePage === facePages - 1} onClick={() => setFacePage(currentFacePage + 1)}>다음</button></div>}

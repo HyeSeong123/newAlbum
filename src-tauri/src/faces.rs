@@ -222,12 +222,15 @@ pub fn rename_face_person(app: AppHandle, id: i64, name: String) -> Result<(), S
     if name.trim().chars().count() > 80 {
         return Err("이름은 80자 이내로 입력해 주세요.".into());
     }
-    let mut conn=super::open_database(&app)?;
+    rename_person(&mut super::open_database(&app)?,id,&name)
+}
+
+fn rename_person(conn:&mut Connection,id:i64,name:&str)->Result<(),String>{
     let tx=conn.transaction().map_err(|e|e.to_string())?;
     tx.execute("UPDATE person SET name=?1 WHERE id=?2",params![name.trim(),id]).map_err(|e|e.to_string())?;
-    // Naming this group explicitly confirms its current membership; later
-    // automatic additions remain unconfirmed and cannot become references.
-    if !name.trim().is_empty() {tx.execute("UPDATE detected_face SET confirmed=1 WHERE person_id=?1",[id]).map_err(|e|e.to_string())?;}
+    // The displayed cover is an explicit exemplar. Renaming must not promote
+    // the entire automatically assigned group into trusted references.
+    if !name.trim().is_empty() {tx.execute("UPDATE detected_face SET confirmed=1 WHERE person_id=?1 AND id=COALESCE((SELECT cover_face_id FROM person WHERE id=?1),(SELECT MIN(id) FROM detected_face WHERE person_id=?1 AND NOT EXISTS(SELECT 1 FROM excluded_face WHERE face_id=detected_face.id)))",[id]).map_err(|e|e.to_string())?;}
     tx.commit().map_err(|e|e.to_string())?;
     Ok(())
 }
@@ -273,8 +276,8 @@ fn reassign(conn: &mut Connection, ids: Vec<i64>, target: Option<i64>) -> Result
     };
     for id in ids {
         tx.execute(
-            "UPDATE person SET cover_face_id = NULL WHERE cover_face_id = ?1",
-            [id],
+            "UPDATE person SET cover_face_id = NULL WHERE cover_face_id = ?1 AND id<>?2",
+            params![id,person_id],
         )
         .map_err(|e| e.to_string())?;
         let count = tx
@@ -526,6 +529,15 @@ mod tests {
     fn unknown_descriptor_model_is_rejected_before_storage() {
         let mut c=database();let mut wrong=face(0.1);wrong.model_version=Some("same-dimension-other-model".into());
         assert!(save_scan(&mut c,1,vec![wrong]).is_err());assert!(read_index(&c).unwrap().faces.is_empty());assert!(read_index(&c).unwrap().scanned.is_empty());
+    }
+
+    #[test]
+    fn naming_only_confirms_cover_and_explicit_confirmation_preserves_cover(){
+      let mut c=database();save_scan(&mut c,1,vec![face(0.1)]).unwrap();save_scan(&mut c,2,vec![face(0.11)]).unwrap();
+      let rows=read_index(&c).unwrap().faces;let person=rows[0].person_id;let cover=rows[0].id;
+      set_cover_face(&c,person,cover).unwrap();rename_person(&mut c,person,"가족").unwrap();
+      let index=read_index(&c).unwrap();assert!(index.faces[0].confirmed);assert!(!index.faces[1].confirmed);
+      reassign(&mut c,vec![rows[1].id,cover],Some(person)).unwrap();let index=read_index(&c).unwrap();assert!(index.faces.iter().all(|f|f.confirmed));assert_eq!(index.people[0].cover_face_id,Some(cover));
     }
 
 }
