@@ -18,3 +18,15 @@ test('cancelled waiting work cannot acquire a model or block the next task',asyn
  await assert.rejects(waiting,{name:'AbortError'});assert.equal(called,false);
  assert.equal(await runAI('test-people',async()=>42),42);
 });
+test('aborting a queued person request settles before an active pet task finishes',async()=>{
+ let release;
+ const active=runAI('test-pets',()=>new Promise(resolve=>{release=resolve;}));
+ await new Promise(resolve=>setTimeout(resolve,0));
+ const controller=new AbortController();let ran=false;
+ const waiting=runAI('test-people',async()=>{ran=true;},controller.signal);
+ controller.abort();
+ const outcome=await Promise.race([waiting.then(()=>false,error=>error.name==='AbortError'),new Promise(resolve=>setTimeout(()=>resolve(false),30))]);
+ assert.equal(outcome,true);assert.equal(ran,false);
+ release();await active;
+ assert.equal(await runAI('test-people',async()=>42),42);
+});

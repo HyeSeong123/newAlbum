@@ -11,5 +11,14 @@ export function runAI<T>(domain: string, task: () => Promise<T>, signal?: AbortS
     return task();
   });
   tail = result.catch(() => undefined);
-  return result;
+  if (!signal) return result;
+  // Cancellation must settle immediately even while another domain is busy.
+  // Keep the scheduler's tail attached to the actual work, so abort cannot
+  // accidentally release its slot or allow overlapping inference.
+  return new Promise<T>((resolve, reject) => {
+    const abort = () => { signal.removeEventListener('abort', abort); reject(signal.reason ?? new DOMException('분석 중단', 'AbortError')); };
+    signal.addEventListener('abort', abort, { once: true });
+    result.then((value) => { signal.removeEventListener('abort', abort); resolve(value); }, (error) => { signal.removeEventListener('abort', abort); reject(error); });
+    if (signal.aborted) abort();
+  });
 }
