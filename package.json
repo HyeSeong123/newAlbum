@@ -1,6 +1,6 @@
 {
   "name": "local-album-manager",
-  "version": "0.8.2",
+  "version": "0.9.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -23,18 +23,19 @@
     "version:major": "node scripts/version.mjs major",
     "version:check": "node scripts/version.mjs --check",
     "test:e2e": "playwright test",
-    "test:unit": "node --test tests/diary-model.test.mjs tests/journal-model.test.mjs tests/media-playback.test.mjs tests/feature-models.test.mjs tests/mutations.test.mjs tests/version.test.mjs tests/album-content.test.mjs tests/memories-model.test.mjs tests/timeline-model.test.mjs tests/memory-map-model.test.mjs tests/trip-model.test.mjs tests/characters-model.test.mjs tests/gomi-behavior.test.mjs tests/pet-engine.test.mjs",
-    "test:pets": "node --test tests/pet-engine.test.mjs && python3 -m unittest discover -s tests -p test_pet_storage.py"
+    "test:unit": "node --test tests/diary-model.test.mjs tests/journal-model.test.mjs tests/media-playback.test.mjs tests/feature-models.test.mjs tests/mutations.test.mjs tests/version.test.mjs tests/album-content.test.mjs tests/memories-model.test.mjs tests/timeline-model.test.mjs tests/memory-map-model.test.mjs tests/trip-model.test.mjs tests/characters-model.test.mjs tests/gomi-behavior.test.mjs tests/pet-engine.test.mjs tests/ai-runtime.test.mjs",
+    "test:pets": "node --test tests/pet-engine.test.mjs && python3 -m unittest discover -s tests -p test_pet_storage.py",
+    "test:people": "node --test tests/ai-runtime.test.mjs && python3 -m unittest discover -s tests -p test_person_storage.py && python3 -m unittest discover -s tests -p test_person_evaluation.py"
   },
   "dependencies": {
     "@fontsource/noto-serif-kr": "^5.2.7",
     "@tauri-apps/api": "2.12.1",
     "@tauri-apps/plugin-dialog": "^2.7.3",
     "@tensorflow-models/coco-ssd": "^2.2.3",
-    "@tensorflow/tfjs": "^4.22.0",
+    "@tensorflow/tfjs": "4.22.0",
     "@tensorflow/tfjs-backend-wasm": "4.22.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "@vladmandic/face-api": "^1.7.15",
+    "@vladmandic/face-api": "1.7.15",
     "lucide-react": "^0.468.0",
     "motion": "^14.0.0",
     "react": "^19.0.0",

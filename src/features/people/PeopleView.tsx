@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, BookPlus, Check, FolderOutput, Image as ImageIcon, LoaderCircle, MoreVertical, Pause, Pencil, Play, RefreshCw, Scissors, Trash2, Users, X } from 'lucide-react';
 import type { MediaItem } from '../../types/media';
 import { isTauriRuntime } from '../../services/tauriMediaService';
-import { clearFaceIndex, emptyFaceIndex, FaceIndex, loadFaceEngine, loadFaceIndex, moveFaces, renamePerson, scanPhoto, setFacesExcluded, setPersonCoverFace } from './faceService';
+import { clearFaceIndex, controlPersonJobs, enqueuePersonPhotos, finishPersonJob, emptyFaceIndex, FaceIndex, loadFaceEngine, loadFaceIndex, moveFaces, renamePerson, scanPhoto, setFacesExcluded, setPersonCoverFace } from './faceService';
 import { EmptyState, FavoriteBadge, MediaVisual } from '../../components/MediaVisual';
 import { useRowSelection } from '../../hooks/useRowSelection';
 import './people.css';
@@ -38,6 +38,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
   const [unknownChosen, setUnknownChosen] = useState<number[]>([]);
   const alive = useRef(false);
   const stop = useRef(false);
+  const controller = useRef<AbortController | null>(null);
   const locked = useRef(false);
   const heading = useRef<HTMLDivElement>(null);
   const desktop = isTauriRuntime();
@@ -125,23 +126,25 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
         .catch(() => { if (!disposed) setError('인물 정보를 불러오지 못했습니다.'); })
         .finally(() => { if (!disposed) setLoading(false); });
     } else setLoading(false);
-    return () => { disposed = true; alive.current = false; stop.current = true; };
+    return () => { disposed = true; alive.current = false; stop.current = true; controller.current?.abort(); if (desktop) void controlPersonJobs(false).catch(() => undefined); };
   }, [desktop, items]);
 
   async function start() {
     if (locked.current || !desktop) return;
-    locked.current = true; stop.current = false;
+    locked.current = true; stop.current = false; controller.current = new AbortController();
     setRunning(true); setError(''); setStatus('얼굴 분석 준비 중');
     setProgress({ done: 0, total: remaining.length });
     let failures = 0;
     try {
-      await loadFaceEngine();
+      await enqueuePersonPhotos(remaining);
+      await controlPersonJobs(true);
+      await loadFaceEngine(controller.current.signal);
       let done = 0;
       for (const item of remaining) {
         if (stop.current) break;
         if (alive.current) setStatus('사진에서 사람을 찾는 중');
-        try { await scanPhoto(item); }
-        catch { failures += 1; }
+        try { await scanPhoto(item, controller.current.signal); await finishPersonJob(Number(item.id),false); }
+        catch { if (stop.current) break; failures += 1; await finishPersonJob(Number(item.id),true); }
         done += 1;
         if (alive.current) setProgress({ done, total: remaining.length });
         await new Promise((resolve) => setTimeout(resolve, 0));
@@ -150,8 +153,8 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
         setIndex(await loadFaceIndex());
         setStatus(stop.current ? '사람 찾기를 중단했습니다. 확인한 사진은 그대로 남아 있습니다.' : failures ? `얼굴 찾기를 마쳤습니다. ${remaining.length}장 중 ${done - failures}장을 확인했습니다. ${failures}장은 확인하지 못했습니다. 새 사진에서 사람 찾기를 눌러 다시 시도할 수 있습니다.` : `얼굴 찾기를 마쳤습니다. ${done}장을 확인했습니다.`);
       }
-    } catch { if (alive.current) setError('사진에서 사람을 찾는 중 문제가 발생했습니다. 이미 확인한 사진과 원본은 그대로 남아 있습니다. 다시 시도해 주세요.'); }
-    finally { locked.current = false; if (alive.current) setRunning(false); }
+    } catch { if (alive.current && !stop.current) setError('사진에서 사람을 찾는 중 문제가 발생했습니다. 이미 확인한 사진과 원본은 그대로 남아 있습니다. 다시 시도해 주세요.'); }
+    finally { controller.current = null; locked.current = false; if (alive.current) { setRunning(false); if(stop.current) setStatus('사람 찾기를 중단했습니다. 확인한 사진은 그대로 남아 있습니다.'); } }
   }
 
   async function edit(action: () => Promise<unknown>) {
@@ -203,7 +206,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
     </div>
     {!desktop && <p role="status">얼굴 찾기는 감자싹 데스크톱 앱에서 사용할 수 있습니다.</p>}
     {loading && <p role="status"><LoaderCircle size={18} className="spinIcon" />인물 불러오는 중</p>}
-    {(running || status) && <div className="faceProgress" role="status"><span>{status}</span>{running && <><span>{progress.done} / {progress.total}장</span><div className="peopleActions"><button onClick={() => { stop.current = true; setStatus('현재 사진을 마치고 중단합니다.'); }}><Pause size={18} />중단</button></div><progress value={progress.done} max={progress.total || 1} /></>}</div>}
+    {(running || status) && <div className="faceProgress" role="status"><span>{status}</span>{running && <><span>{progress.done} / {progress.total}장</span><div className="peopleActions"><button onClick={() => { stop.current = true; controller.current?.abort(); void controlPersonJobs(false).catch(() => undefined); setStatus('분석을 중단하는 중'); }}><Pause size={18} />중단</button></div><progress value={progress.done} max={progress.total || 1} /></>}</div>}
     {error && <p role="alert" className="faceError">{error}</p>}
     {lastExcluded.length > 0 && <div className="peopleActions"><span>{lastExcluded.length}개 얼굴 제외됨</span><button disabled={blocked} onClick={() => void edit(async () => { await setFacesExcluded(lastExcluded, false); setLastExcluded([]); })}>제외 되돌리기</button></div>}
     {!person && !showFaceThumbnails ? <>

@@ -1,3 +1,4 @@
+import { registerAIWorker, runAI } from '../../ai/runtime';
 import type { PetFeatures, PetView } from './types';
 import type { PetBackendPreference } from './runtime';
 let worker: Worker | undefined;
@@ -6,9 +7,10 @@ let requestId = 0;
 let queue: Promise<unknown> = Promise.resolve();
 export interface PetDiagnostics {elapsedMs:number;totalMs:number;backend:string;simd:boolean;tensors:number;tensorBytes:number;faceDetectionMs?:number;faceEmbeddingMs:number}
 export function cancelPetInference() { clearTimeout(idleTimer); worker?.terminate(); worker = undefined; }
+registerAIWorker('pets', cancelPetInference);
 // One worker, one image at a time; decoded source is already a native thumbnail.
 export function analyzePetImage(url: string, signal?: AbortSignal, viewHint: PetView = 'unknown', regions?: PetFeatures[], backend: PetBackendPreference = 'auto',onDiagnostics?:(value:PetDiagnostics)=>void): Promise<PetFeatures[]> {
-  const task = queue.then(async () => {
+  const task = queue.then(() => runAI('pets', async () => {
     clearTimeout(idleTimer);
     signal?.throwIfAborted();
     if (!globalThis.Worker || !globalThis.createImageBitmap || !globalThis.OffscreenCanvas) throw new Error('이 기기의 WebView에서 반려동물 분석을 지원하지 않습니다. WebView를 업데이트해 주세요.');
@@ -39,7 +41,7 @@ export function analyzePetImage(url: string, signal?: AbortSignal, viewHint: Pet
       signal?.addEventListener('abort', abort, { once: true }); active.addEventListener('message', message); active.addEventListener('error', error);
       active.postMessage({ id, width:canvas.width,height:canvas.height,pixels,viewHint,regions,backend,modelBase: new URL(`${import.meta.env.BASE_URL}models/pets/`, location.href).href }, [pixels]);
     });
-  });
+  }, signal));
   queue = task.catch(() => undefined).finally(() => { idleTimer = setTimeout(cancelPetInference,60_000); });
   return task;
 }

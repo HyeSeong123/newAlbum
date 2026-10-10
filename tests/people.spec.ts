@@ -260,7 +260,7 @@ test('review applies only checked face suggestions', async ({ page }) => {
   await expect(page.getByRole('checkbox')).toHaveCount(1);
 });
 
-test('analysis stops after current photo and retries failed photos', async ({ page, isMobile }) => {
+test('analysis keeps saved photos on stop and retries failed photos', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Real analysis queue runs once on desktop.');
   test.setTimeout(120_000);
   const thumbnail = `data:image/jpeg;base64,${(await readFile('node_modules/@vladmandic/face-api/demo/sample1.jpg')).toString('base64')}`;
@@ -276,6 +276,7 @@ test('analysis stops after current photo and retries failed photos', async ({ pa
         if (command === 'list_diary') return [];
         // Tauri serializes command results; each invocation returns a fresh snapshot.
         if (command === 'list_face_index') return structuredClone(state);
+        if (command === 'get_person_scan_source') return { source_key:'sha256:test',completed:state.scanned.includes(args.mediaId),legacy:false };
         if (command === 'save_face_scan') {
           saves.push(args.mediaId);
           document.documentElement.dataset.faceSaves = JSON.stringify(saves);

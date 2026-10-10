@@ -44,12 +44,16 @@ export function FaceMatchReview({ index, onClose, onSaved }: { index: FaceIndex;
         {loading && <p role="status"><LoaderCircle className="spinIcon" size={18} />얼굴 비교 중</p>}
         {error && <p role="alert">{error}</p>}
         {!loading && !error && <p role="status">{matches.length ? `확인할 얼굴 ${matches.length}개` : '새로 제안할 얼굴이 없습니다.'}</p>}
+        <p>후보를 확인한 뒤 선택해 주세요. 거리는 동일 인물일 확률이 아닙니다.</p>
         <div className="faceMatchGrid">{matches.slice(page * 24, (page + 1) * 24).map((match) => {
           const face = index.faces.find((entry) => entry.id === match.face_id);
           const person = index.people.find((entry) => entry.id === match.person_id);
           return <label key={match.face_id} className="faceMatchItem">
             <img src={face?.thumbnail} alt="비교할 얼굴" />
             <span><input type="checkbox" disabled={saving} checked={selected.includes(match.face_id)} onChange={(event) => setSelected((current) => event.target.checked ? [...current, match.face_id] : current.filter((id) => id !== match.face_id))} />{person?.name} 추정</span>
+            {match.candidates && match.candidates.length > 1 && <select aria-label="인물 후보" disabled={saving} value={match.person_id} onChange={(event) => setMatches((current) => current.map((entry) => entry.face_id === match.face_id ? {...entry, person_id:Number(event.target.value)} : entry))}>
+              {match.candidates.map((candidate) => <option key={candidate.person_id} value={candidate.person_id}>{index.people.find((entry)=>entry.id===candidate.person_id)?.name} · 거리 {candidate.distance.toFixed(3)}</option>)}
+            </select>}
           </label>;
         })}</div>
       </div>

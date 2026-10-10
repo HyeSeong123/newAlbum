@@ -2,63 +2,36 @@ use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 
-const MODEL: &str = "face-api-1.7.15-ssd-68-resnet-v1";
+pub(crate) const MODEL: &str = "face-api-1.7.15-ssd-68-resnet-v1";
 
 #[derive(Serialize)]
 pub struct FaceMatch {
     face_id: i64,
     person_id: i64,
+    state: String,
+    candidates: Vec<super::person_engine::Candidate>,
 }
 
 fn find_matches(conn: &Connection) -> Result<Vec<FaceMatch>, String> {
-    let rows = conn.prepare("SELECT f.id, f.media_id, f.person_id, p.name, f.confirmed, f.descriptor FROM detected_face f JOIN person p ON p.id = f.person_id JOIN face_scan s ON s.media_id = f.media_id WHERE s.model_version = ?1 AND NOT EXISTS (SELECT 1 FROM excluded_face e WHERE e.face_id = f.id) ORDER BY f.id")
-        .map_err(|e| e.to_string())?.query_map([MODEL], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?, row.get::<_, i64>(2)?, row.get::<_, String>(3)?, row.get::<_, bool>(4)?, row.get::<_, String>(5)?)))
-        .map_err(|e| e.to_string())?.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())?;
-    let rows: Vec<_> = rows
-        .into_iter()
-        .filter_map(|(id, media, person, name, confirmed, json)| {
-            let vector = serde_json::from_str::<Vec<f64>>(&json).ok()?;
-            (vector.len() == 128 && vector.iter().all(|v| v.is_finite()))
-                .then_some((id, media, person, name, confirmed, vector))
-        })
-        .collect();
-    let references: Vec<_> = rows.iter().filter(|r| !r.3.trim().is_empty()).collect();
-    let mut proposals = Vec::new();
-    for row in rows.iter().filter(|r| r.3.trim().is_empty() && !r.4) {
-        let mut scores = std::collections::HashMap::<i64, f64>::new();
-        for reference in &references {
-            let distance = row
-                .5
-                .iter()
-                .zip(&reference.5)
-                .map(|(a, b)| (a - b).powi(2))
-                .sum::<f64>()
-                .sqrt();
-            scores
-                .entry(reference.2)
-                .and_modify(|score| *score = score.min(distance))
-                .or_insert(distance);
-        }
-        let mut scores: Vec<_> = scores.into_iter().collect();
-        scores.sort_by(|a, b| a.1.total_cmp(&b.1).then(a.0.cmp(&b.0)));
-        if let Some(&(target, distance)) = scores.first() {
-            if distance < 0.45 && scores.get(1).map_or(true, |next| next.1 - distance > 0.06) {
-                proposals.push((row.0, row.1, target, distance));
-            }
-        }
+    let rows = conn.prepare("SELECT f.id,f.media_id,f.person_id,p.name,f.confirmed,f.descriptor,COALESCE(m.reference_kind,CASE WHEN f.id=(SELECT MIN(id) FROM detected_face WHERE person_id=f.person_id) THEN 'seed' ELSE 'auto' END) FROM detected_face f JOIN person p ON p.id=f.person_id JOIN face_scan s ON s.media_id=f.media_id LEFT JOIN person_face_metadata m ON m.face_id=f.id WHERE s.model_version=?1 AND COALESCE(m.model_version,s.model_version)=?1 AND NOT EXISTS(SELECT 1 FROM excluded_face e WHERE e.face_id=f.id) ORDER BY f.id")
+      .map_err(|e|e.to_string())?.query_map([MODEL],|r|Ok((r.get::<_,i64>(0)?,r.get::<_,i64>(1)?,r.get::<_,i64>(2)?,r.get::<_,String>(3)?,r.get::<_,bool>(4)?,r.get::<_,String>(5)?,r.get::<_,String>(6)?)))
+      .map_err(|e|e.to_string())?.collect::<Result<Vec<_>,_>>().map_err(|e|e.to_string())?;
+    let rows:Vec<_>=rows.into_iter().filter_map(|(id,media,person,name,confirmed,json,kind)|{let vector=serde_json::from_str::<Vec<f64>>(&json).ok()?;(vector.len()==128 && vector.iter().all(|x|x.is_finite())).then_some((id,media,person,name,confirmed,vector,kind))}).collect();
+    let confirmed:std::collections::HashSet<_>=rows.iter().filter(|r|r.4 && !r.3.trim().is_empty()).map(|r|r.2).collect();
+    let mut reference_photos=std::collections::HashSet::new();
+    let mut reference_counts=std::collections::HashMap::<i64,usize>::new();
+    let references:Vec<_>=rows.iter().rev().filter(|r|!r.3.trim().is_empty() && (r.4 || (!confirmed.contains(&r.2) && r.6=="seed"))).filter_map(|r|{
+      let count=reference_counts.entry(r.2).or_default();
+      if *count>=32 || !reference_photos.insert((r.2,r.1)) {return None;}
+      *count+=1;Some((r.2,r.5.clone()))
+    }).collect();
+    let occupied:std::collections::HashSet<_>=rows.iter().map(|r|(r.1,r.2)).collect();
+    let mut proposals=Vec::new();
+    for row in rows.iter().filter(|r|r.3.trim().is_empty() && !r.4) {
+      let candidates:Vec<_>=super::person_engine::rank(&row.5,&references).into_iter().filter(|c|c.distance<0.6 && !occupied.contains(&(row.1,c.person_id))).take(3).collect();
+      if let Some(best)=candidates.first() {proposals.push(FaceMatch{face_id:row.0,person_id:best.person_id,state:"needs-review".into(),candidates});}
     }
-    // Reserve each named person once per photo, including existing assignments.
-    let mut occupied: std::collections::HashSet<_> = rows.iter().map(|r| (r.1, r.2)).collect();
-    proposals.sort_by(|a, b| a.3.total_cmp(&b.3).then(a.0.cmp(&b.0)));
-    Ok(proposals
-        .into_iter()
-        .filter_map(|(id, media, target, _)| {
-            occupied.insert((media, target)).then_some(FaceMatch {
-                face_id: id,
-                person_id: target,
-            })
-        })
-        .collect())
+    Ok(proposals)
 }
 
 #[tauri::command]
@@ -72,6 +45,12 @@ pub async fn find_face_matches(app: AppHandle) -> Result<Vec<FaceMatch>, String>
 pub struct FaceInput {
     descriptor: Vec<f64>,
     thumbnail: String,
+    #[serde(default, rename="modelVersion")]
+    model_version: Option<String>,
+    #[serde(default)]
+    quality: Option<String>,
+    #[serde(default, rename="box")]
+    box_: Option<[f64;4]>,
 }
 
 #[derive(Serialize)]
@@ -123,13 +102,18 @@ pub fn list_face_index(app: AppHandle) -> Result<FaceIndex, String> {
     read_index(&super::open_database(&app)?)
 }
 
-fn save_scan(conn: &mut Connection, media_id: i64, faces: Vec<FaceInput>) -> Result<(), String> {
+#[cfg(test)]
+fn save_scan(conn: &mut Connection, media_id: i64, faces: Vec<FaceInput>) -> Result<(), String> { save_scan_with_source(conn,media_id,faces,None) }
+fn save_scan_with_source(conn: &mut Connection, media_id: i64, faces: Vec<FaceInput>,source_key:Option<String>) -> Result<(), String> {
     if faces.len() > 100
         || faces.iter().any(|face| {
             face.descriptor.len() != 128
                 || face.descriptor.iter().any(|x| !x.is_finite())
                 || !face.thumbnail.starts_with("data:image/jpeg;base64,")
                 || face.thumbnail.len() > 100_000
+                || face.model_version.as_deref().is_some_and(|m|m!=MODEL)
+                || face.quality.as_deref().is_some_and(|q|q!="usable" && q!="review")
+                || face.box_.is_some_and(|b| !b.iter().all(|v|v.is_finite() && *v>=0.0 && *v<=1.00001) || b[2]<=0.0 || b[3]<=0.0 || b[0]+b[2]>1.00001 || b[1]+b[3]>1.00001)
         })
     {
         return Err("얼굴 분석 결과가 올바르지 않습니다.".into());
@@ -155,16 +139,17 @@ fn save_scan(conn: &mut Connection, media_id: i64, faces: Vec<FaceInput>) -> Res
     if scanned {
         return Ok(());
     }
-    tx.execute("DELETE FROM detected_face WHERE media_id = ?1", [media_id])
-        .map_err(|e| e.to_string())?;
-    let candidates = tx.prepare("SELECT person_id, descriptor FROM detected_face WHERE NOT EXISTS (SELECT 1 FROM excluded_face e WHERE e.face_id = detected_face.id) ORDER BY id")
-        .map_err(|e| e.to_string())?.query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?)))
+    let existing: bool = tx.query_row("SELECT EXISTS(SELECT 1 FROM face_scan WHERE media_id=?1) OR EXISTS(SELECT 1 FROM detected_face WHERE media_id=?1)",[media_id],|r|r.get(0)).map_err(|e|e.to_string())?;
+    if existing { return Err("기존 얼굴 연결을 보존했습니다. 모델 재추출에는 별도 연결 마이그레이션이 필요합니다.".into()); }
+    let candidates = tx.prepare("SELECT f.person_id,f.descriptor FROM detected_face f JOIN face_scan s ON s.media_id=f.media_id LEFT JOIN person_face_metadata m ON m.face_id=f.id WHERE s.model_version=?1 AND COALESCE(m.model_version,s.model_version)=?1 AND (m.quality='usable' OR m.geometry IN ('{}','null') OR m.face_id IS NULL) AND (m.reference_kind='seed' OR (m.face_id IS NULL AND f.id=(SELECT MIN(id) FROM detected_face WHERE person_id=f.person_id))) AND NOT EXISTS (SELECT 1 FROM excluded_face e WHERE e.face_id=f.id) ORDER BY f.id")
+        .map_err(|e| e.to_string())?.query_map([MODEL], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?)))
         .map_err(|e| e.to_string())?.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())?;
     let candidates: Vec<_> = candidates
         .into_iter()
         .filter_map(|(id, json)| {
             serde_json::from_str::<Vec<f64>>(&json)
                 .ok()
+                .filter(|v|v.len()==128 && v.iter().all(|x|x.is_finite()))
                 .map(|vector| (id, vector))
         })
         .collect();
@@ -191,7 +176,7 @@ fn save_scan(conn: &mut Connection, media_id: i64, faces: Vec<FaceInput>) -> Res
         scores.sort_by(|a, b| a.1.total_cmp(&b.1));
         let person_id = match scores.first() {
             Some(&(id, distance))
-                if distance < 0.45
+                if face.quality.as_deref()!=Some("review") && distance < 0.45
                     && scores.get(1).map_or(true, |next| next.1 - distance > 0.06) =>
             {
                 id
@@ -205,20 +190,31 @@ fn save_scan(conn: &mut Connection, media_id: i64, faces: Vec<FaceInput>) -> Res
                 tx.last_insert_rowid()
             }
         };
+        let is_seed = !candidates.iter().any(|(id,_)|*id==person_id);
         used.push(person_id);
         tx.execute("INSERT INTO detected_face (media_id, person_id, descriptor, thumbnail) VALUES (?1, ?2, ?3, ?4)", params![media_id, person_id, serde_json::to_string(&face.descriptor).map_err(|e| e.to_string())?, face.thumbnail]).map_err(|e| e.to_string())?;
+        let id=tx.last_insert_rowid();
+        tx.execute("INSERT INTO person_face_metadata(face_id,model_version,reference_kind,quality,geometry) VALUES(?1,?2,?3,?4,?5)",params![id,MODEL,if is_seed {"seed"} else {"auto"},face.quality.unwrap_or_else(||"review".into()),serde_json::to_string(&face.box_).map_err(|e|e.to_string())?]).map_err(|e|e.to_string())?;
     }
     tx.execute(
         "INSERT OR REPLACE INTO face_scan (media_id, model_version) VALUES (?1, ?2)",
         params![media_id, MODEL],
     )
     .map_err(|e| e.to_string())?;
+    if let Some(key)=source_key {tx.execute("INSERT INTO person_scan_metadata(media_id,source_key,engine_version) VALUES(?1,?2,'gamjassak-people-v1')",params![media_id,key]).map_err(|e|e.to_string())?;}
     tx.commit().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn save_face_scan(app: AppHandle, media_id: i64, faces: Vec<FaceInput>) -> Result<(), String> {
-    save_scan(&mut super::open_database(&app)?, media_id, faces)
+pub async fn save_face_scan(app: AppHandle, media_id: i64, faces: Vec<FaceInput>, source_key: Option<String>) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move|| {
+      let mut conn=super::open_database(&app)?;
+      // Old callers remain compatible; the new engine always supplies a content key.
+      if let Some(ref key)=source_key {super::pet_recognition::verify_source(&conn,media_id,key)?;}
+      if source_key.is_some() {super::person_engine::source(&conn,media_id)?;}
+      save_scan_with_source(&mut conn,media_id,faces,source_key)?;
+      Ok(())
+    }).await.map_err(|e|e.to_string())?
 }
 
 #[tauri::command]
@@ -226,12 +222,13 @@ pub fn rename_face_person(app: AppHandle, id: i64, name: String) -> Result<(), S
     if name.trim().chars().count() > 80 {
         return Err("이름은 80자 이내로 입력해 주세요.".into());
     }
-    super::open_database(&app)?
-        .execute(
-            "UPDATE person SET name = ?1 WHERE id = ?2",
-            params![name.trim(), id],
-        )
-        .map_err(|e| e.to_string())?;
+    let mut conn=super::open_database(&app)?;
+    let tx=conn.transaction().map_err(|e|e.to_string())?;
+    tx.execute("UPDATE person SET name=?1 WHERE id=?2",params![name.trim(),id]).map_err(|e|e.to_string())?;
+    // Naming this group explicitly confirms its current membership; later
+    // automatic additions remain unconfirmed and cannot become references.
+    if !name.trim().is_empty() {tx.execute("UPDATE detected_face SET confirmed=1 WHERE person_id=?1",[id]).map_err(|e|e.to_string())?;}
+    tx.commit().map_err(|e|e.to_string())?;
     Ok(())
 }
 
@@ -249,6 +246,7 @@ fn set_cover_face(conn: &Connection, person_id: i64, face_id: i64) -> Result<(),
         params![face_id, person_id],
     )
     .map_err(|e| e.to_string())?;
+    conn.execute("UPDATE detected_face SET confirmed=1 WHERE id=?1",[face_id]).map_err(|e|e.to_string())?;
     Ok(())
 }
 
@@ -330,6 +328,7 @@ pub fn clear_face_index(app: AppHandle) -> Result<(), String> {
         .map_err(|e| e.to_string())?;
     tx.execute("DELETE FROM person WHERE profile_type = 'face'", [])
         .map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM person_analysis_job", []).map_err(|e|e.to_string())?;
     tx.execute("DELETE FROM face_scan", [])
         .map_err(|e| e.to_string())?;
     tx.commit().map_err(|e| e.to_string())
@@ -352,6 +351,7 @@ mod tests {
         FaceInput {
             descriptor: vec![value; 128],
             thumbnail: "data:image/jpeg;base64,AA==".into(),
+            model_version: None, quality: None, box_: None,
         }
     }
     #[test]
@@ -407,14 +407,16 @@ mod tests {
         assert_eq!(matches[0].face_id, 2);
         assert_eq!(matches[0].person_id, 1);
         assert_eq!(read_index(&conn).unwrap().faces[1].person_id, 2);
-        // A competing named identity with a similar score must prevent a guess.
+        // Ambiguity is offered for explicit review, never an automatic write.
         conn.execute(
             "INSERT INTO person (id, name, profile_type) VALUES (3, '다른 인물', 'face')",
             [],
         )
         .unwrap();
         conn.execute("INSERT INTO detected_face (media_id, person_id, descriptor, thumbnail) VALUES (3, 3, ?1, 'data:image/jpeg;base64,AA==')", [serde_json::to_string(&vec![0.115; 128]).unwrap()]).unwrap();
-        assert!(find_matches(&conn).unwrap().is_empty());
+        let ambiguous=find_matches(&conn).unwrap();
+        assert_eq!(ambiguous[0].candidates.len(),2);
+        assert_eq!(ambiguous[0].state,"needs-review");
     }
     #[test]
     fn grouping_resume_and_manual_moves() {
@@ -445,7 +447,7 @@ mod tests {
             3,
             vec![FaceInput {
                 descriptor: vec![],
-                thumbnail: String::new()
+                thumbnail: String::new(), model_version:None,quality:None,box_:None
             }]
         )
         .is_err());
@@ -497,4 +499,33 @@ mod tests {
             None
         );
     }
+    #[test]
+    fn model_change_preserves_existing_ids_and_vectors() {
+        let mut c=database();save_scan(&mut c,1,vec![face(0.1)]).unwrap();
+        let id=read_index(&c).unwrap().faces[0].id;
+        c.execute("UPDATE face_scan SET model_version='future-model' WHERE media_id=1",[]).unwrap();
+        assert!(save_scan(&mut c,1,vec![face(0.9)]).is_err());
+        assert_eq!(read_index(&c).unwrap().faces[0].id,id);
+        save_scan(&mut c,2,vec![face(0.1)]).unwrap();
+        assert_ne!(read_index(&c).unwrap().faces[0].person_id,read_index(&c).unwrap().faces[1].person_id);
+    }
+    #[test]
+    fn uncertain_faces_cannot_auto_link_or_seed_future_links() {
+        let mut c=database();let mut uncertain=face(0.1);uncertain.model_version=Some(MODEL.into());uncertain.quality=Some("review".into());uncertain.box_=Some([0.1,0.1,0.2,0.2]);
+        save_scan(&mut c,1,vec![uncertain]).unwrap();let mut next=face(0.1);next.quality=Some("usable".into());next.box_=Some([0.1,0.1,0.2,0.2]);save_scan(&mut c,2,vec![next]).unwrap();
+        assert_eq!(read_index(&c).unwrap().people.len(),2);
+    }
+    #[test]
+    fn automatically_added_face_does_not_expand_matching_boundary() {
+        let mut c=database();save_scan(&mut c,1,vec![face(0.1)]).unwrap();save_scan(&mut c,2,vec![face(0.13)]).unwrap();
+        assert_eq!(read_index(&c).unwrap().people.len(),1);
+        // Close to the automatic descendant, outside the original seed radius.
+        save_scan(&mut c,3,vec![face(0.16)]).unwrap();assert_eq!(read_index(&c).unwrap().people.len(),2);
+    }
+    #[test]
+    fn unknown_descriptor_model_is_rejected_before_storage() {
+        let mut c=database();let mut wrong=face(0.1);wrong.model_version=Some("same-dimension-other-model".into());
+        assert!(save_scan(&mut c,1,vec![wrong]).is_err());assert!(read_index(&c).unwrap().faces.is_empty());assert!(read_index(&c).unwrap().scanned.is_empty());
+    }
+
 }

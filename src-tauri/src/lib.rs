@@ -17,6 +17,7 @@ mod faces;
 mod pets;
 mod pet_recognition;
 mod pet_jobs;
+mod person_engine;
 mod pet_evaluation;
 mod thumbnails;
 mod media_dimensions;
@@ -1270,6 +1271,10 @@ pub fn run() {
             faces::find_face_matches,
             faces::set_faces_excluded,
             faces::save_face_scan,
+            person_engine::get_person_scan_source,
+            person_engine::enqueue_person_jobs,
+            person_engine::control_person_jobs,
+            person_engine::finish_person_job,
             faces::rename_face_person,
             faces::set_person_cover_face,
             faces::move_faces,

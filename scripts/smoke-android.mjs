@@ -1,3 +1,4 @@
+import { verifyInstalledPersonRuntime } from './person-runtime-benchmark.mjs';
 import { expect } from '@playwright/test';
 import { _android as android } from 'playwright';
 import assert from 'node:assert/strict';
@@ -642,6 +643,8 @@ try {
   await page.getByRole('dialog',{name:'사진 상세',exact:true}).getByTitle('닫기',{exact:true}).click();
   const catFaceSmoke=await verifyInstalledCatFace(page,(await readFile('tests/fixtures/pet-cat.jpg')).toString('base64'));
   await writeFile(join(output,'pet-cat-face-smoke.json'),JSON.stringify({...catFaceSmoke,offline:true,identityAccuracyMeasured:false},null,2));
+  const personSmoke=await verifyInstalledPersonRuntime(page,(await readFile('node_modules/@vladmandic/face-api/demo/sample1.jpg')).toString('base64'),petPhoto.id);
+  await writeFile(join(output,'person-runtime-smoke.json'),JSON.stringify({...personSmoke,environment:'Android API 36 x86_64 emulator'},null,2));
   await adb('shell','svc','wifi','enable');
   await adb('shell','svc','data','enable');
   console.log('Offline Android Worker dog inference, native feature persistence, explicit confirmation and rear-vector removal passed (not identity accuracy).');
