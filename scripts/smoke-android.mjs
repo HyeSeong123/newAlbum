@@ -208,6 +208,11 @@ async function checkVideoPlayback(page, label) {
 
 async function checkPhotoGps(page) {
   console.log('Checking real Android photo GPS redaction, permission and reimport recovery.');
+  // With visual-media permissions declared, Android can suppress the separate
+  // location sheet until photo access exists. Set a real denied permission
+  // state instead of requiring a dialog that the OS may never display.
+  await adb('shell', 'pm', 'revoke', appId, 'android.permission.ACCESS_MEDIA_LOCATION');
+  await adb('shell', 'pm', 'set-permission-flags', appId, 'android.permission.ACCESS_MEDIA_LOCATION', 'user-set', 'user-fixed');
   await adb('shell', 'mkdir', '-p', '/sdcard/Download/GamjassakGPS');
   await adb('push', resolve('tests/fixtures/exif-seoul.jpg'), '/sdcard/Download/GamjassakGPS/gps-smoke.jpg');
   await adb('push', resolve('tests/fixtures/no-gps.jpg'), '/sdcard/Download/GamjassakGPS/no-gps-smoke.jpg');
@@ -229,7 +234,6 @@ async function checkPhotoGps(page) {
   await tapNative(/text="GamjassakGPS"/);
   await tapNative(/text="USE THIS FOLDER"/i);
   await tapNative(/text="ALLOW"/i);
-  await tapNative(/resource-id="com.android.permissioncontroller:id\/permission_deny_button"/);
   await expect(page.locator('.mediaTile')).toHaveCount(2, { timeout:60_000 });
   await expect(page.locator('.selectionNotice')).toContainText('사진 위치정보 권한이 꺼져', { timeout:60_000 });
   let rows = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_media'));
@@ -259,6 +263,11 @@ async function checkPhotoGps(page) {
   // Android can zero GPS tags instead of removing their IFD. The parser then
   // reports unreadable GPS; neither state may expose coordinates or a region.
   assert.ok(['no-gps', 'failed'].includes(denied.location_status));
+  // Model recovery through Android settings, after a permanent denial. Keep
+  // the original SAF grant and do not grant broad gallery access for this test.
+  await adb('shell', 'pm', 'clear-permission-flags', appId, 'android.permission.ACCESS_MEDIA_LOCATION', 'user-set', 'user-fixed');
+  await adb('shell', 'pm', 'grant', appId, 'android.permission.ACCESS_MEDIA_LOCATION');
+  assert.match(await adb('shell', 'dumpsys', 'package', appId), /android\.permission\.ACCESS_MEDIA_LOCATION: granted=true/);
   await page.evaluate(async id => {
     await window.__TAURI_INTERNALS__.invoke('update_media_details', { id, rating:4, comment:'GPS 복구 확인', favorite:true });
     window.gpsRecovery = { completed:false };
@@ -270,7 +279,6 @@ async function checkPhotoGps(page) {
     }).then(rows => { window.gpsRecovery = { completed:true, rows }; })
       .catch(error => { window.gpsRecovery = { completed:true, error:String(error) }; });
   }, denied.id);
-  await tapNative(/resource-id="com.android.permissioncontroller:id\/permission_allow(?:_all)?_button"/);
   await expect.poll(() => page.evaluate(() => window.gpsRecovery.completed), { timeout:60_000 }).toBe(true);
   const recovery = await page.evaluate(() => window.gpsRecovery);
   const permission = (await adb('shell', 'dumpsys', 'package', appId)).split('\n').filter(line => /ACCESS_MEDIA_LOCATION|READ_MEDIA/.test(line));
