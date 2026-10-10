@@ -13,9 +13,9 @@ test('additional reference faces require explicit selection and retain the perso
  });
  await page.goto('/');await page.getByRole('button',{name:'사람과 반려동물',exact:true}).click();
  await page.getByRole('button',{name:'가족 2장',exact:true}).click();await page.getByRole('button',{name:'사람 관리',exact:true}).click();
- await page.getByRole('button',{name:'얼굴 선택·분리·합치기'}).click();
- await expect(page.getByRole('button',{name:'기준 얼굴로 확인',exact:true})).toBeDisabled();
- await page.getByRole('button',{name:'얼굴 선택',exact:true}).nth(1).click();await page.getByRole('button',{name:'기준 얼굴로 확인',exact:true}).click();
+ await page.getByRole('button',{name:'다른 사람으로 옮기기'}).click();
+ await expect(page.getByRole('button',{name:'이 사람 맞아요',exact:true})).toBeDisabled();
+ await page.getByRole('button',{name:'얼굴 선택',exact:true}).nth(1).click();await page.getByRole('button',{name:'이 사람 맞아요',exact:true}).click();
  await expect(page.locator('html')).toHaveAttribute('data-person-reference-ids','[12]');await expect(page.getByText('선택한 얼굴을 이 인물의 기준으로 확인했습니다.')).toBeVisible();
  await expect(page.locator('.personCoverBadge')).toHaveCount(1);await expect(page.locator('.personPhotoMeta').filter({hasText:'확인'})).toHaveCount(2);
 });
@@ -77,7 +77,7 @@ test('person photos form an even grid and create an album from unique originals'
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
 
   await page.getByRole('button', { name: '사람 관리', exact: true }).click();
-  await page.getByRole('button', { name: '얼굴 선택·분리·합치기' }).click();
+  await page.getByRole('button', { name: '다른 사람으로 옮기기' }).click();
   await page.getByRole('button', { name: '얼굴 선택', exact: true }).first().click();
   await page.getByRole('button', { name: '얼굴 선택', exact: true }).nth(2).click();
   await page.getByRole('button', { name: '앨범 만들기 (2)', exact: true }).click();
@@ -124,26 +124,24 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
   }, { thumbnail });
   await page.goto('/');
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
-  await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
-  await page.getByRole('button', { name: '미확인 얼굴 보기' }).click();
+  await page.getByRole('button', { name: /^이름 붙이기/ }).click();
   await expect(page.locator('.personTile')).toHaveCount(2);
-  const unknownSection = page.getByRole('region', { name: '미확인 얼굴', exact: true });
-  await unknownSection.getByRole('button', { name: '미확인 얼굴 선택', exact: true }).click();
-  await unknownSection.getByRole('button', { name: '미확인 얼굴 2장', exact: true }).click();
+  const unknownSection = page.getByRole('region', { name: '이름 없는 사람', exact: true });
+  await unknownSection.getByRole('button', { name: '이름 없는 사람 선택', exact: true }).click();
+  await unknownSection.getByRole('button', { name: '이름 없는 사람 2장', exact: true }).click();
   await expect(unknownSection.getByText('2개 얼굴 선택')).toBeVisible();
   await page.screenshot({ path: `test-results/unknown-exclude-${test.info().project.name}.png`, fullPage: true });
   page.once('dialog', (dialog) => dialog.accept());
   await unknownSection.getByRole('button', { name: '선택한 얼굴 제외', exact: true }).click();
-  await expect(unknownSection.getByText('미확인 얼굴이 없습니다.')).toBeVisible();
+  await expect(unknownSection.getByText('이름을 붙일 사람이 없습니다.')).toBeVisible();
   await expect(page.getByRole('button', { name: '가족 1장', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '제외 되돌리기', exact: true }).click();
-  await expect(unknownSection.getByRole('button', { name: '미확인 얼굴 2장', exact: true })).toBeVisible();
+  await expect(unknownSection.getByRole('button', { name: '이름 없는 사람 2장', exact: true })).toBeVisible();
   await unknownSection.getByRole('button', { name: '선택 끝내기', exact: true }).click();
-  await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
-  await page.getByRole('button', { name: '미확인 얼굴 다시 비교' }).click();
-  await expect(page.getByRole('dialog', { name: '이름 있는 인물과 다시 비교' })).toBeVisible();
+  await page.getByRole('button', { name: '같은 사람 찾기', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: '같은 사람 찾기' })).toBeVisible();
   await expect(page.getByRole('checkbox')).toHaveCount(2);
-  await expect(page.getByRole('button', { name: '선택한 얼굴 적용', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '이 이름으로 저장', exact: true })).toBeDisabled();
   await page.getByRole('checkbox').first().check();
   await page.screenshot({ path: `test-results/people-match-review-${test.info().project.name}.png` });
   await page.getByTitle('닫기', { exact: true }).click();
@@ -154,18 +152,18 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
   await page.getByRole('button', { name: '얼굴 선택하기', exact: true }).click();
   await expect(page.getByRole('button', { name: '얼굴 제외', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '사람별 보기', exact: true }).click();
-  await page.getByRole('region', { name: '미확인 얼굴', exact: true }).getByRole('button', { name: '미확인 얼굴 2장', exact: true }).click();
+  await page.getByRole('region', { name: '이름 없는 사람', exact: true }).getByRole('button', { name: '이름 없는 사람 2장', exact: true }).click();
   await page.getByLabel('인물 이름').fill('우리 가족');
   await page.getByRole('button', { name: '이름 저장', exact: true }).click();
   await expect(page.getByRole('heading', { name: '우리 가족' })).toBeVisible();
   await page.getByRole('button', { name: '사람 관리', exact: true }).click();
-  await page.getByRole('button', { name: '얼굴 선택·분리·합치기' }).click();
+  await page.getByRole('button', { name: '다른 사람으로 옮기기' }).click();
   await page.getByRole('button', { name: '얼굴 선택', exact: true }).first().click();
   await page.screenshot({ path: `test-results/people-edit-${test.info().project.name}.png`, fullPage: false });
-  await page.getByRole('button', { name: '새 인물로 분리' }).click();
+  await page.getByRole('button', { name: '다른 사람으로 나누기' }).click();
   await expect(page.locator('.personPhoto')).toHaveCount(1);
   await page.getByRole('button', { name: '얼굴 선택', exact: true }).click();
-  await page.getByLabel('옮길 인물').selectOption('2');
+  await page.getByLabel('옮길 사람').selectOption('2');
   await page.getByRole('button', { name: '옮기기', exact: true }).click();
   await expect(page.locator('.personTile')).toHaveCount(2);
   await page.reload();
@@ -187,21 +185,20 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
   await page.getByTitle('닫기').click();
   await expect(page.locator('.personPhoto')).toHaveCount(2);
   await page.getByRole('button', { name: '사람 목록' }).click();
-  await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
-  await page.getByRole('button', { name: '미확인 얼굴 보기' }).click();
-  await page.getByRole('button', { name: '미확인 얼굴 1장', exact: true }).click();
+  await page.getByRole('button', { name: /^이름 붙이기/ }).click();
+  await page.getByRole('button', { name: '이름 없는 사람 1장', exact: true }).click();
   await page.getByLabel('인물 이름').fill(' 가족 ');
   page.once('dialog', (dialog) => dialog.dismiss());
   await page.getByRole('button', { name: '같은 이름 합치기', exact: true }).click();
   await expect(page.locator('.personPhoto')).toHaveCount(1);
-  await expect(page.getByRole('heading', { name: '미확인 얼굴', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '이름 없는 사람', exact: true })).toBeVisible();
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: '같은 이름 합치기', exact: true }).click();
   await expect(page.getByRole('heading', { name: '가족', exact: true })).toBeVisible();
   await expect(page.locator('.personPhoto')).toHaveCount(3);
   await page.getByRole('button', { name: '사람 목록', exact: true }).click();
   await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
-  await page.getByRole('button', { name: '모든 얼굴 보기' }).click();
+  await page.getByRole('button', { name: '찾은 얼굴 모두 보기' }).click();
   const faceBox = await page.locator('.faceOverviewGrid .personOriginal').first().boundingBox();
   expect(faceBox!.width).toBeLessThanOrEqual(128);
   expect(Math.abs(faceBox!.height - faceBox!.width)).toBeLessThan(1);
@@ -266,16 +263,14 @@ test('review applies only checked face suggestions', async ({ page }) => {
   }, { thumbnail });
   await page.goto('/');
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
-  await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
-  await page.getByRole('button', { name: '미확인 얼굴 다시 비교' }).click();
+  await page.getByRole('button', { name: '같은 사람 찾기', exact: true }).click();
   await expect(page.getByRole('checkbox')).toHaveCount(2);
   await page.getByRole('checkbox').first().check();
-  await page.getByRole('button', { name: '선택한 얼굴 적용 (1)', exact: true }).click();
+  await page.getByRole('button', { name: '이 이름으로 저장 (1)', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.locator('html')).toHaveAttribute('data-reassigned', '[2]');
   await expect(page.getByRole('button', { name: '아버님 2장', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
-  await page.getByRole('button', { name: '미확인 얼굴 다시 비교' }).click();
+  await page.getByRole('button', { name: '같은 사람 찾기', exact: true }).click();
   await expect(page.getByRole('checkbox')).toHaveCount(1);
 });
 
@@ -325,4 +320,73 @@ test('analysis keeps saved photos on stop and retries failed photos', async ({ p
   await page.getByRole('button', { name: '새 사진에서 사람 찾기', exact: true }).click();
   await expect(page.locator('.peopleSummary')).toContainText('2 / 2장', { timeout: 60_000 });
   await expect(page.locator('html')).toHaveAttribute('data-face-saves', '[1,2,2]');
+});
+
+test('unnamed faces are visible and can be saved to an existing person without advanced menus', async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = {
+      people: [{ id: 7, name: '가족', cover_face_id: 11 }, { id: 8, name: '' }, { id: 9, name: '친구' }],
+      faces: [{ id: 11, media_id: 1, person_id: 7, confirmed: true }, { id: 12, media_id: 2, person_id: 8, confirmed: false }, { id: 13, media_id: 3, person_id: 9, confirmed: true }].map(face => ({ ...face, thumbnail: '/favicon.svg' })),
+      scanned: [1, 2, 3],
+    };
+    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: { convertFileSrc: () => '/favicon.svg', invoke: async (command: string, args: { ids: number[]; target: number }) => {
+      if (command === 'list_media') return [1, 2, 3].map(id => ({ id, file_path: `photo${id}.jpg`, file_type: 'image', taken_at: '2026-10-10', size_bytes: 1, rating: 0, comment: '', favorite: false, metadata_status: 'ready' }));
+      if (command === 'list_face_index') return { ...structuredClone(state), people: state.people.filter(person => state.faces.some(face => face.person_id === person.id)) };
+      if (command === 'move_faces') {
+        for (const face of state.faces) if (args.ids.includes(face.id)) { face.person_id = args.target; face.confirmed = true; }
+        document.documentElement.dataset.simpleNameSave = JSON.stringify(state);
+      }
+      if (command === 'clear_face_index' || command === 'retry_empty_face_scans') throw new Error('Naming must not reset scans');
+      return [];
+    } } });
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
+  await expect(page.getByRole('button', { name: '이름 없는 사람 1장', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '이름 붙이기 (1)', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
+  await expect(page.getByRole('button', { name: /인식 검증|기기 측정|새로고침|미확인/ })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: '이름 없는 사람 1장', exact: true }).click();
+  await expect(page.getByRole('button', { name: '이 사람으로 저장', exact: true })).toBeDisabled();
+  await page.getByLabel('이미 등록한 사람', { exact: true }).selectOption('7');
+  await page.getByRole('button', { name: '이 사람으로 저장', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '가족', exact: true })).toBeVisible();
+  await expect(page.locator('.personPhoto')).toHaveCount(2);
+  const state = JSON.parse((await page.locator('html').getAttribute('data-simple-name-save'))!);
+  expect(state.faces.map((face: { person_id: number }) => face.person_id)).toEqual([7, 7, 9]);
+  expect(state.faces[1].confirmed).toBe(true);
+  expect(state.people.find((person: { id: number }) => person.id === 7).cover_face_id).toBe(11);
+  expect(state.scanned).toEqual([1, 2, 3]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.screenshot({ path: `preview-results/people-simple-name-${test.info().project.name}.png`, fullPage: false });
+});
+
+test('the main action retries a completed photo with no faces and keeps existing names', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Real inference exercised once; naming UI covers both sizes.');
+  test.setTimeout(120_000);
+  await page.route('**/missed-person.jpg', route => route.fulfill({ path: 'tests/fixtures/pet-dog.jpg', contentType: 'image/jpeg' }));
+  await page.addInitScript(() => {
+    const state = { people: [{ id: 7, name: '가족' }], faces: [{ id: 11, media_id: 1, person_id: 7, thumbnail: '/favicon.svg', confirmed: true }], scanned: [1, 2] };
+    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: { convertFileSrc: () => '/missed-person.jpg', invoke: async (command: string, args: { mediaId: number; mediaIds: number[]; faces: unknown[] }) => {
+      if (command === 'list_media') return [1, 2].map(id => ({ id, file_path: `photo${id}.jpg`, file_type: 'image', taken_at: '2026-10-10', size_bytes: 1, rating: 0, comment: '', favorite: false, metadata_status: 'ready' }));
+      if (command === 'list_face_index') return structuredClone(state);
+      if (command === 'retry_empty_face_scans') { state.scanned = [1]; return [2]; }
+      if (command === 'audit_person_scans') return { items: [], nextCursor: 0, done: true };
+      if (command === 'get_person_scan_source') return { source_key: 'sha256:missed-fixture', completed: false, legacy: false };
+      if (command === 'enqueue_person_jobs') document.documentElement.dataset.retryPhotos = JSON.stringify(args.mediaIds);
+      if (command === 'save_face_scan') { if (args.mediaId !== 2 || args.faces.length) throw new Error('Only the missed dog fixture should be scanned'); state.scanned.push(2); }
+      if (command === 'clear_face_index' || command === 'move_faces' || command === 'rename_face_person') throw new Error('Retry must retain existing people');
+      return [];
+    } } });
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
+  const retry = page.getByRole('group', { name: '얼굴 분석', exact: true }).getByRole('button', { name: '못 찾은 사진 다시 찾기', exact: true });
+  await expect(retry).toBeEnabled();
+  await retry.click();
+  await expect(page.locator('html')).toHaveAttribute('data-retry-photos', '[2]');
+  await expect(page.locator('.faceProgress')).toContainText('사진 1장을 확인했습니다.', { timeout: 60_000 });
+  await expect(page.getByRole('button', { name: '가족 1장', exact: true })).toBeVisible();
+  await expect(page.locator('.peopleSummary')).toContainText('2 / 2장');
 });

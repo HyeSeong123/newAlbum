@@ -12,7 +12,7 @@ test('local person evaluation records explicit truth without moving faces',async
    return [];
   }}});
  });
- await page.goto('/');await page.getByRole('button',{name:'사람과 반려동물',exact:true}).click();await page.getByRole('button',{name:'얼굴 관리',exact:true}).click();await page.getByRole('button',{name:'인식 검증·기기 측정',exact:true}).click();
+ await page.goto('/?peopleDiagnostics=1');await page.getByRole('button',{name:'사람과 반려동물',exact:true}).click();
  const panel=page.getByRole('region',{name:'인물 정확도 평가'});await expect(panel.getByRole('button',{name:'인물 평가 자료에 추가'})).toBeDisabled();
  await panel.getByLabel('인물 자료 용도').selectOption('reference');await panel.getByLabel('실제 인물',{exact:true}).selectOption('7');await panel.getByLabel('인물 촬영 세션').fill('A');await panel.getByLabel('인물 사진 사용 권리·출처').fill('owner and subject consent');await expect(panel.getByRole('button',{name:'인물 평가 자료에 추가'})).toBeDisabled();
  await panel.getByRole('radio',{name:'평가 얼굴 1',exact:true}).check();await panel.getByRole('button',{name:'인물 평가 자료에 추가'}).click();await expect(panel.getByRole('status')).toContainText('등록 기준 1개');
@@ -35,7 +35,7 @@ test('person device measurement cancels, restarts and compares both local backen
    return [];
   }}});
  });
- await page.goto('/');await page.getByRole('button',{name:'사람과 반려동물',exact:true}).click();await page.getByRole('button',{name:'얼굴 관리',exact:true}).click();await page.getByRole('button',{name:'인식 검증·기기 측정',exact:true}).click();
+ await page.goto('/?peopleDiagnostics=1');await page.getByRole('button',{name:'사람과 반려동물',exact:true}).click();
  const panel=page.getByRole('region',{name:'이 기기 인물 처리 속도'});await panel.getByRole('button',{name:'이 기기 인물 속도 측정',exact:true}).click();await panel.getByRole('button',{name:'인물 측정 중단',exact:true}).click();await expect(panel).toContainText('인물 측정을 중단했습니다.');
  await panel.getByRole('button',{name:'이 기기 인물 속도 측정',exact:true}).click();await expect(panel).toContainText('CPU 추론 중앙값',{timeout:120_000});await expect(panel).toContainText('WASM');await expect(panel).toContainText('test-browser · x86_64');await expect(panel).toContainText('모델 텐서 최대');
  await expect(page.getByRole('button',{name:'얼굴 관리',exact:true})).toBeEnabled();
@@ -49,7 +49,7 @@ test('source audit keeps identity links and shows changed originals',async({page
   if(['move_faces','save_face_scan','clear_face_index'].includes(command))throw new Error('Audit cannot change identity');
   return [];
  }}}));
- await page.goto('/');await page.getByRole('button',{name:'사람과 반려동물',exact:true}).click();await page.getByRole('button',{name:'얼굴 관리',exact:true}).click();await page.getByRole('button',{name:'인식 검증·기기 측정',exact:true}).click();
+ await page.goto('/?peopleDiagnostics=1');await page.getByRole('button',{name:'사람과 반려동물',exact:true}).click();
  const panel=page.getByRole('region',{name:'얼굴 원본 변경 점검'});await panel.getByRole('button',{name:'얼굴 원본 점검',exact:true}).click();await expect(panel.getByRole('status')).toContainText('원본 점검 완료');await expect(panel).toContainText('원본 변경: 1장');await expect(page.getByRole('button',{name:'가족 1장',exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
 
@@ -79,11 +79,10 @@ test('repeated recognition alternates real isolated Workers, cancels and keeps i
    return [];
   } } });
  });
- await page.goto('/');
+ await page.goto('/?peopleDiagnostics=1');
  const external: string[] = [];
  await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
- await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
- await page.getByRole('button', { name: '인식 검증·기기 측정', exact: true }).click();
+
  const panel = page.getByRole('region', { name: '이 기기 인물 처리 속도' });
  await panel.getByLabel('인물 기기 측정 방식').selectOption('alternating');
  await panel.getByLabel('반려동물 전환 측정 사진').selectOption('2');
@@ -127,7 +126,7 @@ test('repetition controls reject changed source and do not present a completed r
    return [];
   } } });
  });
- await page.goto('/'); await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click(); await page.getByRole('button', { name: '얼굴 관리', exact: true }).click(); await page.getByRole('button', { name: '인식 검증·기기 측정', exact: true }).click();
+ await page.goto('/?peopleDiagnostics=1'); await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
  const panel = page.getByRole('region', { name: '이 기기 인물 처리 속도' });
  await panel.getByLabel('인물 기기 측정 방식').selectOption('alternating');
  await expect(panel.getByLabel('반려동물 전환 측정 사진')).toBeVisible();

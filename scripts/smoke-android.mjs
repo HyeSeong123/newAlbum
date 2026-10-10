@@ -683,7 +683,7 @@ try {
   const personSmoke=await verifyInstalledPersonRuntime(page,(await readFile('node_modules/@vladmandic/face-api/demo/sample1.jpg')).toString('base64'),petPhoto.id);
   await writeFile(join(output,'person-runtime-smoke.json'),JSON.stringify({...personSmoke,environment:'Android API 36 x86_64 emulator'},null,2));
   console.log('Offline Android person Worker and native persistence (NOT identity accuracy or phone performance): '+JSON.stringify(personSmoke));
-  const repetitionSmoke = await verifyInstalledRepetitionMeasurement(page, petPhoto.id);
+  const repetitionSmoke = await verifyInstalledRepetitionMeasurement(page, petPhoto.id, thumbnailPath);
   await writeFile(join(output,'person-repetition-smoke.json'),JSON.stringify({...repetitionSmoke,environment:'Android API 36 x86_64 emulator'},null,2));
   await adb('shell','svc','wifi','enable');
   await adb('shell','svc','data','enable');

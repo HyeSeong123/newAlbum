@@ -39,13 +39,13 @@ test('unknown directory shows only unnamed faces and retains person navigation',
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '아버님 1장', exact: true }).click();
   await page.getByRole('button', { name: '사람 관리', exact: true }).click();
-  await page.getByRole('button', { name: '얼굴 선택·분리·합치기' }).click();
+  await page.getByRole('button', { name: '다른 사람으로 옮기기' }).click();
   await page.getByRole('button', { name: '얼굴 선택', exact: true }).click();
   const directory = page.getByRole('complementary', { name: '이름을 지정한 사람' });
   const unknown = directory.locator('.unknownDirectory');
   await unknown.click();
   await expect(unknown).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByRole('heading', { name: '미확인 얼굴', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '이름 없는 사람', exact: true })).toBeVisible();
   await expect(page.locator('.personTile, .faceSelectionActions, .personEditor')).toHaveCount(0);
   await expect(page.locator('.personPhoto')).toHaveCount(24);
   await expect(page.locator('.personPhoto[data-selection-id="101"], .personPhoto[data-selection-id="102"], .personPhoto[data-selection-id="28"]')).toHaveCount(0);
@@ -64,7 +64,7 @@ test('unknown directory shows only unnamed faces and retains person navigation',
   await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
   await page.getByRole('button', { name: '얼굴 선택하기', exact: true }).click();
   await page.getByRole('button', { name: '얼굴 선택', exact: true }).first().click();
-  await page.getByLabel('옮길 인물').selectOption('1');
+  await page.getByLabel('옮길 사람').selectOption('1');
   await page.getByRole('button', { name: '옮기기', exact: true }).click();
   await expect(unknown).toContainText('26개 얼굴');
   await expect(page.locator('.personPhoto[data-selection-id="25"]')).toHaveCount(0);
@@ -83,7 +83,7 @@ test('unknown directory shows only unnamed faces and retains person navigation',
   await expect(page.locator('.faceSelectionActions')).toContainText('26개 선택');
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: '얼굴 제외', exact: true }).click();
-  await expect(page.getByText('미확인 얼굴이 없습니다.', { exact: true })).toBeVisible();
+  await expect(page.getByText('이름을 붙일 사람이 없습니다.', { exact: true })).toBeVisible();
   await expect(directory).toBeVisible();
   await expect(page.locator('.personTile, .personPhoto')).toHaveCount(0);
   await expect(unknown).toContainText('0개 얼굴');

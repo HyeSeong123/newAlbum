@@ -52,7 +52,7 @@ async function selectPerson(page: Page) {
   await page.locator('.navList').getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '가족 48장', exact: true }).click();
   await page.getByRole('button', { name: '사람 관리', exact: true }).click();
-  await page.getByRole('button', { name: '얼굴 선택·분리·합치기', exact: true }).click();
+  await page.getByRole('button', { name: '다른 사람으로 옮기기', exact: true }).click();
 }
 
 async function editPet(page: Page) {
