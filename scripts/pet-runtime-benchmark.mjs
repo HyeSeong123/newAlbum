@@ -73,11 +73,12 @@ export async function benchmarkInstalledPetRuntime(page, inputPath) {
       const summarize=values=>({runs:values.length,medianMs:values.map(v=>v.elapsedMs).sort((a,b)=>a-b)[1],minMs:Math.min(...values.map(v=>v.elapsedMs)),maxMs:Math.max(...values.map(v=>v.elapsedMs)),tensorCounts:values.map(v=>v.tensors),tensorBytes:values.map(v=>v.tensorBytes),backends:values.map(v=>v.backend)});
       const cosine=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0)/Math.sqrt(a.reduce((s,v)=>s+v*v,0)*b.reduce((s,v)=>s+v*v,0));
       const cpu=features.cpu[0],wasm=features.wasm[0];
-      return {sample:'existing-dog-fixture',photos:1,runsPerBackend:3,cold,cpu:summarize(rows.cpu),wasm:summarize(rows.wasm),cpuKinds:features.cpu.map(f=>f.kind),wasmKinds:features.wasm.map(f=>f.kind),bodyCosine:cpu&&wasm?cosine(cpu.appearance,wasm.appearance):null,mirrorCosine:cpu&&wasm?cosine(cpu.mirroredAppearance,wasm.mirroredAppearance):null,maxBoxDifference:cpu&&wasm?Math.max(...cpu.box.map((v,i)=>Math.abs(v-wasm.box[i]))):null,diagnostics:rows,identityAccuracyMeasured:false,wholeAppPeakMemoryMeasured:false};
+      return {sample:'existing-dog-fixture',photos:1,runsPerBackend:3,cold,cpu:summarize(rows.cpu),wasm:summarize(rows.wasm),poseModels:features.wasm.map(f=>({version:f.automaticPose?.modelVersion,keypoints:f.automaticPose?.keypoints?.length,view:f.automaticPose?.view})),cpuKinds:features.cpu.map(f=>f.kind),wasmKinds:features.wasm.map(f=>f.kind),bodyCosine:cpu&&wasm?cosine(cpu.appearance,wasm.appearance):null,mirrorCosine:cpu&&wasm?cosine(cpu.mirroredAppearance,wasm.mirroredAppearance):null,maxBoxDifference:cpu&&wasm?Math.max(...cpu.box.map((v,i)=>Math.abs(v-wasm.box[i]))):null,diagnostics:rows,identityAccuracyMeasured:false,wholeAppPeakMemoryMeasured:false};
     }finally{worker.terminate();}
   },inputPath);
   assert.deepEqual(result.cpuKinds,result.wasmKinds);
   assert.ok(result.cpuKinds.includes('dog'));
+  assert.ok(result.poseModels.length>0 && result.poseModels.every(p=>p.version==='quadpose-ap10k-52f0329b-v1' && p.keypoints===17));
   assert.deepEqual(result.wasm.backends,['wasm','wasm','wasm']);
   assert.ok(result.bodyCosine>.9999 && result.mirrorCosine>.9999);
   assert.ok(result.maxBoxDifference<.001);

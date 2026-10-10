@@ -71,6 +71,7 @@ function DetectionCard({ detection, item, pets, references, preferredPet, onSave
       <strong>{state}</strong>
       <small>{item.fileName}</small>
       {detection.viewSource==='cat-frontal-cascade' && <p className="petMatchNotice">고양이 정면 얼굴을 자동으로 찾았습니다. 얼굴 테두리와 촬영 방향을 확인하고, 다르면 수정해 주세요.</p>}
+      {detection.viewSource==='quadpose-keypoints' && <p className="petMatchNotice">촬영 방향을 자동으로 추정했습니다. 사진과 다르면 방향을 수정해 주세요.</p>}
       <label>종류<select aria-label="반려동물 종류" disabled={busy} value={kind} onChange={event=>setKind(event.target.value as PetKind)}><option value="dog">강아지</option><option value="cat">고양이</option></select></label>
       <label>촬영 방향<select aria-label="촬영 방향" disabled={busy} value={view} onChange={event => {const next=event.target.value as PetView;setView(next);if(next==='rear'||next==='unknown'){setFaceBox(undefined);setSelectFace(false);}}}>{Object.entries(VIEW_LABELS).map(([key,label]) => <option key={key} value={key}>{label}</option>)}</select></label>
       {view!=='rear' && view!=='unknown' && <div className="petFaceControls"><button disabled={busy} aria-pressed={selectFace} onClick={()=>setSelectFace(!selectFace)}>{selectFace?'얼굴 지정 마침':'얼굴 영역 지정'}</button>{faceBox && <><button disabled={busy} onClick={()=>void compareFace()}>선택한 얼굴로 후보 비교</button><button disabled={busy} onClick={()=>{setFaceBox(undefined);setSelectFace(false);}}>얼굴 영역 해제</button></>}<small>{selectFace?'동물 테두리 안에서 얼굴을 둘러싸도록 드래그해 주세요.':'얼굴을 지정한 사진끼리는 얼굴 특징을 우선 비교합니다.'}</small></div>}

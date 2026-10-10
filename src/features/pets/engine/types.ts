@@ -6,8 +6,9 @@ export interface PetFeatures {
   kind: PetKind;
   detectedKind?: PetKind; // original model species; retained when a user corrects kind
   view: PetView;
-  viewSource: 'unknown' | 'user' | 'cat-frontal-cascade';
+  viewSource: 'unknown' | 'user' | 'cat-frontal-cascade' | 'quadpose-keypoints';
   box: [number, number, number, number]; // normalized x/y/width/height
+  automaticPose?: import('./poseGeometry').PetPose;
   detectionScore: number; // dog/cat detection, never identity probability
   appearance: number[]; // whole animal embedding, NOT facial landmarks
   mirroredAppearance: number[];
@@ -31,5 +32,5 @@ export interface RecognitionResult { state: RecognitionState; candidates: PetCan
 export interface ScanRecord { media_id: number; engine_version: string; source_key: string; detections: PetDetection[] }
 export interface PetDetector { detect(image: ImageBitmap): Promise<PetFeatures[]> }
 export interface ViewAnalyzer { analyze(): { view: PetView; viewSource: 'unknown' | 'user' } }
-// No licensed/validated pose model is bundled yet. Abstain instead of guessing.
+// Fallback when the bundled pose model has insufficient evidence or fails.
 export const conservativeViewAnalyzer: ViewAnalyzer = { analyze: () => ({ view: 'unknown', viewSource: 'unknown' }) };

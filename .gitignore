@@ -2,6 +2,10 @@
 node_modules/
 public/models/faces/
 public/models/pets/
+public/models/people512/
+public/models/pet-pose/
+public/models/onnx-runtime/
+public/models/recognition-provenance.json
 
 # frontend build output
 dist/

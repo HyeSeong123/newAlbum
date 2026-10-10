@@ -21,6 +21,8 @@ export async function verifyInstalledPersonRuntime(page,base64,mediaId){
   try {
    const cpu=await run('cpu'),wasm=await run('wasm'),warm=await run('auto');
    const drift=wasm.faces.map((f,i)=>Math.sqrt(f.descriptor.reduce((sum,x,j)=>sum+(x-cpu.faces[i].descriptor[j])**2,0)));
+   const extra=wasm.faces.map(f=>f.additionalFeatures?.[0]?.descriptor);
+   const learned512Valid=extra.every(v=>v?.length===512&&v.every(Number.isFinite)&&Math.abs(Math.hypot(...v)-1)<1e-5);
    const native=window.__TAURI_INTERNALS__;
    await native.invoke('enqueue_person_jobs',{mediaIds:[mediaId]});await native.invoke('control_person_jobs',{resume:false});await native.invoke('control_person_jobs',{resume:true});
    const source=await native.invoke('get_person_scan_source',{mediaId});
@@ -33,10 +35,10 @@ export async function verifyInstalledPersonRuntime(page,base64,mediaId){
    // Never treat this dog image as accuracy ground truth for the person model.
    await native.invoke('save_person_evaluation',{sample:{mediaId,faceId:null,personId:null,missedSlot:1,role:'query',captureGroup:'synthetic-smoke',category:'unregistered',rights:'package test fixture; functional storage only'}});
    const evaluation=await native.invoke('person_evaluation_summary');await native.invoke('clear_person_evaluation');
-   return {faces:cpu.faces.length,valid:cpu.faces.every(f=>f.descriptor.length===128&&f.descriptor.every(Number.isFinite)),maxBackendDistance:Math.max(...drift),cpu:cpu.diagnostics,wasm:wasm.diagnostics,auto:warm.diagnostics,nativeSourceVerified:source.source_key.startsWith('sha256:'),completedCache:duplicate.completed,sourceAuditVerified:audit.items.some(item=>item.mediaId===mediaId&&item.state==='verified'),evaluationStored:evaluation.queries===1,environment,offline:true,identityAccuracyMeasured:false,devicePerformanceMeasured:false};
+   return {learned512Valid,faces:cpu.faces.length,valid:cpu.faces.every(f=>f.descriptor.length===128&&f.descriptor.every(Number.isFinite)),maxBackendDistance:Math.max(...drift),cpu:cpu.diagnostics,wasm:wasm.diagnostics,auto:warm.diagnostics,nativeSourceVerified:source.source_key.startsWith('sha256:'),completedCache:duplicate.completed,sourceAuditVerified:audit.items.some(item=>item.mediaId===mediaId&&item.state==='verified'),evaluationStored:evaluation.queries===1,environment,offline:true,identityAccuracyMeasured:false,devicePerformanceMeasured:false};
   }finally{worker.terminate();}
  },{encoded:base64,mediaId});
- assert.equal(result.faces,3);assert.equal(result.valid,true);assert.ok(result.maxBackendDistance<.001);assert.equal(result.wasm.backend,'wasm');assert.equal(result.auto.backend,'wasm');assert.equal(result.nativeSourceVerified,true);assert.equal(result.completedCache,true);
+ assert.equal(result.learned512Valid,true);assert.equal(result.faces,3);assert.equal(result.valid,true);assert.ok(result.maxBackendDistance<.001);assert.equal(result.wasm.backend,'wasm');assert.equal(result.auto.backend,'wasm');assert.equal(result.nativeSourceVerified,true);assert.equal(result.completedCache,true);
  assert.equal(result.sourceAuditVerified,true);assert.equal(result.evaluationStored,true);assert.equal(result.environment.os,'android');assert.equal(result.environment.architecture,'x86_64');
  return result;
 }

@@ -3,6 +3,11 @@ use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 
 const ENGINE: &str = "gamjassak-pets-v2";
+#[derive(Serialize,Deserialize,Clone)]
+struct PosePoint {x:f64,y:f64,score:f64}
+#[derive(Serialize,Deserialize,Clone)]
+#[serde(rename_all="camelCase")]
+struct AutomaticPose {model_version:String,view:String,keypoints:Vec<PosePoint>}
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Foreground {version:String,color:Vec<f64>,shape:Vec<f64>,fraction:f64}
 #[derive(Serialize, Deserialize, Clone)]
@@ -15,6 +20,7 @@ pub struct Features {
     #[serde(default)] face_appearance: Vec<f64>,
     #[serde(default)] mirrored_face_appearance: Vec<f64>,
     #[serde(default,skip_serializing_if="Option::is_none")] foreground: Option<Foreground>,
+    #[serde(default,skip_serializing_if="Option::is_none")] automatic_pose: Option<AutomaticPose>,
 }
 // The wire spelling of the bounding box is `box`.
 
@@ -28,7 +34,7 @@ pub struct Scan { media_id: i64, engine_version: String, source_key: String, det
 fn validate(f: &Features) -> Result<(), String> {
     if !["dog", "cat"].contains(&f.kind.as_str()) || !["front", "left", "right", "rear", "unknown"].contains(&f.view.as_str())
         || f.detected_kind.as_ref().is_some_and(|kind|!["dog","cat"].contains(&kind.as_str()))
-        || !["unknown", "user", "cat-frontal-cascade"].contains(&f.view_source.as_str())
+        || !["unknown", "user", "cat-frontal-cascade", "quadpose-keypoints"].contains(&f.view_source.as_str())
         || !f.box_.iter().all(|v| v.is_finite() && (0.0..=1.0).contains(v))
         || f.box_[2] <= 0.0 || f.box_[3] <= 0.0
         || f.box_[0]+f.box_[2] > 1.000001 || f.box_[1]+f.box_[3] > 1.000001
@@ -39,6 +45,10 @@ fn validate(f: &Features) -> Result<(), String> {
         return Err("올바르지 않은 반려동물 특징입니다.".into());
     }
     if f.view_source=="cat-frontal-cascade" && (f.kind!="cat" || f.view!="front" || f.face_box.is_none()) {return Err("자동 고양이 얼굴 분석을 확인해 주세요.".into());}
+    if let Some(pose)=&f.automatic_pose {
+        if pose.model_version!="quadpose-ap10k-52f0329b-v1" || !["front","left","right","unknown"].contains(&pose.view.as_str()) || pose.keypoints.len()!=17 || pose.keypoints.iter().any(|p|![p.x,p.y,p.score].iter().all(|x|x.is_finite()) || !(-1.0..=2.0).contains(&p.x) || !(-1.0..=2.0).contains(&p.y) || !(-2.0..=2.0).contains(&p.score)) {return Err("반려동물 자세 모델 결과가 올바르지 않습니다.".into());}
+    }
+    if f.view_source=="quadpose-keypoints" && f.automatic_pose.as_ref().is_none_or(|p|p.view!=f.view || p.view=="unknown") {return Err("자동 방향의 자세 근거가 없습니다.".into());}
     if let Some(g)=&f.foreground {
         if g.version!="border-connected-v1" || g.color.len()!=120 || g.shape.len()!=10 || !g.fraction.is_finite() || !(0.05..=0.85).contains(&g.fraction) || ![&g.color,&g.shape].iter().all(|v|v.iter().all(|x|x.is_finite() && x.abs()<=1.000001)) {return Err("배경을 제외한 체형·색상 특징을 확인해 주세요.".into());}
     }
@@ -47,6 +57,11 @@ fn validate(f: &Features) -> Result<(), String> {
         if f.view=="unknown" || !b.iter().all(|x|x.is_finite()) || b[2]<=0.0 || b[3]<=0.0 || b[0]<f.box_[0]-0.000001 || b[1]<f.box_[1]-0.000001 || b[0]+b[2]>f.box_[0]+f.box_[2]+0.000001 || b[1]+b[3]>f.box_[1]+f.box_[3]+0.000001 || f.face_appearance.len()!=1024 || f.mirrored_face_appearance.len()!=1024 {return Err("얼굴 영역과 특징을 확인해 주세요.".into());}
     } else if !f.face_appearance.is_empty() || !f.mirrored_face_appearance.is_empty() {return Err("얼굴 영역 없는 특징은 저장할 수 없습니다.".into());}
     Ok(())
+}
+fn record_direction(conn:&Connection,id:i64,f:&Features)->Result<(),String>{
+    let automatic=if f.view_source=="user" {f.automatic_pose.as_ref().map(|p|p.view.as_str())} else {Some(f.view.as_str())};
+    let source=if f.view_source=="user" && f.automatic_pose.is_some() {"quadpose-keypoints"} else {f.view_source.as_str()};
+    conn.execute("INSERT OR IGNORE INTO pet_direction_observation(detection_id,automatic_view,automatic_source,manual_view) VALUES(?1,?2,?3,?4)",params![id,automatic,source,if f.view_source=="user" {Some(f.view.as_str())} else {None}]).map_err(|e|e.to_string())?;Ok(())
 }
 fn read_detections(conn: &Connection, media: Option<i64>, after: i64, limit: i64, references: bool) -> Result<Vec<Detection>, String> {
     let sql=if references {
@@ -93,7 +108,7 @@ fn write_scan(conn: &mut Connection, media_id: i64, source_key: &str, features: 
     for (index,feature) in features.into_iter().enumerate() {
         let json=serde_json::to_string(&feature).map_err(|e|e.to_string())?;
         tx.execute("INSERT INTO pet_detection(media_id,object_index,features) VALUES(?1,?2,?3)",params![media_id,index as i64,json]).map_err(|e|e.to_string())?;
-        tx.execute("INSERT INTO pet_direction_observation(detection_id,automatic_view,automatic_source) VALUES(?1,?2,?3)",params![tx.last_insert_rowid(),if feature.view_source=="user" {None} else {Some(&feature.view)},feature.view_source]).map_err(|e|e.to_string())?;
+        record_direction(&tx,tx.last_insert_rowid(),&feature)?;
     }
     tx.commit().map_err(|e|e.to_string())?;
     read_scan(conn,media_id)?.ok_or_else(||"분석 결과 저장 실패".into())
@@ -110,7 +125,7 @@ fn confirm_with_features(conn: &mut Connection, detection_id:i64, pet_id:Option<
     let tx=conn.transaction().map_err(|e|e.to_string())?;
     let (media,old,json):(i64,Option<i64>,String)=tx.query_row("SELECT media_id,pet_id,features FROM pet_detection WHERE id=?1",[detection_id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?))).map_err(|e|e.to_string())?;
     let mut features:Features=serde_json::from_str(&json).map_err(|e|e.to_string())?;
-    tx.execute("INSERT OR IGNORE INTO pet_direction_observation(detection_id,automatic_view,automatic_source) VALUES(?1,?2,?3)",params![detection_id,if features.view_source=="user" {None} else {Some(&features.view)},features.view_source]).map_err(|e|e.to_string())?;
+    record_direction(&tx,detection_id,&features)?;
     if let Some(replacement)=replacement {
         validate(&replacement)?;
         if replacement.box_!=features.box_ {return Err("분석 영역이 변경되었습니다. 결과를 다시 불러와 주세요.".into());}
@@ -180,7 +195,8 @@ fn replace_scan(conn:&mut Connection,media_id:i64,expected_key:&str,source_key:&
         // Keep exact user-confirmed objects/IDs, including excluded false positives.
         // Detector boxes overlapping these objects cannot silently create duplicates.
         if retained.iter().any(|d|overlap(d.features.box_,f.box_)>=0.3) || count>=20 {continue;}
-        tx.execute("INSERT INTO pet_detection(media_id,object_index,features) VALUES(?1,?2,?3)",params![media_id,next,serde_json::to_string(&f).map_err(|e|e.to_string())?]).map_err(|e|e.to_string())?;next+=1;count+=1;
+        tx.execute("INSERT INTO pet_detection(media_id,object_index,features) VALUES(?1,?2,?3)",params![media_id,next,serde_json::to_string(&f).map_err(|e|e.to_string())?]).map_err(|e|e.to_string())?;
+        record_direction(&tx,tx.last_insert_rowid(),&f)?;next+=1;count+=1;
     }
     tx.execute("UPDATE pet_scan SET source_key=?1,engine_version=?2,completed_at=CURRENT_TIMESTAMP WHERE media_id=?3",params![source_key,ENGINE,media_id]).map_err(|e|e.to_string())?;
     tx.commit().map_err(|e|e.to_string())?;
@@ -194,7 +210,7 @@ pub async fn replace_pet_scan(app:AppHandle,media_id:i64,expected_source_key:Str
 mod tests {
     use super::*;
     fn database()->Connection {let mut c=Connection::open_in_memory().unwrap();crate::database::initialize(&mut c).unwrap();c.execute_batch("INSERT INTO media(id,file_path,file_type,size_bytes) VALUES(1,'a','image',1);INSERT INTO pet(id,name) VALUES(1,'보리'),(2,'초코');").unwrap();c}
-    fn features()->Features {Features{kind:"dog".into(),detected_kind:Some("dog".into()),view:"unknown".into(),view_source:"unknown".into(),box_:[0.0,0.0,0.5,0.5],detection_score:0.9,appearance:vec![0.0;1024],mirrored_appearance:vec![0.0;1024],color:vec![0.0;120],shape:vec![0.0;10],face_box:None,face_appearance:vec![],mirrored_face_appearance:vec![],foreground:None}}
+    fn features()->Features {Features{kind:"dog".into(),detected_kind:Some("dog".into()),view:"unknown".into(),view_source:"unknown".into(),box_:[0.0,0.0,0.5,0.5],detection_score:0.9,appearance:vec![0.0;1024],mirrored_appearance:vec![0.0;1024],color:vec![0.0;120],shape:vec![0.0;10],face_box:None,face_appearance:vec![],mirrored_face_appearance:vec![],foreground:None,automatic_pose:None}}
     #[test] fn reanalysis_preserves_confirmed_ids_and_explicit_source_change_preserves_photo_links(){
         let mut c=database();let key=format!("sha256:{}","a".repeat(64));let other=format!("sha256:{}","b".repeat(64));
         let scan=write_scan(&mut c,1,&key,vec![features(),features()]).unwrap();let id=scan.detections[0].id;
@@ -274,6 +290,14 @@ mod tests {
     #[test] fn rejects_bad_vectors_and_preserves_negative_scan() {
         let mut c=database();let mut bad=features();bad.shape[0]=f64::NAN;assert!(write_scan(&mut c,1,"a",vec![bad]).is_err());
         assert!(read_scan(&c,1).unwrap().is_none());assert!(write_scan(&mut c,1,"a",vec![]).unwrap().detections.is_empty());
+    }
+    #[test] fn learned_pet_pose_retains_automatic_observation_after_manual_correction(){
+      let mut c=database();let mut f=features();f.view="left".into();f.view_source="quadpose-keypoints".into();
+      f.automatic_pose=Some(AutomaticPose{model_version:"quadpose-ap10k-52f0329b-v1".into(),view:"left".into(),keypoints:(0..17).map(|_|PosePoint{x:0.2,y:0.3,score:0.8}).collect()});
+      let scan=write_scan(&mut c,1,"test",vec![f.clone()]).unwrap();let id=scan.detections[0].id;assert_eq!(scan.detections[0].pet_id,None);assert_eq!(scan.detections[0].features.automatic_pose.as_ref().unwrap().keypoints.len(),17);
+      confirm(&mut c,id,Some(1),"right",false).unwrap();let saved=read_scan(&c,1).unwrap().unwrap().detections.remove(0);assert_eq!(saved.features.view,"right");assert_eq!(saved.features.automatic_pose.unwrap().view,"left");
+      let (auto,manual):(String,String)=c.query_row("SELECT automatic_view,manual_view FROM pet_direction_observation WHERE detection_id=?1",[id],|r|Ok((r.get(0)?,r.get(1)?))).unwrap();assert_eq!(auto,"left");assert_eq!(manual,"right");
+      f.automatic_pose.as_mut().unwrap().keypoints.pop();assert!(validate(&f).is_err());
     }
     #[test] fn manual_direction_never_becomes_an_automatic_success(){
       let mut c=database();let mut f=features();f.view="unknown".into();f.view_source="unknown".into();

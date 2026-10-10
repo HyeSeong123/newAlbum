@@ -27,9 +27,19 @@ fn find_matches(conn: &Connection) -> Result<Vec<FaceMatch>, String> {
     }).collect();
     let confirmed_review:Vec<_>=rows.iter().filter(|r|r.4 && r.7=="review" && references.iter().any(|(person,vector)|*person==r.2 && *vector==r.5)).map(|r|(r.2,r.5.clone())).collect();
     let occupied:std::collections::HashSet<_>=rows.iter().map(|r|(r.1,r.2)).collect();
+    let extra:std::collections::HashMap<i64,Vec<f64>>=conn.prepare("SELECT x.face_id,x.descriptor FROM person_model_feature x JOIN detected_face f ON f.id=x.face_id JOIN person_scan_metadata m ON m.media_id=f.media_id WHERE x.model_version=?1 AND x.dimensions=512 AND x.source_key=m.source_key AND NOT EXISTS(SELECT 1 FROM person_scan_issue i WHERE i.media_id=f.media_id)")
+      .map_err(|e|e.to_string())?.query_map([super::recognition::PERSON_512_MODEL],|r|Ok((r.get::<_,i64>(0)?,r.get::<_,String>(1)?))).map_err(|e|e.to_string())?.filter_map(|r|r.ok().and_then(|(id,json)|serde_json::from_str::<Vec<f64>>(&json).ok().map(|v|(id,v)))).collect();
+    let mut extra_counts=std::collections::HashMap::<i64,usize>::new();
+    let mut extra_photos=std::collections::HashSet::new();
+    let extra_refs:Vec<_>=rows.iter().rev().filter(|r|!r.3.trim().is_empty() && (r.4 || (!confirmed.contains(&r.2) && r.6=="seed"))).filter_map(|r|{
+      let vector=extra.get(&r.0)?;let count=extra_counts.entry(r.2).or_default();
+      if *count>=32 || !extra_photos.insert((r.2,r.1)){return None;}*count+=1;Some((r.2,vector.clone()))
+    }).collect();
     let mut proposals=Vec::new();
     for row in rows.iter().filter(|r|r.3.trim().is_empty() && !r.4) {
-      let candidates:Vec<_>=super::person_engine::rank_for_review(&row.5,&references,&confirmed_review).into_iter().filter(|c|c.distance<0.6 && !occupied.contains(&(row.1,c.person_id))).take(3).collect();
+      let legacy=super::person_engine::rank_for_review(&row.5,&references,&confirmed_review).into_iter().filter(|c|c.distance<0.6 && !occupied.contains(&(row.1,c.person_id)));
+      let mut candidates:Vec<_>=extra.get(&row.0).map(|query|super::person_engine::rank512(query,&extra_refs)).unwrap_or_default().into_iter().filter(|c|c.distance<0.7 && !occupied.contains(&(row.1,c.person_id))).take(3).collect();
+      for candidate in legacy {if candidates.len()>=3{break;}if !candidates.iter().any(|c|c.person_id==candidate.person_id){candidates.push(candidate);}}
       if let Some(best)=candidates.first() {proposals.push(FaceMatch{face_id:row.0,person_id:best.person_id,state:"needs-review".into(),candidates});}
     }
     Ok(proposals)
@@ -601,6 +611,21 @@ mod tests {
       set_cover_face(&c,person,cover).unwrap();rename_person(&mut c,person,"가족").unwrap();
       let index=read_index(&c).unwrap();assert!(index.faces[0].confirmed);assert!(!index.faces[1].confirmed);
       reassign(&mut c,vec![rows[1].id,cover],Some(person)).unwrap();let index=read_index(&c).unwrap();assert!(index.faces.iter().all(|f|f.confirmed));assert_eq!(index.people[0].cover_face_id,Some(cover));
+    }
+
+    #[test]
+    fn learned512_round_trips_and_only_proposes_review_without_changing_identity(){
+      let mut c=database();let key=format!("sha256:{}","a".repeat(64));
+      let learned=||serde_json::from_value(serde_json::json!({"modelVersion":crate::recognition::PERSON_512_MODEL,"dimensions":512,"descriptor":vec![1.0/(512.0_f64).sqrt();512]})).unwrap();
+      let mut reference=face(0.1);reference.additional_features.push(learned());
+      save_scan_with_source(&mut c,1,vec![reference],Some(key.clone())).unwrap();let first=read_index(&c).unwrap();let person=first.faces[0].person_id;rename_person(&mut c,person,"가족").unwrap();
+      let mut query=face(0.9);query.additional_features.push(learned());save_scan_with_source(&mut c,2,vec![query],Some(key.clone())).unwrap();
+      let before=read_index(&c).unwrap();assert_ne!(before.faces[1].person_id,person);
+      let proposals=find_matches(&c).unwrap();assert_eq!(proposals.len(),1);assert_eq!(proposals[0].person_id,person);assert_eq!(proposals[0].state,"needs-review");assert_eq!(proposals[0].candidates[0].model_version.as_deref(),Some(crate::recognition::PERSON_512_MODEL));
+      assert_eq!(read_index(&c).unwrap().faces[1].person_id,before.faces[1].person_id);
+      assert_eq!(c.query_row("SELECT COUNT(*) FROM person_model_feature WHERE source_key=?1",[key],|r|r.get::<_,i64>(0)).unwrap(),2);
+      c.execute("UPDATE person_model_feature SET source_key='changed' WHERE face_id=?1",[before.faces[1].id]).unwrap();assert!(find_matches(&c).unwrap().is_empty());
+      c.execute("DELETE FROM detected_face WHERE id=?1",[before.faces[1].id]).unwrap();assert_eq!(c.query_row("SELECT COUNT(*) FROM person_model_feature",[],|r|r.get::<_,i64>(0)).unwrap(),1);
     }
 
     #[test]

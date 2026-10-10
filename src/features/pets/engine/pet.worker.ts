@@ -6,6 +6,8 @@ import { conservativeViewAnalyzer, type PetFeatures, type PetView } from './type
 import { disablePetWasm, petRuntimeInfo, selectPetBackend, type PetBackendPreference } from './runtime';
 import { detectCatFrontFace } from './catFace';
 import catFaceCascade from './cat-face-cascade.json';
+import { PetPoseModel } from './poseModel';
+const poseModel = new PetPoseModel();
 import { foregroundDescriptors } from './foreground';
 const scope = self as unknown as DedicatedWorkerGlobalScope;
 let models: Promise<{ detector: coco.ObjectDetection; embedding: tf.LayersModel }> | undefined;
@@ -60,6 +62,15 @@ async function infer(request: PetRequest) {
     if (x1-x0 < 8 || y1-y0 < 8) continue;
     const crop = new OffscreenCanvas(224,224), context = crop.getContext('2d')!;
     context.drawImage(canvas,x0,y0,x1-x0,y1-y0,0,0,224,224);
+    let automaticPose = object.region?.automaticPose;
+    if (!object.region) {
+      const at = performance.now();
+      try {
+        automaticPose = await poseModel.analyze(canvas, [x0,y0,x1-x0,y1-y0], modelBase);
+        if (hint === 'unknown' && automaticPose.view !== 'unknown') view = { view: automaticPose.view, viewSource: 'quadpose-keypoints' };
+      } catch { /* Keep old detection/features and abstain if the pose runtime fails. */ }
+      timings.faceDetectionMs += performance.now() - at;
+    }
     let autoFaceBox: PetFeatures['faceBox'];
     // Run only on detected cats and fresh scans. Corrections (including clearing
     // a face box) always obey the user's selection. Failure is not rear evidence.
@@ -101,7 +112,7 @@ async function infer(request: PetRequest) {
       timings.faceEmbeddingMs += performance.now()-faceAt;
     }
     features.push({ kind: object.class as 'dog' | 'cat', detectedKind: object.region?.detectedKind ?? object.class as 'dog'|'cat', ...view,
-      box: object.region?.box ?? [x0/width,y0/height,(x1-x0)/width,(y1-y0)/height],
+      automaticPose, box: object.region?.box ?? [x0/width,y0/height,(x1-x0)/width,(y1-y0)/height],
       detectionScore: object.score, appearance: vector, mirroredAppearance: mirror, faceBox, faceAppearance, mirroredFaceAppearance, ...descriptors });
   }
   let min=255,max=0;for(let i=0;i<rgba.length;i++){if(i%4===3)continue;min=Math.min(min,rgba[i]);max=Math.max(max,rgba[i]);}

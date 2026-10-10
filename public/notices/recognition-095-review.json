@@ -1,0 +1,12 @@
+{
+  "version": "0.9.5",
+  "newWeightsIncluded": true,
+  "person512Installed": true,
+  "person512Model": "facex-tiny-512-af7ca993-v1",
+  "petSidePoseInstalled": true,
+  "petPoseModel": "quadpose-ap10k-52f0329b-v1",
+  "directionAccuracyValidated": false,
+  "commercialClearanceConfirmed": false,
+  "independentEvaluationPhotos": 0,
+  "legacyWeightsChanged": false
+}

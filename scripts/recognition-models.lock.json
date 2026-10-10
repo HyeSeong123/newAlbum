@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "runtime": "1.22.0",
+  "commercialClearanceConfirmed": false,
+  "models": [
+    {
+      "version": "facex-tiny-512-af7ca993-v1",
+      "path": "people512/facex-tiny.onnx",
+      "url": "https://raw.githubusercontent.com/facex-engine/facex/af7ca9937705a10901ca4b72c4eb19ef49a4ac53/docs/demo/facex_tiny.enc",
+      "downloadSha256": "ed7e3fa87363eb67c4963dadf8718ec8f02eeda6bd0d57869ba6cb4e6f53fd05",
+      "publicDemoAesKey": "f5c79dbc3b5eaac6ba718c93b4d356373e70eaafe09839dc450db9a972248fbd",
+      "bytes": 1809221,
+      "sha256": "4b4f191410cfc172d9d319f381e175ff3b2c08a5eb5584aefbe24d4dc0a6394c",
+      "license": "Apache-2.0",
+      "trainingSource": "MS1M-RefineV2; upstream image commercial clearance unverified"
+    },
+    {
+      "version": "quadpose-ap10k-52f0329b-v1",
+      "path": "pet-pose/quadpose.onnx",
+      "url": "https://raw.githubusercontent.com/EstevanSL/snapml-quadruped-pose/52f0329b5c9af513b5a8f2820aaea6bbd945d0c0/models/quadpose_f2.onnx",
+      "downloadSha256": "f3807433962d8abcee18f1bd45e5ff9e56bd899768b03a6996c3db4ebd12b884",
+      "bytes": 13083695,
+      "sha256": "f3807433962d8abcee18f1bd45e5ff9e56bd899768b03a6996c3db4ebd12b884",
+      "license": "Apache-2.0",
+      "trainingSource": "AP-10K annotations CC-BY-4.0; third-party photos and ImageNet/ViTPose training lineage have unresolved commercial-image rights"
+    }
+  ]
+}

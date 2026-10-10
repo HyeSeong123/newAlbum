@@ -23,6 +23,7 @@ test('Worker detects dog locally and keeps main thread responsive with cancel/re
     const cropUrl=URL.createObjectURL(await new Promise<Blob>(resolve=>crop.toBlob(blob=>resolve(blob!),'image/jpeg',.95)));
     let closeCats;try{closeCats=await analyzePetImage(cropUrl);}finally{URL.revokeObjectURL(cropUrl);}
     const object=features[0], [x,y,w,h]=object.box;
+    if(object.automaticPose?.keypoints?.length!==17 || object.automaticPose.modelVersion!=='quadpose-ap10k-52f0329b-v1')throw new Error('Bundled animal pose model did not execute');
     const front=await analyzePetImage('/pet-test.jpg',undefined,'front',[{...object,view:'front',faceBox:[x+w*0.2,y+h*0.2,w*0.3,h*0.3]}]);
     const rear=await analyzePetImage('/pet-test.jpg',undefined,'rear',[{...front[0],view:'rear'}]);
     if(front[0].faceAppearance.length!==1024 || rear[0].appearance.length || rear[0].faceAppearance.length || rear[0].faceBox)throw new Error('face/rear extraction policy failed');
@@ -31,7 +32,7 @@ test('Worker detects dog locally and keeps main thread responsive with cancel/re
   });
   await mkdir('preview-results',{recursive:true});await writeFile('preview-results/pet-worker-smoke.json',JSON.stringify(result,null,2));
   console.log('Pet Worker smoke (NOT identity accuracy):',JSON.stringify(result));
-  expect(result.catView).toBe('front');expect(result.catViewSource).toBe('cat-frontal-cascade');expect(result.catFaceLength).toBe(1024);expect(result.catFace).toHaveLength(4);expect(result.hardCatAutomaticLinks).toBe(0);expect(result.aborted).toBe(true);expect(result.count).toBeGreaterThan(0);expect(result.kind).toBe('dog');expect(result.view).toBe('unknown');expect(result.length).toBe(1024);expect(result.color).toBe(120);expect(result.shape).toBe(10);expect(result.score).toBeCloseTo(1,4);expect(result.auto).toBeNull();expect(result.negative).toBe(0);expect(result.catCount).toBeGreaterThan(0);expect(result.catKind).toBe('cat');expect(result.catLength).toBe(1024);expect(result.ticks).toBeGreaterThan(10);expect(external).toEqual([]);
+  expect(result.catView).toBe('front');expect(result.catViewSource).toBe('cat-frontal-cascade');expect(result.catFaceLength).toBe(1024);expect(result.catFace).toHaveLength(4);expect(result.hardCatAutomaticLinks).toBe(0);expect(result.aborted).toBe(true);expect(result.count).toBeGreaterThan(0);expect(result.kind).toBe('dog');expect(['front','left','right','unknown']).toContain(result.view);expect(result.length).toBe(1024);expect(result.color).toBe(120);expect(result.shape).toBe(10);expect(result.score).toBeCloseTo(1,4);expect(result.auto).toBeNull();expect(result.negative).toBe(0);expect(result.catCount).toBeGreaterThan(0);expect(result.catKind).toBe('cat');expect(result.catLength).toBe(1024);expect(result.ticks).toBeGreaterThan(10);expect(external).toEqual([]);
 });
 
 test('offline WASM matches CPU outputs, reuses corrected body vectors and has bounded tensor counts',async({page,isMobile})=>{

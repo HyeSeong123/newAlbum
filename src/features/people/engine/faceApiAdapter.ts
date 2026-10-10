@@ -1,14 +1,14 @@
 import * as api from '@vladmandic/face-api/dist/face-api.esm-nobundle.js';
 import * as tf from '@tensorflow/tfjs';
 import { setThreadsCount, setWasmPaths } from '@tensorflow/tfjs-backend-wasm';
-import { GraphFace512Adapter, APPROVED_512_MODELS } from './embedding512';
+import { OnnxFace512Adapter, APPROVED_512_MODELS } from './embedding512';
 import { estimateFacePose } from './pose';
 import { FACE_MODEL, type FaceBackend, type FaceFeatures, type FaceModelAdapter } from './types';
 import { FACE_DETECTION_MIN_CONFIDENCE, FACE_AUTOMATIC_MIN_CONFIDENCE, retainFaceDetection } from './detectionPolicy';
 
 // No second bundled TF registry. These exact versions are pinned together.
 export class FaceApiAdapter implements FaceModelAdapter {
-  private extra=new GraphFace512Adapter();private extraLoad:Promise<void>|undefined;
+  private extra=new OnnxFace512Adapter();private extraLoad:Promise<void>|undefined;
   private extraFailed=false;private base='';
 
   async loadModel(base: string, backend: FaceBackend) {
@@ -35,7 +35,8 @@ export class FaceApiAdapter implements FaceModelAdapter {
     // Keep FaceAPI's 68-point alignment and original descriptor pipeline.
     const faces = await api.detectAllFaces(image as unknown as HTMLCanvasElement,
       new api.SsdMobilenetv1Options({ minConfidence: FACE_DETECTION_MIN_CONFIDENCE, maxResults: 100 })).withFaceLandmarks().withFaceDescriptors();
-    return Promise.all(faces.filter(face => retainFaceDetection(face.detection)).map(async (face) => {
+    const results: FaceFeatures[] = [];
+    for (const face of faces.filter(face => retainFaceDetection(face.detection))) {
       const { x, y, width, height } = face.detection.box;
       const size = Math.min(Math.max(width, height) * 1.35, image.width, image.height);
       const left = Math.max(0, Math.min(image.width - size, x + width / 2 - size / 2));
@@ -58,18 +59,18 @@ export class FaceApiAdapter implements FaceModelAdapter {
       const pose=estimateFacePose([30,8,36,45,48,54].map(i=>positions[i]),image.width,image.height);
       const usable = face.detection.score >= FACE_AUTOMATIC_MIN_CONFIDENCE && Math.min(width, height) >= 60 && Math.abs(rollDegrees) <= 25 && asymmetry <= 0.35;
       const additionalFeatures:FaceFeatures['additionalFeatures']=[];
-      // No model is approved in this release. If an approved model is added,
-      // load only when a face needs it; any failure preserves the legacy result.
+      // Load the bundled 512 model once; failures preserve the legacy result.
       const spec=APPROVED_512_MODELS[0];
       if(spec&&!this.extraFailed)try {
         this.extraLoad??=this.extra.load(spec.version,this.base);await this.extraLoad;
         const landmarks=[eyes[0],eyes[1],nose,positions[48],positions[54]];
         additionalFeatures.push({modelVersion:spec.version,dimensions:512,descriptor:await this.extra.extract(image,landmarks)});
       }catch {this.extraFailed=true;this.extra.dispose();this.extraLoad=undefined;}
-      return { additionalFeatures, descriptor: Array.from(face.descriptor), thumbnail, modelVersion: FACE_MODEL,
+      results.push({ additionalFeatures, descriptor: Array.from(face.descriptor), thumbnail, modelVersion: FACE_MODEL,
         box: [x / image.width, y / image.height, width / image.width, height / image.height],
-        quality: usable ? 'usable' : 'review', view: pose.view, pose, rollDegrees };
-    }));
+        quality: usable ? 'usable' : 'review', view: pose.view, pose, rollDegrees });
+    }
+    return results;
   }
   // The public operation is deliberately the same landmark-aligned pipeline.
   async extractDescriptor(image: OffscreenCanvas) { const faces = await this.detectFaces(image); if (faces.length !== 1) throw new Error('하나의 얼굴을 선택해 주세요.'); return faces[0].descriptor; }

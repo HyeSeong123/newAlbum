@@ -34,10 +34,14 @@ test('person Worker preserves original descriptors, isolates runtimes and suppor
     const abortWorked=await cancelled;
     const restarted=await analyzePersonImage('/face-input.jpg',undefined,'wasm');
     disposePersonEngine();
-    return {baselineBoxes:original.boxes,workerBoxes:cpu.map((f:{box:number[]})=>f.box),tfVersion:original.tfVersion,faces:cpu.length,baselineDistances,backendDistances,stable,abortWorked,restarted:restarted.length,beats,baselineMs,diagnostics};
+    const extra=wasm.map((face:{additionalFeatures:{descriptor:number[]}[]})=>face.additionalFeatures[0]?.descriptor);
+    const extraValid=extra.every((v:number[]|undefined)=>v?.length===512 && v.every(Number.isFinite) && Math.abs(Math.hypot(...v)-1)<1e-5);
+    const extraDifferent=distance(extra[0],extra[1])>.01;
+    return {extraValid,extraDifferent,baselineBoxes:original.boxes,workerBoxes:cpu.map((f:{box:number[]})=>f.box),tfVersion:original.tfVersion,faces:cpu.length,baselineDistances,backendDistances,stable,abortWorked,restarted:restarted.length,beats,baselineMs,diagnostics};
   });
   await mkdir('preview-results',{recursive:true});await writeFile('preview-results/person-worker-smoke.json',JSON.stringify({environment:'desktop Chromium, functional fixture; no independent identity accuracy',...results},null,2));
   expect(results.faces).toBe(3);
+  expect(results.extraValid).toBe(true);expect(results.extraDifferent).toBe(true);
   expect(Math.max(...results.baselineDistances)).toBeLessThan(0.001);
   expect(Math.max(...results.backendDistances)).toBeLessThan(0.001);
   expect(results.stable).toBe(true);expect(results.abortWorked).toBe(true);expect(results.restarted).toBe(3);

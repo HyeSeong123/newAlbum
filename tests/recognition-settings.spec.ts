@@ -10,7 +10,7 @@ test('advanced evaluation is in settings and keeps automatic and manual directio
  }}}));
  await page.goto('/');await page.locator('.globalSettings').click();
  await page.getByRole('button',{name:'인식 검증 열기 · 고급',exact:true}).click();
- await expect(page.getByText('신규 512차원 미설치',{exact:false})).toBeVisible();
+ await expect(page.getByText('실제 512차원 모델 포함',{exact:false})).toBeVisible();
  const panel=page.getByRole('region',{name:'인물 정확도 평가'});
  await panel.getByRole('radio',{name:'평가 얼굴 1',exact:true}).check();
  await expect(panel).toContainText('자동 방향: 왼쪽을 봄');

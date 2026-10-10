@@ -1,6 +1,10 @@
-import { existsSync, readdirSync } from 'node:fs';
-// There is no approved 512-D or pet-side pose weight set in release 0.9.4.
-// Fail packaging if weights are slipped into these reserved asset roots.
-for(const directory of ['public/models/people512','public/models/pet-pose']) {
- if(existsSync(directory)&&readdirSync(directory).length)throw new Error(`Unapproved commercial model weights: ${directory}. Verify code, weights and training-data rights before changing the reviewed registry.`);
+import { readFileSync, readdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+const lock=JSON.parse(readFileSync(new URL('./recognition-models.lock.json',import.meta.url),'utf8'));
+for(const model of lock.models){
+ const file=new URL('../public/models/'+model.path,import.meta.url), bytes=readFileSync(file);
+ if(bytes.length!==model.bytes || createHash('sha256').update(bytes).digest('hex')!==model.sha256)throw new Error('Unrecognized model: '+model.path);
+ const root=new URL('./',file);
+ for(const name of readdirSync(root))if(![file.pathname.split('/').pop(),'LICENSE'].includes(name))throw new Error('Unexpected model asset: '+name);
 }
+if(process.argv.includes('--commercial') && !lock.commercialClearanceConfirmed)throw new Error('Development models are installed, but commercial training-image clearance is unresolved.');

@@ -1,0 +1,33 @@
+Gamjassak 0.9.5 recognition development preview
+
+FaceX tiny512
+Copyright and attribution: Baurzhan Atinov and FaceX contributors.
+https://github.com/facex-engine/facex
+Pinned source: af7ca9937705a10901ca4b72c4eb19ef49a4ac53
+The upstream author explicitly releases code and self-trained model weights
+under Apache License 2.0. This app decrypts the public demo weights using
+the demo's published key, aligns FaceAPI landmarks, and normalizes the output.
+Training source: MS1M-RefineV2. Commercial image-rights clearance is unverified.
+
+QuadPose f2
+Copyright and attribution: Sausage Labs / EstevanSL and contributors.
+https://github.com/EstevanSL/snapml-quadruped-pose
+Pinned source: 52f0329b5c9af513b5a8f2820aaea6bbd945d0c0
+Upstream code and pose weights: Apache License 2.0.
+This app uses the pose weights only, with its existing COCO animal detector;
+Snap's animal detector is not bundled. A quarter-cell heatmap decoder and
+conservative muzzle-direction rules replace upstream DARK decoding. Upstream
+accuracy figures do not describe this app's pipeline or direction rules.
+Training annotations: AP-10K, CC-BY-4.0, Yu et al., NeurIPS 2021.
+https://github.com/AlexTheBad/AP-10K
+The annotation license does not establish rights for all third-party photos.
+ImageNet pretraining / ViTPose distillation lineage also remains unverified
+for commercial-image rights.
+
+ONNX Runtime Web 1.22.0: Microsoft Corporation, MIT License.
+Full licenses are included in recognition-models-Apache-2.0.txt and
+onnx-runtime-MIT.txt and in the respective model directories.
+
+Independent evaluation photos: 0/800. No calibrated identity probability,
+60% accuracy claim, or commercial training-data clearance is asserted.
+Existing recognition libraries and notices continue to apply.

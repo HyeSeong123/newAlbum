@@ -93,7 +93,7 @@ fn evaluate(all:&[Row])->Result<Value,String>{
   }
   let mut row=metric(correct,total);row["missingReferenceTrials"]=json!(unavailable);comparisons.insert(format!("{a}-{b}"),row);
  }
- Ok(json!({"comparisons":comparisons,"person512":null,"person512Status":"not-installed","orientationValidated":false,"modelVersion":super::faces::MODEL,"photos":queries.iter().map(|q|&q.source).collect::<BTreeSet<_>>().len(),"labeledFaces":queries.len(),"referenceFaces":refs.len(),"referencePeople":counts.len(),"conditions":conditions,"automaticLinksWritten":false,"independentSessionsUserDeclared":true,"processingTimeMeasured":false,"wholeAppMemoryMeasured":false}))
+ Ok(json!({"comparisons":comparisons,"person512":null,"person512Status":"bundled-not-evaluated","orientationValidated":false,"modelVersion":super::faces::MODEL,"photos":queries.iter().map(|q|&q.source).collect::<BTreeSet<_>>().len(),"labeledFaces":queries.len(),"referenceFaces":refs.len(),"referencePeople":counts.len(),"conditions":conditions,"automaticLinksWritten":false,"independentSessionsUserDeclared":true,"processingTimeMeasured":false,"wholeAppMemoryMeasured":false}))
 }
 #[tauri::command]
 pub async fn save_person_evaluation(app:AppHandle,sample:Sample)->Result<(),String>{tauri::async_runtime::spawn_blocking(move||save(&mut super::open_database(&app)?,sample)).await.map_err(|_|"평가 자료를 저장하지 못했습니다.".to_string())?}
