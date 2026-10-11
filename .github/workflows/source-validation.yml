@@ -118,6 +118,7 @@ jobs:
             preview-results/menu-*.png
             preview-results/people-controls-*.png
             preview-results/people-simple-name-*.png
+            preview-results/manual-photo-picker-*.png
             preview-results/pet-worker-smoke.json
             preview-results/person-worker-smoke.json
             preview-results/person-repetition-smoke.json
