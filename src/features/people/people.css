@@ -20,6 +20,9 @@
 .personTile { position: relative; }
 .personTile .faceCheck { color: #fff; }
 .personTile > img { width: 112px; height: 112px; object-fit: cover; border-radius: 50%; }
+.personTile > .mediaVisual, .personTile > .personPlaceholder { width: 112px; height: 112px; aspect-ratio: 1; border-radius: 50%; overflow: hidden; }
+.personPlaceholder { display: grid; place-items: center; background: var(--surface-soft); color: var(--muted); }
+.personDirectory button > .mediaVisual, .personDirectory button > .personPlaceholder { flex: 0 0 40px; width: 40px; height: 40px; aspect-ratio: 1; border-radius: 50%; overflow: hidden; }
 .personTile strong { overflow-wrap: anywhere; max-width: 100%; }
 .personTile span, .peopleSummary { color: #53615a; font-size: 14px; }
 .faceProgress { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }

@@ -49,15 +49,25 @@ export async function extractPetCorrection(item:MediaItem,detection:PetDetection
   return features;
 }
 export const savePetCorrection=(detectionId:number,petId:number|null,features:PetFeatures)=>invoke<void>('update_pet_features',{detectionId,petId,view:features.view,excluded:false,features});
-export interface PetProgress { done: number; total: number; failed: number; detected: number; running: boolean; message: string }
+export interface PetProgress { done: number; total: number; failed: number; detected: number; learned?: number; missed?: number; running: boolean; message: string }
 export async function scanPetBatch(items: MediaItem[], signal: AbortSignal, progress: (value: PetProgress) => void, enrollment?: { petId: number; views: Record<string,PetView> }, refresh = false, allowSourceChange = false) {
   const photos = items.filter(item => item.fileType === 'image');
-  let done = 0, failed = 0, detected = 0, lastError = '';
+  let done = 0, failed = 0, detected = 0, learned = 0, missed = 0, lastError = '';
   for (const item of photos) {
     if (signal.aborted) break;
     progress({ done, total: photos.length, failed, detected, running: true, message: `반려동물 확인 중 · ${item.fileName}` });
     try {
       const scan = await scanPetPhoto(item, signal, enrollment?.views[item.id],refresh,allowSourceChange);
+      if (!scan.detections.some(row => !row.excluded)) missed++;
+      if (refresh) {
+        for (const detection of scan.detections.filter(row => row.pet_id !== null && !row.excluded && (!enrollment || row.pet_id === enrollment.petId))) {
+          const features = await extractPetCorrection(item,detection,detection.view,detection.kind,detection.faceBox,signal,true);
+          const replacement = { ...withView(features,detection.view), viewSource:detection.viewSource, automaticPose:detection.automaticPose, faceBox:detection.faceBox };
+          signal.throwIfAborted();
+          await invoke('refresh_pet_reference',{detectionId:detection.id,expectedSourceKey:scan.source_key,features:replacement});
+          learned++;
+        }
+      }
       if (enrollment && scan.detections.length === 1 && !scan.detections[0].excluded) {
         const owners = (await loadPets()).filter(pet => pet.media_ids.includes(Number(item.id)));
         const detection = scan.detections[0];
@@ -65,7 +75,7 @@ export async function scanPetBatch(items: MediaItem[], signal: AbortSignal, prog
         // multi-animal/multi-owner photos always require object-level confirmation.
         if (owners.length === 1 && owners[0].id === enrollment.petId && (detection.pet_id === null || detection.pet_id === enrollment.petId)) {
           signal.throwIfAborted();
-          await confirmPetDetection(detection.id,enrollment.petId,enrollment.views[item.id] ?? detection.view);
+          if (detection.pet_id === null || enrollment.views[item.id]) {await confirmPetDetection(detection.id,enrollment.petId,enrollment.views[item.id] ?? detection.view);learned++;}
           detection.pet_id = enrollment.petId;
         }
       }
@@ -76,6 +86,6 @@ export async function scanPetBatch(items: MediaItem[], signal: AbortSignal, prog
     window.dispatchEvent(new Event('gamjassak-pet-results'));
     await new Promise(resolve => setTimeout(resolve, 0));
   }
-  progress({ done, total: photos.length, failed, detected, running: false,
+  progress({ done, total: photos.length, failed, detected, learned, missed, running: false,
     message: signal.aborted ? '반려동물 분석을 중단했습니다. 완료한 결과는 저장되었습니다.' : `반려동물 확인 필요 ${detected}마리 · ${done}장 확인${failed ? ` · 실패 ${failed}장 (${lastError})` : ''}` });
 }

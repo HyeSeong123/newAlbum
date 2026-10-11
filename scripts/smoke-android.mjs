@@ -1,5 +1,6 @@
 import { verifyInstalledPersonRuntime } from './person-runtime-benchmark.mjs';
 import { verifyInstalledGallery } from './gallery-smoke.mjs';
+import { verifyInstalledManualPhotos } from './manual-photo-smoke.mjs';
 import { verifyInstalledRepetitionMeasurement } from './person-repetition-smoke.mjs';
 import { expect } from '@playwright/test';
 import { _android as android } from 'playwright';
@@ -683,6 +684,9 @@ try {
   const personSmoke=await verifyInstalledPersonRuntime(page,(await readFile('node_modules/@vladmandic/face-api/demo/sample1.jpg')).toString('base64'),petPhoto.id);
   await writeFile(join(output,'person-runtime-smoke.json'),JSON.stringify({...personSmoke,environment:'Android API 36 x86_64 emulator'},null,2));
   console.log('Offline Android person Worker and native persistence (NOT identity accuracy or phone performance): '+JSON.stringify(personSmoke));
+  const manualPhotoSmoke=await verifyInstalledManualPhotos(page,petPhoto.id,registeredPet,captureScreen);
+  await writeFile(join(output,'manual-photos-smoke.json'),JSON.stringify(manualPhotoSmoke,null,2));
+  console.log('Manual person/pet photo membership and fresh registered-photo relearning preserve names, links and object IDs: OK');
   const repetitionSmoke = await verifyInstalledRepetitionMeasurement(page, petPhoto.id, thumbnailPath);
   await writeFile(join(output,'person-repetition-smoke.json'),JSON.stringify({...repetitionSmoke,environment:'Android API 36 x86_64 emulator'},null,2));
   await adb('shell','svc','wifi','enable');
@@ -740,6 +744,8 @@ try {
   await startApp();
   connection = await connect(); context = connection.context; page = connection.page;
   assert.equal((await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_media'))).length, 2);
+  const restoredPeople=await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('list_face_index'));
+  assert.deepEqual(restoredPeople.people.find(person=>person.id===manualPhotoSmoke.personId).media_ids,[manualPhotoSmoke.mediaId]);
   const savedQueue=await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('list_pet_jobs'));assert.equal(savedQueue.paused,1);
   assert.equal((await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('pet_evaluation_summary'))).queries,1);
   await page.getByRole('button',{name:'분석 이어서 하기',exact:true}).click();

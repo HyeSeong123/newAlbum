@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { ArrowLeft, Check, ChevronLeft, ChevronRight, LoaderCircle, MoreVertical, PawPrint, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, ImagePlus, LoaderCircle, MoreVertical, PawPrint, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import type { MediaItem } from '../../types/media';
 import { MediaVisual } from '../../components/MediaVisual';
 import { EmptyState } from '../../components/MediaVisual';
@@ -14,6 +14,7 @@ import type { PetAnalysis } from './usePetAnalysis';
 import { ScanSearch } from 'lucide-react';
 import { VIEW_LABELS, type PetView } from './engine/types';
 import { petCovers, petPhotos } from './petModel';
+import { EntityPhotoPicker } from '../../components/EntityPhotoPicker';
 
 export function PetsView({ items, onOpen, analysis, query = "" }: { items: MediaItem[]; analysis: PetAnalysis; query?: string; onOpen: (item: MediaItem, collection?: MediaItem[]) => void }) {
   const [pets, setPets] = useState<Pet[]>([]);
@@ -24,6 +25,7 @@ export function PetsView({ items, onOpen, analysis, query = "" }: { items: Media
   const [editing, setEditing] = useState<Pet | null>(null);
   const [page, setPage] = useState(0);
   const [reviewing, setReviewing] = useState(false);
+  const [manualPhotos, setManualPhotos] = useState(false);
   const heading = useRef<HTMLDivElement>(null);
   const desktop = isTauriRuntime();
   const photos = useMemo(() => items.filter((item) => item.fileType === 'image'), [items]);
@@ -74,6 +76,9 @@ export function PetsView({ items, onOpen, analysis, query = "" }: { items: Media
     </div>
     {!desktop && <p role="status">반려동물 등록·인식은 감자싹 앱에서 사용할 수 있습니다.</p>}
     {desktop && pets.length > 0 && <div className="petFindPhotos"><div><strong>{pet ? `${pet.name}의 다른 사진도 찾아보세요` : '반려동물 사진을 한곳에 모으세요'}</strong><p className="petMatchNotice">연결한 사진과 비교해 비슷한 사진을 찾습니다.</p></div><button disabled={loading || !photos.length} onClick={() => setReviewing(true)}><ScanSearch size={18}/>등록된 사진에서 찾기</button></div>}
+    {desktop && pets.length > 0 && <div className="entityManualActions">{pet && <button disabled={loading || busy || analysis.progress?.running} onClick={() => setManualPhotos(true)}><ImagePlus size={18} />사진 직접 등록</button>}<button disabled={loading || busy || analysis.progress?.running || !(pet ? linked.length : pets.some(entry => entry.media_ids.some(id => photos.some(photo => Number(photo.id) === id))))} onClick={() => analysis.retrain((pet ? [pet] : pets).map(entry => ({petId:entry.id,items:photos.filter(photo => entry.media_ids.includes(Number(photo.id)))})))}><RefreshCw size={18} />{pet ? '등록 사진 다시 학습' : '등록 목록 다시 학습'}</button></div>}
+    {desktop && pets.length > 0 && <p className="petMatchNotice">다시 학습하면 등록한 사진의 인식 기준을 갱신해요. 여러 반려동물이 나온 사진은 사진 상세에서 개체를 확인하세요.</p>}
+    {!reviewing && analysis.progress && <div className="petAnalysisNotice"><span role="status">{analysis.progress.message}</span>{analysis.progress.running && <><progress aria-label="반려동물 다시 학습 진행" value={analysis.progress.done} max={analysis.progress.total || 1} /><button onClick={analysis.cancel}>중단</button></>}{!analysis.progress.running && analysis.waiting > 0 && <button onClick={analysis.resume}>이어서 학습</button>}</div>}
 
     {loading && <p role="status"><LoaderCircle className="spinIcon" size={18} />반려동물 정보를 불러오는 중</p>}
     {error && <p role="alert">{error}</p>}
@@ -88,6 +93,10 @@ export function PetsView({ items, onOpen, analysis, query = "" }: { items: Media
     {pages > 1 && <div className="peopleActions"><button title="이전 페이지" disabled={!currentPage} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={18} /></button><span>{currentPage + 1} / {pages}</span><button title="다음 페이지" disabled={currentPage === pages - 1} onClick={() => setPage(currentPage + 1)}><ChevronRight size={18} /></button></div>}
     {editing && <PetEditor pet={editing} photos={photos} onClose={() => setEditing(null)} onSaved={async (id) => { setPets(await loadPets()); setActive(id); setPage(0); }} />}
     {reviewing && <PetPhotoSearch pet={pet} pets={pets} photos={photos} analysis={analysis} onClose={() => setReviewing(false)} onSaved={async () => { setPets(await loadPets()); }} />}
+    {manualPhotos && pet && <EntityPhotoPicker title="반려동물 사진 직접 등록" name={pet.name} photos={photos} initialIds={pet.media_ids} onClose={() => setManualPhotos(false)} onSave={async (name, ids) => {
+      const cover = pet.cover_media_id !== null && ids.includes(pet.cover_media_id) ? pet.cover_media_id : ids[0] ?? null;
+      await savePet(pet.id, name, ids, cover); setPets(await loadPets()); setPage(0);
+    }} />}
   </section>;
 }
 

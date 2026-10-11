@@ -1,0 +1,10 @@
+.entityEditDialog.entityPhotoPicker { width: min(760px, 100%); }
+.entityPhotoGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 10px; touch-action: pan-y pinch-zoom; user-select: none; }
+.entityPhotoChoice { position: relative; display: grid; gap: 6px; min-width: 0; padding: 0; background: transparent; color: var(--text); text-align: left; align-content: start; }
+.entityPhotoChoice > .mediaVisual { width: 100%; aspect-ratio: 1; border-radius: 8px; overflow: hidden; }
+.entityPhotoChoice > span:not(.faceCheck), .entityPhotoChoice small { overflow-wrap: anywhere; font-size: 12px; color: var(--muted); }
+.entityPhotoChoice:disabled { opacity: 1; }
+.entityPhotoCount { font-size: 14px; font-weight: 600; color: var(--primary); }
+.entityManualActions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.entityManualActions button { min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+@media (max-width: 600px) { .entityPhotoGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .entityManualActions button { flex: 1 1 160px; } }

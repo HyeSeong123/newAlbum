@@ -165,6 +165,19 @@ pub async fn update_pet_features(app:AppHandle,detection_id:i64,pet_id:Option<i6
     tauri::async_runtime::spawn_blocking(move||{let mut conn=super::open_database(&app)?;verify_detection_source(&conn,detection_id)?;confirm_with_features(&mut conn,detection_id,pet_id,&view,excluded,Some(features))}).await.map_err(|e|e.to_string())?
 }
 
+fn refresh_reference(conn:&Connection,detection_id:i64,expected_key:&str,features:Features)->Result<(),String>{
+    validate(&features)?;
+    let (json,key,owner,excluded):(String,String,Option<i64>,bool)=conn.query_row("SELECT d.features,s.source_key,d.pet_id,d.excluded FROM pet_detection d JOIN pet_scan s ON s.media_id=d.media_id WHERE d.id=?1",[detection_id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?))).map_err(|e|e.to_string())?;
+    let old:Features=serde_json::from_str(&json).map_err(|e|e.to_string())?;
+    if key!=expected_key || owner.is_none() || excluded || features.box_!=old.box_ || features.kind!=old.kind || features.view!=old.view || features.view_source!=old.view_source || features.face_box!=old.face_box {return Err("인식 기준이 변경되었습니다. 기존 연결을 유지하고 다시 불러와 주세요.".into());}
+    // Refresh vectors while retaining the object's ID, owner, direction and region.
+    conn.execute("UPDATE pet_detection SET features=?1 WHERE id=?2",params![serde_json::to_string(&features).map_err(|e|e.to_string())?,detection_id]).map_err(|e|e.to_string())?;Ok(())
+}
+#[tauri::command]
+pub async fn refresh_pet_reference(app:AppHandle,detection_id:i64,expected_source_key:String,features:Features)->Result<(),String>{
+    tauri::async_runtime::spawn_blocking(move||{let conn=super::open_database(&app)?;verify_detection_source(&conn,detection_id)?;refresh_reference(&conn,detection_id,&expected_source_key,features)}).await.map_err(|e|e.to_string())?
+}
+
 fn overlap(a:[f64;4],b:[f64;4])->f64 {
     let intersection=(a[0]+a[2]).min(b[0]+b[2])-(a[0].max(b[0]));
     let height=(a[1]+a[3]).min(b[1]+b[3])-(a[1].max(b[1]));
@@ -209,6 +222,15 @@ pub async fn replace_pet_scan(app:AppHandle,media_id:i64,expected_source_key:Str
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test] fn reference_refresh_changes_vectors_without_changing_identity_or_direction(){
+        let mut c=database();let scan=write_scan(&mut c,1,"test",vec![features()]).unwrap();let id=scan.detections[0].id;
+        confirm(&mut c,id,Some(1),"left",false).unwrap();let saved=read_scan(&c,1).unwrap().unwrap().detections.remove(0).features;
+        let mut replacement=saved.clone();replacement.appearance=vec![0.01;1024];replacement.mirrored_appearance=vec![0.01;1024];
+        refresh_reference(&c,id,"test",replacement.clone()).unwrap();let after=read_scan(&c,1).unwrap().unwrap();assert_eq!(after.detections[0].id,id);assert_eq!(after.detections[0].pet_id,Some(1));assert_eq!(after.detections[0].features.view,"left");assert_eq!(after.detections[0].features.appearance[0],0.01);
+        assert!(refresh_reference(&c,id,"changed",replacement.clone()).is_err());replacement.box_[0]+=0.01;assert!(refresh_reference(&c,id,"test",replacement).is_err());
+        assert_eq!(c.query_row("SELECT COUNT(*) FROM pet_media",[],|r|r.get::<_,i64>(0)).unwrap(),1);
+        assert_eq!(c.query_row("SELECT manual_view FROM pet_direction_observation WHERE detection_id=?1",[id],|r|r.get::<_,String>(0)).unwrap(),"left");
+    }
     fn database()->Connection {let mut c=Connection::open_in_memory().unwrap();crate::database::initialize(&mut c).unwrap();c.execute_batch("INSERT INTO media(id,file_path,file_type,size_bytes) VALUES(1,'a','image',1);INSERT INTO pet(id,name) VALUES(1,'보리'),(2,'초코');").unwrap();c}
     fn features()->Features {Features{kind:"dog".into(),detected_kind:Some("dog".into()),view:"unknown".into(),view_source:"unknown".into(),box_:[0.0,0.0,0.5,0.5],detection_score:0.9,appearance:vec![0.0;1024],mirrored_appearance:vec![0.0;1024],color:vec![0.0;120],shape:vec![0.0;10],face_box:None,face_appearance:vec![],mirrored_face_appearance:vec![],foreground:None,automatic_pose:None}}
     #[test] fn reanalysis_preserves_confirmed_ids_and_explicit_source_change_preserves_photo_links(){

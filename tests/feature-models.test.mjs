@@ -16,6 +16,12 @@ const { indexFaces, mediaForFaces } = await loadModel('people/peopleModel.ts');
 const { petPhotos, petCovers } = await loadModel('pets/petModel.ts');
 const photo = (id, extra = {}) => ({ id: String(id), fileType: 'image', fileName: `사진 ${id}.jpg`, comment: '', takenAt: null, rating: 0, favorite: false, ...extra });
 const defaults = { sort: 'date-desc', mediaType: 'all', favoritesOnly: false, commentsOnly: false, minimumRating: 0 };
+test('manual person photo membership combines with detected faces without duplicate originals', () => {
+  const items=[photo(1),photo(2),photo(3),photo(4)];
+  const faces=[{media_id:1},{media_id:1},{media_id:2}];
+  assert.deepEqual(mediaForFaces(items,faces,[2,3,3]).map(item=>item.id),['1','2','3']);
+  assert.deepEqual(mediaForFaces(items,[],[3]).map(item=>item.id),['3']);
+});
 const ids = (items) => items.map((item) => item.id);
 
 test('taken date range includes both endpoints and supports open bounds without timezone conversion', () => {

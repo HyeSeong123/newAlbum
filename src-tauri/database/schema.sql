@@ -118,6 +118,13 @@ CREATE TABLE IF NOT EXISTS excluded_face (
   face_id INTEGER PRIMARY KEY REFERENCES detected_face(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS person_photo (
+  person_id INTEGER NOT NULL REFERENCES person(id) ON DELETE CASCADE,
+  media_id INTEGER NOT NULL REFERENCES media(id) ON DELETE CASCADE,
+  PRIMARY KEY (person_id, media_id)
+);
+CREATE INDEX IF NOT EXISTS idx_person_photo_media ON person_photo(media_id);
+
 CREATE TABLE IF NOT EXISTS pet (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,

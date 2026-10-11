@@ -80,6 +80,7 @@ jobs:
       - name: Test browser workflows
         run: |
           npx playwright install --with-deps chromium
+          npx playwright test tests/manual-photos.spec.ts --workers=2
           npx playwright test tests/pet-review.spec.ts --workers=2
           npx playwright test tests/home.spec.ts tests/characters.spec.ts --workers=2
           npx playwright test tests/album-content.spec.ts tests/media-playback.spec.ts tests/menu-position.spec.ts --workers=2

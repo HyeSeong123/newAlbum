@@ -8,6 +8,21 @@ fn temp_db() -> std::path::PathBuf {
 }
 
 #[test]
+fn version_16_upgrade_keeps_existing_face_pet_and_paused_job_records(){
+    let mut c=Connection::open_in_memory().unwrap();initialize(&mut c).unwrap();
+    c.execute_batch("DROP TABLE person_photo; ALTER TABLE pet_analysis_job DROP COLUMN refresh; PRAGMA user_version=16;
+      INSERT INTO media(id,file_path,file_type,size_bytes) VALUES(1,'photo','image',1);
+      INSERT INTO person(id,name,profile_type) VALUES(42,'가족','face');
+      INSERT INTO detected_face(id,media_id,person_id,descriptor,thumbnail,confirmed) VALUES(91,1,42,'[0.1]','jpeg',1);
+      INSERT INTO pet(id,name) VALUES(8,'보리');INSERT INTO pet_media VALUES(8,1);
+      INSERT INTO pet_analysis_job(media_id,pet_id,state) VALUES(1,8,'paused');").unwrap();
+    let before=snapshot(&c);initialize(&mut c).unwrap();assert_eq!(snapshot(&c),before);
+    assert!(table_exists(&c,"person_photo").unwrap());assert_eq!(version(&c).unwrap(),17);
+    assert_eq!(c.query_row("SELECT state,refresh FROM pet_analysis_job",[],|r|Ok((r.get::<_,String>(0)?,r.get::<_,bool>(1)?))).unwrap(),("paused".into(),false));
+    c.execute("INSERT INTO person_photo VALUES(42,1)",[]).unwrap();initialize(&mut c).unwrap();assert_eq!(c.query_row("SELECT COUNT(*) FROM person_photo",[],|r|r.get::<_,i64>(0)).unwrap(),1);
+}
+
+#[test]
 fn deleted_face_values_do_not_remain_in_sqlite_free_pages() {
     let path=temp_db();let mut conn=Connection::open(&path).unwrap();initialize(&mut conn).unwrap();
     let marker="synthetic-biometric-delete-canary-7ab09";

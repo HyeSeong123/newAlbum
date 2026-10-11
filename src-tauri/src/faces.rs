@@ -83,6 +83,7 @@ pub struct PersonRow {
     id: i64,
     name: String,
     cover_face_id: Option<i64>,
+    media_ids: Vec<i64>,
 }
 
 #[derive(Serialize)]
@@ -93,9 +94,15 @@ pub struct FaceIndex {
 }
 
 fn read_index(conn: &Connection) -> Result<FaceIndex, String> {
-    let people = conn.prepare("SELECT id, name, cover_face_id FROM person WHERE EXISTS (SELECT 1 FROM detected_face WHERE person_id = person.id AND NOT EXISTS (SELECT 1 FROM excluded_face e WHERE e.face_id = detected_face.id)) ORDER BY id")
-        .map_err(|e| e.to_string())?.query_map([], |row| Ok(PersonRow { id: row.get(0)?, name: row.get(1)?, cover_face_id: row.get(2)? }))
+    let mut people = conn.prepare("SELECT id, name, cover_face_id FROM person WHERE profile_type='manual' OR EXISTS(SELECT 1 FROM person_photo WHERE person_id=person.id) OR EXISTS (SELECT 1 FROM detected_face WHERE person_id = person.id AND NOT EXISTS (SELECT 1 FROM excluded_face e WHERE e.face_id = detected_face.id)) ORDER BY id")
+        .map_err(|e| e.to_string())?.query_map([], |row| Ok(PersonRow { id: row.get(0)?, name: row.get(1)?, cover_face_id: row.get(2)?, media_ids: vec![] }))
         .map_err(|e| e.to_string())?.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())?;
+    let mut memberships = std::collections::HashMap::<i64,Vec<i64>>::new();
+    let mut statement=conn.prepare("SELECT person_id,media_id FROM person_photo ORDER BY person_id,media_id").map_err(|e|e.to_string())?;
+    for row in statement.query_map([],|r|Ok((r.get::<_,i64>(0)?,r.get::<_,i64>(1)?))).map_err(|e|e.to_string())? {
+        let (person,media)=row.map_err(|e|e.to_string())?; memberships.entry(person).or_default().push(media);
+    }
+    for person in &mut people {person.media_ids=memberships.remove(&person.id).unwrap_or_default();}
     let faces = conn.prepare("SELECT id, media_id, person_id, thumbnail, confirmed,(SELECT json_object('automatic',json(automatic),'manualView',manual_view) FROM person_face_pose WHERE face_id=detected_face.id) FROM detected_face WHERE NOT EXISTS (SELECT 1 FROM excluded_face e WHERE e.face_id = detected_face.id) ORDER BY id")
         .map_err(|e| e.to_string())?.query_map([], |row| Ok(FaceRow { id: row.get(0)?, media_id: row.get(1)?, person_id: row.get(2)?, thumbnail: row.get(3)?, confirmed: row.get(4)?, pose: row.get::<_,Option<String>>(5)?.and_then(|v|serde_json::from_str(&v).ok()) }))
         .map_err(|e| e.to_string())?.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())?;
@@ -118,6 +125,40 @@ pub fn list_face_index(app: AppHandle) -> Result<FaceIndex, String> {
     read_index(&super::open_database(&app)?)
 }
 
+fn save_person_photos(conn:&mut Connection,person_id:Option<i64>,name:&str,media_ids:Vec<i64>)->Result<i64,String>{
+    if media_ids.len()>100_000 || person_id.is_none() && (name.trim().is_empty() || name.trim().chars().count()>80) {return Err("이름을 1~80자로 입력하고 사진을 확인해 주세요.".into());}
+    let tx=conn.transaction().map_err(|e|e.to_string())?;
+    let id=match person_id {
+        Some(id)=>{if !tx.query_row("SELECT EXISTS(SELECT 1 FROM person WHERE id=?1)",[id],|r|r.get::<_,bool>(0)).map_err(|e|e.to_string())? {return Err("등록된 사람을 찾을 수 없습니다.".into());}id},
+        None=>{tx.execute("INSERT INTO person(name,profile_type) VALUES(?1,'manual')",[name.trim()]).map_err(|e|e.to_string())?;tx.last_insert_rowid()}
+    };
+    tx.execute("DELETE FROM person_photo WHERE person_id=?1",[id]).map_err(|e|e.to_string())?;
+    for media in media_ids {
+        if !tx.query_row("SELECT EXISTS(SELECT 1 FROM media WHERE id=?1 AND file_type='image')",[media],|r|r.get::<_,bool>(0)).map_err(|e|e.to_string())? {return Err("등록된 사진을 찾을 수 없습니다. 기존 연결은 유지했습니다.".into());}
+        tx.execute("INSERT OR IGNORE INTO person_photo(person_id,media_id) VALUES(?1,?2)",params![id,media]).map_err(|e|e.to_string())?;
+    }
+    tx.commit().map_err(|e|e.to_string())?;Ok(id)
+}
+#[tauri::command]
+pub fn save_manual_person_photos(app:AppHandle,person_id:Option<i64>,name:String,media_ids:Vec<i64>)->Result<i64,String>{
+    save_person_photos(&mut super::open_database(&app)?,person_id,&name,media_ids)
+}
+
+fn merge_people(conn:&mut Connection,sources:Vec<i64>,target:i64)->Result<(),String>{
+    if sources.is_empty() || sources.len()>1000 {return Err("합칠 사람을 확인해 주세요.".into());}
+    let tx=conn.transaction().map_err(|e|e.to_string())?;
+    for id in sources.iter().chain(std::iter::once(&target)) {if !tx.query_row("SELECT EXISTS(SELECT 1 FROM person WHERE id=?1)",[id],|r|r.get::<_,bool>(0)).map_err(|e|e.to_string())? {return Err("등록된 사람을 찾을 수 없습니다.".into());}}
+    for source in sources.into_iter().filter(|id|*id!=target) {
+        tx.execute("INSERT OR IGNORE INTO person_photo(person_id,media_id) SELECT ?1,media_id FROM person_photo WHERE person_id=?2",params![target,source]).map_err(|e|e.to_string())?;
+        tx.execute("UPDATE detected_face SET person_id=?1,confirmed=1 WHERE person_id=?2",params![target,source]).map_err(|e|e.to_string())?;
+        tx.execute("DELETE FROM person_photo WHERE person_id=?1",[source]).map_err(|e|e.to_string())?;
+        tx.execute("UPDATE person SET profile_type='face',cover_face_id=NULL WHERE id=?1",[source]).map_err(|e|e.to_string())?;
+    }
+    tx.commit().map_err(|e|e.to_string())
+}
+#[tauri::command]
+pub fn merge_registered_people(app:AppHandle,sources:Vec<i64>,target:i64)->Result<(),String>{merge_people(&mut super::open_database(&app)?,sources,target)}
+
 fn reset_empty_scans(conn:&mut Connection)->Result<Vec<i64>,String>{
     let tx=conn.transaction().map_err(|e|e.to_string())?;
     let ids=tx.prepare("SELECT media_id FROM face_scan WHERE model_version=?1 AND NOT EXISTS(SELECT 1 FROM detected_face WHERE media_id=face_scan.media_id) ORDER BY media_id").map_err(|e|e.to_string())?
@@ -132,7 +173,7 @@ pub async fn retry_empty_face_scans(app:AppHandle)->Result<Vec<i64>,String>{
 
 #[cfg(test)]
 fn save_scan(conn: &mut Connection, media_id: i64, faces: Vec<FaceInput>) -> Result<(), String> { save_scan_with_source(conn,media_id,faces,None) }
-fn save_scan_with_source(conn: &mut Connection, media_id: i64, faces: Vec<FaceInput>,source_key:Option<String>) -> Result<(), String> {
+fn validate_faces(faces:&[FaceInput],has_source:bool)->Result<(),String>{
     if faces.len() > 100
         || faces.iter().any(|face| {
             face.descriptor.len() != 128
@@ -146,7 +187,11 @@ fn save_scan_with_source(conn: &mut Connection, media_id: i64, faces: Vec<FaceIn
     {
         return Err("얼굴 분석 결과가 올바르지 않습니다.".into());
     }
-    for face in &faces {if let Some(pose)=&face.pose {pose.validate()?;}for feature in &face.additional_features{feature.validate()?;}if !face.additional_features.is_empty()&&source_key.is_none(){return Err("모델 특징의 원본 지문이 없습니다.".into());}}
+    for face in faces {if let Some(pose)=&face.pose {pose.validate()?;}for feature in &face.additional_features{feature.validate()?;}if !face.additional_features.is_empty()&&!has_source{return Err("모델 특징의 원본 지문이 없습니다.".into());}}
+    Ok(())
+}
+fn save_scan_with_source(conn: &mut Connection, media_id: i64, faces: Vec<FaceInput>,source_key:Option<String>) -> Result<(), String> {
+    validate_faces(&faces,source_key.is_some())?;
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     let image: bool = tx
         .query_row(
@@ -246,6 +291,71 @@ pub async fn save_face_scan(app: AppHandle, media_id: i64, faces: Vec<FaceInput>
       save_scan_with_source(&mut conn,media_id,faces,source_key)?;
       Ok(())
     }).await.map_err(|e|e.to_string())?
+}
+
+#[derive(Serialize)]
+pub struct RefreshResult { detected:usize, learned:usize }
+struct StoredFace {id:i64,person:i64,descriptor:Vec<f64>,box_:Option<[f64;4]>,confirmed:bool,name:String,excluded:bool}
+fn overlap(a:[f64;4],b:[f64;4])->f64{
+    let area=((a[0]+a[2]).min(b[0]+b[2])-a[0].max(b[0])).max(0.0)*((a[1]+a[3]).min(b[1]+b[3])-a[1].max(b[1])).max(0.0);
+    area/(a[2]*a[3]+b[2]*b[3]-area).max(0.000001)
+}
+fn face_distance(a:&[f64],b:&[f64])->f64{
+    if a.len()!=128 || b.len()!=128 {return f64::INFINITY;}
+    a.iter().zip(b).map(|(a,b)|(a-b).powi(2)).sum::<f64>().sqrt()
+}
+fn refresh_scan(conn:&mut Connection,media_id:i64,faces:Vec<FaceInput>,source_key:&str)->Result<RefreshResult,String>{
+    validate_faces(&faces,true)?;
+    let tx=conn.transaction().map_err(|e|e.to_string())?;
+    let image:bool=tx.query_row("SELECT EXISTS(SELECT 1 FROM media WHERE id=?1 AND file_type='image')",[media_id],|r|r.get(0)).map_err(|e|e.to_string())?;
+    if !image {return Err("등록된 사진을 찾을 수 없습니다.".into());}
+    let valid:bool=tx.query_row("SELECT NOT EXISTS(SELECT 1 FROM face_scan s LEFT JOIN person_scan_metadata m ON m.media_id=s.media_id WHERE s.media_id=?1 AND (s.model_version<>?2 OR (m.source_key IS NOT NULL AND m.source_key<>?3)))",params![media_id,MODEL,source_key],|r|r.get(0)).map_err(|e|e.to_string())?;
+    if !valid {return Err("사진 또는 모델이 변경되었습니다. 기존 얼굴 연결은 유지했습니다.".into());}
+    let legacy:bool=tx.query_row("SELECT NOT EXISTS(SELECT 1 FROM person_scan_metadata WHERE media_id=?1)",[media_id],|r|r.get(0)).map_err(|e|e.to_string())?;
+    let old={let mut statement=tx.prepare("SELECT f.id,f.person_id,f.descriptor,m.geometry,f.confirmed,p.name,EXISTS(SELECT 1 FROM excluded_face WHERE face_id=f.id) FROM detected_face f JOIN person p ON p.id=f.person_id LEFT JOIN person_face_metadata m ON m.face_id=f.id WHERE f.media_id=?1 ORDER BY f.id").map_err(|e|e.to_string())?;
+        let rows=statement.query_map([media_id],|r|{let descriptor:String=r.get(2)?;let geometry:Option<String>=r.get(3)?;Ok(StoredFace{id:r.get(0)?,person:r.get(1)?,descriptor:serde_json::from_str(&descriptor).unwrap_or_default(),box_:geometry.and_then(|s|serde_json::from_str(&s).ok()),confirmed:r.get(4)?,name:r.get(5)?,excluded:r.get(6)?})}).map_err(|e|e.to_string())?;
+        rows.collect::<Result<Vec<_>,_>>().map_err(|e|e.to_string())?};
+    let owners={let mut statement=tx.prepare("SELECT p.id FROM person_photo m JOIN person p ON p.id=m.person_id WHERE m.media_id=?1 AND trim(p.name)<>''").map_err(|e|e.to_string())?;let rows=statement.query_map([media_id],|r|r.get::<_,i64>(0)).map_err(|e|e.to_string())?;rows.collect::<Result<Vec<_>,_>>().map_err(|e|e.to_string())?};
+    let mut matched=std::collections::HashMap::<usize,usize>::new();
+    for (index,previous) in old.iter().enumerate().filter(|(_,row)|!row.excluded) {
+        let mut scores:Vec<_>=faces.iter().enumerate().filter_map(|(i,face)|{
+            let distance=face_distance(&previous.descriptor,&face.descriptor);
+            if legacy && distance>=0.15 {return None;}
+            match (previous.box_,face.box_) {
+                (Some(a),Some(b))=>{let value=overlap(a,b);(value>=0.6).then_some((i,1.0-value))},
+                _=>(distance<0.45).then_some((i,distance))
+            }
+        }).collect();scores.sort_by(|a,b|a.1.total_cmp(&b.1));
+        let Some(&(fresh,score))=scores.first() else {return Err("기존 얼굴을 다시 확인하지 못했습니다. 이름과 사진 연결은 유지했습니다.".into());};
+        if scores.get(1).is_some_and(|next|next.1-score<0.06) || matched.insert(fresh,index).is_some() {return Err("얼굴 위치가 모호합니다. 기존 연결을 유지하고 사진 정리에서 확인해 주세요.".into());}
+    }
+    let detected=faces.len();let mut learned=0;
+    for (i,face) in faces.into_iter().enumerate(){
+        // Explicit exclusions remain exclusions, even after a fresh detector run.
+        if !matched.contains_key(&i) && old.iter().filter(|r|r.excluded).any(|r|match(r.box_,face.box_){(Some(a),Some(b))=>overlap(a,b)>=0.3,_=>face_distance(&r.descriptor,&face.descriptor)<0.3}) {continue;}
+        let previous=matched.get(&i).map(|index|&old[*index]);
+        let manual=if detected==1 && owners.len()==1 && face.quality.as_deref()==Some("usable") && previous.is_none_or(|row|row.name.trim().is_empty() || row.person==owners[0]) {Some(owners[0])} else {None};
+        let (id,person,confirmed)=if let Some(row)=previous {
+            let person=manual.unwrap_or(row.person);let confirmed=row.confirmed || manual.is_some();
+            tx.execute("UPDATE person SET cover_face_id=NULL WHERE cover_face_id=?1 AND id<>?2",params![row.id,person]).map_err(|e|e.to_string())?;
+            tx.execute("UPDATE detected_face SET person_id=?1,confirmed=?2,descriptor=?3,thumbnail=?4 WHERE id=?5",params![person,confirmed,serde_json::to_string(&face.descriptor).map_err(|e|e.to_string())?,face.thumbnail,row.id]).map_err(|e|e.to_string())?;(row.id,person,confirmed)
+        } else {
+            let person=match manual {Some(id)=>id,None=>{tx.execute("INSERT INTO person(name,profile_type) VALUES('','face')",[]).map_err(|e|e.to_string())?;tx.last_insert_rowid()}};
+            tx.execute("INSERT INTO detected_face(media_id,person_id,descriptor,thumbnail,confirmed) VALUES(?1,?2,?3,?4,?5)",params![media_id,person,serde_json::to_string(&face.descriptor).map_err(|e|e.to_string())?,face.thumbnail,manual.is_some()]).map_err(|e|e.to_string())?;(tx.last_insert_rowid(),person,manual.is_some())
+        };
+        tx.execute("INSERT INTO person_face_metadata(face_id,model_version,reference_kind,quality,geometry) VALUES(?1,?2,'seed',?3,?4) ON CONFLICT(face_id) DO UPDATE SET model_version=excluded.model_version,quality=excluded.quality,geometry=excluded.geometry",params![id,MODEL,face.quality.unwrap_or_else(||"review".into()),serde_json::to_string(&face.box_).map_err(|e|e.to_string())?]).map_err(|e|e.to_string())?;
+        tx.execute("DELETE FROM person_model_feature WHERE face_id=?1",[id]).map_err(|e|e.to_string())?;
+        for feature in face.additional_features {tx.execute("INSERT INTO person_model_feature(face_id,model_version,dimensions,descriptor,source_key) VALUES(?1,?2,?3,?4,?5)",params![id,feature.model_version,feature.dimensions as i64,serde_json::to_string(&feature.descriptor).map_err(|e|e.to_string())?,source_key]).map_err(|e|e.to_string())?;}
+        if let Some(pose)=face.pose {tx.execute("INSERT INTO person_face_pose(face_id,automatic) VALUES(?1,?2) ON CONFLICT(face_id) DO UPDATE SET automatic=excluded.automatic,updated_at=CURRENT_TIMESTAMP",params![id,serde_json::to_string(&pose).map_err(|e|e.to_string())?]).map_err(|e|e.to_string())?;}
+        if confirmed && tx.query_row("SELECT trim(name)<>'' FROM person WHERE id=?1",[person],|r|r.get::<_,bool>(0)).map_err(|e|e.to_string())? {learned+=1;}
+    }
+    tx.execute("INSERT INTO face_scan(media_id,model_version) VALUES(?1,?2) ON CONFLICT(media_id) DO UPDATE SET model_version=excluded.model_version,completed_at=CURRENT_TIMESTAMP",params![media_id,MODEL]).map_err(|e|e.to_string())?;
+    tx.execute("INSERT INTO person_scan_metadata(media_id,source_key,engine_version) VALUES(?1,?2,'gamjassak-people-v1') ON CONFLICT(media_id) DO UPDATE SET source_key=excluded.source_key,engine_version=excluded.engine_version",params![media_id,source_key]).map_err(|e|e.to_string())?;
+    tx.commit().map_err(|e|e.to_string())?;Ok(RefreshResult{detected,learned})
+}
+#[tauri::command]
+pub async fn refresh_face_scan(app:AppHandle,media_id:i64,faces:Vec<FaceInput>,source_key:String)->Result<RefreshResult,String>{
+    tauri::async_runtime::spawn_blocking(move||{let mut conn=super::open_database(&app)?;super::person_engine::source(&conn,media_id)?;super::pet_recognition::verify_source(&conn,media_id,&source_key)?;refresh_scan(&mut conn,media_id,faces,&source_key)}).await.map_err(|e|e.to_string())?
 }
 
 #[tauri::command]
@@ -356,12 +466,14 @@ pub fn set_faces_excluded(app: AppHandle, ids: Vec<i64>, excluded: bool) -> Resu
 
 #[tauri::command]
 pub fn clear_face_index(app: AppHandle) -> Result<(), String> {
-    let mut conn = super::open_database(&app)?;
+    clear_index(&mut super::open_database(&app)?)
+}
+fn clear_index(conn:&mut Connection)->Result<(),String>{
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     tx.execute("DELETE FROM person_evaluation_sample", []).map_err(|e|e.to_string())?;
     tx.execute("DELETE FROM detected_face", [])
         .map_err(|e| e.to_string())?;
-    tx.execute("DELETE FROM person WHERE profile_type = 'face'", [])
+    tx.execute("DELETE FROM person WHERE profile_type = 'face' AND NOT EXISTS(SELECT 1 FROM person_photo WHERE person_id=person.id)", [])
         .map_err(|e| e.to_string())?;
     tx.execute("DELETE FROM person_analysis_job", []).map_err(|e|e.to_string())?;
     tx.execute("DELETE FROM face_scan", [])
@@ -372,6 +484,48 @@ pub fn clear_face_index(app: AppHandle) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn manual_photos_work_without_faces_and_invalid_replacement_rolls_back(){
+        let mut c=database();let id=save_person_photos(&mut c,None,"가족",vec![1,1,2]).unwrap();
+        let index=read_index(&c).unwrap();assert!(index.faces.is_empty());assert_eq!(index.people[0].id,id);assert_eq!(index.people[0].media_ids,vec![1,2]);
+        assert!(save_person_photos(&mut c,Some(id),"가족",vec![3,999]).is_err());assert_eq!(read_index(&c).unwrap().people[0].media_ids,vec![1,2]);
+        assert!(save_person_photos(&mut c,None,"다른 사람",vec![999]).is_err());assert_eq!(read_index(&c).unwrap().people.len(),1);
+        let second=save_person_photos(&mut c,None,"친구",vec![1]).unwrap();assert_ne!(id,second);
+        c.execute("DELETE FROM media WHERE id=1",[]).unwrap();assert_eq!(read_index(&c).unwrap().people[0].media_ids,vec![2]);
+        assert_eq!(c.query_row("SELECT COUNT(*) FROM media",[],|r|r.get::<_,i64>(0)).unwrap(),3);
+    }
+    #[test]
+    fn relearning_single_manual_photo_promotes_the_known_person_and_preserves_ids(){
+        let mut c=database();let owner=save_person_photos(&mut c,None,"가족",vec![1]).unwrap();let key=format!("sha256:{}","a".repeat(64));
+        let mut fresh=face(0.1);fresh.quality=Some("usable".into());fresh.box_=Some([0.1,0.1,0.2,0.2]);
+        let result=refresh_scan(&mut c,1,vec![fresh],&key).unwrap();assert_eq!((result.detected,result.learned),(1,1));
+        let row=read_index(&c).unwrap().faces.remove(0);assert_eq!(row.person_id,owner);assert!(row.confirmed);set_cover_face(&c,owner,row.id).unwrap();
+        let pose=r#"{"version":"landmarks-pnp-v1","view":"left","yawDegrees":-40.0,"pitchDegrees":0.0,"rollDegrees":0.0,"quality":"estimated","normalizedError":0.01}"#;
+        c.execute("INSERT INTO person_face_pose(face_id,automatic,manual_view) VALUES(?1,?2,'right')",params![row.id,pose]).unwrap();
+        let mut again=face(0.1001);again.quality=Some("usable".into());again.box_=Some([0.1,0.1,0.2,0.2]);again.pose=Some(serde_json::from_str(pose).unwrap());
+        again.additional_features.push(crate::recognition::ModelFeature{model_version:crate::recognition::PERSON_512_MODEL.into(),dimensions:512,descriptor:vec![0.1;512]});
+        refresh_scan(&mut c,1,vec![again],&key).unwrap();let next=read_index(&c).unwrap();assert_eq!(next.faces[0].id,row.id);assert_eq!(next.faces[0].person_id,owner);assert_eq!(next.people[0].cover_face_id,Some(row.id));assert_eq!(next.people[0].media_ids,vec![1]);
+        assert_eq!(c.query_row("SELECT manual_view FROM person_face_pose WHERE face_id=?1",[row.id],|r|r.get::<_,String>(0)).unwrap(),"right");
+        assert_eq!(c.query_row("SELECT dimensions FROM person_model_feature WHERE face_id=?1",[row.id],|r|r.get::<_,i64>(0)).unwrap(),512);
+        assert!(refresh_scan(&mut c,1,vec![],&key).is_err());assert_eq!(read_index(&c).unwrap().faces[0].id,row.id);
+        assert!(refresh_scan(&mut c,1,vec![face(0.1)],&format!("sha256:{}","b".repeat(64))).is_err());assert_eq!(read_index(&c).unwrap().people[0].media_ids,vec![1]);
+        clear_index(&mut c).unwrap();let kept=read_index(&c).unwrap();assert!(kept.faces.is_empty());assert_eq!(kept.people[0].id,owner);assert_eq!(kept.people[0].media_ids,vec![1]);
+    }
+    #[test]
+    fn relearning_multi_face_or_multi_owner_photos_requires_identity_review(){
+        let mut c=database();let owner=save_person_photos(&mut c,None,"가족",vec![1,2]).unwrap();let key=format!("sha256:{}","a".repeat(64));
+        let mut a=face(0.1);a.quality=Some("usable".into());let mut b=face(0.2);b.quality=Some("usable".into());
+        assert_eq!(refresh_scan(&mut c,1,vec![a,b],&key).unwrap().learned,0);
+        assert!(read_index(&c).unwrap().faces.iter().all(|row|row.person_id!=owner && !row.confirmed));
+        save_person_photos(&mut c,None,"친구",vec![2]).unwrap();let mut only=face(0.1);only.quality=Some("usable".into());
+        assert_eq!(refresh_scan(&mut c,2,vec![only],&key).unwrap().learned,0);
+        assert_eq!(read_index(&c).unwrap().people.iter().find(|row|row.id==owner).unwrap().media_ids,vec![1,2]);
+    }
+    #[test]
+    fn merging_manual_people_keeps_photos_faces_and_original_media(){
+        let mut c=database();let source=save_person_photos(&mut c,None,"가족",vec![1,2]).unwrap();let target=save_person_photos(&mut c,None,"가족",vec![2,3]).unwrap();
+        merge_people(&mut c,vec![source],target).unwrap();let index=read_index(&c).unwrap();assert_eq!(index.people.len(),1);assert_eq!(index.people[0].id,target);assert_eq!(index.people[0].media_ids,vec![1,2,3]);assert_eq!(c.query_row("SELECT COUNT(*) FROM media",[],|r|r.get::<_,i64>(0)).unwrap(),4);
+    }
     fn database() -> Connection {
         let conn = Connection::open_in_memory().unwrap();
         conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();

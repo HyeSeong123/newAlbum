@@ -17,7 +17,7 @@ export function indexFaces(index: FaceIndex) {
   return { byPerson, peopleById, unidentified, scanned: new Set(index.scanned) };
 }
 
-export function mediaForFaces(items: MediaItem[], faces: FaceRow[]): MediaItem[] {
-  const ids = new Set(faces.map((face) => face.media_id));
+export function mediaForFaces(items: MediaItem[], faces: FaceRow[], manualIds: number[] = []): MediaItem[] {
+  const ids = new Set([...faces.map((face) => face.media_id), ...manualIds]);
   return items.filter((item) => ids.has(Number(item.id)));
 }
