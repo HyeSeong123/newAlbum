@@ -18,6 +18,7 @@ export function PetPhotoSearch({ photos, pets, pet, analysis, onClose, onSaved }
   const [ratios, setRatios] = useState<Record<string, number>>({});
   const [hasNext, setHasNext] = useState(false), [error, setError] = useState('');
   const [saving, setSaving] = useState<number | null>(null);
+  const connected = useRef(new Set<string>());
   const cursors = useRef([0]), alive = useRef(true), request = useRef(0), locked = useRef(false);
   const byId = useMemo(() => new Map(photos.map(item => [Number(item.id), item])), [photos]);
   const registered = useMemo(() => new Map(pets.map(entry => [entry.id, entry])), [pets]);
@@ -40,7 +41,7 @@ export function PetPhotoSearch({ photos, pets, pet, analysis, onClose, onSaved }
         // turn another pet's better match into a misleading suggestion.
         const candidate = recognizePet(detection, refs).candidates[0];
         const owner = candidate && registered.get(candidate.petId);
-        if (!owner || pet && owner.id !== pet.id || owner.media_ids.includes(detection.media_id)) continue;
+        if (!owner || pet && owner.id !== pet.id || owner.media_ids.includes(detection.media_id) || connected.current.has(`${owner.id}:${detection.media_id}`)) continue;
         found.push({ detection, pet: owner, item });
         if (found.length === 24) { more = index < rows.length - 1 || rows.length === 100; break; }
       }
@@ -48,7 +49,7 @@ export function PetPhotoSearch({ photos, pets, pet, analysis, onClose, onSaved }
       if (!alive.current || token !== request.current) return;
     }
     if (alive.current && token === request.current) {
-      cursors.current[page + 1] = cursor; setMatches(found); setHasNext(more);
+      cursors.current[page + 1] = cursor; setMatches(found.filter(match => !connected.current.has(`${match.pet.id}:${match.detection.media_id}`))); setHasNext(more);
     }
   }, [byId, registered, page, pet]);
   useEffect(() => {
@@ -74,8 +75,12 @@ export function PetPhotoSearch({ photos, pets, pet, analysis, onClose, onSaved }
     locked.current = true; setSaving(match.detection.id); setError('');
     try {
       await confirmPetDetection(match.detection.id, match.pet.id, match.detection.view);
+      connected.current.add(`${match.pet.id}:${match.detection.media_id}`);
+      setMatches(current => current.filter(row => row.pet.id !== match.pet.id || row.detection.media_id !== match.detection.media_id));
       window.dispatchEvent(new Event('gamjassak-pet-results'));
-      await onSaved(); await refresh();
+      // Parent updates replace the pets snapshot. Its effect refreshes results;
+      // never launch another request with this render's older memberships.
+      await onSaved();
     } catch (reason) { if (alive.current) setError(String(reason instanceof Error ? reason.message : reason)); }
     finally { locked.current = false; if (alive.current) setSaving(null); }
   }
