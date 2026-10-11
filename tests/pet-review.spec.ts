@@ -13,7 +13,7 @@ async function prepare(page: import('@playwright/test').Page) {
       if (command === 'list_face_index') return { people: [], faces: [], scanned: [] };
       if (command === 'list_pet_jobs') return { pending: 0, paused: 0, failed: 0, jobs: [] };
       if (command === 'media_thumbnail') return 'C:/thumb.jpg';
-      if (command === 'list_pets') return pets;
+      if (command === 'list_pets') return structuredClone(pets);
       if (command === 'get_pet_scan') return { media_id: args.mediaId, engine_version: 'gamjassak-pets-v2', source_key: 'mock', detections: detections.filter(d => d.media_id === args.mediaId) };
       if (command === 'list_pet_detections') return detections.filter(d => (args.mediaId === null || d.media_id === args.mediaId) && d.id > args.afterId && (!args.references || d.pet_id !== null && !d.excluded)).slice(0, args.limit);
       if (command === 'enqueue_pet_jobs') { const calls = JSON.parse(localStorage.getItem('pet-search-jobs') ?? '[]'); calls.push(args.jobs); localStorage.setItem('pet-search-jobs', JSON.stringify(calls)); return; }
