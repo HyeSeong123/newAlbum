@@ -40,6 +40,22 @@ test('touch swipes scroll selection mode without selecting photos, while taps to
   await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(before + 40);
   await expect(page.locator('.mediaTile.multiSelected')).toHaveCount(0);
+  // The first tap during native scroll inertia stops the fling. Check a
+  // separate selection tap after the scroll has actually settled, as in the
+  // people/pet touch regression rather than relying on runner timing.
+  await page.evaluate(async () => {
+    const scroller = document.scrollingElement!;
+    await new Promise<void>(resolve => {
+      let previous = scroller.scrollTop, stableFrames = 0;
+      const frame = () => {
+        const current = scroller.scrollTop;
+        stableFrames = Math.abs(current - previous) < .25 ? stableFrames + 1 : 0;
+        previous = current;
+        if (stableFrames >= 12) resolve(); else requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    });
+  });
   await page.locator('.mediaTile').nth(8).tap();
   await expect(page.locator('.mediaTile.multiSelected')).toHaveCount(1);
   await page.locator('.mediaTile').nth(8).tap();
