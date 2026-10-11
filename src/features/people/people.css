@@ -61,12 +61,7 @@
 @media (max-width: 720px) { .personPhotoGrid.personMediaGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 10px; } }
 @media (max-width: 480px) { .personPhotoGrid.faceOverviewGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; } }
 
-.peopleNextSteps { display: grid; gap: 10px; padding: 16px; background: #eef2e8; border: 1px solid var(--border); border-radius: 12px; }
-.peopleNextSteps p { margin: 0; font-weight: 600; }
-.peopleNextSteps small { color: #53615a; line-height: 1.6; }
 
-.existingPersonChoice label { display: grid; gap: 6px; }
-.existingPersonChoice { align-items: flex-end; }
 
 .personEvaluationReport > table { width:100%; table-layout:fixed; border-collapse:collapse; margin:16px 0; }
 .personEvaluationReport > table th,.personEvaluationReport > table td { padding:8px 4px; overflow-wrap:anywhere; text-align:left; border-bottom:1px solid var(--border); }

@@ -214,7 +214,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
             { label: '이름 수정', icon: <Pencil size={16} />, onSelect: () => { setName(person.name); setNameMode('new'); setEditingName(true); } },
             { label: '사진 내보내기', icon: <FolderOutput size={16} />, disabled: !personItems.length, onSelect: () => setExporting(true) },
             { label: '대표 사진 변경', icon: <ImageIcon size={16} />, onSelect: () => { setChoosingCover(true); setSelecting(false); setChosen([]); } },
-            { label: '사진 정리', icon: <Scissors size={16} />, onSelect: () => { setSelecting(true); setFaceAction('confirm'); setChoosingCover(false); setChosen([]); } },
+            { label: '사진 정리', icon: <Scissors size={16} />, onSelect: () => { setSelecting(true); setFaceAction(person.name.trim() ? 'confirm' : 'move'); setChoosingCover(false); setChosen([]); } },
           ]} />
         </> : <>
         <div className="toolbarGroup" role="group" aria-label="얼굴 분석">
