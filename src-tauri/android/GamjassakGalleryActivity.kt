@@ -102,9 +102,6 @@ class GamjassakGalleryActivity : Activity() {
         }
         window.statusBarColor = cream
         window.navigationBarColor = cream
-        WindowInsetsControllerCompat(window, root).apply {
-            isAppearanceLightStatusBars = true; isAppearanceLightNavigationBars = true
-        }
         fun text(value: String, size: Float) = TextView(this).apply {
             text = value; textSize = size; setTextColor(ink)
         }
@@ -152,7 +149,12 @@ class GamjassakGalleryActivity : Activity() {
         done = styledButton("0개 가져오기", true).apply { setOnClickListener { complete(selected.toList()) } }
         actions.addView(done, LinearLayout.LayoutParams(0, dp(48), 2f))
         footer.addView(actions); root.addView(footer)
-        setContentView(root); updateSelection()
+        setContentView(root)
+        // The controller needs an installed DecorView before it can read system bars.
+        WindowInsetsControllerCompat(window, root).apply {
+            isAppearanceLightStatusBars = true; isAppearanceLightNavigationBars = true
+        }
+        updateSelection()
         if (!accessible()) requestGalleryAccess()
     }
 
