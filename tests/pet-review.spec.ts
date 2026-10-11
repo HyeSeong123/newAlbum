@@ -39,6 +39,7 @@ test('registered photos can be searched and each animal connected without diagno
   await page.getByRole('button', { name: '등록된 사진에서 찾기', exact: true }).click();
   const search = page.getByRole('dialog', { name: '등록된 사진에서 찾기' });
   await expect(search.locator('.petSearchCard')).toHaveCount(2);
+  await expect.poll(() => search.locator('.petDetectionPreview').first().evaluate(element => { const bounds = element.getBoundingClientRect(); return Math.round(bounds.width / bounds.height * 100); })).toBe(133);
   await expect(search.getByRole('button', { name: '검증 자료 만들기', exact: true })).toHaveCount(0);
   await search.getByRole('button', { name: '사진 찾기 시작', exact: true }).click();
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pet-search-jobs') ?? '[]'))).toEqual([

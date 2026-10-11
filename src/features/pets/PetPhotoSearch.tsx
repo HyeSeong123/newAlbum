@@ -15,6 +15,7 @@ export function PetPhotoSearch({ photos, pets, pet, analysis, onClose, onSaved }
   photos: MediaItem[]; pets: Pet[]; pet?: Pet; analysis: PetAnalysis; onClose: () => void; onSaved: () => Promise<void>;
 }) {
   const [matches, setMatches] = useState<Match[]>([]), [page, setPage] = useState(0);
+  const [ratios, setRatios] = useState<Record<string, number>>({});
   const [hasNext, setHasNext] = useState(false), [error, setError] = useState('');
   const [saving, setSaving] = useState<number | null>(null);
   const cursors = useRef([0]), alive = useRef(true), request = useRef(0), locked = useRef(false);
@@ -89,7 +90,13 @@ export function PetPhotoSearch({ photos, pets, pet, analysis, onClose, onSaved }
       <strong>연결할 사진</strong>
       {!matches.length && <p>{analysis.progress?.running ? '사진을 찾고 있어요. 발견한 사진은 여기에 표시됩니다.' : '아직 연결할 사진이 없습니다. 사진 찾기를 실행하거나 다른 사진을 연결해 보세요.'}</p>}
       <div className="petSearchGrid">{matches.map(match => <article key={match.detection.id} className="petSearchCard">
-        <div className="petDetectionPreview"><MediaVisual item={match.item} /><span className="petDetectionBox" style={{ left: `${match.detection.box[0] * 100}%`, top: `${match.detection.box[1] * 100}%`, width: `${match.detection.box[2] * 100}%`, height: `${match.detection.box[3] * 100}%` }} /></div>
+        <div className="petDetectionPreview" style={{ aspectRatio: ratios[match.item.id] ?? (match.item.width && match.item.height ? match.item.width / match.item.height : 1) }} onLoadCapture={event => {
+          const image = event.target;
+          if (image instanceof HTMLImageElement && image.naturalHeight) {
+            const ratio = image.naturalWidth / image.naturalHeight;
+            setRatios(current => current[match.item.id] === ratio ? current : { ...current, [match.item.id]: ratio });
+          }
+        }}><MediaVisual item={match.item} /><span className="petDetectionBox" style={{ left: `${match.detection.box[0] * 100}%`, top: `${match.detection.box[1] * 100}%`, width: `${match.detection.box[2] * 100}%`, height: `${match.detection.box[3] * 100}%` }} /></div>
         <strong>{match.pet.name}</strong><small>{match.item.takenAt ?? match.item.fileName}</small>
         <button disabled={saving !== null} aria-label={`${match.pet.name} 사진 연결 ${match.detection.id}`} onClick={() => void connect(match)}><Check size={16}/>{saving === match.detection.id ? '연결 중…' : '사진 연결'}</button>
       </article>)}</div>

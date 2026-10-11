@@ -65,10 +65,17 @@ export async function verifyInstalledGallery({page,adb,nativeTree,tapNative,capt
   await adb('shell','input','swipe',String(beforeScroll[0][0]),String(beforeScroll[0][1]+400),String(beforeScroll[0][0]),String(beforeScroll[0][1]),'250');
   const scrolled = await nativeTree();
   assert.ok(scrolled.includes('사진·영상을 골라 주세요'), 'Normal scrolling must not select images');
-  assert.ok(!scrolled.includes(order[0]), 'Normal swipe must actually scroll the gallery');
+  assert.ok(!scrolled.includes(order[0]) || centers(scrolled)[0][1] < beforeScroll[0][1] - 100, 'Normal swipe must move gallery cells while leaving selection unchanged');
   await adb('shell','input','swipe',String(beforeScroll[0][0]),String(beforeScroll[0][1]),String(beforeScroll[0][0]),String(beforeScroll[0][1]+1000),'300');
   await expect.poll(async () => (await nativeTree()).includes(order[0])).toBe(true);
-  const points = centers(await nativeTree());
+  // Use one visible row for the gesture: dated fixtures can start in the
+  // middle of a row when the device already contains newer photos.
+  const gestureTree = await nativeTree();
+  const points = (gestureTree.match(/<node\b[^>]+>/g) ?? []).filter(node => /content-desc="[^"]+, (사진|영상), 수정 /.test(node)).slice(0,3).map(node => {
+    const bounds = node.match(/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/).slice(1).map(Number);
+    return [Math.round((bounds[0]+bounds[2])/2),Math.round((bounds[1]+bounds[3])/2)];
+  });
+  assert.equal(points.length,3); assert.ok(points.every(point=>point[1]===points[0][1]), 'Gesture fixtures must share a visible row');
   async function dragSelection() {
     await adb('shell','input','motionevent','DOWN',...points[0].map(String));
     await new Promise(resolve=>setTimeout(resolve,800));
@@ -84,7 +91,7 @@ export async function verifyInstalledGallery({page,adb,nativeTree,tapNative,capt
   assert.ok((await nativeTree()).includes('3개 선택됨'), 'Long press then drag must select each crossed cell once');
   await dragSelection();
   assert.ok((await nativeTree()).includes('사진·영상을 골라 주세요'), 'Long pressing a selected photo must drag to deselect');
-  await dragSelection();
+  for (const name of order) await tapNative(new RegExp(`content-desc="${name.replaceAll('.','\\.')}[^\"]*선택 안 됨`));
   assert.ok((await nativeTree()).includes('3개 선택됨'), 'Selection count must update above the import action');
   await captureScreen('gallery-three-selected');
   await tapNative(/text="3개 가져오기"/);

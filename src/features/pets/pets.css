@@ -69,5 +69,5 @@
 .petSearchCard > div { aspect-ratio: 1; overflow: hidden; border-radius: 8px; }
 .petSearchCard small { color: var(--muted); overflow-wrap: anywhere; }
 .petSearchCard button { min-height: 44px; display: flex; gap: 6px; align-items: center; justify-content: center; }
-.petPhotoSearch .entityEditFooter { grid-template-columns: 1fr; }
+.entityEditDialog.petPhotoSearch .entityEditFooter { grid-template-columns: 1fr; }
 @media (max-width: 600px) { .petSearchGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } .petFindPhotos button { width: 100%; } }
