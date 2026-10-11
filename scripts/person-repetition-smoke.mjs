@@ -50,6 +50,8 @@ export async function verifyInstalledRepetitionMeasurement(page, mediaId, inputP
   }
   assert.deepEqual(await snapshot(mediaId), before, 'Worker repetition must preserve stored people/pet links and features');
   await page.getByRole('tab', { name: '사람', exact: true }).click();
+  const backToPeople = page.getByRole('button', { name: '사람 목록', exact: true });
+  if (await backToPeople.isVisible()) await backToPeople.click();
   await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
   assert.equal(await page.getByRole('button', { name: /인식 검증|기기 측정/ }).count(), 0);
   await page.screenshot({ path: 'test-results/android-smoke/people-simple-menu.png' });

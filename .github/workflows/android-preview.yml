@@ -19,6 +19,7 @@ on:
       - 'scripts/pet-model-lock.json'
       - 'scripts/pet-runtime-benchmark.mjs'
       - 'scripts/smoke-android.mjs'
+      - 'scripts/manual-photo-smoke.mjs'
       - 'scripts/gallery-smoke.mjs'
       - 'package*.json'
       - 'vite.config.ts'
