@@ -77,7 +77,13 @@ pub fn initialize(conn: &mut Connection) -> Result<(), String> {
     if current < 14 { tx.execute_batch(include_str!("../database/person-evaluation.sql")).map_err(|e| e.to_string())?; }
     if current < 15 { tx.execute_batch(include_str!("../database/person-source-audit.sql")).map_err(|e| e.to_string())?; }
     if current < 16 { tx.execute_batch(include_str!("../database/recognition-094.sql")).map_err(|e| e.to_string())?; }
-    if current < 17 { tx.execute_batch(include_str!("../database/manual-person-photos.sql")).map_err(|e| e.to_string())?; }
+    if current < 17 {
+        tx.execute_batch(include_str!("../database/manual-person-photos.sql")).map_err(|e| e.to_string())?;
+        let has_refresh: bool = tx.query_row("SELECT EXISTS(SELECT 1 FROM pragma_table_info('pet_analysis_job') WHERE name='refresh')", [], |row| row.get(0)).map_err(|e| e.to_string())?;
+        if !has_refresh {
+            tx.execute_batch("ALTER TABLE pet_analysis_job ADD COLUMN refresh INTEGER NOT NULL DEFAULT 0 CHECK(refresh IN (0,1));").map_err(|e| e.to_string())?;
+        }
+    }
     tx.pragma_update(None, "user_version", VERSION).map_err(|error| error.to_string())?;
     tx.commit().map_err(|error| error.to_string())
 }
