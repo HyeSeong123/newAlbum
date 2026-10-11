@@ -50,7 +50,7 @@ test('registered photos can be searched and each animal connected without diagno
   await search.getByRole('button', { name: '보리 사진 연결 2', exact: true }).click();
   await expect(search.locator('.petSearchCard')).toHaveCount(0); // the photo is already linked, including its other animal
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pet-confirmed-test')!)[2].pet_id)).toBeNull();
-  await search.getByRole('button', { name: '닫기', exact: true }).click();
+  await search.locator('.entityEditFooter').getByRole('button', { name: '닫기', exact: true }).click();
   await expect(page.getByRole('button', { name: '사진 상세보기', exact: true })).toHaveCount(2);
   await page.getByRole('button', { name: '반려동물 목록', exact: true }).click();
   await page.getByRole('button', { name: '초코 0장', exact: true }).click();
