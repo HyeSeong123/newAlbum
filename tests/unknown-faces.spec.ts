@@ -81,7 +81,7 @@ test('unknown directory shows only unnamed faces and retains person navigation',
   for (const face of await page.getByRole('button', { name: '얼굴 선택', exact: true }).all()) await face.click();
   await page.getByRole('button', { name: '다음', exact: true }).click();
   for (const face of await page.getByRole('button', { name: '얼굴 선택', exact: true }).all()) await face.click();
-  await expect(page.locator('.faceSelectionActions')).toContainText('26개 선택');
+  await expect(page.getByRole('region', { name: '선택한 얼굴 정리', exact: true })).toContainText('26개 선택');
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByLabel('얼굴 정리 작업').selectOption('exclude');
   await page.getByRole('button', { name: '얼굴 제외', exact: true }).click();
