@@ -33,12 +33,12 @@ test('people and pet controls stay aligned and anchored on narrow screens', asyn
   await page.addInitScript(() => {
     const media = [1, 2].map(id => ({ id, file_path: `/photos/${id}.jpg`, file_type: 'image', taken_at: '2026-10-05', width: 800, height: 600, size_bytes: 1000, rating: 0, comment: '', favorite: false, metadata_status: 'ready' }));
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
-      convertFileSrc: () => '/favicon.svg',
+      convertFileSrc: () => '/favicon.png',
       invoke: async (command: string) => {
         if (command === 'list_media') return media;
         if (command === 'list_face_index') return {
           people: [{ id: 1, name: '아주 긴 이름을 가진 우리 가족' }, { id: 2, name: '혜성' }],
-          faces: [1, 2].map(id => ({ id, person_id: id, media_id: id, thumbnail: '/favicon.svg', confirmed: true })), scanned: [1],
+          faces: [1, 2].map(id => ({ id, person_id: id, media_id: id, thumbnail: '/favicon.png', confirmed: true })), scanned: [1],
         };
         if (command === 'list_pets') return [{ id: 1, name: '아주 긴 이름을 가진 우리 보리', media_ids: [1, 2], cover_media_id: 1 }];
         return [];
@@ -81,7 +81,8 @@ test('people and pet controls stay aligned and anchored on narrow screens', asyn
     await checkHeader(page, petHeader);
     await expect(petHeader.getByText('사진 2장', { exact: true })).toBeVisible();
     menu = await checkMenu(page, petHeader.getByRole('button', { name: '반려동물 관리', exact: true }));
-    await expect(menu.getByRole('button', { name: '인식 기준·결과 확인', exact: true })).toBeEnabled();
+    await expect(menu.getByRole('button', { name: '인식 기준·결과 확인', exact: true })).toHaveCount(0);
+    await expect(menu.getByRole('button', { name: '반려동물 등록 삭제', exact: true })).toBeEnabled();
     await page.screenshot({ path: `preview-results/people-controls-pet-${width}-${large ? 'large' : 'normal'}.png`, fullPage: true });
     await page.keyboard.press('Escape');
     await expect(petHeader.getByRole('button', { name: '반려동물 관리', exact: true })).toBeFocused();

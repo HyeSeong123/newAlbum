@@ -15,11 +15,14 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.provider.MediaStore
 import android.provider.Settings
 import android.util.LruCache
 import android.util.Size
 import android.view.Gravity
+import android.view.MotionEvent
+import android.view.HapticFeedbackConstants
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
@@ -43,7 +46,7 @@ class GamjassakGalleryActivity : Activity() {
     private val cache = object : LruCache<String, Bitmap>(8 * 1024 * 1024) {
         override fun sizeOf(key: String, value: Bitmap) = value.byteCount
     }
-    private lateinit var grid: GridView
+    private lateinit var grid: SelectionGrid
     private lateinit var message: TextView
     private lateinit var selectionSummary: TextView
     private lateinit var done: Button
@@ -108,7 +111,7 @@ class GamjassakGalleryActivity : Activity() {
         val header = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(12)) }
         header.addView(text("감자싹", 12f).apply { setTextColor(olive); setTypeface(typeface, Typeface.BOLD) })
         header.addView(text("사진·영상 선택", 22f).apply { setTypeface(typeface, Typeface.BOLD); setPadding(0, dp(6), 0, dp(6)) })
-        header.addView(text("최근 수정 순 · 사진과 영상만 표시", 12f).apply { setTextColor(muted) })
+        header.addView(text("최근 수정 순 · 꾹 누른 뒤 드래그로 여러 장 선택", 12f).apply { setTextColor(muted) })
         message = text("갤러리를 불러오는 중", 13f).apply { setPadding(0, dp(10), 0, 0); setTextColor(muted) }
         header.addView(message)
         more = styledButton("접근할 사진 변경").apply { setOnClickListener { requestGalleryAccess() } }
@@ -118,7 +121,7 @@ class GamjassakGalleryActivity : Activity() {
         }
         header.addView(settings, LinearLayout.LayoutParams(-1, dp(44)).apply { topMargin = dp(8) })
         root.addView(header)
-        grid = GridView(this).apply {
+        grid = SelectionGrid().apply {
             numColumns = 3; horizontalSpacing = dp(6); verticalSpacing = dp(8)
             setPadding(dp(12), 0, dp(12), dp(8)); clipToPadding = false; setBackgroundColor(cream)
             stretchMode = GridView.STRETCH_COLUMN_WIDTH; this.adapter = this@GamjassakGalleryActivity.adapter
@@ -128,8 +131,9 @@ class GamjassakGalleryActivity : Activity() {
                     if (selected.size >= 500) Toast.makeText(this@GamjassakGalleryActivity, "한 번에 500개까지 선택해 주세요.", Toast.LENGTH_SHORT).show()
                     else selected.add(uri)
                 }
-                updateSelection(); this@GamjassakGalleryActivity.adapter.notifyDataSetChanged()
+                updateSelection(); updateVisibleSelection()
             }
+            setOnItemLongClickListener { _, _, position, _ -> beginSelection(position); true }
             setOnScrollListener(object : AbsListView.OnScrollListener {
                 override fun onScrollStateChanged(view: AbsListView?, state: Int) {}
                 override fun onScroll(view: AbsListView?, first: Int, visible: Int, total: Int) {
@@ -255,6 +259,104 @@ class GamjassakGalleryActivity : Activity() {
             }
         }
     }
+    /** AbsListView decides long press vs. scrolling. Only an accepted long
+     * press takes over touch events; normal swipes retain native scrolling. */
+    private inner class SelectionGrid : GridView(this@GamjassakGalleryActivity) {
+        private var dragging = false
+        private var cancelled = false
+        private var selecting = true
+        private var pointer = -1
+        private var x = 0f
+        private var y = 0f
+        private var lastPosition = -1
+        private var limitShown = false
+        private val visited = HashSet<Int>()
+        private val autoScroll = object : Runnable {
+            override fun run() {
+                if (!dragging) return
+                val edge = dp(48)
+                val step = when { y < edge -> -dp(12); y > height - edge -> dp(12); else -> 0 }
+                if (step != 0) {
+                    scrollListBy(step)
+                    selectAtPoint()
+                    postOnAnimation(this)
+                }
+            }
+        }
+        fun beginSelection(position: Int) {
+            if (position !in entries.indices) return
+            dragging = true; selecting = !selected.contains(entries[position].uri.toString())
+            visited.clear(); lastPosition = position; limitShown = false
+            // Clear AbsListView's pressed/click/fling state after long-press
+            // recognition. Subsequent events are owned by this gesture only.
+            val cancel = MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_CANCEL, x, y, 0)
+            super.onTouchEvent(cancel); cancel.recycle()
+            parent?.requestDisallowInterceptTouchEvent(true)
+            performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            changeSelection(position)
+            updateSelection(); updateVisibleSelection()
+        }
+        private fun changeSelection(position: Int): Boolean {
+            if (position !in entries.indices || !visited.add(position)) return false
+            val uri = entries[position].uri.toString()
+            if (!selecting) return selected.remove(uri)
+            if (selected.contains(uri)) return false
+            if (selected.size >= 500) {
+                if (!limitShown) Toast.makeText(this@GamjassakGalleryActivity, "한 번에 500개까지 선택해 주세요.", Toast.LENGTH_SHORT).show()
+                limitShown = true; return false
+            }
+            return selected.add(uri)
+        }
+        private fun selectAtPoint() {
+            val position = pointToPosition(x.toInt(), y.toInt().coerceIn(0, maxOf(0, height - 1)))
+            if (position == INVALID_POSITION) return
+            var changed = false
+            // Fill skipped cells during fast movement and auto-scroll.
+            for (index in minOf(lastPosition, position)..maxOf(lastPosition, position)) changed = changeSelection(index) || changed
+            lastPosition = position
+            if (changed) { updateSelection(); updateVisibleSelection() }
+        }
+        private fun endSelection() {
+            dragging = false; visited.clear(); lastPosition = -1
+            removeCallbacks(autoScroll); parent?.requestDisallowInterceptTouchEvent(false)
+        }
+        override fun onTouchEvent(event: MotionEvent): Boolean {
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                endSelection(); cancelled = false; pointer = event.getPointerId(0)
+            }
+            val index = event.findPointerIndex(pointer)
+            if (index >= 0) { x = event.getX(index); y = event.getY(index) }
+            if (cancelled) {
+                if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) cancelled = false
+                return true
+            }
+            if (!dragging) return super.onTouchEvent(event)
+            when (event.actionMasked) {
+                MotionEvent.ACTION_MOVE -> {
+                    selectAtPoint(); removeCallbacks(autoScroll); postOnAnimation(autoScroll)
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> endSelection()
+                MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_POINTER_UP -> { endSelection(); cancelled = true }
+            }
+            return true
+        }
+        override fun onDetachedFromWindow() { endSelection(); super.onDetachedFromWindow() }
+    }
+    private fun updateVisibleSelection() {
+        // Selection paint does not rebind images or cancel thumbnail tasks.
+        for (index in 0 until grid.childCount) {
+            val position = grid.firstVisiblePosition + index
+            val cell = grid.getChildAt(index).tag as? Cell ?: continue
+            entries.getOrNull(position)?.let { paintSelection(cell, it) }
+        }
+    }
+    private fun paintSelection(cell: Cell, entry: Entry) {
+        val checked = selected.contains(entry.uri.toString())
+        cell.root.background = rounded(if (checked) Color.rgb(230, 235, 217) else cream, 8)
+        cell.check.isChecked = checked; cell.frame.alpha = if (checked) 0.88f else 1f
+        val date = if (entry.modified > 0) SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.getDefault()).format(Date(entry.modified * 1000)) else "수정일 없음"
+        cell.root.contentDescription = "${entry.name}, ${if (entry.video) "영상" else "사진"}, 수정 $date, ${if (checked) "선택됨" else "선택 안 됨"}"
+    }
     private class Cell(val root: LinearLayout, val frame: FrameLayout, val image: ImageView, val label: TextView, val check: CheckBox, val video: TextView) {
         var uri = ""; var task: Future<*>? = null
     }
@@ -288,13 +390,9 @@ class GamjassakGalleryActivity : Activity() {
                 Cell(root, frame, image, label, check, video).also { root.tag = it }
             }
             val entry = entries[position]; val uri = entry.uri.toString(); cell.uri = uri; cell.task?.cancel(true)
-            val checked = selected.contains(uri)
-            cell.root.background = rounded(if (checked) Color.rgb(230, 235, 217) else cream, 8)
-            cell.check.isChecked = checked; cell.video.visibility = if (entry.video) View.VISIBLE else View.GONE
-            cell.frame.alpha = if (checked) 0.88f else 1f
-            val date = if (entry.modified > 0) SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.getDefault()).format(Date(entry.modified * 1000)) else "수정일 없음"
+            paintSelection(cell, entry)
+            cell.video.visibility = if (entry.video) View.VISIBLE else View.GONE
             cell.label.text = if (entry.modified > 0) SimpleDateFormat("MM.dd HH:mm", Locale.getDefault()).format(Date(entry.modified * 1000)) else "수정일 없음"
-            cell.root.contentDescription = "${entry.name}, ${if (entry.video) "영상" else "사진"}, 수정 $date, ${if (checked) "선택됨" else "선택 안 됨"}"
             cell.image.setImageBitmap(cache.get(uri))
             val token = generation
             if (cache.get(uri) == null) cell.task = thumbnails.submit {

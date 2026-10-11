@@ -6,7 +6,10 @@ import type { PetView } from './engine/types';
 import type { PetProgress } from './engine/manager';
 interface Job { id:number;media_id:number;pet_id:number|null;view:PetView;state:'pending'|'paused'|'failed';error:string }
 interface Queue {jobs:Job[];pending:number;paused:number;failed:number}
-export function usePetAnalysis() {
+export type PetAnalysis = ReturnType<typeof usePetAnalysis>;
+export function usePetAnalysis(media: MediaItem[]) {
+  const mediaRef = useRef(media);
+  mediaRef.current = media;
   const controller=useRef<AbortController|null>(null), mounted=useRef(true);
   const operations=useRef<Promise<unknown>>(Promise.resolve());
   const settled=useRef<Promise<void>>(Promise.resolve()), rerun=useRef(false);
@@ -20,26 +23,30 @@ export function usePetAnalysis() {
     let done=0,failed=0,detected=0;
     try {
       const {scanPetBatch}=await import('./engine/manager');
-      let items=new Map((await loadRegisteredMedia()).map(item=>[Number(item.id),item]));
+      let items=new Map((mediaRef.current.length ? mediaRef.current : await loadRegisteredMedia()).map(item=>[Number(item.id),item]));
       for(;;){
         abort.signal.throwIfAborted();
         const queue=await invoke<Queue>('list_pet_jobs');
         if(!queue?.jobs)break; // browser previews without native queue commands
         if(mounted.current)setWaiting(queue.paused+queue.failed);
-        const job=queue.jobs.find(job=>job.state==='pending');
-        if(!job){if(mounted.current && (done || queue.paused || queue.failed))setProgress({done,total:done,failed,detected,running:false,message:queue.paused+queue.failed?`완료 ${done}장 · 대기 ${queue.paused}장 · 재시도 필요 ${queue.failed}장${queue.jobs.find(j=>j.error)?.error?` (${queue.jobs.find(j=>j.error)!.error})`:''}`:`반려동물 확인 필요 ${detected}마리 · ${done}장 확인`});break;}
+        const pending = queue.jobs.filter(job => job.state === 'pending');
+        if(!pending.length){if(mounted.current && (done || queue.paused || queue.failed))setProgress({done,total:done,failed,detected,running:false,message:queue.paused+queue.failed?`완료 ${done}장 · 대기 ${queue.paused}장 · 재시도 필요 ${queue.failed}장${queue.jobs.find(j=>j.error)?.error?` (${queue.jobs.find(j=>j.error)!.error})`:''}`:`반려동물 확인 필요 ${detected}마리 · ${done}장 확인`});break;}
+        let processedInBatch = 0;
+        for (const job of pending) {
+        abort.signal.throwIfAborted();
         let item=items.get(job.media_id);
-        if(!item){items=new Map((await loadRegisteredMedia()).map(item=>[Number(item.id),item]));item=items.get(job.media_id);}
+        if(!item){items=new Map((mediaRef.current.some(item=>Number(item.id)===job.media_id) ? mediaRef.current : await loadRegisteredMedia()).map(item=>[Number(item.id),item]));item=items.get(job.media_id);}
         if(!item){await invoke('finish_pet_job',{id:job.id,error:null});continue;}
         let outcome:PetProgress|undefined;
         await scanPetBatch([item],abort.signal,value=>{
           outcome=value;
-          if(mounted.current)setProgress({...value,done,total:done+queue.pending,failed,detected,running:true});
+          if(mounted.current)setProgress({...value,done,total:done+queue.pending-processedInBatch,failed,detected,running:true});
         },job.pet_id!==null?{petId:job.pet_id,views:{[item.id]:job.view}}:undefined);
         abort.signal.throwIfAborted();
         const problem=outcome?.failed ? outcome.message : null;
         await invoke('finish_pet_job',{id:job.id,error:problem});
-        done++;failed+=outcome?.failed??0;detected+=outcome?.detected??0;
+        done++;processedInBatch++;failed+=outcome?.failed??0;detected+=outcome?.detected??0;
+        }
       }
     }catch(error){if(!abort.signal.aborted)report(error);}
     finally{if(controller.current===abort)controller.current=null;release();if(rerun.current && mounted.current && !abort.signal.aborted){rerun.current=false;void pump();}}
@@ -60,5 +67,5 @@ export function usePetAnalysis() {
     schedule(async()=>{});
     return()=>{mounted.current=false;controller.current?.abort();void settled.current.then(()=>{if(mounted.current)void pump();});window.removeEventListener('gamjassak-pet-import',imported);window.removeEventListener('gamjassak-pet-enroll',enrolled);};
   },[start,schedule]);
-  return {progress,waiting,cancel:()=>{controller.current?.abort();const finished=settled.current;schedule(async()=>{await invoke('control_pet_jobs',{resume:false});await finished;});},resume:()=>schedule(async()=>{await settled.current;await invoke('control_pet_jobs',{resume:true});}),dismiss:()=>setProgress(null)};
+  return {progress,waiting,start,cancel:()=>{controller.current?.abort();const finished=settled.current;schedule(async()=>{await invoke('control_pet_jobs',{resume:false});await finished;});},resume:()=>schedule(async()=>{await settled.current;await invoke('control_pet_jobs',{resume:true});}),dismiss:()=>setProgress(null)};
 }

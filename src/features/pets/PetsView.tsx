@@ -9,12 +9,13 @@ import { useRowSelection } from '../../hooks/useRowSelection';
 import { isTauriRuntime } from '../../services/tauriMediaService';
 import { deletePet, loadPets, Pet, savePet } from './petService';
 import './pets.css';
-import { PetRecognitionReview } from './PetRecognitionReview';
+import { PetPhotoSearch } from './PetPhotoSearch';
+import type { PetAnalysis } from './usePetAnalysis';
 import { ScanSearch } from 'lucide-react';
 import { VIEW_LABELS, type PetView } from './engine/types';
 import { petCovers, petPhotos } from './petModel';
 
-export function PetsView({ items, onOpen, query = "" }: { items: MediaItem[]; query?: string; onOpen: (item: MediaItem, collection?: MediaItem[]) => void }) {
+export function PetsView({ items, onOpen, analysis, query = "" }: { items: MediaItem[]; analysis: PetAnalysis; query?: string; onOpen: (item: MediaItem, collection?: MediaItem[]) => void }) {
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -66,15 +67,14 @@ export function PetsView({ items, onOpen, query = "" }: { items: MediaItem[]; qu
       </div>
       <div className="peopleActions entityActions">
         {pet && <><button className="primaryControl entityPrimary" aria-label="이름·사진 수정" disabled={busy} onClick={() => setEditing(pet)}><Pencil size={18} /><span className="entityActionFull">이름·사진 수정</span><span className="entityActionShort" aria-hidden="true">수정</span></button><ActionMenu label="반려동물 관리" icon={<MoreVertical size={20} />} disabled={busy} actions={[
-          { label: '인식 기준·결과 확인', icon: <ScanSearch size={16} />, disabled: false, onSelect: () => setReviewing(true) },
           { label: '반려동물 등록 삭제', icon: <Trash2 size={16} />, danger: true, onSelect: () => void remove() },
         ]} /></>}
         {!pet && <button className="primaryControl entityPrimary" aria-label="반려동물 등록" disabled={loading || !desktop} onClick={() => setEditing({ id: 0, name: '', cover_media_id: null, media_ids: [] })}><Plus size={18} /><span className="entityActionFull">반려동물 등록</span><span className="entityActionShort" aria-hidden="true">등록</span></button>}
       </div>
     </div>
     {!desktop && <p role="status">반려동물 등록·인식은 감자싹 앱에서 사용할 수 있습니다.</p>}
-    {desktop && !pet && <div className="peopleActions"><button onClick={() => setReviewing(true)}><ScanSearch size={18}/>반려동물 인식 결과 확인</button></div>}
-    {desktop && pet && <p className="petMatchNotice">정면·왼쪽·오른쪽 측면·전신 사진을 연결한 뒤, 반려동물 관리의 인식 기준·결과 확인에서 방향과 개체를 확인해 주세요. 한 장으로도 등록할 수 있습니다.</p>}
+    {desktop && pets.length > 0 && <div className="petFindPhotos"><div><strong>{pet ? `${pet.name}의 다른 사진도 찾아보세요` : '반려동물 사진을 한곳에 모으세요'}</strong><p className="petMatchNotice">연결한 사진과 비교해 비슷한 사진을 찾습니다.</p></div><button disabled={loading || !photos.length} onClick={() => setReviewing(true)}><ScanSearch size={18}/>등록된 사진에서 찾기</button></div>}
+
     {loading && <p role="status"><LoaderCircle className="spinIcon" size={18} />반려동물 정보를 불러오는 중</p>}
     {error && <p role="alert">{error}</p>}
     {!pet && <div className="peopleSummary">등록된 반려동물 {pets.length}마리</div>}
@@ -87,7 +87,7 @@ export function PetsView({ items, onOpen, query = "" }: { items: MediaItem[]; qu
     })}</div>
     {pages > 1 && <div className="peopleActions"><button title="이전 페이지" disabled={!currentPage} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={18} /></button><span>{currentPage + 1} / {pages}</span><button title="다음 페이지" disabled={currentPage === pages - 1} onClick={() => setPage(currentPage + 1)}><ChevronRight size={18} /></button></div>}
     {editing && <PetEditor pet={editing} photos={photos} onClose={() => setEditing(null)} onSaved={async (id) => { setPets(await loadPets()); setActive(id); setPage(0); }} />}
-    {reviewing && <PetRecognitionReview pet={pet} photos={photos} onClose={() => setReviewing(false)} onSaved={async () => { setPets(await loadPets()); }} />}
+    {reviewing && <PetPhotoSearch pet={pet} pets={pets} photos={photos} analysis={analysis} onClose={() => setReviewing(false)} onSaved={async () => { setPets(await loadPets()); }} />}
   </section>;
 }
 
@@ -110,7 +110,9 @@ function PetEditor({ pet, photos, onClose, onSaved }: { pet: Pet; photos: MediaI
     setBusy(true); setError('');
     try {
       const id = await savePet(pet.id || null, name.trim(), selected, actualCover);
-      window.dispatchEvent(new CustomEvent('gamjassak-pet-enroll',{detail:{petId:id,items:photos.filter(photo=>selected.includes(Number(photo.id))).slice(0,12),views:referenceViews}}));
+      if (!pet.id || selected.some(id => !pet.media_ids.includes(id)) || Object.keys(referenceViews).length) {
+        window.dispatchEvent(new CustomEvent('gamjassak-pet-enroll',{detail:{petId:id,items:photos.filter(photo=>selected.includes(Number(photo.id))).slice(0,12),views:referenceViews}}));
+      }
       await onSaved(id); onClose();
     } catch { setError('반려동물 정보를 저장하지 못했습니다. 입력한 이름과 선택한 사진은 화면에 남아 있습니다. 다시 저장해 주세요.'); }
     finally { setBusy(false); }

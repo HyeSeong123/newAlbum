@@ -1,15 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, LoaderCircle, X } from 'lucide-react';
+import { LoaderCircle } from 'lucide-react';
 import { MediaVisual } from '../../components/MediaVisual';
-import { useModalBehavior } from '../../hooks/useModalBehavior';
 import type { MediaItem } from '../../types/media';
 import { loadPets, savePet, type Pet } from './petService';
-import { confirmPetDetection, getPetScan, listPetDetections, loadPetReferences, scanPetBatch, scanPetPhoto, extractPetCorrection, savePetCorrection, type PetProgress } from './engine/manager';
+import { confirmPetDetection, getPetScan, loadPetReferences, scanPetPhoto, extractPetCorrection, savePetCorrection } from './engine/manager';
 import { recognizePet, withView } from './engine/matcher';
 import { VIEW_LABELS, type PetDetection, type PetReference, type PetView, type PetFeatures, type PetKind } from './engine/types';
 import './pets.css';
-import { PetEvaluationPanel } from './PetEvaluationPanel';
-import { PetDeviceBenchmarkPanel } from './PetDeviceBenchmarkPanel';
 
 function DetectionCard({ detection, item, pets, references, preferredPet, onSaved }: {
   detection: PetDetection; item: MediaItem; pets: Pet[]; references: PetReference[]; preferredPet?: Pet; onSaved: () => Promise<void>;
@@ -87,50 +84,6 @@ function DetectionCard({ detection, item, pets, references, preferredPet, onSave
       {error && <p role="alert">{error}</p>}
     </div>
   </article>;
-}
-
-export function PetRecognitionReview({ photos, pet, onClose, onSaved }: { photos: MediaItem[]; pet?: Pet; onClose: () => void; onSaved: () => Promise<void> }) {
-  const [rows,setRows] = useState<PetDetection[]>([]), [pets,setPets] = useState<Pet[]>([]), [references,setReferences] = useState<PetReference[]>([]);
-  const [page,setPage] = useState(0), [hasNext,setHasNext] = useState(false), [error,setError] = useState('');
-  const [evaluation,setEvaluation]=useState(false);
-  const cursors = useRef([0]);
-  const [progress,setProgress] = useState<PetProgress | null>(null);
-  const abort = useRef<AbortController | null>(null), alive = useRef(true);
-  const refresh = useCallback(async () => {
-    const [all,registered,refs] = await Promise.all([listPetDetections(null,cursors.current[page] ?? 0,false,24),loadPets(),loadPetReferences()]);
-    if (!alive.current) return;
-    const results = all ?? [];
-    setHasNext(results.length===24); cursors.current[page+1] = results.at(-1)?.id ?? 0;
-    setRows(results);setPets(registered);setReferences(refs);
-  },[page]);
-  useEffect(() => {
-    alive.current=true;
-    const update=()=>void refresh().catch(()=>{if(alive.current)setError('인식 결과를 불러오지 못했습니다.');});
-    update();window.addEventListener('gamjassak-pet-results',update);
-    return()=>{alive.current=false;abort.current?.abort();window.removeEventListener('gamjassak-pet-results',update);};
-  },[refresh]);
-  useModalBehavior(onClose);
-  async function start(refreshResults = false) {
-    if (abort.current) return;
-    abort.current=new AbortController();setError('');
-    try {await scanPetBatch(photos,abort.current.signal,value=>{if(alive.current)setProgress(value);},undefined,refreshResults,false);await refresh();}
-    catch(reason){if(alive.current)setError(reason instanceof Error ? reason.message : String(reason));}
-    finally{abort.current=null;}
-  }
-  const byId = new Map(photos.map(item=>[Number(item.id),item]));
-  return <div className="modalBackdrop"><section className="petEditor" role="dialog" aria-modal="true" aria-label={pet ? `${pet.name} 인식 기준·결과 확인` : '반려동물 인식 결과 확인'}>
-    <header className="detailHeader"><strong>{pet ? `${pet.name} 인식 기준·결과 확인` : '반려동물 인식 결과 확인'}</strong><button title="닫기" className="closeButton" onClick={onClose}><X size={18}/></button></header>
-    <div className="petMatchBody"><p className="petMatchNotice">사진에서 테두리로 표시된 동물을 확인해 주세요. 확인한 사진이 다음 비교의 기준으로 추가됩니다.</p>
-      <div className="peopleActions">{progress?.running ? <button onClick={()=>abort.current?.abort()}>분석 중단</button> : <><button onClick={()=>void start()}>사진 분석</button><button onClick={()=>void start(true)}>미확인 결과 재분석</button></>}<span role="status">{progress?.message}</span></div>
-      {progress?.running && <progress aria-label="반려동물 분석 진행" value={progress.done} max={progress.total || 1}/>}
-      <button disabled={!!progress?.running} onClick={()=>setEvaluation(!evaluation)}>{evaluation?'검증 자료 닫기':'검증 자료 만들기'}</button>
-      {evaluation && <><PetEvaluationPanel photos={photos} pets={pets}/><PetDeviceBenchmarkPanel photos={photos} disabled={!!progress?.running}/></>}
-      {error && <p role="alert">{error}</p>}
-      {!rows.length && <p>아직 확인할 결과가 없습니다. 사진 분석을 시작해 주세요.</p>}
-      {rows.map(row=>{const item=byId.get(row.media_id);return item ? <DetectionCard key={`${row.id}:${row.pet_id}:${row.view}:${row.kind}:${row.faceBox}`} detection={row} item={item} pets={pets} references={references} preferredPet={pet} onSaved={async()=>{await refresh();await onSaved();}}/> : null;})}
-      <div className="peopleActions"><button title="이전 결과" disabled={!page || !!progress?.running} onClick={()=>setPage(page-1)}><ChevronLeft size={18}/></button><span>{page+1}</span><button title="다음 결과" disabled={!hasNext || !!progress?.running} onClick={()=>setPage(page+1)}><ChevronRight size={18}/></button></div>
-    </div>
-  </section></div>;
 }
 
 export function PetPhotoResults({ item }: { item: MediaItem }) {

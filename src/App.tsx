@@ -75,7 +75,7 @@ export function App() {
   const [memorySection, setMemorySection] = useState<"rediscover" | "timeline" | "map">("rediscover");
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const library = useMediaLibrary();
-  const petAnalysis = usePetAnalysis();
+  const petAnalysis = usePetAnalysis(library.items);
   const diary = useDiary();
   const [largeLayout, setLargeLayout] = useState(() => localStorage.getItem("warm-journal-large-layout") === "true");
   const [importOpen, setImportOpen] = useState(false);
@@ -292,7 +292,7 @@ export function App() {
               onSectionChange={(section) => { setMemorySection(section); if (section === "map") setQuery(""); }}
               onAssignRegion={library.assignRegion} onLocationsAnalyzed={library.refreshLocations}
               onCreateAlbum={(records, title = "") => { setAlbumDraftItems(records); setAlbumDraftTitle(title); }} />}
-            {activeView === "People" && <PeopleWorkspace items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} activeTab={peopleTab} onTabChange={setPeopleTab} />}
+            {activeView === "People" && <PeopleWorkspace analysis={petAnalysis} items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} activeTab={peopleTab} onTabChange={setPeopleTab} />}
             {activeView === "Settings" && <SettingsPanel photos={items.filter(item=>item.fileType==="image")} itemCount={items.length} clearing={clearing} onClear={clearAllRegisteredMedia} />}
           </div>
         </section>

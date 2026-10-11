@@ -8,7 +8,7 @@ import { useModalBehavior } from "../../hooks/useModalBehavior";
 import { formatJournalDate } from "./journalModel";
 import { useMediaDownload } from "./useMediaDownload";
 import { isTauriRuntime } from "../../services/tauriMediaService";
-import { PetPhotoResults } from "../pets/PetRecognitionReview";
+import { PetPhotoResults } from "../pets/PetPhotoResults";
 import { RegionEditor } from "../map/RegionEditor";
 
 export function DetailModal({
