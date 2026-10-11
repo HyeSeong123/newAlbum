@@ -5,7 +5,7 @@ import { PeopleView } from './PeopleView';
 import { PetsView } from '../pets/PetsView';
 import type { PetAnalysis } from '../pets/usePetAnalysis';
 
-export function PeopleWorkspace(props: { analysis: PetAnalysis; items: MediaItem[]; onOpen: (item: MediaItem, collection?: MediaItem[]) => void; query?: string; onCreateAlbum: (items: MediaItem[]) => void; activeTab?: 'people' | 'pets'; onTabChange?: (tab: 'people' | 'pets') => void }) {
+export function PeopleWorkspace(props: { analysis: PetAnalysis; items: MediaItem[]; onOpen: (item: MediaItem, collection?: MediaItem[]) => void; query?: string; onCreateAlbum: (items: MediaItem[]) => void; reviewRequested?: boolean; onReviewHandled?: () => void; activeTab?: 'people' | 'pets'; onTabChange?: (tab: 'people' | 'pets') => void }) {
   const [localTab, setTab] = useState(0);
   const tab = props.activeTab ? Number(props.activeTab === 'pets') : localTab;
   const [petsVisited, setPetsVisited] = useState(props.activeTab === 'pets');

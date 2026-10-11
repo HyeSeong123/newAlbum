@@ -1,3 +1,4 @@
+import { PetAnalysisStatus } from './features/pets/PetAnalysisStatus';
 import { PhotoView, type PhotoMode } from "./features/media/PhotoWorkspace";
 import { useMediaLibrary } from "./features/media/useMediaLibrary";
 import { useMediaViewer } from "./features/media/useMediaViewer";
@@ -95,6 +96,7 @@ export function App() {
   const [selectionNotice, setSelectionNotice] = useState("");
   const [firstRunOpen, setFirstRunOpen] = useState(false);
   const [guideTopic, setGuideTopic] = useState<GuideTopic | null>(null);
+  const [petReviewRequested, setPetReviewRequested] = useState(false);
   const [peopleTab, setPeopleTab] = useState<"people" | "pets">("people");
   const currentGuideTopic: GuideTopic = activeView === "People" ? peopleTab : ({ Library: "photos", Albums: "albums", Diary: "diary", Memories: "memories", Characters: "characters" } as Partial<Record<View, GuideTopic>>)[activeView] || "photos";
 
@@ -292,7 +294,7 @@ export function App() {
               onSectionChange={(section) => { setMemorySection(section); if (section === "map") setQuery(""); }}
               onAssignRegion={library.assignRegion} onLocationsAnalyzed={library.refreshLocations}
               onCreateAlbum={(records, title = "") => { setAlbumDraftItems(records); setAlbumDraftTitle(title); }} />}
-            {activeView === "People" && <PeopleWorkspace analysis={petAnalysis} items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} activeTab={peopleTab} onTabChange={setPeopleTab} />}
+            {activeView === "People" && <PeopleWorkspace reviewRequested={petReviewRequested} onReviewHandled={() => setPetReviewRequested(false)} analysis={petAnalysis} items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} activeTab={peopleTab} onTabChange={setPeopleTab} />}
             {activeView === "Settings" && <SettingsPanel photos={items.filter(item=>item.fileType==="image")} itemCount={items.length} clearing={clearing} onClear={clearAllRegisteredMedia} />}
           </div>
         </section>
@@ -313,11 +315,8 @@ export function App() {
           if (created) navigate("Albums");
         }} />}
         {library.error && <p className="selectionNotice" role="alert">{library.error}</p>}
-        {petAnalysis.progress && <div className="petAnalysisNotice" role="status">
-          <span>{petAnalysis.progress.message}</span>
-          {petAnalysis.progress.running && <progress aria-label="반려동물 분석 진행" value={petAnalysis.progress.done} max={petAnalysis.progress.total || 1} />}
-          {petAnalysis.progress.running ? <button onClick={petAnalysis.cancel}>분석 중단</button> : <><button onClick={() => { setPeopleTab('pets'); navigate('People'); }}>반려동물 확인</button>{petAnalysis.waiting > 0 && <button onClick={petAnalysis.resume}>분석 이어서 하기</button>}<button onClick={petAnalysis.dismiss}>닫기</button></>}
-        </div>}
+        {!(activeView === 'People' && peopleTab === 'pets') && <PetAnalysisStatus analysis={petAnalysis} onReview={() => { setPetReviewRequested(true); setPeopleTab('pets'); navigate('People'); }} />}
+
         {library.importNotice && !library.error && <p className="selectionNotice" role="status">{library.importNotice}</p>}
         {selectionNotice && <p className="selectionNotice" role="status">{selectionNotice}</p>}
         {albumDraftItems && <AlbumCreateModal items={albumDraftItems} initialTitle={albumDraftTitle} onClose={() => { setAlbumDraftItems(null); setAlbumDraftTitle(""); }} onCreate={createAlbumFromSelectedItems} />}

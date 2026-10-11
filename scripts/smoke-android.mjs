@@ -612,12 +612,20 @@ try {
   },detectorLock);
   await writeFile(join(output,'pet-native-model-digests.json'),JSON.stringify(modelDigests,null,2));
   assert.ok(modelDigests.every(row=>row.sha256===row.expected.sha256 && row.bytes===row.expected.bytes),'APK detector bytes must match the reviewed model manifest');
+  // Neither importing nor saving a profile authorizes background inference.
+  assert.equal(await page.evaluate(id => window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),petPhoto.id),null);
+  assert.equal((await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('list_pet_jobs'))).pending,0);
+  await page.getByRole('button',{name:'등록된 사진에서 찾기',exact:true}).click();
+  const searchDialog=page.getByRole('dialog',{name:'등록된 사진에서 찾기',exact:true});
+  await searchDialog.getByRole('button',{name:'사진 찾기 시작',exact:true}).click();
   const petWaitStarted = Date.now();
   await expect.poll(async () => {
     const scan = await page.evaluate(id => window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),petPhoto.id);
     if (scan) await writeFile(join(output,'pet-scan-before-confirmation.json'),JSON.stringify({photo:petPhoto,scan,progress:await page.locator('.petAnalysisNotice').innerText().catch(()=>''),diagnostics:await page.evaluate(()=>window.petDiagnostics)},null,2));
     return scan !== null;
   }, {timeout:180_000, intervals:[1000,2000,5000]}).toBe(true);
+  await expect(searchDialog.getByRole('button',{name:'사진 찾기 시작',exact:true})).toBeEnabled({timeout:180_000});
+  await searchDialog.locator('.entityEditFooter').getByRole('button',{name:'닫기',exact:true}).click();
   let petScan = await page.evaluate(id => window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),petPhoto.id);
   const dog = petScan.detections.find(detection => detection.kind === 'dog');
   assert.ok(dog, 'The imported dog must be detected as a dog; see pet-scan-before-confirmation.json');
@@ -748,7 +756,7 @@ try {
   assert.deepEqual(restoredPeople.people.find(person=>person.id===manualPhotoSmoke.personId).media_ids,[manualPhotoSmoke.mediaId]);
   const savedQueue=await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('list_pet_jobs'));assert.equal(savedQueue.paused,1);
   assert.equal((await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('pet_evaluation_summary'))).queries,1);
-  await page.getByRole('button',{name:'분석 이어서 하기',exact:true}).click();
+  await page.getByRole('button',{name:'이어서 분석',exact:true}).click();
   await expect.poll(async()=>{const q=await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('list_pet_jobs'));return q.pending+q.paused+q.failed;},{timeout:60_000}).toBe(0);
   await writeFile(join(output,'pet-queue-restart.json'),JSON.stringify({pausedAfterRestart:1,deduplicated:true,resumedAndCompleted:true,validationSamplesPersisted:1},null,2));
   await checkVideoPlayback(page, 'after-restart');

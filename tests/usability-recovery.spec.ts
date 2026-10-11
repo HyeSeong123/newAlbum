@@ -273,7 +273,7 @@ test('pet empty action and management preserve name, photos and cover on failed 
   await page.goto('/');
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('tab', { name: '반려동물', exact: true }).click();
-  await page.getByRole('button', { name: '반려동물 등록하기', exact: true }).click();
+  await page.getByRole('button', { name: '반려동물 등록', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: '반려동물 등록', exact: true });
   await dialog.getByLabel('이름', { exact: true }).fill('보리');
   await dialog.getByRole('button', { name: '사진 선택', exact: true }).nth(0).click();
@@ -287,7 +287,7 @@ test('pet empty action and management preserve name, photos and cover on failed 
   await dialog.getByRole('button', { name: '저장', exact: true }).click();
   await expect(dialog).toBeHidden();
   await page.getByRole('button', { name: '반려동물 관리', exact: true }).click();
-  await expect(page.getByRole('button', { name: '비슷한 사진 찾기', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '등록 사진 다시 학습', exact: true })).toBeVisible();
 });
 
 test('album creation and editing preserve title and written content after failed saves', async ({ page }) => {

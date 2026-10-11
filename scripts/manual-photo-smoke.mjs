@@ -30,11 +30,12 @@ export async function verifyInstalledManualPhotos(page, mediaId, pet, capture) {
   if(await header.getByRole('heading').innerText()!==pet.name) await page.locator('.petsView .petGrid').getByRole('button').filter({hasText:pet.name}).first().click();
   const before=await page.evaluate(id=>window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),mediaId);
   const dog=before.detections.find(row=>row.pet_id===pet.id);assert.ok(dog);
-  await page.getByRole('button', { name:'사진 직접 등록',exact:true }).click();
-  const picker=page.getByRole('dialog', { name:'반려동물 사진 직접 등록',exact:true });
+  await page.getByRole('button', { name:'이름·사진 수정',exact:true }).click();
+  const picker=page.getByRole('dialog', { name:'반려동물 편집',exact:true });
   await expect(picker.locator(`[data-selection-id="${mediaId}"]`)).toHaveAttribute('aria-pressed','true');
-  await picker.getByRole('button', { name:'사진 저장',exact:true }).click();await expect(picker).toBeHidden();
+  await picker.getByRole('button', { name:'저장',exact:true }).click();await expect(picker).toBeHidden();
   const count=await page.evaluate(()=>window.petDiagnostics.length);
+  await page.getByRole('button', { name:'반려동물 관리',exact:true }).click();
   await page.getByRole('button', { name:'등록 사진 다시 학습',exact:true }).click();
   await expect(page.locator('.petsView .petAnalysisNotice')).toContainText('다시 학습 완료', { timeout:120_000 });
   assert.ok(await page.evaluate(before=>window.petDiagnostics.length>before,count));

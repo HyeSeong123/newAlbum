@@ -4,6 +4,7 @@ import type { MediaItem } from '../../types/media';
 import { isTauriRuntime, loadRegisteredMedia } from '../../services/tauriMediaService';
 import type { PetView } from './engine/types';
 import type { PetProgress } from './engine/manager';
+import { loadPets } from './petService';
 interface Job { id:number;media_id:number;pet_id:number|null;view:PetView;state:'pending'|'paused'|'failed';error:string;refresh?:boolean }
 interface Queue {jobs:Job[];pending:number;paused:number;failed:number}
 export type PetAnalysis = ReturnType<typeof usePetAnalysis>;
@@ -52,13 +53,13 @@ export function usePetAnalysis(media: MediaItem[]) {
     }catch(error){if(!abort.signal.aborted)report(error);}
     finally{if(controller.current===abort)controller.current=null;release();if(rerun.current && mounted.current && !abort.signal.aborted){rerun.current=false;void pump();}}
   },[report]);
-  const schedule=useCallback((operation:()=>Promise<void>)=>{
-    operations.current=operations.current.catch(()=>undefined).then(operation).then(()=>{void pump();}).catch(report);
+  const schedule=useCallback((operation:()=>Promise<void>, run=true)=>{
+    operations.current=operations.current.catch(()=>undefined).then(operation).then(()=>{if(run)void pump();}).catch(report);
   },[pump,report]);
   const start=useCallback((items:MediaItem[],petId?:number,views:Record<string,PetView>={})=>{
     if(!isTauriRuntime())return;
     const photos=items.filter(item=>item.fileType==='image');
-    schedule(async()=>{for(let index=0;index<photos.length;index+=1000)await invoke('enqueue_pet_jobs',{jobs:photos.slice(index,index+1000).map(item=>({mediaId:Number(item.id),petId:petId??null,view:views[item.id]??'unknown'}))});});
+    schedule(async()=>{if(!(await loadPets()).length)throw new Error('먼저 반려동물을 등록한 뒤 사진 찾기를 시작해 주세요.');for(let index=0;index<photos.length;index+=1000)await invoke('enqueue_pet_jobs',{jobs:photos.slice(index,index+1000).map(item=>({mediaId:Number(item.id),petId:petId??null,view:views[item.id]??'unknown'}))});});
   },[schedule]);
   const retrain=useCallback((groups:{petId:number;items:MediaItem[]}[])=>{
     if(!isTauriRuntime())return;
@@ -73,11 +74,21 @@ export function usePetAnalysis(media: MediaItem[]) {
   },[schedule]);
   useEffect(()=>{
     mounted.current=true;
-    const imported=(event:Event)=>start((event as CustomEvent<MediaItem[]>).detail);
-    const enrolled=(event:Event)=>{const {items,petId,views}=(event as CustomEvent).detail;start(items,petId,views);};
-    window.addEventListener('gamjassak-pet-import',imported);window.addEventListener('gamjassak-pet-enroll',enrolled);
-    schedule(async()=>{});
-    return()=>{mounted.current=false;controller.current?.abort();void settled.current.then(()=>{if(mounted.current)void pump();});window.removeEventListener('gamjassak-pet-import',imported);window.removeEventListener('gamjassak-pet-enroll',enrolled);};
-  },[start,schedule]);
-  return {progress,waiting,start,retrain,cancel:()=>{controller.current?.abort();const finished=settled.current;schedule(async()=>{await invoke('control_pet_jobs',{resume:false});await finished;});},resume:()=>schedule(async()=>{await settled.current;await invoke('control_pet_jobs',{resume:true});}),dismiss:()=>setProgress(null)};
+    // Startup only reads the durable queue. Imports and profile saves never
+    // authorize inference, including pending work left by an older version.
+    if(isTauriRuntime()) schedule(async()=>{
+      const queue=await invoke<Queue>('list_pet_jobs');
+      const count=(queue?.pending??0)+(queue?.paused??0)+(queue?.failed??0);
+      if(mounted.current && count){setWaiting(count);setProgress({done:0,total:count,failed:0,detected:0,running:false,message:`이전 분석 ${count}장이 대기 중이에요. 원할 때 이어서 분석하세요.`});}
+    },false);
+    return()=>{mounted.current=false;rerun.current=false;controller.current?.abort();};
+  },[schedule]);
+  return {progress,waiting,start,retrain,cancel:()=>{
+    rerun.current=false;controller.current?.abort();const finished=settled.current;
+    schedule(async()=>{
+      await finished;await invoke('control_pet_jobs',{resume:false});
+      const queue=await invoke<Queue>('list_pet_jobs');
+      if(mounted.current){setWaiting((queue?.paused??0)+(queue?.failed??0));setProgress(previous=>previous?{...previous,running:false,message:'분석을 멈췄어요. 완료한 결과는 저장되어 있어요.'}:null);}
+    },false);
+  },resume:()=>schedule(async()=>{await settled.current;if(!(await loadPets()).length)throw new Error('먼저 반려동물을 등록해 주세요.');await invoke('control_pet_jobs',{resume:true});}),dismiss:()=>setProgress(null)};
 }

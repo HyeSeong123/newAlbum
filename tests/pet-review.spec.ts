@@ -48,7 +48,8 @@ test('registered photos can be searched and each animal connected without diagno
   ]);
   await expect(search.locator('.entityEditFooter')).toBeInViewport();
   await page.screenshot({ path: `preview-results/pet-review-${test.info().project.name}.png` });
-  await search.getByRole('button', { name: '보리 사진 연결 2', exact: true }).click();
+  await search.getByRole('button', { name: '보리 사진 선택 2', exact: true }).click();
+  await search.getByRole('button', { name: /선택한 사진 연결/ }).click();
   await expect(search.locator('.petSearchCard')).toHaveCount(0); // the photo is already linked, including its other animal
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pet-confirmed-test')!)[2].pet_id)).toBeNull();
   await search.locator('.entityEditFooter').getByRole('button', { name: '닫기', exact: true }).click();
@@ -64,10 +65,11 @@ test('failed photo connection retains candidates and can be retried', async ({ p
   await prepare(page); await page.getByRole('button', { name: '등록된 사진에서 찾기', exact: true }).click();
   const search = page.getByRole('dialog', { name: '등록된 사진에서 찾기' });
   await page.evaluate(() => localStorage.setItem('fail-connect', 'true'));
-  await search.getByRole('button', { name: '보리 사진 연결 2', exact: true }).click();
+  await search.getByRole('button', { name: '보리 사진 선택 2', exact: true }).click();
+  await search.getByRole('button', { name: /선택한 사진 연결/ }).click();
   await expect(search.getByRole('alert')).toContainText('연결 실패'); await expect(search.locator('.petSearchCard')).toHaveCount(2);
   await page.evaluate(() => localStorage.removeItem('fail-connect'));
-  await search.getByRole('button', { name: '보리 사진 연결 2', exact: true }).click(); await expect(search.locator('.petSearchCard')).toHaveCount(0);
+  await search.getByRole('button', { name: /선택한 사진 연결/ }).click(); await expect(search.locator('.petSearchCard')).toHaveCount(0);
   await search.getByTitle('닫기').click(); await page.getByRole('tab', { name: '사람', exact: true }).click();
   await expect(page.getByRole('button', { name: '사진에서 사람 찾기', exact: true }).first()).toBeVisible();
 });
@@ -97,4 +99,69 @@ test('cached library search batches the queue and reuses existing scans', async 
   const result = await page.evaluate(() => JSON.parse(localStorage.getItem('pet-queue-test')!));
   expect(result.remaining).toBe(0); expect(result.queueReads).toBeLessThan(10);
   await expect(page.getByRole('dialog', { name: '등록된 사진에서 찾기' }).getByRole('button', { name: '사진 찾기 시작', exact: true })).toBeEnabled();
+});
+
+async function prepareLargeLibrary(page: import('@playwright/test').Page, pending = false) {
+  const thumbnail = `data:image/jpeg;base64,${(await readFile('tests/fixtures/pet-dog.jpg')).toString('base64')}`;
+  await page.addInitScript(({ thumbnail, pending }) => {
+    const media = Array.from({length:100},(_,i)=>({id:i+1,file_path:`C:/pets/${i+1}.jpg`,file_type:'image',size_bytes:100,metadata_status:'ready',favorite:false,rating:0,comment:''}));
+    const pets=[{id:1,name:'보리',media_ids:[1],cover_media_id:1}];
+    const vector=(n:number)=>Array.from({length:n},(_,i)=>Number(i===0));
+    const base={kind:'dog',view:'unknown',viewSource:'unknown',box:[.1,.1,.8,.8],detectionScore:.9,appearance:vector(1024),mirroredAppearance:vector(1024),color:vector(120),shape:vector(10),excluded:false};
+    const detections=Array.from({length:28},(_,i)=>({...base,id:i+1,media_id:i+1,pet_id:i===0?1:null as number|null}));
+    const record=(command:string,args:any)=>{const calls=JSON.parse(localStorage.getItem('native-calls')??'[]');calls.push({command,args});localStorage.setItem('native-calls',JSON.stringify(calls));};
+    Object.defineProperty(window,'__TAURI_INTERNALS__',{value:{convertFileSrc:()=>thumbnail,invoke:async(command:string,args:any={})=>{
+      record(command,args);
+      if(command==='list_media')return media;
+      if(command==='list_face_index')return {people:[],faces:[],scanned:[]};
+      if(command==='list_pet_jobs')return {pending:Number(pending),paused:0,failed:0,jobs:pending?[{id:1,media_id:2,pet_id:null,view:'unknown',state:'pending',error:''}]:[]};
+      if(command==='list_pets')return structuredClone(pets);
+      if(command==='save_pet'){const id=args.id??pets.length+1;const owner=pets.find(row=>row.id===id);if(owner)Object.assign(owner,{name:args.name,media_ids:args.mediaIds,cover_media_id:args.coverMediaId});else pets.push({id,name:args.name,media_ids:args.mediaIds,cover_media_id:args.coverMediaId});return id;}
+      if(command==='list_pet_detections')return detections.filter(d=>d.id>args.afterId&&(!args.references||d.pet_id!==null)).slice(0,args.limit);
+      if(command==='confirm_pet_detection'){
+        if(args.detectionId===28&&localStorage.getItem('fail-last'))throw '마지막 사진 연결 실패';
+        const row=detections.find(d=>d.id===args.detectionId)!;row.pet_id=args.petId;
+        const owner=pets.find(p=>p.id===args.petId)!;if(!owner.media_ids.includes(row.media_id))owner.media_ids.push(row.media_id);return;
+      }
+      return [];
+    }}});
+  },{thumbnail,pending});
+  await page.goto('/');
+}
+
+test('100 imported photos and profile saves stay idle until an explicit request',async({page})=>{
+  await prepareLargeLibrary(page);
+  await page.getByRole('button',{name:'사람과 반려동물',exact:true}).click();await page.getByRole('tab',{name:'반려동물',exact:true}).click();
+  await page.evaluate(()=>{window.dispatchEvent(new CustomEvent('gamjassak-pet-import',{detail:Array.from({length:100},(_,i)=>({id:String(i+1),fileType:'image'}))}));});
+  await page.getByRole('button',{name:'반려동물 등록',exact:true}).click();
+  const editor=page.getByRole('dialog',{name:'반려동물 등록',exact:true});
+  await editor.getByLabel('이름',{exact:true}).fill('고미');await editor.getByRole('button',{name:'사진 선택',exact:true}).first().click();await editor.getByRole('button',{name:'저장',exact:true}).click();await expect(editor).toBeHidden();
+  await page.getByRole('button',{name:'이름·사진 수정',exact:true}).click();await page.getByRole('dialog',{name:'반려동물 편집',exact:true}).getByRole('button',{name:'저장',exact:true}).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const calls=await page.evaluate(()=>JSON.parse(localStorage.getItem('native-calls')!));
+  expect(calls.filter((row:any)=>['enqueue_pet_jobs','prepare_pet_input','control_pet_jobs'].includes(row.command))).toEqual([]);
+  await expect(page.locator('.petsView').getByRole('button',{name:'사진 직접 등록',exact:true})).toHaveCount(0);
+  await expect(page.locator('.petsView').getByRole('button',{name:'등록 사진 다시 학습',exact:true})).toHaveCount(0);
+});
+
+test('pending work remains idle after restart and confirmation opens the real result picker',async({page})=>{
+  await prepareLargeLibrary(page,true);await expect(page.getByRole('button',{name:'반려동물 확인',exact:true})).toBeVisible();
+  await page.reload();await page.getByRole('button',{name:'반려동물 확인',exact:true}).click();
+  await expect(page.getByRole('tab',{name:'반려동물',exact:true})).toHaveAttribute('aria-selected','true');
+  const search=page.getByRole('dialog',{name:'등록된 사진에서 찾기',exact:true});await expect(search).toBeVisible();await expect(search.locator('.petSearchCard')).toHaveCount(24);
+  const calls=await page.evaluate(()=>JSON.parse(localStorage.getItem('native-calls')!));expect(calls.some((row:any)=>row.command==='prepare_pet_input')).toBe(false);
+  await search.locator('.entityEditFooter').getByRole('button',{name:'닫기',exact:true}).click();await expect(page.getByRole('button',{name:'반려동물 확인',exact:true})).toHaveCount(1);
+  await page.getByRole('button',{name:'반려동물 확인',exact:true}).click();await expect(search).toBeVisible();
+});
+
+test('multi-selection crosses result pages and keeps only failed selections for retry',async({page})=>{
+  await prepareLargeLibrary(page);await page.getByRole('button',{name:'사람과 반려동물',exact:true}).click();await page.getByRole('tab',{name:'반려동물',exact:true}).click();await page.getByRole('button',{name:'등록된 사진에서 찾기',exact:true}).click();
+  const search=page.getByRole('dialog',{name:'등록된 사진에서 찾기',exact:true});await expect(search.locator('.petSearchCard')).toHaveCount(24);
+  await search.getByRole('button',{name:'보리 사진 선택 2',exact:true}).click();await search.getByRole('button',{name:'보리 사진 선택 3',exact:true}).click();await search.getByTitle('다음 사진').click();
+  await expect(search.locator('.petSearchCard')).toHaveCount(3);await search.getByRole('button',{name:'보리 사진 선택 28',exact:true}).click();
+  await expect(search.getByRole('button',{name:'선택한 사진 연결 (3)',exact:true})).toBeVisible();
+  await page.evaluate(()=>localStorage.setItem('fail-last','1'));await search.getByRole('button',{name:'선택한 사진 연결 (3)',exact:true}).click();
+  await expect(search.getByRole('alert')).toContainText('마지막 사진 연결 실패');await expect(search.getByRole('button',{name:'선택한 사진 연결 (1)',exact:true})).toBeEnabled();await expect(search.getByRole('button',{name:'보리 사진 선택 28',exact:true})).toHaveAttribute('aria-pressed','true');
+  await page.evaluate(()=>localStorage.removeItem('fail-last'));await search.getByRole('button',{name:'선택한 사진 연결 (1)',exact:true}).click();await expect(search.getByRole('button',{name:'선택한 사진 연결',exact:true})).toBeDisabled();
+  const calls=await page.evaluate(()=>JSON.parse(localStorage.getItem('native-calls')!).filter((row:any)=>row.command==='confirm_pet_detection').map((row:any)=>row.args.detectionId));expect(calls).toEqual([2,3,28,28]);
 });
