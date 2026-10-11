@@ -66,6 +66,10 @@ test('people and pet controls stay aligned and anchored on narrow screens', asyn
     await menu.getByRole('button', { name: '이름 수정', exact: true }).click();
     await expect(page.getByLabel('인물 이름')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    const nameDialog = page.getByRole('dialog', { name: '이름 수정', exact: true });
+    await expect(nameDialog).toBeVisible();
+    await expect(nameDialog.locator('.entityEditFooter')).toBeInViewport();
+    await page.screenshot({ path: `preview-results/people-controls-name-editor-${width}-${large ? 'large' : 'normal'}.png` });
     await page.getByLabel('인물 이름').fill('취소할 이름');
     await page.locator('.personEditor').getByRole('button', { name: '취소', exact: true }).click();
     await expect(peopleHeader.getByRole('heading')).toHaveText('아주 긴 이름을 가진 우리 가족');
@@ -83,7 +87,10 @@ test('people and pet controls stay aligned and anchored on narrow screens', asyn
     await expect(petHeader.getByRole('button', { name: '반려동물 관리', exact: true })).toBeFocused();
     await petHeader.getByRole('button', { name: '이름·사진 수정', exact: true }).click();
     await expect(page.getByRole('dialog', { name: '반려동물 편집' })).toBeVisible();
-    await page.getByRole('dialog', { name: '반려동물 편집' }).getByTitle('닫기').click();
+    const petDialog = page.getByRole('dialog', { name: '반려동물 편집' });
+    await expect(petDialog.locator('.entityEditFooter')).toBeInViewport();
+    await page.screenshot({ path: `preview-results/people-controls-pet-editor-${width}-${large ? 'large' : 'normal'}.png` });
+    await petDialog.getByTitle('닫기').click();
     await petHeader.getByRole('button', { name: '반려동물 목록', exact: true }).click();
     await page.getByRole('tab', { name: '사람', exact: true }).click();
   }

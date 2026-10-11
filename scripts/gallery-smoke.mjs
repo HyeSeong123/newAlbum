@@ -52,8 +52,10 @@ export async function verifyInstalledGallery({page,adb,nativeTree,tapNative,capt
   assert.ok(tree.indexOf(order[0])<tree.indexOf(order[1]) && tree.indexOf(order[1])<tree.indexOf(order[2]),'Gallery must order by modified time rather than filename');
   assert.ok(!tree.includes('com.google.android.documentsui'),'Gallery cannot launch the file browser');
   assert.ok(!tree.includes('unsupported-gallery.gif'),'Unsupported formats must not be offered for import');
+  assert.ok(tree.includes('사진·영상 선택') && tree.includes('사진·영상을 골라 주세요'), 'Gallery must show a clear selection heading and footer');
   await captureScreen('gallery-recent-modified');
   for (const name of order) await tapNative(new RegExp(`content-desc="${name.replaceAll('.','\\.')}[^\"]*선택 안 됨`));
+  assert.ok((await nativeTree()).includes('3개 선택됨'), 'Selection count must update above the import action');
   await captureScreen('gallery-three-selected');
   await tapNative(/text="3개 가져오기"/);
   const selected=await wait();assert.equal(selected.uris.length,3);

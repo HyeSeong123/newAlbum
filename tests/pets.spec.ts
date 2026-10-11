@@ -36,7 +36,7 @@ test('pets collect photos manually and preserve originals', async ({ page }) => 
   const choices = page.getByRole('button', { name: '사진 선택', exact: true });
   await choices.nth(0).click();
   await choices.nth(1).click();
-  await page.locator('.petEditor img').first().evaluate((img: HTMLImageElement) => img.decode());
+  await page.locator('.petRegistrationEditor img').first().evaluate((img: HTMLImageElement) => img.decode());
   await page.getByLabel('대표 사진', { exact: true }).selectOption('2');
   await page.screenshot({ path: `test-results/pet-editor-${test.info().project.name}.png` });
   await page.getByRole('button', { name: '저장', exact: true }).click();

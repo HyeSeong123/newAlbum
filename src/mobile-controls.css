@@ -49,8 +49,6 @@
 .entityActionShort { display: none; }
 .peopleWorkspace .peopleActions button, .peopleWorkspace .peopleActions input, .peopleWorkspace .peopleActions select { min-height: 44px; }
 .peopleWorkspace .entityActions { flex-wrap: nowrap; }
-.personEditor form { width: 100%; }
-.personEditor form input { flex: 1 1 160px; }
 
 @media (max-width: 999px) {
   .topbar.view-people { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
@@ -75,9 +73,6 @@
   .personDirectory > button { width: 144px; min-width: 144px; flex: 0 0 144px; min-height: 64px; grid-template-columns: 40px minmax(0, 1fr); gap: 8px; }
   .personDirectory img { width: 40px; height: 40px; }
   .personDirectory .unknownDirectory { margin: 0; padding: 8px; border: 0; grid-template-columns: minmax(0, 1fr); }
-  .personEditor form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
-  .personEditor form input { grid-column: 1 / -1; width: 100%; }
-  .personEditor form button { min-width: 0; }
   /* Page titles and primary actions share the first row; search stays below. */
   .topbar.view-library, .topbar.view-albums,
   .workspace:has(.photoWorkspace.mode-grid) .topbar.view-library {

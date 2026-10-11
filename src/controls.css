@@ -107,8 +107,6 @@ button > svg { flex-shrink: 0; }
 .petsView > .panelHeader > .peopleActions { margin-left: auto; justify-content: flex-end; }
 .peopleActions.peopleToolbar { gap: 16px; }
 .peopleActions .toolbarGroup { min-width: 0; max-width: 100%; }
-.personEditor form { display: flex; flex-wrap: wrap; align-items: center; gap: var(--control-gap); min-width: 0; max-width: 100%; }
-.personEditor form input { max-width: 100%; min-width: 0; }
 .peopleActions .actionMenuPanel { width: max-content; min-width: min(220px, calc(100vw - 32px)); max-width: calc(100vw - 32px); }
 .peopleActions .actionMenuPanel button { height: auto; padding-block: 10px; white-space: normal; text-align: left; }
 .selectionDock .selectionActions { display: flex; flex-wrap: wrap; gap: var(--control-gap); min-width: 0; }

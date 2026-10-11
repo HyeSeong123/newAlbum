@@ -33,7 +33,7 @@ async function swipe(page: Page, tile: Locator) {
   // A tap during native scroll inertia stops scrolling instead of activating a tile.
   // Finish the swipe before testing a separate tap, for document and modal scrolls.
   await tile.evaluate(async el => {
-    const scroller = el.closest('.petEditor') || document.scrollingElement!;
+    const scroller = el.closest('.entityEditBody') || document.scrollingElement!;
     await new Promise<void>(resolve => {
       let previous = scroller.scrollTop, stableFrames = 0;
       const frame = () => {
@@ -52,13 +52,13 @@ async function selectPerson(page: Page) {
   await page.locator('.navList').getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '가족 48장', exact: true }).click();
   await page.getByRole('button', { name: '사람 관리', exact: true }).click();
-  await page.getByRole('button', { name: '다른 사람으로 옮기기', exact: true }).click();
+  await page.getByRole('button', { name: '사진 정리', exact: true }).click();
 }
 
 async function editPet(page: Page) {
   await page.getByRole('tab', { name: '반려동물', exact: true }).click();
   await page.getByRole('button', { name: '반려동물 등록', exact: true }).click();
-  return page.locator('.petEditor');
+  return page.locator('.petRegistrationEditor');
 }
 
 test('touch selection in people and pets scrolls without selecting, and taps toggle once', async ({ page, isMobile }) => {
@@ -78,9 +78,10 @@ test('touch selection in people and pets scrolls without selecting, and taps tog
   const editor = await editPet(page);
   const pets = editor.getByRole('button', { name: '사진 선택', exact: true });
   await pets.first().scrollIntoViewIfNeeded();
-  const modalBefore = await editor.evaluate(el => el.scrollTop);
+  const modalBody = editor.locator('.entityEditBody');
+  const modalBefore = await modalBody.evaluate(el => el.scrollTop);
   await swipe(page, pets.first());
-  await expect.poll(() => editor.evaluate(el => el.scrollTop)).toBeGreaterThan(modalBefore + 40);
+  await expect.poll(() => modalBody.evaluate(el => el.scrollTop)).toBeGreaterThan(modalBefore + 40);
   await expect(editor.locator('.petPhoto[aria-pressed="true"]')).toHaveCount(0);
   await pets.nth(8).tap();
   await expect(editor.locator('.petPhoto[aria-pressed="true"]')).toHaveCount(1);

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { ArrowLeft, Check, ChevronLeft, ChevronRight, LoaderCircle, MoreVertical, PawPrint, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, LoaderCircle, MoreVertical, PawPrint, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { MediaItem } from '../../types/media';
 import { MediaVisual } from '../../components/MediaVisual';
 import { EmptyState } from '../../components/MediaVisual';
 import { ActionMenu } from '../../components/ActionMenu';
-import { useModalBehavior } from '../../hooks/useModalBehavior';
+import { EntityEditorDialog } from '../../components/EntityEditorDialog';
 import { useRowSelection } from '../../hooks/useRowSelection';
 import { isTauriRuntime } from '../../services/tauriMediaService';
 import { deletePet, loadPets, Pet, savePet } from './petService';
@@ -101,7 +101,6 @@ function PetEditor({ pet, photos, onClose, onSaved }: { pet: Pet; photos: MediaI
   const [error, setError] = useState('');
   const toggle = (id: string) => setSelected((current) => current.includes(Number(id)) ? current.filter((entry) => entry !== Number(id)) : [...current, Number(id)]);
   const drag = useRowSelection(!busy, toggle, (id) => selected.includes(Number(id)));
-  useModalBehavior(() => { if (!busy) onClose(); });
   const pages = Math.max(1, Math.ceil(photos.length / 24));
   const currentPage = Math.min(page, pages - 1);
   const actualCover = cover !== null && selected.includes(cover) ? cover : selected[0] ?? null;
@@ -116,22 +115,22 @@ function PetEditor({ pet, photos, onClose, onSaved }: { pet: Pet; photos: MediaI
     } catch { setError('반려동물 정보를 저장하지 못했습니다. 입력한 이름과 선택한 사진은 화면에 남아 있습니다. 다시 저장해 주세요.'); }
     finally { setBusy(false); }
   }
-  return <div className="modalBackdrop"><section className="petEditor" role="dialog" aria-modal="true" aria-labelledby="petEditorTitle">
-    <header className="detailHeader"><strong id="petEditorTitle">{pet.id ? '반려동물 편집' : '반려동물 등록'}</strong><button className="closeButton" title="닫기" disabled={busy} onClick={onClose}><X size={18} /></button></header>
+  return <EntityEditorDialog title={pet.id ? '반려동물 편집' : '반려동물 등록'} busy={busy} onClose={onClose} className="petRegistrationEditor">
     <form onSubmit={(event) => void submit(event)}>
-      <fieldset disabled={busy}>
-        <div className="petFields"><label>이름<input required maxLength={80} value={name} onChange={(event) => setName(event.target.value)} /></label>
-        <label>대표 사진<select aria-label="대표 사진" value={actualCover ?? ''} disabled={!selected.length} onChange={(event) => setCover(Number(event.target.value))}>{!selected.length && <option value="">사진 없음</option>}{selected.map((id, i) => <option key={id} value={id}>{photos.find((photo) => Number(photo.id) === id)?.takenAt ?? '날짜 없음'} · {i + 1}</option>)}</select></label></div>
-        <strong>사진 {selected.length}장 선택</strong><p className="petMatchNotice">사진은 선택 사항입니다. 정면과 양쪽 측면 사진을 함께 연결하면 비교 기준을 보완할 수 있습니다.</p>
+      <div className="entityEditBody"><fieldset disabled={busy}>
+        <div className="petFields"><label className="entityEditField">이름<input placeholder="반려동물 이름" required maxLength={80} value={name} onChange={(event) => setName(event.target.value)} /></label>
+        <label className="entityEditField">대표 사진<select aria-label="대표 사진" value={actualCover ?? ''} disabled={!selected.length} onChange={(event) => setCover(Number(event.target.value))}>{!selected.length && <option value="">사진 없음</option>}{selected.map((id, i) => <option key={id} value={id}>{photos.find((photo) => Number(photo.id) === id)?.takenAt ?? '날짜 없음'} · {i + 1}</option>)}</select></label></div>
+        <div className="petPhotoSelectionHeading"><strong>연결할 사진</strong><span>{selected.length}장 선택</span></div><p className="petMatchNotice">사진을 눌러 연결하거나 해제하세요. 사진 없이 이름만 등록할 수도 있어요.</p>
         <div className="petGrid selecting" {...drag}>{photos.slice(currentPage * 24, (currentPage + 1) * 24).map((item) => <button type="button" key={item.id} className="petPhoto" data-selection-id={item.id} aria-label="사진 선택" aria-pressed={selected.includes(Number(item.id))} onClick={() => toggle(item.id)}>
           <MediaVisual item={item} /><span className={`faceCheck ${selected.includes(Number(item.id)) ? 'checked' : ''}`} aria-hidden="true">{selected.includes(Number(item.id)) && <Check size={22} />}</span><span>{item.takenAt ?? '날짜 없음'}</span>
         </button>)}</div>
         {selected.length > 0 && <details><summary>인식 기준 사진의 방향 (선택 사항 · 최대 12장)</summary><div className="petReferenceViews">{photos.filter(photo=>selected.includes(Number(photo.id))).slice(0,12).map(photo=><label key={photo.id}>{photo.fileName}<select aria-label={`${photo.fileName} 촬영 방향`} value={referenceViews[photo.id] ?? 'unknown'} onChange={event=>setReferenceViews(current=>({...current,[photo.id]:event.target.value as PetView}))}>{Object.entries(VIEW_LABELS).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label>)}</div></details>}
         {!photos.length && <p>등록된 사진이 없습니다.</p>}
         <div className="peopleActions">{pages > 1 && <><button type="button" title="이전 페이지" disabled={!currentPage} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={18} /></button><span>{currentPage + 1} / {pages}</span><button type="button" title="다음 페이지" disabled={currentPage === pages - 1} onClick={() => setPage(currentPage + 1)}><ChevronRight size={18} /></button></>}
-          <button type="submit" disabled={!name.trim()}>{busy ? <LoaderCircle className="spinIcon" size={18} /> : <Check size={18} />}저장</button></div>
+        </div>
         {error && <p role="alert">{error}</p>}
-      </fieldset>
+      </fieldset></div>
+      <footer className="peopleActions entityEditFooter"><button type="button" disabled={busy} onClick={onClose}>취소</button><button type="submit" className="primaryControl" disabled={busy || !name.trim()}>{busy ? <LoaderCircle className="spinIcon" size={18} /> : <Check size={18} />}저장</button></footer>
     </form>
-  </section></div>;
+  </EntityEditorDialog>;
 }

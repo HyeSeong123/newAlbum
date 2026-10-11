@@ -14,7 +14,6 @@
 .peopleActions button:hover:not(:disabled) { background: #edf4f1; border-color: #49695c; }
 .peopleActions button:disabled { opacity: .45; cursor: not-allowed; }
 .peopleActions input, .peopleActions select { font: inherit; min-height: 42px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--text); max-width: 100%; }
-.personEditor form { display: flex; gap: 10px; flex-wrap: wrap; }
 .personGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 24px; }
 .personTile { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; padding: 16px; background: transparent; color: var(--text); border-radius: 8px; }
 .personTile:hover { background: #edf4f1; }
@@ -58,7 +57,7 @@
 .faceCheck svg { position: static; margin: 0; transform: none; }
 .personPhotoMeta { display: flex; align-items: center; gap: 8px; padding-top: 8px; font-size: 13px; }
 .personPhotoMeta img { width: 36px; height: 36px; object-fit: cover; border-radius: 4px; }
-@media (max-width: 700px) { .personPhotoGrid:not(.personMediaGrid) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .personGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } .personEditor input { width: 170px; } }
+@media (max-width: 700px) { .personPhotoGrid:not(.personMediaGrid) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .personGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
 @media (max-width: 720px) { .personPhotoGrid.personMediaGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 10px; } }
 @media (max-width: 480px) { .personPhotoGrid.faceOverviewGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; } }
 
@@ -66,9 +65,19 @@
 .peopleNextSteps p { margin: 0; font-weight: 600; }
 .peopleNextSteps small { color: #53615a; line-height: 1.6; }
 
-.personEditor { flex-direction: column; align-items: flex-start; }
 .existingPersonChoice label { display: grid; gap: 6px; }
 .existingPersonChoice { align-items: flex-end; }
 
 .personEvaluationReport > table { width:100%; table-layout:fixed; border-collapse:collapse; margin:16px 0; }
 .personEvaluationReport > table th,.personEvaluationReport > table td { padding:8px 4px; overflow-wrap:anywhere; text-align:left; border-bottom:1px solid var(--border); }
+
+.peopleSectionHint { margin: 0 0 12px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.faceSelectionPanel { padding: 16px; display: grid; gap: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-soft); }
+.faceSelectionHeader { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.faceSelectionHeader button { min-height: 44px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface, #fff); color: var(--text); }
+.faceSelectionPanel .faceSelectionActions { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+.faceSelectionPanel .faceActionField { display: grid; gap: 6px; min-width: 0; color: var(--muted); font-size: 12px; }
+.faceSelectionPanel select { width: 100%; min-width: 0; }
+.faceSelectionPanel .peopleSectionHint { margin: 0; }
+.faceSelectionActions:has(select[aria-label="옮길 사람"]) .faceActionField:first-child { grid-column: 1 / -1; }
+@media (max-width: 600px) { .faceSelectionPanel { padding: 12px; } .faceSelectionPanel .faceSelectionActions { grid-template-columns: minmax(0, 1fr); } .faceSelectionPanel .faceSelectionActions button { width: 100%; height: auto; min-height: 44px; white-space: normal; line-height: 1.3; padding: 10px; } }

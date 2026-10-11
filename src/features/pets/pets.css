@@ -55,3 +55,12 @@
 .petEvaluationReport { min-width: 0; overflow-wrap: anywhere; }
 .petEvaluationReport table { width: 100%; table-layout: fixed; border-collapse: collapse; }
 .petEvaluationReport th, .petEvaluationReport td { padding: 8px 4px; text-align: left; border-bottom: 1px solid var(--border); }
+
+.entityEditDialog.petRegistrationEditor { width: min(760px, 100%); }
+.petRegistrationEditor fieldset { display: grid; gap: 16px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.petPhotoSelectionHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.petPhotoSelectionHeading span { padding: 5px 9px; border-radius: 999px; background: var(--surface-soft); color: var(--primary); font-size: 13px; }
+.petRegistrationEditor .petGrid { gap: 14px 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.petRegistrationEditor .petGrid button { border-radius: 8px; }
+.petRegistrationEditor .petFields { padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-soft); }
+@media (max-width: 600px) { .petRegistrationEditor .petFields { padding: 12px; } .petRegistrationEditor .petGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

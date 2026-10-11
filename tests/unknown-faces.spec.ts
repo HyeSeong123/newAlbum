@@ -39,7 +39,7 @@ test('unknown directory shows only unnamed faces and retains person navigation',
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '아버님 1장', exact: true }).click();
   await page.getByRole('button', { name: '사람 관리', exact: true }).click();
-  await page.getByRole('button', { name: '다른 사람으로 옮기기' }).click();
+  await page.getByRole('button', { name: '사진 정리' }).click();
   await page.getByRole('button', { name: '얼굴 선택', exact: true }).click();
   const directory = page.getByRole('complementary', { name: '이름을 지정한 사람' });
   const unknown = directory.locator('.unknownDirectory');
@@ -64,6 +64,7 @@ test('unknown directory shows only unnamed faces and retains person navigation',
   await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
   await page.getByRole('button', { name: '얼굴 선택하기', exact: true }).click();
   await page.getByRole('button', { name: '얼굴 선택', exact: true }).first().click();
+  await page.getByLabel('얼굴 정리 작업').selectOption('move');
   await page.getByLabel('옮길 사람').selectOption('1');
   await page.getByRole('button', { name: '옮기기', exact: true }).click();
   await expect(unknown).toContainText('26개 얼굴');
@@ -82,6 +83,7 @@ test('unknown directory shows only unnamed faces and retains person navigation',
   for (const face of await page.getByRole('button', { name: '얼굴 선택', exact: true }).all()) await face.click();
   await expect(page.locator('.faceSelectionActions')).toContainText('26개 선택');
   page.once('dialog', (dialog) => dialog.accept());
+  await page.getByLabel('얼굴 정리 작업').selectOption('exclude');
   await page.getByRole('button', { name: '얼굴 제외', exact: true }).click();
   await expect(page.getByText('이름을 붙일 사람이 없습니다.', { exact: true })).toBeVisible();
   await expect(directory).toBeVisible();

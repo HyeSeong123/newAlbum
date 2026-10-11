@@ -39,7 +39,7 @@ export function FaceMatchReview({ index, onClose, onSaved }: { index: FaceIndex;
   const pageCount = Math.max(1, Math.ceil(matches.length / 24));
   return <div className="modalBackdrop">
     <section className="faceMatchReview" role="dialog" aria-modal="true" aria-labelledby="faceMatchTitle">
-      <header className="detailHeader"><strong id="faceMatchTitle">같은 사람 찾기</strong><button className="closeButton" title="닫기" disabled={saving} onClick={onClose}><X size={18} /></button></header>
+      <header className="detailHeader"><strong id="faceMatchTitle">이름 추천 확인</strong><button className="closeButton" title="닫기" disabled={saving} onClick={onClose}><X size={18} /></button></header>
       <div className="faceMatchBody">
         {loading && <p role="status"><LoaderCircle className="spinIcon" size={18} />얼굴 비교 중</p>}
         {error && <p role="alert">{error}</p>}
