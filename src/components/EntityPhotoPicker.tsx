@@ -31,7 +31,7 @@ export function EntityPhotoPicker({ title, photos, name, initialIds = [], automa
     if (lock.current || !draftName.trim() || name === undefined && !count) return;
     lock.current = true; setBusy(true); setError('');
     try { await onSave(draftName.trim(), [...selected]); onClose(); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : '사진을 저장하지 못했습니다. 선택한 사진은 남아 있습니다. 다시 저장해 주세요.'); }
+    catch (reason) { setError(reason instanceof Error ? reason.message : typeof reason === 'string' && reason.trim() ? reason : '사진을 저장하지 못했습니다. 선택한 사진은 남아 있습니다. 다시 저장해 주세요.'); }
     finally { lock.current = false; setBusy(false); }
   }
   return <EntityEditorDialog title={title} busy={busy} onClose={onClose} className="entityPhotoPicker">

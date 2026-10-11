@@ -31,7 +31,7 @@ async function prepare(page: Page) {
       if(command==='list_media')return Array.from({length:31},(_,i)=>({id:i+1,file_path:`/photos/photo${i+1}.jpg`,file_type:i===30?'video':'image',taken_at:'2026-10-11',width:768,height:576,size_bytes:1000,rating:0,comment:'',favorite:false,metadata_status:'ready'}));
       if(command==='list_face_index')return structuredClone({people,faces,scanned:[1,2,3]});
       if(command==='save_manual_person_photos'){
-        if(localStorage.getItem('fail-manual'))throw new Error('저장 실패 · 다시 저장해 주세요.');
+        if(localStorage.getItem('fail-manual'))throw '저장 실패 · 다시 저장해 주세요.'; // Native command errors arrive as strings.
         const id=args.personId??Math.max(...people.map(row=>row.id))+1;
         const owner=people.find(row=>row.id===id);if(owner)owner.media_ids=args.mediaIds;else people.push({id,name:args.name,media_ids:args.mediaIds});remember('saved-person', {id,ids:args.mediaIds});return id;
       }
