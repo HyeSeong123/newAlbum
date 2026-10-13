@@ -5,6 +5,8 @@ import ts from 'typescript';
 const affinitySource = ts.transpileModule(readFileSync(new URL('../src/features/characters/gomiAffinity.ts', import.meta.url),'utf8'), { compilerOptions:{ target:ts.ScriptTarget.ES2022, module:ts.ModuleKind.ESNext } }).outputText;
 const affinityUrl = `data:text/javascript;base64,${Buffer.from(affinitySource).toString('base64')}`;
 const affinity = await import(affinityUrl);
+const greetingSource = ts.transpileModule(readFileSync(new URL('../src/features/characters/gomiGreeting.ts', import.meta.url),'utf8').replace('"./gomiAffinity"', JSON.stringify(affinityUrl)), { compilerOptions:{ target:ts.ScriptTarget.ES2022, module:ts.ModuleKind.ESNext } }).outputText;
+const { claimGomiGreeting } = await import(`data:text/javascript;base64,${Buffer.from(greetingSource).toString('base64')}`);
 const source = readFileSync(new URL('../src/features/characters/gomiBehavior.ts', import.meta.url), 'utf8');
 const { outputText } = ts.transpileModule(source.replace('"./gomiAffinity"', JSON.stringify(affinityUrl)), { compilerOptions:{ target:ts.ScriptTarget.ES2022, module:ts.ModuleKind.ESNext } });
 const { allowedGomiMotion, gomiInteractionMotion, gomiHomeMotion, gomiSeason, gomiSleepReaction, gomiMotionFrames, gomiMotionDuration, GOMI_BOND_AFFECTION, GOMI_LICK_AFFECTION, gomiSleepLine } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
@@ -24,6 +26,32 @@ test('Gomi stays cynical until 60, offers a paw at 60 and only licks from 90', (
     assert.deepEqual([1,2,3,4].map(n=>gomiInteractionMotion(affection,n)), ['paw-wave','lick','happy','cynical']);
     assert.equal(allowedGomiMotion('lick',affection), 'lick');
   }
+});
+test('daily welcomes use six affection tiers and the requested restrained wording', () => {
+  for (const [score,tier] of [[0,0],[19,0],[20,1],[29,1],[30,2],[59,2],[60,3],[89,3],[90,4],[99,4],[100,5],[150,5]]) {
+    assert.equal(affinity.gomiGreetingTier(score),tier);
+  }
+  assert.deepEqual([0,20,30,60].map(score=>affinity.gomiDialogueLines(score,'greeting')), [
+    ['........누구....?'], ['......왔네....'], ['...자주 오네..'], ['기다리진 않았어...'],
+  ]);
+  for (const score of [90,100]) assert.ok(affinity.gomiDialogueLines(score,'greeting').length >= 5);
+  assert.ok(affinity.gomiDialogueLines(0).includes('....뭐'));
+  assert.ok(affinity.gomiDialogueLines(0).includes('....귀찮게 하지마....'));
+  assert.equal(gomiSleepLine(3,0),'휴...');
+  assert.equal(gomiSleepLine(4,0),'어휴..또 시작이네...');
+});
+test('daily greeting survives repeat entries and stored restarts, and resets on the local day', () => {
+  const values = new Map();
+  const storage = { getItem:key=>values.get(key) ?? null, setItem:(key,value)=>values.set(key,value) };
+  assert.equal(claimGomiGreeting('2026-10-13','daily-test',0,storage,()=>0),'........누구....?');
+  assert.equal(claimGomiGreeting('2026-10-13','daily-test',100,storage),undefined);
+  assert.equal(claimGomiGreeting('2026-10-14','daily-test',100,storage,()=>0),'혼자두고 어디다녀왔어');
+  values.set('gamjassak:gomi-greeting:stored-test','2026-10-13');
+  assert.equal(claimGomiGreeting('2026-10-13','stored-test',90,storage),undefined);
+  assert.equal(claimGomiGreeting('2026-10-14','stored-test',90,storage,()=>0),'빨리빨리 다녀');
+  const disabled = { getItem:()=>{throw Error('disabled');}, setItem:()=>{throw Error('disabled');} };
+  assert.equal(claimGomiGreeting('2026-10-13','disabled-test',20,disabled),'......왔네....');
+  assert.equal(claimGomiGreeting('2026-10-13','disabled-test',20,disabled),undefined);
 });
 test('sleeping has two different poses and all expressions and motion frames are transparent local PNGs', () => {
   const assets = new Set(Object.values(gomiMotionFrames).flat());

@@ -5,6 +5,7 @@ import { characterDefinitions, characterName, dialogueLines, nextDialogue, type 
 import { isGomiAngry, isGomiSleeping, isGomiSleepReaction } from "../characters/gomiBehavior";
 import { gomiAffinity, gomiInteractionHints } from "../characters/gomiAffinity";
 import { useGomiBehavior } from "../characters/useGomiBehavior";
+import { claimGomiGreeting } from "../characters/gomiGreeting";
 import "../characters/characters.css";
 import "./home.css";
 
@@ -51,7 +52,26 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   const gomi = useGomiBehavior(isGomi, mainCharacter?.affection || 0, today, mainCharacter?.id);
   const lines = definition && mainCharacter ? dialogueLines(definition, mainCharacter.growthStage, mainCharacter.affection >= 20 ? "highAffection" : "idle", mainCharacter.affection) : messages;
   const affinity = isGomi ? gomiAffinity(mainCharacter?.affection || 0) : undefined;
-  useEffect(() => { lastLine.current=0; setMessageIndex(0); setSpokenLine(undefined); }, [mainCharacter?.id,mainCharacter?.growthStage,affinity]);
+  const dialogueEntry = useRef("");
+  useEffect(() => {
+    const entry = `${mainCharacter?.id}:${mainCharacter?.growthStage}:${affinity}`;
+    if (dialogueEntry.current === entry) return;
+    dialogueEntry.current = entry;
+    lastLine.current=0; setMessageIndex(0); setSpokenLine(undefined);
+  }, [mainCharacter?.id,mainCharacter?.growthStage,affinity]);
+  const greetingEntry = useRef("");
+  const greetingAffection = useRef(0);
+  greetingAffection.current = mainCharacter?.affection || 0;
+  useEffect(() => {
+    if (!isGomi || !mainCharacter?.id) return;
+    const entry = `${mainCharacter.id}:${today}`;
+    if (greetingEntry.current === entry) return;
+    greetingEntry.current = entry;
+    let storage: Storage | undefined;
+    try { storage = window.localStorage; } catch { /* Session fallback handles disabled storage. */ }
+    const greeting = claimGomiGreeting(today, mainCharacter.id, greetingAffection.current, storage);
+    if (greeting) setSpokenLine(greeting);
+  }, [isGomi, mainCharacter?.id, today]);
   useEffect(() => () => window.clearTimeout(timer.current), []);
   const dateLabel = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long" })
     .format(new Date(`${today}T12:00:00`));

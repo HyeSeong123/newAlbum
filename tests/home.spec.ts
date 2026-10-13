@@ -1,6 +1,24 @@
 import { expect, test } from '@playwright/test';
 test.beforeEach(async ({page}) => { await page.addInitScript(()=>{Math.random=()=>.1;}); });
 
+test('Gomi greets once per local day across Home navigation and app reloads', async ({ page }) => {
+  await page.goto('/');
+  const speech = page.locator('#homeMessage');
+  await expect(speech).toHaveText('........누구....?');
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
+  await page.locator('.navList').getByRole('button', { name: '홈', exact: true }).click();
+  await expect(speech).not.toHaveText('........누구....?');
+  await page.reload();
+  await expect(speech).not.toHaveText('........누구....?');
+  await page.evaluate(() => {
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith('gamjassak:gomi-greeting:')) localStorage.setItem(key,'2026-01-01');
+    }
+  });
+  await page.reload();
+  await expect(speech).toHaveText('........누구....?');
+});
+
 test('startup, every logo link, the first menu item and reload all lead to Home', async ({ page }) => {
   await page.goto('/');
   const nav = page.locator('.navList');
