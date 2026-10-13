@@ -350,11 +350,12 @@ test('bonded Gomi actually alternates paw and tongue drawings while her adult st
 });
 
 for (const scenario of [
-  { score:0, home:'…', photo:'…휴. 사진은 직접 골라.', opening:'…가져오기부터.', description:'못 들은 척', motion:'cynical' },
-  { score:20, home:'뭐.', photo:'사진? 가져오기 눌러. 끝.', opening:'고르는 건 네 몫이야.', description:'반가운 기색은 없어요', motion:'cynical' },
-  { score:30, home:'휴. 또 왜.', photo:'휴. 마음에 드는 거부터 골라. 전부 넣을 필요 없잖아.', opening:'몇 장만 골라. 정리까지 하긴 귀찮으니까.', description:'이런 것도 말해야 해?', motion:'cynical' },
-  { score:60, home:'휴. 왔네. 무슨 일이야.', photo:'휴. 고르기 힘들면 좋아하는 사진부터. 옆에서 봐줄게.', opening:'좋아하는 것부터 고르자. 내가 기다릴게.', description:'슬쩍 챙겨줘요', motion:'idle' },
-  { score:90, home:'휴. 너니까 해 주는 거야.', photo:'휴. 네가 좋아하는 순간부터 고르자. 같이 보고 싶으니까.', opening:'이건 너랑 같이 보고 싶어. 먼저 골라줄래?', description:'당신 곁은 익숙해졌어요', motion:'idle' },
+  { score:0, home:'........누구....?', photo:'…휴. 사진은 직접 골라.', opening:'…가져오기부터.', description:'못 들은 척', motion:'cynical' },
+  { score:20, home:'......왔네....', photo:'사진? 가져오기 눌러. 끝.', opening:'고르는 건 네 몫이야.', description:'반가운 기색은 없어요', motion:'cynical' },
+  { score:30, home:'...자주 오네..', photo:'휴. 마음에 드는 거부터 골라. 전부 넣을 필요 없잖아.', opening:'몇 장만 골라. 정리까지 하긴 귀찮으니까.', description:'이런 것도 말해야 해?', motion:'cynical' },
+  { score:60, home:'기다리진 않았어...', photo:'휴. 고르기 힘들면 좋아하는 사진부터. 옆에서 봐줄게.', opening:'좋아하는 것부터 고르자. 내가 기다릴게.', description:'슬쩍 챙겨줘요', motion:'idle' },
+  { score:90, home:'빨리빨리 다녀', photo:'휴. 네가 좋아하는 순간부터 고르자. 같이 보고 싶으니까.', opening:'이건 너랑 같이 보고 싶어. 먼저 골라줄래?', description:'당신 곁은 익숙해졌어요', motion:'idle' },
+  { score:100, home:'혼자두고 어디다녀왔어', photo:'휴. 네가 좋아하는 순간부터 고르자. 같이 보고 싶으니까.', opening:'이건 너랑 같이 보고 싶어. 먼저 골라줄래?', description:'당신 곁은 익숙해졌어요', motion:'idle' },
 ]) test(`Gomi affection ${scenario.score} changes her Home, guide and book together`, async ({page}, info) => {
   await page.emulateMedia({reducedMotion:'reduce'});
   await installSnapshot(page,[{...companion('gomi',6,true),affection:scenario.score}]);
