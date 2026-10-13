@@ -112,7 +112,8 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
           ? "잠을 여러 번 깨워서 고미가 뾰로통해졌어요. 잠시 쉬게 해 주세요"
           : isGomi && isGomiSleepReaction(gomi.motion) ? "고미가 한쪽 눈을 살짝 떴어요. 아직 졸린가 봐요"
           : isGomi && isGomiSleeping(gomi.motion) ? "고미가 자고 있어요. 살짝 톡, 건드리면 실눈으로 쳐다봐요"
-          : isGomi && gomi.motion === "stretch" ? "고미가 쭉, 기지개를 켜고 있어요" : isGomi ? gomiInteractionHints[affinity!] : "홈에서 톡, 쓰다듬으며 말을 걸어 주세요"}</p>
+          : isGomi && gomi.motion === "stretch" ? "고미가 쭉, 기지개를 켜고 있어요"
+          : isGomi && gomi.motion === "rest-front" ? "고미가 앞발을 쭉 내밀고 편하게 쉬고 있어요. 조용히 말을 걸어 보세요" : isGomi ? gomiInteractionHints[affinity!] : "홈에서 톡, 쓰다듬으며 말을 걸어 주세요"}</p>
         <button className="homeCharacterLink" type="button" onClick={onShowCharacters}>새싹 도감 보기</button>
       </div>
     </div>

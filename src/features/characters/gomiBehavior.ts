@@ -7,10 +7,11 @@ export const GOMI_SLEEP_TOUCH_WINDOW_MS = 10_000;
 export const GOMI_ANGRY_TOUCHES = 3;
 
 export type GomiSleepMotion = "sleep-curled" | "sleep-stretched" | "sleep-cool" | "sleep-warm";
-export type GomiMotion = "idle" | "cynical" | "happy" | "sad" | "angry" | "grow" | GomiSleepMotion | `${GomiSleepMotion}-peek` | `${GomiSleepMotion}-angry` | "stretch" | "paw-wave" | "lick";
+export type GomiMotion = "idle" | "cynical" | "rest-front" | "happy" | "sad" | "angry" | "grow" | GomiSleepMotion | `${GomiSleepMotion}-peek` | `${GomiSleepMotion}-angry` | "stretch" | "paw-wave" | "lick";
 export const gomiMotionFrames: Record<GomiMotion, string[]> = {
   idle: ["/characters/gomi/idle.png"],
   cynical: ["/characters/gomi/cynical.png"],
+  "rest-front": ["/characters/gomi/rest-front.png"],
   happy: ["/characters/gomi/happy.png"],
   sad: ["/characters/gomi/sad.png"],
   angry: ["/characters/gomi/angry.png"],
@@ -47,7 +48,8 @@ export function gomiSeason(today: string): "cool" | "warm" | "none" {
 // One draw on Home entry; staying on Home never starts another pose cycle.
 export function gomiHomeMotion(today: string, random = Math.random): GomiMotion {
   const roll = random();
-  if (roll < .4) return "idle";
+  if (roll < .2) return "idle";
+  if (roll < .4) return "rest-front";
   if (roll < .6) return "sleep-curled";
   if (roll < .7) return "sleep-stretched";
   if (roll < .9) {

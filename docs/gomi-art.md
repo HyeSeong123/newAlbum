@@ -1,5 +1,17 @@
 # 고미 손그림과 모션 제작 기록
 
+## 2026-10-14 앞발을 내민 편안한 자세
+
+파일: `public/characters/gomi/rest-front.png`. 내장 이미지 생성 도구로 제작한 RGBA PNG를 변환 없이 복사했습니다. 기존 `cynical.png`를 고미의 외형·그림체 편집 대상으로, 사용자가 올린 푸들 사진을 자세 참고로 사용했습니다. 사진 원본은 앱에 포함하지 않습니다.
+
+상체와 고개를 들고 배를 바닥에 붙이며 양 앞발을 앞으로 내민 자세입니다. 뒷다리는 옆으로 접고, 기존 색연필 질감·살구색 곱슬 앞머리·갈색 귀·무심한 반쯤 감긴 눈을 유지합니다. 홈 진입 시 20% 확률로 선택하며, 호감도와 관계없이 같은 표정으로 쉬고 교감 후 이 자세로 돌아옵니다.
+
+최종 프롬프트:
+
+```text
+Use case: precise-object-edit. Asset type: one transparent PNG resting pose sprite for Gomi in the Korean photo diary app 감자싹. Input 1 is the EDIT TARGET and identity/style reference: existing cynical Gomi color-pencil drawing. Input 2 is a POSE REFERENCE ONLY: live poodle relaxing on belly, upper chest lifted, two forelegs forward, hind legs tucked to the side. Transform Gomi's BODY POSE to that relaxed belly-down lounging sit, also called sphinx/rest pose: head raised facing the viewer in slight three-quarter view, chest upright, belly resting on ground, two front paws extended parallel forward and slightly apart, hindquarters tucked softly along one side, small tail beside rear. The dog is awake with the SAME tired half-lidded unimpressed eyes and small closed weary mouth from input 1. Preserve Gomi's exact identity: pale apricot round curly forehead with raised tuft, brown/apricot floppy curly ears and body, light cream muzzle, tiny black nose, childlike simple proportions, rough warm colored-pencil/crayon grain and irregular gray-brown pencil outlines. Whole body, all paws and tail fully visible, centered on square canvas with generous transparent margins and bottom baseline around 88%. ONE dog only. Make it low and wide, clearly distinct from the existing upright seated pose. No smile, no tongue, no realistic fur, no glossy eyes, no photorealism, no 3D, no collar, no sofa, no cushion, no background scenery, no ground line, no text, no watermark, no white rectangle. Do not reproduce any photo branding or scenery. Actual transparent background outside character.
+```
+
 2026-10-06 사용자가 승인한 고미 초안을 기준으로 이미지 생성 스킬의 내장 도구로 제작했습니다. 참고 그림의 거친 색연필 선, 밝은 살구색 머리, 갈색 몸, 위로 살짝 올라간 앞머리를 유지합니다. 생성된 RGBA PNG의 픽셀과 투명 배경을 그대로 사용하며, 포즈 전환·숨쉬기·기지개·두 프레임 교감은 앱에서 재생합니다.
 
 ## 입력과 공통 프롬프트

@@ -55,7 +55,7 @@ test('daily greeting survives repeat entries and stored restarts, and resets on 
 });
 test('sleeping has two different poses and all expressions and motion frames are transparent local PNGs', () => {
   const assets = new Set(Object.values(gomiMotionFrames).flat());
-  assert.equal(assets.size, 21);
+  assert.equal(assets.size, 22);
   for (const path of assets) {
     const png = readFileSync(new URL(`../public${path}`,import.meta.url));
     assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
@@ -72,11 +72,17 @@ test('local calendar months select the correct bedding, including the year bound
     assert.equal(gomiSeason(date), seasons[month-1]);
     assert.equal(gomiHomeMotion(date,()=>.8), seasons[month-1] === 'none' ? 'sleep-curled' : `sleep-${seasons[month-1]}`);
   }
-  for (const [roll,pose] of [[0,'idle'],[.3999,'idle'],[.4,'sleep-curled'],[.5999,'sleep-curled'],[.6,'sleep-stretched'],[.6999,'sleep-stretched'],[.7,'sleep-warm'],[.8999,'sleep-warm'],[.9,'stretch'],[.9999,'stretch']]) {
+  for (const [roll,pose] of [[0,'idle'],[.1999,'idle'],[.2,'rest-front'],[.3999,'rest-front'],[.4,'sleep-curled'],[.5999,'sleep-curled'],[.6,'sleep-stretched'],[.6999,'sleep-stretched'],[.7,'sleep-warm'],[.8999,'sleep-warm'],[.9,'stretch'],[.9999,'stretch']]) {
     let draws=0;
     assert.equal(gomiHomeMotion('2026-10-01',()=>{draws++;return roll;}),pose);
     assert.equal(draws,1);
   }
+});
+test('the awake lounging pose keeps its own drawing at every affection level', () => {
+  assert.deepEqual(gomiMotionFrames['rest-front'], ['/characters/gomi/rest-front.png']);
+  for (const affection of [0,19,20,30,60,90,100]) assert.equal(allowedGomiMotion('rest-front',affection),'rest-front');
+  assert.notDeepEqual(gomiMotionFrames['rest-front'],gomiMotionFrames.cynical);
+  assert.notDeepEqual(gomiMotionFrames['rest-front'],gomiMotionFrames['sleep-stretched']);
 });
 test('every sleeping pose peeks first and becomes angry after three consecutive touches, regardless of affinity', () => {
   for (const rest of ['sleep-curled','sleep-stretched','sleep-cool','sleep-warm']) {

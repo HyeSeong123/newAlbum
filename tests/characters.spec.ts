@@ -32,6 +32,28 @@ async function installSnapshot(page:Page,initial:Companion[],event?:{ id:number;
 }
 const cardFor = (page:Page,name:string) => page.locator('.characterCard').filter({ has:page.getByRole('heading',{ name,exact:true }) });
 
+test('Gomi rests awake with front paws extended and returns to the pose after talking', async ({page}) => {
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await installSnapshot(page,[companion('gomi',6,true)]);
+  await page.addInitScript(()=>{Math.random=()=>.3;});
+  await page.clock.install({time:new Date('2026-10-14T12:00:00')});
+  await page.goto('/');
+  const mascot=page.getByRole('button',{name:'고미에게 말 걸기'});
+  const visual=mascot.locator('.characterVisual');
+  await expect(visual).toHaveAttribute('data-motion','rest-front');
+  await expect(visual).toHaveAttribute('data-expression','cynical');
+  await expect(mascot.locator('img')).toHaveAttribute('src','/characters/gomi/rest-front.png');
+  await mascot.locator('img').evaluate((img:HTMLImageElement)=>img.decode());
+  await expect(page.locator('#homeMascotHint')).toContainText('앞발을 쭉 내밀고');
+  await mascot.click();
+  await expect(visual).toHaveAttribute('data-motion','cynical');
+  await page.clock.fastForward(1_800);
+  await expect(visual).toHaveAttribute('data-motion','rest-front');
+  await page.clock.fastForward(600_000);
+  await expect(visual).toHaveAttribute('data-motion','rest-front');
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
+});
+
 test('the starter potato has a visible portrait and the book reveals no discovery or growth hints',async({page}) => {
   await page.goto('/');
   await page.getByRole('button',{name:'새싹 도감 보기'}).click();
