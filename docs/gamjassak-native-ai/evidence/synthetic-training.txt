@@ -1,0 +1,18 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> local-album-manager@0.9.9 ai:train:synthetic
+> node scripts/native-ai/train.mjs --epochs 12
+
+{"epoch":1,"steps":72,"train":{"loss":0.016830833429657677,"accuracy":1,"samples":72},"validation":{"loss":0.016994461108888005,"accuracy":1,"samples":18}}
+{"epoch":2,"steps":144,"train":{"loss":0.007503447877804419,"accuracy":1,"samples":72},"validation":{"loss":0.007574380287536056,"accuracy":1,"samples":18}}
+{"epoch":3,"steps":216,"train":{"loss":0.004721647190373204,"accuracy":1,"samples":72},"validation":{"loss":0.004766418194378401,"accuracy":1,"samples":18}}
+{"epoch":4,"steps":288,"train":{"loss":0.0034107948065597625,"accuracy":1,"samples":72},"validation":{"loss":0.0034434504322070985,"accuracy":1,"samples":18}}
+{"epoch":5,"steps":360,"train":{"loss":0.002654901392380109,"accuracy":1,"samples":72},"validation":{"loss":0.0026805988203984733,"accuracy":1,"samples":18}}
+{"epoch":6,"steps":432,"train":{"loss":0.0021656240784399504,"accuracy":1,"samples":72},"validation":{"loss":0.002186818818707591,"accuracy":1,"samples":18}}
+{"epoch":7,"steps":504,"train":{"loss":0.001824182521295378,"accuracy":1,"samples":72},"validation":{"loss":0.0018422314910574598,"accuracy":1,"samples":18}}
+{"epoch":8,"steps":576,"train":{"loss":0.001572956601996205,"accuracy":1,"samples":72},"validation":{"loss":0.001588675369574715,"accuracy":1,"samples":18}}
+{"epoch":9,"steps":648,"train":{"loss":0.0013806928384070577,"accuracy":1,"samples":72},"validation":{"loss":0.0013946199965168787,"accuracy":1,"samples":18}}
+{"epoch":10,"steps":720,"train":{"loss":0.001229013023419737,"accuracy":1,"samples":72},"validation":{"loss":0.0012415225710067528,"accuracy":1,"samples":18}}
+{"epoch":11,"steps":792,"train":{"loss":0.0011064266612608288,"accuracy":1,"samples":72},"validation":{"loss":0.0011177775073041437,"accuracy":1,"samples":18}}
+{"epoch":12,"steps":864,"train":{"loss":0.00100536948502894,"accuracy":1,"samples":72},"validation":{"loss":0.0010157662605436372,"accuracy":1,"samples":18}}
+{"output":"/workspace/scratch/243a8146a977/newAlbum/native-ai-output","weightsSha256":"4864e9ffb594f3d47beec12409bf6fa929f5c746fe3bc8c106412fb0f6c0bac8","before":{"loss":1.0468635701970688,"accuracy":0.4444444444444444,"samples":18},"after":{"loss":0.0010157662605436372,"accuracy":1,"samples":18},"productionApproved":false}

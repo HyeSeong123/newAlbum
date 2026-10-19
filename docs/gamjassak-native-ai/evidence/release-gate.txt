@@ -1,0 +1,10 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> local-album-manager@0.9.9 ai:release:check
+> node scripts/native-ai/release-gate.mjs
+
+NATIVE_RIGHTS_REVIEW_INCOMPLETE
+NO_REVIEWED_PERSON_PET_MODELS
+LEGACY_MODEL_DEPENDENCY:@vladmandic/face-api
+LEGACY_MODEL_DEPENDENCY:@tensorflow-models/coco-ssd
+FINAL_APK_AAB_AND_TRAINING_LINEAGE_REVIEW_REQUIRED

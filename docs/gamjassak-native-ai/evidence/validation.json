@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "dateKST": "2026-10-19",
+  "branch": "feature/gamjassak-native-ai",
+  "validatedCodeCommit": "2f6cd665e1314ce298ac1e9a024230beb6d2445c",
+  "stableBranchUntouched": "cd3d1be70331d35d504c7081022b2cead8351498",
+  "ci": {
+    "url": "https://github.com/HyeSeong123/newAlbum/actions/runs/39195083636",
+    "runId": 39195083636,
+    "conclusion": "success",
+    "frontendJob": 117876134315,
+    "rustJob": 117876134236
+  },
+  "tests": [
+    {
+      "command": "npm run test:unit",
+      "passed": 140,
+      "failed": 0,
+      "skipped": 0,
+      "platform": "Node 24 local and GitHub Linux",
+      "includesNewNativeTests": 10
+    },
+    {
+      "command": "python3 -m unittest discover -s tests -p 'test_*.py'",
+      "passed": 22,
+      "failed": 0,
+      "skipped": 0,
+      "platform": "SQLite fixture tests, Python/Linux"
+    },
+    {
+      "command": "cargo test --manifest-path src-tauri/Cargo.toml --locked",
+      "passed": 116,
+      "failed": 0,
+      "skipped": 0,
+      "platform": "GitHub Ubuntu Linux Rust; includes native sidecar and full migration regressions"
+    },
+    {
+      "command": "npx playwright test tests/native-ai.spec.ts tests/media-import.spec.ts --workers=2",
+      "passed": 24,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": "npx playwright test tests/pets.spec.ts tests/people-controls.spec.ts --workers=2",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 1,
+      "skipReason": "phone-only geometry test skipped on desktop"
+    },
+    {
+      "command": "npx playwright test tests/people.spec.ts --grep-invert \"local models detect|analysis keeps saved|the main action retries\" --workers=2",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "excluded": "three legacy actual-inference cases require comparison mode/models; native untrained behavior is tested separately"
+    },
+    {
+      "command": "npx playwright test tests/pet-review.spec.ts --grep \"100 imported|pending work remains|multi-selection\" --workers=2",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": "npx playwright test tests/manual-photos.spec.ts --grep \"person manual photos|a new person\" --workers=2",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "browserPlatform": "Desktop Chromium and Pixel 7 viewport in GitHub; not Android WebView",
+  "totals": {
+    "passed": 325,
+    "failed": 0,
+    "skipped": 1,
+    "browserPassed": 47
+  },
+  "build": {
+    "command": "npm run build",
+    "status": "PASS",
+    "nativeLegacyWorkerLeakCheck": "PASS",
+    "warnings": [
+      "Existing main chunk exceeds 500kB",
+      "Pet manager static/dynamic import prevents separate chunk"
+    ]
+  },
+  "commercialNegativeTest": {
+    "command": "npm run ai:release:check",
+    "expectedExitCode": 1,
+    "actualExitCode": 1,
+    "status": "PASS protection remains closed"
+  },
+  "dependencyAudit": {
+    "command": "npm audit --json",
+    "highBefore": 1,
+    "highAfter": 0,
+    "moderateAfter": 3,
+    "patched": "source-map-js 1.2.1 -> 1.2.2",
+    "remaining": "legacy TensorFlow / argparse / sprintf-js; excluded from native Worker bundle, release blocked"
+  },
+  "syntheticTraining": {
+    "command": "npm run ai:train:synthetic -- --epochs 12",
+    "status": "PASS",
+    "trainSamples": 72,
+    "validationSamples": 18,
+    "parameters": 18971,
+    "modelBytes": 394126,
+    "weightsSha256": "4864e9ffb594f3d47beec12409bf6fa929f5c746fe3bc8c106412fb0f6c0bac8",
+    "beforeValidationLoss": 1.0468635701970688,
+    "afterValidationLoss": 0.0010157662605436372,
+    "scope": "synthetic RGB 3-class pipeline proof only; not identity accuracy",
+    "browserProbeEpochs": 6
+  },
+  "dataPreservation": "No loss in tested migration/manual-connection fixtures. No actual user database was available or modified.",
+  "notExecuted": [
+    "Real person/pet model training or independent identity/left/right/rear evaluation",
+    "Android APK/AAB build, cold offline ARM64 device inference and long-run memory/thermal/battery tests",
+    "New native WASM acceleration (not implemented)",
+    "Full repository E2E suite and legacy real-model inference comparison",
+    "Final APK/AAB model/dependency/license/rights and privacy review"
+  ],
+  "approval": {
+    "independentArchitecture": "CONDITIONAL PASS",
+    "selfTraining": "PASS",
+    "actualInference": "CONDITIONAL PASS",
+    "existingDataCompatibility": "CONDITIONAL PASS",
+    "androidSuitability": "CONDITIONAL PASS",
+    "rightsRiskManagement": "CONDITIONAL PASS",
+    "maintainability": "CONDITIONAL PASS",
+    "nextDevelopmentStage": "CONDITIONAL PASS",
+    "commercialRelease": "FAIL"
+  }
+}
