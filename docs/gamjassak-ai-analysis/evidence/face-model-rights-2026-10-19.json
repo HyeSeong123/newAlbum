@@ -1,0 +1,223 @@
+{
+  "schema_version": 1,
+  "checked_at_utc": "2026-10-19T11:08:02.695628+00:00",
+  "repository": "HyeSeong123/newAlbum",
+  "stable_commit": "cd3d1be70331d35d504c7081022b2cead8351498",
+  "development_base_commit": "5b0d046d88fb60ec09971f358ae48a88c1627956",
+  "npm_package": "@vladmandic/face-api@1.7.15",
+  "faceapi_upstream_commit": "a86f011d72124e5fb93e59d5c4ab98f699dd5c9c",
+  "models": [
+    {
+      "name": "ssd_mobilenetv1_model",
+      "source_commit": "a86f011d72124e5fb93e59d5c4ab98f699dd5c9c",
+      "manifest_url": "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/a86f011d72124e5fb93e59d5c4ab98f699dd5c9c/weights/ssd_mobilenetv1_model-weights_manifest.json",
+      "manifest_sha256": "9b84918d1d8b2e988dc5d72c0d77e7cc0a3d433f2452516fcd88dca8051b552f",
+      "shards": [
+        {
+          "url": "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/a86f011d72124e5fb93e59d5c4ab98f699dd5c9c/weights/ssd_mobilenetv1_model-shard1",
+          "bytes": 4194304,
+          "sha256": "6ff16f095b0371f24accb48aab82e595697baa821cf851167cbf9203d1d7ec9a"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/a86f011d72124e5fb93e59d5c4ab98f699dd5c9c/weights/ssd_mobilenetv1_model-shard2",
+          "bytes": 1422653,
+          "sha256": "2539847e627c8c4a561e999170735e6c527deecc6fdba2959fc5312fb1ea1de3"
+        }
+      ],
+      "upstream_concatenated_sha256": "2835640602d53718aa6ae9a42896327eaa21beefed056c218d32ca7d79e1e2f8",
+      "installed_sha256": "2835640602d53718aa6ae9a42896327eaa21beefed056c218d32ca7d79e1e2f8",
+      "lock_sha256": "2835640602d53718aa6ae9a42896327eaa21beefed056c218d32ca7d79e1e2f8",
+      "bytes": 5616957,
+      "binary_equal": true,
+      "lock_equal": true,
+      "tensor_specifications_equal": true,
+      "tensor_count": 151
+    },
+    {
+      "name": "face_landmark_68_model",
+      "source_commit": "a86f011d72124e5fb93e59d5c4ab98f699dd5c9c",
+      "manifest_url": "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/a86f011d72124e5fb93e59d5c4ab98f699dd5c9c/weights/face_landmark_68_model-weights_manifest.json",
+      "manifest_sha256": "d30f6cc341009ea4f8223876959289b96576fc54a2615f92da9741ab9c5f0bbc",
+      "shards": [
+        {
+          "url": "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/a86f011d72124e5fb93e59d5c4ab98f699dd5c9c/weights/face_landmark_68_model-shard1",
+          "bytes": 356840,
+          "sha256": "4611ef65c87d836d03d684b30eec4d195d8b219fa1dd58fc58945831c6b9299b"
+        }
+      ],
+      "upstream_concatenated_sha256": "4611ef65c87d836d03d684b30eec4d195d8b219fa1dd58fc58945831c6b9299b",
+      "installed_sha256": "4611ef65c87d836d03d684b30eec4d195d8b219fa1dd58fc58945831c6b9299b",
+      "lock_sha256": "4611ef65c87d836d03d684b30eec4d195d8b219fa1dd58fc58945831c6b9299b",
+      "bytes": 356840,
+      "binary_equal": true,
+      "lock_equal": true,
+      "tensor_specifications_equal": true,
+      "tensor_count": 49
+    },
+    {
+      "name": "face_recognition_model",
+      "source_commit": "a86f011d72124e5fb93e59d5c4ab98f699dd5c9c",
+      "manifest_url": "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/a86f011d72124e5fb93e59d5c4ab98f699dd5c9c/weights/face_recognition_model-weights_manifest.json",
+      "manifest_sha256": "6619f4126f845c1f7857f39cbd79565f375734f46e0dd25d9602f8dc21cda9f5",
+      "shards": [
+        {
+          "url": "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/a86f011d72124e5fb93e59d5c4ab98f699dd5c9c/weights/face_recognition_model-shard1",
+          "bytes": 4194304,
+          "sha256": "412566a2b8d814d84c60b8055ec5d3b3b2328ef7cd7853384e03ec3db7b053d8"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/a86f011d72124e5fb93e59d5c4ab98f699dd5c9c/weights/face_recognition_model-shard2",
+          "bytes": 2249728,
+          "sha256": "69350fdecd845c532e44dd8f7d0521c773505ef46b87cc34f46640a0cc334ecc"
+        }
+      ],
+      "upstream_concatenated_sha256": "b413e420d6840b2775fba32008db6f3cddb07d485967fb42cfcf379c16a8c589",
+      "installed_sha256": "b413e420d6840b2775fba32008db6f3cddb07d485967fb42cfcf379c16a8c589",
+      "lock_sha256": "b413e420d6840b2775fba32008db6f3cddb07d485967fb42cfcf379c16a8c589",
+      "bytes": 6444032,
+      "binary_equal": true,
+      "lock_equal": true,
+      "tensor_specifications_equal": true,
+      "tensor_count": 117
+    }
+  ],
+  "github_comment_metadata": {
+    "315": [
+      {
+        "id": 500822444,
+        "url": "https://github.com/justadudewhohacks/face-api.js/issues/315#issuecomment-500822444",
+        "author": "justadudewhohacks",
+        "author_association": "OWNER",
+        "created_at": "2019-06-11T12:38:32Z",
+        "updated_at": "2019-06-11T12:38:32Z",
+        "body_sha256": "e48521b1db18c67a55ed56ab070ebf2eee08253f47a3e212e007addb5bca60d8"
+      }
+    ],
+    "338": [
+      {
+        "id": 506833294,
+        "url": "https://github.com/justadudewhohacks/face-api.js/issues/338#issuecomment-506833294",
+        "author": "justadudewhohacks",
+        "author_association": "OWNER",
+        "created_at": "2019-06-28T18:25:43Z",
+        "updated_at": "2019-06-28T18:25:43Z",
+        "body_sha256": "e58ec137f3703d902daa6afc0cb48144e1f5f71ccd69daa98e688f138759898c"
+      }
+    ],
+    "269": [],
+    "139": [
+      {
+        "id": 439689852,
+        "url": "https://github.com/justadudewhohacks/face-api.js/issues/139#issuecomment-439689852",
+        "author": "justadudewhohacks",
+        "author_association": "OWNER",
+        "created_at": "2018-11-18T12:39:21Z",
+        "updated_at": "2018-11-18T12:39:21Z",
+        "body_sha256": "1c84c7fae28102501026ea12ccac05eceace6447d0d2c01c576637489dab2514"
+      },
+      {
+        "id": 464663568,
+        "url": "https://github.com/justadudewhohacks/face-api.js/issues/139#issuecomment-464663568",
+        "author": "chuan92",
+        "author_association": "NONE",
+        "created_at": "2019-02-18T09:53:21Z",
+        "updated_at": "2019-02-18T09:53:21Z",
+        "body_sha256": "a221d53703a4ce076250955eddaee04b1ace59e9cc78e5a9e953ad508c4dcd3f"
+      }
+    ],
+    "496": [
+      {
+        "id": 577556495,
+        "url": "https://github.com/justadudewhohacks/face-api.js/issues/496#issuecomment-577556495",
+        "author": "adityapatadia",
+        "author_association": "NONE",
+        "created_at": "2020-01-23T07:52:26Z",
+        "updated_at": "2020-01-23T07:52:26Z",
+        "body_sha256": "e449207488b076dad3263a2aa0121ca8d1a4a7f4b8ef5a90f337e1cfce1d6f89"
+      }
+    ]
+  },
+  "source_fingerprints": [
+    {
+      "id": "cc-ai-guidance",
+      "url": "https://creativecommons.org/using-cc-licensed-works-for-ai-training-2/",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "id": "dlib-license",
+      "url": "https://raw.githubusercontent.com/davisking/dlib-models/fd81b6308a6a73d4ce08859eb2f4b628a21e27a2/LICENSE",
+      "resolved_url": "https://raw.githubusercontent.com/davisking/dlib-models/fd81b6308a6a73d4ce08859eb2f4b628a21e27a2/LICENSE",
+      "bytes": 6556,
+      "sha256": "6a1ee543e5282cd9061881edf462e6fdab181f328da71fc2c9a6950a80e94d01"
+    },
+    {
+      "id": "dlib-readme",
+      "url": "https://raw.githubusercontent.com/davisking/dlib-models/fd81b6308a6a73d4ce08859eb2f4b628a21e27a2/README.md",
+      "resolved_url": "https://raw.githubusercontent.com/davisking/dlib-models/fd81b6308a6a73d4ce08859eb2f4b628a21e27a2/README.md",
+      "bytes": 15318,
+      "sha256": "9c6d18a2a83ceebc136997941ec913ccc0548889e24440381bd06d7453b05e3c"
+    },
+    {
+      "id": "faceapi-license",
+      "url": "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/a86f011d72124e5fb93e59d5c4ab98f699dd5c9c/LICENSE",
+      "resolved_url": "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/a86f011d72124e5fb93e59d5c4ab98f699dd5c9c/LICENSE",
+      "bytes": 1072,
+      "sha256": "d5480b4d4e46880107a56db666697ec3e90def81a8fc829e530b1c291e3172a5"
+    },
+    {
+      "id": "faceapi-readme",
+      "url": "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/a86f011d72124e5fb93e59d5c4ab98f699dd5c9c/README.md",
+      "resolved_url": "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/a86f011d72124e5fb93e59d5c4ab98f699dd5c9c/README.md",
+      "bytes": 30920,
+      "sha256": "68fbe251305b6fd6102c3e3e59b27134974a6787d59ae22b334408cab2f621a9"
+    },
+    {
+      "id": "ssd-readme",
+      "url": "https://raw.githubusercontent.com/yeephycho/tensorflow-face-detection/1be9e93150118943036afdc3ed086563a0449888/README.md",
+      "resolved_url": "https://raw.githubusercontent.com/yeephycho/tensorflow-face-detection/1be9e93150118943036afdc3ed086563a0449888/README.md",
+      "bytes": 3043,
+      "sha256": "4e6f1a9e50c541606be49b3286ad96c95d0c39970e45d5573b169c598b5101ee"
+    },
+    {
+      "id": "vgg-license",
+      "url": "https://www.robots.ox.ac.uk/~vgg/data/vgg_face/licence.txt",
+      "resolved_url": "https://www.robots.ox.ac.uk/~vgg/data/vgg_face/licence.txt",
+      "bytes": 1840,
+      "sha256": "cac3325eef18eb1fbf632020d96bcc242df64cae94db1171a706515892db5d7a"
+    },
+    {
+      "id": "vladmandic-license",
+      "url": "https://raw.githubusercontent.com/vladmandic/face-api/189226d63aabb48cb40776fd1c453ebc0fa722f1/LICENSE",
+      "resolved_url": "https://raw.githubusercontent.com/vladmandic/face-api/189226d63aabb48cb40776fd1c453ebc0fa722f1/LICENSE",
+      "bytes": 1067,
+      "sha256": "9a3442b79acaf4fbc7c2e07b7e2d8f84af9bb3871bf08a69d80304ab00640e9a"
+    },
+    {
+      "id": "wider-site",
+      "url": "https://shuoyang1213.me/WIDERFACE/",
+      "error": "HTTP Error 503: Service Unavailable"
+    }
+  ],
+  "summaries": {
+    "315": "Owner explicitly licenses model files under MIT, refers SSD/MTCNN/recognizer users to original authors, and permits any purpose for own models.",
+    "338": "Owner states commercial use is permitted, referring to MIT and Apache-2.0.",
+    "269": "No public comments returned for the specific landmark training dataset/license question.",
+    "139": "Owner offers dataset access by email; this is not commercial-use permission.",
+    "496": "No author clarification of landmark dataset composition in returned comments."
+  },
+  "retrieval_notes": [
+    "WIDER FACE direct HTTP fetch returned 503; official-site search index showed CC BY-NC-ND and shuoyang.1213@gmail.com. No successful HTTP source fingerprint is claimed.",
+    "CC AI guidance direct HTTP fetch returned 403; its web-browsed contents were available earlier in this conversation.",
+    "GitHub public user API has no public email for justadudewhohacks at retrieval. No address inferred.",
+    "Source hashes identify downloaded bytes and are not signatures, timestamp attestations, or rights clearance."
+  ],
+  "not_verified": [
+    "Original dlib/TensorFlow to FaceAPI conversion reproduction",
+    "Original training dataset acquisition contracts and third-party rights",
+    "Final APK/AAB contents",
+    "Runtime inference and recognition accuracy during this rights audit"
+  ],
+  "external_messages_sent": false,
+  "raw_training_images_downloaded": false,
+  "commercial_clearance_confirmed": false
+}
