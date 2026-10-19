@@ -29,6 +29,7 @@ jobs:
       - run: npx playwright test tests/pets.spec.ts tests/people-controls.spec.ts --workers=2
       - run: npx playwright test tests/people.spec.ts --grep-invert "local models detect|analysis keeps saved|the main action retries" --workers=2
       - run: npx playwright test tests/pet-review.spec.ts --grep "100 imported|pending work remains|multi-selection" --workers=2
+      - run: npx playwright test tests/manual-photos.spec.ts --grep "person manual photos|a new person" --workers=2
       - run: npm run build
       - name: Confirm commercial release remains blocked
         run: |
