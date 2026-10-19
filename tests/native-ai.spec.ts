@@ -3,10 +3,14 @@ import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 
 // The same model bytes are exercised in Node and a real browser Worker.
-test.beforeAll(() => { execFileSync(process.execPath, ['scripts/native-ai/train.mjs', '--epochs', '6'], { stdio: 'pipe' }); });
+let modelDirectory: string;
+test.beforeAll(({}, workerInfo) => {
+  modelDirectory = `native-ai-output/${workerInfo.project.name}-${workerInfo.workerIndex}`;
+  execFileSync(process.execPath, ['scripts/native-ai/train.mjs', '--epochs', '6', '--out', modelDirectory], { stdio: 'pipe' });
+});
 test('exported own model runs in Worker, agrees with Node and reuses loaded weights offline', async ({ page, context }) => {
-  const model = await readFile('native-ai-output/model.json', 'utf8');
-  const provenance = JSON.parse(await readFile('native-ai-output/provenance.json', 'utf8'));
+  const model = await readFile(`${modelDirectory}/model.json`, 'utf8');
+  const provenance = JSON.parse(await readFile(`${modelDirectory}/provenance.json`, 'utf8'));
   let loads = 0;
   await page.route('**/models/native-dev/probe.json', route => { loads++; return route.fulfill({ body: model, contentType: 'application/json' }); });
   await page.goto('/');

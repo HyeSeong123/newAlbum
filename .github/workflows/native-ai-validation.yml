@@ -2,6 +2,7 @@ name: Native AI foundation validation
 on:
   push:
     branches: [feature/gamjassak-native-ai]
+    paths: ['src/**', 'src-tauri/**', 'scripts/**', 'tests/**', 'models/**', 'package*.json', 'vite.config.ts', '.github/workflows/native-ai-validation.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -40,8 +41,8 @@ jobs:
         with:
           name: native-ai-foundation-evidence
           path: |
-            native-ai-output/provenance.json
-            native-ai-output/model.json
+            native-ai-output/**/provenance.json
+            native-ai-output/**/model.json
             test-results/
           retention-days: 7
   native-storage:
