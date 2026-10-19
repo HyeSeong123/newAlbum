@@ -1,3 +1,4 @@
+import { nativeAIEnabled, NATIVE_AI_MESSAGE } from '../ai/engineMode';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, BookPlus, Check, FolderOutput, Image as ImageIcon, ImagePlus, LoaderCircle, MoreVertical, Pause, Pencil, Play, RefreshCw, Scissors, Trash2, Users, X } from 'lucide-react';
 import type { MediaItem } from '../../types/media';
@@ -133,6 +134,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
     return photos.filter(photo => ids.has(Number(photo.id)));
   }, [index.people, lookup, photos]);
   async function relearn() {
+    if (nativeAIEnabled) { setError(NATIVE_AI_MESSAGE); return; }
     const selected = person ? personItems : registeredPhotos;
     if (locked.current || !desktop || !selected.length) return;
     locked.current = true; stop.current = false; controller.current = new AbortController();
@@ -183,6 +185,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
   }, [desktop, items]);
 
   async function start(retryEmpty = false) {
+    if (nativeAIEnabled) { setError(NATIVE_AI_MESSAGE); return; }
     if (locked.current || !desktop) return;
     locked.current = true; stop.current = false; controller.current = new AbortController();
     setRunning(true); setError(''); setStatus('얼굴 분석 준비 중');

@@ -19,6 +19,8 @@ export async function checkRelease(base = root) {
         const file = path.join(dir, name);
         if ((await stat(file)).isDirectory()) { await walk(file); continue; }
         const rel = path.relative(base, file);
+        // License notices are evidence, not executable model assets.
+        if (rel.split(path.sep).includes('notices')) continue;
         if (/\.(onnx|bin|weights|safetensors|pt|pth|tflite)$/i.test(name) || /cascade|recognition-provenance|facex|quadpose|mobilenet|native-dev/i.test(rel)) errors.push(`UNAPPROVED_MODEL_ASSET:${rel}`);
       }
     }

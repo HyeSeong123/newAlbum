@@ -1,3 +1,4 @@
+import { nativeAIEnabled, NATIVE_AI_MESSAGE } from '../ai/engineMode';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import type { MediaItem } from '../../types/media';
@@ -18,6 +19,7 @@ export function usePetAnalysis(media: MediaItem[]) {
   const [progress,setProgress]=useState<PetProgress|null>(null), [waiting,setWaiting]=useState(0);
   const report=useCallback((error:unknown)=>{if(mounted.current)setProgress({done:0,total:0,failed:1,detected:0,running:false,message:error instanceof Error?error.message:String(error)});},[]);
   const pump=useCallback(async():Promise<void>=>{
+    if(nativeAIEnabled){report(new Error(NATIVE_AI_MESSAGE));return;}
     if(!isTauriRuntime() || !mounted.current)return;
     if(controller.current){rerun.current=true;return;}
     const abort=new AbortController();controller.current=abort;
@@ -57,11 +59,13 @@ export function usePetAnalysis(media: MediaItem[]) {
     operations.current=operations.current.catch(()=>undefined).then(operation).then(()=>{if(run)void pump();}).catch(report);
   },[pump,report]);
   const start=useCallback((items:MediaItem[],petId?:number,views:Record<string,PetView>={})=>{
+    if(nativeAIEnabled){report(new Error(NATIVE_AI_MESSAGE));return;}
     if(!isTauriRuntime())return;
     const photos=items.filter(item=>item.fileType==='image');
     schedule(async()=>{if(!(await loadPets()).length)throw new Error('먼저 반려동물을 등록한 뒤 사진 찾기를 시작해 주세요.');for(let index=0;index<photos.length;index+=1000)await invoke('enqueue_pet_jobs',{jobs:photos.slice(index,index+1000).map(item=>({mediaId:Number(item.id),petId:petId??null,view:views[item.id]??'unknown'}))});});
-  },[schedule]);
+  },[schedule,report]);
   const retrain=useCallback((groups:{petId:number;items:MediaItem[]}[])=>{
+    if(nativeAIEnabled){report(new Error(NATIVE_AI_MESSAGE));return;}
     if(!isTauriRuntime())return;
     relearning.current=true;
     controller.current?.abort();
@@ -71,7 +75,7 @@ export function usePetAnalysis(media: MediaItem[]) {
       await finished;
       for(const group of groups){const photos=group.items.filter(item=>item.fileType==='image');for(let index=0;index<photos.length;index+=1000)await invoke('enqueue_pet_jobs',{jobs:photos.slice(index,index+1000).map(item=>({mediaId:Number(item.id),petId:group.petId,view:'unknown',refresh:true}))});}
     });
-  },[schedule]);
+  },[schedule,report]);
   useEffect(()=>{
     mounted.current=true;
     // Startup only reads the durable queue. Imports and profile saves never
@@ -90,5 +94,5 @@ export function usePetAnalysis(media: MediaItem[]) {
       const queue=await invoke<Queue>('list_pet_jobs');
       if(mounted.current){setWaiting((queue?.paused??0)+(queue?.failed??0));setProgress(previous=>previous?{...previous,running:false,message:'분석을 멈췄어요. 완료한 결과는 저장되어 있어요.'}:null);}
     },false);
-  },resume:()=>schedule(async()=>{await settled.current;if(!(await loadPets()).length)throw new Error('먼저 반려동물을 등록해 주세요.');await invoke('control_pet_jobs',{resume:true});}),dismiss:()=>setProgress(null)};
+  },resume:()=>{if(nativeAIEnabled){report(new Error(NATIVE_AI_MESSAGE));return;}schedule(async()=>{await settled.current;if(!(await loadPets()).length)throw new Error('먼저 반려동물을 등록해 주세요.');await invoke('control_pet_jobs',{resume:true});});},dismiss:()=>setProgress(null)};
 }

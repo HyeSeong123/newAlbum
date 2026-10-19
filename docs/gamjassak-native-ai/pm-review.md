@@ -25,6 +25,9 @@
 | PM-05 | High | 모델 로드 실패 시 이전 모델이 남아 호출자가 다른 모델로 오인할 수 있음 | 로드 오류 시 session의 가중치 0 채움/참조 해제; Worker 오류 및 client 오류에도 dispose. 재실행 테스트. |
 | PM-06 | High | 동일 버전 문자열에 다른 가중치를 넣으면 특징 혼합 가능 | 불변 model_key·가중치 SHA·전처리 계약 및 복합 FK. 직접 벡터 비교도 SHA/모델/task/kind/차원 검사. |
 | PM-07 | Medium | 학습용·테스트용 TS 로더 중복 위험 | 기존 model-loader를 공용 개발 스크립트로 이동하여 테스트에서 재export. 앱은 Vite 사용. |
+| PM-09 | High | UI가 미학습 client에 도달하기 전에 영구 분석 큐/재시도 cache를 변경할 수 있음 | 사람 시작/재학습, 반려동물 시작/재학습/재개에 capability guard 추가. 미학습 안내 전에 분석 큐를 생성·재개하지 않는다. |
+| PM-11 | High | Vite가 실행 불가 분기의 Worker URL도 먼저 변환하여 외부 추론 라이브러리 orphan asset 약 4.6MB를 생성 | native 모드에서 legacy client를 해석 단계의 미학습 경계로 연결하고 build 후 legacy Worker 파일 존재 시 실패. 실행 경로 차단만으로 번들 제거를 가정하지 않음. |
+| PM-10 | Low | 자산 검사에서 모델 이름이 포함된 고지 파일도 가중치로 오인 | notices 폴더의 라이선스 증빙은 검사 대상 가중치와 분리. |
 | PM-08 | Low | SQLite 테스트 INSERT 값 개수 오류 | 실제 실행 중 발견해 수정. 전체 Python 저장소 테스트 재통과. |
 
 ## 미해결 사항과 해소 조건
