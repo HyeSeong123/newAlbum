@@ -15,6 +15,7 @@ use export::{copy_media_file, export_media_files, ExportResultDto};
 use export::valid_export_folder_name;
 mod faces;
 mod recognition;
+mod native_ai;
 mod pets;
 mod pet_recognition;
 mod pet_jobs;
@@ -1254,6 +1255,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            native_ai::save_native_ai_feature,
+            native_ai::list_native_ai_features,
             sync_characters, rename_character, set_main_character, interact_character, dismiss_character_event,
             list_diary, save_diary, assign_diary_album, delete_diary, import_diary_photos,
             list_media,

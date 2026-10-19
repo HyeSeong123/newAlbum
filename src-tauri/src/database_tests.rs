@@ -17,7 +17,7 @@ fn version_16_upgrade_keeps_existing_face_pet_and_paused_job_records(){
       INSERT INTO pet(id,name) VALUES(8,'보리');INSERT INTO pet_media VALUES(8,1);
       INSERT INTO pet_analysis_job(media_id,pet_id,state) VALUES(1,8,'paused');").unwrap();
     let before=snapshot(&c);initialize(&mut c).unwrap();assert_eq!(snapshot(&c),before);
-    assert!(table_exists(&c,"person_photo").unwrap());assert_eq!(version(&c).unwrap(),17);
+    assert!(table_exists(&c,"person_photo").unwrap());assert_eq!(version(&c).unwrap(),VERSION);
     assert_eq!(c.query_row("SELECT state,refresh FROM pet_analysis_job",[],|r|Ok((r.get::<_,String>(0)?,r.get::<_,bool>(1)?))).unwrap(),("paused".into(),false));
     c.execute("INSERT INTO person_photo VALUES(42,1)",[]).unwrap();initialize(&mut c).unwrap();assert_eq!(c.query_row("SELECT COUNT(*) FROM person_photo",[],|r|r.get::<_,i64>(0)).unwrap(),1);
 }

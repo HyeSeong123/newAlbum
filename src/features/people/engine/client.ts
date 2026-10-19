@@ -1,3 +1,4 @@
+import { nativeAIEnabled, NATIVE_AI_MESSAGE } from '../../ai/engineMode';
 import { registerAIWorker, runAI } from '../../ai/runtime';
 import type { FaceBackend, FaceDiagnostics, FaceFeatures } from './types';
 let worker: Worker | undefined;
@@ -28,8 +29,9 @@ function request(pixels?: ArrayBuffer, width?: number, height?: number, signal?:
     active.postMessage({ id, pixels, width, height, backend, modelBase: new URL(`${import.meta.env.BASE_URL}models/faces/`, location.href).href }, pixels ? [pixels] : []);
   });
 }
-export function loadPersonEngine(signal?: AbortSignal) { return runAI('people', () => request(undefined, undefined, undefined, signal), signal); }
+export function loadPersonEngine(signal?: AbortSignal) { if (nativeAIEnabled) return Promise.reject(new Error(NATIVE_AI_MESSAGE)); return runAI('people', () => request(undefined, undefined, undefined, signal), signal); }
 export function analyzePersonImage(url: string, signal?: AbortSignal, backend: FaceBackend = 'auto', onDiagnostics?: (value:FaceDiagnostics)=>void) {
+  if (nativeAIEnabled) return Promise.reject(new Error(NATIVE_AI_MESSAGE));
   return runAI('people', async () => {
     const response = await fetch(url, { signal });
     if (!response.ok) throw new Error('사진을 읽지 못했습니다.');

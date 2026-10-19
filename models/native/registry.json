@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "engine": "GamjaSsak AI Engine",
+  "commercialApproved": false,
+  "reviewEvidence": [],
+  "models": [],
+  "reason": "Person and pet models are not trained or independently evaluated. Synthetic pipeline proof is not a release model."
+}
