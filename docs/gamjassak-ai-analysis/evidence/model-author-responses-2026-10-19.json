@@ -1,0 +1,913 @@
+{
+  "checked_date": "2026-10-19",
+  "scope": "FaceAPI landmark/SSD/128-d recognizer; related original authors",
+  "method": {
+    "selection": "Latest 30 issues per repository sorted by created descending, state=all; exclude pull requests and issues created by repository owner.",
+    "owner_reply": "At least one public comment by exact repository-owner login, including self-follow-up to an external issue. Closing, reactions, community replies, and PR reviews are not counted.",
+    "comments": "Initial issues metadata via public GitHub REST; positive-comment issues fully queried through authenticated GitHub connector. The initial unauthenticated comment batch hit HTTP 403 and was discarded; all 48 required comment threads were successfully re-fetched through connector.",
+    "limitations": [
+      "Public snapshot only; deleted/private issues and emails are not observable.",
+      "Different sample periods; not a forecast or a license-specific response rate.",
+      "Comment timestamps were unavailable in connector results; no response-time statistic claimed.",
+      "SSD author yeephycho is not WIDER FACE contact Shuo Yang."
+    ]
+  },
+  "repositories": [
+    {
+      "repo": "justadudewhohacks/face-api.js",
+      "owner": "justadudewhohacks",
+      "archived": false,
+      "pushed_at": "2024-01-24T09:25:35Z",
+      "summary": {
+        "sample_size": 30,
+        "owner_replied": 0,
+        "other_human_replied": 8,
+        "owner_reply_percentage": 0
+      },
+      "period": {
+        "from": "2024-01-04T13:59:09Z",
+        "to": "2026-04-28T12:32:37Z"
+      },
+      "since_2024": {
+        "sample_size": 30,
+        "owner_replied": 0
+      },
+      "issues": [
+        {
+          "number": 967,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/967",
+          "created_at": "2026-04-28T12:32:37Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 964,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/964",
+          "created_at": "2025-05-27T14:20:33Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 963,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/963",
+          "created_at": "2025-04-18T12:55:09Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 962,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/962",
+          "created_at": "2025-03-24T15:26:52Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 961,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/961",
+          "created_at": "2025-03-03T09:12:26Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 960,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/960",
+          "created_at": "2025-02-15T19:43:09Z",
+          "owner_replied": false,
+          "other_human_replied": true,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 959,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/959",
+          "created_at": "2025-01-29T03:51:00Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 958,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/958",
+          "created_at": "2024-12-26T07:33:36Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 956,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/956",
+          "created_at": "2024-11-25T04:25:31Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 955,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/955",
+          "created_at": "2024-11-25T04:12:34Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 954,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/954",
+          "created_at": "2024-11-24T07:09:13Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 953,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/953",
+          "created_at": "2024-11-23T23:58:13Z",
+          "owner_replied": false,
+          "other_human_replied": true,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 952,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/952",
+          "created_at": "2024-11-02T09:07:01Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 950,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/950",
+          "created_at": "2024-10-14T04:49:43Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 949,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/949",
+          "created_at": "2024-10-11T19:37:02Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 948,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/948",
+          "created_at": "2024-08-12T16:02:28Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 947,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/947",
+          "created_at": "2024-06-19T00:49:26Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 946,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/946",
+          "created_at": "2024-05-16T03:47:33Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 945,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/945",
+          "created_at": "2024-05-15T11:55:29Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 944,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/944",
+          "created_at": "2024-05-10T03:06:28Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 943,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/943",
+          "created_at": "2024-05-04T23:05:04Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 942,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/942",
+          "created_at": "2024-04-08T20:41:08Z",
+          "owner_replied": false,
+          "other_human_replied": true,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 941,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/941",
+          "created_at": "2024-03-30T07:32:01Z",
+          "owner_replied": false,
+          "other_human_replied": true,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 940,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/940",
+          "created_at": "2024-03-11T02:07:58Z",
+          "owner_replied": false,
+          "other_human_replied": true,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 939,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/939",
+          "created_at": "2024-02-21T09:53:07Z",
+          "owner_replied": false,
+          "other_human_replied": true,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 938,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/938",
+          "created_at": "2024-01-29T15:34:05Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 937,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/937",
+          "created_at": "2024-01-28T10:57:38Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 936,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/936",
+          "created_at": "2024-01-25T17:00:44Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 933,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/933",
+          "created_at": "2024-01-23T13:53:53Z",
+          "owner_replied": false,
+          "other_human_replied": true,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 932,
+          "url": "https://github.com/justadudewhohacks/face-api.js/issues/932",
+          "created_at": "2024-01-04T13:59:09Z",
+          "owner_replied": false,
+          "other_human_replied": true,
+          "owner_comment_urls": []
+        }
+      ]
+    },
+    {
+      "repo": "yeephycho/tensorflow-face-detection",
+      "owner": "yeephycho",
+      "archived": false,
+      "pushed_at": "2020-10-05T03:53:16Z",
+      "summary": {
+        "sample_size": 30,
+        "owner_replied": 9,
+        "other_human_replied": 15,
+        "owner_reply_percentage": 30
+      },
+      "period": {
+        "from": "2018-09-25T07:56:43Z",
+        "to": "2025-11-10T17:56:16Z"
+      },
+      "since_2024": {
+        "sample_size": 2,
+        "owner_replied": 0
+      },
+      "issues": [
+        {
+          "number": 72,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/72",
+          "created_at": "2025-11-10T17:56:16Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 71,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/71",
+          "created_at": "2025-10-08T08:59:37Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 70,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/70",
+          "created_at": "2021-07-31T09:40:23Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 69,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/69",
+          "created_at": "2020-12-05T00:15:33Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/yeephycho/tensorflow-face-detection/issues/69#issuecomment-861104445"
+          ]
+        },
+        {
+          "number": 67,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/67",
+          "created_at": "2020-08-17T10:22:08Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/yeephycho/tensorflow-face-detection/issues/67#issuecomment-861104223"
+          ]
+        },
+        {
+          "number": 66,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/66",
+          "created_at": "2020-06-24T02:45:54Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/yeephycho/tensorflow-face-detection/issues/66#issuecomment-861105391"
+          ]
+        },
+        {
+          "number": 65,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/65",
+          "created_at": "2020-05-31T16:39:35Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 64,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/64",
+          "created_at": "2020-05-29T18:53:06Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 63,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/63",
+          "created_at": "2020-05-18T03:53:51Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 62,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/62",
+          "created_at": "2020-03-28T18:48:40Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 60,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/60",
+          "created_at": "2019-12-27T12:22:57Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/yeephycho/tensorflow-face-detection/issues/60#issuecomment-569615158"
+          ]
+        },
+        {
+          "number": 59,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/59",
+          "created_at": "2019-12-02T04:59:30Z",
+          "owner_replied": false,
+          "other_human_replied": true,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 58,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/58",
+          "created_at": "2019-08-15T03:20:55Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 57,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/57",
+          "created_at": "2019-07-01T10:29:35Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 56,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/56",
+          "created_at": "2019-06-20T04:12:43Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 55,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/55",
+          "created_at": "2019-06-08T10:05:33Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/yeephycho/tensorflow-face-detection/issues/55#issuecomment-500264682"
+          ]
+        },
+        {
+          "number": 54,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/54",
+          "created_at": "2019-04-20T02:50:12Z",
+          "owner_replied": false,
+          "other_human_replied": true,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 53,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/53",
+          "created_at": "2019-04-02T19:18:47Z",
+          "owner_replied": false,
+          "other_human_replied": true,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 52,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/52",
+          "created_at": "2019-04-02T06:45:53Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/yeephycho/tensorflow-face-detection/issues/52#issuecomment-478868684"
+          ]
+        },
+        {
+          "number": 51,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/51",
+          "created_at": "2019-03-27T09:45:35Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 50,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/50",
+          "created_at": "2019-03-12T07:32:09Z",
+          "owner_replied": false,
+          "other_human_replied": true,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 49,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/49",
+          "created_at": "2019-02-18T08:14:24Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 48,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/48",
+          "created_at": "2019-02-08T10:00:28Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 47,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/47",
+          "created_at": "2019-01-16T08:54:25Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 46,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/46",
+          "created_at": "2018-12-14T12:05:57Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/yeephycho/tensorflow-face-detection/issues/46#issuecomment-447779458"
+          ]
+        },
+        {
+          "number": 45,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/45",
+          "created_at": "2018-11-13T17:12:06Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/yeephycho/tensorflow-face-detection/issues/45#issuecomment-438508898"
+          ]
+        },
+        {
+          "number": 44,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/44",
+          "created_at": "2018-11-12T15:25:48Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/yeephycho/tensorflow-face-detection/issues/44#issuecomment-438096321"
+          ]
+        },
+        {
+          "number": 43,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/43",
+          "created_at": "2018-11-02T16:04:03Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 42,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/42",
+          "created_at": "2018-09-27T07:33:11Z",
+          "owner_replied": false,
+          "other_human_replied": true,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 41,
+          "url": "https://github.com/yeephycho/tensorflow-face-detection/issues/41",
+          "created_at": "2018-09-25T07:56:43Z",
+          "owner_replied": false,
+          "other_human_replied": true,
+          "owner_comment_urls": []
+        }
+      ]
+    },
+    {
+      "repo": "davisking/dlib-models",
+      "owner": "davisking",
+      "archived": false,
+      "pushed_at": "2025-05-28T01:33:39Z",
+      "summary": {
+        "sample_size": 30,
+        "owner_replied": 18,
+        "other_human_replied": 23,
+        "owner_reply_percentage": 60
+      },
+      "period": {
+        "from": "2019-07-28T01:50:05Z",
+        "to": "2025-05-22T06:22:30Z"
+      },
+      "since_2024": {
+        "sample_size": 4,
+        "owner_replied": 1
+      },
+      "issues": [
+        {
+          "number": 62,
+          "url": "https://github.com/davisking/dlib-models/issues/62",
+          "created_at": "2025-05-22T06:22:30Z",
+          "owner_replied": false,
+          "other_human_replied": true,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 59,
+          "url": "https://github.com/davisking/dlib-models/issues/59",
+          "created_at": "2024-09-03T06:10:59Z",
+          "owner_replied": false,
+          "other_human_replied": true,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 58,
+          "url": "https://github.com/davisking/dlib-models/issues/58",
+          "created_at": "2024-06-03T10:11:54Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 56,
+          "url": "https://github.com/davisking/dlib-models/issues/56",
+          "created_at": "2024-05-11T05:23:03Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/davisking/dlib-models/issues/56#issuecomment-2105814956"
+          ]
+        },
+        {
+          "number": 50,
+          "url": "https://github.com/davisking/dlib-models/issues/50",
+          "created_at": "2023-06-13T10:24:41Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/davisking/dlib-models/issues/50#issuecomment-1590149504"
+          ]
+        },
+        {
+          "number": 49,
+          "url": "https://github.com/davisking/dlib-models/issues/49",
+          "created_at": "2023-05-02T13:22:34Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/davisking/dlib-models/issues/49#issuecomment-1532982355"
+          ]
+        },
+        {
+          "number": 48,
+          "url": "https://github.com/davisking/dlib-models/issues/48",
+          "created_at": "2023-03-31T00:03:24Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 47,
+          "url": "https://github.com/davisking/dlib-models/issues/47",
+          "created_at": "2022-12-12T07:03:52Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/davisking/dlib-models/issues/47#issuecomment-1351340612",
+            "https://github.com/davisking/dlib-models/issues/47#issuecomment-1365524095"
+          ]
+        },
+        {
+          "number": 46,
+          "url": "https://github.com/davisking/dlib-models/issues/46",
+          "created_at": "2022-09-29T23:05:24Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/davisking/dlib-models/issues/46#issuecomment-1262926174"
+          ]
+        },
+        {
+          "number": 45,
+          "url": "https://github.com/davisking/dlib-models/issues/45",
+          "created_at": "2021-07-06T08:18:54Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 43,
+          "url": "https://github.com/davisking/dlib-models/issues/43",
+          "created_at": "2021-02-22T13:03:40Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/davisking/dlib-models/issues/43#issuecomment-787081943"
+          ]
+        },
+        {
+          "number": 42,
+          "url": "https://github.com/davisking/dlib-models/issues/42",
+          "created_at": "2020-11-03T10:46:46Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/davisking/dlib-models/issues/42#issuecomment-721497001"
+          ]
+        },
+        {
+          "number": 40,
+          "url": "https://github.com/davisking/dlib-models/issues/40",
+          "created_at": "2020-07-02T04:36:59Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/davisking/dlib-models/issues/40#issuecomment-653662890"
+          ]
+        },
+        {
+          "number": 39,
+          "url": "https://github.com/davisking/dlib-models/issues/39",
+          "created_at": "2020-06-11T15:00:38Z",
+          "owner_replied": false,
+          "other_human_replied": true,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 38,
+          "url": "https://github.com/davisking/dlib-models/issues/38",
+          "created_at": "2020-06-07T09:34:55Z",
+          "owner_replied": false,
+          "other_human_replied": true,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 37,
+          "url": "https://github.com/davisking/dlib-models/issues/37",
+          "created_at": "2020-05-15T12:53:06Z",
+          "owner_replied": false,
+          "other_human_replied": true,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 36,
+          "url": "https://github.com/davisking/dlib-models/issues/36",
+          "created_at": "2020-04-16T04:34:52Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/davisking/dlib-models/issues/36#issuecomment-615865489"
+          ]
+        },
+        {
+          "number": 35,
+          "url": "https://github.com/davisking/dlib-models/issues/35",
+          "created_at": "2020-03-14T13:44:08Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/davisking/dlib-models/issues/35#issuecomment-604961072",
+            "https://github.com/davisking/dlib-models/issues/35#issuecomment-637522358"
+          ]
+        },
+        {
+          "number": 33,
+          "url": "https://github.com/davisking/dlib-models/issues/33",
+          "created_at": "2020-02-13T16:10:54Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 32,
+          "url": "https://github.com/davisking/dlib-models/issues/32",
+          "created_at": "2020-02-06T00:41:41Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/davisking/dlib-models/issues/32#issuecomment-583376231"
+          ]
+        },
+        {
+          "number": 31,
+          "url": "https://github.com/davisking/dlib-models/issues/31",
+          "created_at": "2020-02-04T06:31:31Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 29,
+          "url": "https://github.com/davisking/dlib-models/issues/29",
+          "created_at": "2020-02-02T06:18:30Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/davisking/dlib-models/issues/29#issuecomment-581131780",
+            "https://github.com/davisking/dlib-models/issues/29#issuecomment-581137818"
+          ]
+        },
+        {
+          "number": 28,
+          "url": "https://github.com/davisking/dlib-models/issues/28",
+          "created_at": "2020-01-10T18:58:20Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/davisking/dlib-models/issues/28#issuecomment-573374512"
+          ]
+        },
+        {
+          "number": 27,
+          "url": "https://github.com/davisking/dlib-models/issues/27",
+          "created_at": "2019-12-27T07:53:42Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/davisking/dlib-models/issues/27#issuecomment-569417891"
+          ]
+        },
+        {
+          "number": 26,
+          "url": "https://github.com/davisking/dlib-models/issues/26",
+          "created_at": "2019-12-26T00:37:23Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/davisking/dlib-models/issues/26#issuecomment-569054187",
+            "https://github.com/davisking/dlib-models/issues/26#issuecomment-572849242",
+            "https://github.com/davisking/dlib-models/issues/26#issuecomment-573374341"
+          ]
+        },
+        {
+          "number": 24,
+          "url": "https://github.com/davisking/dlib-models/issues/24",
+          "created_at": "2019-10-18T08:22:42Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 23,
+          "url": "https://github.com/davisking/dlib-models/issues/23",
+          "created_at": "2019-10-16T14:14:38Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/davisking/dlib-models/issues/23#issuecomment-542939792"
+          ]
+        },
+        {
+          "number": 22,
+          "url": "https://github.com/davisking/dlib-models/issues/22",
+          "created_at": "2019-10-10T13:22:06Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/davisking/dlib-models/issues/22#issuecomment-540874141",
+            "https://github.com/davisking/dlib-models/issues/22#issuecomment-541413908"
+          ]
+        },
+        {
+          "number": 21,
+          "url": "https://github.com/davisking/dlib-models/issues/21",
+          "created_at": "2019-09-11T07:03:33Z",
+          "owner_replied": false,
+          "other_human_replied": false,
+          "owner_comment_urls": []
+        },
+        {
+          "number": 20,
+          "url": "https://github.com/davisking/dlib-models/issues/20",
+          "created_at": "2019-07-28T01:50:05Z",
+          "owner_replied": true,
+          "other_human_replied": true,
+          "owner_comment_urls": [
+            "https://github.com/davisking/dlib-models/issues/20#issuecomment-516660407"
+          ]
+        }
+      ]
+    }
+  ],
+  "email_response_rate": {
+    "measurable": false,
+    "reason": "No published denominator of received inquiries or numerator of replies found. No messages sent during this investigation."
+  },
+  "cases": [
+    {
+      "repo": "nextcloud/recognize",
+      "commit": "61cac761a9f1de59b0c9e528060e42540afc7347",
+      "sources": [
+        {
+          "path": "src/classifier_faces.js",
+          "url": "https://raw.githubusercontent.com/nextcloud/recognize/61cac761a9f1de59b0c9e528060e42540afc7347/src/classifier_faces.js",
+          "sha256": "6e0835fc938740794e4b093f175f162daaf5d3f817fb156f63de3ed5e636dc5a"
+        },
+        {
+          "path": "package.json",
+          "url": "https://raw.githubusercontent.com/nextcloud/recognize/61cac761a9f1de59b0c9e528060e42540afc7347/package.json",
+          "sha256": "84a0b7e9140dcf17051d130e87c44305ac2e1cb98400fe1adae79f1ffc8b3f5f"
+        }
+      ]
+    },
+    {
+      "repo": "photoview/photoview",
+      "commit": "0f2e3741e7b18ff3517d18b15d16494b93bb312b",
+      "sources": [
+        {
+          "path": "api/scanner/face_detection/face_detector_impl.go",
+          "url": "https://raw.githubusercontent.com/photoview/photoview/0f2e3741e7b18ff3517d18b15d16494b93bb312b/api/scanner/face_detection/face_detector_impl.go",
+          "sha256": "fd4d103c18cc0ff4b0ee84f2657e10244a2c67dd62bbcc727f1c5471345652a8"
+        },
+        {
+          "path": "api/go.mod",
+          "url": "https://raw.githubusercontent.com/photoview/photoview/0f2e3741e7b18ff3517d18b15d16494b93bb312b/api/go.mod",
+          "sha256": "e119bc1f7ecad563264650657ef4185ab0eacd7098da475ca9c3c39ab34938ed"
+        }
+      ]
+    }
+  ],
+  "nextcloud_package_lock": {
+    "commit": "61cac761a9f1de59b0c9e528060e42540afc7347",
+    "path": "package-lock.json",
+    "package": "@vladmandic/face-api",
+    "version": "1.7.15",
+    "proof": "node_modules/@vladmandic/face-api entry read directly"
+  },
+  "not_established": [
+    "Commercial Android app with advertising using the same model binaries and documented rights clearance",
+    "Legal clearance or undisclosed permissions of any listed project",
+    "Identity of deployed production artifacts with the inspected repository commits"
+  ]
+}
