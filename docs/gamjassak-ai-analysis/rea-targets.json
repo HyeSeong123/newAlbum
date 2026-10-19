@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "baseline": "cd3d1be70331d35d504c7081022b2cead8351498",
+  "analysisMethod": "static-source",
+  "reaExecuted": false,
+  "testExecuted": false,
+  "targets": [
+    {
+      "id": "P01",
+      "name": "human_face_detection",
+      "source": [
+        "src/features/people/engine/faceApiAdapter.ts",
+        "src/features/people/engine/detectionPolicy.ts"
+      ],
+      "external": "FaceAPI SSD"
+    },
+    {
+      "id": "P02",
+      "name": "human_landmarks_alignment",
+      "source": [
+        "src/features/people/engine/faceApiAdapter.ts",
+        "src/features/people/engine/faceAlignment.ts"
+      ],
+      "external": "FaceAPI 68 landmarks"
+    },
+    {
+      "id": "P03",
+      "name": "human_embedding",
+      "source": [
+        "src/features/people/engine/embedding512.ts",
+        "src-tauri/src/faces.rs"
+      ],
+      "external": "FaceAPI ResNet128 and FaceX512"
+    },
+    {
+      "id": "P04",
+      "name": "human_orientation",
+      "source": [
+        "src/features/people/engine/pose.ts"
+      ],
+      "external": "depends on FaceAPI landmarks"
+    },
+    {
+      "id": "A01",
+      "name": "pet_detection",
+      "source": [
+        "src/features/pets/engine/pet.worker.ts"
+      ],
+      "external": "SSDLite COCO-SSD"
+    },
+    {
+      "id": "A02",
+      "name": "pet_orientation",
+      "source": [
+        "src/features/pets/engine/poseModel.ts",
+        "src/features/pets/engine/poseGeometry.ts"
+      ],
+      "external": "QuadPose"
+    },
+    {
+      "id": "A03",
+      "name": "pet_features",
+      "source": [
+        "src/features/pets/engine/pet.worker.ts",
+        "src/features/pets/engine/features.ts",
+        "src/features/pets/engine/foreground.ts",
+        "src/features/pets/engine/catFace.ts"
+      ],
+      "external": "MobileNetV1 catCascade"
+    },
+    {
+      "id": "A04",
+      "name": "pet_identity_candidates",
+      "source": [
+        "src/features/pets/engine/matcher.ts",
+        "src/features/pets/engine/evaluation.ts"
+      ],
+      "external": "upstream external embeddings"
+    },
+    {
+      "id": "C01",
+      "name": "analysis_user_consent_queue",
+      "source": [
+        "src/features/people/PeopleView.tsx",
+        "src/features/pets/usePetAnalysis.ts",
+        "src-tauri/src/pet_jobs.rs"
+      ],
+      "external": "none for scheduler"
+    },
+    {
+      "id": "C02",
+      "name": "offline_storage_release",
+      "source": [
+        "src/features/ai/runtime.ts",
+        "src-tauri/src/database.rs",
+        "scripts/recognition-models.lock.json",
+        "package.json"
+      ],
+      "external": "runtime models and build preparation"
+    }
+  ]
+}
