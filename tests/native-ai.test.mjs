@@ -107,6 +107,7 @@ test('checkpoint resume equals uninterrupted SGD and records hashes; tampering f
 
 test('dataset loader requires rights, hashes, local paths and nonoverlapping sources', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'gss-data-'));
+  const outside = await mkdtemp(path.join(tmpdir(), 'gss-outside-'));
   try {
     const text = JSON.stringify({ width: 1, height: 1, channels: 3, data: [1,2,3] });
     await writeFile(path.join(dir, 'rgb.json'), text);
@@ -119,10 +120,15 @@ test('dataset loader requires rights, hashes, local paths and nonoverlapping sou
     await writeFile(file, JSON.stringify(manifest)); await assert.rejects(loadDataset(file), /UNVERIFIED_DATA_RIGHTS/);
     manifest.records[0].rights = rights; manifest.records[0].sha256 = '0'.repeat(64);
     await writeFile(file, JSON.stringify(manifest)); await assert.rejects(loadDataset(file), /DATA_HASH/);
-    await symlink('/etc/hostname', path.join(dir, 'escape.json'));
+    const outsideFile = path.join(outside, 'rgb.json');
+    await writeFile(outsideFile, text);
+    await symlink(outsideFile, path.join(dir, 'escape.json'), 'file');
     manifest.records[0].path = 'escape.json';
     await writeFile(file, JSON.stringify(manifest)); await assert.rejects(loadDataset(file), /DATA_PATH_ESCAPE/);
-  } finally { await rm(dir, { recursive: true, force: true }); }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+    await rm(outside, { recursive: true, force: true });
+  }
 });
 
 test('commercial gate fails on unreviewed registry and on real unexpected weight assets', async () => {
