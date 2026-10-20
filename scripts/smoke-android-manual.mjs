@@ -89,5 +89,5 @@ try{
  await captureScreen('manual-only-after-restart');
  await writeFile(join(output,'manual-only-smoke.json'),JSON.stringify({environment:'Android API36 x86_64 emulator',profile:policy.activeModelProfile,personId:ids.person,petId:ids.pet,mediaId,idsAndLinksPreserved:true,restartPreserved:true,workers,modelRequests},null,2));
  console.log('Manual-only Android: native gallery, person/pet editing, restart retention and no inference verified.');
-}catch(error){await writeFile(join(output,'failure.txt'),error.stack??String(error));await captureScreen('failure').catch(()=>{});throw error;}
+}catch(error){await writeFile(join(output,'permissions.txt'),await adb('shell','dumpsys','package',appId).catch(String));await writeFile(join(output,'appops.txt'),await adb('shell','cmd','appops','get',appId).catch(String));await writeFile(join(output,'failure.txt'),error.stack??String(error));await captureScreen('failure').catch(()=>{});throw error;}
 finally{await disconnect();}

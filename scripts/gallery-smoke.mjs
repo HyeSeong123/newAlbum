@@ -41,14 +41,18 @@ export async function verifyInstalledGallery({page,adb,nativeTree,tapNative,capt
   await adb('push',resolve(unsupported),'/sdcard/Pictures/GamjassakGallery/unsupported-gallery.gif');
   await adb('shell','am','broadcast','-a','android.intent.action.MEDIA_SCANNER_SCAN_FILE','-d','file:///sdcard/Pictures/GamjassakGallery/unsupported-gallery.gif');
   await expect.poll(async () => {
-    const rows=await adb('shell','content','query','--uri','content://media/external/file','--projection','_display_name:date_modified');
-    return [...fixtures, ...scrollFixtures].every(file=>rows.includes(file.name)) && rows.includes('unsupported-gallery.gif');
-  }).toBe(true);
+    // A fresh MediaProvider can publish the filename before MIME classification
+    // finishes. The app intentionally filters pending/trash/non-media entries.
+    const rows=await adb('shell','content','query','--uri','content://media/external/file','--projection','_display_name:date_modified:media_type:is_pending:is_trashed');
+    await writeFile(join(output,'gallery-media-store.txt'),rows);
+    return [...fixtures, ...scrollFixtures].every(file=>rows.split('\n').some(row=>row.includes(file.name) && /media_type=(1|3)(,|$)/.test(row) && row.includes('is_pending=0') && row.includes('is_trashed=0')))
+      && rows.includes('unsupported-gallery.gif');
+  },{timeout:60_000}).toBe(true);
   await launch();
   let tree;
   await expect.poll(async()=>{
     tree=await nativeTree();return fixtures.every(file=>tree.includes(file.name));
-  }).toBe(true);
+  },{timeout:60_000}).toBe(true);
   const order=['M-video-gallery.mp4','Z-new-gallery.jpg','A-old-gallery.jpg'];
   assert.ok(tree.indexOf(order[0])<tree.indexOf(order[1]) && tree.indexOf(order[1])<tree.indexOf(order[2]),'Gallery must order by modified time rather than filename');
   assert.ok(!tree.includes('com.google.android.documentsui'),'Gallery cannot launch the file browser');
