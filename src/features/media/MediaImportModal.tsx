@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { FolderOpen, Images, LoaderCircle, Plus, X } from "lucide-react";
 import { AlbumColorPicker, DEFAULT_ALBUM_COLOR } from "../albums/AlbumCover";
+import { useDialogFocus } from "../../hooks/useDialogFocus";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
 import type { MediaImportOptions } from "./useMediaLibrary";
 import { REGION_NAMES } from "../map/regions";
@@ -12,6 +13,8 @@ import { CalendarRegistrationFields } from "../calendar/CalendarRegistrationFiel
 import { calendarRegistrationError, type CalendarRegistrationOptions } from "../calendar/calendarModel";
 
 export function MediaImportModal({ onClose, onImport }: { onClose: () => void; onImport: (options: MediaImportOptions) => Promise<void> }) {
+  const panel = useRef<HTMLElement>(null);
+  const onKeyDown = useDialogFocus(panel);
   const [kind, setKind] = useState<"files" | "folder">("files");
   const [makeAlbum, setMakeAlbum] = useState(false);
   const [title, setTitle] = useState("");
@@ -35,7 +38,7 @@ export function MediaImportModal({ onClose, onImport }: { onClose: () => void; o
   }
 
   return <div className="modalBackdrop">
-    <section className="mediaImportDialog" role="dialog" aria-modal="true" aria-labelledby="mediaImportTitle">
+    <section ref={panel} tabIndex={-1} onKeyDown={onKeyDown} className="mediaImportDialog" role="dialog" aria-modal="true" aria-labelledby="mediaImportTitle">
       <header className="mediaImportHeader"><div><h2 id="mediaImportTitle">사진·영상 가져오기</h2><p>간직하고 싶은 순간을 기록에 담아보세요.</p></div><button type="button" className="closeButton" aria-label="닫기" disabled={busy} onClick={onClose}><X size={18} /></button></header>
       <form onSubmit={event => void submit(event)}>
         <div className="mediaImportBody">

@@ -3,6 +3,7 @@ import { Bookmark, CalendarDays, CheckSquare, ChevronLeft, ChevronRight, Cloud, 
 import { localDateKey } from "../calendar/calendarModel";
 import { ActionMenu } from "../../components/ActionMenu";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
+import { useDialogFocus } from "../../hooks/useDialogFocus";
 import type { SavedAlbum } from "../../types/media";
 import { chooseDiaryPhotos, isTauriRuntime } from "../../services/tauriMediaService";
 import { readDiaryPhotoFiles } from "./browserDiaryStorage";
@@ -61,13 +62,7 @@ export function DiaryView({ entries, albums, query = "", onQueryChange, onSave, 
     setDraft(null); setDraftError("");
   }
   useModalBehavior(close, { enabled: Boolean(draft) });
-  useEffect(() => {
-    if (!draft) return;
-    const previous = document.activeElement as HTMLElement | null;
-    if (window.matchMedia("(max-width: 999px)").matches) form.current?.focus();
-    else form.current?.querySelector<HTMLInputElement>(".diaryTitleInput")?.focus();
-    return () => { previous?.focus(); };
-  }, [Boolean(draft)]);
+  const onDialogKeyDown = useDialogFocus(form, Boolean(draft), window.matchMedia("(max-width: 999px)").matches ? undefined : ".diaryTitleInput");
 
   async function run(action: () => Promise<void>, success: string) {
     if (saving.current || importing.current) return;
@@ -152,13 +147,7 @@ export function DiaryView({ entries, albums, query = "", onQueryChange, onSave, 
     </article>)}</div>
     {draft && <div className="modalBackdrop diaryBackdrop"><section className="diaryDialog" role="dialog" aria-modal="true" aria-label={draft.id ? "일기 상세" : "새 일기"}>
       <Bookmark className="diaryBookmark" size={30} fill="currentColor" strokeWidth={0} aria-hidden="true" />
-      <form ref={form} tabIndex={-1} onSubmit={submit} onKeyDown={event => {
-        if (event.key !== "Tab") return;
-        const focusable = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled):not([hidden]), select:not(:disabled), textarea:not(:disabled)')).filter(el => el.getClientRects().length > 0);
-        const first = focusable[0], last = focusable.at(-1);
-        if (event.shiftKey && (document.activeElement === first || document.activeElement === form.current)) { event.preventDefault(); last?.focus(); }
-        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
-      }}><fieldset disabled={busy || adding}>
+      <form ref={form} tabIndex={-1} onSubmit={submit} onKeyDown={onDialogKeyDown}><fieldset disabled={busy || adding}>
         <div className="diaryDialogTop"><span>{draft.id ? "그날의 기록" : "오늘의 기록"}</span><button className="diaryIconButton" type="button" aria-label="닫기" onClick={close}><X size={21} /></button></div>
         <div className="diaryMetadata"><label className="diaryDateInput"><CalendarDays size={18} /><span>{diaryDateLabel(draft.date, true)}</span><input aria-label="날짜" type="date" required value={draft.date} onInput={e => updateDraft({ date: e.currentTarget.value })} /></label><div className="diaryMoodWeather"><label><Weather value={draft.weather} /><select aria-label="날씨" value={draft.weather} onChange={e => updateDraft({ weather: e.target.value })}>{weathers.map(w => <option key={w}>{w}</option>)}</select></label><label><Smile size={18} /><select aria-label="오늘의 기분" value={draft.mood} onChange={e => updateDraft({ mood: e.target.value })}>{moods.map(m => <option key={m}>{m}</option>)}</select></label></div></div>
         <div className="diaryEditorBody"><div className="diaryWriting"><input className="diaryTitleInput" aria-label="제목" required maxLength={120} placeholder="오늘을 기억할 제목" value={draft.title} onChange={e => updateDraft({ title: e.target.value })} /><textarea aria-label="내용" maxLength={20000} rows={8} placeholder="오늘은 어떤 하루였나요?" value={draft.body} onChange={e => updateDraft({ body: e.target.value })} /></div>

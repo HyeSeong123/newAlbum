@@ -1,12 +1,15 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Check, LoaderCircle, X } from "lucide-react";
 import type { MediaItem } from "../../types/media";
+import { useDialogFocus } from "../../hooks/useDialogFocus";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
 import { AlbumColorPicker, DEFAULT_ALBUM_COLOR } from "./AlbumCover";
 import { CalendarRegistrationFields } from "../calendar/CalendarRegistrationFields";
 import { calendarRegistrationError, type CalendarRegistrationOptions } from "../calendar/calendarModel";
 
 export function AlbumCreateModal({ items, initialTitle = "", onClose, onCreate }: { items: MediaItem[]; initialTitle?: string; onClose: () => void; onCreate: (title: string, color: string, calendar?: CalendarRegistrationOptions) => Promise<void> }) {
+  const panel = useRef<HTMLElement>(null);
+  const onKeyDown = useDialogFocus(panel, true, ".albumTitleField input");
   const [title, setTitle] = useState(initialTitle);
   const [color, setColor] = useState(DEFAULT_ALBUM_COLOR);
   const [calendar, setCalendar] = useState<CalendarRegistrationOptions>();
@@ -22,11 +25,11 @@ export function AlbumCreateModal({ items, initialTitle = "", onClose, onCreate }
     finally { setBusy(false); }
   }
   return <div className="modalBackdrop">
-    <section className="albumCreateModal" role="dialog" aria-modal="true" aria-labelledby="albumCreateTitle">
+    <section ref={panel} tabIndex={-1} onKeyDown={onKeyDown} className="albumCreateModal" role="dialog" aria-modal="true" aria-labelledby="albumCreateTitle">
       <div className="detailHeader"><strong id="albumCreateTitle">앨범 만들기</strong><button title="닫기" className="closeButton" disabled={busy} onClick={onClose}><X size={18} /></button></div>
       <form onSubmit={(event) => void submit(event)}>
         <fieldset disabled={busy}>
-          <label className="albumTitleField">제목<input autoFocus required maxLength={80} value={title} onChange={(event) => setTitle(event.target.value)} /></label>
+          <label className="albumTitleField">제목<input required maxLength={80} value={title} onChange={(event) => setTitle(event.target.value)} /></label>
           <p>{items.length}개의 기록을 앨범에 담습니다.</p>
           <AlbumColorPicker value={color} onChange={setColor} items={items} title={title || "나의 추억"} />
           <CalendarRegistrationFields value={calendar} onChange={setCalendar} title={title} items={items} />

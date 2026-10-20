@@ -1,6 +1,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { Check, Trash2, X } from "lucide-react";
 import type { AlbumContent, SavedAlbum } from "../../../types/media";
+import { useDialogFocus } from "../../../hooks/useDialogFocus";
 import { useModalBehavior } from "../../../hooks/useModalBehavior";
 import { albumContents, writtenPage } from "../albumContent";
 import { AlbumContentEditor } from "./AlbumContentEditor";
@@ -13,6 +14,8 @@ export function AlbumWrittenEditor({ album, request, onClose, onSave }: {
   onClose: () => void;
   onSave: (album: SavedAlbum) => Promise<void>;
 }) {
+  const panel = useRef<HTMLElement>(null);
+  const onKeyDown = useDialogFocus(panel);
   const [entryId] = useState(() => request.entryId ?? crypto.randomUUID());
   const [contents, setContents] = useState(() => {
     const entries = albumContents(album);
@@ -47,7 +50,7 @@ export function AlbumWrittenEditor({ album, request, onClose, onSave }: {
     void save(contents);
   }
   return <div className="modalBackdrop">
-    <section className="albumEditor albumWrittenEditor" role="dialog" aria-modal="true" aria-labelledby="albumWrittenEditorTitle">
+    <section ref={panel} tabIndex={-1} onKeyDown={onKeyDown} className="albumEditor albumWrittenEditor" role="dialog" aria-modal="true" aria-labelledby="albumWrittenEditorTitle">
       <div className="detailHeader albumEditorHeader"><div><strong id="albumWrittenEditorTitle">{name} 상세</strong><small>{album.title}</small></div><button className="closeButton" title="닫기" disabled={busy} onClick={onClose}><X size={18} /></button></div>
       <form onSubmit={submit}><fieldset disabled={busy}>
         <AlbumContentEditor contents={contents} items={album.items} onChange={setContents} selectedId={entryId} />
