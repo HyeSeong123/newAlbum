@@ -1,0 +1,574 @@
+{
+  "config": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/workspace/scratch/f8234dbfd407/newAlbum/node_modules/.bin/playwright",
+      "test",
+      "tests/audit-regression.spec.ts",
+      "--workers=2",
+      "--reporter=json"
+    ],
+    "configFile": "/workspace/scratch/f8234dbfd407/newAlbum/playwright.config.ts",
+    "rootDir": "/workspace/scratch/f8234dbfd407/newAlbum/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 2
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/workspace/scratch/f8234dbfd407/newAlbum/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "desktop",
+        "name": "desktop",
+        "testDir": "/workspace/scratch/f8234dbfd407/newAlbum/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/workspace/scratch/f8234dbfd407/newAlbum/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "mobile",
+        "name": "mobile",
+        "testDir": "/workspace/scratch/f8234dbfd407/newAlbum/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 2,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://127.0.0.1:5173",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "audit-regression.spec.ts",
+      "file": "audit-regression.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "native import of 100 dog and 100 cat records never authorizes inference",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3093,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-20T10:37:33.230Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "94e611744c616bb0886b-0a37ad16d740e803ec1b",
+          "file": "audit-regression.spec.ts",
+          "line": 27,
+          "column": 1
+        },
+        {
+          "title": "long press then touch drag selects a range without scrolling or a duplicate click",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "Native touch input requires a mobile context.",
+                  "location": {
+                    "file": "/workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts",
+                    "line": 42,
+                    "column": 8
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "skipped",
+                  "duration": 155,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-20T10:37:36.473Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Native touch input requires a mobile context.",
+                      "location": {
+                        "file": "/workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts",
+                        "line": 42,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "94e611744c616bb0886b-6561630902b9264c4c85",
+          "file": "audit-regression.spec.ts",
+          "line": 41,
+          "column": 1
+        },
+        {
+          "title": "album creation traps keyboard focus and restores its opening control",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 7325,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeFocused\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: '앨범 만들기', exact: true }).getByRole('button', { name: '취소', exact: true })\nExpected: focused\nReceived: inactive\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeFocused\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '앨범 만들기', exact: true }).getByRole('button', { name: '취소', exact: true })\u001b[22m\n\u001b[2m    14 × locator resolved to <button type=\"button\">취소</button>\u001b[22m\n\u001b[2m       - unexpected value \"inactive\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeFocused\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: '앨범 만들기', exact: true }).getByRole('button', { name: '취소', exact: true })\nExpected: focused\nReceived: inactive\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeFocused\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '앨범 만들기', exact: true }).getByRole('button', { name: '취소', exact: true })\u001b[22m\n\u001b[2m    14 × locator resolved to <button type=\"button\">취소</button>\u001b[22m\n\u001b[2m       - unexpected value \"inactive\"\u001b[22m\n\n    at /workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts:75:73",
+                    "location": {
+                      "file": "/workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts",
+                      "column": 73,
+                      "line": 75
+                    },
+                    "snippet": "  73 |   await close.focus();\n  74 |   await page.keyboard.press('Shift+Tab');\n> 75 |   await expect(dialog.getByRole('button', { name: '취소', exact: true })).toBeFocused();\n     |                                                                         ^\n  76 |   await page.keyboard.press('Tab');\n  77 |   await expect(close).toBeFocused();\n  78 |   await close.click();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts",
+                        "column": 73,
+                        "line": 75
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeFocused\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: '앨범 만들기', exact: true }).getByRole('button', { name: '취소', exact: true })\nExpected: focused\nReceived: inactive\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeFocused\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '앨범 만들기', exact: true }).getByRole('button', { name: '취소', exact: true })\u001b[22m\n\u001b[2m    14 × locator resolved to <button type=\"button\">취소</button>\u001b[22m\n\u001b[2m       - unexpected value \"inactive\"\u001b[22m\n\n\n  73 |   await close.focus();\n  74 |   await page.keyboard.press('Shift+Tab');\n> 75 |   await expect(dialog.getByRole('button', { name: '취소', exact: true })).toBeFocused();\n     |                                                                         ^\n  76 |   await page.keyboard.press('Tab');\n  77 |   await expect(close).toBeFocused();\n  78 |   await close.click();\n    at /workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts:75:73"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-20T10:37:36.645Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/workspace/scratch/f8234dbfd407/newAlbum/test-results/audit-regression-album-cre-ff6ce-estores-its-opening-control-desktop/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/scratch/f8234dbfd407/newAlbum/test-results/audit-regression-album-cre-ff6ce-estores-its-opening-control-desktop/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/scratch/f8234dbfd407/newAlbum/test-results/audit-regression-album-cre-ff6ce-estores-its-opening-control-desktop/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts",
+                    "column": 73,
+                    "line": 75
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "94e611744c616bb0886b-b8acfdab06f958b1ddcc",
+          "file": "audit-regression.spec.ts",
+          "line": 63,
+          "column": 1
+        },
+        {
+          "title": "Android back dismisses the open action menu before leaving its screen",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "Android bridge is active only with the mobile user agent.",
+                  "location": {
+                    "file": "/workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts",
+                    "line": 83,
+                    "column": 8
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "skipped",
+                  "duration": 213,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-20T10:37:45.122Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Android bridge is active only with the mobile user agent.",
+                      "location": {
+                        "file": "/workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts",
+                        "line": 83,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "94e611744c616bb0886b-093a6bbe3229d0c49b28",
+          "file": "audit-regression.spec.ts",
+          "line": 82,
+          "column": 1
+        },
+        {
+          "title": "native import of 100 dog and 100 cat records never authorizes inference",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 3239,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-20T10:37:33.182Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "94e611744c616bb0886b-f87b408ee8188f94ae95",
+          "file": "audit-regression.spec.ts",
+          "line": 27,
+          "column": 1
+        },
+        {
+          "title": "long press then touch drag selects a range without scrolling or a duplicate click",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "failed",
+                  "duration": 8138,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('.personOriginal[aria-pressed=\"true\"]')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m0\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.personOriginal[aria-pressed=\"true\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to 0 elements\u001b[22m\n\u001b[2m       - unexpected value \"0\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('.personOriginal[aria-pressed=\"true\"]')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m0\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.personOriginal[aria-pressed=\"true\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to 0 elements\u001b[22m\n\u001b[2m       - unexpected value \"0\"\u001b[22m\n\n    at /workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts:55:70",
+                    "location": {
+                      "file": "/workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts",
+                      "column": 70,
+                      "line": 55
+                    },
+                    "snippet": "  53 |   await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: a.x + a.width / 2, y: a.y + a.height / 2 }] });\n  54 |   await page.waitForTimeout(550);\n> 55 |   await expect(page.locator('.personOriginal[aria-pressed=\"true\"]')).toHaveCount(1);\n     |                                                                      ^\n  56 |   await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: b.x + b.width / 2, y: b.y + b.height / 2 }] });\n  57 |   await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });\n  58 |   await expect(page.locator('.personOriginal[aria-pressed=\"true\"]')).toHaveCount(2);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts",
+                        "column": 70,
+                        "line": 55
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('.personOriginal[aria-pressed=\"true\"]')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m0\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.personOriginal[aria-pressed=\"true\"]')\u001b[22m\n\u001b[2m    14 × locator resolved to 0 elements\u001b[22m\n\u001b[2m       - unexpected value \"0\"\u001b[22m\n\n\n  53 |   await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: a.x + a.width / 2, y: a.y + a.height / 2 }] });\n  54 |   await page.waitForTimeout(550);\n> 55 |   await expect(page.locator('.personOriginal[aria-pressed=\"true\"]')).toHaveCount(1);\n     |                                                                      ^\n  56 |   await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: b.x + b.width / 2, y: b.y + b.height / 2 }] });\n  57 |   await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });\n  58 |   await expect(page.locator('.personOriginal[aria-pressed=\"true\"]')).toHaveCount(2);\n    at /workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts:55:70"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-20T10:37:36.542Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/workspace/scratch/f8234dbfd407/newAlbum/test-results/audit-regression-long-pres-9281d-olling-or-a-duplicate-click-mobile/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/scratch/f8234dbfd407/newAlbum/test-results/audit-regression-long-pres-9281d-olling-or-a-duplicate-click-mobile/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/scratch/f8234dbfd407/newAlbum/test-results/audit-regression-long-pres-9281d-olling-or-a-duplicate-click-mobile/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts",
+                    "column": 70,
+                    "line": 55
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "94e611744c616bb0886b-1eb66ba62011d87fafef",
+          "file": "audit-regression.spec.ts",
+          "line": 41,
+          "column": 1
+        },
+        {
+          "title": "album creation traps keyboard focus and restores its opening control",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "failed",
+                  "duration": 8026,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeFocused\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: '앨범 만들기', exact: true }).getByRole('button', { name: '취소', exact: true })\nExpected: focused\nReceived: inactive\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeFocused\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '앨범 만들기', exact: true }).getByRole('button', { name: '취소', exact: true })\u001b[22m\n\u001b[2m    14 × locator resolved to <button type=\"button\">취소</button>\u001b[22m\n\u001b[2m       - unexpected value \"inactive\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeFocused\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: '앨범 만들기', exact: true }).getByRole('button', { name: '취소', exact: true })\nExpected: focused\nReceived: inactive\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeFocused\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '앨범 만들기', exact: true }).getByRole('button', { name: '취소', exact: true })\u001b[22m\n\u001b[2m    14 × locator resolved to <button type=\"button\">취소</button>\u001b[22m\n\u001b[2m       - unexpected value \"inactive\"\u001b[22m\n\n    at /workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts:75:73",
+                    "location": {
+                      "file": "/workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts",
+                      "column": 73,
+                      "line": 75
+                    },
+                    "snippet": "  73 |   await close.focus();\n  74 |   await page.keyboard.press('Shift+Tab');\n> 75 |   await expect(dialog.getByRole('button', { name: '취소', exact: true })).toBeFocused();\n     |                                                                         ^\n  76 |   await page.keyboard.press('Tab');\n  77 |   await expect(close).toBeFocused();\n  78 |   await close.click();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts",
+                        "column": 73,
+                        "line": 75
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeFocused\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: '앨범 만들기', exact: true }).getByRole('button', { name: '취소', exact: true })\nExpected: focused\nReceived: inactive\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeFocused\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '앨범 만들기', exact: true }).getByRole('button', { name: '취소', exact: true })\u001b[22m\n\u001b[2m    14 × locator resolved to <button type=\"button\">취소</button>\u001b[22m\n\u001b[2m       - unexpected value \"inactive\"\u001b[22m\n\n\n  73 |   await close.focus();\n  74 |   await page.keyboard.press('Shift+Tab');\n> 75 |   await expect(dialog.getByRole('button', { name: '취소', exact: true })).toBeFocused();\n     |                                                                         ^\n  76 |   await page.keyboard.press('Tab');\n  77 |   await expect(close).toBeFocused();\n  78 |   await close.click();\n    at /workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts:75:73"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-20T10:37:45.658Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/workspace/scratch/f8234dbfd407/newAlbum/test-results/audit-regression-album-cre-ff6ce-estores-its-opening-control-mobile/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/scratch/f8234dbfd407/newAlbum/test-results/audit-regression-album-cre-ff6ce-estores-its-opening-control-mobile/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/scratch/f8234dbfd407/newAlbum/test-results/audit-regression-album-cre-ff6ce-estores-its-opening-control-mobile/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts",
+                    "column": 73,
+                    "line": 75
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "94e611744c616bb0886b-74b7539d4d96408dbb59",
+          "file": "audit-regression.spec.ts",
+          "line": 63,
+          "column": 1
+        },
+        {
+          "title": "Android back dismisses the open action menu before leaving its screen",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 7333,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: '가족', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: '가족', exact: true })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: '가족', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: '가족', exact: true })\u001b[22m\n\n    at /workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts:91:72",
+                    "location": {
+                      "file": "/workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts",
+                      "column": 72,
+                      "line": 91
+                    },
+                    "snippet": "  89 |   expect(await page.evaluate(() => window.__gamjassakBack?.())).toBe(true);\n  90 |   await expect(page.locator('.actionMenuPanel')).toHaveCount(0);\n> 91 |   await expect(page.getByRole('heading', { name: '가족', exact: true })).toBeVisible();\n     |                                                                        ^\n  92 | });\n  93 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts",
+                        "column": 72,
+                        "line": 91
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: '가족', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: '가족', exact: true })\u001b[22m\n\n\n  89 |   expect(await page.evaluate(() => window.__gamjassakBack?.())).toBe(true);\n  90 |   await expect(page.locator('.actionMenuPanel')).toHaveCount(0);\n> 91 |   await expect(page.getByRole('heading', { name: '가족', exact: true })).toBeVisible();\n     |                                                                        ^\n  92 | });\n  93 |\n    at /workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts:91:72"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-20T10:37:54.690Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/workspace/scratch/f8234dbfd407/newAlbum/test-results/audit-regression-Android-b-7dcb5-u-before-leaving-its-screen-mobile/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/scratch/f8234dbfd407/newAlbum/test-results/audit-regression-Android-b-7dcb5-u-before-leaving-its-screen-mobile/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/scratch/f8234dbfd407/newAlbum/test-results/audit-regression-Android-b-7dcb5-u-before-leaving-its-screen-mobile/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/scratch/f8234dbfd407/newAlbum/tests/audit-regression.spec.ts",
+                    "column": 72,
+                    "line": 91
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "94e611744c616bb0886b-ed79e047534f38aeccbb",
+          "file": "audit-regression.spec.ts",
+          "line": 82,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-20T10:37:30.175Z",
+    "duration": 32688.913999999997,
+    "expected": 2,
+    "skipped": 2,
+    "unexpected": 4,
+    "flaky": 0
+  }
+}

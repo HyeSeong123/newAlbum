@@ -1,0 +1,38 @@
+{
+  "excluded512": true,
+  "faces": 3,
+  "valid": true,
+  "maxBackendDistance": 9.553288312538728e-7,
+  "cpu": {
+    "backend": "cpu",
+    "tensors": 300,
+    "tensorBytes": 46107804,
+    "simd": false,
+    "elapsedMs": 12023.200000000012,
+    "modelLoadMs": 440.8999999999651
+  },
+  "wasm": {
+    "backend": "wasm",
+    "tensors": 300,
+    "tensorBytes": 46107804,
+    "simd": true,
+    "elapsedMs": 1340,
+    "modelLoadMs": 473.20000000001164
+  },
+  "auto": {
+    "backend": "wasm",
+    "tensors": 300,
+    "tensorBytes": 46107804,
+    "simd": true,
+    "elapsedMs": 1231.7000000000116,
+    "modelLoadMs": 487.0999999999767
+  },
+  "nativeSourceVerified": true,
+  "completedCache": true,
+  "sourceAuditVerified": true,
+  "evaluationStored": true,
+  "environment": "Android API 36 x86_64 emulator",
+  "offline": true,
+  "identityAccuracyMeasured": false,
+  "devicePerformanceMeasured": false
+}

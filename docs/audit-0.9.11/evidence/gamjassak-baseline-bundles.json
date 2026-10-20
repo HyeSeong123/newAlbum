@@ -1,0 +1,32 @@
+[
+  {
+    "file": "MemoryMap-DW7XyX4g.css",
+    "bytes": 6654,
+    "gzipBytes": 1762
+  },
+  {
+    "file": "MemoryMap-DF9ibrAY.js",
+    "bytes": 225922,
+    "gzipBytes": 81175
+  },
+  {
+    "file": "index-1NGxMez8.css",
+    "bytes": 206606,
+    "gzipBytes": 37400
+  },
+  {
+    "file": "index-CYQMnog1.js",
+    "bytes": 726798,
+    "gzipBytes": 217981
+  },
+  {
+    "file": "pet.worker-wwJIKZJn.js",
+    "bytes": 2245115,
+    "gzipBytes": 382826
+  },
+  {
+    "file": "person.worker-D0XON92t.js",
+    "bytes": 2243383,
+    "gzipBytes": 361315
+  }
+]

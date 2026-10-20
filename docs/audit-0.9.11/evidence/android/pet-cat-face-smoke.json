@@ -1,0 +1,43 @@
+{
+  "kind": "cat",
+  "view": "front",
+  "viewSource": "cat-frontal-cascade",
+  "faceBox": [
+    0.265409428308784,
+    0.3023814095762752,
+    0.6351890408483516,
+    0.6022606794088445
+  ],
+  "faceLength": 1024,
+  "backend": "wasm",
+  "rearClearsIdentity": true,
+  "diagnostics": {
+    "width": 285,
+    "height": 300,
+    "inputRange": [
+      0,
+      255
+    ],
+    "elapsedMs": 3649.5999999999767,
+    "animals": 1,
+    "reusedBodies": 0,
+    "backend": "wasm",
+    "wasmFallback": false,
+    "simd": true,
+    "threads": 1,
+    "tensors": 399,
+    "tensorBytes": 35049984,
+    "tensorMemoryUnreliable": false,
+    "initializationMs": 2206.0999999999767,
+    "detectionMs": 142.39999999996508,
+    "bodyEmbeddingMs": 277.0999999999767,
+    "faceDetectionMs": 729.8000000000466,
+    "faceEmbeddingMs": 236.10000000003492,
+    "descriptorMs": 45.59999999997672,
+    "backendInitializationMs": 37.70000000001164,
+    "retryMs": 0,
+    "totalMs": 3688
+  },
+  "offline": true,
+  "identityAccuracyMeasured": false
+}

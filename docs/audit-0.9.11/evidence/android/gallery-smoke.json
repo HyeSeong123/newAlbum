@@ -1,0 +1,17 @@
+{
+  "gallery": true,
+  "longPressDragSelects": true,
+  "longPressDragDeselects": true,
+  "ordinarySwipeScrollsWithoutSelection": true,
+  "sort": "date_modified DESC, _id DESC",
+  "order": [
+    "M-video-gallery.mp4",
+    "Z-new-gallery.jpg",
+    "A-old-gallery.jpg"
+  ],
+  "photoCount": 2,
+  "videoCount": 1,
+  "unsupportedFormatsHidden": true,
+  "deniedPermissionCancels": true,
+  "cancelLeavesRecordsUnchanged": true
+}

@@ -1,0 +1,6001 @@
+{
+  "candidates": [
+    {
+      "file": "src/design-system.css",
+      "line": 91,
+      "selector": ".dayEvents"
+    },
+    {
+      "file": "src/design-system.css",
+      "line": 92,
+      "selector": ".dayEvents small"
+    },
+    {
+      "file": "src/design-system.css",
+      "line": 103,
+      "selector": ".detailBody"
+    },
+    {
+      "file": "src/design-system.css",
+      "line": 108,
+      "selector": ".commentItem"
+    },
+    {
+      "file": "src/design-system.css",
+      "line": 109,
+      "selector": ".commentForm button"
+    },
+    {
+      "file": "src/design-system.css",
+      "line": 110,
+      "selector": ".commentForm input:focus, .commentForm textarea:focus"
+    },
+    {
+      "file": "src/design-system.css",
+      "line": 111,
+      "selector": ".eventItem"
+    },
+    {
+      "file": "src/design-system.css",
+      "line": 112,
+      "selector": ".eventIcon"
+    },
+    {
+      "file": "src/design-system.css",
+      "line": 113,
+      "selector": ".eventItem.birthday .eventIcon"
+    },
+    {
+      "file": "src/design-system.css",
+      "line": 114,
+      "selector": ".eventItem.anniversary .eventIcon"
+    },
+    {
+      "file": "src/design-system.css",
+      "line": 115,
+      "selector": ".eventItem.memorial .eventIcon"
+    },
+    {
+      "file": "src/design-system.css",
+      "line": 116,
+      "selector": ".scheduleForm .ddayCheck"
+    },
+    {
+      "file": "src/design-system.css",
+      "line": 117,
+      "selector": ".scheduleForm button[type=\"submit\"]"
+    },
+    {
+      "file": "src/design-system.css",
+      "line": 184,
+      "selector": ".dayEvents"
+    },
+    {
+      "file": "src/design-system.css",
+      "line": 185,
+      "selector": ".dayEvents small"
+    },
+    {
+      "file": "src/design-system.css",
+      "line": 186,
+      "selector": ".dayEvents small > span"
+    },
+    {
+      "file": "src/design-system.css",
+      "line": 187,
+      "selector": ".dayEvents small strong"
+    },
+    {
+      "file": "src/design-system.css",
+      "line": 196,
+      "selector": ".detailBody"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 179,
+      "selector": ".eyebrow"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 676,
+      "selector": ".detailBody"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 696,
+      "selector": ".commentBox textarea"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 701,
+      "selector": ".commentForm"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 706,
+      "selector": ".commentForm label"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 714,
+      "selector": ".commentForm input"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 724,
+      "selector": ".commentForm input:focus,\n.commentForm textarea:focus"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 730,
+      "selector": ".commentForm button"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 740,
+      "selector": ".commentList"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 745,
+      "selector": ".commentList > p"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 751,
+      "selector": ".commentItem"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 758,
+      "selector": ".commentItem div"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 766,
+      "selector": ".commentItem strong"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 771,
+      "selector": ".commentItem time"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 776,
+      "selector": ".commentItem p"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 784,
+      "selector": ".commentActions,\n.commentEditActions"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 792,
+      "selector": ".commentActions button,\n.commentEditActions button"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 807,
+      "selector": ".commentActions button:last-child"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 811,
+      "selector": ".commentEditForm"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 816,
+      "selector": ".commentEditForm label"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 824,
+      "selector": ".commentEditForm input,\n.commentEditForm textarea"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 832,
+      "selector": ".commentEditForm input"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 838,
+      "selector": ".commentEditForm textarea"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 843,
+      "selector": ".commentEditActions button:first-child"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 870,
+      "selector": ".yearlyCheck"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 871,
+      "selector": ".annualDateFields"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 872,
+      "selector": ".annualDateFields label"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1011,
+      "selector": ".dayEvents"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1023,
+      "selector": ".dayEvents small"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1027,
+      "selector": ".dayEvents small > span"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1071,
+      "selector": ".eventModal"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1080,
+      "selector": ".eventModalHeader"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1089,
+      "selector": ".eventModalHeader h2"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1104,
+      "selector": ".scheduleForm"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1111,
+      "selector": ".eventModalForm"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1116,
+      "selector": ".eventModalForm .scheduleTitleField,\n.eventModalForm .ddayCheck,\n.eventModalForm button"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1122,
+      "selector": ".eventModalForm button"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1126,
+      "selector": ".scheduleForm label"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1134,
+      "selector": ".scheduleForm select,\n.scheduleForm input[type=\"date\"],\n.scheduleForm input[type=\"text\"],\n.scheduleForm input:not([type])"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1147,
+      "selector": ".scheduleForm select:focus,\n.scheduleForm input:focus"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1153,
+      "selector": ".scheduleTitleField input"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1157,
+      "selector": ".ddayCheck"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1169,
+      "selector": ".ddayCheck input,\n.eventItem input"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1174,
+      "selector": ".scheduleForm button"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1184,
+      "selector": ".eventList"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1190,
+      "selector": ".eventList > p"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1196,
+      "selector": ".eventItem"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1208,
+      "selector": ".eventIcon"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1218,
+      "selector": ".eventItem.birthday .eventIcon"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1223,
+      "selector": ".eventItem.anniversary .eventIcon"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1228,
+      "selector": ".eventItem.memorial .eventIcon"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1233,
+      "selector": ".eventItem.appointment .eventIcon"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1238,
+      "selector": ".eventItem strong,\n.eventItem small"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1243,
+      "selector": ".eventItem strong"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1248,
+      "selector": ".eventItem small"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1254,
+      "selector": ".eventItem label"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1263,
+      "selector": ".eventItem button"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1498,
+      "selector": ".detailBody"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1530,
+      "selector": ".dayEvents"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1552,
+      "selector": ".scheduleForm"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1556,
+      "selector": ".eventItem"
+    },
+    {
+      "file": "src/styles.css",
+      "line": 1560,
+      "selector": ".eventItem button"
+    },
+    {
+      "file": "src/features/pets/pets.css",
+      "line": 2,
+      "selector": ".petMatchBody"
+    },
+    {
+      "file": "src/features/pets/pets.css",
+      "line": 3,
+      "selector": ".petMatchBody progress"
+    },
+    {
+      "file": "src/features/pets/pets.css",
+      "line": 36,
+      "selector": ".petMatchBody"
+    },
+    {
+      "file": "src/features/pets/pets.css",
+      "line": 39,
+      "selector": ".petReferenceViews"
+    },
+    {
+      "file": "src/features/pets/pets.css",
+      "line": 40,
+      "selector": ".petReferenceViews label"
+    },
+    {
+      "file": "src/features/pets/pets.css",
+      "line": 41,
+      "selector": ".petReferenceViews select"
+    }
+  ],
+  "repeatedSelectors": [
+    {
+      "selector": ":root",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 3,
+          "properties": [
+            "--control-height:42px",
+            "--control-gap:8px",
+            "--control-radius:6px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 2,
+          "properties": [
+            "--danger:#c4313b",
+            "--radius-card:8px",
+            "--radius-inner:4px",
+            "--nav-bg:#18191c",
+            "--nav-surface:#2b2d32",
+            "--nav-ink:#f5f5f7",
+            "--font-body:15px",
+            "--font-control:14px",
+            "--font-label:14px",
+            "--font-meta:13px",
+            "--font-tiny:12px",
+            "font-family:\"SUIT\", \"Segoe UI\", system-ui, sans-serif",
+            "font-size:var(--font-body)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 350,
+          "properties": [
+            "--bg:#f8f7f3",
+            "--surface:#fffefa",
+            "--surface-soft:#efeee7",
+            "--primary:#7d815a",
+            "--secondary:#33382c",
+            "--border:#e1dfd6",
+            "--text:#292b25",
+            "--muted:#74766e",
+            "--focus-ring:#777b54",
+            "--shadow:0 8px 24px #48483d12",
+            "--shadow-strong:0 24px 70px #34342b24"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 3,
+          "properties": [
+            "--bg:#FBFAF7",
+            "--surface:#FFFFFF",
+            "--surface-soft:#F4EFE8",
+            "--primary:#B36B38",
+            "--secondary:#3F2D23",
+            "--border:#DED1C3",
+            "--text:#2F2925",
+            "--muted:#5E534B",
+            "--danger:#B15A4D",
+            "--shadow:0 12px 26px rgba(63, 45, 35, 0.09)",
+            "--shadow-strong:0 24px 70px rgba(63, 45, 35, 0.2)",
+            "--radius-card:20px",
+            "--radius-inner:16px",
+            "color:var(--text)",
+            "background:var(--bg)",
+            "font-family:\"SUIT\", \"Segoe UI\", system-ui, sans-serif",
+            "font-synthesis:none",
+            "text-rendering:optimizeLegibility"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": "button",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 9,
+          "properties": [
+            "word-break:keep-all"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 25,
+          "properties": [
+            "transition:background-color .16s, color .16s, border-color .16s",
+            "word-break:keep-all",
+            "overflow-wrap:normal"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 200,
+          "properties": [
+            "transition:none"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 37,
+          "properties": [
+            "border:0",
+            "cursor:pointer"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".collectionTools .sortControl",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 59,
+          "properties": [
+            "padding:0 10px",
+            "gap:6px"
+          ]
+        },
+        {
+          "file": "src/controls.css",
+          "line": 94,
+          "properties": [
+            "border:1px solid var(--border)"
+          ]
+        },
+        {
+          "file": "src/controls.css",
+          "line": 127,
+          "properties": [
+            "flex:1",
+            "min-width:0"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".collectionTools .sortControl select",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 60,
+          "properties": [
+            "font-size:13px"
+          ]
+        },
+        {
+          "file": "src/controls.css",
+          "line": 128,
+          "properties": [
+            "width:100%",
+            "min-width:0"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".topbar .importActions .actionMenuTrigger",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 61,
+          "properties": [
+            "width:auto",
+            "min-width:0",
+            "padding-inline:9px"
+          ]
+        },
+        {
+          "file": "src/controls.css",
+          "line": 146,
+          "properties": [
+            "color:var(--muted)",
+            "border-color:transparent",
+            "background:transparent"
+          ]
+        },
+        {
+          "file": "src/controls.css",
+          "line": 150,
+          "properties": [
+            "border-radius:var(--control-radius)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 397,
+          "properties": [
+            "width:27px",
+            "min-width:27px",
+            "padding:0",
+            "border-radius:0 5px 5px 0",
+            "border-color:var(--primary)",
+            "border-left-color:#ffffff3b",
+            "background:var(--primary)",
+            "color:#fff"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".collectionTools > .viewTabs",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 91,
+          "properties": [
+            "width:max-content",
+            "max-width:100%",
+            "margin:0",
+            "flex-shrink:0"
+          ]
+        },
+        {
+          "file": "src/controls.css",
+          "line": 126,
+          "properties": [
+            "width:100%"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".savedAlbums > .panelHeader",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 96,
+          "properties": [
+            "align-items:center",
+            "justify-content:space-between",
+            "flex-wrap:wrap",
+            "gap:var(--control-gap) 16px",
+            "margin-bottom:16px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 232,
+          "properties": [
+            "justify-content:flex-end"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".peopleActions.peopleToolbar",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 108,
+          "properties": [
+            "gap:16px"
+          ]
+        },
+        {
+          "file": "src/controls.css",
+          "line": 131,
+          "properties": [
+            "gap:var(--control-gap) 16px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".peopleActions .actionMenuPanel button",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 111,
+          "properties": [
+            "height:auto",
+            "padding-block:10px",
+            "white-space:normal",
+            "text-align:left"
+          ]
+        },
+        {
+          "file": "src/controls.css",
+          "line": 152,
+          "properties": [
+            "justify-content:flex-start",
+            "border:0",
+            "border-radius:4px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".selectionDock .selectionActions",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 112,
+          "properties": [
+            "display:flex",
+            "flex-wrap:wrap",
+            "gap:var(--control-gap)",
+            "min-width:0"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 515,
+          "properties": [
+            "min-height:44px",
+            "align-items:center"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".calendarPanel .panelHeader",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 115,
+          "properties": [
+            "grid-template-columns:auto auto minmax(0, 1fr)",
+            "gap:16px"
+          ]
+        },
+        {
+          "file": "src/controls.css",
+          "line": 121,
+          "properties": [
+            "grid-template-columns:1fr auto"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".calendarPanel .monthControls",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 116,
+          "properties": [
+            "justify-content:flex-end"
+          ]
+        },
+        {
+          "file": "src/controls.css",
+          "line": 122,
+          "properties": [
+            "grid-column:1 / -1"
+          ]
+        },
+        {
+          "file": "src/controls.css",
+          "line": 132,
+          "properties": [
+            "justify-content:flex-start"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".calendarPanel .monthControls > .primaryControl",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 118,
+          "properties": [
+            "margin-left:8px"
+          ]
+        },
+        {
+          "file": "src/controls.css",
+          "line": 133,
+          "properties": [
+            "margin-left:0"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".sidebar",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 142,
+          "properties": [
+            "grid-template-columns:minmax(175px,1fr) auto auto auto",
+            "gap:12px"
+          ]
+        },
+        {
+          "file": "src/controls.css",
+          "line": 157,
+          "properties": [
+            "display:flex",
+            "flex-wrap:wrap",
+            "min-height:70px",
+            "height:auto",
+            "padding:10px 16px"
+          ]
+        },
+        {
+          "file": "src/controls.css",
+          "line": 163,
+          "properties": [
+            "gap:6px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 32,
+          "properties": [
+            "border:0"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 135,
+          "properties": [
+            "padding-left:12px",
+            "padding-right:12px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 143,
+          "properties": [
+            "position:relative",
+            "height:auto",
+            "min-height:0",
+            "padding:20px 20px 0",
+            "gap:20px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 206,
+          "properties": [
+            "width:100%",
+            "flex-direction:row",
+            "align-items:center"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 270,
+          "properties": [
+            "padding:0 24px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 278,
+          "properties": [
+            "height:auto",
+            "padding:16px 20px 12px",
+            "gap:12px",
+            "flex-wrap:wrap",
+            "position:relative"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 367,
+          "properties": [
+            "position:sticky",
+            "top:0",
+            "z-index:30",
+            "height:70px",
+            "min-height:70px",
+            "padding:0 38px",
+            "display:grid",
+            "grid-template-columns:minmax(200px, 1fr) auto minmax(120px, 1fr)",
+            "gap:24px",
+            "color:var(--text)",
+            "background:#fbfaf7f5",
+            "border-bottom:1px solid var(--border)",
+            "backdrop-filter:blur(16px)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 540,
+          "properties": [
+            "padding-inline:24px",
+            "grid-template-columns:1fr auto auto",
+            "gap:20px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 555,
+          "properties": [
+            "height:auto",
+            "min-height:0",
+            "grid-template-columns:1fr auto",
+            "padding:16px 20px 0",
+            "gap:12px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 56,
+          "properties": [
+            "min-height:100vh",
+            "padding:24px",
+            "background:rgba(255, 255, 255, .9)",
+            "border-right:1px solid var(--border)",
+            "backdrop-filter:blur(18px)",
+            "display:flex",
+            "flex-direction:column",
+            "gap:26px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1366,
+          "properties": [
+            "min-height:auto",
+            "position:static",
+            "z-index:5",
+            "padding:16px",
+            "overflow:hidden"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".sidebar .layoutToggle",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 143,
+          "properties": [
+            "justify-self:end",
+            "margin:0",
+            "min-height:40px",
+            "padding:0 12px",
+            "border:1px solid var(--border)",
+            "border-radius:6px",
+            "background:var(--surface)",
+            "color:var(--text)",
+            "font-size:14px",
+            "white-space:nowrap"
+          ]
+        },
+        {
+          "file": "src/controls.css",
+          "line": 160,
+          "properties": [
+            "margin-left:auto"
+          ]
+        },
+        {
+          "file": "src/controls.css",
+          "line": 164,
+          "properties": [
+            "padding-inline:8px",
+            "font-size:13px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".sidebar .globalSettings",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 145,
+          "properties": [
+            "width:auto",
+            "min-height:40px",
+            "padding:0 8px",
+            "display:inline-flex",
+            "align-items:center",
+            "justify-content:center",
+            "gap:5px",
+            "font-size:13px"
+          ]
+        },
+        {
+          "file": "src/controls.css",
+          "line": 165,
+          "properties": [
+            "padding-inline:4px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".topbar .importActions",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 148,
+          "properties": [
+            "flex-wrap:wrap",
+            "gap:6px"
+          ]
+        },
+        {
+          "file": "src/controls.css",
+          "line": 168,
+          "properties": [
+            "justify-content:flex-start"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 214,
+          "properties": [
+            "width:auto",
+            "position:relative"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 287,
+          "properties": [
+            "gap:6px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 392,
+          "properties": [
+            "flex-wrap:nowrap",
+            "gap:0"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".topbar .importActions:has(.actionMenu) .primary",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 149,
+          "properties": [
+            "border-radius:var(--control-radius)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 396,
+          "properties": [
+            "border-radius:5px 0 0 5px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".workspace:has(.photoWorkspace.mode-grid) .topbar .importActions",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 153,
+          "properties": [
+            "justify-self:end",
+            "margin-left:0"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 412,
+          "properties": [
+            "grid-column:3",
+            "grid-row:1",
+            "justify-self:start",
+            "margin-left:0"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 546,
+          "properties": [
+            "margin-left:0"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".app.largeLayout .workspace",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 154,
+          "properties": [
+            "max-width:1800px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1596,
+          "properties": [
+            "padding:clamp(24px,3vw,48px)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".sidebar .navList",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 158,
+          "properties": [
+            "order:3",
+            "width:100%",
+            "overflow-x:auto"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 208,
+          "properties": [
+            "align-items:center",
+            "padding:0",
+            "overflow-x:auto"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 280,
+          "properties": [
+            "flex-basis:100%"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 375,
+          "properties": [
+            "justify-self:center",
+            "align-self:stretch",
+            "display:flex",
+            "gap:10px",
+            "overflow:visible"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 557,
+          "properties": [
+            "grid-column:1 / -1",
+            "grid-row:2",
+            "width:100%",
+            "height:44px",
+            "padding:0",
+            "gap:6px",
+            "overflow-x:auto"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".sidebar .navList button",
+      "locations": [
+        {
+          "file": "src/controls.css",
+          "line": 159,
+          "properties": [
+            "min-height:44px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 209,
+          "properties": [
+            "flex:0 0 auto"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 271,
+          "properties": [
+            "padding:0 10px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 281,
+          "properties": [
+            "min-height:44px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": "*",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 17,
+          "properties": [
+            "letter-spacing:0"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 24,
+          "properties": [
+            "box-sizing:border-box"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": "h1",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 22,
+          "properties": [
+            "line-height:1.2",
+            "margin:0"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 152,
+          "properties": [
+            "font-size:26px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 364,
+          "properties": [
+            "font-size:25px",
+            "font-weight:700"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 198,
+          "properties": [
+            "margin-bottom:0",
+            "color:var(--secondary)",
+            "font-size:clamp(26px, 2.8vw, 36px)",
+            "line-height:1.16"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1394,
+          "properties": [
+            "font-size:28px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": "h2",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 23,
+          "properties": [
+            "font-weight:750",
+            "line-height:1.3"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 176,
+          "properties": [
+            "font-size:18px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 365,
+          "properties": [
+            "font-size:19px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 205,
+          "properties": [
+            "margin-bottom:4px",
+            "color:var(--secondary)",
+            "font-size:22px",
+            "line-height:1.28"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1398,
+          "properties": [
+            "font-size:19px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": "h3",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 24,
+          "properties": [
+            "line-height:1.4"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 366,
+          "properties": [
+            "font-size:15px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": "button:disabled",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 30,
+          "properties": [
+            "opacity:.45"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 42,
+          "properties": [
+            "cursor:default",
+            "opacity:.55"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".app",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 31,
+          "properties": [
+            "grid-template-columns:212px minmax(0, 1fr)",
+            "overflow:visible"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 133,
+          "properties": [
+            "grid-template-columns:184px minmax(0, 1fr)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 142,
+          "properties": [
+            "display:block"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 205,
+          "properties": [
+            "display:block"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 47,
+          "properties": [
+            "min-height:100vh",
+            "width:100%",
+            "overflow-x:hidden",
+            "display:grid",
+            "grid-template-columns:252px 1fr",
+            "background:linear-gradient(120deg, #FBFAF7 0%, #F3ECE4 100%)"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1362,
+          "properties": [
+            "grid-template-columns:1fr"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".brand",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 33,
+          "properties": [
+            "gap:10px",
+            "padding:0 12px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 136,
+          "properties": [
+            "padding:0 6px",
+            "gap:6px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 145,
+          "properties": [
+            "padding:0"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 67,
+          "properties": [
+            "display:flex",
+            "gap:12px",
+            "align-items:center"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".brand strong",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 34,
+          "properties": [
+            "font-size:24px",
+            "font-weight:800",
+            "color:var(--nav-ink)",
+            "white-space:nowrap"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 137,
+          "properties": [
+            "font-size:22px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 144,
+          "properties": [
+            "font-size:23px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 77,
+          "properties": [
+            "color:var(--secondary)",
+            "font-size:20px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1402,
+          "properties": [
+            "font-size:18px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".navList",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 35,
+          "properties": [
+            "gap:6px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 146,
+          "properties": [
+            "display:flex",
+            "overflow-x:auto",
+            "gap:4px",
+            "padding-bottom:12px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 87,
+          "properties": [
+            "display:grid",
+            "gap:8px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1378,
+          "properties": [
+            "grid-template-columns:repeat(4, minmax(0, 1fr))"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1449,
+          "properties": [
+            "display:flex",
+            "gap:8px",
+            "overflow-x:auto",
+            "padding-bottom:2px",
+            "scrollbar-width:none"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".navList button",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 36,
+          "properties": [
+            "min-height:44px",
+            "border-radius:6px",
+            "padding:0 14px",
+            "color:#a9abb3",
+            "font-weight:600",
+            "gap:12px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 147,
+          "properties": [
+            "flex:0 0 auto",
+            "min-height:44px",
+            "padding:0 12px",
+            "gap:7px",
+            "font-size:13px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 114,
+          "properties": [
+            "justify-content:flex-start",
+            "padding:0 14px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1382,
+          "properties": [
+            "min-width:0",
+            "justify-content:center",
+            "padding:0 10px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1442,
+          "properties": [
+            "flex:0 0 auto",
+            "gap:5px",
+            "min-height:40px",
+            "font-size:12px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".navList button.active",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 38,
+          "properties": [
+            "background:var(--nav-surface)",
+            "color:#fff",
+            "box-shadow:inset 3px 0 #82b9ff"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 149,
+          "properties": [
+            "box-shadow:none",
+            "background:#35373e"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".navList button:last-child",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 39,
+          "properties": [
+            "margin-top:20px",
+            "border-top:1px solid #34363b",
+            "border-radius:0",
+            "padding-top:8px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 148,
+          "properties": [
+            "margin:0",
+            "border:0",
+            "padding:0 12px",
+            "border-radius:6px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".workspace",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 40,
+          "properties": [
+            "min-width:0"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 134,
+          "properties": [
+            "padding:28px 24px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 150,
+          "properties": [
+            "padding:24px 20px 32px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 282,
+          "properties": [
+            "padding:20px 16px 32px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 384,
+          "properties": [
+            "width:100%",
+            "max-width:1600px",
+            "margin-inline:auto",
+            "padding:36px 38px 52px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 542,
+          "properties": [
+            "padding-inline:26px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 560,
+          "properties": [
+            "padding:24px 18px 38px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 166,
+          "properties": [
+            "min-width:0",
+            "padding:28px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1390,
+          "properties": [
+            "padding:16px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".topbar",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 41,
+          "properties": [
+            "flex-direction:row"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 151,
+          "properties": [
+            "margin-bottom:20px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 163,
+          "properties": [
+            "flex-wrap:wrap",
+            "gap:12px",
+            "text-align:left"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 211,
+          "properties": [
+            "padding-bottom:24px",
+            "margin-bottom:24px",
+            "border-bottom:1px solid var(--border)",
+            "gap:24px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 283,
+          "properties": [
+            "gap:16px",
+            "margin-bottom:16px",
+            "padding-bottom:16px",
+            "flex-wrap:wrap"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 385,
+          "properties": [
+            "min-height:54px",
+            "margin:0 0 16px",
+            "padding:0",
+            "border:0",
+            "align-items:center"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".searchBox",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 42,
+          "properties": [
+            "width:300px",
+            "height:40px",
+            "min-height:40px",
+            "padding:0 12px",
+            "background:#f0f1f3",
+            "border:1px solid transparent",
+            "border-radius:6px",
+            "box-shadow:none"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 154,
+          "properties": [
+            "width:240px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 228,
+          "properties": [
+            "width:min(38vw, 380px)",
+            "height:46px",
+            "padding:0 16px",
+            "border:1px solid var(--border)",
+            "border-radius:9999px",
+            "background:var(--surface)",
+            "display:flex",
+            "align-items:center",
+            "gap:10px",
+            "box-shadow:var(--shadow)"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1423,
+          "properties": [
+            "width:100%"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".searchBox input",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 44,
+          "properties": [
+            "font-size:13px",
+            "min-width:0",
+            "color:var(--text)"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 241,
+          "properties": [
+            "width:100%",
+            "min-width:0",
+            "border:0",
+            "outline:0",
+            "color:var(--text)",
+            "background:transparent"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".importActions",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 46,
+          "properties": [
+            "display:flex",
+            "flex-direction:row",
+            "align-items:center",
+            "flex-wrap:wrap",
+            "gap:8px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 165,
+          "properties": [
+            "width:100%"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".importActions button",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 47,
+          "properties": [
+            "min-height:42px",
+            "padding:8px 14px",
+            "border:1px solid var(--border)",
+            "border-radius:6px",
+            "background:#fff",
+            "box-shadow:none",
+            "font-size:var(--font-control)",
+            "font-weight:650"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 166,
+          "properties": [
+            "flex:1 1 0"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".importStatus",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 51,
+          "properties": [
+            "padding:8px",
+            "border:0",
+            "border-radius:4px",
+            "background:#edf5ff",
+            "font-size:12px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 284,
+          "properties": [
+            "flex-basis:100%",
+            "min-height:40px",
+            "padding:0 16px",
+            "border:1px solid var(--border)",
+            "border-radius:9999px",
+            "color:var(--secondary)",
+            "background:var(--surface-soft)",
+            "display:inline-flex",
+            "align-items:center",
+            "justify-content:flex-end",
+            "gap:8px",
+            "font-size:13px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".mainPanel",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 52,
+          "properties": [
+            "padding:0",
+            "border:0",
+            "border-radius:0",
+            "background:transparent",
+            "box-shadow:none"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 400,
+          "properties": [
+            "min-height:0"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 312,
+          "properties": [
+            "min-width:0",
+            "padding:24px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1471,
+          "properties": [
+            "padding:20px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".panelHeader",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 53,
+          "properties": [
+            "gap:16px",
+            "align-items:center",
+            "flex-direction:row"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 170,
+          "properties": [
+            "flex-wrap:wrap",
+            "gap:12px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".viewTabs",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 55,
+          "properties": [
+            "display:inline-flex",
+            "margin:0 0 24px",
+            "border:0"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 168,
+          "properties": [
+            "display:flex",
+            "width:100%"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 401,
+          "properties": [
+            "padding:0",
+            "gap:2px",
+            "border-radius:5px",
+            "background:#eeede8"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 317,
+          "properties": [
+            "margin-bottom:20px",
+            "padding:5px",
+            "border:1px solid var(--border)",
+            "border-radius:9999px",
+            "background:var(--surface-soft)",
+            "display:inline-flex",
+            "gap:4px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1578,
+          "properties": [
+            "width:100%",
+            "display:grid",
+            "grid-template-columns:repeat(3, minmax(0, 1fr))"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".viewTabs button",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 56,
+          "properties": [
+            "white-space:nowrap"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 169,
+          "properties": [
+            "flex:1",
+            "min-width:0",
+            "padding:0 4px",
+            "gap:4px",
+            "min-height:42px",
+            "font-size:13px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 402,
+          "properties": [
+            "min-height:38px",
+            "padding:0 18px",
+            "border-radius:4px",
+            "color:#585b52",
+            "font-size:13px",
+            "font-weight:550"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 572,
+          "properties": [
+            "min-height:36px",
+            "padding-inline:16px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 327,
+          "properties": [
+            "padding:0 16px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1584,
+          "properties": [
+            "padding:0 8px",
+            "font-size:13px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".calendarModeTabs",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 57,
+          "properties": [
+            "border:0",
+            "background:transparent",
+            "padding:0",
+            "border-radius:0",
+            "gap:16px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 331,
+          "properties": [
+            "margin:18px 0 16px",
+            "padding:5px",
+            "border:1px solid var(--border)",
+            "border-radius:9999px",
+            "background:var(--surface-soft)",
+            "display:inline-flex",
+            "gap:4px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1519,
+          "properties": [
+            "width:100%",
+            "display:grid",
+            "grid-template-columns:repeat(2, minmax(0, 1fr))"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".calendarModeTabs button",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 58,
+          "properties": [
+            "border-radius:0",
+            "padding:0 0 8px",
+            "min-height:34px",
+            "border-bottom:2px solid transparent",
+            "color:var(--muted)"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 341,
+          "properties": [
+            "padding:0 16px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1525,
+          "properties": [
+            "padding:0 8px",
+            "font-size:13px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".galleryGrid",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 66,
+          "properties": [
+            "grid-template-columns:repeat(auto-fill, minmax(180px, 1fr))",
+            "gap:24px 16px",
+            "margin-top:20px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 131,
+          "properties": [
+            "grid-template-columns:repeat(6, minmax(0, 1fr))"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 138,
+          "properties": [
+            "grid-template-columns:repeat(4, minmax(0, 1fr))",
+            "gap:20px 12px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 155,
+          "properties": [
+            "grid-template-columns:repeat(3, minmax(0, 1fr))"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 167,
+          "properties": [
+            "grid-template-columns:repeat(2, minmax(0, 1fr))",
+            "gap:20px 12px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 345,
+          "properties": [
+            "margin-top:20px",
+            "display:grid",
+            "grid-template-columns:repeat(auto-fill, minmax(214px, 1fr))",
+            "gap:18px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1466,
+          "properties": [
+            "grid-template-columns:repeat(2, minmax(0, 1fr))",
+            "gap:12px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".mediaTile",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 67,
+          "properties": [
+            "padding:0",
+            "border:0",
+            "border-radius:4px",
+            "background:transparent",
+            "box-shadow:none",
+            "transform:none"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 371,
+          "properties": [
+            "min-width:0",
+            "padding:12px",
+            "border:1px solid var(--border)",
+            "border-radius:var(--radius-card)",
+            "color:inherit",
+            "text-align:left",
+            "background:var(--surface)",
+            "box-shadow:var(--shadow)",
+            "transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".mediaTile:hover",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 68,
+          "properties": [
+            "background:transparent",
+            "box-shadow:none",
+            "transform:none"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 201,
+          "properties": [
+            "transform:none"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 383,
+          "properties": [
+            "transform:translateY(-2px)",
+            "box-shadow:0 14px 30px rgba(63, 45, 35, .12)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".mediaTile.multiSelected",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 70,
+          "properties": [
+            "background:transparent",
+            "box-shadow:none",
+            "border:0"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 397,
+          "properties": [
+            "border-color:var(--primary)",
+            "background:#FFFDFC",
+            "box-shadow:0 0 0 4px rgba(179, 107, 56, .18), var(--shadow)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".thumb",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 72,
+          "properties": [
+            "border:0",
+            "border-radius:4px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 408,
+          "properties": [
+            "aspect-ratio:1 / 1",
+            "border:0",
+            "border-radius:var(--radius-inner)",
+            "display:grid",
+            "place-items:center",
+            "color:rgba(255, 255, 255, .9)",
+            "background:var(--surface-soft)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".selectMark",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 74,
+          "properties": [
+            "box-shadow:none"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 461,
+          "properties": [
+            "position:absolute",
+            "left:0",
+            "top:0",
+            "z-index:2",
+            "width:34px",
+            "height:34px",
+            "border:1.5px solid rgba(255, 255, 255, .82)",
+            "border-radius:50%",
+            "color:#FFFFFF",
+            "background:rgba(51, 46, 43, .34)",
+            "display:block",
+            "box-shadow:0 6px 14px rgba(20, 14, 10, .2)",
+            "transform:translate(8px, 8px)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".emptyState",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 75,
+          "properties": [
+            "background:transparent",
+            "border:0",
+            "border-radius:0",
+            "box-shadow:none",
+            "min-height:260px",
+            "color:var(--muted)"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 352,
+          "properties": [
+            "min-height:190px",
+            "margin-top:18px",
+            "padding:32px",
+            "color:var(--muted)",
+            "background:var(--surface)",
+            "display:grid",
+            "place-content:center",
+            "justify-items:center",
+            "gap:12px",
+            "text-align:center"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".emptyState p",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 77,
+          "properties": [
+            "max-width:460px",
+            "font-size:15px",
+            "line-height:1.6"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 365,
+          "properties": [
+            "max-width:380px",
+            "margin:0",
+            "line-height:1.6"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".pagination",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 80,
+          "properties": [
+            "border-top:1px solid var(--border)",
+            "padding-top:20px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 528,
+          "properties": [
+            "margin-top:24px",
+            "padding-top:18px",
+            "border-top:1px solid var(--border)",
+            "display:flex",
+            "align-items:center",
+            "justify-content:space-between",
+            "gap:14px",
+            "color:var(--muted)",
+            "font-size:13px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".calendarGrid",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 84,
+          "properties": [
+            "gap:1px",
+            "padding:1px",
+            "background:var(--border)",
+            "border:1px solid var(--border)",
+            "border-radius:6px",
+            "overflow:hidden"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 900,
+          "properties": [
+            "display:grid",
+            "grid-template-columns:repeat(7, minmax(0, 1fr))",
+            "gap:12px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1503,
+          "properties": [
+            "gap:5px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".calendarGrid .weekday",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 85,
+          "properties": [
+            "background:var(--bg)",
+            "padding:12px 0",
+            "color:var(--muted)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 183,
+          "properties": [
+            "border-radius:0"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".calendarGrid button, .calendarGrid .emptyDay",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 86,
+          "properties": [
+            "border:0",
+            "border-radius:0",
+            "min-height:190px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 139,
+          "properties": [
+            "min-height:160px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 177,
+          "properties": [
+            "min-height:116px",
+            "padding:5px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".calendarGrid button",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 87,
+          "properties": [
+            "padding:10px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 968,
+          "properties": [
+            "position:relative",
+            "overflow:hidden",
+            "border:1px solid var(--border)",
+            "color:var(--text)",
+            "text-align:left",
+            "background:var(--surface)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".calendarGrid .dayNumber",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 88,
+          "properties": [
+            "color:var(--text)",
+            "font-weight:650"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 179,
+          "properties": [
+            "font-size:12px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 180,
+          "properties": [
+            "left:5px",
+            "top:7px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 994,
+          "properties": [
+            "position:absolute",
+            "left:12px",
+            "top:10px",
+            "z-index:2",
+            "color:var(--secondary)",
+            "font-weight:850"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".calendarGrid small",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 89,
+          "properties": [
+            "background:#edf2fa",
+            "color:#315580",
+            "box-shadow:none",
+            "border-radius:3px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1059,
+          "properties": [
+            "max-width:100%",
+            "color:var(--secondary)",
+            "background:rgba(244, 239, 232, .96)",
+            "box-shadow:0 4px 12px rgba(63, 45, 35, .08)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".calendarGrid i",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 90,
+          "properties": [
+            "border-radius:3px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 178,
+          "properties": [
+            "min-height:56px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 182,
+          "properties": [
+            "inset:30px 4px 6px",
+            "border:0"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 986,
+          "properties": [
+            "position:absolute",
+            "inset:44px 12px 14px",
+            "border:1px solid var(--border)",
+            "border-radius:var(--radius-inner)",
+            "background:var(--surface-soft)"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1514,
+          "properties": [
+            "inset:30px 6px 7px",
+            "border-radius:12px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".dayEvents",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 91,
+          "properties": [
+            "padding:2px",
+            "background:#ffffffed",
+            "border-radius:3px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 184,
+          "properties": [
+            "top:29px",
+            "padding:2px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1011,
+          "properties": [
+            "position:absolute",
+            "left:12px",
+            "top:38px",
+            "z-index:2",
+            "right:12px",
+            "display:flex",
+            "flex-wrap:nowrap",
+            "gap:5px",
+            "overflow:hidden"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1530,
+          "properties": [
+            "left:6px",
+            "right:6px",
+            "top:30px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".dayEvents small",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 92,
+          "properties": [
+            "color:#3e5369"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 185,
+          "properties": [
+            "font-size:12px",
+            "gap:2px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1023,
+          "properties": [
+            "min-width:0"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".dayNoteBadge",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 93,
+          "properties": [
+            "color:#176c47",
+            "background:#e8f5ed"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1033,
+          "properties": [
+            "position:absolute",
+            "left:12px",
+            "bottom:10px",
+            "z-index:3"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1536,
+          "properties": [
+            "left:6px",
+            "bottom:7px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".recordedDayGrid button",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 94,
+          "properties": [
+            "border-radius:6px",
+            "box-shadow:none",
+            "background:#fff"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1281,
+          "properties": [
+            "min-height:260px",
+            "padding:14px",
+            "border:1px solid var(--border)",
+            "border-radius:var(--radius-card)",
+            "color:var(--text)",
+            "text-align:left",
+            "background:var(--surface)",
+            "box-shadow:var(--shadow)",
+            "display:grid",
+            "grid-template-rows:auto auto minmax(0, 1fr)",
+            "gap:8px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".modalBackdrop",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 95,
+          "properties": [
+            "background:#10121699",
+            "backdrop-filter:blur(8px)",
+            "padding:24px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 157,
+          "properties": [
+            "padding:12px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 517,
+          "properties": [
+            "z-index:110"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 551,
+          "properties": [
+            "position:fixed",
+            "inset:0",
+            "z-index:20",
+            "padding:28px",
+            "background:rgba(51, 46, 43, .42)",
+            "backdrop-filter:blur(12px)",
+            "display:grid",
+            "place-items:center"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1475,
+          "properties": [
+            "padding:12px",
+            "align-items:end"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".detailHeader strong",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 98,
+          "properties": [
+            "font-size:17px",
+            "font-weight:750"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 584,
+          "properties": [
+            "margin-right:auto",
+            "color:var(--secondary)",
+            "font-family:\"SUIT\", \"Segoe UI\", system-ui, sans-serif",
+            "font-size:18px",
+            "font-weight:850"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".closeButton",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 99,
+          "properties": [
+            "color:#fff",
+            "background:#292b30",
+            "border-color:#292b30",
+            "box-shadow:none",
+            "border-radius:6px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 605,
+          "properties": [
+            "color:#FFFFFF",
+            "border-color:#9A5B32",
+            "background:#9A5B32",
+            "box-shadow:0 8px 18px rgba(154, 91, 50, .24)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".closeButton:hover",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 100,
+          "properties": [
+            "background:#454851",
+            "border-color:#454851"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 612,
+          "properties": [
+            "background:#1F1712",
+            "border-color:#1F1712"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".detailStage",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 102,
+          "properties": [
+            "border-radius:0",
+            "border:0",
+            "box-shadow:none"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 159,
+          "properties": [
+            "min-height:320px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 195,
+          "properties": [
+            "min-height:280px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 632,
+          "properties": [
+            "position:relative",
+            "min-height:540px",
+            "display:grid",
+            "place-items:center",
+            "color:#FFFFFF",
+            "overflow:hidden",
+            "border-radius:18px",
+            "background:#2A2521"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1493,
+          "properties": [
+            "min-height:310px",
+            "border-radius:16px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".detailBody",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 103,
+          "properties": [
+            "padding:24px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 196,
+          "properties": [
+            "padding:20px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 676,
+          "properties": [
+            "min-height:0",
+            "padding:24px",
+            "background:var(--surface)",
+            "overflow:auto"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1498,
+          "properties": [
+            "padding:18px",
+            "overflow:visible"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".rating button",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 104,
+          "properties": [
+            "border-radius:6px",
+            "background:#f2f3f5",
+            "color:#946916"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 689,
+          "properties": [
+            "width:42px",
+            "min-height:42px",
+            "border-color:rgba(179, 107, 56, .24)",
+            "background:var(--surface-soft)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoNavButton",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 106,
+          "properties": [
+            "display:grid",
+            "place-items:center",
+            "border-radius:50%",
+            "background:#202228c9",
+            "box-shadow:none"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 648,
+          "properties": [
+            "position:absolute",
+            "top:50%",
+            "z-index:3",
+            "width:46px",
+            "min-height:46px",
+            "border:1px solid rgba(255, 255, 255, .28)",
+            "border-radius:50%",
+            "color:#FFFFFF",
+            "background:rgba(31, 23, 18, .68)",
+            "box-shadow:0 10px 22px rgba(31, 23, 18, .24)",
+            "transform:translateY(-50%)",
+            "backdrop-filter:blur(8px)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoNavButton:hover",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 107,
+          "properties": [
+            "background:#444750"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 663,
+          "properties": [
+            "border-color:rgba(255, 255, 255, .72)",
+            "background:var(--primary)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".commentItem",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 108,
+          "properties": [
+            "background:#f6f7f9",
+            "border:0",
+            "border-radius:6px",
+            "padding:14px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 751,
+          "properties": [
+            "padding:12px",
+            "border:1px solid var(--border)",
+            "border-radius:16px",
+            "background:#FFFDFC"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".commentForm button",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 109,
+          "properties": [
+            "border-radius:6px",
+            "background:var(--secondary)"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 730,
+          "properties": [
+            "min-height:42px",
+            "color:#FFFFFF",
+            "background:var(--primary)",
+            "display:inline-flex",
+            "align-items:center",
+            "justify-content:center",
+            "gap:7px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".eventItem",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 111,
+          "properties": [
+            "border-radius:6px",
+            "background:#f6f7f9"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1196,
+          "properties": [
+            "min-height:54px",
+            "padding:10px",
+            "border:1px solid rgba(222, 209, 195, .88)",
+            "border-radius:16px",
+            "background:var(--surface)",
+            "display:grid",
+            "grid-template-columns:38px minmax(0, 1fr) auto 38px",
+            "align-items:center",
+            "gap:10px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1556,
+          "properties": [
+            "grid-template-columns:34px minmax(0, 1fr) auto"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".eventIcon",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 112,
+          "properties": [
+            "background:#e8effc",
+            "color:#2860af",
+            "border-radius:6px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1208,
+          "properties": [
+            "width:38px",
+            "height:38px",
+            "border-radius:50%",
+            "color:var(--secondary)",
+            "background:var(--surface-soft)",
+            "display:grid",
+            "place-items:center"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".eventItem.birthday .eventIcon",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 113,
+          "properties": [
+            "background:#fff0f2",
+            "color:#b03162"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1218,
+          "properties": [
+            "color:#AF5D37",
+            "background:#FFF0E6"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".eventItem.anniversary .eventIcon",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 114,
+          "properties": [
+            "background:#fff5dc",
+            "color:#8b6218"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1223,
+          "properties": [
+            "color:#9A5B32",
+            "background:#F6E9DC"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".eventItem.memorial .eventIcon",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 115,
+          "properties": [
+            "background:#e9efed",
+            "color:#425e52"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1228,
+          "properties": [
+            "color:#5E6255",
+            "background:#EEF1E7"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".albumActions button[type=\"submit\"]",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 119,
+          "properties": [
+            "background:var(--secondary)"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 877,
+          "properties": [
+            "background:var(--secondary)",
+            "color:#fff"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".peopleActions button",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 121,
+          "properties": [
+            "border-radius:6px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 481,
+          "properties": [
+            "background:transparent",
+            "border-color:var(--border)",
+            "font-size:12px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".dangerPanel",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 126,
+          "properties": [
+            "padding:20px 0",
+            "border:0",
+            "border-top:1px solid var(--border)",
+            "border-radius:0",
+            "box-shadow:none",
+            "background:transparent"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1333,
+          "properties": [
+            "margin-top:10px",
+            "padding:18px",
+            "display:flex",
+            "align-items:center",
+            "justify-content:space-between",
+            "gap:14px",
+            "background:#FFFDFC"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1589,
+          "properties": [
+            "align-items:stretch",
+            "flex-direction:column"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".dangerButton",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 127,
+          "properties": [
+            "background:#c4313b",
+            "color:#fff"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1349,
+          "properties": [
+            "flex:0 0 auto",
+            "min-width:132px",
+            "padding:0 16px",
+            "color:#FFFFFF",
+            "background:var(--danger)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".settingsPanel",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 129,
+          "properties": [
+            "max-width:780px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1317,
+          "properties": [
+            "display:grid",
+            "align-content:start",
+            "gap:14px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".detailLayout",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 156,
+          "properties": [
+            "grid-template-columns:minmax(0, 1fr)"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 617,
+          "properties": [
+            "min-height:0",
+            "display:grid",
+            "grid-template-columns:minmax(0, 1fr) 330px",
+            "background:var(--surface)"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1484,
+          "properties": [
+            "grid-template-columns:1fr",
+            "overflow:auto"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".detailPhotoPane",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 158,
+          "properties": [
+            "padding:12px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 624,
+          "properties": [
+            "min-width:0",
+            "min-height:0",
+            "padding:18px",
+            "background:#2F2925",
+            "display:grid"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1489,
+          "properties": [
+            "padding:12px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".detailModal",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 160,
+          "properties": [
+            "width:100%",
+            "max-height:calc(100dvh - 24px)"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 562,
+          "properties": [
+            "width:min(1180px, 100%)",
+            "max-height:min(92vh, 880px)",
+            "overflow:hidden",
+            "display:grid",
+            "grid-template-rows:auto minmax(0, 1fr)",
+            "border:1px solid rgba(222, 209, 195, .9)",
+            "border-radius:24px",
+            "background:var(--surface)",
+            "box-shadow:var(--shadow-strong)",
+            "font-family:\"SUIT\", \"Segoe UI\", system-ui, sans-serif"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1480,
+          "properties": [
+            "max-height:94vh"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".sortControl",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 172,
+          "properties": [
+            "justify-content:center",
+            "min-width:0"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 221,
+          "properties": [
+            "display:inline-flex",
+            "align-items:center",
+            "padding:0 10px",
+            "border:1px solid var(--border)",
+            "border-radius:6px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 435,
+          "properties": [
+            "gap:4px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".sortControl select",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 173,
+          "properties": [
+            "min-width:0",
+            "width:100%"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 222,
+          "properties": [
+            "padding:0 20px 0 0",
+            "border:0",
+            "outline:0",
+            "background:transparent",
+            "color:inherit",
+            "font:inherit",
+            "cursor:pointer"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 436,
+          "properties": [
+            "min-width:94px",
+            "font-size:12px",
+            "font-weight:500"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".filterPanel",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 174,
+          "properties": [
+            "display:grid",
+            "grid-template-columns:minmax(0, 1fr)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 225,
+          "properties": [
+            "display:flex",
+            "align-items:center",
+            "flex-wrap:wrap",
+            "gap:12px 18px",
+            "margin-top:16px",
+            "padding:16px",
+            "border:1px solid var(--border)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 294,
+          "properties": [
+            "margin-top:12px",
+            "align-items:stretch"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 439,
+          "properties": [
+            "border-radius:5px",
+            "background:var(--surface)",
+            "font-size:12px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".filterPanel > label:not(.filterCheck)",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 175,
+          "properties": [
+            "width:100%",
+            "display:grid",
+            "grid-template-columns:76px minmax(0, 1fr)",
+            "white-space:nowrap"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 226,
+          "properties": [
+            "display:flex",
+            "align-items:center",
+            "gap:8px",
+            "color:var(--muted)",
+            "font-size:13px",
+            "font-weight:600"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 295,
+          "properties": [
+            "flex:1 1 160px",
+            "justify-content:space-between"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".calendarGrid b",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 181,
+          "properties": [
+            "right:4px",
+            "top:8px",
+            "font-size:12px",
+            "color:var(--muted)"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1003,
+          "properties": [
+            "position:absolute",
+            "right:10px",
+            "top:10px",
+            "z-index:2",
+            "color:var(--secondary)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".dayEvents small > span",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 186,
+          "properties": [
+            "display:none"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1027,
+          "properties": [
+            "overflow:hidden",
+            "text-overflow:ellipsis",
+            "white-space:nowrap"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".calendarGrid button.hasEvent i",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 188,
+          "properties": [
+            "inset:54px 4px 6px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1040,
+          "properties": [
+            "inset:72px 12px 14px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1541,
+          "properties": [
+            "inset:55px 6px 7px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".monthPicker label",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 190,
+          "properties": [
+            "display:flex",
+            "flex:1",
+            "gap:6px",
+            "align-items:center"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 914,
+          "properties": [
+            "display:flex",
+            "align-items:center",
+            "gap:6px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".monthPicker select",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 191,
+          "properties": [
+            "width:100%",
+            "min-width:0"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 925,
+          "properties": [
+            "min-width:96px",
+            "min-height:40px",
+            "border:1px solid var(--border)",
+            "border-radius:9999px",
+            "padding:0 14px",
+            "color:var(--text)",
+            "background:var(--surface)"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1574,
+          "properties": [
+            "flex:1"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".monthControls button",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 193,
+          "properties": [
+            "flex:1 1 auto",
+            "padding:0 7px",
+            "font-size:12px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 935,
+          "properties": [
+            "padding:0 14px",
+            "border:1px solid var(--border)",
+            "background:var(--surface)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".monthControls .primaryControl",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 194,
+          "properties": [
+            "box-shadow:none"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 487,
+          "properties": [
+            "background:var(--primary)"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 941,
+          "properties": [
+            "color:#FFFFFF",
+            "border-color:var(--primary)",
+            "background:var(--primary)",
+            "box-shadow:0 8px 18px rgba(179, 107, 56, .16)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".sidebar .brand",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 207,
+          "properties": [
+            "flex-shrink:0"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 372,
+          "properties": [
+            "gap:12px",
+            "padding:0"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".collectionCount",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 212,
+          "properties": [
+            "white-space:nowrap"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 387,
+          "properties": [
+            "color:var(--muted)",
+            "font-size:13px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".topbar .toolbar",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 213,
+          "properties": [
+            "display:flex",
+            "align-items:center",
+            "width:auto"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 285,
+          "properties": [
+            "width:100%",
+            "display:grid",
+            "grid-template-columns:minmax(0, 1fr) auto",
+            "gap:8px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 388,
+          "properties": [
+            "gap:24px",
+            "flex-wrap:nowrap"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".topbar .importActions button",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 215,
+          "properties": [
+            "flex:none"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 288,
+          "properties": [
+            "font-size:12px",
+            "min-height:40px",
+            "padding:0 9px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 393,
+          "properties": [
+            "min-height:40px",
+            "border-radius:5px",
+            "font-size:13px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".topbar .importStatus",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 216,
+          "properties": [
+            "position:absolute",
+            "right:0",
+            "top:48px",
+            "width:300px",
+            "z-index:20"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 398,
+          "properties": [
+            "background:var(--surface-soft)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoWorkspace",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 217,
+          "properties": [
+            "grid-template-columns:auto minmax(0, 1fr)",
+            "column-gap:24px",
+            "align-items:center"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 290,
+          "properties": [
+            "grid-template-columns:minmax(0, 1fr)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 405,
+          "properties": [
+            "display:block"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoWorkspace > .viewTabs",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 218,
+          "properties": [
+            "grid-column:1",
+            "grid-row:1",
+            "margin:0"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 292,
+          "properties": [
+            "width:100%"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 406,
+          "properties": [
+            "margin-bottom:22px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 573,
+          "properties": [
+            "width:max-content",
+            "max-width:100%"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoWorkspace > .collectionTools",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 219,
+          "properties": [
+            "grid-column:2",
+            "grid-row:1",
+            "justify-content:flex-end"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 291,
+          "properties": [
+            "grid-column:1",
+            "grid-row:2",
+            "margin-top:12px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".filterPanel select",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 227,
+          "properties": [
+            "min-height:36px",
+            "padding:0 30px 0 10px",
+            "border:1px solid var(--border)",
+            "border-radius:5px",
+            "background:#fff",
+            "color:var(--text)",
+            "font:inherit"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 296,
+          "properties": [
+            "flex:1"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoWorkspace .galleryGrid",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 230,
+          "properties": [
+            "grid-template-columns:repeat(auto-fill, minmax(210px, 1fr))",
+            "gap:24px 16px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 293,
+          "properties": [
+            "grid-template-columns:repeat(2, minmax(0, 1fr))",
+            "margin-top:16px",
+            "gap:18px 10px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 442,
+          "properties": [
+            "display:block",
+            "margin-top:28px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 574,
+          "properties": [
+            "margin-top:22px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoLightboxBackdrop",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 235,
+          "properties": [
+            "padding:0",
+            "backdrop-filter:none"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 488,
+          "properties": [
+            "background:var(--bg)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 538,
+          "properties": [
+            "z-index:120"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoLightbox.detailModal",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 236,
+          "properties": [
+            "width:100%",
+            "height:100dvh",
+            "max-height:none",
+            "border:0",
+            "border-radius:0",
+            "box-shadow:none"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 297,
+          "properties": [
+            "grid-template-rows:56px minmax(0, 1fr)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 489,
+          "properties": [
+            "grid-template-rows:64px minmax(0, 1fr)",
+            "background:var(--bg)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoLightbox .detailHeader strong",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 237,
+          "properties": [
+            "color:#fff"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 299,
+          "properties": [
+            "font-size:15px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoLightbox .detailHeader button",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 238,
+          "properties": [
+            "display:inline-flex",
+            "align-items:center",
+            "justify-content:center",
+            "border-color:#3c3f46",
+            "border-radius:6px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 300,
+          "properties": [
+            "width:36px",
+            "min-height:38px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 493,
+          "properties": [
+            "width:auto",
+            "min-width:34px",
+            "min-height:34px",
+            "padding:0 9px",
+            "gap:5px",
+            "color:#65695e",
+            "border:0",
+            "background:transparent",
+            "font-size:12px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoLightbox .detailPhotoPane",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 241,
+          "properties": [
+            "min-height:0"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 301,
+          "properties": [
+            "padding:8px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 498,
+          "properties": [
+            "padding:24px 7vw 20px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 587,
+          "properties": [
+            "padding:12px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoLightbox .detailStage",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 242,
+          "properties": [
+            "min-height:0",
+            "height:100%"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 499,
+          "properties": [
+            "padding:8px",
+            "background:white",
+            "box-shadow:0 2px 12px #38382f14"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoLightbox .detailBody",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 243,
+          "properties": [
+            "padding:0",
+            "overflow-y:auto"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 302,
+          "properties": [
+            "max-height:48dvh"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 514,
+          "properties": [
+            "max-height:34dvh",
+            "background:var(--bg)",
+            "border-top:1px solid var(--border)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoLightbox .rating button",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 246,
+          "properties": [
+            "width:34px",
+            "min-height:34px",
+            "background:transparent"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 516,
+          "properties": [
+            "color:#8a805a"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoLightbox .commentBox",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 247,
+          "properties": [
+            "margin:0",
+            "padding:16px 32px 20px",
+            "display:grid",
+            "grid-template-columns:minmax(0, 1fr) minmax(0, 1.2fr)",
+            "gap:12px 32px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 303,
+          "properties": [
+            "padding:12px 16px 16px",
+            "grid-template-columns:minmax(0, 1fr)",
+            "gap:12px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 515,
+          "properties": [
+            "padding-inline:5vw",
+            "background:var(--surface)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 588,
+          "properties": [
+            "padding:16px 18px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoLightbox .commentForm",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 249,
+          "properties": [
+            "grid-template-columns:120px minmax(0, 1fr) auto",
+            "align-items:end",
+            "gap:12px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 274,
+          "properties": [
+            "grid-template-columns:100px minmax(0, 1fr)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 304,
+          "properties": [
+            "grid-template-columns:90px minmax(0, 1fr) auto",
+            "gap:8px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoLightbox .commentForm button",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 252,
+          "properties": [
+            "height:64px",
+            "padding:0 16px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 275,
+          "properties": [
+            "grid-column:1 / -1",
+            "height:38px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 306,
+          "properties": [
+            "grid-column:auto",
+            "height:52px",
+            "padding:0 10px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoLightbox .commentList",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 253,
+          "properties": [
+            "max-height:130px",
+            "overflow:auto",
+            "align-content:start"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 308,
+          "properties": [
+            "max-height:180px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoZoomViewer",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 257,
+          "properties": [
+            "width:100%",
+            "height:100dvh",
+            "display:grid",
+            "grid-template-rows:58px minmax(0, 1fr)",
+            "overflow:hidden",
+            "background:#0d0e10"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 309,
+          "properties": [
+            "grid-template-rows:54px minmax(0, 1fr)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 316,
+          "properties": [
+            "grid-template-rows:100px minmax(0, 1fr)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoZoomToolbar",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 258,
+          "properties": [
+            "z-index:2",
+            "min-width:0",
+            "padding:0 18px",
+            "display:flex",
+            "align-items:center",
+            "justify-content:center",
+            "gap:10px",
+            "color:#f2f3f5",
+            "background:#18191c",
+            "border-bottom:1px solid #303238"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 310,
+          "properties": [
+            "padding:0 10px",
+            "gap:6px",
+            "justify-content:flex-start"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 317,
+          "properties": [
+            "flex-wrap:wrap",
+            "align-content:center",
+            "padding-right:52px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoZoomToolbar button",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 259,
+          "properties": [
+            "width:38px",
+            "height:38px",
+            "flex:0 0 auto",
+            "padding:0",
+            "display:grid",
+            "place-items:center",
+            "border:1px solid #3c3f46",
+            "border-radius:6px",
+            "color:#eceef1",
+            "background:#292b31"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 311,
+          "properties": [
+            "width:36px",
+            "height:36px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoZoomToolbar input",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 263,
+          "properties": [
+            "width:min(320px, 35vw)",
+            "accent-color:#7aa7e8",
+            "cursor:pointer"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 312,
+          "properties": [
+            "width:min(150px, 32vw)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoZoomToolbar .photoZoomClose",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 265,
+          "properties": [
+            "position:absolute",
+            "right:18px",
+            "color:#fff",
+            "background:#9a4b38",
+            "border-color:#b86551"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 313,
+          "properties": [
+            "right:10px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 318,
+          "properties": [
+            "top:10px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoZoomStage",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 266,
+          "properties": [
+            "min-width:0",
+            "min-height:0",
+            "overflow:auto",
+            "display:grid",
+            "align-items:start",
+            "justify-items:start",
+            "overscroll-behavior:contain",
+            "background:#0d0e10"
+          ]
+        },
+        {
+          "file": "src/mobile-controls.css",
+          "line": 29,
+          "properties": [
+            "position:relative"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".topbar .searchBox",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 272,
+          "properties": [
+            "width:220px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 286,
+          "properties": [
+            "width:100%"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 389,
+          "properties": [
+            "width:278px",
+            "min-width:180px",
+            "height:40px",
+            "min-height:40px",
+            "border:1px solid #d7d7ce",
+            "border-radius:5px",
+            "background:transparent"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".topbar > div:first-child",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 273,
+          "properties": [
+            "display:block"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 284,
+          "properties": [
+            "display:flex"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 386,
+          "properties": [
+            "display:flex",
+            "align-items:baseline",
+            "gap:16px",
+            "min-width:0"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".sidebar .brand strong",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 279,
+          "properties": [
+            "font-size:22px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 373,
+          "properties": [
+            "color:var(--text)",
+            "font-size:22px",
+            "font-weight:750"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 556,
+          "properties": [
+            "font-size:20px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoLightbox .detailHeader",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 298,
+          "properties": [
+            "padding:8px 12px",
+            "gap:6px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 490,
+          "properties": [
+            "position:relative",
+            "padding:0 28px",
+            "gap:8px",
+            "background:#fbfaf7",
+            "border-color:var(--border)",
+            "color:var(--text)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 584,
+          "properties": [
+            "padding-inline:10px",
+            "gap:4px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".personDetailShell",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 322,
+          "properties": [
+            "display:grid",
+            "grid-template-columns:268px minmax(0, 1fr)",
+            "gap:22px",
+            "min-width:0"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 341,
+          "properties": [
+            "display:block"
+          ]
+        },
+        {
+          "file": "src/mobile-controls.css",
+          "line": 70,
+          "properties": [
+            "display:block"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".personDirectory",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 324,
+          "properties": [
+            "min-width:0",
+            "padding-right:20px",
+            "border-right:1px solid var(--border)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 342,
+          "properties": [
+            "margin-bottom:18px",
+            "padding:0 0 12px",
+            "display:flex",
+            "gap:8px",
+            "overflow-x:auto",
+            "border-right:0",
+            "border-bottom:1px solid var(--border)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 483,
+          "properties": [
+            "border-color:var(--border)"
+          ]
+        },
+        {
+          "file": "src/mobile-controls.css",
+          "line": 71,
+          "properties": [
+            "display:flex",
+            "gap:8px",
+            "padding:0 0 12px",
+            "margin-bottom:16px",
+            "border-right:0",
+            "border-bottom:1px solid var(--border)",
+            "overflow-x:auto",
+            "overscroll-behavior-x:contain"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".personDirectory h3",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 325,
+          "properties": [
+            "margin:0 0 16px",
+            "font-size:15px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 343,
+          "properties": [
+            "display:none"
+          ]
+        },
+        {
+          "file": "src/mobile-controls.css",
+          "line": 72,
+          "properties": [
+            "display:none"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".personDirectory > button",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 326,
+          "properties": [
+            "width:100%",
+            "min-height:66px",
+            "padding:8px",
+            "display:grid",
+            "grid-template-columns:48px minmax(0, 1fr)",
+            "align-items:center",
+            "gap:11px",
+            "border-radius:4px",
+            "color:var(--text)",
+            "background:transparent",
+            "text-align:left"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 344,
+          "properties": [
+            "min-width:160px"
+          ]
+        },
+        {
+          "file": "src/mobile-controls.css",
+          "line": 73,
+          "properties": [
+            "width:144px",
+            "min-width:144px",
+            "flex:0 0 144px",
+            "min-height:64px",
+            "grid-template-columns:40px minmax(0, 1fr)",
+            "gap:8px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".personDirectory img",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 329,
+          "properties": [
+            "width:48px",
+            "height:48px",
+            "object-fit:cover",
+            "border-radius:50%"
+          ]
+        },
+        {
+          "file": "src/mobile-controls.css",
+          "line": 74,
+          "properties": [
+            "width:40px",
+            "height:40px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".personDirectory .unknownDirectory",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 333,
+          "properties": [
+            "grid-template-columns:minmax(0, 1fr)",
+            "margin-top:18px",
+            "padding-top:18px",
+            "border-top:1px solid var(--border)",
+            "border-radius:0"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 345,
+          "properties": [
+            "margin:0",
+            "padding:8px",
+            "border:0"
+          ]
+        },
+        {
+          "file": "src/mobile-controls.css",
+          "line": 75,
+          "properties": [
+            "margin:0",
+            "padding:8px",
+            "border:0",
+            "grid-template-columns:minmax(0, 1fr)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".personDetailContent .personMediaGrid",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 346,
+          "properties": [
+            "grid-template-columns:repeat(2, minmax(0, 1fr))",
+            "gap:16px 7px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 482,
+          "properties": [
+            "grid-template-columns:repeat(4, minmax(0, 1fr))",
+            "gap:18px 8px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 550,
+          "properties": [
+            "grid-template-columns:repeat(3, minmax(0, 1fr))"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 583,
+          "properties": [
+            "grid-template-columns:repeat(2, minmax(0, 1fr))"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".sidebar .brand span",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 374,
+          "properties": [
+            "color:#acafa7",
+            "font-family:Georgia, serif",
+            "font-size:12px",
+            "white-space:nowrap"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 541,
+          "properties": [
+            "display:none"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".sidebar .navList button, .sidebar .navList button:last-child",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 376,
+          "properties": [
+            "position:relative",
+            "min-height:100%",
+            "margin:0",
+            "padding:0 14px",
+            "border:0",
+            "border-radius:0",
+            "color:#6c6f65",
+            "background:transparent",
+            "font-size:14px",
+            "font-weight:550"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 558,
+          "properties": [
+            "min-height:44px",
+            "padding-inline:10px",
+            "font-size:12px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".globalSettings",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 381,
+          "properties": [
+            "justify-self:end",
+            "width:36px",
+            "height:36px",
+            "padding:0",
+            "display:grid",
+            "place-items:center",
+            "color:#6e7068",
+            "background:transparent",
+            "border-radius:5px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 559,
+          "properties": [
+            "grid-column:2",
+            "grid-row:1"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".navCount",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 383,
+          "properties": [
+            "position:absolute",
+            "top:8px",
+            "right:0",
+            "min-width:18px",
+            "height:18px",
+            "padding:0 4px",
+            "background:var(--primary)",
+            "font-size:12px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 119,
+          "properties": [
+            "min-width:22px",
+            "height:22px",
+            "margin-left:auto",
+            "padding:0 7px",
+            "border-radius:9999px",
+            "display:inline-flex",
+            "align-items:center",
+            "justify-content:center",
+            "color:#FFFFFF",
+            "background:var(--primary)",
+            "font-size:12px",
+            "font-weight:800",
+            "font-variant-numeric:tabular-nums"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".workspace:has(.photoWorkspace.mode-grid) .topbar",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 407,
+          "properties": [
+            "display:grid",
+            "grid-template-columns:166px minmax(0, 1fr) 320px",
+            "column-gap:32px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 543,
+          "properties": [
+            "grid-template-columns:154px minmax(0, 1fr)",
+            "column-gap:22px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".workspace:has(.photoWorkspace.mode-grid) .topbar .toolbar",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 410,
+          "properties": [
+            "display:contents"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 544,
+          "properties": [
+            "display:flex",
+            "grid-column:2",
+            "grid-row:2",
+            "gap:16px",
+            "margin-top:12px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".workspace:has(.photoWorkspace.mode-grid) .topbar .searchBox",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 411,
+          "properties": [
+            "grid-column:2",
+            "grid-row:1",
+            "justify-self:end",
+            "width:min(278px, 45%)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 545,
+          "properties": [
+            "width:278px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoWorkspace.mode-grid",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 413,
+          "properties": [
+            "position:relative",
+            "display:grid",
+            "grid-template-columns:166px minmax(0, 1fr) 236px",
+            "grid-template-rows:auto minmax(0, 1fr)",
+            "column-gap:32px",
+            "align-items:start"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 547,
+          "properties": [
+            "grid-template-columns:154px minmax(0, 1fr)",
+            "column-gap:22px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 565,
+          "properties": [
+            "display:block"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoWorkspace.mode-grid > .monthRail",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 414,
+          "properties": [
+            "grid-column:1",
+            "grid-row:1 / 3"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 566,
+          "properties": [
+            "position:static",
+            "height:auto",
+            "flex-direction:row",
+            "align-items:center",
+            "gap:10px",
+            "margin:0 0 16px",
+            "padding:0 0 12px",
+            "overflow-x:auto",
+            "border-right:0",
+            "border-bottom:1px solid var(--border)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoWorkspace.mode-grid > .quickAlbums",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 416,
+          "properties": [
+            "grid-column:3",
+            "grid-row:1 / 3"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 549,
+          "properties": [
+            "display:none"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".monthRail",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 417,
+          "properties": [
+            "position:sticky",
+            "top:calc(var(--app-header-height, 70px) + 36px)",
+            "display:flex",
+            "flex-direction:column",
+            "min-width:0",
+            "height:calc(100dvh - var(--app-header-height, 70px) - 72px)",
+            "margin-top:-70px",
+            "padding-right:12px",
+            "border-right:1px solid var(--border)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 548,
+          "properties": [
+            "margin-top:0",
+            "height:calc(100dvh - var(--app-header-height, 70px) - 200px)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".monthRail button",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 418,
+          "properties": [
+            "position:relative",
+            "width:100%",
+            "min-height:36px",
+            "padding:0 9px",
+            "display:flex",
+            "align-items:center",
+            "gap:10px",
+            "border-radius:3px",
+            "color:#55584f",
+            "background:transparent",
+            "text-align:left",
+            "font-size:13px",
+            "font-weight:450"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 570,
+          "properties": [
+            "width:auto",
+            "min-width:max-content",
+            "text-align:center"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".monthRailLabel",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 425,
+          "properties": [
+            "margin:0 0 12px 9px",
+            "color:var(--muted)",
+            "font-size:13px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 568,
+          "properties": [
+            "display:none"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".monthRailMonths button",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 430,
+          "properties": [
+            "min-height:32px",
+            "padding-left:28px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 571,
+          "properties": [
+            "padding-inline:10px",
+            "gap:10px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".monthRailFooter",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 432,
+          "properties": [
+            "flex:none",
+            "padding-top:14px",
+            "margin-top:16px",
+            "border-top:1px solid var(--border)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 569,
+          "properties": [
+            "margin:0",
+            "padding:0",
+            "border:0"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".selectionDock",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 440,
+          "properties": [
+            "display:flex",
+            "align-items:center",
+            "justify-content:space-between",
+            "gap:12px",
+            "padding:12px 0"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 507,
+          "properties": [
+            "margin-top:18px",
+            "min-height:44px",
+            "display:flex",
+            "align-items:center",
+            "justify-content:flex-end"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".journalDayHeader",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 445,
+          "properties": [
+            "display:flex",
+            "align-items:baseline",
+            "flex-wrap:wrap",
+            "gap:8px 16px",
+            "margin-bottom:12px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 575,
+          "properties": [
+            "gap:6px 12px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".journalDayHeader h2",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 446,
+          "properties": [
+            "margin:0",
+            "font-size:19px",
+            "font-weight:650"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 576,
+          "properties": [
+            "font-size:16px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".journalDayHeader span",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 447,
+          "properties": [
+            "padding-left:16px",
+            "border-left:1px solid var(--border)",
+            "color:var(--muted)",
+            "font-size:13px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 577,
+          "properties": [
+            "padding-left:0",
+            "border:0",
+            "font-size:13px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".journalMosaic",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 448,
+          "properties": [
+            "display:grid",
+            "grid-template-columns:repeat(3, minmax(0, 1fr))",
+            "gap:6px",
+            "grid-auto-rows:min(22cqw, 218px)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 578,
+          "properties": [
+            "grid-template-columns:repeat(2, minmax(0, 1fr))",
+            "grid-auto-rows:32cqw"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".journalMosaic.count-3:not(.compact)",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 453,
+          "properties": [
+            "grid-template-columns:minmax(0, 1.8fr) minmax(0, 1fr)",
+            "grid-template-rows:repeat(2, minmax(0, 1fr))",
+            "height:min(43cqw, 430px)",
+            "grid-auto-rows:auto"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 579,
+          "properties": [
+            "height:auto",
+            "grid-template-columns:repeat(2, minmax(0, 1fr))",
+            "grid-template-rows:54cqw 30cqw"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".journalMosaic.count-3:not(.compact) .featured",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 454,
+          "properties": [
+            "grid-row:1 / 3"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 580,
+          "properties": [
+            "grid-row:1",
+            "grid-column:1 / -1"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".journalMosaic.count-1",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 455,
+          "properties": [
+            "grid-template-columns:minmax(0, 2fr) minmax(0, 1fr)",
+            "grid-auto-rows:min(43cqw, 430px)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 581,
+          "properties": [
+            "grid-template-columns:minmax(0, 1fr)",
+            "grid-auto-rows:60cqw"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".journalMosaic.count-2",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 456,
+          "properties": [
+            "grid-template-columns:repeat(2, minmax(0, 1fr))",
+            "grid-auto-rows:min(32cqw, 310px)"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 582,
+          "properties": [
+            "grid-auto-rows:34cqw"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".actionMenuPanel",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 475,
+          "properties": [
+            "position:absolute",
+            "z-index:100",
+            "top:calc(100% + 6px)",
+            "right:0",
+            "min-width:168px",
+            "padding:5px",
+            "border:1px solid var(--border)",
+            "border-radius:7px",
+            "background:var(--surface)",
+            "box-shadow:0 8px 24px #34342b1f"
+          ]
+        },
+        {
+          "file": "src/mobile-controls.css",
+          "line": 2,
+          "properties": [
+            "z-index:2000",
+            "width:max-content",
+            "min-width:min(200px, calc(100vw - 20px))",
+            "top:auto",
+            "right:auto",
+            "box-sizing:border-box"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".peopleWorkspace > .viewTabs",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 479,
+          "properties": [
+            "margin-bottom:24px"
+          ]
+        },
+        {
+          "file": "src/mobile-controls.css",
+          "line": 58,
+          "properties": [
+            "display:grid",
+            "grid-template-columns:repeat(2, minmax(0, 1fr))",
+            "margin-bottom:20px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoLightbox .detailHeader .detailBack",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 491,
+          "properties": [
+            "margin-right:auto",
+            "min-width:100px",
+            "justify-content:flex-start",
+            "gap:4px",
+            "font-size:13px",
+            "font-weight:550"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 552,
+          "properties": [
+            "margin-right:0"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 586,
+          "properties": [
+            "min-width:34px",
+            "margin-right:auto"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".photoLightbox .detailDateTitle",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 492,
+          "properties": [
+            "position:absolute",
+            "left:50%",
+            "transform:translateX(-50%)",
+            "color:#62665a",
+            "font-size:13px",
+            "font-weight:500",
+            "white-space:nowrap"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 551,
+          "properties": [
+            "position:static",
+            "margin-right:auto",
+            "transform:none",
+            "font-size:12px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".exportModal form",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 519,
+          "properties": [
+            "display:grid",
+            "gap:20px",
+            "padding:24px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 537,
+          "properties": [
+            "padding:20px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".exportPathField",
+      "locations": [
+        {
+          "file": "src/design-system.css",
+          "line": 524,
+          "properties": [
+            "display:grid",
+            "grid-template-columns:minmax(0, 1fr) auto",
+            "gap:8px"
+          ]
+        },
+        {
+          "file": "src/design-system.css",
+          "line": 537,
+          "properties": [
+            "grid-template-columns:minmax(0, 1fr)"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".primaryActionShort",
+      "locations": [
+        {
+          "file": "src/mobile-controls.css",
+          "line": 12,
+          "properties": [
+            "display:none"
+          ]
+        },
+        {
+          "file": "src/mobile-controls.css",
+          "line": 97,
+          "properties": [
+            "display:inline"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".diaryView > .diarySearch",
+      "locations": [
+        {
+          "file": "src/mobile-controls.css",
+          "line": 13,
+          "properties": [
+            "width:100%",
+            "margin-bottom:16px"
+          ]
+        },
+        {
+          "file": "src/mobile-controls.css",
+          "line": 107,
+          "properties": [
+            "min-height:44px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".sidebar .navScroll",
+      "locations": [
+        {
+          "file": "src/mobile-controls.css",
+          "line": 15,
+          "properties": [
+            "display:flex",
+            "align-items:stretch",
+            "justify-self:center",
+            "min-width:0",
+            "max-width:100%"
+          ]
+        },
+        {
+          "file": "src/mobile-controls.css",
+          "line": 34,
+          "properties": [
+            "order:3",
+            "flex:0 0 100%",
+            "width:100%",
+            "min-height:44px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".sidebar .navScroll .navList",
+      "locations": [
+        {
+          "file": "src/mobile-controls.css",
+          "line": 16,
+          "properties": [
+            "order:0",
+            "flex:1 1 auto",
+            "min-width:0",
+            "width:auto",
+            "overflow-x:auto"
+          ]
+        },
+        {
+          "file": "src/mobile-controls.css",
+          "line": 35,
+          "properties": [
+            "width:100%"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".entityHeading",
+      "locations": [
+        {
+          "file": "src/mobile-controls.css",
+          "line": 41,
+          "properties": [
+            "display:flex",
+            "align-items:center",
+            "gap:8px",
+            "min-width:0"
+          ]
+        },
+        {
+          "file": "src/mobile-controls.css",
+          "line": 66,
+          "properties": [
+            "gap:4px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".entityHeadingCopy h2",
+      "locations": [
+        {
+          "file": "src/mobile-controls.css",
+          "line": 43,
+          "properties": [
+            "overflow-wrap:anywhere",
+            "margin:0"
+          ]
+        },
+        {
+          "file": "src/mobile-controls.css",
+          "line": 65,
+          "properties": [
+            "font-size:22px",
+            "line-height:1.35",
+            "display:-webkit-box",
+            "-webkit-box-orient:vertical",
+            "-webkit-line-clamp:2",
+            "overflow:hidden"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".entityActionShort",
+      "locations": [
+        {
+          "file": "src/mobile-controls.css",
+          "line": 49,
+          "properties": [
+            "display:none"
+          ]
+        },
+        {
+          "file": "src/mobile-controls.css",
+          "line": 68,
+          "properties": [
+            "display:inline"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".pagination button",
+      "locations": [
+        {
+          "file": "src/styles.css",
+          "line": 545,
+          "properties": [
+            "min-width:88px",
+            "color:var(--secondary)",
+            "font-weight:800"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1438,
+          "properties": [
+            "flex:1 1 0"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".albumEditor form",
+      "locations": [
+        {
+          "file": "src/styles.css",
+          "line": 884,
+          "properties": [
+            "padding:24px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 892,
+          "properties": [
+            "padding:16px"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".albumEditPhotos",
+      "locations": [
+        {
+          "file": "src/styles.css",
+          "line": 888,
+          "properties": [
+            "display:grid",
+            "grid-template-columns:repeat(4, minmax(0, 1fr))",
+            "gap:16px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 892,
+          "properties": [
+            "grid-template-columns:repeat(2, minmax(0, 1fr))"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".scheduleForm",
+      "locations": [
+        {
+          "file": "src/styles.css",
+          "line": 1104,
+          "properties": [
+            "display:grid",
+            "grid-template-columns:140px minmax(220px, 1fr) auto auto",
+            "align-items:end",
+            "gap:10px"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1552,
+          "properties": [
+            "grid-template-columns:1fr"
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".eventItem button",
+      "locations": [
+        {
+          "file": "src/styles.css",
+          "line": 1263,
+          "properties": [
+            "min-width:36px",
+            "min-height:36px",
+            "padding:0 9px",
+            "display:inline-flex",
+            "align-items:center",
+            "gap:5px",
+            "border:1px solid var(--border)",
+            "color:var(--danger)",
+            "background:var(--surface)"
+          ]
+        },
+        {
+          "file": "src/styles.css",
+          "line": 1560,
+          "properties": [
+            "grid-column:3"
+          ]
+        }
+      ]
+    }
+  ],
+  "warning": "Text absence is a candidate only; dynamic classes, platforms, media queries and SVG require manual review."
+}

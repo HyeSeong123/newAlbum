@@ -1,0 +1,6 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> local-album-manager@0.9.11 ai:release:check
+> node scripts/release/check-ai-assets.mjs
+
+AI packaging inventory and notices verified. Release decision recorded; unresolved training-data rights remain unresolved.

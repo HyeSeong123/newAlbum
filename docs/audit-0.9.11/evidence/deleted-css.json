@@ -1,0 +1,186 @@
+[
+  {
+    "file": "src/design-system.css",
+    "selector": ".actionMenuPanel"
+  },
+  {
+    "file": "src/design-system.css",
+    "selector": ".actionMenuPanel button, .topbar .importActions .actionMenuPanel button"
+  },
+  {
+    "file": "src/design-system.css",
+    "selector": ".actionMenuPanel button:hover:not(:disabled)"
+  },
+  {
+    "file": "src/design-system.css",
+    "selector": ".actionMenuPanel button.dangerAction"
+  },
+  {
+    "file": "src/controls.css",
+    "selector": ".peopleActions .actionMenuPanel"
+  },
+  {
+    "file": "src/controls.css",
+    "selector": ".peopleActions .actionMenuPanel button"
+  },
+  {
+    "file": "src/controls.css",
+    "selector": ".peopleActions .actionMenuPanel button"
+  },
+  {
+    "file": "src/mobile-controls.css",
+    "selector": ".actionMenuPanel"
+  },
+  {
+    "file": "src/mobile-controls.css",
+    "selector": ".actionMenuPanel button"
+  },
+  {
+    "file": "src/mobile-controls.css",
+    "selector": ".actionMenuPanel button svg"
+  },
+  {
+    "file": "src/mobile-controls.css",
+    "selector": ".albumJournal.is-list"
+  },
+  {
+    "file": "src/features/albums/albums.css",
+    "selector": ".albumJournalTools .actionMenuPanel button"
+  },
+  {
+    "file": "src/features/albums/albums.css",
+    "selector": ".albumJournal.is-list"
+  },
+  {
+    "file": "src/features/albums/albums.css",
+    "selector": ".albumPhotoList"
+  },
+  {
+    "file": "src/features/albums/albums.css",
+    "selector": ".albumPhotoList > button"
+  },
+  {
+    "file": "src/features/albums/albums.css",
+    "selector": ".albumPhotoList > button > div"
+  },
+  {
+    "file": "src/features/albums/albums.css",
+    "selector": ".albumPhotoList > button > span"
+  },
+  {
+    "file": "src/features/albums/albums.css",
+    "selector": ".albumPhotoList > .emptyState"
+  },
+  {
+    "file": "src/features/albums/albums.css",
+    "selector": ".albumJournal.is-list"
+  },
+  {
+    "file": "src/features/albums/albums.css",
+    "selector": ".albumJournalTools .actionMenuPanel button"
+  },
+  {
+    "file": "src/features/albums/albums.css",
+    "selector": ".albumPhotoList"
+  },
+  {
+    "file": "src/features/albums/albums.css",
+    "selector": ".albumPhotoList > button"
+  },
+  {
+    "file": "src/features/albums/albums.css",
+    "selector": ".albumPhotoList > button > div"
+  },
+  {
+    "file": "src/features/albums/albums.css",
+    "selector": ".albumPhotoList .mediaImage"
+  },
+  {
+    "file": "src/features/albums/albums.css",
+    "selector": ".albumPhotoName"
+  },
+  {
+    "file": "src/features/albums/albums.css",
+    "selector": ".albumPhotoList > button:hover > div"
+  },
+  {
+    "file": "src/features/albums/albums.css",
+    "selector": ".albumPhotoList > button:focus-visible"
+  },
+  {
+    "file": "src/features/albums/albums.css",
+    "selector": ".albumPhotoList"
+  },
+  {
+    "file": "src/features/albums/album-library.css",
+    "selector": ".savedAlbums .savedAlbumCard:has(.actionMenuPanel)"
+  },
+  {
+    "file": "src/features/albums/album-library.css",
+    "selector": ".savedAlbumFooter .actionMenuPanel"
+  },
+  {
+    "file": "src/features/diary/diary.css",
+    "selector": ".diaryCard:has(.actionMenuPanel)"
+  },
+  {
+    "file": "src/features/albums/album-contents-list.css",
+    "selector": ".albumContentsList"
+  },
+  {
+    "file": "src/features/albums/album-contents-list.css",
+    "selector": ".albumListFilters"
+  },
+  {
+    "file": "src/features/albums/album-contents-list.css",
+    "selector": ".albumListFilters button"
+  },
+  {
+    "file": "src/features/albums/album-contents-list.css",
+    "selector": ".albumListFilters button[aria-pressed=\"true\"]"
+  },
+  {
+    "file": "src/features/albums/album-contents-list.css",
+    "selector": ".albumListFilters button:focus-visible"
+  },
+  {
+    "file": "src/features/albums/album-contents-list.css",
+    "selector": ".albumListCount"
+  },
+  {
+    "file": "src/features/albums/album-contents-list.css",
+    "selector": ".albumContentsList .albumPhotoList"
+  },
+  {
+    "file": "src/features/albums/album-contents-list.css",
+    "selector": ".albumContentsList .albumListWritten"
+  },
+  {
+    "file": "src/features/albums/album-contents-list.css",
+    "selector": ".albumListWritten .albumWrittenPage"
+  },
+  {
+    "file": "src/features/albums/album-contents-list.css",
+    "selector": ".albumListWritten .albumWrittenPage h3"
+  },
+  {
+    "file": "src/features/albums/album-contents-list.css",
+    "selector": ".albumListWritten .albumWrittenPage p"
+  },
+  {
+    "file": "src/features/albums/album-contents-list.css",
+    "selector": ".albumContentsList .albumPhotoList.diaries-only"
+  },
+  {
+    "file": "src/features/albums/album-contents-list.css",
+    "selector": ".albumListFilters"
+  },
+  {
+    "file": "src/features/albums/album-contents-list.css",
+    "selector": ".albumContentsList .albumListWritten"
+  },
+  {
+    "file": "src/features/albums/album-contents-list.css",
+    "selector": ".albumListWritten .albumWrittenPage"
+  }
+]

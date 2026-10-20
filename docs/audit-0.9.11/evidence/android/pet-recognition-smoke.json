@@ -1,0 +1,65 @@
+{
+  "offline": true,
+  "photoCount": 1,
+  "detectedDogs": 1,
+  "analysisWaitMs": 62985,
+  "engineVersion": "gamjassak-pets-v3-no-pose",
+  "rearClearsIdentityVectors": true,
+  "identityAccuracyMeasured": false,
+  "diagnostics": [
+    {
+      "width": 640,
+      "height": 480,
+      "inputRange": [
+        1,
+        255
+      ],
+      "elapsedMs": 2911.4000000000233,
+      "animals": 1,
+      "reusedBodies": 0,
+      "backend": "wasm",
+      "wasmFallback": false,
+      "simd": true,
+      "threads": 1,
+      "tensors": 399,
+      "tensorBytes": 35049984,
+      "tensorMemoryUnreliable": false,
+      "initializationMs": 2191.7000000000116,
+      "detectionMs": 319.4000000000233,
+      "bodyEmbeddingMs": 297.4000000000233,
+      "faceDetectionMs": 0,
+      "faceEmbeddingMs": 0,
+      "descriptorMs": 82.5,
+      "backendInitializationMs": 51.5,
+      "retryMs": 0,
+      "totalMs": 2963.2999999999884
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "inputRange": [
+        1,
+        255
+      ],
+      "elapsedMs": 1752.0999999999767,
+      "animals": 1,
+      "reusedBodies": 1,
+      "backend": "wasm",
+      "wasmFallback": false,
+      "simd": true,
+      "threads": 1,
+      "tensors": 399,
+      "tensorBytes": 35049984,
+      "tensorMemoryUnreliable": false,
+      "initializationMs": 0.09999999997671694,
+      "detectionMs": 0,
+      "bodyEmbeddingMs": 0,
+      "faceDetectionMs": 0,
+      "faceEmbeddingMs": 1249.5999999999767,
+      "descriptorMs": 416,
+      "backendInitializationMs": 2.099999999976717,
+      "retryMs": 0,
+      "totalMs": 1754.1999999999534
+    }
+  ]
+}

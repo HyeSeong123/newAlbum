@@ -1,0 +1,2 @@
+# Original screenshot bytes are delivered in the audit ZIP and CI artifacts.
+evidence/**/*.png

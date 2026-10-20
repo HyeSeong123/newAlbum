@@ -1,0 +1,6 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> local-album-manager@0.9.11 version:check
+> node scripts/version.mjs --check
+
+0.9.11

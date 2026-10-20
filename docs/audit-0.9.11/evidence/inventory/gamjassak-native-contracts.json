@@ -1,0 +1,591 @@
+{
+  "registeredCommands": [
+    "native_ai::save_native_ai_feature",
+    "native_ai::list_native_ai_features",
+    "sync_characters",
+    "rename_character",
+    "set_main_character",
+    "interact_character",
+    "dismiss_character_event",
+    "list_diary",
+    "save_diary",
+    "assign_diary_album",
+    "delete_diary",
+    "import_diary_photos",
+    "list_media",
+    "location_overview",
+    "analyze_locations",
+    "queue_failed_locations",
+    "region_media_page",
+    "assign_media_region",
+    "thumbnails::media_thumbnail",
+    "thumbnails::pet_thumbnail",
+    "thumbnails::prepare_pet_input",
+    "media_playback_source",
+    "list_albums",
+    "clear_registered_media",
+    "delete_registered_media",
+    "create_album_from_media",
+    "update_album",
+    "delete_albums",
+    "export_media_group",
+    "download_media",
+    "register_paths",
+    "choose_android_directory",
+    "choose_android_gallery",
+    "faces::retry_empty_face_scans",
+    "update_media_details",
+    "update_media_title",
+    "increment_media_view",
+    "recognition::export_recognition_report",
+    "recognition::set_person_face_view",
+    "recognition::recognition_model_status",
+    "faces::list_face_index",
+    "faces::save_manual_person_photos",
+    "faces::merge_registered_people",
+    "faces::refresh_face_scan",
+    "pet_recognition::refresh_pet_reference",
+    "pets::list_pets",
+    "pets::save_pet",
+    "pets::delete_pet",
+    "pet_recognition::get_pet_scan",
+    "pet_recognition::list_pet_detections",
+    "pet_recognition::save_pet_scan",
+    "pet_recognition::confirm_pet_detection",
+    "pet_recognition::replace_pet_scan",
+    "pet_recognition::update_pet_features",
+    "pet_jobs::enqueue_pet_jobs",
+    "pet_jobs::list_pet_jobs",
+    "pet_jobs::finish_pet_job",
+    "pet_jobs::control_pet_jobs",
+    "pet_evaluation::save_pet_evaluation",
+    "pet_evaluation::pet_evaluation_summary",
+    "pet_evaluation::get_pet_evaluation_dataset",
+    "pet_evaluation::export_pet_evaluation",
+    "faces::find_face_matches",
+    "faces::set_faces_excluded",
+    "faces::save_face_scan",
+    "person_engine::get_person_scan_source",
+    "person_engine::audit_person_scans",
+    "person_engine::person_runtime_environment",
+    "person_engine::enqueue_person_jobs",
+    "person_engine::control_person_jobs",
+    "person_engine::finish_person_job",
+    "person_evaluation::save_person_evaluation",
+    "person_evaluation::person_evaluation_summary",
+    "person_evaluation::evaluate_person_samples",
+    "person_evaluation::clear_person_evaluation",
+    "faces::rename_face_person",
+    "faces::set_person_cover_face",
+    "faces::move_faces",
+    "faces::clear_face_index"
+  ],
+  "literalInvokeCalls": [
+    {
+      "command": "media_playback_source",
+      "file": "src/components/NativeMediaPlayback.tsx",
+      "line": 16
+    },
+    {
+      "command": "media_thumbnail",
+      "file": "src/components/MediaVisual.tsx",
+      "line": 12
+    },
+    {
+      "command": "list_media",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 63
+    },
+    {
+      "command": "list_albums",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 68
+    },
+    {
+      "command": "location_overview",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 92
+    },
+    {
+      "command": "analyze_locations",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 95
+    },
+    {
+      "command": "queue_failed_locations",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 98
+    },
+    {
+      "command": "assign_media_region",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 108
+    },
+    {
+      "command": "clear_registered_media",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 112
+    },
+    {
+      "command": "delete_registered_media",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 119
+    },
+    {
+      "command": "create_album_from_media",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 126
+    },
+    {
+      "command": "update_album",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 130
+    },
+    {
+      "command": "delete_albums",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 142
+    },
+    {
+      "command": "choose_android_gallery",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 146
+    },
+    {
+      "command": "choose_android_directory",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 155
+    },
+    {
+      "command": "choose_android_directory",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 168
+    },
+    {
+      "command": "export_media_group",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 179
+    },
+    {
+      "command": "download_media",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 201
+    },
+    {
+      "command": "update_media_details",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 207
+    },
+    {
+      "command": "update_media_title",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 217
+    },
+    {
+      "command": "increment_media_view",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 222
+    },
+    {
+      "command": "register_paths",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 231
+    },
+    {
+      "command": "list_diary",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 277
+    },
+    {
+      "command": "save_diary",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 278
+    },
+    {
+      "command": "assign_diary_album",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 279
+    },
+    {
+      "command": "delete_diary",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 280
+    },
+    {
+      "command": "import_diary_photos",
+      "file": "src/services/tauriMediaService.ts",
+      "line": 288
+    },
+    {
+      "command": "get_person_scan_source",
+      "file": "src/features/people/PersonDeviceBenchmarkPanel.tsx",
+      "line": 33
+    },
+    {
+      "command": "person_runtime_environment",
+      "file": "src/features/people/PersonDeviceBenchmarkPanel.tsx",
+      "line": 36
+    },
+    {
+      "command": "get_person_scan_source",
+      "file": "src/features/people/PersonDeviceBenchmarkPanel.tsx",
+      "line": 45
+    },
+    {
+      "command": "person_evaluation_summary",
+      "file": "src/features/people/PersonEvaluationPanel.tsx",
+      "line": 20
+    },
+    {
+      "command": "save_person_evaluation",
+      "file": "src/features/people/PersonEvaluationPanel.tsx",
+      "line": 25
+    },
+    {
+      "command": "clear_person_evaluation",
+      "file": "src/features/people/PersonEvaluationPanel.tsx",
+      "line": 26
+    },
+    {
+      "command": "evaluate_person_samples",
+      "file": "src/features/people/PersonEvaluationPanel.tsx",
+      "line": 27
+    },
+    {
+      "command": "person_evaluation_summary",
+      "file": "src/features/people/PersonEvaluationPanel.tsx",
+      "line": 28
+    },
+    {
+      "command": "set_person_face_view",
+      "file": "src/features/people/PersonEvaluationPanel.tsx",
+      "line": 35
+    },
+    {
+      "command": "list_face_index",
+      "file": "src/features/people/faceService.ts",
+      "line": 8
+    },
+    {
+      "command": "save_manual_person_photos",
+      "file": "src/features/people/faceService.ts",
+      "line": 9
+    },
+    {
+      "command": "merge_registered_people",
+      "file": "src/features/people/faceService.ts",
+      "line": 10
+    },
+    {
+      "command": "get_person_scan_source",
+      "file": "src/features/people/faceService.ts",
+      "line": 12
+    },
+    {
+      "command": "rename_face_person",
+      "file": "src/features/people/faceService.ts",
+      "line": 17
+    },
+    {
+      "command": "set_person_cover_face",
+      "file": "src/features/people/faceService.ts",
+      "line": 18
+    },
+    {
+      "command": "move_faces",
+      "file": "src/features/people/faceService.ts",
+      "line": 19
+    },
+    {
+      "command": "clear_face_index",
+      "file": "src/features/people/faceService.ts",
+      "line": 20
+    },
+    {
+      "command": "retry_empty_face_scans",
+      "file": "src/features/people/faceService.ts",
+      "line": 21
+    },
+    {
+      "command": "find_face_matches",
+      "file": "src/features/people/faceService.ts",
+      "line": 23
+    },
+    {
+      "command": "set_faces_excluded",
+      "file": "src/features/people/faceService.ts",
+      "line": 24
+    },
+    {
+      "command": "save_face_scan",
+      "file": "src/features/people/faceService.ts",
+      "line": 34
+    },
+    {
+      "command": "enqueue_person_jobs",
+      "file": "src/features/people/faceService.ts",
+      "line": 38
+    },
+    {
+      "command": "control_person_jobs",
+      "file": "src/features/people/faceService.ts",
+      "line": 40
+    },
+    {
+      "command": "finish_person_job",
+      "file": "src/features/people/faceService.ts",
+      "line": 41
+    },
+    {
+      "command": "export_recognition_report",
+      "file": "src/features/ai/reportExport.ts",
+      "line": 14
+    },
+    {
+      "command": "list_pet_jobs",
+      "file": "src/features/pets/usePetAnalysis.ts",
+      "line": 31
+    },
+    {
+      "command": "finish_pet_job",
+      "file": "src/features/pets/usePetAnalysis.ts",
+      "line": 41
+    },
+    {
+      "command": "finish_pet_job",
+      "file": "src/features/pets/usePetAnalysis.ts",
+      "line": 49
+    },
+    {
+      "command": "enqueue_pet_jobs",
+      "file": "src/features/pets/usePetAnalysis.ts",
+      "line": 62
+    },
+    {
+      "command": "enqueue_pet_jobs",
+      "file": "src/features/pets/usePetAnalysis.ts",
+      "line": 72
+    },
+    {
+      "command": "list_pet_jobs",
+      "file": "src/features/pets/usePetAnalysis.ts",
+      "line": 80
+    },
+    {
+      "command": "control_pet_jobs",
+      "file": "src/features/pets/usePetAnalysis.ts",
+      "line": 89
+    },
+    {
+      "command": "list_pet_jobs",
+      "file": "src/features/pets/usePetAnalysis.ts",
+      "line": 90
+    },
+    {
+      "command": "control_pet_jobs",
+      "file": "src/features/pets/usePetAnalysis.ts",
+      "line": 93
+    },
+    {
+      "command": "pet_evaluation_summary",
+      "file": "src/features/pets/PetEvaluationPanel.tsx",
+      "line": 19
+    },
+    {
+      "command": "save_pet_evaluation",
+      "file": "src/features/pets/PetEvaluationPanel.tsx",
+      "line": 22
+    },
+    {
+      "command": "get_pet_evaluation_dataset",
+      "file": "src/features/pets/PetEvaluationPanel.tsx",
+      "line": 23
+    },
+    {
+      "command": "export_pet_evaluation",
+      "file": "src/features/pets/PetEvaluationPanel.tsx",
+      "line": 24
+    },
+    {
+      "command": "list_pets",
+      "file": "src/features/pets/petService.ts",
+      "line": 4
+    },
+    {
+      "command": "save_pet",
+      "file": "src/features/pets/petService.ts",
+      "line": 5
+    },
+    {
+      "command": "delete_pet",
+      "file": "src/features/pets/petService.ts",
+      "line": 6
+    },
+    {
+      "command": "save_native_ai_feature",
+      "file": "src/features/ai/native/storage.ts",
+      "line": 9
+    },
+    {
+      "command": "list_native_ai_features",
+      "file": "src/features/ai/native/storage.ts",
+      "line": 10
+    },
+    {
+      "command": "get_pet_scan",
+      "file": "src/features/pets/engine/manager.ts",
+      "line": 8
+    },
+    {
+      "command": "list_pet_detections",
+      "file": "src/features/pets/engine/manager.ts",
+      "line": 9
+    },
+    {
+      "command": "confirm_pet_detection",
+      "file": "src/features/pets/engine/manager.ts",
+      "line": 10
+    },
+    {
+      "command": "replace_pet_scan",
+      "file": "src/features/pets/engine/manager.ts",
+      "line": 36
+    },
+    {
+      "command": "save_pet_scan",
+      "file": "src/features/pets/engine/manager.ts",
+      "line": 36
+    },
+    {
+      "command": "update_pet_features",
+      "file": "src/features/pets/engine/manager.ts",
+      "line": 51
+    },
+    {
+      "command": "refresh_pet_reference",
+      "file": "src/features/pets/engine/manager.ts",
+      "line": 67
+    }
+  ],
+  "tables": {
+    "person_evaluation_sample": [
+      "src-tauri/database/person-evaluation.sql",
+      "src-tauri/database/schema.sql"
+    ],
+    "person_scan_issue": [
+      "src-tauri/database/person-source-audit.sql",
+      "src-tauri/database/schema.sql"
+    ],
+    "pet_analysis_job": [
+      "src-tauri/database/pet-analysis-jobs.sql"
+    ],
+    "pet_evaluation_sample": [
+      "src-tauri/database/pet-analysis-jobs.sql"
+    ],
+    "owned_character_v10": [
+      "src-tauri/database/characters-six-stages.sql"
+    ],
+    "character_event_v10": [
+      "src-tauri/database/characters-six-stages.sql"
+    ],
+    "character_photo_credit_v10": [
+      "src-tauri/database/characters-six-stages.sql"
+    ],
+    "character_growth_start_v10": [
+      "src-tauri/database/characters-six-stages.sql"
+    ],
+    "native_ai_model": [
+      "src-tauri/database/native-ai.sql"
+    ],
+    "native_ai_feature": [
+      "src-tauri/database/native-ai.sql"
+    ],
+    "pet_scan": [
+      "src-tauri/database/pet-recognition.sql"
+    ],
+    "pet_detection": [
+      "src-tauri/database/pet-recognition.sql"
+    ],
+    "pet_recognition_link": [
+      "src-tauri/database/pet-recognition.sql"
+    ],
+    "character_growth_start": [
+      "src-tauri/database/character-growth.sql"
+    ],
+    "media": [
+      "src-tauri/database/schema.sql"
+    ],
+    "album": [
+      "src-tauri/database/schema.sql"
+    ],
+    "diary": [
+      "src-tauri/database/schema.sql"
+    ],
+    "album_item": [
+      "src-tauri/database/schema.sql"
+    ],
+    "album_page": [
+      "src-tauri/database/schema.sql"
+    ],
+    "person": [
+      "src-tauri/database/schema.sql"
+    ],
+    "face_scan": [
+      "src-tauri/database/schema.sql"
+    ],
+    "detected_face": [
+      "src-tauri/database/schema.sql"
+    ],
+    "excluded_face": [
+      "src-tauri/database/schema.sql"
+    ],
+    "person_photo": [
+      "src-tauri/database/schema.sql",
+      "src-tauri/database/manual-person-photos.sql"
+    ],
+    "pet": [
+      "src-tauri/database/schema.sql"
+    ],
+    "pet_media": [
+      "src-tauri/database/schema.sql"
+    ],
+    "person_face_metadata": [
+      "src-tauri/database/schema.sql",
+      "src-tauri/database/person-engine.sql"
+    ],
+    "person_scan_metadata": [
+      "src-tauri/database/schema.sql",
+      "src-tauri/database/person-engine.sql"
+    ],
+    "person_analysis_job": [
+      "src-tauri/database/schema.sql",
+      "src-tauri/database/person-engine.sql"
+    ],
+    "person_face_pose": [
+      "src-tauri/database/schema.sql",
+      "src-tauri/database/recognition-094.sql"
+    ],
+    "person_model_feature": [
+      "src-tauri/database/schema.sql",
+      "src-tauri/database/recognition-094.sql"
+    ],
+    "pet_direction_observation": [
+      "src-tauri/database/schema.sql",
+      "src-tauri/database/recognition-094.sql"
+    ],
+    "owned_character": [
+      "src-tauri/database/characters.sql"
+    ],
+    "character_photo_credit": [
+      "src-tauri/database/characters.sql"
+    ],
+    "character_event": [
+      "src-tauri/database/characters.sql"
+    ],
+    "diary_photo": [
+      "src-tauri/database/diary-photos.sql"
+    ]
+  },
+  "migrationVersion": 18,
+  "limitations": "Generic type parsing and dynamic invoke wrappers require manual review; not a call-completeness proof."
+}

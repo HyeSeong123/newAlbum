@@ -1,0 +1,785 @@
+{
+  "entry": "src/main.tsx",
+  "graph": {
+    "src/App.tsx": [
+      "src/features/pets/PetAnalysisStatus.tsx",
+      "src/features/media/PhotoWorkspace.tsx",
+      "src/features/media/useMediaLibrary.ts",
+      "src/features/media/useMediaViewer.ts",
+      "src/features/media/useMediaSelection.ts",
+      "src/features/media/useMediaComments.ts",
+      "src/features/media/PhotoDetail.tsx",
+      "src/features/memories/MemoriesWorkspace.tsx",
+      "src/features/settings/SettingsPanel.tsx",
+      "src/features/media/collectionModel.ts",
+      "src/features/memories/memoriesModel.ts",
+      "src/features/calendar/calendarModel.ts",
+      "src/features/people/PeopleWorkspace.tsx",
+      "src/features/albums/AlbumsView.tsx",
+      "src/features/albums/AlbumCreateModal.tsx",
+      "src/features/calendar/calendarModel.ts",
+      "src/features/media/MediaImportModal.tsx",
+      "src/features/media/MediaImportProgress.tsx",
+      "src/hooks/useAndroidBack.ts",
+      "src/components/FirstRunGuide.tsx",
+      "src/features/media/mediaService.ts",
+      "src/features/media/journalModel.ts",
+      "src/types/media.ts",
+      "src/features/diary/DiaryView.tsx",
+      "src/components/BrandLogo.tsx",
+      "src/components/MainNavigation.tsx",
+      "src/features/home/HomeView.tsx",
+      "src/features/characters/CharacterBook.tsx",
+      "src/features/characters/CharacterEventModal.tsx",
+      "src/features/characters/useCharacters.ts",
+      "src/features/characters/GomiGuide.tsx",
+      "src/features/pets/usePetAnalysis.ts",
+      "src/features/characters/guideTopics.ts"
+    ],
+    "src/android.css": [],
+    "src/brand.css": [],
+    "src/controls.css": [],
+    "src/design-system.css": [],
+    "src/main.tsx": [
+      "src/App.tsx",
+      "src/styles.css",
+      "src/design-system.css",
+      "src/features/albums/albums.css",
+      "src/features/calendar/calendar.css",
+      "src/controls.css",
+      "src/features/media/photo-detail.css",
+      "src/components/media-visual.css",
+      "src/brand.css",
+      "src/features/albums/album-library.css",
+      "src/android.css",
+      "src/mobile-controls.css",
+      "src/services/tauriMediaService.ts",
+      "src/services/mobileViewport.ts"
+    ],
+    "src/mobile-controls.css": [],
+    "src/styles.css": [],
+    "src/vite-env.d.ts": [],
+    "src/components/ActionMenu.tsx": [],
+    "src/components/BrandLogo.tsx": [],
+    "src/components/CameraLocationNotice.tsx": [
+      "src/components/camera-location-notice.css"
+    ],
+    "src/components/EntityEditorDialog.tsx": [
+      "src/hooks/useModalBehavior.ts",
+      "src/components/entity-editor.css"
+    ],
+    "src/components/EntityPhotoPicker.tsx": [
+      "src/types/media.ts",
+      "src/components/EntityEditorDialog.tsx",
+      "src/components/MediaVisual.tsx",
+      "src/hooks/useRowSelection.ts",
+      "src/components/entity-photo-picker.css"
+    ],
+    "src/components/ExportModal.tsx": [
+      "src/types/media.ts",
+      "src/services/tauriMediaService.ts",
+      "src/features/export/useMediaExport.ts",
+      "src/hooks/useModalBehavior.ts"
+    ],
+    "src/components/FirstRunGuide.tsx": [
+      "src/hooks/useModalBehavior.ts",
+      "src/components/first-run-guide.css",
+      "src/components/CameraLocationNotice.tsx",
+      "src/features/characters/CharacterVisual.tsx",
+      "src/features/characters/models.ts",
+      "src/features/characters/gomiAffinity.ts"
+    ],
+    "src/components/MainNavigation.tsx": [],
+    "src/components/MediaPlayback.tsx": [],
+    "src/components/MediaVisual.tsx": [
+      "src/services/tauriMediaService.ts",
+      "src/types/media.ts",
+      "src/features/media/mediaSource.ts"
+    ],
+    "src/components/NativeMediaPlayback.tsx": [
+      "src/types/media.ts",
+      "src/services/tauriMediaService.ts",
+      "src/components/MediaVisual.tsx",
+      "src/components/MediaPlayback.tsx"
+    ],
+    "src/components/camera-location-notice.css": [],
+    "src/components/entity-editor.css": [],
+    "src/components/entity-photo-picker.css": [],
+    "src/components/first-run-guide.css": [],
+    "src/components/media-visual.css": [],
+    "src/hooks/useAndroidBack.ts": [
+      "src/services/tauriMediaService.ts"
+    ],
+    "src/hooks/useMobileLayout.ts": [
+      "src/services/tauriMediaService.ts"
+    ],
+    "src/hooks/useModalBehavior.ts": [],
+    "src/hooks/useRowSelection.ts": [],
+    "src/services/keyedTaskQueue.ts": [],
+    "src/services/mobileViewport.ts": [],
+    "src/services/tauriMediaService.ts": [
+      "src/features/media/importProgress.ts",
+      "src/types/media.ts",
+      "src/features/albums/albumContent.ts",
+      "src/features/diary/diaryModel.ts"
+    ],
+    "src/types/media.ts": [],
+    "src/features/ai/metrics.ts": [],
+    "src/features/ai/protocol.ts": [],
+    "src/features/ai/reportExport.ts": [],
+    "src/features/ai/runtime.ts": [],
+    "src/features/albums/AlbumContentsList.tsx": [
+      "src/types/media.ts",
+      "src/components/MediaVisual.tsx",
+      "src/features/albums/chapter/AlbumWrittenPage.tsx",
+      "src/features/albums/albumContent.ts",
+      "src/features/albums/album-contents-list.css"
+    ],
+    "src/features/albums/AlbumCover.tsx": [
+      "src/types/media.ts",
+      "src/components/MediaVisual.tsx"
+    ],
+    "src/features/albums/AlbumCreateModal.tsx": [
+      "src/types/media.ts",
+      "src/hooks/useModalBehavior.ts",
+      "src/features/albums/AlbumCover.tsx",
+      "src/features/calendar/CalendarRegistrationFields.tsx",
+      "src/features/calendar/calendarModel.ts"
+    ],
+    "src/features/albums/AlbumEditor.tsx": [
+      "src/types/media.ts",
+      "src/components/MediaVisual.tsx",
+      "src/hooks/useModalBehavior.ts",
+      "src/features/albums/AlbumCover.tsx",
+      "src/features/albums/albumContent.ts"
+    ],
+    "src/features/albums/AlbumReader.tsx": [
+      "src/types/media.ts",
+      "src/features/albums/chapter/AlbumWrittenPage.tsx",
+      "src/components/MediaVisual.tsx",
+      "src/components/ActionMenu.tsx",
+      "src/features/media/journalModel.ts",
+      "src/features/albums/useAlbumReader.ts",
+      "src/hooks/useMobileLayout.ts",
+      "src/features/albums/albumAnimation.ts",
+      "src/features/albums/AlbumCover.tsx"
+    ],
+    "src/features/albums/AlbumsView.tsx": [
+      "src/types/media.ts",
+      "src/components/MediaVisual.tsx",
+      "src/features/albums/albumContent.ts",
+      "src/features/albums/AlbumCover.tsx",
+      "src/components/ActionMenu.tsx",
+      "src/components/ExportModal.tsx",
+      "src/features/media/journalModel.ts",
+      "src/features/albums/AlbumReader.tsx",
+      "src/features/diary/DiaryView.tsx",
+      "src/features/albums/chapter/AlbumWrittenEditor.tsx",
+      "src/features/albums/AlbumEditor.tsx"
+    ],
+    "src/features/albums/album-contents-list.css": [],
+    "src/features/albums/album-library.css": [],
+    "src/features/albums/albumAnimation.ts": [],
+    "src/features/albums/albumContent.ts": [
+      "src/types/media.ts",
+      "src/features/media/journalModel.ts"
+    ],
+    "src/features/albums/albums.css": [],
+    "src/features/albums/useAlbumReader.ts": [
+      "src/types/media.ts",
+      "src/features/media/journalModel.ts",
+      "src/features/albums/albumContent.ts",
+      "src/hooks/useModalBehavior.ts",
+      "src/features/albums/albumAnimation.ts"
+    ],
+    "src/features/calendar/Calendar.tsx": [
+      "src/features/calendar/calendarModel.ts",
+      "src/features/calendar/useCalendarRecords.ts",
+      "src/features/calendar/DayDetailModal.tsx",
+      "src/types/media.ts",
+      "src/components/MediaVisual.tsx",
+      "src/features/media/journalModel.ts"
+    ],
+    "src/features/calendar/CalendarRegistrationFields.tsx": [
+      "src/features/calendar/calendarModel.ts",
+      "src/types/media.ts",
+      "src/features/calendar/calendar-registration.css"
+    ],
+    "src/features/calendar/DayDetailModal.tsx": [
+      "src/types/media.ts",
+      "src/components/MediaVisual.tsx",
+      "src/hooks/useModalBehavior.ts",
+      "src/features/calendar/calendarModel.ts"
+    ],
+    "src/features/calendar/calendar-registration.css": [],
+    "src/features/calendar/calendar.css": [],
+    "src/features/calendar/calendarModel.ts": [
+      "src/types/media.ts"
+    ],
+    "src/features/calendar/calendarRegistrationStore.ts": [
+      "src/features/calendar/calendarModel.ts"
+    ],
+    "src/features/calendar/useCalendarRecords.ts": [
+      "src/features/calendar/calendarModel.ts",
+      "src/features/calendar/calendarRegistrationStore.ts"
+    ],
+    "src/features/characters/CharacterBook.tsx": [
+      "src/features/characters/CharacterVisual.tsx",
+      "src/features/characters/models.ts",
+      "src/features/characters/characters.css"
+    ],
+    "src/features/characters/CharacterEventModal.tsx": [
+      "src/features/characters/CharacterVisual.tsx",
+      "src/features/characters/models.ts"
+    ],
+    "src/features/characters/CharacterVisual.tsx": [
+      "src/features/characters/models.ts",
+      "src/features/characters/GomiVisual.tsx",
+      "src/features/characters/gomiBehavior.ts"
+    ],
+    "src/features/characters/GomiGuide.tsx": [
+      "src/hooks/useModalBehavior.ts",
+      "src/features/characters/CharacterVisual.tsx",
+      "src/features/characters/models.ts",
+      "src/features/characters/guideTopics.ts",
+      "src/features/characters/gomi-guide.css",
+      "src/features/characters/gomiAffinity.ts"
+    ],
+    "src/features/characters/GomiVisual.tsx": [
+      "src/features/characters/gomiBehavior.ts"
+    ],
+    "src/features/characters/characters.css": [],
+    "src/features/characters/gomi-guide.css": [],
+    "src/features/characters/gomiAffinity.ts": [],
+    "src/features/characters/gomiBehavior.ts": [
+      "src/features/characters/gomiAffinity.ts"
+    ],
+    "src/features/characters/gomiGreeting.ts": [
+      "src/features/characters/gomiAffinity.ts"
+    ],
+    "src/features/characters/guideTopics.ts": [],
+    "src/features/characters/models.ts": [
+      "src/features/characters/gomiAffinity.ts"
+    ],
+    "src/features/characters/service.ts": [
+      "src/services/tauriMediaService.ts",
+      "src/features/characters/models.ts"
+    ],
+    "src/features/characters/useCharacters.ts": [
+      "src/features/characters/models.ts",
+      "src/features/characters/service.ts"
+    ],
+    "src/features/characters/useGomiBehavior.ts": [
+      "src/features/characters/gomiBehavior.ts"
+    ],
+    "src/features/diary/DiaryPhoto.tsx": [
+      "src/components/MediaVisual.tsx",
+      "src/features/diary/diaryModel.ts"
+    ],
+    "src/features/diary/DiaryView.tsx": [
+      "src/features/calendar/calendarModel.ts",
+      "src/components/ActionMenu.tsx",
+      "src/hooks/useModalBehavior.ts",
+      "src/types/media.ts",
+      "src/services/tauriMediaService.ts",
+      "src/features/diary/browserDiaryStorage.ts",
+      "src/features/diary/diaryModel.ts",
+      "src/features/diary/DiaryPhoto.tsx",
+      "src/features/diary/diary.css",
+      "src/features/diary/useDiary.ts",
+      "src/features/diary/diaryModel.ts"
+    ],
+    "src/features/diary/browserDiaryStorage.ts": [
+      "src/features/diary/diaryModel.ts"
+    ],
+    "src/features/diary/diary.css": [],
+    "src/features/diary/diaryModel.ts": [],
+    "src/features/diary/useDiary.ts": [
+      "src/services/tauriMediaService.ts",
+      "src/features/diary/browserDiaryStorage.ts",
+      "src/features/diary/diaryModel.ts"
+    ],
+    "src/features/export/exportModel.ts": [],
+    "src/features/export/useMediaExport.ts": [
+      "src/types/media.ts",
+      "src/services/tauriMediaService.ts",
+      "src/features/export/exportModel.ts"
+    ],
+    "src/features/home/HomeView.tsx": [
+      "src/features/characters/CharacterVisual.tsx",
+      "src/features/characters/models.ts",
+      "src/features/characters/gomiBehavior.ts",
+      "src/features/characters/gomiAffinity.ts",
+      "src/features/characters/useGomiBehavior.ts",
+      "src/features/characters/gomiGreeting.ts",
+      "src/features/characters/characters.css",
+      "src/features/home/home.css"
+    ],
+    "src/features/home/home.css": [],
+    "src/features/map/MemoryMap.tsx": [
+      "src/types/media.ts",
+      "src/components/MediaVisual.tsx",
+      "src/features/map/RegionGallery.tsx",
+      "src/services/tauriMediaService.ts",
+      "src/features/map/regionModel.ts",
+      "src/features/map/memoryMapModel.ts",
+      "src/features/map/memory-map.css"
+    ],
+    "src/features/map/RegionEditor.tsx": [
+      "src/features/map/regions.ts",
+      "src/features/map/koreanDistricts.ts",
+      "src/types/media.ts",
+      "src/features/map/locationStatus.ts",
+      "src/features/map/region-editor.css"
+    ],
+    "src/features/map/RegionGallery.tsx": [
+      "src/types/media.ts",
+      "src/components/MediaVisual.tsx",
+      "src/features/media/RecordMediaGrid.tsx",
+      "src/features/media/useMediaSelection.ts",
+      "src/services/tauriMediaService.ts",
+      "src/features/map/RegionEditor.tsx",
+      "src/features/map/regions.ts",
+      "src/features/map/memoryMapModel.ts"
+    ],
+    "src/features/map/koreanDistricts.ts": [],
+    "src/features/map/locationStatus.ts": [
+      "src/types/media.ts"
+    ],
+    "src/features/map/memory-map.css": [],
+    "src/features/map/memoryMapModel.ts": [
+      "src/types/media.ts",
+      "src/services/tauriMediaService.ts",
+      "src/services/tauriMediaService.ts",
+      "src/features/map/regions.ts"
+    ],
+    "src/features/map/region-editor.css": [],
+    "src/features/map/regionModel.ts": [
+      "src/services/tauriMediaService.ts",
+      "src/features/map/regions.ts",
+      "src/features/map/regions.ts"
+    ],
+    "src/features/map/regions.ts": [],
+    "src/features/media/LibraryView.tsx": [
+      "src/types/media.ts",
+      "src/components/MediaVisual.tsx",
+      "src/hooks/useRowSelection.ts",
+      "src/hooks/useMobileLayout.ts",
+      "src/features/calendar/calendarModel.ts",
+      "src/features/media/mediaService.ts",
+      "src/features/media/journalModel.ts",
+      "src/features/media/collectionModel.ts",
+      "src/features/media/TakenDateFilter.tsx",
+      "src/features/map/RegionEditor.tsx",
+      "src/features/media/library-search.css"
+    ],
+    "src/features/media/MediaImportModal.tsx": [
+      "src/features/albums/AlbumCover.tsx",
+      "src/hooks/useModalBehavior.ts",
+      "src/features/media/useMediaLibrary.ts",
+      "src/features/map/regions.ts",
+      "src/features/map/koreanDistricts.ts",
+      "src/features/media/media-import.css",
+      "src/services/tauriMediaService.ts",
+      "src/components/CameraLocationNotice.tsx",
+      "src/features/calendar/CalendarRegistrationFields.tsx",
+      "src/features/calendar/calendarModel.ts"
+    ],
+    "src/features/media/MediaImportProgress.tsx": [
+      "src/hooks/useModalBehavior.ts",
+      "src/features/media/importProgress.ts",
+      "src/features/media/mediaImportProgress.css"
+    ],
+    "src/features/media/PhotoDateNavigation.tsx": [
+      "src/types/media.ts",
+      "src/features/media/journalModel.ts"
+    ],
+    "src/features/media/PhotoDetail.tsx": [
+      "src/types/media.ts",
+      "src/components/MediaVisual.tsx",
+      "src/hooks/useMobileLayout.ts",
+      "src/components/NativeMediaPlayback.tsx",
+      "src/hooks/useModalBehavior.ts",
+      "src/features/media/journalModel.ts",
+      "src/features/media/useMediaDownload.ts",
+      "src/services/tauriMediaService.ts",
+      "src/features/pets/PetPhotoResults.tsx",
+      "src/features/map/RegionEditor.tsx"
+    ],
+    "src/features/media/PhotoWorkspace.tsx": [
+      "src/types/media.ts",
+      "src/features/media/LibraryView.tsx",
+      "src/features/media/PhotoDateNavigation.tsx",
+      "src/features/media/journalModel.ts",
+      "src/features/calendar/Calendar.tsx",
+      "src/features/albums/AlbumReader.tsx",
+      "src/features/albums/AlbumCover.tsx",
+      "src/components/ExportModal.tsx"
+    ],
+    "src/features/media/RecordMediaGrid.tsx": [
+      "src/types/media.ts",
+      "src/components/MediaVisual.tsx",
+      "src/hooks/useRowSelection.ts",
+      "src/features/map/locationStatus.ts",
+      "src/features/media/record-media-grid.css"
+    ],
+    "src/features/media/TakenDateFilter.tsx": [
+      "src/features/media/collectionModel.ts",
+      "src/features/media/taken-date-filter.css"
+    ],
+    "src/features/media/browserImport.ts": [
+      "src/types/media.ts",
+      "src/features/media/mediaService.ts",
+      "src/features/media/importProgress.ts"
+    ],
+    "src/features/media/collectionModel.ts": [
+      "src/types/media.ts"
+    ],
+    "src/features/media/importProgress.ts": [],
+    "src/features/media/journalModel.ts": [
+      "src/types/media.ts"
+    ],
+    "src/features/media/library-search.css": [],
+    "src/features/media/media-import.css": [],
+    "src/features/media/mediaComments.ts": [
+      "src/types/media.ts"
+    ],
+    "src/features/media/mediaImportProgress.css": [],
+    "src/features/media/mediaService.ts": [
+      "src/types/media.ts"
+    ],
+    "src/features/media/mediaSource.ts": [
+      "src/types/media.ts"
+    ],
+    "src/features/media/photo-detail.css": [],
+    "src/features/media/record-media-grid.css": [],
+    "src/features/media/recordDate.ts": [],
+    "src/features/media/taken-date-filter.css": [],
+    "src/features/media/useMediaComments.ts": [
+      "src/types/media.ts",
+      "src/features/media/mediaComments.ts"
+    ],
+    "src/features/media/useMediaDownload.ts": [
+      "src/types/media.ts",
+      "src/services/tauriMediaService.ts"
+    ],
+    "src/features/media/useMediaLibrary.ts": [
+      "src/types/media.ts",
+      "src/services/tauriMediaService.ts",
+      "src/services/keyedTaskQueue.ts",
+      "src/features/media/browserImport.ts",
+      "src/features/media/importProgress.ts",
+      "src/features/media/journalModel.ts",
+      "src/features/map/regions.ts",
+      "src/features/calendar/calendarModel.ts",
+      "src/features/calendar/calendarRegistrationStore.ts"
+    ],
+    "src/features/media/useMediaSelection.ts": [],
+    "src/features/media/useMediaViewer.ts": [
+      "src/types/media.ts"
+    ],
+    "src/features/memories/Memories.tsx": [
+      "src/types/media.ts",
+      "src/components/MediaVisual.tsx",
+      "src/features/albums/AlbumReader.tsx",
+      "src/features/calendar/calendarModel.ts",
+      "src/features/media/RecordMediaGrid.tsx",
+      "src/features/memories/memoriesModel.ts",
+      "src/features/memories/memories.css"
+    ],
+    "src/features/memories/MemoriesWorkspace.tsx": [
+      "src/types/media.ts",
+      "src/features/memories/Memories.tsx",
+      "src/features/timeline/TimelineView.tsx",
+      "src/features/memories/TripDiscovery.tsx",
+      "src/features/map/MemoryMap.tsx"
+    ],
+    "src/features/memories/TripDiscovery.tsx": [
+      "src/types/media.ts",
+      "src/components/MediaVisual.tsx",
+      "src/features/media/RecordMediaGrid.tsx",
+      "src/features/memories/tripModel.ts",
+      "src/features/memories/trip-discovery.css"
+    ],
+    "src/features/memories/memories.css": [],
+    "src/features/memories/memoriesModel.ts": [
+      "src/types/media.ts",
+      "src/features/media/recordDate.ts"
+    ],
+    "src/features/memories/trip-discovery.css": [],
+    "src/features/memories/tripModel.ts": [
+      "src/types/media.ts",
+      "src/features/media/recordDate.ts",
+      "src/features/map/regions.ts"
+    ],
+    "src/features/people/FaceMatchReview.tsx": [
+      "src/hooks/useModalBehavior.ts",
+      "src/features/people/faceService.ts"
+    ],
+    "src/features/people/PeopleView.tsx": [
+      "src/types/media.ts",
+      "src/services/tauriMediaService.ts",
+      "src/features/people/faceService.ts",
+      "src/components/MediaVisual.tsx",
+      "src/hooks/useRowSelection.ts",
+      "src/features/people/people.css",
+      "src/features/people/FaceMatchReview.tsx",
+      "src/features/people/PersonEvaluationPanel.tsx",
+      "src/features/people/PersonSourceAuditPanel.tsx",
+      "src/features/people/engine/sourceAudit.ts",
+      "src/features/people/PersonDeviceBenchmarkPanel.tsx",
+      "src/components/ExportModal.tsx",
+      "src/components/ActionMenu.tsx",
+      "src/components/EntityEditorDialog.tsx",
+      "src/features/people/peopleModel.ts",
+      "src/components/EntityPhotoPicker.tsx"
+    ],
+    "src/features/people/PeopleWorkspace.tsx": [
+      "src/types/media.ts",
+      "src/features/people/PeopleView.tsx",
+      "src/features/pets/PetsView.tsx",
+      "src/features/pets/usePetAnalysis.ts"
+    ],
+    "src/features/people/PersonDeviceBenchmarkPanel.tsx": [
+      "src/types/media.ts",
+      "src/features/media/mediaSource.ts",
+      "src/features/people/engine/deviceBenchmark.ts",
+      "src/features/people/engine/repetitionBenchmark.ts"
+    ],
+    "src/features/people/PersonEvaluationPanel.tsx": [
+      "src/types/media.ts",
+      "src/features/people/faceService.ts",
+      "src/features/ai/reportExport.ts",
+      "src/components/MediaVisual.tsx"
+    ],
+    "src/features/people/PersonSourceAuditPanel.tsx": [
+      "src/types/media.ts",
+      "src/features/people/engine/sourceAudit.ts"
+    ],
+    "src/features/people/faceService.ts": [
+      "src/types/media.ts",
+      "src/features/media/mediaSource.ts",
+      "src/features/people/engine/client.ts",
+      "src/features/people/engine/client.ts"
+    ],
+    "src/features/people/people.css": [],
+    "src/features/people/peopleModel.ts": [
+      "src/types/media.ts",
+      "src/features/people/faceService.ts"
+    ],
+    "src/features/pets/PetAnalysisStatus.tsx": [
+      "src/features/pets/usePetAnalysis.ts"
+    ],
+    "src/features/pets/PetEvaluationPanel.tsx": [
+      "src/features/ai/reportExport.ts",
+      "src/types/media.ts",
+      "src/features/pets/petService.ts",
+      "src/features/pets/engine/manager.ts",
+      "src/features/pets/engine/types.ts",
+      "src/features/pets/engine/evaluation.ts"
+    ],
+    "src/features/pets/PetPhotoResults.tsx": [
+      "src/components/MediaVisual.tsx",
+      "src/types/media.ts",
+      "src/features/pets/petService.ts",
+      "src/features/pets/engine/manager.ts",
+      "src/features/pets/engine/matcher.ts",
+      "src/features/pets/engine/types.ts",
+      "src/features/pets/pets.css"
+    ],
+    "src/features/pets/PetPhotoSearch.tsx": [
+      "src/hooks/useRowSelection.ts",
+      "src/components/EntityEditorDialog.tsx",
+      "src/components/MediaVisual.tsx",
+      "src/types/media.ts",
+      "src/features/pets/petService.ts",
+      "src/features/pets/usePetAnalysis.ts",
+      "src/features/pets/engine/manager.ts",
+      "src/features/pets/engine/matcher.ts",
+      "src/features/pets/engine/types.ts"
+    ],
+    "src/features/pets/PetsView.tsx": [
+      "src/types/media.ts",
+      "src/components/MediaVisual.tsx",
+      "src/components/MediaVisual.tsx",
+      "src/components/ActionMenu.tsx",
+      "src/components/EntityEditorDialog.tsx",
+      "src/hooks/useRowSelection.ts",
+      "src/services/tauriMediaService.ts",
+      "src/features/pets/petService.ts",
+      "src/features/pets/pets.css",
+      "src/features/pets/PetPhotoSearch.tsx",
+      "src/features/pets/usePetAnalysis.ts",
+      "src/features/pets/petModel.ts",
+      "src/features/pets/PetAnalysisStatus.tsx"
+    ],
+    "src/features/pets/petModel.ts": [
+      "src/types/media.ts",
+      "src/features/pets/petService.ts"
+    ],
+    "src/features/pets/petService.ts": [],
+    "src/features/pets/pets.css": [],
+    "src/features/pets/usePetAnalysis.ts": [
+      "src/types/media.ts",
+      "src/services/tauriMediaService.ts",
+      "src/features/pets/engine/types.ts",
+      "src/features/pets/engine/manager.ts",
+      "src/features/pets/petService.ts",
+      "src/features/pets/engine/manager.ts"
+    ],
+    "src/features/settings/RecognitionEvaluation.tsx": [
+      "src/types/media.ts",
+      "src/features/people/faceService.ts",
+      "src/features/pets/petService.ts",
+      "src/features/people/PersonEvaluationPanel.tsx",
+      "src/features/pets/PetEvaluationPanel.tsx"
+    ],
+    "src/features/settings/SettingsPanel.tsx": [
+      "src/types/media.ts",
+      "src/features/settings/RecognitionEvaluation.tsx"
+    ],
+    "src/features/timeline/TimelineView.tsx": [
+      "src/types/media.ts",
+      "src/components/MediaVisual.tsx",
+      "src/features/calendar/calendarModel.ts",
+      "src/features/media/RecordMediaGrid.tsx",
+      "src/features/timeline/timelineModel.ts",
+      "src/features/timeline/timeline.css"
+    ],
+    "src/features/timeline/timeline.css": [],
+    "src/features/timeline/timelineModel.ts": [
+      "src/types/media.ts",
+      "src/features/media/recordDate.ts"
+    ],
+    "src/features/ai/native/client.ts": [
+      "src/features/ai/runtime.ts",
+      "src/features/ai/native/core.ts",
+      "src/features/ai/native/native.worker.ts"
+    ],
+    "src/features/ai/native/core.ts": [],
+    "src/features/ai/native/engines.ts": [
+      "src/features/ai/native/core.ts"
+    ],
+    "src/features/ai/native/native.worker.ts": [
+      "src/features/ai/native/session.ts"
+    ],
+    "src/features/ai/native/network.ts": [
+      "src/features/ai/native/core.ts"
+    ],
+    "src/features/ai/native/session.ts": [
+      "src/features/ai/native/network.ts",
+      "src/features/ai/native/core.ts"
+    ],
+    "src/features/ai/native/storage.ts": [],
+    "src/features/albums/chapter/AlbumContentEditor.tsx": [
+      "src/types/media.ts",
+      "src/features/albums/albumContent.ts",
+      "src/components/MediaVisual.tsx",
+      "src/features/albums/chapter/written-page.css"
+    ],
+    "src/features/albums/chapter/AlbumWrittenEditor.tsx": [
+      "src/types/media.ts",
+      "src/hooks/useModalBehavior.ts",
+      "src/features/albums/albumContent.ts",
+      "src/features/albums/chapter/AlbumContentEditor.tsx"
+    ],
+    "src/features/albums/chapter/AlbumWrittenPage.tsx": [
+      "src/types/media.ts",
+      "src/features/albums/chapter/written-page.css"
+    ],
+    "src/features/albums/chapter/written-page.css": [],
+    "src/features/people/engine/client.ts": [
+      "src/features/ai/runtime.ts",
+      "src/features/people/engine/types.ts",
+      "src/features/people/engine/person.worker.ts"
+    ],
+    "src/features/people/engine/detectionPolicy.ts": [],
+    "src/features/people/engine/deviceBenchmark.ts": [
+      "src/features/people/engine/client.ts",
+      "src/features/people/engine/types.ts"
+    ],
+    "src/features/people/engine/faceAlignment.ts": [
+      "src/features/people/engine/pose.ts"
+    ],
+    "src/features/people/engine/faceApiAdapter.ts": [
+      "src/features/people/engine/pose.ts",
+      "src/features/people/engine/types.ts",
+      "src/features/people/engine/detectionPolicy.ts"
+    ],
+    "src/features/people/engine/person.worker.ts": [
+      "src/features/people/engine/faceApiAdapter.ts",
+      "src/features/people/engine/types.ts"
+    ],
+    "src/features/people/engine/pose.ts": [],
+    "src/features/people/engine/repetitionBenchmark.ts": [
+      "src/features/people/engine/client.ts",
+      "src/features/pets/engine/client.ts"
+    ],
+    "src/features/people/engine/sourceAudit.ts": [],
+    "src/features/people/engine/types.ts": [],
+    "src/features/pets/engine/catFace.ts": [],
+    "src/features/pets/engine/client.ts": [
+      "src/features/ai/runtime.ts",
+      "src/features/pets/engine/types.ts",
+      "src/features/pets/engine/runtime.ts",
+      "src/features/pets/engine/pet.worker.ts"
+    ],
+    "src/features/pets/engine/deviceBenchmark.ts": [
+      "src/features/pets/engine/client.ts"
+    ],
+    "src/features/pets/engine/evaluation.ts": [
+      "src/features/ai/metrics.ts",
+      "src/features/pets/engine/matcher.ts",
+      "src/features/pets/engine/types.ts"
+    ],
+    "src/features/pets/engine/features.ts": [],
+    "src/features/pets/engine/foreground.ts": [
+      "src/features/pets/engine/features.ts",
+      "src/features/pets/engine/types.ts"
+    ],
+    "src/features/pets/engine/index.ts": [
+      "src/features/pets/engine/client.ts",
+      "src/features/pets/engine/matcher.ts",
+      "src/features/pets/engine/types.ts",
+      "src/features/pets/engine/types.ts"
+    ],
+    "src/features/pets/engine/manager.ts": [
+      "src/features/media/mediaSource.ts",
+      "src/types/media.ts",
+      "src/features/pets/engine/types.ts",
+      "src/features/pets/petService.ts",
+      "src/features/pets/engine/client.ts",
+      "src/features/pets/engine/matcher.ts"
+    ],
+    "src/features/pets/engine/matcher.ts": [
+      "src/features/pets/engine/types.ts"
+    ],
+    "src/features/pets/engine/pet.worker.ts": [
+      "src/features/pets/engine/features.ts",
+      "src/features/pets/engine/types.ts",
+      "src/features/pets/engine/runtime.ts",
+      "src/features/pets/engine/catFace.ts",
+      "src/features/pets/engine/foreground.ts"
+    ],
+    "src/features/pets/engine/poseGeometry.ts": [
+      "src/features/pets/engine/types.ts"
+    ],
+    "src/features/pets/engine/runtime.ts": [],
+    "src/features/pets/engine/types.ts": []
+  },
+  "unreachableCandidates": [
+    "src/features/ai/protocol.ts",
+    "src/features/albums/AlbumContentsList.tsx",
+    "src/features/ai/native/client.ts",
+    "src/features/ai/native/core.ts",
+    "src/features/ai/native/engines.ts",
+    "src/features/ai/native/native.worker.ts",
+    "src/features/ai/native/network.ts",
+    "src/features/ai/native/session.ts",
+    "src/features/ai/native/storage.ts",
+    "src/features/people/engine/faceAlignment.ts",
+    "src/features/pets/engine/deviceBenchmark.ts",
+    "src/features/pets/engine/index.ts",
+    "src/features/pets/engine/poseGeometry.ts"
+  ]
+}

@@ -1,0 +1,1159 @@
+{
+  "pairs": 96,
+  "sameDimensions": 94,
+  "pixelIdenticalWithin8": 78,
+  "rows": [
+    {
+      "file": "1280-empty-albums.png",
+      "before": [
+        1280,
+        1000
+      ],
+      "after": [
+        1280,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1280-empty-characters.png",
+      "before": [
+        1280,
+        2103
+      ],
+      "after": [
+        1280,
+        2103
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1280-empty-diary.png",
+      "before": [
+        1280,
+        1043
+      ],
+      "after": [
+        1280,
+        1043
+      ],
+      "pixelsOver8": 11274
+    },
+    {
+      "file": "1280-empty-home.png",
+      "before": [
+        1280,
+        1093
+      ],
+      "after": [
+        1280,
+        1093
+      ],
+      "pixelsOver8": 25579
+    },
+    {
+      "file": "1280-empty-memories.png",
+      "before": [
+        1280,
+        1000
+      ],
+      "after": [
+        1280,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1280-empty-people.png",
+      "before": [
+        1280,
+        1017
+      ],
+      "after": [
+        1280,
+        1017
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1280-empty-photos.png",
+      "before": [
+        1280,
+        1072
+      ],
+      "after": [
+        1280,
+        1072
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1280-empty-settings.png",
+      "before": [
+        1280,
+        1000
+      ],
+      "after": [
+        1280,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1280-populated-albums.png",
+      "before": [
+        1280,
+        1033
+      ],
+      "after": [
+        1280,
+        1033
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1280-populated-characters.png",
+      "before": [
+        1280,
+        1992
+      ],
+      "after": [
+        1280,
+        1992
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1280-populated-diary.png",
+      "before": [
+        1280,
+        1171
+      ],
+      "after": [
+        1280,
+        1171
+      ],
+      "pixelsOver8": 9709
+    },
+    {
+      "file": "1280-populated-home.png",
+      "before": [
+        1280,
+        1029
+      ],
+      "after": [
+        1280,
+        1029
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1280-populated-memories.png",
+      "before": [
+        1280,
+        1000
+      ],
+      "after": [
+        1280,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1280-populated-people.png",
+      "before": [
+        1280,
+        1000
+      ],
+      "after": [
+        1280,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1280-populated-photos.png",
+      "before": [
+        1280,
+        1132
+      ],
+      "after": [
+        1280,
+        1132
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1280-populated-settings.png",
+      "before": [
+        1280,
+        1000
+      ],
+      "after": [
+        1280,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1440-empty-albums.png",
+      "before": [
+        1440,
+        1000
+      ],
+      "after": [
+        1440,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1440-empty-characters.png",
+      "before": [
+        1440,
+        2103
+      ],
+      "after": [
+        1440,
+        2103
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1440-empty-diary.png",
+      "before": [
+        1440,
+        1043
+      ],
+      "after": [
+        1440,
+        1043
+      ],
+      "pixelsOver8": 11255
+    },
+    {
+      "file": "1440-empty-home.png",
+      "before": [
+        1440,
+        1093
+      ],
+      "after": [
+        1440,
+        1093
+      ],
+      "pixelsOver8": 15045
+    },
+    {
+      "file": "1440-empty-memories.png",
+      "before": [
+        1440,
+        1000
+      ],
+      "after": [
+        1440,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1440-empty-people.png",
+      "before": [
+        1440,
+        1017
+      ],
+      "after": [
+        1440,
+        1017
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1440-empty-photos.png",
+      "before": [
+        1440,
+        1072
+      ],
+      "after": [
+        1440,
+        1072
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1440-empty-settings.png",
+      "before": [
+        1440,
+        1000
+      ],
+      "after": [
+        1440,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1440-populated-albums.png",
+      "before": [
+        1440,
+        1033
+      ],
+      "after": [
+        1440,
+        1033
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1440-populated-characters.png",
+      "before": [
+        1440,
+        1992
+      ],
+      "after": [
+        1440,
+        1992
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1440-populated-diary.png",
+      "before": [
+        1440,
+        1171
+      ],
+      "after": [
+        1440,
+        1171
+      ],
+      "pixelsOver8": 9730
+    },
+    {
+      "file": "1440-populated-home.png",
+      "before": [
+        1440,
+        1029
+      ],
+      "after": [
+        1440,
+        1029
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1440-populated-memories.png",
+      "before": [
+        1440,
+        1000
+      ],
+      "after": [
+        1440,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1440-populated-people.png",
+      "before": [
+        1440,
+        1000
+      ],
+      "after": [
+        1440,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1440-populated-photos.png",
+      "before": [
+        1440,
+        1197
+      ],
+      "after": [
+        1440,
+        1197
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "1440-populated-settings.png",
+      "before": [
+        1440,
+        1000
+      ],
+      "after": [
+        1440,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "360-empty-albums.png",
+      "before": [
+        360,
+        1000
+      ],
+      "after": [
+        360,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "360-empty-characters.png",
+      "before": [
+        360,
+        6238
+      ],
+      "after": [
+        360,
+        6238
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "360-empty-diary.png",
+      "before": [
+        360,
+        1000
+      ],
+      "after": [
+        360,
+        1000
+      ],
+      "pixelsOver8": 6298
+    },
+    {
+      "file": "360-empty-home.png",
+      "before": [
+        360,
+        1308
+      ],
+      "after": [
+        360,
+        1328
+      ],
+      "pixelsOver8": null
+    },
+    {
+      "file": "360-empty-memories.png",
+      "before": [
+        360,
+        1000
+      ],
+      "after": [
+        360,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "360-empty-people.png",
+      "before": [
+        360,
+        1114
+      ],
+      "after": [
+        360,
+        1114
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "360-empty-photos.png",
+      "before": [
+        360,
+        1112
+      ],
+      "after": [
+        360,
+        1112
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "360-empty-settings.png",
+      "before": [
+        360,
+        1000
+      ],
+      "after": [
+        360,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "360-populated-albums.png",
+      "before": [
+        360,
+        1000
+      ],
+      "after": [
+        360,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "360-populated-characters.png",
+      "before": [
+        360,
+        5973
+      ],
+      "after": [
+        360,
+        5973
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "360-populated-diary.png",
+      "before": [
+        360,
+        1083
+      ],
+      "after": [
+        360,
+        1083
+      ],
+      "pixelsOver8": 5599
+    },
+    {
+      "file": "360-populated-home.png",
+      "before": [
+        360,
+        1248
+      ],
+      "after": [
+        360,
+        1248
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "360-populated-memories.png",
+      "before": [
+        360,
+        1000
+      ],
+      "after": [
+        360,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "360-populated-people.png",
+      "before": [
+        360,
+        1133
+      ],
+      "after": [
+        360,
+        1133
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "360-populated-photos.png",
+      "before": [
+        360,
+        1306
+      ],
+      "after": [
+        360,
+        1306
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "360-populated-settings.png",
+      "before": [
+        360,
+        1000
+      ],
+      "after": [
+        360,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "390-empty-albums.png",
+      "before": [
+        390,
+        1000
+      ],
+      "after": [
+        390,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "390-empty-characters.png",
+      "before": [
+        390,
+        6230
+      ],
+      "after": [
+        390,
+        6230
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "390-empty-diary.png",
+      "before": [
+        390,
+        1000
+      ],
+      "after": [
+        390,
+        1000
+      ],
+      "pixelsOver8": 6307
+    },
+    {
+      "file": "390-empty-home.png",
+      "before": [
+        390,
+        1298
+      ],
+      "after": [
+        390,
+        1319
+      ],
+      "pixelsOver8": null
+    },
+    {
+      "file": "390-empty-memories.png",
+      "before": [
+        390,
+        1000
+      ],
+      "after": [
+        390,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "390-empty-people.png",
+      "before": [
+        390,
+        1130
+      ],
+      "after": [
+        390,
+        1130
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "390-empty-photos.png",
+      "before": [
+        390,
+        1111
+      ],
+      "after": [
+        390,
+        1111
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "390-empty-settings.png",
+      "before": [
+        390,
+        1000
+      ],
+      "after": [
+        390,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "390-populated-albums.png",
+      "before": [
+        390,
+        1000
+      ],
+      "after": [
+        390,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "390-populated-characters.png",
+      "before": [
+        390,
+        5989
+      ],
+      "after": [
+        390,
+        5989
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "390-populated-diary.png",
+      "before": [
+        390,
+        1099
+      ],
+      "after": [
+        390,
+        1099
+      ],
+      "pixelsOver8": 5603
+    },
+    {
+      "file": "390-populated-home.png",
+      "before": [
+        390,
+        1238
+      ],
+      "after": [
+        390,
+        1238
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "390-populated-memories.png",
+      "before": [
+        390,
+        1000
+      ],
+      "after": [
+        390,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "390-populated-people.png",
+      "before": [
+        390,
+        1095
+      ],
+      "after": [
+        390,
+        1095
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "390-populated-photos.png",
+      "before": [
+        390,
+        1347
+      ],
+      "after": [
+        390,
+        1347
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "390-populated-settings.png",
+      "before": [
+        390,
+        1000
+      ],
+      "after": [
+        390,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "430-empty-albums.png",
+      "before": [
+        430,
+        1000
+      ],
+      "after": [
+        430,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "430-empty-characters.png",
+      "before": [
+        430,
+        6207
+      ],
+      "after": [
+        430,
+        6207
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "430-empty-diary.png",
+      "before": [
+        430,
+        1000
+      ],
+      "after": [
+        430,
+        1000
+      ],
+      "pixelsOver8": 6307
+    },
+    {
+      "file": "430-empty-home.png",
+      "before": [
+        430,
+        1298
+      ],
+      "after": [
+        430,
+        1298
+      ],
+      "pixelsOver8": 15528
+    },
+    {
+      "file": "430-empty-memories.png",
+      "before": [
+        430,
+        1000
+      ],
+      "after": [
+        430,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "430-empty-people.png",
+      "before": [
+        430,
+        1130
+      ],
+      "after": [
+        430,
+        1130
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "430-empty-photos.png",
+      "before": [
+        430,
+        1111
+      ],
+      "after": [
+        430,
+        1111
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "430-empty-settings.png",
+      "before": [
+        430,
+        1000
+      ],
+      "after": [
+        430,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "430-populated-albums.png",
+      "before": [
+        430,
+        1000
+      ],
+      "after": [
+        430,
+        1000
+      ],
+      "pixelsOver8": 87650
+    },
+    {
+      "file": "430-populated-characters.png",
+      "before": [
+        430,
+        5989
+      ],
+      "after": [
+        430,
+        5989
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "430-populated-diary.png",
+      "before": [
+        430,
+        1099
+      ],
+      "after": [
+        430,
+        1099
+      ],
+      "pixelsOver8": 5603
+    },
+    {
+      "file": "430-populated-home.png",
+      "before": [
+        430,
+        1234
+      ],
+      "after": [
+        430,
+        1234
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "430-populated-memories.png",
+      "before": [
+        430,
+        1000
+      ],
+      "after": [
+        430,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "430-populated-people.png",
+      "before": [
+        430,
+        1076
+      ],
+      "after": [
+        430,
+        1076
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "430-populated-photos.png",
+      "before": [
+        430,
+        1381
+      ],
+      "after": [
+        430,
+        1381
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "430-populated-settings.png",
+      "before": [
+        430,
+        1000
+      ],
+      "after": [
+        430,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "768-empty-albums.png",
+      "before": [
+        768,
+        1000
+      ],
+      "after": [
+        768,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "768-empty-characters.png",
+      "before": [
+        768,
+        2615
+      ],
+      "after": [
+        768,
+        2615
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "768-empty-diary.png",
+      "before": [
+        768,
+        1028
+      ],
+      "after": [
+        768,
+        1028
+      ],
+      "pixelsOver8": 7053
+    },
+    {
+      "file": "768-empty-home.png",
+      "before": [
+        768,
+        1181
+      ],
+      "after": [
+        768,
+        1181
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "768-empty-memories.png",
+      "before": [
+        768,
+        1000
+      ],
+      "after": [
+        768,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "768-empty-people.png",
+      "before": [
+        768,
+        1114
+      ],
+      "after": [
+        768,
+        1114
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "768-empty-photos.png",
+      "before": [
+        768,
+        1084
+      ],
+      "after": [
+        768,
+        1084
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "768-empty-settings.png",
+      "before": [
+        768,
+        1000
+      ],
+      "after": [
+        768,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "768-populated-albums.png",
+      "before": [
+        768,
+        1058
+      ],
+      "after": [
+        768,
+        1058
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "768-populated-characters.png",
+      "before": [
+        768,
+        2527
+      ],
+      "after": [
+        768,
+        2527
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "768-populated-diary.png",
+      "before": [
+        768,
+        1156
+      ],
+      "after": [
+        768,
+        1156
+      ],
+      "pixelsOver8": 5603
+    },
+    {
+      "file": "768-populated-home.png",
+      "before": [
+        768,
+        1117
+      ],
+      "after": [
+        768,
+        1117
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "768-populated-memories.png",
+      "before": [
+        768,
+        1000
+      ],
+      "after": [
+        768,
+        1000
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "768-populated-people.png",
+      "before": [
+        768,
+        1060
+      ],
+      "after": [
+        768,
+        1060
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "768-populated-photos.png",
+      "before": [
+        768,
+        1220
+      ],
+      "after": [
+        768,
+        1220
+      ],
+      "pixelsOver8": 0
+    },
+    {
+      "file": "768-populated-settings.png",
+      "before": [
+        768,
+        1000
+      ],
+      "after": [
+        768,
+        1000
+      ],
+      "pixelsOver8": 0
+    }
+  ]
+}
