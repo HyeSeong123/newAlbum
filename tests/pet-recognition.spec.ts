@@ -23,7 +23,7 @@ test('Worker detects dog locally and keeps main thread responsive with cancel/re
     const cropUrl=URL.createObjectURL(await new Promise<Blob>(resolve=>crop.toBlob(blob=>resolve(blob!),'image/jpeg',.95)));
     let closeCats;try{closeCats=await analyzePetImage(cropUrl);}finally{URL.revokeObjectURL(cropUrl);}
     const object=features[0], [x,y,w,h]=object.box;
-    if(object.automaticPose?.keypoints?.length!==17 || object.automaticPose.modelVersion!=='quadpose-ap10k-52f0329b-v1')throw new Error('Bundled animal pose model did not execute');
+    if(object.automaticPose || object.viewSource==='quadpose-keypoints')throw new Error('Excluded pose model executed');
     const front=await analyzePetImage('/pet-test.jpg',undefined,'front',[{...object,view:'front',faceBox:[x+w*0.2,y+h*0.2,w*0.3,h*0.3]}]);
     const rear=await analyzePetImage('/pet-test.jpg',undefined,'rear',[{...front[0],view:'rear'}]);
     if(front[0].faceAppearance.length!==1024 || rear[0].appearance.length || rear[0].faceAppearance.length || rear[0].faceBox)throw new Error('face/rear extraction policy failed');

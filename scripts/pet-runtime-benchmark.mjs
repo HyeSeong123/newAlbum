@@ -78,7 +78,7 @@ export async function benchmarkInstalledPetRuntime(page, inputPath) {
   },inputPath);
   assert.deepEqual(result.cpuKinds,result.wasmKinds);
   assert.ok(result.cpuKinds.includes('dog'));
-  assert.ok(result.poseModels.length>0 && result.poseModels.every(p=>p.version==='quadpose-ap10k-52f0329b-v1' && p.keypoints===17));
+  assert.ok(result.poseModels.length>0 && result.poseModels.every(p=>p.version===undefined && p.keypoints===undefined));
   assert.deepEqual(result.wasm.backends,['wasm','wasm','wasm']);
   assert.ok(result.bodyCosine>.9999 && result.mirrorCosine>.9999);
   assert.ok(result.maxBoxDifference<.001);

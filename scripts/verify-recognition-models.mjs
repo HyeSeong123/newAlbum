@@ -1,11 +1,6 @@
-import { readFileSync, readdirSync } from 'node:fs';
-import { createHash } from 'node:crypto';
-const lock=JSON.parse(readFileSync(new URL('./recognition-models.lock.json',import.meta.url),'utf8'));
-for(const model of lock.models){
- const file=new URL('../public/models/'+model.path,import.meta.url), bytes=readFileSync(file);
- if(bytes.length!==model.bytes || createHash('sha256').update(bytes).digest('hex')!==model.sha256)throw new Error('Unrecognized model: '+model.path);
- const root=new URL('./',file);
- const allowed=[file.pathname.split('/').pop(),'LICENSE',...(model.path.startsWith('pet-pose/')?['NOTICE']:[])];
- for(const name of readdirSync(root))if(!allowed.includes(name))throw new Error('Unexpected model asset: '+name);
+import { existsSync, readFileSync } from 'node:fs';
+const lock = JSON.parse(readFileSync(new URL('./recognition-models.lock.json', import.meta.url), 'utf8'));
+if (lock.models.length || lock.deployment !== 'excluded-from-product') throw new Error('Excluded recognition models must not be enabled');
+for (const name of ['people512', 'pet-pose', 'onnx-runtime', 'recognition-provenance.json']) {
+  if (existsSync(new URL(`../public/models/${name}`, import.meta.url))) throw new Error(`Excluded model asset: ${name}`);
 }
-if(process.argv.includes('--commercial') && !lock.commercialClearanceConfirmed)throw new Error('Development models are installed, but commercial training-image clearance is unresolved.');

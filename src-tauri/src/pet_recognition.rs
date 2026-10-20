@@ -2,7 +2,7 @@ use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 
-const ENGINE: &str = "gamjassak-pets-v2";
+const ENGINE: &str = "gamjassak-pets-v3-no-pose";
 #[derive(Serialize,Deserialize,Clone)]
 struct PosePoint {x:f64,y:f64,score:f64}
 #[derive(Serialize,Deserialize,Clone)]
@@ -34,7 +34,7 @@ pub struct Scan { media_id: i64, engine_version: String, source_key: String, det
 fn validate(f: &Features) -> Result<(), String> {
     if !["dog", "cat"].contains(&f.kind.as_str()) || !["front", "left", "right", "rear", "unknown"].contains(&f.view.as_str())
         || f.detected_kind.as_ref().is_some_and(|kind|!["dog","cat"].contains(&kind.as_str()))
-        || !["unknown", "user", "cat-frontal-cascade", "quadpose-keypoints"].contains(&f.view_source.as_str())
+        || !["unknown", "user", "cat-frontal-cascade"].contains(&f.view_source.as_str())
         || !f.box_.iter().all(|v| v.is_finite() && (0.0..=1.0).contains(v))
         || f.box_[2] <= 0.0 || f.box_[3] <= 0.0
         || f.box_[0]+f.box_[2] > 1.000001 || f.box_[1]+f.box_[3] > 1.000001
@@ -45,10 +45,7 @@ fn validate(f: &Features) -> Result<(), String> {
         return Err("올바르지 않은 반려동물 특징입니다.".into());
     }
     if f.view_source=="cat-frontal-cascade" && (f.kind!="cat" || f.view!="front" || f.face_box.is_none()) {return Err("자동 고양이 얼굴 분석을 확인해 주세요.".into());}
-    if let Some(pose)=&f.automatic_pose {
-        if pose.model_version!="quadpose-ap10k-52f0329b-v1" || !["front","left","right","unknown"].contains(&pose.view.as_str()) || pose.keypoints.len()!=17 || pose.keypoints.iter().any(|p|![p.x,p.y,p.score].iter().all(|x|x.is_finite()) || !(-1.0..=2.0).contains(&p.x) || !(-1.0..=2.0).contains(&p.y) || !(-2.0..=2.0).contains(&p.score)) {return Err("반려동물 자세 모델 결과가 올바르지 않습니다.".into());}
-    }
-    if f.view_source=="quadpose-keypoints" && f.automatic_pose.as_ref().is_none_or(|p|p.view!=f.view || p.view=="unknown") {return Err("자동 방향의 자세 근거가 없습니다.".into());}
+    if f.automatic_pose.is_some() {return Err("현재 배포에서 자세 모델은 제외되어 있습니다.".into());}
     if let Some(g)=&f.foreground {
         if g.version!="border-connected-v1" || g.color.len()!=120 || g.shape.len()!=10 || !g.fraction.is_finite() || !(0.05..=0.85).contains(&g.fraction) || ![&g.color,&g.shape].iter().all(|v|v.iter().all(|x|x.is_finite() && x.abs()<=1.000001)) {return Err("배경을 제외한 체형·색상 특징을 확인해 주세요.".into());}
     }
@@ -63,11 +60,21 @@ fn record_direction(conn:&Connection,id:i64,f:&Features)->Result<(),String>{
     let source=if f.view_source=="user" && f.automatic_pose.is_some() {"quadpose-keypoints"} else {f.view_source.as_str()};
     conn.execute("INSERT OR IGNORE INTO pet_direction_observation(detection_id,automatic_view,automatic_source,manual_view) VALUES(?1,?2,?3,?4)",params![id,automatic,source,if f.view_source=="user" {Some(f.view.as_str())} else {None}]).map_err(|e|e.to_string())?;Ok(())
 }
+// Excluded model observations remain in SQLite for recovery. They do not
+// supply orientation, keypoints or face identity evidence to active matching.
+fn active_features(mut f: Features) -> Features {
+    f.automatic_pose = None;
+    if f.view_source == "quadpose-keypoints" {
+        f.view = "unknown".into(); f.view_source = "unknown".into();
+        f.face_box = None; f.face_appearance.clear(); f.mirrored_face_appearance.clear();
+    }
+    f
+}
 fn read_detections(conn: &Connection, media: Option<i64>, after: i64, limit: i64, references: bool) -> Result<Vec<Detection>, String> {
     let sql=if references {
         "SELECT id,media_id,pet_id,excluded,features FROM (
           SELECT id,media_id,pet_id,excluded,features,
-            ROW_NUMBER() OVER(PARTITION BY pet_id,json_extract(features,'$.view')
+            ROW_NUMBER() OVER(PARTITION BY pet_id,CASE WHEN json_extract(features,'$.viewSource')='quadpose-keypoints' THEN 'unknown' ELSE json_extract(features,'$.view') END
               ORDER BY CASE WHEN COALESCE(json_array_length(features,'$.faceAppearance'),0)>0 THEN 0 ELSE 1 END,id DESC) AS view_rank
           FROM pet_detection WHERE pet_id IS NOT NULL AND excluded=0
         ) WHERE (?1 IS NULL OR media_id=?1) AND id>?2 AND view_rank<=3 AND ?4=1 ORDER BY id LIMIT ?3"
@@ -78,7 +85,7 @@ fn read_detections(conn: &Connection, media: Option<i64>, after: i64, limit: i64
     let mut stmt=conn.prepare(sql).map_err(|e|e.to_string())?;
     let raw = stmt.query_map(params![media,after,limit,references], |row| Ok((row.get::<_,i64>(0)?,row.get::<_,i64>(1)?,row.get::<_,Option<i64>>(2)?,row.get::<_,bool>(3)?,row.get::<_,String>(4)?)))
         .map_err(|e|e.to_string())?.collect::<Result<Vec<_>,_>>().map_err(|e|e.to_string())?;
-    raw.into_iter().map(|(id,media_id,pet_id,excluded,json)| Ok(Detection { id,media_id,pet_id,excluded,features: serde_json::from_str(&json).map_err(|e|e.to_string())? })).collect()
+    raw.into_iter().map(|(id,media_id,pet_id,excluded,json)| Ok(Detection { id,media_id,pet_id,excluded,features: active_features(serde_json::from_str(&json).map_err(|e|e.to_string())?) })).collect()
 }
 fn read_scan(conn: &Connection, media_id: i64) -> Result<Option<Scan>,String> {
     let header: Option<(String,String)> = conn.query_row("SELECT engine_version,source_key FROM pet_scan WHERE media_id=?1",[media_id],|r|Ok((r.get(0)?,r.get(1)?))).optional().map_err(|e|e.to_string())?;
@@ -313,13 +320,19 @@ mod tests {
         let mut c=database();let mut bad=features();bad.shape[0]=f64::NAN;assert!(write_scan(&mut c,1,"a",vec![bad]).is_err());
         assert!(read_scan(&c,1).unwrap().is_none());assert!(write_scan(&mut c,1,"a",vec![]).unwrap().detections.is_empty());
     }
-    #[test] fn learned_pet_pose_retains_automatic_observation_after_manual_correction(){
-      let mut c=database();let mut f=features();f.view="left".into();f.view_source="quadpose-keypoints".into();
-      f.automatic_pose=Some(AutomaticPose{model_version:"quadpose-ap10k-52f0329b-v1".into(),view:"left".into(),keypoints:(0..17).map(|_|PosePoint{x:0.2,y:0.3,score:0.8}).collect()});
-      let scan=write_scan(&mut c,1,"test",vec![f.clone()]).unwrap();let id=scan.detections[0].id;assert_eq!(scan.detections[0].pet_id,None);assert_eq!(scan.detections[0].features.automatic_pose.as_ref().unwrap().keypoints.len(),17);
-      confirm(&mut c,id,Some(1),"right",false).unwrap();let saved=read_scan(&c,1).unwrap().unwrap().detections.remove(0);assert_eq!(saved.features.view,"right");assert_eq!(saved.features.automatic_pose.unwrap().view,"left");
-      let (auto,manual):(String,String)=c.query_row("SELECT automatic_view,manual_view FROM pet_direction_observation WHERE detection_id=?1",[id],|r|Ok((r.get(0)?,r.get(1)?))).unwrap();assert_eq!(auto,"left");assert_eq!(manual,"right");
-      f.automatic_pose.as_mut().unwrap().keypoints.pop();assert!(validate(&f).is_err());
+    #[test] fn excluded_pose_is_read_inactive_without_deleting_legacy_data_or_manual_links(){
+      let mut c=database();let scan=write_scan(&mut c,1,"test",vec![features()]).unwrap();let id=scan.detections[0].id;
+      let mut old=features();old.view="left".into();old.view_source="quadpose-keypoints".into();
+      old.automatic_pose=Some(AutomaticPose{model_version:"quadpose-ap10k-52f0329b-v1".into(),view:"left".into(),keypoints:(0..17).map(|_|PosePoint{x:0.2,y:0.3,score:0.8}).collect()});
+      assert!(validate(&old).is_err());
+      let json=serde_json::to_string(&old).unwrap();
+      c.execute("UPDATE pet_detection SET features=?1,pet_id=1 WHERE id=?2",params![json,id]).unwrap();
+      let saved=read_scan(&c,1).unwrap().unwrap().detections.remove(0);
+      assert_eq!(saved.pet_id,Some(1));assert_eq!(saved.features.view,"unknown");assert!(saved.features.automatic_pose.is_none());
+      assert_eq!(c.query_row("SELECT features FROM pet_detection WHERE id=?1",[id],|r|r.get::<_,String>(0)).unwrap(),json);
+      old.view="right".into();old.view_source="user".into();
+      c.execute("UPDATE pet_detection SET features=?1 WHERE id=?2",params![serde_json::to_string(&old).unwrap(),id]).unwrap();
+      let manual=read_scan(&c,1).unwrap().unwrap().detections.remove(0);assert_eq!(manual.features.view,"right");assert_eq!(manual.features.view_source,"user");assert!(manual.features.automatic_pose.is_none());
     }
     #[test] fn manual_direction_never_becomes_an_automatic_success(){
       let mut c=database();let mut f=features();f.view="unknown".into();f.view_source="unknown".into();

@@ -52,10 +52,10 @@ async function prepare(page: Page) {
       if(command==='finish_pet_job'){if(args.error){const row=jobs.find(row=>row.id===args.id);if(row){row.state='failed';row.error=args.error;}}else jobs=jobs.filter(row=>row.id!==args.id);return;}
       if(command==='control_pet_jobs'){for(const row of jobs)row.state=args.resume?'pending':'paused';return;}
       if(command==='prepare_pet_input')return {path:'/manual-photo.jpg',sourceKey:'sha256:'+'a'.repeat(64)};
-      if(command==='get_pet_scan')return detections.some(row=>row.media_id===args.mediaId)?structuredClone({media_id:args.mediaId,engine_version:'gamjassak-pets-v2',source_key:'sha256:'+'a'.repeat(64),detections:detections.filter(row=>row.media_id===args.mediaId)}):null;
+      if(command==='get_pet_scan')return detections.some(row=>row.media_id===args.mediaId)?structuredClone({media_id:args.mediaId,engine_version:'gamjassak-pets-v3-no-pose',source_key:'sha256:'+'a'.repeat(64),detections:detections.filter(row=>row.media_id===args.mediaId)}):null;
       if(command==='replace_pet_scan'||command==='save_pet_scan'){
         if(!detections.some(row=>row.media_id===args.mediaId))detections.push({...args.features[0],id:args.mediaId,media_id:args.mediaId,pet_id:null,excluded:false});
-        return structuredClone({media_id:args.mediaId,engine_version:'gamjassak-pets-v2',source_key:'sha256:'+'a'.repeat(64),detections:detections.filter(row=>row.media_id===args.mediaId)});
+        return structuredClone({media_id:args.mediaId,engine_version:'gamjassak-pets-v3-no-pose',source_key:'sha256:'+'a'.repeat(64),detections:detections.filter(row=>row.media_id===args.mediaId)});
       }
       if(command==='refresh_pet_reference'){Object.assign(detections.find(row=>row.id===args.detectionId),args.features);remember('pet-refreshed',args.detectionId);return;}
       if(command==='confirm_pet_detection'){const row=detections.find(row=>row.id===args.detectionId);row.pet_id=args.petId;return;}

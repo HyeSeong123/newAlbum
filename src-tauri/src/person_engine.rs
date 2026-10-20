@@ -97,6 +97,7 @@ pub(crate) fn rank(query:&[f64],references:&[(i64,Vec<f64>)])->Vec<Candidate>{
 
 // A separate learned space: cosine distances are never compared to FaceAPI's
 // unnormalized Euclidean distances. This only proposes candidates for review.
+#[cfg(test)]
 pub(crate) fn rank512(query:&[f64],references:&[(i64,Vec<f64>)])->Vec<Candidate>{
     let valid=|v:&[f64]|v.len()==512 && v.iter().all(|x|x.is_finite()) && v.iter().map(|x|x*x).sum::<f64>()>1e-12;
     if !valid(query){return vec![];}

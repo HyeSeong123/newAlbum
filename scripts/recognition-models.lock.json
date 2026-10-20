@@ -2,7 +2,7 @@
   "version": 1,
   "runtime": "1.22.0",
   "commercialClearanceConfirmed": false,
-  "models": [
+  "excludedModels": [
     {
       "version": "facex-tiny-512-af7ca993-v1",
       "path": "people512/facex-tiny.onnx",
@@ -24,5 +24,7 @@
       "license": "Apache-2.0",
       "trainingSource": "AP-10K annotations CC-BY-4.0; third-party photos and ImageNet/ViTPose training lineage have unresolved commercial-image rights"
     }
-  ]
+  ],
+  "models": [],
+  "deployment": "excluded-from-product"
 }

@@ -7,20 +7,23 @@
   "engine": "existing-offline-recognition",
   "inventory": {
     "scripts/face-models.lock.json": "47e0c87d8378c07dd3c7d65acb8d574952ffc88279d86d3e19d700fc99c24f5a",
-    "scripts/recognition-models.lock.json": "b1d78f99bafab3c0949bd55c4d3db1e873ee81cbeb7115c3ffff3ec44443d874",
+    "scripts/recognition-models.lock.json": "6b9b142663e1eb084397f61df04899924a4f4a7f7916e39434223cc852094cdf",
     "scripts/pet-model-lock.json": "79a55f3cd09966905c5b155437bcd55c76835e369f5f1a3e386a85141b7b7cc1",
     "src/features/pets/engine/cat-face-cascade.json": "69cf5c1a84f33860a396b696d44f98ea0f15a3d7e0d6c00e14e5cb8fac2fa2a3",
     "public/notices/face-api-original-MIT.txt": "d5480b4d4e46880107a56db666697ec3e90def81a8fc829e530b1c291e3172a5",
     "public/notices/dlib-models-CC0.txt": "6a1ee543e5282cd9061881edf462e6fdab181f328da71fc2c9a6950a80e94d01",
-    "public/notices/pet-pose-NOTICE.txt": "8cddc66c3ccd843e08b691ab6a1460f98f5ad2fc2ca72d951c08c21a69617c4a",
     "public/notices/pet-cat-face-license.txt": "616d0059581d04800fa0a602d4a5e388d7bf99b73246babc92b065a7a34e9c57",
-    "public/notices/pet-models-Apache-2.0.txt": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
-    "public/notices/recognition-models-Apache-2.0.txt": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
-    "public/notices/onnx-runtime-MIT.txt": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c"
+    "public/notices/pet-models-Apache-2.0.txt": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd"
   },
   "remaining": [
     "Training-data terms and third-party rights are not fully resolved.",
     "This packaging decision is not a legal clearance or an app store approval."
   ],
-  "researchModelsIncluded": false
+  "researchModelsIncluded": false,
+  "activeModelProfile": "person128-pet-basic-no-pose",
+  "excludedModelVersions": [
+    "facex-tiny-512-af7ca993-v1",
+    "quadpose-ap10k-52f0329b-v1"
+  ],
+  "correctionRecord": "docs/rights-scope-correction-2026-10-20.md"
 }

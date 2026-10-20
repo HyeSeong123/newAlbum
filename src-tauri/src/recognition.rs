@@ -23,7 +23,7 @@ pub async fn set_person_face_view(app:AppHandle,face_id:i64,view:String)->Result
 }
 #[tauri::command]
 pub fn recognition_model_status()->serde_json::Value {
- serde_json::json!({"person128":"active","person512":"bundled-development","person512Model":PERSON_512_MODEL,"commercialClearanceConfirmed":false,"pet1024":"active","petAutomaticSides":"quadpose-keypoints-unvalidated","personPose":"estimated-unvalidated","automaticPetLinking":false})
+ serde_json::json!({"person128":"active","person512":"excluded-rights-review","person512Model":PERSON_512_MODEL,"commercialClearanceConfirmed":false,"pet1024":"active","petAutomaticSides":"unsupported-model-excluded","personPose":"estimated-unvalidated","automaticPetLinking":false})
 }
 
 #[tauri::command]
@@ -46,8 +46,7 @@ pub async fn export_recognition_report(app:AppHandle,destination:String,content:
 pub struct ModelFeature {pub(crate) model_version:String,pub(crate) dimensions:usize,pub(crate) descriptor:Vec<f64>}
 impl ModelFeature {
  pub(crate) fn validate(&self)->Result<(),String>{
-  // Keep synchronized with the hash-pinned development-model registry.
-  let approved=[PERSON_512_MODEL];
-  if self.dimensions!=512||self.descriptor.len()!=512||self.descriptor.iter().any(|v|!v.is_finite())||!self.descriptor.iter().any(|v|v.abs()>1e-12)||!approved.contains(&self.model_version.as_str()) {return Err("승인된 512차원 모델의 특징이 아닙니다.".into());} Ok(())
+  // Preserve legacy rows for recovery; never admit excluded model outputs.
+  Err("현재 배포에서 512차원 추가 모델은 제외되어 있습니다.".into())
  }
 }

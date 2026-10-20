@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 export const inventoryFiles = ['scripts/face-models.lock.json', 'scripts/recognition-models.lock.json', 'scripts/pet-model-lock.json', 'src/features/pets/engine/cat-face-cascade.json'];
-export const requiredNotices = ['face-api-original-MIT.txt', 'dlib-models-CC0.txt', 'pet-pose-NOTICE.txt', 'pet-cat-face-license.txt', 'pet-models-Apache-2.0.txt', 'recognition-models-Apache-2.0.txt', 'onnx-runtime-MIT.txt'];
+export const requiredNotices = ['face-api-original-MIT.txt', 'dlib-models-CC0.txt', 'pet-cat-face-license.txt', 'pet-models-Apache-2.0.txt'];
 
 // Packaging consent is deliberately separate from legal clearance. This checks
 // the recorded inventory and actual shipped bytes, never grants model rights.
@@ -21,8 +21,9 @@ export async function checkRelease(base = root, { verifyAssets = true, verifyDis
   try { policy = JSON.parse(policyBytes); } catch { errors.push('INVALID_RELEASE_RECORD'); return errors; }
   if (!policy || typeof policy !== 'object') return [...errors, 'INVALID_RELEASE_RECORD'];
   if (policy.schemaVersion !== 1 || policy.releaseDecision !== 'proceed-with-documented-uncertainties'
-      || policy.commercialRightsVerified !== false || policy.decisionRecord !== 'docs/release-decisions/2026-10-20-public-release.md') errors.push('INVALID_RELEASE_RECORD');
+      || policy.correctionRecord !== 'docs/rights-scope-correction-2026-10-20.md' || policy.activeModelProfile !== 'person128-pet-basic-no-pose' || policy.commercialRightsVerified !== false || policy.decisionRecord !== 'docs/release-decisions/2026-10-20-public-release.md') errors.push('INVALID_RELEASE_RECORD');
   await read(policy.decisionRecord === 'docs/release-decisions/2026-10-20-public-release.md' ? policy.decisionRecord : 'docs/release-decisions/2026-10-20-public-release.md');
+  await read('docs/rights-scope-correction-2026-10-20.md');
   for (const file of [...inventoryFiles, ...requiredNotices.map(name => `public/notices/${name}`)]) {
     const bytes = await read(file);
     if (bytes && digest(bytes) !== policy.inventory?.[file]) errors.push(`INVENTORY_CHANGED:${file}`);
@@ -33,7 +34,7 @@ export async function checkRelease(base = root, { verifyAssets = true, verifyDis
   const pets = JSON.parse(await read('scripts/pet-model-lock.json'));
   const expected = new Map();
   for (const [name, sha256] of Object.entries(face.models)) expected.set(`faces/${name}`, { sha256 });
-  for (const model of extra.models) expected.set(model.path, model);
+  if (extra.models.length || extra.deployment !== 'excluded-from-product') errors.push('EXCLUDED_MODELS_ENABLED');
   for (const [name, model] of Object.entries(pets.models)) for (const [file, spec] of Object.entries(model.files)) expected.set(`pets/${name}/${file}`, spec);
   const addCopy = async (destination, source) => {
     const bytes = await read(source);
@@ -45,11 +46,7 @@ export async function checkRelease(base = root, { verifyAssets = true, verifyDis
   await addCopy('faces/runtime/TFJS-LICENSE', 'public/notices/pet-models-Apache-2.0.txt');
   for (const name of ['tfjs-backend-wasm.wasm', 'tfjs-backend-wasm-simd.wasm']) await addCopy(`pets/runtime/${name}`, `node_modules/@tensorflow/tfjs-backend-wasm/dist/${name}`);
   await addCopy('pets/LICENSE', 'public/notices/pet-models-Apache-2.0.txt');
-  for (const directory of ['people512', 'pet-pose']) await addCopy(`${directory}/LICENSE`, 'public/notices/recognition-models-Apache-2.0.txt');
-  await addCopy('pet-pose/NOTICE', 'public/notices/pet-pose-NOTICE.txt');
-  for (const name of ['ort-wasm-simd-threaded.wasm', 'ort-wasm-simd-threaded.mjs']) await addCopy(`onnx-runtime/${name}`, `node_modules/onnxruntime-web/dist/${name}`);
-  await addCopy('onnx-runtime/LICENSE', 'public/notices/onnx-runtime-MIT.txt');
-  const metadata = new Set(['faces/provenance.json', 'pets/runtime/manifest.json', 'recognition-provenance.json']);
+  const metadata = new Set(['faces/provenance.json', 'pets/runtime/manifest.json']);
   for (const assets of verifyDist ? ['public', 'dist'] : ['public']) {
     for (const [file, spec] of expected) {
       const bytes = await read(`${assets}/models/${file}`);
@@ -67,6 +64,7 @@ export async function checkRelease(base = root, { verifyAssets = true, verifyDis
       let entries; try { entries = await readdir(directory); } catch { return; }
       for (const name of entries) {
         const file = path.posix.join(relative, name), info = await lstat(path.join(directory, name));
+        if (/^(people512|pet-pose|onnx-runtime)(\/|$)/.test(file) || file === 'recognition-provenance.json') errors.push(`EXCLUDED_MODEL_ASSET:${assets}/models/${file}`);
         if (info.isSymbolicLink()) errors.push(`MODEL_SYMLINK:${assets}/models/${file}`);
         else if (info.isDirectory()) await walk(file);
         else if (!expected.has(file) && !metadata.has(file)) errors.push(`UNRECORDED_MODEL_ASSET:${assets}/models/${file}`);

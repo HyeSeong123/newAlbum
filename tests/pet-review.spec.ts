@@ -14,7 +14,7 @@ async function prepare(page: import('@playwright/test').Page) {
       if (command === 'list_pet_jobs') return { pending: 0, paused: 0, failed: 0, jobs: [] };
       if (command === 'media_thumbnail') return 'C:/thumb.jpg';
       if (command === 'list_pets') return structuredClone(pets);
-      if (command === 'get_pet_scan') return { media_id: args.mediaId, engine_version: 'gamjassak-pets-v2', source_key: 'mock', detections: detections.filter(d => d.media_id === args.mediaId) };
+      if (command === 'get_pet_scan') return { media_id: args.mediaId, engine_version: 'gamjassak-pets-v3-no-pose', source_key: 'mock', detections: detections.filter(d => d.media_id === args.mediaId) };
       if (command === 'list_pet_detections') return detections.filter(d => (args.mediaId === null || d.media_id === args.mediaId) && d.id > args.afterId && (!args.references || d.pet_id !== null && !d.excluded)).slice(0, args.limit);
       if (command === 'enqueue_pet_jobs') { const calls = JSON.parse(localStorage.getItem('pet-search-jobs') ?? '[]'); calls.push(args.jobs); localStorage.setItem('pet-search-jobs', JSON.stringify(calls)); return; }
       if (command === 'confirm_pet_detection') {
@@ -87,7 +87,7 @@ test('cached library search batches the queue and reuses existing scans', async 
       if (command === 'list_pet_jobs') { queueReads++; return { jobs: jobs.slice(0, 100), pending: jobs.length, paused: 0, failed: 0 }; }
       if (command === 'enqueue_pet_jobs') { jobs.push(...args.jobs.map((job: any) => ({ id: next++, media_id: job.mediaId, pet_id: job.petId, view: job.view, state: 'pending', error: '' }))); return; }
       if (command === 'prepare_pet_input') return { path: 'cached.jpg', sourceKey: 'cached-source' };
-      if (command === 'get_pet_scan') { scans++; return { engine_version: 'gamjassak-pets-v2', source_key: 'cached-source', media_id: args.mediaId, detections: [] }; }
+      if (command === 'get_pet_scan') { scans++; return { engine_version: 'gamjassak-pets-v3-no-pose', source_key: 'cached-source', media_id: args.mediaId, detections: [] }; }
       if (command === 'finish_pet_job') { jobs = jobs.filter(job => job.id !== args.id); localStorage.setItem('pet-queue-test', JSON.stringify({ queueReads, scans, remaining: jobs.length })); return; }
       return [];
     } } });

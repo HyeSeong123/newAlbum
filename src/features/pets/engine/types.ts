@@ -1,4 +1,4 @@
-export const ENGINE_VERSION = 'gamjassak-pets-v2';
+export const ENGINE_VERSION = 'gamjassak-pets-v3-no-pose';
 export type PetKind = 'dog' | 'cat';
 export type PetView = 'front' | 'left' | 'right' | 'rear' | 'unknown';
 export const VIEW_LABELS: Record<PetView, string> = { front: '정면', left: '왼쪽 측면', right: '오른쪽 측면', rear: '뒷모습', unknown: '방향 미확인' };
@@ -32,5 +32,5 @@ export interface RecognitionResult { state: RecognitionState; candidates: PetCan
 export interface ScanRecord { media_id: number; engine_version: string; source_key: string; detections: PetDetection[] }
 export interface PetDetector { detect(image: ImageBitmap): Promise<PetFeatures[]> }
 export interface ViewAnalyzer { analyze(): { view: PetView; viewSource: 'unknown' | 'user' } }
-// Fallback when the bundled pose model has insufficient evidence or fails.
+// No pose model is shipped. Unknown orientation requires user confirmation.
 export const conservativeViewAnalyzer: ViewAnalyzer = { analyze: () => ({ view: 'unknown', viewSource: 'unknown' }) };
