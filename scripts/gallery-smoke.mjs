@@ -22,7 +22,6 @@ export async function verifyInstalledGallery({page,adb,nativeTree,tapNative,capt
   await captureScreen('gallery-permission-denied');
   await tapNative(/text="취소"/);
   assert.equal((await wait()).uris,null);
-  for (const permission of ['READ_MEDIA_IMAGES','READ_MEDIA_VIDEO']) await adb('shell','pm','grant',appId,`android.permission.${permission}`);
   await adb('shell','mkdir','-p','/sdcard/Pictures/GamjassakGallery');
   const fixtures = [
     {name:'A-old-gallery.jpg',source:'tests/fixtures/no-gps.jpg',date:'202401010900.00'},
@@ -49,6 +48,9 @@ export async function verifyInstalledGallery({page,adb,nativeTree,tapNative,capt
       && rows.includes('unsupported-gallery.gif');
   },{timeout:60_000}).toBe(true);
   await launch();
+  // Exercise a real full-access permission choice after denial. A shell grant
+  // alone can leave Android's selected-photo AppOps session out of sync.
+  await tapNative(/resource-id="com.android.permissioncontroller:id\/permission_allow(?:_all)?_button"/);
   let tree;
   await expect.poll(async()=>{
     tree=await nativeTree();return fixtures.every(file=>tree.includes(file.name));
