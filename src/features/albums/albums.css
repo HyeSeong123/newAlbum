@@ -254,14 +254,7 @@
 }
 .landscape-page :is(.albumPageCaption, .albumTurnCaption) p { min-width: 0; }
 .landscape-page :is(.albumPageCaption, .albumTurnCaption) time { flex-shrink: 0; }
-.albumJournalTools .actionMenuPanel button { width: 100%; justify-content: flex-start; min-height: 40px; font-size: 13px; }
 .albumReaderNotice { position: absolute; z-index: 3; top: 76px; left: 50%; transform: translateX(-50%); padding: 10px 16px; border: 1px solid var(--border); border-radius: 5px; color: var(--muted); background: var(--surface); font-size: 13px; }
-.albumJournal.is-list { grid-template-rows: 76px minmax(0, 1fr); }
-.albumPhotoList { min-height: 0; overflow-y: auto; display: grid; align-content: start; }
-.albumPhotoList > button { display: grid; gap: 8px; padding: 0; color: var(--muted); background: transparent; text-align: left; }
-.albumPhotoList > button > div { width: 100%; overflow: hidden; position: relative; }
-.albumPhotoList > button > span { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
-.albumPhotoList > .emptyState { grid-column: 1 / -1; }
 .albumColorPreview .frontAlbum { width: 100%; }
 .albumColorPreview .frontAlbumTitle { font-size: 8px; }
 .albumActions button { font-size: 12px; border-color: var(--border); background: transparent; }
@@ -270,7 +263,6 @@
 @media (max-width: 1000px) { .savedAlbumGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px; } }
 @media (max-width: 760px) {
   .albumJournal { grid-template-rows: auto minmax(0, 1fr) auto; }
-  .albumJournal.is-list { grid-template-rows: auto minmax(0, 1fr); }
   .albumJournalHeader { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; padding: 8px 12px; }
   .albumJournalBack { font-size: 13px; gap: 4px; }
   .albumJournalHeading { min-width: 0; padding: 0; text-align: left; }
@@ -278,7 +270,6 @@
   .albumJournalTools { grid-column: 1 / -1; justify-self: stretch; justify-content: flex-start; flex-wrap: wrap; gap: 4px; }
   .albumJournalTools button { width: auto; min-height: 38px; padding: 0 7px; font-size: 13px; gap: 4px; }
   .albumJournalTools button > span { display: inline; }
-  .albumJournalTools .actionMenuPanel button { width: 100%; }
   .albumPageImages, .albumTurnFace { --caption-line: 15px; --caption-gap: 2px; }
   .albumLeafLayout { gap: 8px; }
   .albumLeafLayout.layout-grid { gap: 4px; }
@@ -410,16 +401,6 @@
 }
 
 /* Keep the full frame visible in both the overview and book view. */
-.albumPhotoList { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 28px 20px; padding: 20px clamp(20px, 4vw, 64px) 40px; }
-.albumPhotoList > button { min-width: 0; align-content: start; border-radius: 8px; }
-.albumPhotoList > button > div { aspect-ratio: 4 / 3; border-radius: 6px; background: #eeede7 !important; }
-.albumPhotoList .mediaImage { width: 100%; height: 100%; object-fit: contain; object-position: center; }
-.albumPhotoName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-size: 13px; font-weight: 550; }
-.albumPhotoList > button:hover > div { outline: 1px solid var(--primary); outline-offset: 3px; }
-.albumPhotoList > button:focus-visible { outline: 2px solid var(--primary); outline-offset: 5px; }
-@media (max-width: 760px) {
-  .albumPhotoList { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; padding: 12px; }
-}
 
 .albumJournalStart { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
 /* Writing actions sit above the book and use separate warm colour cues. */

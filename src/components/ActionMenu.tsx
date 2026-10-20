@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import "./action-menu.css";
 
 export function ActionMenu({ label, icon, triggerText, disabled = false, actions }: {
   label: string;

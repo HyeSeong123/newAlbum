@@ -1,14 +1,4 @@
 /* Menus are portalled out of transformed cards and clipped scroll containers. */
-.actionMenuPanel {
-  z-index: 2000;
-  width: max-content;
-  min-width: min(200px, calc(100vw - 20px));
-  top: auto;
-  right: auto;
-  box-sizing: border-box;
-}
-.actionMenuPanel button { min-height: 44px; height: auto; padding: 10px 12px; font-size: 14px; line-height: 1.5; white-space: normal; text-align: left; }
-.actionMenuPanel button svg { flex-shrink: 0; }
 .primaryActionShort { display: none; }
 .diaryView > .diarySearch { width: 100%; margin-bottom: 16px; }
 
@@ -114,7 +104,6 @@
   .diaryCardMenu { top: 16px; right: 12px; }
   .diaryOpen time { padding-right: 44px; }
   .albumJournal { grid-template-rows: auto minmax(0, 1fr) auto; }
-  .albumJournal.is-list { grid-template-rows: auto minmax(0, 1fr); }
   .albumJournalHeader { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; padding: 12px 16px; }
   .albumJournalHeading { min-width: 0; text-align: left; }
   .albumJournalBack { min-height: 44px; }

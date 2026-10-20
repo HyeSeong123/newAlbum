@@ -472,10 +472,6 @@ h3 { font-size: 15px; }
 .showAllAlbums { margin-left: auto; padding: 8px 0; display: flex; align-items: center; gap: 4px; color: #43463c; background: transparent; font-size: 12px; font-weight: 550; }
 .actionMenu { position: relative; display: inline-flex; }
 .actionMenuTrigger { display: inline-flex; justify-content: center; align-items: center; gap: 5px; min-height: 36px; padding: 0 8px; color: var(--muted); background: transparent; border-radius: 4px; }
-.actionMenuPanel { position: absolute; z-index: 100; top: calc(100% + 6px); right: 0; min-width: 168px; padding: 5px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); box-shadow: 0 8px 24px #34342b1f; }
-.actionMenuPanel button, .topbar .importActions .actionMenuPanel button { width: 100%; min-height: 40px; padding: 0 10px; display: flex; justify-content: flex-start; align-items: center; gap: 8px; border: 0; border-radius: 4px; background: transparent; color: var(--text); font-size: 13px; white-space: nowrap; }
-.actionMenuPanel button:hover:not(:disabled) { background: var(--surface-soft); }
-.actionMenuPanel button.dangerAction { margin-top: 6px; border-top: 1px solid var(--border); border-radius: 0; color: #9b2828; }
 .peopleWorkspace > .viewTabs { margin-bottom: 24px; }
 .peopleView > .panelHeader:first-child { padding-bottom: 16px; border-bottom: 1px solid var(--border); }
 .peopleActions button { background: transparent; border-color: var(--border); font-size: 12px; }

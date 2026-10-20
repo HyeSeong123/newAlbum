@@ -38,7 +38,6 @@
 .diaryCards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 30px; padding: 40px 4px 20px; align-items: stretch; }
 .diaryCard { position: relative; min-width: 0; min-height: 600px; padding: 38px 30px 22px; background: var(--diary-paper) url('/textures/diary-paper.webp') repeat; background-size: 512px; border: 1px solid #eee7dc; border-radius: 4px 8px 5px 3px; box-shadow: -4px 5px 0 -1px #f8f5eb, -8px 8px 0 -3px #ebe5d7, 0 7px 16px #66512b0d; transition: transform .18s ease, box-shadow .18s ease; }
 .diaryCard:hover { transform: translateY(-3px); box-shadow: -4px 5px 0 -1px #f8f5eb, -8px 8px 0 -3px #ebe5d7, 0 10px 20px #66512b15; }
-.diaryCard:has(.actionMenuPanel) { z-index: 4; }
 .diaryCard.isSelected { outline: 2px solid var(--diary-accent); outline-offset: 3px; }
 .diaryBookmark { position: absolute; left: 21px; top: -10px; color: #b3b599; pointer-events: none; }
 .diaryCardMenu { position: absolute; top: 25px; right: 17px; z-index: 2; }
