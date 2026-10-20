@@ -21,16 +21,16 @@
     "latestVerifiedHead": "ceb474600a8b8955592ae1d967f2ea81bbe783c0"
   },
   "apk": {
-    "artifact": 12265599756,
-    "run": 39426914270,
-    "commit": "abcdb38152329fe27c8ddf21ec9701fadca72d8b",
-    "apkBytes": 285663731,
-    "sha256": "fed2045928afaab7efd8ac623c080aee78868ee0becb83f03ffa2b7442a9365d",
+    "artifact": 12267239424,
+    "run": 39429654455,
+    "commit": "ceb474600a8b8955592ae1d967f2ea81bbe783c0",
+    "apkBytes": 285647347,
+    "sha256": "0fe4ce11995b63f35eac86fe63d9d17be5a2867b825fedbc1ebe46d85b6c81b5",
     "nativeLibraryPathReferences": {
       "lib/arm64-v8a/liboraedameun_lib.so": []
     },
     "zipModelAssets": [],
-    "scope": "Registered path/reference scan, not independent decompression of every embedded asset. Release build and module guards verify product inputs separately."
+    "scope": "Registered path/reference scan, not independent decompression of every embedded asset. Product input and module guards are separate."
   },
   "assetChecks": {
     "publicModelFiles": 0,
@@ -54,12 +54,43 @@
   "androidSmoke": {
     "failedRun": 39426914270,
     "failedAt": "Gallery fixture visibility before manual registration checks",
-    "status": "not passed",
+    "status": "success",
     "changes": "Wait for MIME media classification/pending/trash eligibility and grant full access through the real permission dialog instead of a shell-only permission setup. Cause not independently isolated.",
     "retryRun": 39429654455,
     "attempt1": "Gallery readiness timeout60s; saved36 rows pass identical predicate offline; cause unresolved",
     "attempt2": "NDK download ZipFile unknown archive; no app execution",
-    "attempt3": "pending"
+    "attempt3": "PASS: Android API36 x86_64 installed app, real permission/gallery gestures/import, manual person/pet editing, restart and membership preservation, zero worker/model requests",
+    "successfulJob": 118661780574,
+    "evidenceArtifact": 12268374073,
+    "manualResult": {
+      "environment": "Android API36 x86_64 emulator",
+      "profile": "manual-only-no-models",
+      "personId": 1,
+      "petId": 1,
+      "mediaId": 4,
+      "idsAndLinksPreserved": true,
+      "restartPreserved": true,
+      "workers": 0,
+      "modelRequests": []
+    },
+    "galleryResult": {
+      "gallery": true,
+      "longPressDragSelects": true,
+      "longPressDragDeselects": true,
+      "ordinarySwipeScrollsWithoutSelection": true,
+      "sort": "date_modified DESC, _id DESC",
+      "order": [
+        "M-video-gallery.mp4",
+        "Z-new-gallery.jpg",
+        "A-old-gallery.jpg"
+      ],
+      "photoCount": 2,
+      "videoCount": 1,
+      "unsupportedFormatsHidden": true,
+      "deniedPermissionCancels": true,
+      "cancelLeavesRecordsUnchanged": true
+    },
+    "remainingRisk": "First attempt gallery fixture readiness was flaky; second attempt SDK download failed. Same-source third attempt passed. Physical ARM64 device not tested."
   },
   "remaining": [
     "Real ARM64 physical device check",
