@@ -16,7 +16,7 @@ test('restored recognition waits for an explicit request, including existing pen
   page.on('request', request => { if (new URL(request.url()).pathname.includes('/models/')) modelRequests.push(request.url()); });
   await page.goto('/');
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
-  await expect(page.getByRole('button', { name: '사진에서 사람 찾기', exact: true })).toBeEnabled();
+  await expect(page.getByLabel('사진에서 사람 찾기', { exact: true })).toBeEnabled();
   await page.getByRole('tab', { name: '반려동물', exact: true }).click();
   await expect(page.getByRole('button', { name: '등록된 사진에서 찾기', exact: true })).toBeEnabled();
   await expect(page.getByText(/이전 분석 1장이 대기/)).toBeVisible();
