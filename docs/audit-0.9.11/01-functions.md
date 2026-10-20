@@ -62,7 +62,7 @@
 | DB 마이그레이션·기존 연결 | Rust116·Python22·legacy diary tests | PARTIAL | 임시 DB 및 구형 데이터 fixture 검사; 실제 사용자의0.9.11 DB를 복사해 업그레이드는 미검증 |
 | Android 저장 권한/로컬 접근/재실행 | Android gallery/security/video/system bars | PASS | API36 x86_64 emulator에서 실행, 다른 OS/제조사 미검증 |
 | Android 실제 업데이트/재설치 보존 | 이 환경에서 실행 안 함 | NOT TESTED | 같은 서명 update와 uninstall/reinstall을 구분해야 함. 삭제 후 자동 복원 보장 불가 |
-| Windows 설치/업데이트·데이터 유지 | Windows package CI | PARTIAL | cross-platform test 경로·CRLF 무결성 실패 수정 후 재실행. 최종 CI상태는 README/PM 보고서 참고 |
+| Windows 설치/업데이트·데이터 유지 | Windows package CI | PARTIAL | Windows runner에서 full/update NSIS 설치·미디어/앨범/글/재생/WebView seed기록 보존 성공. 실제 이전 사용자 DB의 사람/Pet 연결·수동확인은 미검증 |
 
 ## 남은 실행 제한
 

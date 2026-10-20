@@ -10,7 +10,7 @@
 | 같은 브라우저 768/1280/1440px | 같은 화면/fixture | PASS(가로 넘침 검사), 시각 일치 PARTIAL |
 | Pixel 7 touch emulation | 길게 누름·이동·스크롤·메뉴/헤더·사진 상세 | 자동화 통과, 실제 OS 키보드 아님 |
 | Android API36 x86_64 | APK 설치, native gallery, 저장 권한, WebView, offline AI, 재실행 | smoke 통과, evidence/android 참고 |
-| Windows | 브라우저 PC 레이아웃 + 별도 installer CI | 실제 PC 수동 UI/IME/고대비는 미검증 |
+| Windows | 브라우저 PC 레이아웃 + 별도 installer CI | Windows2025에서 설치·업데이트·seed기록 보존 smoke 성공. 실제 PC 수동 UI/IME/고대비는 미검증 |
 
 전후96쌍 중 동일 dimension94쌍, RGB 차이8 허용에서 완전 일치78쌍이다. 18쌍의 예외는 일기12(글꼴 swap), 빈 홈5(고미 무작위 대사/포즈·2장 높이 변화), 앨범1(표지 이미지 decode 시점)이다. 일기390px 전후를 직접 나란히 확인했으며 배치·버튼 위치는 유지되고 글꼴 렌더링이 다르다. 이 예외를 제품 개선/회귀 수치로 해석하지 않는다. 원본은 `evidence/visual-comparison.json`. 완전한 시각 회귀 승인에는 동적 영역 mask와 실제 사용 글꼴 완료 후 재캡처가 필요하다.
 

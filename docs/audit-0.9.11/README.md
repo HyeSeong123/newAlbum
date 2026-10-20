@@ -40,8 +40,8 @@
 | npx playwright test --workers=2 | 412 PASS / 44 SKIP / 0 FAIL / 0 flaky |
 | AUDIT_STAGE=before/after npx playwright test tests/audit-visual.spec.ts --project=desktop --workers=2 | 각각12 PASS, 96장씩 |
 | Android APK·설치·offline smoke | [PASS run39411226617](https://github.com/HyeSeong123/newAlbum/actions/runs/39411226617), bf2fdff 제품코드 |
-| Source CI | [PASS babe008](https://github.com/HyeSeong123/newAlbum/actions/runs/39411866394), 후속은 CI 상태 파일 참고 |
-| Windows NSIS·설치·업데이트 | 재실행 결과는 [CI 상태](evidence/ci-status.json) 참고. 검사 해시는 완화하지 않음 |
+| Source CI | [PASS 66524ee](https://github.com/HyeSeong123/newAlbum/actions/runs/39417048180), Rust116·browser412/skip44 |
+| Windows NSIS·설치·업데이트 | [PASS Windows CI](https://github.com/HyeSeong123/newAlbum/actions/runs/39417042627), full/update 설치·seeded 기록 보존. 실제 사용자 DB 검증과 구분 |
 
 44skip은 platform전용·중복viewport/실제GPU환경 조건 등 원래의test.skip이며 PASS가 아니다. 처음 실패한13개 stale assertion을 원래사용동선에 맞춰 수정했고 신규8 case(프로젝트별 실행)와6폭 capture를 추가했다. 원본 실패 결과도 보관했다.
 

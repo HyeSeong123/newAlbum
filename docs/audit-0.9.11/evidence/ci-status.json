@@ -1,76 +1,32 @@
 {
-  "recordedAt": "2026-10-20T11:46:45.492Z",
-  "runs": [
-    {
-      "id": 39417048180,
-      "name": "Source validation",
-      "status": "in_progress",
-      "conclusion": null,
-      "head_sha": "66524eeaafd0173e55f099b67126f0b73c80086e",
-      "html_url": "https://github.com/HyeSeong123/newAlbum/actions/runs/39417048180"
-    },
-    {
-      "id": 39417042627,
-      "name": "Windows preview package",
-      "status": "in_progress",
-      "conclusion": null,
-      "head_sha": "66524eeaafd0173e55f099b67126f0b73c80086e",
-      "html_url": "https://github.com/HyeSeong123/newAlbum/actions/runs/39417042627"
-    },
-    {
-      "id": 39416558476,
-      "name": "Source validation",
-      "status": "completed",
-      "conclusion": "cancelled",
-      "head_sha": "ac5ff4e59920bbd18e12ac4bf9f1041f3cd713cb",
-      "html_url": "https://github.com/HyeSeong123/newAlbum/actions/runs/39416558476"
-    },
-    {
-      "id": 39416552340,
-      "name": "Source validation",
-      "status": "in_progress",
-      "conclusion": null,
-      "head_sha": "ac5ff4e59920bbd18e12ac4bf9f1041f3cd713cb",
-      "html_url": "https://github.com/HyeSeong123/newAlbum/actions/runs/39416552340"
-    },
-    {
-      "id": 39416552326,
-      "name": "Windows preview package",
-      "status": "completed",
-      "conclusion": "failure",
-      "head_sha": "ac5ff4e59920bbd18e12ac4bf9f1041f3cd713cb",
-      "html_url": "https://github.com/HyeSeong123/newAlbum/actions/runs/39416552326"
-    },
-    {
-      "id": 39416403442,
-      "name": "Source validation",
-      "status": "completed",
-      "conclusion": "cancelled",
-      "head_sha": "3c87ffd3028a382b452d56e17febcba4777f58c6",
-      "html_url": "https://github.com/HyeSeong123/newAlbum/actions/runs/39416403442"
-    },
-    {
-      "id": 39411866394,
-      "name": "Source validation",
-      "status": "completed",
-      "conclusion": "success",
-      "head_sha": "babe008351bf05917775390bb5918e1e84247fff",
-      "html_url": "https://github.com/HyeSeong123/newAlbum/actions/runs/39411866394"
-    },
-    {
-      "id": 39411858520,
-      "name": "Source validation",
-      "status": "completed",
-      "conclusion": "success",
-      "head_sha": "babe008351bf05917775390bb5918e1e84247fff",
-      "html_url": "https://github.com/HyeSeong123/newAlbum/actions/runs/39411858520"
-    }
-  ],
+  "recordedAt": "2026-10-20T12:06:30.456Z",
+  "verifiedCommit": "66524eeaafd0173e55f099b67126f0b73c80086e",
+  "source": {
+    "run": 39417048180,
+    "status": "success",
+    "rustPassed": 116,
+    "browserPassed": 412,
+    "browserSkipped": 44,
+    "nodePassed": 144
+  },
+  "windows": {
+    "run": 39417042627,
+    "status": "success",
+    "environment": "windows-2025 x64 runner",
+    "scope": "NSIS full/update installer, seeded media/album/chapter/text/playback/WebView record retention",
+    "artifacts": [
+      {
+        "id": 12263330321,
+        "name": "Gamjassak-Windows-0.9.11",
+        "size_in_bytes": 383548489
+      }
+    ]
+  },
   "android": {
     "run": 39411226617,
     "sha": "bf2fdfffe778f469655d601cead70c590298e9ec",
     "status": "success",
-    "environment": "API 36 x86_64 emulator",
+    "environment": "API36 x86_64 emulator",
     "artifacts": [
       {
         "id": 12260388401,
@@ -84,10 +40,5 @@
       }
     ]
   },
-  "sourceVerified": {
-    "run": 39411866394,
-    "sha": "babe008351bf05917775390bb5918e1e84247fff",
-    "status": "success"
-  },
-  "note": "This is a time-stamped snapshot. Pending/in-progress is not PASS."
+  "note": "Later commits are audit documentation only. Real user database/ARM64 device upgrade and identity accuracy remain unverified."
 }

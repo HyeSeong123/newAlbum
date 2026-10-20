@@ -1,0 +1,18 @@
+windows
+2026-10-20T11:44:55.4822907Z ℹ tests 144
+2026-10-20T11:45:17.8501380Z Existing offline recognition restored; research UI excluded; packaged model files and notices verified.
+2026-10-20T11:51:56.1038256Z Legacy app seeded: media, album, chapters, text, playback metadata and WebView storage.
+2026-10-20T11:52:15.4768635Z Shortcut target: D:\a\_temp\OraedameunSmoke\gamjassak.exe; installed binary: D:\a\_temp\OraedameunSmoke\gamjassak.exe
+2026-10-20T11:52:15.5308562Z Shortcut target: D:\a\_temp\OraedameunSmoke\gamjassak.exe; installed binary: D:\a\_temp\OraedameunSmoke\gamjassak.exe
+2026-10-20T11:52:37.7895238Z Existing offline recognition restored; research UI excluded; packaged model files and notices verified.
+2026-10-20T11:54:40.6936305Z Shortcut target: D:\a\_temp\OraedameunSmoke\gamjassak.exe; installed binary: D:\a\_temp\OraedameunSmoke\gamjassak.exe
+2026-10-20T11:54:40.7094459Z Shortcut target: D:\a\_temp\OraedameunSmoke\gamjassak.exe; installed binary: D:\a\_temp\OraedameunSmoke\gamjassak.exe
+
+native
+2026-10-20T11:45:29.5209763Z test result: ok. 116 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.32s
+
+source
+2026-10-20T11:44:41.7941126Z ℹ tests 144
+2026-10-20T11:56:11.7316179Z   44 skipped
+2026-10-20T11:56:11.7316529Z   412 passed (11.1m)
+2026-10-20T11:56:35.8577752Z Existing offline recognition restored; research UI excluded; packaged model files and notices verified.
