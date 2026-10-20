@@ -1,0 +1,71 @@
+{
+  "version": "0.9.12",
+  "productCommit": "abcdb38152329fe27c8ddf21ec9701fadca72d8b",
+  "profile": "manual-only-no-models",
+  "sourceCI": {
+    "run": 39426921646,
+    "status": "success",
+    "browserPassed": 379,
+    "browserSkipped": 81,
+    "nodePassed": 146,
+    "rustPassed": 116,
+    "latestVerifiedRun": 39429663977,
+    "latestVerifiedHead": "ceb474600a8b8955592ae1d967f2ea81bbe783c0"
+  },
+  "pythonLocalPassed": 22,
+  "windowsCI": {
+    "run": 39426914144,
+    "status": "success",
+    "scope": "Actual 0.9.11 installer seeded with media/album/chapters/text/playback/WebView state, upgraded with 0.9.12 full and update installers; seeded records retained. Not an actual user DB.",
+    "latestVerifiedRun": 39429654890,
+    "latestVerifiedHead": "ceb474600a8b8955592ae1d967f2ea81bbe783c0"
+  },
+  "apk": {
+    "artifact": 12265599756,
+    "run": 39426914270,
+    "commit": "abcdb38152329fe27c8ddf21ec9701fadca72d8b",
+    "apkBytes": 285663731,
+    "sha256": "fed2045928afaab7efd8ac623c080aee78868ee0becb83f03ffa2b7442a9365d",
+    "nativeLibraryPathReferences": {
+      "lib/arm64-v8a/liboraedameun_lib.so": []
+    },
+    "zipModelAssets": [],
+    "scope": "Registered path/reference scan, not independent decompression of every embedded asset. Release build and module guards verify product inputs separately."
+  },
+  "assetChecks": {
+    "publicModelFiles": 0,
+    "distModelFiles": 0,
+    "inferenceWorkers": 0,
+    "wasmRuntimes": 0,
+    "onnxFiles": 0,
+    "inferenceModulesInProductGraph": 0,
+    "trackedCatCascadeRemoved": true
+  },
+  "bundle": {
+    "beforeJavascriptBytes": 5442882,
+    "afterJavascriptBytes": 908866,
+    "afterCssBytes": 211000
+  },
+  "manualBrowserCore": {
+    "passed": 28,
+    "skipped": 6,
+    "scope": "IPC fixture, register/edit/retry/reload, legacy ID and confirmation preservation, no worker/model/queue calls"
+  },
+  "androidSmoke": {
+    "failedRun": 39426914270,
+    "failedAt": "Gallery fixture visibility before manual registration checks",
+    "status": "not passed",
+    "changes": "Wait for MIME media classification/pending/trash eligibility and grant full access through the real permission dialog instead of a shell-only permission setup. Cause not independently isolated.",
+    "retryRun": 39429654455,
+    "attempt1": "Gallery readiness timeout60s; saved36 rows pass identical predicate offline; cause unresolved",
+    "attempt2": "NDK download ZipFile unknown archive; no app execution",
+    "attempt3": "pending"
+  },
+  "remaining": [
+    "Real ARM64 physical device check",
+    "Actual user DB update test",
+    "Full accessibility validation"
+  ],
+  "history": "No Git history rewrite or old APK deletion. Previous artifacts can still contain old models; this record describes 0.9.12 product inputs.",
+  "scopeNote": "Research npm dev dependencies may contain weights locally; no weights/runtimes are shipped by the manual-only product. Historical commits/artifacts are not rewritten/deleted."
+}
