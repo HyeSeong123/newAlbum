@@ -4,16 +4,9 @@ import * as coco from '@tensorflow-models/coco-ssd';
 import { cropDescriptors, normalize, validPetVector } from './features';
 import { conservativeViewAnalyzer, type PetFeatures, type PetView } from './types';
 import { disablePetWasm, petRuntimeInfo, selectPetBackend, type PetBackendPreference } from './runtime';
-import { detectCatFrontFace, type CatCascade } from './catFace';
+import { detectCatFrontFace } from './catFace';
+import catFaceCascade from './cat-face-cascade.json';
 import { foregroundDescriptors } from './foreground';
-// Optional private research input, never embedded in the product or source.
-let catCascade: Promise<CatCascade> | undefined;
-function loadResearchCatCascade(base: string) {
-  return catCascade ??= fetch(`${base}cat-face-cascade.json`).then(response => {
-    if (!response.ok) throw new Error('Private research cascade is missing');
-    return response.json() as Promise<CatCascade>;
-  }).catch(error => { catCascade = undefined; throw error; });
-}
 const scope = self as unknown as DedicatedWorkerGlobalScope;
 let models: Promise<{ detector: coco.ObjectDetection; embedding: tf.LayersModel }> | undefined;
 function loadModels(base: string) {
@@ -74,7 +67,7 @@ async function infer(request: PetRequest) {
       const at=performance.now(),scale=224/Math.max(x1-x0,y1-y0);
       const faceCanvas=new OffscreenCanvas(Math.max(1,Math.round((x1-x0)*scale)),Math.max(1,Math.round((y1-y0)*scale))),faceContext=faceCanvas.getContext('2d')!;
       faceContext.drawImage(canvas,x0,y0,x1-x0,y1-y0,0,0,faceCanvas.width,faceCanvas.height);
-      const face=detectCatFrontFace(faceContext.getImageData(0,0,faceCanvas.width,faceCanvas.height).data,faceCanvas.width,faceCanvas.height,await loadResearchCatCascade(modelBase));
+      const face=detectCatFrontFace(faceContext.getImageData(0,0,faceCanvas.width,faceCanvas.height).data,faceCanvas.width,faceCanvas.height,catFaceCascade);
       timings.faceDetectionMs+=performance.now()-at;
       if(face && face[2]*(x1-x0)>=8 && face[3]*(y1-y0)>=8) {
         autoFaceBox=[(x0+face[0]*(x1-x0))/width,(y0+face[1]*(y1-y0))/height,face[2]*(x1-x0)/width,face[3]*(y1-y0)/height];

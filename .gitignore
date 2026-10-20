@@ -58,6 +58,3 @@ local.properties
 # Reproducible synthetic training and private dataset outputs
 native-ai-output/
 public/models/native-dev/
-
-# Opt-in pretrained model research is never a product asset.
-/.research/

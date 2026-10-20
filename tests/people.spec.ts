@@ -21,7 +21,6 @@ test('additional reference faces require explicit selection and retain the perso
 });
 
 test('local models detect faces without remote requests', async ({ page, isMobile }) => {
-  test.skip(true, 'User removed pretrained recognition from the product on 2026-10-20; historical inference coverage is not a product PASS.');
   test.skip(isMobile, 'Run real inference once; management UI is covered on both viewports.');
   test.setTimeout(120_000);
   await page.route('**/face-test.jpg', (route) => route.fulfill({ path: 'node_modules/@vladmandic/face-api/demo/sample1.jpg', contentType: 'image/jpeg' }));
@@ -140,7 +139,13 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
   await page.getByRole('button', { name: '제외 되돌리기', exact: true }).click();
   await expect(unknownSection.getByRole('button', { name: '이름 없는 사람 2장', exact: true })).toBeVisible();
   await unknownSection.getByRole('button', { name: '선택 끝내기', exact: true }).click();
-  await expect(page.getByRole('button', { name: '이름 추천 확인', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: '이름 추천 확인', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: '이름 추천 확인' })).toBeVisible();
+  await expect(page.getByRole('checkbox')).toHaveCount(2);
+  await expect(page.getByRole('button', { name: '이 이름으로 저장', exact: true })).toBeDisabled();
+  await page.getByRole('checkbox').first().check();
+  await page.screenshot({ path: `test-results/people-match-review-${test.info().project.name}.png` });
+  await page.getByTitle('닫기', { exact: true }).click();
   await expect(page.locator('.personTile')).toHaveCount(2);
   await expect(page.locator('.personTile').first()).toContainText('가족');
   await page.screenshot({ path: `test-results/people-groups-${test.info().project.name}.png` });
@@ -246,7 +251,6 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
 });
 
 test('review applies only checked face suggestions', async ({ page }) => {
-  test.skip(true, 'User removed pretrained recognition from the product on 2026-10-20; historical inference coverage is not a product PASS.');
   const thumbnail = `data:image/jpeg;base64,${(await readFile('node_modules/@vladmandic/face-api/demo/sample1.jpg')).toString('base64')}`;
   await page.addInitScript(({ thumbnail }) => {
     const faces = [1, 2, 3].map((id) => ({ id, media_id: id, person_id: id === 1 ? 1 : 2, confirmed: false, thumbnail }));
@@ -277,7 +281,6 @@ test('review applies only checked face suggestions', async ({ page }) => {
 });
 
 test('analysis keeps saved photos on stop and retries failed photos', async ({ page, isMobile }) => {
-  test.skip(true, 'User removed pretrained recognition from the product on 2026-10-20; historical inference coverage is not a product PASS.');
   test.skip(isMobile, 'Real analysis queue runs once on desktop.');
   test.setTimeout(120_000);
   const thumbnail = `data:image/jpeg;base64,${(await readFile('node_modules/@vladmandic/face-api/demo/sample1.jpg')).toString('base64')}`;
@@ -346,7 +349,7 @@ test('unnamed faces are visible and can be saved to an existing person without a
   await page.goto('/');
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await expect(page.getByRole('button', { name: '이름 없는 사람 1장', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: '이름 추천 확인', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '이름 추천 확인', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
   await expect(page.getByRole('button', { name: /인식 검증|기기 측정|새로고침|미확인/ })).toHaveCount(0);
   await page.keyboard.press('Escape');
@@ -367,7 +370,6 @@ test('unnamed faces are visible and can be saved to an existing person without a
 });
 
 test('the main action retries a completed photo with no faces and keeps existing names', async ({ page, isMobile }) => {
-  test.skip(true, 'User removed pretrained recognition from the product on 2026-10-20; historical inference coverage is not a product PASS.');
   test.skip(isMobile, 'Real inference exercised once; naming UI covers both sizes.');
   test.setTimeout(120_000);
   await page.route('**/missed-person.jpg', route => route.fulfill({ path: 'tests/fixtures/pet-dog.jpg', contentType: 'image/jpeg' }));

@@ -1,5 +1,3 @@
-import { test as retiredInferenceTest } from '@playwright/test';
-retiredInferenceTest.skip(true, 'User removed pretrained recognition from the product on 2026-10-20; historical inference coverage is not a product PASS.');
 import { expect, test } from '@playwright/test';
 import {mkdir,writeFile} from 'node:fs/promises';
 test('Worker detects dog locally and keeps main thread responsive with cancel/retry', async ({ page, isMobile }) => {

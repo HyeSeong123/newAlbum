@@ -70,7 +70,7 @@ test('Android back dismisses the open action menu before leaving its screen', as
 });
 
 for (const response of [[], { items: [], done: false, nextCursor: 0 }, { items: [], done: false }]) {
-  test(`removed inference never invokes malformed source audit: ${JSON.stringify(response)}`, async ({ page }) => {
+  test(`invalid source audit response recovers without an unbounded loop: ${JSON.stringify(response)}`, async ({ page }) => {
     await library(page);
     await page.evaluate(response => {
       const bridge = (window as any).__TAURI_INTERNALS__;
@@ -78,9 +78,10 @@ for (const response of [[], { items: [], done: false, nextCursor: 0 }, { items: 
       bridge.invoke = (command: string, args: unknown) => command === 'audit_person_scans' ? Promise.resolve(response) : original(command, args);
     }, response);
     await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
-    await expect(page.getByRole('button', { name: '사진에서 사람 찾기', exact: true })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: '사람 직접 등록', exact: true })).toBeEnabled();
-    expect(await page.evaluate(() => (window as any).__auditCalls.includes('audit_person_scans'))).toBe(false);
+    const start = page.getByRole('button', { name: '사진에서 사람 찾기', exact: true });
+    await start.click();
+    await expect(page.getByRole('alert')).toContainText('이미 확인한 사진과 원본은 그대로');
+    await expect(start).toBeEnabled();
     expect(await page.evaluate(() => (window as any).__auditCalls.includes('enqueue_person_jobs'))).toBe(false);
   });
 }

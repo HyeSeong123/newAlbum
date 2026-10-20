@@ -35,20 +35,25 @@ test('exported own model runs in Worker, agrees with Node and reuses loaded weig
   await context.setOffline(false);
 });
 
-test('own research Worker cancellation remains isolated from the manual product', async ({ page }) => {
+test('research Worker cancellation stays separate from restored app engines', async ({ page }) => {
   await page.goto('/');
   const result = await page.evaluate(async () => {
+    const peoplePath = '/src/features/people/engine/client.ts', petsPath = '/src/features/pets/engine/client.ts';
     const nativePath = '/src/features/ai/native/client.ts', netPath = '/src/features/ai/native/network.ts';
+    const people = await import(/* @vite-ignore */ peoplePath), pets = await import(/* @vite-ignore */ petsPath);
     const { runSyntheticProbe } = await import(/* @vite-ignore */ nativePath), { synthetic } = await import(/* @vite-ignore */ netPath);
     const original = window.fetch; let calls = 0;
     window.fetch = (() => { calls++; throw new Error('unexpected network'); }) as typeof fetch;
     try {
       const controller = new AbortController(); controller.abort();
       const attempts = await Promise.allSettled([
+        people.analyzePersonImage('/never-fetch.jpg', controller.signal),
+        people.loadPersonEngine(controller.signal),
+        pets.analyzePetImage('/never-fetch.jpg', controller.signal),
         runSyntheticProbe({ intent: 'user-request', image: synthetic().train[0].image, modelUrl: '/models/native-dev/probe.json', sha256: 'a'.repeat(64) }, controller.signal),
       ]);
       return { errors: attempts.map(x => x.status === 'rejected' ? x.reason.name : 'unexpected'), calls };
     } finally { window.fetch = original; }
   });
-  expect(result).toEqual({ errors: ['AbortError'], calls: 0 });
+  expect(result).toEqual({ errors: ['AbortError', 'AbortError', 'AbortError', 'AbortError'], calls: 0 });
 });

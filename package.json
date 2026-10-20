@@ -1,6 +1,6 @@
 {
   "name": "local-album-manager",
-  "version": "0.9.12",
+  "version": "0.9.13",
   "private": true,
   "type": "module",
   "scripts": {
@@ -29,14 +29,17 @@
     "ai:train:synthetic": "node scripts/native-ai/train.mjs",
     "ai:release:check": "node scripts/release/check-ai-assets.mjs",
     "test:native-ai": "node --test tests/native-ai.test.mjs tests/native-ai-worker.test.mjs && python3 -m unittest discover -s tests -p test_native_ai_storage.py",
-    "ai:native:release:check": "node scripts/native-ai/release-gate.mjs",
-    "ai:research:prepare": "node scripts/research/prepare-legacy-models.mjs"
+    "ai:native:release:check": "node scripts/native-ai/release-gate.mjs"
   },
   "dependencies": {
     "@fontsource/noto-serif-kr": "^5.2.7",
     "@tauri-apps/api": "2.12.1",
     "@tauri-apps/plugin-dialog": "^2.7.3",
+    "@tensorflow-models/coco-ssd": "^2.2.3",
+    "@tensorflow/tfjs": "4.22.0",
+    "@tensorflow/tfjs-backend-wasm": "4.22.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vladmandic/face-api": "1.7.15",
     "lucide-react": "^0.468.0",
     "motion": "^14.0.0",
     "react": "^19.0.0",
@@ -49,10 +52,6 @@
     "@tauri-apps/cli": "^2.11.4",
     "@types/node": "^22.20.1",
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.5",
-    "@tensorflow-models/coco-ssd": "^2.2.3",
-    "@tensorflow/tfjs": "4.22.0",
-    "@tensorflow/tfjs-backend-wasm": "4.22.0",
-    "@vladmandic/face-api": "1.7.15"
+    "@types/react-dom": "^19.2.5"
   }
 }

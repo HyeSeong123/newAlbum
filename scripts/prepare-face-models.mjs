@@ -1,8 +1,7 @@
 import { createHash } from 'node:crypto';
 import { mkdir, copyFile, readFile, writeFile } from 'node:fs/promises';
 const source = new URL('../node_modules/@vladmandic/face-api/', import.meta.url);
-if (process.env.GAMJASSAK_AI_RESEARCH !== '1') throw new Error('Pretrained models are excluded from the product. Use ai:research:prepare for isolated research.');
-const target = new URL('../.research/models/faces/', import.meta.url);
+const target = new URL('../public/models/faces/', import.meta.url);
 const lock = JSON.parse(await readFile(new URL('./face-models.lock.json', import.meta.url), 'utf8'));
 for (const [name, expected] of [['@vladmandic/face-api','1.7.15'],['@tensorflow/tfjs','4.22.0'],['@tensorflow/tfjs-backend-wasm','4.22.0']]) {
   const metadata=JSON.parse(await readFile(new URL(`../node_modules/${name}/package.json`,import.meta.url),'utf8'));

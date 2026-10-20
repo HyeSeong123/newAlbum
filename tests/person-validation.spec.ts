@@ -1,5 +1,3 @@
-import { test as retiredInferenceTest } from '@playwright/test';
-retiredInferenceTest.skip(true, 'User removed pretrained recognition from the product on 2026-10-20; historical inference coverage is not a product PASS.');
 import {test,expect} from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 test('local person evaluation records explicit truth without moving faces',async({page})=>{

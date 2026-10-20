@@ -175,7 +175,7 @@ test('Gomi help follows the current screen, supports keyboard focus and opens th
   await opener.click();
   const guide = page.getByRole('dialog',{name:'고미 도움말'});
   await expect(guide.getByRole('button',{name:'인물 등록',exact:true})).toHaveAttribute('aria-pressed','true');
-  await expect(guide).toContainText('함께한 사람을 등록해');
+  await expect(guide).toContainText('사진 속 얼굴부터 찾자');
   await page.keyboard.press('Shift+Tab');
   await expect(guide.getByRole('button',{name:'다음',exact:true})).toBeFocused();
   await page.keyboard.press('Tab');

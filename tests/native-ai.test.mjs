@@ -134,14 +134,12 @@ test('dataset loader requires rights, hashes, local paths and nonoverlapping sou
 test('commercial gate fails on unreviewed registry and on real unexpected weight assets', async () => {
   const failures = await checkRelease();
   assert.ok(failures.includes('NATIVE_RIGHTS_REVIEW_INCOMPLETE'));
-  assert.ok(!failures.some(x => x.startsWith('LEGACY_MODEL_DEPENDENCY:'))); // product no longer depends on pretrained runtimes
+  assert.ok(failures.some(x => x.startsWith('LEGACY_MODEL_DEPENDENCY:')));
   const dir = await mkdtemp(path.join(tmpdir(), 'gss-release-'));
   try {
     await mkdir(path.join(dir, 'models/native'), { recursive: true }); await mkdir(path.join(dir, 'public/models'), { recursive: true });
     await writeFile(path.join(dir, 'models/native/registry.json'), JSON.stringify({ schemaVersion: 1, commercialApproved: true, reviewEvidence: ['fake-approval'], models: [{}] }));
-    await writeFile(path.join(dir, 'package.json'), '{"dependencies":{"@vladmandic/face-api":"1.7.15"}}');
-    assert.ok((await checkRelease(dir)).some(x => x.startsWith('LEGACY_MODEL_DEPENDENCY:')));
-    await writeFile(path.join(dir, 'public/models/hidden.onnx'), 'unreviewed');
+    await writeFile(path.join(dir, 'package.json'), '{"dependencies":{}}'); await writeFile(path.join(dir, 'public/models/hidden.onnx'), 'unreviewed');
     assert.ok((await checkRelease(dir)).some(x => x.includes('UNAPPROVED_MODEL_ASSET:')));
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
