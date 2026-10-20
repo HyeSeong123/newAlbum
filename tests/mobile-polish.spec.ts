@@ -157,3 +157,28 @@ test('mobile hides technical metadata and fullscreen, favorites show a red heart
   await expect(page.getByRole('button', { name: '전체화면', exact: true })).toHaveCount(isMobile ? 0 : 1);
   await page.screenshot({ path: `preview-results/mobile-polish-favorites-${test.info().project.name}.png`, fullPage: true });
 });
+
+
+test('long pressing can drag-select people and pet registration photos on phones', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'Native long-press gesture on the mobile profile.');
+  await fixture(page);
+  async function longPressDrag(tiles: Locator) {
+    await tiles.first().scrollIntoViewIfNeeded();
+    const a = (await tiles.first().boundingBox())!, b = (await tiles.nth(1).boundingBox())!;
+    const client = await page.context().newCDPSession(page);
+    try {
+      await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: a.x + a.width / 2, y: a.y + a.height / 2 }] });
+      await page.waitForTimeout(600);
+      await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: b.x + b.width / 2, y: b.y + b.height / 2 }] });
+      await page.waitForTimeout(80);
+      await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    } finally { await client.detach(); }
+    await expect(tiles.first()).toHaveAttribute('aria-pressed', 'true');
+    await expect(tiles.nth(1)).toHaveAttribute('aria-pressed', 'true');
+  }
+  await selectPerson(page);
+  await longPressDrag(page.getByRole('button', { name: '얼굴 선택', exact: true }));
+  const editor = await editPet(page);
+  await longPressDrag(editor.getByRole('button', { name: '사진 선택', exact: true }));
+  await page.screenshot({ path: 'preview-results/mobile-touch-drag-people-pets.png' });
+});
