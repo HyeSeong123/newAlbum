@@ -10,17 +10,17 @@
 - [PM 검토 및 최종 판정](pm-review.md)
 - `evidence/`: 실제 실행 결과와 로그. 수치는 합성 RGB 3종 분류에만 적용.
 
-2026-10-20 변경: 이 디렉터리의 자체 AI는 연구용으로 보관한다. 기본 앱은 기존 얼굴·반려동물 엔진으로 복구했고 `VITE_AI_ENGINE` 전환·합성 모델 점검 화면은 제거했다. 연구 Worker는 테스트에서만 직접 호출하며 제품 번들에 포함하지 않는다. [복구 보고서](../recognition-restoration-2026-10-20.md)를 참조한다.
+2026-10-20 변경: 이 디렉터리의 자체 AI는 연구용으로 보관한다. 기본 앱은 기존 얼굴·반려동물 엔진으로 복구했고 `VITE_AI_ENGINE` 전환·합성 모델 점검 화면은 제거했다. 연구 Worker는 테스트에서만 직접 호출하며 제품 번들에 포함하지 않는다. 현재 0.9.11 제품은 FaceAPI 128차원·기본 반려동물 인식만 사용하며 FaceX512·QuadPose는 제외한다. [정정 보고서](../rights-scope-correction-2026-10-20.md)를 참조한다.
 
 ```bash
 npm ci
-npm run ai:train:synthetic -- --epochs 12 --install-probe
+npm run ai:train:synthetic -- --epochs 12
 npm run test:unit
 python3 -m unittest discover -s tests -p 'test_*.py'
 npm run build
 npm run dev
 ```
 
-개발 화면: 설정 → 인식 검증 열기 · 고급 → 합성 모델 실행 점검. 버튼을 누를 때만 Worker를 시작한다. 이 진단 버튼은 Vite 개발 빌드에서만 표시된다.
+합성 모델은 CLI와 `tests/native-ai.spec.ts`에서 명시적으로 실행한다. 앱에는 합성 모델 점검 버튼이 없다. `--install-probe`로 public/models/native-dev에 설치한 연구 자산은 제품 빌드 검사에서 거부하므로 일반 앱 빌드와 함께 사용하지 않는다.
 
 `npm run ai:native:release:check`는 현재 **실패해야 정상**이다. 미학습 자체 모델을 출시하지 못하게 하는 연구용 검사다. 일반 앱의 `npm run ai:release:check`는 별도로 기록된 기존 모델의 해시·고지·출시 결정을 검사한다. 이 분리는 외부 가중치를 자체 모델로 바꾸거나 미확인 권리를 승인 완료로 표시하지 않는다.

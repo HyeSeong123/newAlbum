@@ -39,8 +39,93 @@
 - 로컬 TypeScript·제품 빌드, 144개 단위·22개 Python 저장소 회귀와 배포 재활성화 차단 검사가 통과했다. 모델·런타임 자산은 72.7 MiB에서 47.7 MiB로 줄었고 최종 dist에 제외 디렉터리가 없다. 이 값은 앱 전체 메모리나 APK 크기가 아니다.
 - 기존 브라우저·Android 실제 추론 검사를 제거하지 않고 ‘512/자세 모델이 실행되지 않음’과 ‘128/기본 반려동물 기능 유지’를 검사하도록 변경했다.
 - Rust 회귀는 기존 512 행을 직접 넣은 DB에서 후보가 생성되지 않는지, 새 512 결과가 거부되는지, 과거 자세 JSON과 사용자 방향·연결이 보존되는지 확인한다.
-- 새 CI·Android 결과는 실행 완료 후 추가한다. 0.9.10의 통과 결과를 이번 수정의 검증 결과로 재사용하지 않는다.
+- 0.9.11 소스 CI 성공: Node 단위 144개, Rust 116개, Python 22개, Playwright 314개 통과. Playwright 27개는 기존 화면·플랫폼 조건에 따른 제외, 실패 0개다. 제품 빌드도 통과했다. Android API 36 x86_64 설치·오프라인 실행·재시작 검증도 성공했다. 0.9.10의 통과 결과를 이번 수정의 검증 결과로 재사용하지 않았다.
 
 ## PM 판단
 
 문제 등급 High: 복구 범위가 사용자 선택을 넘어섰고, 파일만 제거해도 과거 512 DB 비교가 계속될 수 있었다. 코드·준비·의존성·기존 DB의 활성 사용·제품 상태 표시를 함께 수정했다. 반려동물 전체 기능 삭제는 요청 범위를 넘으므로 기본 탐지·외형 비교와 수동 작업을 유지한다. 정확도·실제 휴대폰 성능·남은 권리를 새로 입증했다고 주장하지 않는다.
+
+## 최종 APK 자산 확인
+
+검증 대상 구현 커밋: `1ce76a503b76a54a7c09e7813cf4ccfcc0b65fb1`.
+
+- [0.9.11 ARM64 테스트 APK ZIP](https://github.com/HyeSeong123/newAlbum/actions/runs/39390579912/artifacts/12250180554). 개발 서명 미리보기이며 Play 게시용 서명이 아니다. 아티팩트 만료는 2026-11-19다.
+- 실제 APK SHA-256: `e6c54b39820f18124146922dac7f9929b5169823072ba19900c111fb8242825c`.
+- APK의 Rust 라이브러리에 등록된 기본 모델 자산 68개 경로를 확인했고 FaceX·QuadPose 가중치 경로와 ONNX 런타임 자산 경로는 없었다.
+- 가중치·manifest의 정확한 해시는 빌드 입력 public 및 최종 dist에서 검사했다. APK는 일부 자산을 압축해 포함한다. APK 내부 직접 연속 바이트 SHA 일치는 5개만 확인했으며 나머지 63개를 독립적으로 압축 해제·해시 검증했다고 주장하지 않는다. [실제 APK 확인 JSON](rights-scope-correction-evidence-0.9.11.json)에 확인 범위를 기록했다.
+- [소스 CI](https://github.com/HyeSeong123/newAlbum/actions/runs/39390579783), [Android 빌드·설치 CI](https://github.com/HyeSeong123/newAlbum/actions/runs/39390579912) 모두 성공했다. [설치 실행 증거](https://github.com/HyeSeong123/newAlbum/actions/runs/39390579912/artifacts/12249784062)에 실제 화면과 JSON을 보관했다.
+- 설치 앱에서 얼굴 3개와 유효한 128차원 특징을 확인했고 `excluded512=true`였다. 개·고양이 탐지·기본 특징, QuadPose 결과 미생성, 수동 등록과 등록 사진 재분석 후 이름·사진 연결·개체 ID 보존을 확인했다. 50주기·100회 추론·99회 사람/반려동물 전환에서 도메인별 tensor 수가 일정했고 저장된 연결이 유지됐다. 재시작 후 사진·앨범·일기·반려동물·대기열이 유지되고 사용자 요청으로 재개됐다. 이 결과는 개체 인식 정확도·휴대폰 성능·앱 전체 최고 메모리를 입증하는 수치가 아니다.
+
+## 실행 명령과 변경 파일
+
+```sh
+npm run test:unit
+python3 -m unittest discover -s tests -p 'test_*.py'
+cargo test --manifest-path src-tauri/Cargo.toml --lib --locked -j 2
+npm run build
+npm run ai:release:check
+npm run version:check
+npx tauri android build --debug --apk --ci --features custom-protocol --target aarch64 x86_64 --split-per-abi
+node scripts/smoke-android.mjs
+```
+
+Rust·브라우저·Android 실행 환경은 GitHub Actions다. 브라우저의 실제 파일별 배치·grep·뷰포트 설정은 [워크플로](../../.github/workflows/source-validation.yml)에 보관한다. 실제 ARM64 휴대폰의 설치·업데이트·성능·발열, Windows 설치파일 실행과 독립 개체 식별 정확도 평가는 이번 실행 범위에서 미실행이다.
+
+구현 커밋의 전체 파일 변경(A=추가, M=수정, D=제거):
+
+```text
+M	docs/recognition-restoration-2026-10-20.md
+M	docs/releases.md
+A	docs/rights-scope-correction-2026-10-20.md
+M	package-lock.json
+M	package.json
+M	public/notices/ai-release-status.json
+M	scripts/person-runtime-benchmark.mjs
+M	scripts/pet-runtime-benchmark.mjs
+M	scripts/prepare-recognition-models.mjs
+M	scripts/recognition-models.lock.json
+M	scripts/release/check-ai-assets.mjs
+M	scripts/release/verify-build.mjs
+M	scripts/verify-recognition-models.mjs
+M	src-tauri/Cargo.lock
+M	src-tauri/Cargo.toml
+M	src-tauri/src/faces.rs
+M	src-tauri/src/person_engine.rs
+M	src-tauri/src/person_evaluation.rs
+M	src-tauri/src/pet_evaluation.rs
+M	src-tauri/src/pet_recognition.rs
+M	src-tauri/src/recognition.rs
+M	src-tauri/tauri.conf.json
+D	src/features/ai/onnxRuntime.ts
+D	src/features/people/engine/embedding512.ts
+M	src/features/people/engine/faceApiAdapter.ts
+M	src/features/pets/PetPhotoResults.tsx
+M	src/features/pets/engine/pet.worker.ts
+D	src/features/pets/engine/poseModel.ts
+M	src/features/pets/engine/types.ts
+M	src/features/settings/RecognitionEvaluation.tsx
+D	src/types/onnxruntime-wasm.d.ts
+M	tests/ai-packaging.test.mjs
+M	tests/manual-photos.spec.ts
+M	tests/person-worker.spec.ts
+M	tests/pet-recognition.spec.ts
+M	tests/pet-review.spec.ts
+M	tests/recognition-settings.spec.ts
+M	vite.config.ts
+```
+
+후속 문서 커밋은 이 보고서·APK 확인 JSON·이전 출시 결정의 범위 정정·자체 AI 연구 안내만 변경한다. 앱과 APK의 검증 대상 코드는 바뀌지 않는다.
+
+## PM 최종 판정
+
+| 항목 | 판정 | 근거·남은 조건 |
+| --- | --- | --- |
+| FaceX512·QuadPose·ONNX 제외 | PASS | 활성 추론·의존성·준비 자산·dist·APK 등록 경로 제외, 재유입 차단 검사 |
+| 128차원·기본 반려동물 기능 | PASS | 브라우저·Android CPU/WASM 실제 실행 |
+| 과거 특징·사용자 확인 보존 | PASS | Rust DB 회귀 및 Android 수동 등록·재분석·재시작 검증 |
+| 요청 전 분석 금지 | PASS | 기존 100장 가져오기·대기 작업 회귀 유지 |
+| Android 제품 적합성 | CONDITIONAL PASS | 두 ABI 빌드와 x86_64 설치 통과. ARM64 실기기·Windows 설치 검증은 미실행 |
+| 권리 범위 관리 | CONDITIONAL PASS | 요청한 두 모델을 제외하고 기존 미확인 표시는 유지. 남은 모델의 최종 권리 승인 판정은 아님 |
+| 현재 수정 범위의 High 문제 | PASS | 잘못된 복구 범위와 과거 DB의 512 우선 비교 수정·재검증 완료 |
+
+다음 단계는 수정 APK의 실제 휴대폰 확인과 남은 모델의 권리·평가 자료 관리다. 이전의 포괄적인 출시 진행 결정을 제외 모델 재도입의 근거로 사용하지 않는다.
