@@ -19,7 +19,7 @@ export async function verifyInstalledManualPhotos(page, mediaId, pet, capture) {
   await expect(page.locator('.peopleView .personMediaGrid').getByRole('button', { name:'사진 상세보기',exact:true })).toHaveCount(1);
   await capture('manual-person-registration');
   await page.evaluate(()=>{window.manualPersonDiagnostics=0;window.addEventListener('gamjassak-person-diagnostics',()=>window.manualPersonDiagnostics++);});
-  await page.getByRole('button', { name:'등록 사진 다시 학습', exact:true }).click();
+  await page.getByRole('button', { name:'등록 사진 다시 분석', exact:true }).click();
   await expect(page.locator('.peopleView .faceProgress')).toContainText('얼굴 못 찾음 1장', { timeout:120_000 });
   assert.ok(await page.evaluate(()=>window.manualPersonDiagnostics>0));
   const next=await read();assert.deepEqual(next.people.find(person=>person.id===registered.id).media_ids,[mediaId]);assert.ok(!next.faces.some(face=>face.person_id===registered.id));
@@ -36,8 +36,8 @@ export async function verifyInstalledManualPhotos(page, mediaId, pet, capture) {
   await picker.getByRole('button', { name:'저장',exact:true }).click();await expect(picker).toBeHidden();
   const count=await page.evaluate(()=>window.petDiagnostics.length);
   await page.getByRole('button', { name:'반려동물 관리',exact:true }).click();
-  await page.getByRole('button', { name:'등록 사진 다시 학습',exact:true }).click();
-  await expect(page.locator('.petsView .petAnalysisNotice')).toContainText('다시 학습 완료', { timeout:120_000 });
+  await page.getByRole('button', { name:'등록 사진 다시 분석',exact:true }).click();
+  await expect(page.locator('.petsView .petAnalysisNotice')).toContainText('다시 분석 완료', { timeout:120_000 });
   assert.ok(await page.evaluate(before=>window.petDiagnostics.length>before,count));
   const after=await page.evaluate(id=>window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),mediaId);
   const kept=after.detections.find(row=>row.id===dog.id);assert.equal(kept.pet_id,pet.id);assert.equal(kept.view,dog.view);assert.equal(kept.viewSource,dog.viewSource);
