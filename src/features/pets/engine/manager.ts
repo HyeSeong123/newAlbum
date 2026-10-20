@@ -62,7 +62,7 @@ export async function scanPetBatch(items: MediaItem[], signal: AbortSignal, prog
       if (refresh) {
         for (const detection of scan.detections.filter(row => row.pet_id !== null && !row.excluded && (!enrollment || row.pet_id === enrollment.petId))) {
           const features = await extractPetCorrection(item,detection,detection.view,detection.kind,detection.faceBox,signal,true);
-          const replacement = { ...withView(features,detection.view), viewSource:detection.viewSource, automaticPose:detection.automaticPose, faceBox:detection.faceBox };
+          const replacement = { ...withView(features,detection.view), viewSource:detection.viewSource, faceBox:detection.faceBox };
           signal.throwIfAborted();
           await invoke('refresh_pet_reference',{detectionId:detection.id,expectedSourceKey:scan.source_key,features:replacement});
           learned++;

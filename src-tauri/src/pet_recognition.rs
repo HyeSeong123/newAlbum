@@ -3,11 +3,6 @@ use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 
 const ENGINE: &str = "gamjassak-pets-v3-no-pose";
-#[derive(Serialize,Deserialize,Clone)]
-struct PosePoint {x:f64,y:f64,score:f64}
-#[derive(Serialize,Deserialize,Clone)]
-#[serde(rename_all="camelCase")]
-struct AutomaticPose {model_version:String,view:String,keypoints:Vec<PosePoint>}
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Foreground {version:String,color:Vec<f64>,shape:Vec<f64>,fraction:f64}
 #[derive(Serialize, Deserialize, Clone)]
@@ -20,7 +15,7 @@ pub struct Features {
     #[serde(default)] face_appearance: Vec<f64>,
     #[serde(default)] mirrored_face_appearance: Vec<f64>,
     #[serde(default,skip_serializing_if="Option::is_none")] foreground: Option<Foreground>,
-    #[serde(default,skip_serializing_if="Option::is_none")] automatic_pose: Option<AutomaticPose>,
+    #[serde(default,skip_serializing_if="Option::is_none")] automatic_pose: Option<serde_json::Value>,
 }
 // The wire spelling of the bounding box is `box`.
 
@@ -56,8 +51,8 @@ fn validate(f: &Features) -> Result<(), String> {
     Ok(())
 }
 fn record_direction(conn:&Connection,id:i64,f:&Features)->Result<(),String>{
-    let automatic=if f.view_source=="user" {f.automatic_pose.as_ref().map(|p|p.view.as_str())} else {Some(f.view.as_str())};
-    let source=if f.view_source=="user" && f.automatic_pose.is_some() {"quadpose-keypoints"} else {f.view_source.as_str()};
+    let automatic=if f.view_source=="user" {None} else {Some(f.view.as_str())};
+    let source=f.view_source.as_str();
     conn.execute("INSERT OR IGNORE INTO pet_direction_observation(detection_id,automatic_view,automatic_source,manual_view) VALUES(?1,?2,?3,?4)",params![id,automatic,source,if f.view_source=="user" {Some(f.view.as_str())} else {None}]).map_err(|e|e.to_string())?;Ok(())
 }
 // Excluded model observations remain in SQLite for recovery. They do not
@@ -323,7 +318,7 @@ mod tests {
     #[test] fn excluded_pose_is_read_inactive_without_deleting_legacy_data_or_manual_links(){
       let mut c=database();let scan=write_scan(&mut c,1,"test",vec![features()]).unwrap();let id=scan.detections[0].id;
       let mut old=features();old.view="left".into();old.view_source="quadpose-keypoints".into();
-      old.automatic_pose=Some(AutomaticPose{model_version:"quadpose-ap10k-52f0329b-v1".into(),view:"left".into(),keypoints:(0..17).map(|_|PosePoint{x:0.2,y:0.3,score:0.8}).collect()});
+      old.automatic_pose=Some(serde_json::json!({"modelVersion":"quadpose-ap10k-52f0329b-v1","view":"left","keypoints":vec![serde_json::json!({"x":0.2,"y":0.3,"score":0.8});17]}));
       assert!(validate(&old).is_err());
       let json=serde_json::to_string(&old).unwrap();
       c.execute("UPDATE pet_detection SET features=?1,pet_id=1 WHERE id=?2",params![json,id]).unwrap();

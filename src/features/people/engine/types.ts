@@ -3,7 +3,6 @@ export const PERSON_ENGINE = 'gamjassak-people-v1';
 export type FaceBackend = 'auto' | 'cpu' | 'wasm';
 export interface FaceFeatures {
   descriptor: number[];
-  additionalFeatures?:{modelVersion:string;dimensions:512;descriptor:number[]}[];
   thumbnail: string;
   modelVersion: string;
   box: [number, number, number, number];

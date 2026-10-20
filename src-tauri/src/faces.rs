@@ -57,7 +57,7 @@ pub struct FaceInput {
     #[serde(default)]
     pose: Option<super::recognition::PoseInput>,
     #[serde(default,rename="additionalFeatures")]
-    additional_features:Vec<super::recognition::ModelFeature>,
+    additional_features:Vec<serde_json::Value>,
 }
 
 #[derive(Serialize)]
@@ -165,7 +165,7 @@ pub async fn retry_empty_face_scans(app:AppHandle)->Result<Vec<i64>,String>{
 
 #[cfg(test)]
 fn save_scan(conn: &mut Connection, media_id: i64, faces: Vec<FaceInput>) -> Result<(), String> { save_scan_with_source(conn,media_id,faces,None) }
-fn validate_faces(faces:&[FaceInput],has_source:bool)->Result<(),String>{
+fn validate_faces(faces:&[FaceInput])->Result<(),String>{
     if faces.len() > 100
         || faces.iter().any(|face| {
             face.descriptor.len() != 128
@@ -179,11 +179,11 @@ fn validate_faces(faces:&[FaceInput],has_source:bool)->Result<(),String>{
     {
         return Err("얼굴 분석 결과가 올바르지 않습니다.".into());
     }
-    for face in faces {if let Some(pose)=&face.pose {pose.validate()?;}for feature in &face.additional_features{feature.validate()?;}if !face.additional_features.is_empty()&&!has_source{return Err("모델 특징의 원본 지문이 없습니다.".into());}}
+    for face in faces {if let Some(pose)=&face.pose {pose.validate()?;}if !face.additional_features.is_empty(){return Err("추가 모델 특징은 지원하지 않습니다.".into());}}
     Ok(())
 }
 fn save_scan_with_source(conn: &mut Connection, media_id: i64, faces: Vec<FaceInput>,source_key:Option<String>) -> Result<(), String> {
-    validate_faces(&faces,source_key.is_some())?;
+    validate_faces(&faces)?;
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     let image: bool = tx
         .query_row(
@@ -260,7 +260,6 @@ fn save_scan_with_source(conn: &mut Connection, media_id: i64, faces: Vec<FaceIn
         used.push(person_id);
         tx.execute("INSERT INTO detected_face (media_id, person_id, descriptor, thumbnail) VALUES (?1, ?2, ?3, ?4)", params![media_id, person_id, serde_json::to_string(&face.descriptor).map_err(|e| e.to_string())?, face.thumbnail]).map_err(|e| e.to_string())?;
         let id=tx.last_insert_rowid();
-        for feature in face.additional_features {tx.execute("INSERT INTO person_model_feature(face_id,model_version,dimensions,descriptor,source_key) VALUES(?1,?2,?3,?4,?5)",params![id,feature.model_version,feature.dimensions as i64,serde_json::to_string(&feature.descriptor).map_err(|e|e.to_string())?,source_key.as_deref().unwrap_or("")]).map_err(|e|e.to_string())?;}
         if let Some(pose)=face.pose {tx.execute("INSERT INTO person_face_pose(face_id,automatic) VALUES(?1,?2)",params![id,serde_json::to_string(&pose).map_err(|e|e.to_string())?]).map_err(|e|e.to_string())?;}
         tx.execute("INSERT INTO person_face_metadata(face_id,model_version,reference_kind,quality,geometry) VALUES(?1,?2,?3,?4,?5)",params![id,MODEL,if is_seed {"seed"} else {"auto"},face.quality.unwrap_or_else(||"review".into()),serde_json::to_string(&face.box_).map_err(|e|e.to_string())?]).map_err(|e|e.to_string())?;
     }
@@ -297,7 +296,7 @@ fn face_distance(a:&[f64],b:&[f64])->f64{
     a.iter().zip(b).map(|(a,b)|(a-b).powi(2)).sum::<f64>().sqrt()
 }
 fn refresh_scan(conn:&mut Connection,media_id:i64,faces:Vec<FaceInput>,source_key:&str)->Result<RefreshResult,String>{
-    validate_faces(&faces,true)?;
+    validate_faces(&faces)?;
     let tx=conn.transaction().map_err(|e|e.to_string())?;
     let image:bool=tx.query_row("SELECT EXISTS(SELECT 1 FROM media WHERE id=?1 AND file_type='image')",[media_id],|r|r.get(0)).map_err(|e|e.to_string())?;
     if !image {return Err("등록된 사진을 찾을 수 없습니다.".into());}
@@ -337,7 +336,6 @@ fn refresh_scan(conn:&mut Connection,media_id:i64,faces:Vec<FaceInput>,source_ke
         };
         tx.execute("INSERT INTO person_face_metadata(face_id,model_version,reference_kind,quality,geometry) VALUES(?1,?2,'seed',?3,?4) ON CONFLICT(face_id) DO UPDATE SET model_version=excluded.model_version,quality=excluded.quality,geometry=excluded.geometry",params![id,MODEL,face.quality.unwrap_or_else(||"review".into()),serde_json::to_string(&face.box_).map_err(|e|e.to_string())?]).map_err(|e|e.to_string())?;
         // Preserve excluded legacy features during an explicit 128-D refresh.
-        for feature in face.additional_features {tx.execute("INSERT INTO person_model_feature(face_id,model_version,dimensions,descriptor,source_key) VALUES(?1,?2,?3,?4,?5)",params![id,feature.model_version,feature.dimensions as i64,serde_json::to_string(&feature.descriptor).map_err(|e|e.to_string())?,source_key]).map_err(|e|e.to_string())?;}
         if let Some(pose)=face.pose {tx.execute("INSERT INTO person_face_pose(face_id,automatic) VALUES(?1,?2) ON CONFLICT(face_id) DO UPDATE SET automatic=excluded.automatic,updated_at=CURRENT_TIMESTAMP",params![id,serde_json::to_string(&pose).map_err(|e|e.to_string())?]).map_err(|e|e.to_string())?;}
         if confirmed && tx.query_row("SELECT trim(name)<>'' FROM person WHERE id=?1",[person],|r|r.get::<_,bool>(0)).map_err(|e|e.to_string())? {learned+=1;}
     }
@@ -495,7 +493,7 @@ mod tests {
         let pose=r#"{"version":"landmarks-pnp-v1","view":"left","yawDegrees":-40.0,"pitchDegrees":0.0,"rollDegrees":0.0,"quality":"estimated","normalizedError":0.01}"#;
         c.execute("INSERT INTO person_face_pose(face_id,automatic,manual_view) VALUES(?1,?2,'right')",params![row.id,pose]).unwrap();
         let mut again=face(0.1001);again.quality=Some("usable".into());again.box_=Some([0.1,0.1,0.2,0.2]);again.pose=Some(serde_json::from_str(pose).unwrap());
-        c.execute("INSERT INTO person_model_feature(face_id,model_version,dimensions,descriptor,source_key) VALUES(?1,?2,512,?3,?4)",params![row.id,crate::recognition::PERSON_512_MODEL,serde_json::to_string(&vec![0.1;512]).unwrap(),key]).unwrap();
+        c.execute("INSERT INTO person_model_feature(face_id,model_version,dimensions,descriptor,source_key) VALUES(?1,?2,512,?3,?4)",params![row.id,"facex-tiny-512-af7ca993-v1",serde_json::to_string(&vec![0.1;512]).unwrap(),key]).unwrap();
         refresh_scan(&mut c,1,vec![again],&key).unwrap();let next=read_index(&c).unwrap();assert_eq!(next.faces[0].id,row.id);assert_eq!(next.faces[0].person_id,owner);assert_eq!(next.people[0].cover_face_id,Some(row.id));assert_eq!(next.people[0].media_ids,vec![1]);
         assert_eq!(c.query_row("SELECT manual_view FROM person_face_pose WHERE face_id=?1",[row.id],|r|r.get::<_,String>(0)).unwrap(),"right");
         assert_eq!(c.query_row("SELECT dimensions FROM person_model_feature WHERE face_id=?1",[row.id],|r|r.get::<_,i64>(0)).unwrap(),512);
@@ -765,11 +763,11 @@ mod tests {
       save_scan_with_source(&mut c,1,vec![face(0.1)],Some(key.clone())).unwrap();let first=read_index(&c).unwrap();let person=first.faces[0].person_id;rename_person(&mut c,person,"가족").unwrap();
       save_scan_with_source(&mut c,2,vec![face(0.9)],Some(key.clone())).unwrap();
       let before=read_index(&c).unwrap();
-      for row in &before.faces {c.execute("INSERT INTO person_model_feature(face_id,model_version,dimensions,descriptor,source_key) VALUES(?1,?2,512,?3,?4)",params![row.id,crate::recognition::PERSON_512_MODEL,serde_json::to_string(&vec![0.1;512]).unwrap(),key]).unwrap();}
+      for row in &before.faces {c.execute("INSERT INTO person_model_feature(face_id,model_version,dimensions,descriptor,source_key) VALUES(?1,?2,512,?3,?4)",params![row.id,"facex-tiny-512-af7ca993-v1",serde_json::to_string(&vec![0.1;512]).unwrap(),key]).unwrap();}
       assert!(find_matches(&c).unwrap().is_empty());
       assert_eq!(c.query_row("SELECT COUNT(*) FROM person_model_feature",[],|r|r.get::<_,i64>(0)).unwrap(),2);
       assert_eq!(read_index(&c).unwrap().faces[0].person_id,person);
-      let mut rejected=face(0.2);rejected.additional_features.push(crate::recognition::ModelFeature{model_version:crate::recognition::PERSON_512_MODEL.into(),dimensions:512,descriptor:vec![0.1;512]});
+      let mut rejected=face(0.2);rejected.additional_features.push(serde_json::json!({"modelVersion":"facex-tiny-512-af7ca993-v1","dimensions":512,"descriptor":vec![0.1;512]}));
       assert!(save_scan_with_source(&mut c,3,vec![rejected],Some(key)).is_err());
       assert_eq!(read_index(&c).unwrap().faces.len(),before.faces.len());
     }

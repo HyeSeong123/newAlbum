@@ -12,7 +12,6 @@ async function fixture() {
   const put = async (file, value) => { const target = path.join(root, file); await mkdir(path.dirname(target), { recursive: true }); await writeFile(target, value); };
   const bytes = Buffer.from('test-weights-not-a-real-model'), spec = { sha256: hash(bytes), bytes: bytes.length };
   await put('scripts/face-models.lock.json', JSON.stringify({ models: { 'face_recognition_model.bin': spec.sha256 } }));
-  await put('scripts/recognition-models.lock.json', JSON.stringify({ commercialClearanceConfirmed: false, deployment: 'excluded-from-product', models: [] }));
   await put('scripts/pet-model-lock.json', JSON.stringify({ models: { detector: { files: { 'model.json': spec } } } }));
   await put('src/features/pets/engine/cat-face-cascade.json', '{}');
   await put('docs/release-decisions/2026-10-20-public-release.md', 'Release with documented uncertainties; no legal clearance claimed.');
@@ -72,6 +71,9 @@ test('checks final frontend copies and rejects changed inventory', async () => {
   try {
     await cp(path.join(root, 'public'), path.join(root, 'dist'), { recursive: true });
     assert.deepEqual(await checkRelease(root, { verifyDist: true }), []);
+    await put('dist/notices/pet-pose-NOTICE.txt', 'removed old notice');
+    assert.ok((await checkRelease(root, { verifyDist: true })).includes('REMOVED_COMPONENT_FILE:dist/notices/pet-pose-NOTICE.txt'));
+    await rm(path.join(root, 'dist/notices/pet-pose-NOTICE.txt'));
     await rm(path.join(root, 'dist/models/faces/face_recognition_model.bin'));
     assert.ok((await checkRelease(root, { verifyDist: true })).includes('MISSING_FILE:dist/models/faces/face_recognition_model.bin'));
     await put('scripts/face-models.lock.json', '{"models":{}}');
@@ -80,13 +82,36 @@ test('checks final frontend copies and rejects changed inventory', async () => {
 });
 
 
-test('excluded weights cannot be re-enabled by merely updating the inventory hash', async () => {
+test('removed model registry cannot be restored by updating the inventory hash', async () => {
   const { root, put, policy } = await fixture();
   try {
     const lock = JSON.stringify({ deployment:'excluded-from-product', models:[{path:'people512/renamed.onnx',sha256:'a'.repeat(64)}] });
     await put('scripts/recognition-models.lock.json', lock);
     policy.inventory['scripts/recognition-models.lock.json'] = hash(lock);
     await put('public/notices/ai-release-status.json', JSON.stringify(policy));
-    assert.ok((await checkRelease(root)).includes('EXCLUDED_MODELS_ENABLED'));
+    assert.ok((await checkRelease(root)).includes('REMOVED_COMPONENT_FILE:scripts/recognition-models.lock.json'));
+  } finally { await rm(root, { recursive:true, force:true }); }
+});
+
+
+test('removed inference source and old shipped notices block release', async () => {
+  const { root, put } = await fixture();
+  try {
+    await put('src/features/pets/engine/poseGeometry.ts', 'removed implementation');
+    await put('src/features/people/engine/faceAlignment.ts', 'removed implementation');
+    await put('public/notices/onnx-runtime-MIT.txt', 'old notice');
+    const failures = await checkRelease(root);
+    for (const file of ['src/features/pets/engine/poseGeometry.ts','src/features/people/engine/faceAlignment.ts','public/notices/onnx-runtime-MIT.txt']) assert.ok(failures.includes(`REMOVED_COMPONENT_FILE:${file}`));
+  } finally { await rm(root, { recursive:true, force:true }); }
+});
+
+test('direct and locked transitive ONNX runtime dependencies block release', async () => {
+  const { root, put } = await fixture();
+  try {
+    await put('package.json', JSON.stringify({devDependencies:{'onnxruntime-web':'1.22.0'}}));
+    await put('package-lock.json', JSON.stringify({packages:{'node_modules/a/node_modules/onnxruntime-common':{version:'1.22.0'}}}));
+    const failures = await checkRelease(root, { verifyAssets:false });
+    assert.ok(failures.includes('REMOVED_RUNTIME_DEPENDENCY:package.json'));
+    assert.ok(failures.includes('REMOVED_RUNTIME_DEPENDENCY:package-lock.json'));
   } finally { await rm(root, { recursive:true, force:true }); }
 });

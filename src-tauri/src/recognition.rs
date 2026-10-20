@@ -1,7 +1,6 @@
 use rusqlite::params;
 use serde::{Deserialize,Serialize};
 use tauri::AppHandle;
-pub(crate) const PERSON_512_MODEL: &str = "facex-tiny-512-af7ca993-v1";
 #[derive(Deserialize,Serialize)]
 #[serde(rename_all="camelCase")]
 pub struct PoseInput {version:String,view:String,yaw_degrees:Option<f64>,pitch_degrees:Option<f64>,roll_degrees:Option<f64>,quality:String,normalized_error:Option<f64>}
@@ -23,7 +22,7 @@ pub async fn set_person_face_view(app:AppHandle,face_id:i64,view:String)->Result
 }
 #[tauri::command]
 pub fn recognition_model_status()->serde_json::Value {
- serde_json::json!({"person128":"active","person512":"excluded-rights-review","person512Model":PERSON_512_MODEL,"commercialClearanceConfirmed":false,"pet1024":"active","petAutomaticSides":"unsupported-model-excluded","personPose":"estimated-unvalidated","automaticPetLinking":false})
+ serde_json::json!({"person128":"active","person512":"removed","person512Model":null,"commercialClearanceConfirmed":false,"pet1024":"active","petAutomaticSides":"unsupported-model-excluded","personPose":"estimated-unvalidated","automaticPetLinking":false})
 }
 
 #[tauri::command]
@@ -39,14 +38,4 @@ pub async fn export_recognition_report(app:AppHandle,destination:String,content:
   }
   let _=app;std::fs::write(destination,content).map_err(|e|e.to_string())
  }).await.map_err(|e|e.to_string())?
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all="camelCase")]
-pub struct ModelFeature {pub(crate) model_version:String,pub(crate) dimensions:usize,pub(crate) descriptor:Vec<f64>}
-impl ModelFeature {
- pub(crate) fn validate(&self)->Result<(),String>{
-  // Preserve legacy rows for recovery; never admit excluded model outputs.
-  Err("현재 배포에서 512차원 추가 모델은 제외되어 있습니다.".into())
- }
 }

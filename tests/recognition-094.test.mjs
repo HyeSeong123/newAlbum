@@ -26,15 +26,3 @@ test('800 protocol rejects derivative counts, cross-session leakage and missing 
  assert.equal(audit800Protocol([]).complete,false);
  for(const mutate of [s=>s[10].derivativeOf=s[0].sampleId,s=>s[10].originId=s[0].originId,s=>s[10].sourceKey=s[0].sourceKey,s=>s[10].captureGroup='reference',s=>s.pop()]){const samples=structuredClone(complete);mutate(samples);assert.equal(audit800Protocol(samples).complete,false);}
 });
-
-const {alignmentTransform,validEmbedding}=await import(await modelUrl('features/people/engine/faceAlignment.ts'));
-test('five-point alignment fits rotation and scale; dimensions alone do not approve learned output',()=>{
- const target=[[38.2946,51.6963],[73.5318,51.5014],[56.0252,71.7366],[41.5493,92.3655],[70.7299,92.2041]];
- const points=target.map(([x,y])=>({x:2*x-y+10,y:x+2*y-20}));
- const [a,b,c,d,e,f]=alignmentTransform(points);
- points.forEach((p,i)=>{assert.ok(Math.abs(a*p.x+c*p.y+e-target[i][0])<1e-6);assert.ok(Math.abs(b*p.x+d*p.y+f-target[i][1])<1e-6);});
- assert.throws(()=>alignmentTransform(Array(5).fill({x:0,y:0})));
- assert.equal(validEmbedding(Array(512).fill(0),512),false);assert.equal(validEmbedding(Array(128).fill(1),512),false);assert.equal(validEmbedding([NaN,...Array(511).fill(0)],512),false);
- // Shape validity cannot prove that a vector is learned; native registry approval
- // is additionally required and rejects every unapproved model in this release.
-});

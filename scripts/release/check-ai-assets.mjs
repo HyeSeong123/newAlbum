@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
-export const inventoryFiles = ['scripts/face-models.lock.json', 'scripts/recognition-models.lock.json', 'scripts/pet-model-lock.json', 'src/features/pets/engine/cat-face-cascade.json'];
+export const inventoryFiles = ['scripts/face-models.lock.json', 'scripts/pet-model-lock.json', 'src/features/pets/engine/cat-face-cascade.json'];
 export const requiredNotices = ['face-api-original-MIT.txt', 'dlib-models-CC0.txt', 'pet-cat-face-license.txt', 'pet-models-Apache-2.0.txt'];
 
 // Packaging consent is deliberately separate from legal clearance. This checks
@@ -28,13 +28,27 @@ export async function checkRelease(base = root, { verifyAssets = true, verifyDis
     const bytes = await read(file);
     if (bytes && digest(bytes) !== policy.inventory?.[file]) errors.push(`INVENTORY_CHANGED:${file}`);
   }
+  // These files can no longer restore deleted third-party inference paths.
+  for (const file of ['scripts/recognition-models.lock.json', 'src/features/pets/engine/poseGeometry.ts', 'src/features/people/engine/faceAlignment.ts', 'public/notices/onnx-runtime-MIT.txt', 'public/notices/pet-pose-NOTICE.txt', 'public/notices/recognition-095-NOTICE.txt', 'public/notices/recognition-095-review.json', 'public/notices/recognition-models-Apache-2.0.txt']) {
+    try { await lstat(path.join(base, file)); errors.push(`REMOVED_COMPONENT_FILE:${file}`); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+  }
+  if (verifyDist) {
+    for (const name of ['onnx-runtime-MIT.txt', 'pet-pose-NOTICE.txt', 'recognition-095-NOTICE.txt', 'recognition-095-review.json', 'recognition-models-Apache-2.0.txt']) {
+      const file = `dist/notices/${name}`;
+      try { await lstat(path.join(base, file)); errors.push(`REMOVED_COMPONENT_FILE:${file}`); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+    }
+  }
+  for (const file of ['package.json', 'package-lock.json']) {
+    let text; try { text = await readFile(path.join(base, file), 'utf8'); } catch (error) { if (error.code === 'ENOENT') continue; throw error; }
+    const registry = JSON.parse(text);
+    const packages = [...Object.keys(registry.dependencies || {}), ...Object.keys(registry.devDependencies || {}), ...Object.keys(registry.optionalDependencies || {}), ...Object.keys(registry.packages || {})];
+    if (packages.some(name => /(?:^|node_modules\/)onnxruntime(?:-|$)/i.test(name))) errors.push(`REMOVED_RUNTIME_DEPENDENCY:${file}`);
+  }
   if (!verifyAssets || errors.length) return errors;
   const face = JSON.parse(await read('scripts/face-models.lock.json'));
-  const extra = JSON.parse(await read('scripts/recognition-models.lock.json'));
   const pets = JSON.parse(await read('scripts/pet-model-lock.json'));
   const expected = new Map();
   for (const [name, sha256] of Object.entries(face.models)) expected.set(`faces/${name}`, { sha256 });
-  if (extra.models.length || extra.deployment !== 'excluded-from-product') errors.push('EXCLUDED_MODELS_ENABLED');
   for (const [name, model] of Object.entries(pets.models)) for (const [file, spec] of Object.entries(model.files)) expected.set(`pets/${name}/${file}`, spec);
   const addCopy = async (destination, source) => {
     const bytes = await read(source);

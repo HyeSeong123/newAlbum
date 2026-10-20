@@ -95,24 +95,6 @@ pub(crate) fn rank(query:&[f64],references:&[(i64,Vec<f64>)])->Vec<Candidate>{
     result.sort_by(|a,b|a.distance.total_cmp(&b.distance).then(a.person_id.cmp(&b.person_id)));result
 }
 
-// A separate learned space: cosine distances are never compared to FaceAPI's
-// unnormalized Euclidean distances. This only proposes candidates for review.
-#[cfg(test)]
-pub(crate) fn rank512(query:&[f64],references:&[(i64,Vec<f64>)])->Vec<Candidate>{
-    let valid=|v:&[f64]|v.len()==512 && v.iter().all(|x|x.is_finite()) && v.iter().map(|x|x*x).sum::<f64>()>1e-12;
-    if !valid(query){return vec![];}
-    let qnorm=query.iter().map(|x|x*x).sum::<f64>().sqrt();
-    let mut scores=std::collections::BTreeMap::<i64,Vec<f64>>::new();
-    for (person,vector) in references {
-        if !valid(vector){continue;}
-        let norm=vector.iter().map(|x|x*x).sum::<f64>().sqrt();
-        let cosine=(query.iter().zip(vector).map(|(a,b)|a*b).sum::<f64>()/(qnorm*norm)).clamp(-1.0,1.0);
-        scores.entry(*person).or_default().push(1.0-cosine);
-    }
-    let mut result:Vec<_>=scores.into_iter().map(|(person_id,mut values)|{values.sort_by(f64::total_cmp);Candidate{person_id,distance:values[usize::from(values.len()>=3)],references:values.len(),model_version:Some(super::recognition::PERSON_512_MODEL.into())}}).collect();
-    result.sort_by(|a,b|a.distance.total_cmp(&b.distance).then(a.person_id.cmp(&b.person_id)));result
-}
-
 // An explicitly confirmed review-quality exemplar (e.g. a side view) can
 // propose a match even when the frontal exemplars disagree. Review only;
 // this function never assigns an identity or changes automatic grouping.
@@ -131,12 +113,6 @@ pub(crate) fn rank_for_review(query:&[f64],references:&[(i64,Vec<f64>)],confirme
 #[cfg(test)]
 mod tests{
  use super::*;
- #[test]fn learned_space_uses_cosine_and_two_agreeing_references(){
-  let mut q=vec![0.0;512];q[0]=1.0;let mut other=q.clone();other[0]=0.0;other[1]=1.0;
-  let refs=vec![(1,q.clone()),(1,other.clone()),(1,other),(2,q.iter().map(|v|v*2.0).collect()),(3,vec![1.0;128]),(4,vec![0.0;512])];
-  let result=rank512(&q,&refs);assert_eq!(result.len(),2);assert_eq!(result[0].person_id,2);assert_eq!(result[0].distance,0.0);assert_eq!(result[1].distance,1.0);
-  assert_eq!(result[0].model_version.as_deref(),Some(crate::recognition::PERSON_512_MODEL));assert!(rank512(&[f64::NAN;512],&refs).is_empty());assert!(rank512(&[0.0;512],&refs).is_empty());assert!(rank512(&[1.0;128],&refs).is_empty());
- }
  #[test]fn outlier_and_bad_dimensions_do_not_control_matching(){
   let q=vec![0.1;128];let refs=vec![(1,vec![0.1;128]),(1,vec![0.5;128]),(1,vec![0.5;128]),(2,vec![0.11;128]),(3,vec![0.1;512])];
   let result=rank(&q,&refs);assert_eq!(result.len(),2);assert_eq!(result[0].person_id,2);assert!(rank(&[f64::NAN;128],&refs).is_empty());

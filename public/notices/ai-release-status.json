@@ -7,7 +7,6 @@
   "engine": "existing-offline-recognition",
   "inventory": {
     "scripts/face-models.lock.json": "47e0c87d8378c07dd3c7d65acb8d574952ffc88279d86d3e19d700fc99c24f5a",
-    "scripts/recognition-models.lock.json": "6b9b142663e1eb084397f61df04899924a4f4a7f7916e39434223cc852094cdf",
     "scripts/pet-model-lock.json": "79a55f3cd09966905c5b155437bcd55c76835e369f5f1a3e386a85141b7b7cc1",
     "src/features/pets/engine/cat-face-cascade.json": "69cf5c1a84f33860a396b696d44f98ea0f15a3d7e0d6c00e14e5cb8fac2fa2a3",
     "public/notices/face-api-original-MIT.txt": "d5480b4d4e46880107a56db666697ec3e90def81a8fc829e530b1c291e3172a5",
@@ -21,9 +20,10 @@
   ],
   "researchModelsIncluded": false,
   "activeModelProfile": "person128-pet-basic-no-pose",
-  "excludedModelVersions": [
-    "facex-tiny-512-af7ca993-v1",
-    "quadpose-ap10k-52f0329b-v1"
-  ],
-  "correctionRecord": "docs/rights-scope-correction-2026-10-20.md"
+  "correctionRecord": "docs/rights-scope-correction-2026-10-20.md",
+  "removedComponents": [
+    "FaceX512",
+    "QuadPose",
+    "onnxruntime-web"
+  ]
 }
