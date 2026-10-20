@@ -1,0 +1,2 @@
+# Integrity-checked model data must have identical bytes on every checkout.
+/src/features/pets/engine/cat-face-cascade.json text eol=lf
