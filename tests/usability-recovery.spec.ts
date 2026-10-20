@@ -33,6 +33,7 @@ async function nativeLibrary(page: Page, options: { existing?: 'media' | 'album'
           return structuredClone(command === 'list_media' ? media : command === 'list_albums' ? albums : diary);
         }
         if (command === 'list_face_index') return structuredClone(index);
+        if (command === 'audit_person_scans') return { items: [], nextCursor: 0, done: true };
         if (command === 'save_face_scan') {
           faceAttempts.push(args.mediaId);
           document.documentElement.dataset.faceAttempts = JSON.stringify(faceAttempts);

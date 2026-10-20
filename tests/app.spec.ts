@@ -134,7 +134,7 @@ test("settings clear button is disabled when album is empty", async ({ page }) =
   await page.goto("/");
   await page.getByRole("button", { name: /설정/ }).click();
   await expect(page.getByText("앱에 등록된 0개의 항목만 지웁니다. 원본 파일은 그대로 남습니다.")).toBeVisible();
-  await expect(page.locator(".settingsSummary")).toContainText("홈");
+  await expect(page.getByRole("region", { name: "앱 시작 화면" })).toContainText("홈");
   await expect(page.locator(".settingsPanel")).not.toContainText("오래담은");
   await expect(page.getByRole("button", { name: /모두 비우기/ })).toBeDisabled();
 });

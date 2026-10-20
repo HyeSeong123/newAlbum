@@ -51,12 +51,16 @@ test('journal, person, pet, calendar, memory and album lists show complete photo
   await expect(page.locator('.mediaTile .thumb').first()).toHaveCSS('background-color', 'rgb(238, 237, 231)');
   await page.screenshot({ path: `test-results/full-frames-journal-${test.info().project.name}.png` });
   await page.getByRole('tab', { name: '달력', exact: true }).click();
-  await expectFullPhotos(page.locator('.calendarGrid .mediaImage'), 1);
+  await expect(page.locator('.calendarGrid .hasMedia')).toHaveAttribute('aria-label', /사진 3장/);
+  await expect(page.locator('.calendarGrid .mediaImage')).toHaveCount(0);
   await page.locator('.calendarGrid .hasMedia').click();
   await expectFullPhotos(page.locator('.calendarThumbnails .mediaImage'), 3);
   await page.keyboard.press('Escape');
   await page.getByRole('tab', { name: '사진 있는 날', exact: true }).click();
-  await expectFullPhotos(page.locator('.recordedDayGrid .mediaImage'), 1);
+  await expect(page.locator('.recordedDayGrid > button')).toHaveCount(1);
+  await page.locator('.recordedDayGrid > button').click();
+  await expectFullPhotos(page.locator('.calendarThumbnails .mediaImage'), 3);
+  await page.keyboard.press('Escape');
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '가족 3장', exact: true }).click();
   await expectFullPhotos(page.locator('.personMediaGrid .mediaImage'), 3);
@@ -74,6 +78,7 @@ test('journal, person, pet, calendar, memory and album lists show complete photo
   await expectFullPhotos(page.locator('.recordMediaGrid .mediaImage'), 3);
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
 
+  await page.locator('.savedAlbumFooter .actionMenuTrigger').click();
   await page.getByRole('button', { name: '앨범 수정', exact: true }).click();
   await page.getByRole('dialog', { name: '앨범 수정' }).getByRole('button', { name: /사진 관리/ }).click();
   await expectFullPhotos(page.locator('.albumEditPhotos .mediaImage'), 6);

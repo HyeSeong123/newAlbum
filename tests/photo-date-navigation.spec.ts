@@ -20,7 +20,11 @@ test('date rail groups years, counts records and switches between favorites and 
   await expect(rail.getByRole('button', { name: '2026년 9월', exact: true }).locator('.monthRailCount')).toHaveText('3');
   await expect(rail.getByRole('button', { name: '2026년 5월', exact: true }).locator('.monthRailCount')).toHaveText('1');
   await expect(page.locator('.mediaTile')).toHaveCount(3);
-  await page.locator('.mediaTile img').evaluateAll((images: HTMLImageElement[]) => Promise.all(images.map((image) => image.decode())));
+  for (const image of await page.locator('.mediaTile img').all()) {
+    await image.scrollIntoViewIfNeeded();
+    await expect(image).toHaveAttribute('src', /\S+/);
+    await image.evaluate((element: HTMLImageElement) => element.decode());
+  }
   await page.screenshot({ path: `test-results/photo-date-rail-${test.info().project.name}.png` });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   await rail.getByRole('button', { name: '2025년', exact: true }).click();

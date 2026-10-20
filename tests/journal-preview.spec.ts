@@ -182,7 +182,8 @@ for (const entry of ['saved albums', 'journal shortcut']) {
     await reader.getByRole('button', { name: photoLabel, exact: true }).click();
     await expect(detail.getByTitle('즐겨찾기', { exact: true })).toHaveAttribute('aria-pressed', 'true');
     await expect(detail.getByTitle('5점', { exact: true }).locator('svg')).toHaveAttribute('fill', 'currentColor');
-    await expect(detail.locator('.photoMetadata')).toContainText('2회');
+    if (isMobile) await expect(detail.locator('.photoMetadata')).not.toContainText('조회 수');
+    else await expect(detail.locator('.photoMetadata')).toContainText('2회');
     await expect(detail.getByRole('textbox', { name: '사진 제목', exact: true })).toHaveValue('바람이 좋았던 날');
   });
 }
@@ -204,6 +205,7 @@ test('unregistered photos disappear from albums and clearing leaves an empty alb
   await expect(reader.getByRole('button', { name: '사진 목록', exact: true })).toHaveCount(0);
   await expect(reader.getByRole('button', { name: 'record-1.jpg 상세보기' })).toHaveCount(0);
 
+  await reader.getByTitle('닫기', { exact: true }).click();
   await page.getByRole('button', { name: '설정', exact: true }).click();
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: '모두 비우기', exact: true }).click();

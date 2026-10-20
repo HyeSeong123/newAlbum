@@ -25,7 +25,7 @@ test('first run can start Gomi tutorial and the tutorial can be reopened after d
   await page.addInitScript(() => localStorage.removeItem('geuruteogi.first-run-completed-v1'));
   await page.goto('/');
   const firstRun = page.getByRole('dialog',{name:'감자싹에 사진을 담아보세요'});
-  await expect(firstRun).toContainText('난 고미야');
+  await expect(firstRun).toContainText('…휴. 사진은 직접 골라.');
   await firstRun.getByRole('button',{name:'고미와 사용 방법 살펴보기'}).click();
   const guide = page.getByRole('dialog',{name:'고미 도움말'});
   await expect(guide).toBeVisible();
@@ -62,10 +62,12 @@ test('empty screens explain the next step and open their existing flows', async 
   await expect(page.getByText('아직 사진 기록이 없습니다.')).toBeVisible();
   const chooser = page.waitForEvent('filechooser');
   await page.getByRole('button', { name: '사진 가져오기', exact: true }).click();
+  await page.getByRole('dialog', { name: '사진·영상 가져오기', exact: true }).getByRole('button', { name: '파일 선택', exact: true }).click();
   await (await chooser).setFiles([]);
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
   const albumChooser = page.waitForEvent('filechooser');
   await page.getByRole('button', { name: '첫 앨범 만들기' }).click();
+  await page.getByRole('dialog', { name: '사진·영상 가져오기', exact: true }).getByRole('button', { name: '파일 선택', exact: true }).click();
   await (await albumChooser).setFiles({ name: 'album-first.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('photo') });
   await expect(page.getByRole('button', { name: '선택 끝내기', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '현재 결과 전체 선택 (1개)', exact: true }).click();
