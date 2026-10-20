@@ -1,2 +1,9 @@
-# Integrity-checked model data must have identical bytes on every checkout.
+# Preserve the exact LF bytes covered by the release inventory.
+/scripts/face-models.lock.json text eol=lf
+/scripts/recognition-models.lock.json text eol=lf
+/scripts/pet-model-lock.json text eol=lf
 /src/features/pets/engine/cat-face-cascade.json text eol=lf
+/public/notices/face-api-original-MIT.txt text eol=lf
+/public/notices/dlib-models-CC0.txt text eol=lf
+/public/notices/pet-cat-face-license.txt text eol=lf
+/public/notices/pet-models-Apache-2.0.txt text eol=lf
