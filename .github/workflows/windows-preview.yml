@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [feature/gamjassak-audit-refactor]
-    paths: ['tests/**', 'src/**', 'src-tauri/**', 'scripts/**', 'package*.json', '.github/workflows/windows-preview.yml']
+    paths: ['.gitattributes', 'tests/**', 'src/**', 'src-tauri/**', 'scripts/**', 'package*.json', '.github/workflows/windows-preview.yml']
 
 permissions:
   contents: read
