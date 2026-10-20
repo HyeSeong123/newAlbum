@@ -141,7 +141,7 @@ test('100 imported photos and profile saves stay idle until an explicit request'
   const calls=await page.evaluate(()=>JSON.parse(localStorage.getItem('native-calls')!));
   expect(calls.filter((row:any)=>['enqueue_pet_jobs','prepare_pet_input','control_pet_jobs'].includes(row.command))).toEqual([]);
   await expect(page.locator('.petsView').getByRole('button',{name:'사진 직접 등록',exact:true})).toHaveCount(0);
-  await expect(page.locator('.petsView').getByRole('button',{name:'등록 사진 다시 학습',exact:true})).toHaveCount(0);
+  await expect(page.locator('.petsView').getByRole('button',{name:'등록 사진 다시 분석',exact:true})).toHaveCount(0);
 });
 
 test('pending work remains idle after restart and confirmation opens the real result picker',async({page})=>{

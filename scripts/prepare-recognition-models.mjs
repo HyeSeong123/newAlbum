@@ -27,6 +27,7 @@ for (const model of lock.models) {
   await mkdir(new URL('./', target), { recursive: true });
   await writeFile(new URL(`${model.path}.tmp`, root), bytes); await rename(new URL(`${model.path}.tmp`, root), target);
   await copyFile(new URL('../public/notices/recognition-models-Apache-2.0.txt', import.meta.url), new URL('LICENSE', target));
+  if (model.path.startsWith('pet-pose/')) await copyFile(new URL('../public/notices/pet-pose-NOTICE.txt', import.meta.url), new URL('NOTICE', target));
 }
 const pkg = new URL('../node_modules/onnxruntime-web/', import.meta.url);
 const metadata = JSON.parse(await readFile(new URL('package.json', pkg), 'utf8'));

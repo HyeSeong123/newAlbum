@@ -1,5 +1,13 @@
 # 버전 관리와 자동 패키징
 
+## 0.9.10 인식 복구
+
+기존 얼굴·반려동물 인식이 기본 경로다. 미학습 자체 AI로 우회하는 설정은 제거했다. 재분석은 기존 가중치로 특징을 다시 추출하며 사용자 요청 후 실행한다. [변경·검증 보고서](recognition-restoration-2026-10-20.md)를 참조한다.
+
+`npm run ai:release:check`는 기록된 모델 자산·라이선스 고지를 검사한다. 사용자의 출시 판단과 법적 권리 확인 상태를 구분하며 미확인 사항은 false로 유지한다. `npm run ai:native:release:check`는 보관된 자체 AI 연구용 모델의 별도 차단 검사다. 모델 준비는 일반 `npm run build`의 prebuild에서 실행하므로 처음부터 자산 없이 `ai:release:check`만 실행하면 누락 오류가 정상이다.
+
+신규 브랜치 `feature/gamjassak-native-ai`도 전체 소스 회귀와 Android preview APK 빌드를 실행한다. 미리보기 APK는 개발 서명이며 Play 업로드용 AAB·광고 설정·스토어 등록과는 별도다.
+
 **Source validation**은 Linux에서 버전·소스·브라우저와 Rust 저장소를 검증합니다. **Windows preview package**는 Windows에서 NSIS 설치 파일과 기존 사용자용 업데이트 파일을 만들고, 설치 후 WebView2·네이티브 저장소·재시작 및 단독 실행을 검증한 다음 Actions 아티팩트에 파일을 업로드합니다. `feature/warm-journal-v2`와 `master`에 푸시하면 소스 검사와 Windows 설치파일·업데이트 파일 생성을 모두 실행합니다. 연속 푸시는 이전 패키징을 취소하고 최신 커밋을 빌드합니다. 아티팩트는 90일간 보관됩니다.
 
 ## 코드 수정 반영

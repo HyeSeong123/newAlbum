@@ -1,0 +1,81 @@
+snapml-quadruped-pose
+Copyright 2026 Sausage Labs
+
+This product includes software and model weights developed by third parties.
+
+================================================================================
+AP-10K  —  REQUIRED ATTRIBUTION (CC BY 4.0)
+================================================================================
+
+The pose model in this repository is TRAINED ON the AP-10K dataset. AP-10K is
+released under the Creative Commons Attribution 4.0 International licence
+(CC BY 4.0), which requires attribution in any derivative — and a trained model
+is a derivative.
+
+    AP-10K: A Benchmark for Animal Pose Estimation in the Wild
+    Hang Yu, Yufei Xu, Jing Zhang, Wei Zhao, Ziyu Guan, Dacheng Tao
+    NeurIPS 2021 Datasets and Benchmarks Track
+    https://github.com/AlexTheBad/AP-10K
+    Licence: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+
+⚠️ IMAGES ARE NOT REDISTRIBUTED HERE, AND MUST NOT BE.
+   AP-10K's CC BY 4.0 grant covers the authors' annotations and curated release.
+   The underlying photographs were collected from the web and carry their own,
+   separate, third-party licences. This repository ships trained WEIGHTS only.
+   Download the images from the upstream repository yourself.
+
+⚠️ A DOCUMENTED LICENCE DISCREPANCY, RECORDED HONESTLY.
+   MMPose's dataset-zoo page describes AP-10K as "for non-commercial use only".
+   That contradicts the copyright holder's own LICENSE file, which is the
+   verbatim CC BY 4.0 text, and the README statement "The dataset follows
+   CC-BY-4.0 license". The same "non-commercial" string appears on several other
+   datasets on that page, so it reads as boilerplate rather than a considered
+   statement about AP-10K.
+   We treat upstream as controlling. Anyone putting this model into a COMMERCIAL
+   product should obtain written confirmation from the AP-10K authors first.
+
+================================================================================
+Frameworks and pretrained weights
+================================================================================
+
+MMPose, MMDetection, MMEngine, MMCV      Apache-2.0   OpenMMLab
+  https://github.com/open-mmlab/mmpose
+
+MobileNetV2 ImageNet weights             Apache-2.0   OpenMMLab / mmpretrain
+  Backbone initialisation.
+
+PyTorch, torchvision                     BSD-3-Clause
+ONNX, onnx-simplifier                    Apache-2.0 / MIT
+onnxruntime                              MIT
+onnxconverter-common                     MIT
+
+================================================================================
+Pairing model — Snap Inc., included in the .lspkg only
+================================================================================
+
+The pose model needs a bounding box. That comes from the **Animal** object
+detector in Snap's own SnapML model zoo:
+  https://developers.snap.com/lens-studio/features/snap-ml/model-zoo
+
+  Copyright (c) 2020 Snap Inc. All rights reserved.
+  Licence: Lens Studio Template License
+           https://lensstudio.snapchat.com/template-license
+
+WHERE IT APPEARS. The prefab bundles every asset it references, so the exported
+`.lspkg` contains this detector. The source tree does not: `Models/` carries only
+the pose model, and the detector is gitignored.
+
+Its use is governed by Snap's Lens Studio Template License, not by this
+repository's Apache-2.0 grant. Nothing here relicenses it, and the Apache-2.0
+licence covers only the code and the pose weights this project produced.
+
+================================================================================
+Explicitly excluded
+================================================================================
+
+⚠️ SuperAnimal / DeepLabCut model-zoo weights are NON-COMMERCIAL and must never
+   appear in this repository, including as a comparison baseline.
+⚠️ Ultralytics YOLOv8/v11 (AGPL-3.0) and YOLOv7 (GPL-3.0) are excluded; RTMDet
+   and CSPNeXt (Apache-2.0) were used for any detector experimentation instead.
+⚠️ StanfordExtra, Animal Kingdom, Animal-Pose and APT-36K are excluded: their
+   licences are research-only or unstated.

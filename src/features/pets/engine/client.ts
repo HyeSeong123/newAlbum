@@ -1,4 +1,3 @@
-import { nativeAIEnabled, NATIVE_AI_MESSAGE } from '../../ai/engineMode';
 import { registerAIWorker, runAI } from '../../ai/runtime';
 import type { PetFeatures, PetView } from './types';
 import type { PetBackendPreference } from './runtime';
@@ -11,7 +10,6 @@ export function cancelPetInference() { clearTimeout(idleTimer); worker?.terminat
 registerAIWorker('pets', cancelPetInference);
 // One worker, one image at a time; decoded source is already a native thumbnail.
 export function analyzePetImage(url: string, signal?: AbortSignal, viewHint: PetView = 'unknown', regions?: PetFeatures[], backend: PetBackendPreference = 'auto',onDiagnostics?:(value:PetDiagnostics)=>void): Promise<PetFeatures[]> {
-  if (nativeAIEnabled) return Promise.reject(new Error(NATIVE_AI_MESSAGE));
   const task = queue.then(() => runAI('pets', async () => {
     clearTimeout(idleTimer);
     signal?.throwIfAborted();

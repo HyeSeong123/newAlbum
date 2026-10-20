@@ -1,4 +1,3 @@
-import { nativeAIEnabled, NATIVE_AI_MESSAGE } from '../ai/engineMode';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, BookPlus, Check, FolderOutput, Image as ImageIcon, ImagePlus, LoaderCircle, MoreVertical, Pause, Pencil, Play, RefreshCw, Scissors, Trash2, Users, X } from 'lucide-react';
 import type { MediaItem } from '../../types/media';
@@ -134,23 +133,22 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
     return photos.filter(photo => ids.has(Number(photo.id)));
   }, [index.people, lookup, photos]);
   async function relearn() {
-    if (nativeAIEnabled) { setError(NATIVE_AI_MESSAGE); return; }
     const selected = person ? personItems : registeredPhotos;
     if (locked.current || !desktop || !selected.length) return;
     locked.current = true; stop.current = false; controller.current = new AbortController();
     const signal = controller.current.signal;
-    setRunning(true); setError(''); setStatus('등록 사진 다시 학습 준비 중'); setProgress({done:0,total:selected.length});
+    setRunning(true); setError(''); setStatus('등록 사진 다시 분석 준비 중'); setProgress({done:0,total:selected.length});
     let done=0,failed=0,learned=0,missed=0,lastError='';
     try {
       await loadFaceEngine(signal);
       for (const item of selected) {
-        signal.throwIfAborted();setStatus(`등록 사진 다시 학습 중 · ${item.fileName}`);
+        signal.throwIfAborted();setStatus(`등록 사진 다시 분석 중 · ${item.fileName}`);
         try {const result=await relearnPersonPhoto(item,signal);learned+=result.learned;if(!result.detected)missed++;}
         catch(reason){if(signal.aborted)break;failed++;lastError=reason instanceof Error?reason.message:String(reason);}
         done++;setProgress({done,total:selected.length});
       }
-      if (alive.current) {setIndex(await loadFaceIndex());setStatus(`${signal.aborted ? '다시 학습 중단' : '다시 학습 완료'} · 사진 ${done}장 · 인식 기준 ${learned}개 갱신${missed ? ` · 얼굴 못 찾음 ${missed}장 (사진 연결 유지)` : ''}${failed ? ` · 실패 ${failed}장 (${lastError})` : ''}`);}
-    } catch(reason) {if(alive.current){setIndex(await loadFaceIndex().catch(()=>index));setStatus(signal.aborted ? '다시 학습을 중단했습니다. 완료한 결과와 사진 연결은 유지됩니다.' : `다시 학습하지 못했습니다. 사진 연결은 유지됩니다. ${reason instanceof Error ? reason.message : String(reason)}`);}}
+      if (alive.current) {setIndex(await loadFaceIndex());setStatus(`${signal.aborted ? '다시 분석 중단' : '다시 분석 완료'} · 사진 ${done}장 · 인식 기준 ${learned}개 갱신${missed ? ` · 얼굴 못 찾음 ${missed}장 (사진 연결 유지)` : ''}${failed ? ` · 실패 ${failed}장 (${lastError})` : ''}`);}
+    } catch(reason) {if(alive.current){setIndex(await loadFaceIndex().catch(()=>index));setStatus(signal.aborted ? '다시 분석을 중단했습니다. 완료한 결과와 사진 연결은 유지됩니다.' : `다시 분석하지 못했습니다. 사진 연결은 유지됩니다. ${reason instanceof Error ? reason.message : String(reason)}`);}}
     finally {controller.current=null;locked.current=false;if(alive.current)setRunning(false);}
   }
 
@@ -185,7 +183,6 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
   }, [desktop, items]);
 
   async function start(retryEmpty = false) {
-    if (nativeAIEnabled) { setError(NATIVE_AI_MESSAGE); return; }
     if (locked.current || !desktop) return;
     locked.current = true; stop.current = false; controller.current = new AbortController();
     setRunning(true); setError(''); setStatus('얼굴 분석 준비 중');
@@ -272,8 +269,8 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
       </div>
     </div>
     {!desktop && <p role="status">얼굴 찾기는 감자싹 앱에서 사용할 수 있습니다.</p>}
-    {desktop && !showFaceThumbnails && <div className="entityManualActions"><button disabled={blocked || person && !person.name.trim()} onClick={openManualPhotos}><ImagePlus size={18} />사진 직접 등록</button><button disabled={blocked || !(person ? personItems : registeredPhotos).length || person && !person.name.trim()} onClick={() => void relearn()}><RefreshCw size={18} />{person ? '등록 사진 다시 학습' : '등록 목록 다시 학습'}</button></div>}
-    {desktop && !showFaceThumbnails && <p className="peopleSectionHint">다시 학습하면 사진을 다시 분석해 확인한 얼굴과 직접 등록한 단독 인물 사진의 인식 기준을 갱신해요. 여러 얼굴은 사진 정리에서 확인하세요.</p>}
+    {desktop && !showFaceThumbnails && <div className="entityManualActions"><button disabled={blocked || person && !person.name.trim()} onClick={openManualPhotos}><ImagePlus size={18} />사진 직접 등록</button><button disabled={blocked || !(person ? personItems : registeredPhotos).length || person && !person.name.trim()} onClick={() => void relearn()}><RefreshCw size={18} />{person ? '등록 사진 다시 분석' : '등록 목록 다시 분석'}</button></div>}
+    {desktop && !showFaceThumbnails && <p className="peopleSectionHint">등록 사진을 다시 분석해 확인한 얼굴과 직접 등록한 단독 인물 사진의 인식 기준을 갱신해요. 여러 얼굴은 사진 정리에서 확인하세요.</p>}
     {loading && <p role="status"><LoaderCircle size={18} className="spinIcon" />인물 불러오는 중</p>}
     {(running || status) && <div className="faceProgress" role="status"><span>{status}</span>{running && <><span>{progress.done} / {progress.total}장</span><div className="peopleActions"><button onClick={() => { stop.current = true; controller.current?.abort(); void controlPersonJobs(false).catch(() => undefined); setStatus('분석을 중단하는 중'); }}><Pause size={18} />중단</button></div><progress value={progress.done} max={progress.total || 1} /></>}</div>}
     {error && !editingName && <p role="alert" className="faceError">{error}</p>}

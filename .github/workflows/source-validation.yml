@@ -3,9 +3,9 @@ name: Source validation
 on:
   workflow_dispatch:
   pull_request:
-    branches: [feature/warm-journal-v2, master]
+    branches: [feature/warm-journal-v2, feature/gamjassak-native-ai, master]
   push:
-    branches: [feature/warm-journal-v2, master]
+    branches: [feature/warm-journal-v2, feature/gamjassak-native-ai, master]
     tags: ['v*']
     paths:
       - 'src/**'
@@ -59,6 +59,7 @@ jobs:
           python3 -m unittest discover -s tests -p test_person_storage.py
           python3 -m unittest discover -s tests -p test_person_evaluation.py
           python3 -m unittest discover -s tests -p test_recognition_094.py
+          python3 -m unittest discover -s tests -p test_native_ai_storage.py
 
   verify:
     runs-on: ubuntu-latest
@@ -80,6 +81,7 @@ jobs:
       - name: Test browser workflows
         run: |
           npx playwright install --with-deps chromium
+          npx playwright test tests/native-ai.spec.ts tests/recognition-restored.spec.ts --workers=2
           npx playwright test tests/manual-photos.spec.ts --workers=2
           npx playwright test tests/pet-review.spec.ts --workers=2
           npx playwright test tests/home.spec.ts tests/characters.spec.ts --workers=2

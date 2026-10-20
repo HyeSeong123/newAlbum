@@ -70,11 +70,11 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
       </div>
       <div className="peopleActions entityActions">
         {pet && <><button className="primaryControl entityPrimary" aria-label="이름·사진 수정" disabled={busy} onClick={() => setEditing(pet)}><Pencil size={18} /><span className="entityActionFull">이름·사진 수정</span><span className="entityActionShort" aria-hidden="true">수정</span></button><ActionMenu label="반려동물 관리" icon={<MoreVertical size={20} />} disabled={busy} actions={[
-          { label: '등록 사진 다시 학습', icon: <RefreshCw size={16} />, disabled: !canRetrain || analysis.progress?.running, onSelect: retrain },
+          { label: '등록 사진 다시 분석', icon: <RefreshCw size={16} />, disabled: !canRetrain || analysis.progress?.running, onSelect: retrain },
           { label: '반려동물 등록 삭제', icon: <Trash2 size={16} />, danger: true, onSelect: () => void remove() },
         ]} /></>}
         {!pet && <button className="primaryControl entityPrimary" aria-label="반려동물 등록" disabled={loading || !desktop} onClick={() => setEditing({ id: 0, name: '', cover_media_id: null, media_ids: [] })}><Plus size={18} /><span className="entityActionFull">반려동물 등록</span><span className="entityActionShort" aria-hidden="true">등록</span></button>}
-        {!pet && desktop && pets.length > 0 && <ActionMenu label="반려동물 관리" icon={<MoreVertical size={20} />} actions={[{label:'등록 목록 다시 학습',icon:<RefreshCw size={16} />,disabled:!canRetrain || analysis.progress?.running,onSelect:retrain}]} />}
+        {!pet && desktop && pets.length > 0 && <ActionMenu label="반려동물 관리" icon={<MoreVertical size={20} />} actions={[{label:'등록 목록 다시 분석',icon:<RefreshCw size={16} />,disabled:!canRetrain || analysis.progress?.running,onSelect:retrain}]} />}
       </div>
     </div>
     {!desktop && <p role="status">반려동물 등록·인식은 감자싹 앱에서 사용할 수 있습니다.</p>}

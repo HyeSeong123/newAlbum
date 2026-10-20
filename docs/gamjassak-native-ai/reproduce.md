@@ -26,10 +26,10 @@ npm run build
 npx playwright install --with-deps chromium
 npx playwright test tests/native-ai.spec.ts tests/media-import.spec.ts --workers=2
 cargo test --manifest-path src-tauri/Cargo.toml --locked
-npm run ai:release:check  # 현 단계 exit 1이 정상
+npm run ai:native:release:check  # 미학습 자체 모델: 현 단계 exit 1이 정상
 ```
 
-브라우저 테스트는 데스크톱 Chromium 및 Pixel 7 viewport에서 같은 JSON 가중치로 Worker/Node 출력 parity, 로딩 재사용 후 네트워크 차단 상태의 warm 추론, 취소 및 미학습 legacy 차단을 검사한다. 모바일 viewport는 Android WebView나 ARM64 실기기 테스트가 아니다. `native-ai-validation.yml`은 신규 브랜치에만 적용하며 Rust 저장소·브라우저·기존 가져오기 회귀를 실행한다.
+브라우저 테스트는 데스크톱 Chromium 및 Pixel 7 viewport에서 같은 JSON 가중치로 Worker/Node 출력 parity, 로딩 재사용 후 네트워크 차단 상태의 warm 추론과 취소를 검사한다. 일반 앱의 기존 인식 경로는 복구됐다. 모바일 viewport는 Android WebView나 ARM64 실기기 테스트가 아니다. 연구 회귀도 `source-validation.yml`에 통합했고 Android preview는 별도 워크플로로 검사한다.
 
 ## 권리 검토된 로컬 데이터 확장
 

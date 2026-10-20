@@ -1,4 +1,3 @@
-import { nativeAIEnabled, NATIVE_AI_MESSAGE } from '../ai/engineMode';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import type { MediaItem } from '../../types/media';
@@ -19,7 +18,6 @@ export function usePetAnalysis(media: MediaItem[]) {
   const [progress,setProgress]=useState<PetProgress|null>(null), [waiting,setWaiting]=useState(0);
   const report=useCallback((error:unknown)=>{if(mounted.current)setProgress({done:0,total:0,failed:1,detected:0,running:false,message:error instanceof Error?error.message:String(error)});},[]);
   const pump=useCallback(async():Promise<void>=>{
-    if(nativeAIEnabled){report(new Error(NATIVE_AI_MESSAGE));return;}
     if(!isTauriRuntime() || !mounted.current)return;
     if(controller.current){rerun.current=true;return;}
     const abort=new AbortController();controller.current=abort;
@@ -34,7 +32,7 @@ export function usePetAnalysis(media: MediaItem[]) {
         if(!queue?.jobs)break; // browser previews without native queue commands
         if(mounted.current)setWaiting(queue.paused+queue.failed);
         const pending = queue.jobs.filter(job => job.state === 'pending');
-        if(!pending.length){if(mounted.current && (done || queue.paused || queue.failed || relearning.current))setProgress({done,total:done,failed,detected,running:false,message:queue.paused+queue.failed?`완료 ${done}장 · 대기 ${queue.paused}장 · 재시도 필요 ${queue.failed}장${queue.jobs.find(j=>j.error)?.error?` (${queue.jobs.find(j=>j.error)!.error})`:''}`:retrained || relearning.current?`등록 사진 ${retrained}장 다시 학습 완료 · 인식 기준 ${learned}개 갱신${missed?` · 찾지 못함 ${missed}장 (사진 연결 유지)`:''} · 확인 필요 ${detected}마리`:`반려동물 확인 필요 ${detected}마리 · ${done}장 확인`});relearning.current=false;break;}
+        if(!pending.length){if(mounted.current && (done || queue.paused || queue.failed || relearning.current))setProgress({done,total:done,failed,detected,running:false,message:queue.paused+queue.failed?`완료 ${done}장 · 대기 ${queue.paused}장 · 재시도 필요 ${queue.failed}장${queue.jobs.find(j=>j.error)?.error?` (${queue.jobs.find(j=>j.error)!.error})`:''}`:retrained || relearning.current?`등록 사진 ${retrained}장 다시 분석 완료 · 인식 기준 ${learned}개 갱신${missed?` · 찾지 못함 ${missed}장 (사진 연결 유지)`:''} · 확인 필요 ${detected}마리`:`반려동물 확인 필요 ${detected}마리 · ${done}장 확인`});relearning.current=false;break;}
         let processedInBatch = 0;
         for (const job of pending) {
         abort.signal.throwIfAborted();
@@ -44,7 +42,7 @@ export function usePetAnalysis(media: MediaItem[]) {
         let outcome:PetProgress|undefined;
         await scanPetBatch([item],abort.signal,value=>{
           outcome=value;
-          if(mounted.current)setProgress({...value,message:job.refresh?`등록 사진 다시 학습 중 · ${item.fileName}`:value.message,done,total:done+queue.pending-processedInBatch,failed,detected,running:true});
+          if(mounted.current)setProgress({...value,message:job.refresh?`등록 사진 다시 분석 중 · ${item.fileName}`:value.message,done,total:done+queue.pending-processedInBatch,failed,detected,running:true});
         },job.pet_id!==null?{petId:job.pet_id,views:job.view==='unknown'?{}:{[item.id]:job.view}}:undefined,!!job.refresh);
         abort.signal.throwIfAborted();
         const problem=outcome?.failed ? outcome.message : null;
@@ -59,18 +57,16 @@ export function usePetAnalysis(media: MediaItem[]) {
     operations.current=operations.current.catch(()=>undefined).then(operation).then(()=>{if(run)void pump();}).catch(report);
   },[pump,report]);
   const start=useCallback((items:MediaItem[],petId?:number,views:Record<string,PetView>={})=>{
-    if(nativeAIEnabled){report(new Error(NATIVE_AI_MESSAGE));return;}
     if(!isTauriRuntime())return;
     const photos=items.filter(item=>item.fileType==='image');
     schedule(async()=>{if(!(await loadPets()).length)throw new Error('먼저 반려동물을 등록한 뒤 사진 찾기를 시작해 주세요.');for(let index=0;index<photos.length;index+=1000)await invoke('enqueue_pet_jobs',{jobs:photos.slice(index,index+1000).map(item=>({mediaId:Number(item.id),petId:petId??null,view:views[item.id]??'unknown'}))});});
   },[schedule,report]);
   const retrain=useCallback((groups:{petId:number;items:MediaItem[]}[])=>{
-    if(nativeAIEnabled){report(new Error(NATIVE_AI_MESSAGE));return;}
     if(!isTauriRuntime())return;
     relearning.current=true;
     controller.current?.abort();
     const finished=settled.current;
-    setProgress({done:0,total:groups.reduce((sum,group)=>sum+group.items.length,0),failed:0,detected:0,running:true,message:'등록 사진 다시 학습 준비 중'});
+    setProgress({done:0,total:groups.reduce((sum,group)=>sum+group.items.length,0),failed:0,detected:0,running:true,message:'등록 사진 다시 분석 준비 중'});
     schedule(async()=>{
       await finished;
       for(const group of groups){const photos=group.items.filter(item=>item.fileType==='image');for(let index=0;index<photos.length;index+=1000)await invoke('enqueue_pet_jobs',{jobs:photos.slice(index,index+1000).map(item=>({mediaId:Number(item.id),petId:group.petId,view:'unknown',refresh:true}))});}
@@ -94,5 +90,5 @@ export function usePetAnalysis(media: MediaItem[]) {
       const queue=await invoke<Queue>('list_pet_jobs');
       if(mounted.current){setWaiting((queue?.paused??0)+(queue?.failed??0));setProgress(previous=>previous?{...previous,running:false,message:'분석을 멈췄어요. 완료한 결과는 저장되어 있어요.'}:null);}
     },false);
-  },resume:()=>{if(nativeAIEnabled){report(new Error(NATIVE_AI_MESSAGE));return;}schedule(async()=>{await settled.current;if(!(await loadPets()).length)throw new Error('먼저 반려동물을 등록해 주세요.');await invoke('control_pet_jobs',{resume:true});});},dismiss:()=>setProgress(null)};
+  },resume:()=>{schedule(async()=>{await settled.current;if(!(await loadPets()).length)throw new Error('먼저 반려동물을 등록해 주세요.');await invoke('control_pet_jobs',{resume:true});});},dismiss:()=>setProgress(null)};
 }

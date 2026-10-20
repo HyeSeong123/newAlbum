@@ -287,7 +287,7 @@ test('pet empty action and management preserve name, photos and cover on failed 
   await dialog.getByRole('button', { name: '저장', exact: true }).click();
   await expect(dialog).toBeHidden();
   await page.getByRole('button', { name: '반려동물 관리', exact: true }).click();
-  await expect(page.getByRole('button', { name: '등록 사진 다시 학습', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '등록 사진 다시 분석', exact: true })).toBeVisible();
 });
 
 test('album creation and editing preserve title and written content after failed saves', async ({ page }) => {
