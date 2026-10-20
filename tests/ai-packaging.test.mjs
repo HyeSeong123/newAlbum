@@ -13,7 +13,6 @@ async function fixture() {
   await put('scripts/face-models.lock.json', JSON.stringify({deployment:'research-only-not-in-product',models:{historical:'retained'}}));
   await put('scripts/pet-model-lock.json', JSON.stringify({deployment:'research-only-not-in-product',models:{historical:'retained'}}));
   await put('scripts/recognition-models.lock.json', JSON.stringify({deployment:'excluded-from-product',models:[]}));
-  await put('src/features/pets/engine/cat-face-cascade.json', '{}');
   await put('docs/model-removal-2026-10-20.md', 'All pretrained models excluded; manual data retained.');
   for (const name of requiredNotices) await put(`public/notices/${name}`, `test notice: ${name}`);
   const inventory = {};
@@ -38,6 +37,8 @@ test('every pretrained asset path, including renamed or research weights, blocks
    assert.ok((await checkRelease(root)).some(e=>e.startsWith('EXCLUDED_MODEL_ASSET:public/models/')),name);
    await rm(path.join(root,'public/models'),{recursive:true,force:true});
   }
+  await put('src/features/pets/engine/cat-face-cascade.json','{}');
+  assert.ok((await checkRelease(root)).includes('PRETRAINED_WEIGHT_IN_SOURCE:cat-face-cascade.json'));
  }finally{await rm(root,{recursive:true,force:true});}
 });
 

@@ -140,13 +140,7 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
   await page.getByRole('button', { name: '제외 되돌리기', exact: true }).click();
   await expect(unknownSection.getByRole('button', { name: '이름 없는 사람 2장', exact: true })).toBeVisible();
   await unknownSection.getByRole('button', { name: '선택 끝내기', exact: true }).click();
-  await page.getByRole('button', { name: '이름 추천 확인', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: '이름 추천 확인' })).toBeVisible();
-  await expect(page.getByRole('checkbox')).toHaveCount(2);
-  await expect(page.getByRole('button', { name: '이 이름으로 저장', exact: true })).toBeDisabled();
-  await page.getByRole('checkbox').first().check();
-  await page.screenshot({ path: `test-results/people-match-review-${test.info().project.name}.png` });
-  await page.getByTitle('닫기', { exact: true }).click();
+  await expect(page.getByRole('button', { name: '이름 추천 확인', exact: true })).toHaveCount(0);
   await expect(page.locator('.personTile')).toHaveCount(2);
   await expect(page.locator('.personTile').first()).toContainText('가족');
   await page.screenshot({ path: `test-results/people-groups-${test.info().project.name}.png` });
@@ -352,7 +346,7 @@ test('unnamed faces are visible and can be saved to an existing person without a
   await page.goto('/');
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await expect(page.getByRole('button', { name: '이름 없는 사람 1장', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: '이름 추천 확인', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: '이름 추천 확인', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
   await expect(page.getByRole('button', { name: /인식 검증|기기 측정|새로고침|미확인/ })).toHaveCount(0);
   await page.keyboard.press('Escape');

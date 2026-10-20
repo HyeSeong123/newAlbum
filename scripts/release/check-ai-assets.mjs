@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 // Historical inventories/notices stay as provenance, never an active asset list.
-export const inventoryFiles = ['scripts/face-models.lock.json', 'scripts/recognition-models.lock.json', 'scripts/pet-model-lock.json', 'src/features/pets/engine/cat-face-cascade.json'];
+export const inventoryFiles = ['scripts/face-models.lock.json', 'scripts/recognition-models.lock.json', 'scripts/pet-model-lock.json'];
 export const requiredNotices = ['face-api-original-MIT.txt', 'dlib-models-CC0.txt', 'pet-cat-face-license.txt', 'pet-models-Apache-2.0.txt'];
 const excludedPackages = ['@vladmandic/face-api', '@tensorflow/tfjs', '@tensorflow/tfjs-backend-wasm', '@tensorflow-models/coco-ssd', 'onnxruntime-web'];
 const forbiddenCode = /@vladmandic\/face-api|@tensorflow\/|tfjs-backend|coco-ssd|cat-frontal-cascade|facex-tiny|quadpose\.onnx|onnxruntime-web|ort-wasm-simd/;
@@ -42,6 +42,7 @@ export async function checkRelease(base = root, { verifyAssets = true, verifyDis
     const pkg = JSON.parse(await read('package.json'));
     for (const name of excludedPackages) if (pkg.dependencies?.[name] || pkg.optionalDependencies?.[name]) errors.push(`PRODUCT_AI_DEPENDENCY:${name}`);
   } catch { errors.push('INVALID_PACKAGE'); }
+  try { await lstat(path.join(base, 'src/features/pets/engine/cat-face-cascade.json')); errors.push('PRETRAINED_WEIGHT_IN_SOURCE:cat-face-cascade.json'); } catch (error) { if (error.code !== 'ENOENT') errors.push('SOURCE_MODEL_UNREADABLE'); }
   if (!verifyAssets) return errors;
   for (const assets of verifyDist ? ['public', 'dist'] : ['public']) {
     const directory = path.join(base, assets, 'models');

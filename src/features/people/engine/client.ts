@@ -25,7 +25,7 @@ function request(pixels?: ArrayBuffer, width?: number, height?: number, signal?:
     const timeout = setTimeout(error, 120_000);
     signal?.addEventListener('abort', abort, { once: true });
     active.addEventListener('message', message); active.addEventListener('error', error);
-    active.postMessage({ id, pixels, width, height, backend, modelBase: new URL(`${import.meta.env.BASE_URL}models/faces/`, location.href).href }, pixels ? [pixels] : []);
+    active.postMessage({ id, pixels, width, height, backend, modelBase: new URL(`${import.meta.env.BASE_URL}.research/models/faces/`, location.href).href }, pixels ? [pixels] : []);
   });
 }
 export function loadPersonEngine(signal?: AbortSignal) { return runAI('people', () => request(undefined, undefined, undefined, signal), signal); }

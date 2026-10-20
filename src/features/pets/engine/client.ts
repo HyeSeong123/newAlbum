@@ -39,7 +39,7 @@ export function analyzePetImage(url: string, signal?: AbortSignal, viewHint: Pet
       const message = (event: MessageEvent) => { if (event.data.id !== id) return; cleanup(); if(event.data.diagnostics){onDiagnostics?.(event.data.diagnostics);window.dispatchEvent(new CustomEvent('gamjassak-pet-diagnostics',{detail:event.data.diagnostics}));} event.data.error ? reject(new Error(event.data.error)) : resolve(event.data.features); };
       const timer = setTimeout(() => { cleanup(); cancelPetInference(); reject(new Error('분석 시간이 초과되었습니다.')); }, 120_000);
       signal?.addEventListener('abort', abort, { once: true }); active.addEventListener('message', message); active.addEventListener('error', error);
-      active.postMessage({ id, width:canvas.width,height:canvas.height,pixels,viewHint,regions,backend,modelBase: new URL(`${import.meta.env.BASE_URL}models/pets/`, location.href).href }, [pixels]);
+      active.postMessage({ id, width:canvas.width,height:canvas.height,pixels,viewHint,regions,backend,modelBase: new URL(`${import.meta.env.BASE_URL}.research/models/pets/`, location.href).href }, [pixels]);
     });
   }, signal));
   queue = task.catch(() => undefined).finally(() => { idleTimer = setTimeout(cancelPetInference,60_000); });
