@@ -177,3 +177,30 @@ test('changing between single pages and desktop spreads retains the reading posi
   await expect(reader.locator('.albumPagerActions p')).toHaveText('3 / 3 페이지');
   await expect(reader.locator('.albumPagePhoto')).toHaveCount(3);
 });
+
+
+test('touch long press drags across gallery photos without a scroll gesture', async ({ page }, info) => {
+  test.skip(info.project.name !== 'mobile', 'Native long-press selection runs on the mobile profile.');
+  await fixture(page);
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
+  await page.getByRole('button', { name: '사진 선택', exact: true }).click();
+  const tiles = page.locator('.mediaTile');
+  await tiles.first().scrollIntoViewIfNeeded();
+  const first = (await tiles.first().boundingBox())!;
+  const second = (await tiles.nth(1).boundingBox())!;
+  const scrollBefore = await page.evaluate(() => scrollY);
+  const client = await page.context().newCDPSession(page);
+  const from = { x: first.x + first.width / 2, y: first.y + first.height / 2 };
+  const to = { x: second.x + second.width / 2, y: second.y + second.height / 2 };
+  try {
+    await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from] });
+    await page.waitForTimeout(600);
+    await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [to] });
+    await page.waitForTimeout(80);
+    await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  } finally { await client.detach(); }
+  await expect(tiles.first()).toHaveClass(/multiSelected/);
+  await expect(tiles.nth(1)).toHaveClass(/multiSelected/);
+  expect(Math.abs(await page.evaluate(() => scrollY) - scrollBefore)).toBeLessThan(8);
+  await page.screenshot({ path: 'preview-results/mobile-touch-drag-gallery.png' });
+});
