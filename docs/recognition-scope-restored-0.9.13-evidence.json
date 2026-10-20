@@ -1,0 +1,244 @@
+{
+  "version": "0.9.13",
+  "productCommit": "a3f2d6e91db3d01abfcb21daf1f2bff353ae23ab",
+  "activeModelProfile": "person128-pet-basic-no-pose",
+  "preserved": [
+    "FaceAPI128 face detection/landmarks/geometric direction",
+    "basic dog/cat detection",
+    "MobileNet appearance comparison",
+    "cat auxiliary face detector",
+    "manual registration and confirmation",
+    "legacy IDs/photo links/DB migrations",
+    "independent AI research"
+  ],
+  "excluded": [
+    "FaceX tiny512",
+    "QuadPose f2",
+    "dedicated ONNX runtime",
+    "untrained research model product inference"
+  ],
+  "source": {
+    "run": 39436705914,
+    "pushRun": 39436694075,
+    "status": "success",
+    "nodePassed": 144,
+    "rustPassed": 116,
+    "browserPassed": 412,
+    "browserSkipped": 44,
+    "browserFailed": 0,
+    "build": "success",
+    "assetInventoryAndExclusionCheck": "success",
+    "screensArtifact": 12273348059
+  },
+  "local": {
+    "nodePassed": 144,
+    "pythonPassed": 22,
+    "recognitionBrowserPassed": 44,
+    "recognitionBrowserSkipped": 8,
+    "recognitionBrowserFailed": 0,
+    "rust": "not run: cargo unavailable",
+    "build": "success",
+    "distAssetCheck": "success"
+  },
+  "android": {
+    "run": 39436694146,
+    "job": 118675454677,
+    "status": "success",
+    "environment": "Android API36 x86_64 emulator, installed APK, offline inference",
+    "apkArtifact": 12272217229,
+    "screensAndRawJsonArtifact": 12271604409,
+    "manualMembershipRelearning": "names, links and object IDs preserved; smoke log assertion passed",
+    "identityAccuracyMeasured": false,
+    "phonePerformanceMeasured": false,
+    "personRuntime": {
+      "excluded512": true,
+      "faces": 3,
+      "valid": true,
+      "maxBackendDistance": 9.553288312538728e-07,
+      "cpu": {
+        "backend": "cpu",
+        "tensors": 300,
+        "tensorBytes": 46107804,
+        "simd": false,
+        "elapsedMs": 9286,
+        "modelLoadMs": 374.70000000001164
+      },
+      "wasm": {
+        "backend": "wasm",
+        "tensors": 300,
+        "tensorBytes": 46107804,
+        "simd": true,
+        "elapsedMs": 1122.1999999999534,
+        "modelLoadMs": 376.70000000001164
+      },
+      "auto": {
+        "backend": "wasm",
+        "tensors": 300,
+        "tensorBytes": 46107804,
+        "simd": true,
+        "elapsedMs": 900.8999999999651,
+        "modelLoadMs": 300.19999999995343
+      },
+      "nativeSourceVerified": true,
+      "completedCache": true,
+      "sourceAuditVerified": true,
+      "evaluationStored": true,
+      "environment": "Android API 36 x86_64 emulator",
+      "offline": true,
+      "identityAccuracyMeasured": false,
+      "devicePerformanceMeasured": false
+    },
+    "petRecognition": {
+      "offline": true,
+      "photoCount": 1,
+      "detectedDogs": 1,
+      "analysisWaitMs": 60230,
+      "engineVersion": "gamjassak-pets-v3-no-pose",
+      "rearClearsIdentityVectors": true,
+      "identityAccuracyMeasured": false,
+      "diagnostics": [
+        {
+          "width": 640,
+          "height": 480,
+          "inputRange": [
+            1,
+            255
+          ],
+          "elapsedMs": 2336.2999999999884,
+          "animals": 1,
+          "reusedBodies": 0,
+          "backend": "wasm",
+          "wasmFallback": false,
+          "simd": true,
+          "threads": 1,
+          "tensors": 399,
+          "tensorBytes": 35049984,
+          "tensorMemoryUnreliable": false,
+          "initializationMs": 1758.7999999999884,
+          "detectionMs": 252.39999999996508,
+          "bodyEmbeddingMs": 249.20000000001164,
+          "faceDetectionMs": 0,
+          "faceEmbeddingMs": 0,
+          "descriptorMs": 60.59999999997672,
+          "backendInitializationMs": 41.600000000034925,
+          "retryMs": 0,
+          "totalMs": 2378.5
+        },
+        {
+          "width": 640,
+          "height": 480,
+          "inputRange": [
+            1,
+            255
+          ],
+          "elapsedMs": 1133.399999999965,
+          "animals": 1,
+          "reusedBodies": 1,
+          "backend": "wasm",
+          "wasmFallback": false,
+          "simd": true,
+          "threads": 1,
+          "tensors": 399,
+          "tensorBytes": 35049984,
+          "tensorMemoryUnreliable": false,
+          "initializationMs": 0.19999999995343387,
+          "detectionMs": 0,
+          "bodyEmbeddingMs": 0.29999999998835847,
+          "faceDetectionMs": 0,
+          "faceEmbeddingMs": 565.7000000000116,
+          "descriptorMs": 478.3999999999651,
+          "backendInitializationMs": 18.100000000034925,
+          "retryMs": 0,
+          "totalMs": 1151.7000000000116
+        }
+      ]
+    },
+    "catFace": {
+      "kind": "cat",
+      "view": "front",
+      "viewSource": "cat-frontal-cascade",
+      "faceBox": [
+        0.265409428308784,
+        0.3023814095762752,
+        0.6351890408483516,
+        0.6022606794088445
+      ],
+      "faceLength": 1024,
+      "backend": "wasm",
+      "rearClearsIdentity": true,
+      "diagnostics": {
+        "width": 285,
+        "height": 300,
+        "inputRange": [
+          0,
+          255
+        ],
+        "elapsedMs": 2900.5999999999767,
+        "animals": 1,
+        "reusedBodies": 0,
+        "backend": "wasm",
+        "wasmFallback": false,
+        "simd": true,
+        "threads": 1,
+        "tensors": 399,
+        "tensorBytes": 35049984,
+        "tensorMemoryUnreliable": false,
+        "initializationMs": 1698.0999999999767,
+        "detectionMs": 129.59999999997672,
+        "bodyEmbeddingMs": 270.70000000001164,
+        "faceDetectionMs": 546.7999999999884,
+        "faceEmbeddingMs": 208.59999999997672,
+        "descriptorMs": 37.59999999997672,
+        "backendInitializationMs": 28.199999999953434,
+        "retryMs": 0,
+        "totalMs": 2929.5
+      },
+      "offline": true,
+      "identityAccuracyMeasured": false
+    },
+    "gallery": {
+      "gallery": true,
+      "longPressDragSelects": true,
+      "longPressDragDeselects": true,
+      "ordinarySwipeScrollsWithoutSelection": true,
+      "sort": "date_modified DESC, _id DESC",
+      "order": [
+        "M-video-gallery.mp4",
+        "Z-new-gallery.jpg",
+        "A-old-gallery.jpg"
+      ],
+      "photoCount": 2,
+      "videoCount": 1,
+      "unsupportedFormatsHidden": true,
+      "deniedPermissionCancels": true,
+      "cancelLeavesRecordsUnchanged": true
+    },
+    "security": {
+      "externalNetworkBlocked": true,
+      "inlineScriptBlocked": true,
+      "databaseAssetBlocked": true
+    }
+  },
+  "windows": {
+    "run": 39436694104,
+    "job": 118675455061,
+    "status": "success",
+    "artifact": 12271749326,
+    "previousInstallerArtifact": 12267999145,
+    "previousVersion": "0.9.12",
+    "scope": "Seeded prior 0.9.12 installer with media, album, chapters, text, playback metadata and WebView storage. 0.9.13 full/update installation, packaged WebView/native commands/SQLite/thumbnails and restart persistence passed. Not actual user DB."
+  },
+  "pm": {
+    "restoredScope": "PASS",
+    "excludedModelsRemainExcluded": "PASS",
+    "existingAuditChangesPreserved": "PASS",
+    "releaseReadiness": "CONDITIONAL PASS",
+    "remaining": [
+      "Physical ARM64 device",
+      "Actual user DB end-to-end upgrade",
+      "Full accessibility assessment",
+      "Representative recognition accuracy dataset"
+    ]
+  },
+  "rightsRecord": "Existing commercialRightsVerified=false and mandatory notices retained; no legal-clearance claim."
+}
