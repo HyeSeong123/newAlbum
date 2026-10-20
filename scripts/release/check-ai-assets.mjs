@@ -5,72 +5,65 @@ import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
+// Historical inventories/notices stay as provenance, never an active asset list.
 export const inventoryFiles = ['scripts/face-models.lock.json', 'scripts/recognition-models.lock.json', 'scripts/pet-model-lock.json', 'src/features/pets/engine/cat-face-cascade.json'];
 export const requiredNotices = ['face-api-original-MIT.txt', 'dlib-models-CC0.txt', 'pet-cat-face-license.txt', 'pet-models-Apache-2.0.txt'];
+const excludedPackages = ['@vladmandic/face-api', '@tensorflow/tfjs', '@tensorflow/tfjs-backend-wasm', '@tensorflow-models/coco-ssd', 'onnxruntime-web'];
+const forbiddenCode = /@vladmandic\/face-api|@tensorflow\/|tfjs-backend|coco-ssd|cat-frontal-cascade|facex-tiny|quadpose\.onnx|onnxruntime-web|ort-wasm-simd/;
 
-// Packaging consent is deliberately separate from legal clearance. This checks
-// the recorded inventory and actual shipped bytes, never grants model rights.
 export async function checkRelease(base = root, { verifyAssets = true, verifyDist = false } = {}) {
   const errors = [];
   const read = async file => {
     try { return await readFile(path.join(base, file)); }
     catch { errors.push(`MISSING_FILE:${file}`); return null; }
   };
-  const policyBytes = await read('public/notices/ai-release-status.json');
+  const bytes = await read('public/notices/ai-release-status.json');
   let policy;
-  try { policy = JSON.parse(policyBytes); } catch { errors.push('INVALID_RELEASE_RECORD'); return errors; }
-  if (!policy || typeof policy !== 'object') return [...errors, 'INVALID_RELEASE_RECORD'];
-  if (policy.schemaVersion !== 1 || policy.releaseDecision !== 'proceed-with-documented-uncertainties'
-      || policy.correctionRecord !== 'docs/rights-scope-correction-2026-10-20.md' || policy.activeModelProfile !== 'person128-pet-basic-no-pose' || policy.commercialRightsVerified !== false || policy.decisionRecord !== 'docs/release-decisions/2026-10-20-public-release.md') errors.push('INVALID_RELEASE_RECORD');
-  await read(policy.decisionRecord === 'docs/release-decisions/2026-10-20-public-release.md' ? policy.decisionRecord : 'docs/release-decisions/2026-10-20-public-release.md');
-  await read('docs/rights-scope-correction-2026-10-20.md');
+  try { policy = JSON.parse(bytes); } catch { return [...errors, 'INVALID_RELEASE_RECORD']; }
+  if (!policy || policy.schemaVersion !== 2 || policy.activeModelProfile !== 'manual-only-no-models'
+      || policy.releaseDecision !== 'exclude-all-pretrained-models' || policy.commercialRightsVerified !== false
+      || policy.trainedWeightsIncluded !== false || policy.modelRuntimeEnabled !== false
+      || policy.decisionRecord !== 'docs/model-removal-2026-10-20.md') errors.push('INVALID_RELEASE_RECORD');
+  if (!policy || typeof policy !== 'object') return errors;
+  await read('docs/model-removal-2026-10-20.md');
   for (const file of [...inventoryFiles, ...requiredNotices.map(name => `public/notices/${name}`)]) {
-    const bytes = await read(file);
-    if (bytes && digest(bytes) !== policy.inventory?.[file]) errors.push(`INVENTORY_CHANGED:${file}`);
+    const data = await read(file);
+    if (data && digest(data) !== policy.inventory?.[file]) errors.push(`INVENTORY_CHANGED:${file}`);
   }
-  if (!verifyAssets || errors.length) return errors;
-  const face = JSON.parse(await read('scripts/face-models.lock.json'));
-  const extra = JSON.parse(await read('scripts/recognition-models.lock.json'));
-  const pets = JSON.parse(await read('scripts/pet-model-lock.json'));
-  const expected = new Map();
-  for (const [name, sha256] of Object.entries(face.models)) expected.set(`faces/${name}`, { sha256 });
-  if (extra.models.length || extra.deployment !== 'excluded-from-product') errors.push('EXCLUDED_MODELS_ENABLED');
-  for (const [name, model] of Object.entries(pets.models)) for (const [file, spec] of Object.entries(model.files)) expected.set(`pets/${name}/${file}`, spec);
-  const addCopy = async (destination, source) => {
-    const bytes = await read(source);
-    if (bytes) expected.set(destination, { sha256: digest(bytes), bytes: bytes.length });
-  };
-  await addCopy('faces/LICENSE', 'node_modules/@vladmandic/face-api/LICENSE');
-  for (const name of ['tfjs-backend-wasm.wasm', 'tfjs-backend-wasm-simd.wasm', 'tfjs-backend-wasm-threaded-simd.wasm']) await addCopy(`faces/runtime/${name}`, `node_modules/@tensorflow/tfjs-backend-wasm/dist/${name}`);
-  await addCopy('faces/runtime/TFJS-WASM-README.md', 'node_modules/@tensorflow/tfjs-backend-wasm/README.md');
-  await addCopy('faces/runtime/TFJS-LICENSE', 'public/notices/pet-models-Apache-2.0.txt');
-  for (const name of ['tfjs-backend-wasm.wasm', 'tfjs-backend-wasm-simd.wasm']) await addCopy(`pets/runtime/${name}`, `node_modules/@tensorflow/tfjs-backend-wasm/dist/${name}`);
-  await addCopy('pets/LICENSE', 'public/notices/pet-models-Apache-2.0.txt');
-  const metadata = new Set(['faces/provenance.json', 'pets/runtime/manifest.json']);
+  for (const file of ['scripts/face-models.lock.json', 'scripts/pet-model-lock.json']) {
+    try { if (JSON.parse(await read(file)).deployment !== 'research-only-not-in-product') errors.push(`RESEARCH_INVENTORY_ENABLED:${file}`); }
+    catch { errors.push(`INVALID_INVENTORY:${file}`); }
+  }
+  try {
+    const lock = JSON.parse(await read('scripts/recognition-models.lock.json'));
+    if (lock.models.length || lock.deployment !== 'excluded-from-product') errors.push('EXCLUDED_MODELS_ENABLED');
+  } catch { errors.push('INVALID_RECOGNITION_INVENTORY'); }
+  try {
+    const pkg = JSON.parse(await read('package.json'));
+    for (const name of excludedPackages) if (pkg.dependencies?.[name] || pkg.optionalDependencies?.[name]) errors.push(`PRODUCT_AI_DEPENDENCY:${name}`);
+  } catch { errors.push('INVALID_PACKAGE'); }
+  if (!verifyAssets) return errors;
   for (const assets of verifyDist ? ['public', 'dist'] : ['public']) {
-    for (const [file, spec] of expected) {
-      const bytes = await read(`${assets}/models/${file}`);
-      if (bytes && (digest(bytes) !== spec.sha256 || (spec.bytes !== undefined && bytes.length !== spec.bytes))) errors.push(`ASSET_MISMATCH:${assets}/models/${file}`);
-    }
-    for (const file of metadata) await read(`${assets}/models/${file}`);
-    const shippedPolicy = await read(`${assets}/notices/ai-release-status.json`);
-    if (shippedPolicy && !shippedPolicy.equals(policyBytes)) errors.push(`RELEASE_RECORD_MISMATCH:${assets}`);
+    const directory = path.join(base, assets, 'models');
+    try {
+      const info = await lstat(directory);
+      if (info.isSymbolicLink() || !info.isDirectory()) errors.push(`MODEL_ASSET_ROOT:${assets}/models`);
+      else for (const entry of await readdir(directory)) errors.push(`EXCLUDED_MODEL_ASSET:${assets}/models/${entry}`);
+    } catch (error) { if (error.code !== 'ENOENT') errors.push(`MODEL_ASSET_UNREADABLE:${assets}`); }
+    const shipped = await read(`${assets}/notices/ai-release-status.json`);
+    if (shipped && !shipped.equals(bytes)) errors.push(`RELEASE_RECORD_MISMATCH:${assets}`);
     for (const name of requiredNotices) {
-      const bytes = await read(`${assets}/notices/${name}`);
-      if (bytes && digest(bytes) !== policy.inventory?.[`public/notices/${name}`]) errors.push(`NOTICE_MISMATCH:${assets}/notices/${name}`);
+      const data = await read(`${assets}/notices/${name}`);
+      if (data && digest(data) !== policy.inventory?.[`public/notices/${name}`]) errors.push(`NOTICE_MISMATCH:${assets}/notices/${name}`);
     }
-    async function walk(relative = '') {
-      const directory = path.join(base, assets, 'models', relative);
-      let entries; try { entries = await readdir(directory); } catch { return; }
-      for (const name of entries) {
-        const file = path.posix.join(relative, name), info = await lstat(path.join(directory, name));
-        if (/^(people512|pet-pose|onnx-runtime)(\/|$)/.test(file) || file === 'recognition-provenance.json') errors.push(`EXCLUDED_MODEL_ASSET:${assets}/models/${file}`);
-        if (info.isSymbolicLink()) errors.push(`MODEL_SYMLINK:${assets}/models/${file}`);
-        else if (info.isDirectory()) await walk(file);
-        else if (!expected.has(file) && !metadata.has(file)) errors.push(`UNRECORDED_MODEL_ASSET:${assets}/models/${file}`);
-      }
+  }
+  if (verifyDist) {
+    let files;
+    try { files = await readdir(path.join(base, 'dist/assets')); } catch { errors.push('BUILD_ASSETS_MISSING'); return errors; }
+    for (const name of files) {
+      if (/\.wasm$|\.onnx$|^(?:person|pet|native)\.worker-|^(?:RecognitionEvaluation|NativePipelineProbe)-/.test(name)) errors.push(`EXCLUDED_MODEL_RUNTIME:${name}`);
+      if (name.endsWith('.js') && forbiddenCode.test((await read(`dist/assets/${name}`))?.toString() ?? '')) errors.push(`EXCLUDED_MODEL_CODE:${name}`);
     }
-    await walk();
   }
   return errors;
 }
@@ -78,5 +71,5 @@ export async function checkRelease(base = root, { verifyAssets = true, verifyDis
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const errors = await checkRelease(root, { verifyDist: process.argv.includes('--dist') });
   if (errors.length) { console.error(errors.join('\n')); process.exitCode = 1; }
-  else console.log('AI packaging inventory and notices verified. Release decision recorded; unresolved training-data rights remain unresolved.');
+  else console.log('Manual-only product verified: no model assets or inference runtimes. Historical notices preserved; no blanket legal clearance claimed.');
 }

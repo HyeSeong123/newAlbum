@@ -1,6 +1,9 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 const lock = JSON.parse(readFileSync(new URL('./recognition-models.lock.json', import.meta.url), 'utf8'));
 if (lock.models.length || lock.deployment !== 'excluded-from-product') throw new Error('Excluded recognition models must not be enabled');
-for (const name of ['people512', 'pet-pose', 'onnx-runtime', 'recognition-provenance.json']) {
-  if (existsSync(new URL(`../public/models/${name}`, import.meta.url))) throw new Error(`Excluded model asset: ${name}`);
+for (const file of ['face-models.lock.json', 'pet-model-lock.json']) {
+ const inventory = JSON.parse(readFileSync(new URL(file, import.meta.url), 'utf8'));
+ if (inventory.deployment !== 'research-only-not-in-product') throw new Error(`Research inventory enabled: ${file}`);
 }
+const models = new URL('../public/models/', import.meta.url);
+if (existsSync(models) && readdirSync(models).length) throw new Error('Product must contain no model assets');

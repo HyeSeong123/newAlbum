@@ -21,6 +21,7 @@ test('additional reference faces require explicit selection and retain the perso
 });
 
 test('local models detect faces without remote requests', async ({ page, isMobile }) => {
+  test.skip(true, 'User removed pretrained recognition from the product on 2026-10-20; historical inference coverage is not a product PASS.');
   test.skip(isMobile, 'Run real inference once; management UI is covered on both viewports.');
   test.setTimeout(120_000);
   await page.route('**/face-test.jpg', (route) => route.fulfill({ path: 'node_modules/@vladmandic/face-api/demo/sample1.jpg', contentType: 'image/jpeg' }));
@@ -251,6 +252,7 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
 });
 
 test('review applies only checked face suggestions', async ({ page }) => {
+  test.skip(true, 'User removed pretrained recognition from the product on 2026-10-20; historical inference coverage is not a product PASS.');
   const thumbnail = `data:image/jpeg;base64,${(await readFile('node_modules/@vladmandic/face-api/demo/sample1.jpg')).toString('base64')}`;
   await page.addInitScript(({ thumbnail }) => {
     const faces = [1, 2, 3].map((id) => ({ id, media_id: id, person_id: id === 1 ? 1 : 2, confirmed: false, thumbnail }));
@@ -281,6 +283,7 @@ test('review applies only checked face suggestions', async ({ page }) => {
 });
 
 test('analysis keeps saved photos on stop and retries failed photos', async ({ page, isMobile }) => {
+  test.skip(true, 'User removed pretrained recognition from the product on 2026-10-20; historical inference coverage is not a product PASS.');
   test.skip(isMobile, 'Real analysis queue runs once on desktop.');
   test.setTimeout(120_000);
   const thumbnail = `data:image/jpeg;base64,${(await readFile('node_modules/@vladmandic/face-api/demo/sample1.jpg')).toString('base64')}`;
@@ -370,6 +373,7 @@ test('unnamed faces are visible and can be saved to an existing person without a
 });
 
 test('the main action retries a completed photo with no faces and keeps existing names', async ({ page, isMobile }) => {
+  test.skip(true, 'User removed pretrained recognition from the product on 2026-10-20; historical inference coverage is not a product PASS.');
   test.skip(isMobile, 'Real inference exercised once; naming UI covers both sizes.');
   test.setTimeout(120_000);
   await page.route('**/missed-person.jpg', route => route.fulfill({ path: 'tests/fixtures/pet-dog.jpg', contentType: 'image/jpeg' }));

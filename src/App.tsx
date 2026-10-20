@@ -1,4 +1,3 @@
-import { PetAnalysisStatus } from './features/pets/PetAnalysisStatus';
 import { PhotoView, type PhotoMode } from "./features/media/PhotoWorkspace";
 import { useMediaLibrary } from "./features/media/useMediaLibrary";
 import { useMediaViewer } from "./features/media/useMediaViewer";
@@ -31,7 +30,6 @@ import { CharacterBook } from "./features/characters/CharacterBook";
 import { CharacterEventModal } from "./features/characters/CharacterEventModal";
 import { useCharacters } from "./features/characters/useCharacters";
 import { GomiGuide } from "./features/characters/GomiGuide";
-import { usePetAnalysis } from "./features/pets/usePetAnalysis";
 import type { GuideTopic } from "./features/characters/guideTopics";
 
 type View = "Home" | "Library" | "Albums" | "Memories" | "People" | "Diary" | "Characters" | "Settings";
@@ -76,7 +74,6 @@ export function App() {
   const [memorySection, setMemorySection] = useState<"rediscover" | "timeline" | "map">("rediscover");
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const library = useMediaLibrary();
-  const petAnalysis = usePetAnalysis(library.items);
   const diary = useDiary();
   const [largeLayout, setLargeLayout] = useState(() => localStorage.getItem("warm-journal-large-layout") === "true");
   const [importOpen, setImportOpen] = useState(false);
@@ -96,7 +93,6 @@ export function App() {
   const [selectionNotice, setSelectionNotice] = useState("");
   const [firstRunOpen, setFirstRunOpen] = useState(false);
   const [guideTopic, setGuideTopic] = useState<GuideTopic | null>(null);
-  const [petReviewRequested, setPetReviewRequested] = useState(false);
   const [peopleTab, setPeopleTab] = useState<"people" | "pets">("people");
   const currentGuideTopic: GuideTopic = activeView === "People" ? peopleTab : ({ Library: "photos", Albums: "albums", Diary: "diary", Memories: "memories", Characters: "characters" } as Partial<Record<View, GuideTopic>>)[activeView] || "photos";
 
@@ -294,7 +290,7 @@ export function App() {
               onSectionChange={(section) => { setMemorySection(section); if (section === "map") setQuery(""); }}
               onAssignRegion={library.assignRegion} onLocationsAnalyzed={library.refreshLocations}
               onCreateAlbum={(records, title = "") => { setAlbumDraftItems(records); setAlbumDraftTitle(title); }} />}
-            {activeView === "People" && <PeopleWorkspace reviewRequested={petReviewRequested} onReviewHandled={() => setPetReviewRequested(false)} analysis={petAnalysis} items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} activeTab={peopleTab} onTabChange={setPeopleTab} />}
+            {activeView === "People" && <PeopleWorkspace items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} activeTab={peopleTab} onTabChange={setPeopleTab} />}
             {activeView === "Settings" && <SettingsPanel photos={items.filter(item=>item.fileType==="image")} itemCount={items.length} clearing={clearing} onClear={clearAllRegisteredMedia} />}
           </div>
         </section>
@@ -315,7 +311,6 @@ export function App() {
           if (created) navigate("Albums");
         }} />}
         {library.error && <p className="selectionNotice" role="alert">{library.error}</p>}
-        {!(activeView === 'People' && peopleTab === 'pets') && <PetAnalysisStatus analysis={petAnalysis} onReview={() => { setPetReviewRequested(true); setPeopleTab('pets'); navigate('People'); }} />}
 
         {library.importNotice && !library.error && <p className="selectionNotice" role="status">{library.importNotice}</p>}
         {selectionNotice && <p className="selectionNotice" role="status">{selectionNotice}</p>}

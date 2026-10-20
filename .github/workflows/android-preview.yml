@@ -21,6 +21,7 @@ on:
       - 'scripts/pet-model-lock.json'
       - 'scripts/pet-runtime-benchmark.mjs'
       - 'scripts/smoke-android.mjs'
+      - 'scripts/smoke-android-manual.mjs'
       - 'scripts/manual-photo-smoke.mjs'
       - 'scripts/gallery-smoke.mjs'
       - 'package*.json'
@@ -145,7 +146,7 @@ jobs:
           # Keep kernel output when the guest exits before ADB can collect logs.
           emulator-options: -no-window -gpu lavapipe -no-snapshot -noaudio -no-boot-anim -show-kernel
           disable-animations: true
-          script: node scripts/smoke-android.mjs
+          script: node scripts/smoke-android-manual.mjs
       - name: Capture emulator host diagnostics
         if: failure()
         run: |
@@ -166,6 +167,7 @@ jobs:
             test-results/android-smoke/person-repetition-smoke.json
             test-results/android-smoke/person-security-smoke.json
             test-results/android-smoke/gallery-smoke.json
+            test-results/android-smoke/manual-only-smoke.json
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: failure()

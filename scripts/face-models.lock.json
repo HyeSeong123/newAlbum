@@ -11,5 +11,6 @@
     "face_recognition_model-weights_manifest.json": "cbaffa501b0b9275a12b63357a6843e7e30c054e1c9151e1a5f879b26e32986b"
   },
   "source": "@vladmandic/face-api@1.7.15/model",
-  "licenseReview": "See docs/face-recognition.md; training-data rights are not established by MIT alone."
+  "licenseReview": "See docs/face-recognition.md; training-data rights are not established by MIT alone.",
+  "deployment": "research-only-not-in-product"
 }

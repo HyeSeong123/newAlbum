@@ -245,6 +245,7 @@ test('person management preserves a failed name draft and keeps cover selection 
 });
 
 test('person empty action reports a mixed face scan failure and retries only the failed original', async ({ page }) => {
+  test.skip(true, 'User removed pretrained recognition from the product on 2026-10-20; historical inference coverage is not a product PASS.');
   await nativeLibrary(page, { faceScan: true });
   // Exercise the UI/IPC queue on both viewports; real inference has its own desktop test.
   await page.route('**/src/features/people/faceService.ts*', async route => {

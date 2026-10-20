@@ -31,6 +31,7 @@ async function prepare(page: import('@playwright/test').Page) {
 }
 
 test('registered photos can be searched and each animal connected without diagnostic controls', async ({ page }) => {
+  test.skip(true, 'User removed pretrained recognition from the product on 2026-10-20; historical inference coverage is not a product PASS.');
   await prepare(page);
   await expect(page.getByRole('button', { name: '반려동물 인식 결과 확인', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '보리 1장', exact: true }).click();
@@ -62,6 +63,7 @@ test('registered photos can be searched and each animal connected without diagno
 });
 
 test('failed photo connection retains candidates and can be retried', async ({ page }) => {
+  test.skip(true, 'User removed pretrained recognition from the product on 2026-10-20; historical inference coverage is not a product PASS.');
   await prepare(page); await page.getByRole('button', { name: '등록된 사진에서 찾기', exact: true }).click();
   const search = page.getByRole('dialog', { name: '등록된 사진에서 찾기' });
   await page.evaluate(() => localStorage.setItem('fail-connect', 'true'));
@@ -75,6 +77,7 @@ test('failed photo connection retains candidates and can be retried', async ({ p
 });
 
 test('cached library search batches the queue and reuses existing scans', async ({ page }) => {
+  test.skip(true, 'User removed pretrained recognition from the product on 2026-10-20; historical inference coverage is not a product PASS.');
   await page.addInitScript(() => {
     const media = Array.from({ length: 121 }, (_, index) => ({ id: index + 1, file_path: `C:/pets/${index + 1}.jpg`, file_type: 'image', size_bytes: 100, metadata_status: 'ready', favorite: false, rating: 0, comment: '' }));
     let jobs: { id: number; media_id: number; pet_id: number | null; view: string; state: string; error: string }[] = [];
@@ -145,6 +148,7 @@ test('100 imported photos and profile saves stay idle until an explicit request'
 });
 
 test('pending work remains idle after restart and confirmation opens the real result picker',async({page})=>{
+  test.skip(true, 'User removed pretrained recognition from the product on 2026-10-20; historical inference coverage is not a product PASS.');
   await prepareLargeLibrary(page,true);await expect(page.getByRole('button',{name:'반려동물 확인',exact:true})).toBeVisible();
   await page.reload();await page.getByRole('button',{name:'반려동물 확인',exact:true}).click();
   await expect(page.getByRole('tab',{name:'반려동물',exact:true})).toHaveAttribute('aria-selected','true');
@@ -155,6 +159,7 @@ test('pending work remains idle after restart and confirmation opens the real re
 });
 
 test('multi-selection crosses result pages and keeps only failed selections for retry',async({page})=>{
+  test.skip(true, 'User removed pretrained recognition from the product on 2026-10-20; historical inference coverage is not a product PASS.');
   await prepareLargeLibrary(page);await page.getByRole('button',{name:'사람과 반려동물',exact:true}).click();await page.getByRole('tab',{name:'반려동물',exact:true}).click();await page.getByRole('button',{name:'등록된 사진에서 찾기',exact:true}).click();
   const search=page.getByRole('dialog',{name:'등록된 사진에서 찾기',exact:true});await expect(search.locator('.petSearchCard')).toHaveCount(24);
   await search.getByRole('button',{name:'보리 사진 선택 2',exact:true}).click();await search.getByRole('button',{name:'보리 사진 선택 3',exact:true}).click();await search.getByTitle('다음 사진').click();
