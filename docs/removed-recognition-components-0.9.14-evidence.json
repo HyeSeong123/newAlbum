@@ -1,0 +1,257 @@
+{
+  "version": "0.9.14",
+  "productCommit": "7594c6c851ea316f1fe693b48a73f46b9b54aa90",
+  "activeModelProfile": "person128-pet-basic-no-pose",
+  "deletedSource": [
+    "scripts/recognition-models.lock.json",
+    "src/features/people/engine/faceAlignment.ts",
+    "src/features/pets/engine/poseGeometry.ts",
+    "tests/pet-pose.test.mjs"
+  ],
+  "deletedFunctions": [
+    "alignmentTransform",
+    "validEmbedding",
+    "decodePetHeatmaps",
+    "petHeadDirection",
+    "rank512"
+  ],
+  "deletedRuntimeTypes": [
+    "PET_POSE_MODEL",
+    "PetKeypoint",
+    "PetPose",
+    "PERSON_512_MODEL",
+    "ModelFeature",
+    "AutomaticPose",
+    "PosePoint"
+  ],
+  "removedDownloadRegistry": {
+    "modelUrls": true,
+    "downloadHashes": true,
+    "decryptionKey": true,
+    "onnxVersion": true
+  },
+  "onnxPackagesInLock": [],
+  "local": {
+    "nodePassed": 142,
+    "pythonPassed": 22,
+    "build": "PASS",
+    "packaging": "PASS",
+    "browser": "NOT TESTED: Chromium missing; attempted download returned corrupt archive, no product failure diagnosis"
+  },
+  "ci": {
+    "source": {
+      "run": 39509115061,
+      "status": "success",
+      "browserPassed": 412,
+      "browserSkipped": 44,
+      "browserFailed": 0,
+      "nodePassed": 142,
+      "build": "PASS"
+    },
+    "rust": {
+      "job": 118925654771,
+      "passed": 115,
+      "status": "success"
+    },
+    "android": {
+      "run": 39509115142,
+      "job": 118925618079,
+      "status": "success",
+      "apkArtifact": 12305880607,
+      "screensAndJsonArtifact": 12306057303,
+      "environment": "Android API36 x86_64 emulator; offline installed app; not physical phone performance or identity accuracy",
+      "person": {
+        "excluded512": true,
+        "faces": 3,
+        "valid": true,
+        "maxBackendDistance": 9.553288312538728e-07,
+        "cpu": {
+          "backend": "cpu",
+          "tensors": 300,
+          "tensorBytes": 46107804,
+          "simd": false,
+          "elapsedMs": 9962.600000000035,
+          "modelLoadMs": 405.69999999995343
+        },
+        "wasm": {
+          "backend": "wasm",
+          "tensors": 300,
+          "tensorBytes": 46107804,
+          "simd": true,
+          "elapsedMs": 1240.2000000000116,
+          "modelLoadMs": 432.70000000001164
+        },
+        "auto": {
+          "backend": "wasm",
+          "tensors": 300,
+          "tensorBytes": 46107804,
+          "simd": true,
+          "elapsedMs": 1083.600000000035,
+          "modelLoadMs": 423.5999999999767
+        },
+        "nativeSourceVerified": true,
+        "completedCache": true,
+        "sourceAuditVerified": true,
+        "evaluationStored": true,
+        "environment": "Android API 36 x86_64 emulator",
+        "offline": true,
+        "identityAccuracyMeasured": false,
+        "devicePerformanceMeasured": false
+      },
+      "pet": {
+        "offline": true,
+        "photoCount": 1,
+        "detectedDogs": 1,
+        "analysisWaitMs": 61808,
+        "engineVersion": "gamjassak-pets-v3-no-pose",
+        "rearClearsIdentityVectors": true,
+        "identityAccuracyMeasured": false,
+        "diagnostics": [
+          {
+            "width": 640,
+            "height": 480,
+            "inputRange": [
+              1,
+              255
+            ],
+            "elapsedMs": 2436.2999999999884,
+            "animals": 1,
+            "reusedBodies": 0,
+            "backend": "wasm",
+            "wasmFallback": false,
+            "simd": true,
+            "threads": 1,
+            "tensors": 399,
+            "tensorBytes": 35049984,
+            "tensorMemoryUnreliable": false,
+            "initializationMs": 1772.899999999965,
+            "detectionMs": 286,
+            "bodyEmbeddingMs": 288.29999999998836,
+            "faceDetectionMs": 0,
+            "faceEmbeddingMs": 0,
+            "descriptorMs": 72.09999999997672,
+            "backendInitializationMs": 36.40000000002328,
+            "retryMs": 0,
+            "totalMs": 2473.2000000000116
+          },
+          {
+            "width": 640,
+            "height": 480,
+            "inputRange": [
+              1,
+              255
+            ],
+            "elapsedMs": 1583.2000000000116,
+            "animals": 1,
+            "reusedBodies": 1,
+            "backend": "wasm",
+            "wasmFallback": false,
+            "simd": true,
+            "threads": 1,
+            "tensors": 399,
+            "tensorBytes": 35049984,
+            "tensorMemoryUnreliable": false,
+            "initializationMs": 3.400000000023283,
+            "detectionMs": 0,
+            "bodyEmbeddingMs": 0.09999999997671694,
+            "faceDetectionMs": 0,
+            "faceEmbeddingMs": 1124.4000000000233,
+            "descriptorMs": 357.79999999998836,
+            "backendInitializationMs": 8.099999999976717,
+            "retryMs": 0,
+            "totalMs": 1591.399999999965
+          }
+        ]
+      },
+      "cat": {
+        "kind": "cat",
+        "view": "front",
+        "viewSource": "cat-frontal-cascade",
+        "faceBox": [
+          0.265409428308784,
+          0.3023814095762752,
+          0.6351890408483516,
+          0.6022606794088445
+        ],
+        "faceLength": 1024,
+        "backend": "wasm",
+        "rearClearsIdentity": true,
+        "diagnostics": {
+          "width": 285,
+          "height": 300,
+          "inputRange": [
+            0,
+            255
+          ],
+          "elapsedMs": 3039.3000000000466,
+          "animals": 1,
+          "reusedBodies": 0,
+          "backend": "wasm",
+          "wasmFallback": false,
+          "simd": true,
+          "threads": 1,
+          "tensors": 399,
+          "tensorBytes": 35049984,
+          "tensorMemoryUnreliable": false,
+          "initializationMs": 1726.5,
+          "detectionMs": 140.40000000002328,
+          "bodyEmbeddingMs": 277.19999999995343,
+          "faceDetectionMs": 633.6000000000349,
+          "faceEmbeddingMs": 222,
+          "descriptorMs": 29.70000000001164,
+          "backendInitializationMs": 28.20000000001164,
+          "retryMs": 0,
+          "totalMs": 3068.0999999999767
+        },
+        "offline": true,
+        "identityAccuracyMeasured": false
+      },
+      "gallery": {
+        "gallery": true,
+        "longPressDragSelects": true,
+        "longPressDragDeselects": true,
+        "ordinarySwipeScrollsWithoutSelection": true,
+        "sort": "date_modified DESC, _id DESC",
+        "order": [
+          "M-video-gallery.mp4",
+          "Z-new-gallery.jpg",
+          "A-old-gallery.jpg"
+        ],
+        "photoCount": 2,
+        "videoCount": 1,
+        "unsupportedFormatsHidden": true,
+        "deniedPermissionCancels": true,
+        "cancelLeavesRecordsUnchanged": true
+      },
+      "removedPoseOutputsAbsent": true,
+      "automaticPoseSupported": false
+    },
+    "windows": {
+      "run": 39509115034,
+      "job": 118925538179,
+      "status": "success",
+      "artifact": 12305726811,
+      "previousVersion": "0.9.13",
+      "previousInstallerArtifact": 12271749326,
+      "scope": "Previous installer seeded with test media/albums/chapters/text/playback/WebView state; 0.9.14 full/update install and restart persistence passed. Not actual user DB."
+    }
+  },
+  "historicalNotices": "Moved outside public into docs/archive/removed-model-notices; not model input or product assets.",
+  "compatibility": "Only legacy DB rejection/inactive handling and regression fixtures retain model identifiers; no model execution. No database/schema/migration/media-ID changes.",
+  "publicRemovedComponentFiles": [],
+  "distRemovedComponentFiles": [],
+  "benchmarkCommit": "9d1479b5d4f3b9192ccdf8c966797489aa662717",
+  "verifiedHead": "9d1479b5d4f3b9192ccdf8c966797489aa662717",
+  "pm": {
+    "removal": "PASS",
+    "preservedBasicRecognition": "PASS",
+    "dataPreservationRegression": "PASS",
+    "releaseReadiness": "CONDITIONAL PASS",
+    "unverified": [
+      "Physical ARM64 phone",
+      "Actual user DB full upgrade",
+      "Full accessibility",
+      "Representative identity accuracy and phone performance"
+    ]
+  }
+}

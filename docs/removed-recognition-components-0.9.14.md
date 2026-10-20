@@ -25,10 +25,17 @@
 - 문자열이 남는 위치는 과거 DB 호환, 삭제/재유입 차단 검사, 회귀 fixture, 과거 문서/고지다. 해당 문자열이 모델 구현이나 가중치를 복구하지 않는다.
 - [과거 고지](archive/removed-model-notices/README.md)는 제품 public/dist와 분리했다. Git 과거 커밋은 재작성하지 않는다. 현재 사용 중인 FaceAPI·TensorFlow·COCO/MobileNet·고양이 cascade 고지는 유지한다.
 
-## 검증
+## 실제 검증
 
-- 로컬 Node142 PASS(기존144에서 폐기 전용4개 제거, 재유입 차단2개 추가), Python22 PASS, build 및 유지 모델 해시/제외 자산 검사 PASS.
-- 소스에서 세 모델의 다운로드 URL/복호화 키/디코더/비교 함수 제거와 npm ONNX 의존성 부재를 확인했다.
-- 첫 로컬 브라우저 실행은 Chromium 실행 파일 누락으로50건이 실행 전 실패했다(2건은 브라우저 없는 검사 통과). 기능 실패/통과로 바꾸지 않는다. 브라우저 설치와 재실행 및 새 Source/Rust/Android/Windows CI 결과를 확인한다.0.9.13의 성공 결과를0.9.14 검사로 재사용하지 않는다.
+- [최신 코드 Source CI](https://github.com/HyeSeong123/newAlbum/actions/runs/39509115061) PASS: Node142, Rust115, 전체 브라우저412 PASS/44 SKIP/0 FAIL, build 및 모델 해시/제거 자산 검사 PASS. 검증 커밋은 `9d1479b5d4f3b9192ccdf8c966797489aa662717`이다.
+- Node144에서 폐기 기능 전용4개를 제거하고 재유입 차단2개를 추가해142건이다. Rust116에서 폐기한 `rank512` 단독 검사 하나를 제거해115건이다. 유지할 인식·방향·저장소·데이터 보존 회귀 검사는 삭제하지 않았다.
+- 로컬 Node142·Python22·build/자산 검사 PASS. 첫 로컬 브라우저 실행은 Chromium 누락으로50건 실행 전 실패(브라우저 없는2건 통과)했고, 설치도 손상된 다운로드로 실패했다. 로컬 UI 검증은 미검증으로 남기며 위 실제 CI 브라우저 결과를 따른다.
+- [Android 설치/오프라인 검사](https://github.com/HyeSeong123/newAlbum/actions/runs/39509115142) PASS: API36 x86_64 에뮬레이터에서128차원 얼굴 탐지·CPU/WASM 비교·반복 실행, 기본 개/고양이 인식, 사용자 확인·수동 등록·등록 사진 재분석 후 이름/ID/연결 보존, 갤러리 권한·드래그·스크롤을 검증했다. 벤치마크는 실제 CPU/WASM 출력에 제거한 자세 출력이 없음을 검사한다. [화면/원본 JSON](https://github.com/HyeSeong123/newAlbum/actions/runs/39509115142/artifacts/12306057303), [0.9.14 ARM64 테스트 APK](https://github.com/HyeSeong123/newAlbum/actions/runs/39509115142/artifacts/12305880607).
+- [Windows 설치/업데이트](https://github.com/HyeSeong123/newAlbum/actions/runs/39509115034) PASS: 이전0.9.13 설치파일에 시험 기록을 넣고0.9.14 full/update 설치, WebView·SQLite·썸네일·재실행 보존을 확인했다. [설치/업데이트 파일](https://github.com/HyeSeong123/newAlbum/actions/runs/39509115034/artifacts/12305726811).
+- public/dist에 세 모델·전용 런타임 파일 0개, package-lock의 ONNX 패키지 0개. 0.9.13의 검사 결과를0.9.14 결과로 재사용하지 않았다. [기계 판독 증빙](removed-recognition-components-0.9.14-evidence.json).
 
-PM 검토: 사용하지 않는 전용 구현을 삭제했고 추가 추상화를 만들지 않았다. 기존 사용자 데이터를 건드리지 않으며 현재 기본 인식 기능과의 경계를 유지한다. 아직 완료하지 않은 검사를 PASS로 판단하지 않는다.
+## PM 최종 검토
+
+세 구성요소의 구현·모델 등록/다운로드 정보를 삭제했고 추가 추상화를 만들지 않았다. 소스와 앱 배포 자산에서 제거 확인, 기본 인식 기능 회귀 및 플랫폼 설치 검사는 PASS다. 원본·DB·마이그레이션·기존 ID/연결·수동 확인을 변경하지 않았다. 과거 DB 호환과 재유입 차단 검사에 남은 모델명은 실행 코드가 아니다.
+
+전체 출시 준비는 CONDITIONAL PASS다. 실제 ARM64 휴대폰·실제 사용자 DB 전체 업데이트·전체 접근성·대표 데이터의 동일 개체 인식 정확도/실기기 성능은 미검증이다. 기존 전체 감사의 조건부 판정을 유지한다. 권리 해결 완료나 스토어 승인으로 표시하지 않으며, 기준 브랜치에 병합하지 않는다.
