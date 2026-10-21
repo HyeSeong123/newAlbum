@@ -36,10 +36,52 @@
     "nodePassed": 142,
     "pythonPassed": 22
   },
-  "privateKeyRecovery": "BLOCKED by automatic approval review; not performed",
+  "privateKeyRecovery": "NOT PERFORMED: explicitly authorized, but original cache metadata lookup returned NOT FOUND",
   "privateKeyPublished": false,
   "correctlyResignedApkCreated": false,
   "deviceInstallFailureCode": "NOT COLLECTED",
   "userDataChanged": false,
-  "shippingState": "BLOCKED until original signing key is securely restored/provided; never generate a replacement key"
+  "shippingState": "BLOCKED: original private key unavailable in queried cache; need secure original-key backup, otherwise verify user-data preservation before considering any replacement install",
+  "originalKeyLookup": {
+    "userAuthorizedOneTimeConfidentialRecovery": true,
+    "pr": 19,
+    "commit": "da264357f5711453830a31a69a64a608f2638a1b",
+    "run": 39611297201,
+    "job": 119260546120,
+    "workflowConclusion": "success",
+    "lookupOnly": true,
+    "result": "NOT FOUND",
+    "cacheKey": "gamjassak-android-preview-key-v2",
+    "cachePath": ".preview-keys/android-debug.keystore",
+    "baseBranch": "feature/warm-journal-v2",
+    "originalRunBranchVerified": true,
+    "sameActionShaAsOriginal": "0057852bfaa89a56745cba8c7296529d2fc39830",
+    "sameRunnerOSAsOriginal": "Ubuntu 24.04",
+    "keyDownloadedOrExtracted": false,
+    "cacheSaved": false,
+    "filesUploaded": false,
+    "exactCauseOfCacheAbsence": "NOT VERIFIED",
+    "otherBackupsExist": "UNKNOWN"
+  },
+  "ciAfterSigningFix": {
+    "head": "6257bae87c346c5bcdc6b1d49d9b6b9bea8590b5",
+    "sourcePush": {
+      "run": 39603479870,
+      "conclusion": "success"
+    },
+    "sourcePR": {
+      "run": 39603486607,
+      "conclusion": "success"
+    },
+    "windows": {
+      "run": 39603479827,
+      "conclusion": "success"
+    },
+    "android": {
+      "run": 39603479677,
+      "conclusion": "failure",
+      "reason": "ANDROID_SIGNING_SECRET_MISSING:GAMJASSAK_ANDROID_KEYSTORE_BASE64",
+      "apkPublished": false
+    }
+  }
 }

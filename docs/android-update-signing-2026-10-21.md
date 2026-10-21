@@ -32,6 +32,16 @@ Android 준비/서명 검사9 PASS, 기존 Node142 PASS, Python22 PASS. YAML 파
 
 현재 원래 개인키를 안전하게 확보하지 못했다.0.9.9 키 캐시를 읽어 재서명하려던 워크플로 등록은 자동 승인 검토가 공개 저장소 캐시에 개인 서명키를 복원하는 노출 위험을 이유로 거절했다. 해당 워크플로는 게시/실행하지 않고 폐기했다. 개인키 복구·다운로드·재서명·새 APK 발행·사용자 휴대폰 재설치는 수행하지 않았다. 이 상태에서 업데이트 문제가 해결됐거나 수정 APK가 검증됐다고 표시하지 않는다.
 
-기존 원래 키가 별도 안전한 저장소에 있으면 [Android 설정](android.md)의 secrets로 등록할 수 있다. 기존 캐시의 원래 키를 일회 복구해야 하는 경우에는 해당 민감 작업의 별도 승인이 필요하다. 새 키 생성이나 기존 앱 삭제는 데이터 보존 해법이 아니다.
+### 사용자 승인 후 실제 캐시 확인
+
+사용자는 원래0.9.9 서명키를 공개하지 않는 일회성 복구·재서명을 명시적으로 승인했다. 이전에 거절된 개인키 복원 워크플로를 재실행하지 않고, 먼저 [별도 PR19](https://github.com/HyeSeong123/newAlbum/pull/19)에서 `lookup-only: true`로 캐시 존재 여부만 확인했다. 체크아웃·키 다운로드·압축 해제·캐시 저장·파일 업로드·새 키 생성은 없다.
+
+[실제 조회39611297201](https://github.com/HyeSeong123/newAlbum/actions/runs/39611297201), job119260546120은 성공적으로 실행됐지만 결과는 `Cache not found for input keys: gamjassak-android-preview-key-v2`였다. 성공은 조회 실행 성공을 뜻하며 키 복구 성공을 뜻하지 않는다. 원래 배포 run38364197843의 브랜치가 `feature/warm-journal-v2`이고, 당시 동일 캐시에서 키를 복원했음을 실제 로그로 대조했다. 조회는 이 브랜치를 대상으로 한 같은 저장소 PR에서 수행했고 경로 `.preview-keys/android-debug.keystore`, cache action SHA `0057852bfaa89a56745cba8c7296529d2fc39830`, Ubuntu24.04도 당시와 같다. 접근 가능한 원래/기본 브랜치 범위에서 캐시가 발견되지 않았다. 만료·삭제 등 정확한 원인은 확인하지 못했으며 모든 별도 백업이 없다고 단정하지 않는다.
+
+현재 차단 원인은 추가 승인 부족이 아니라 **원래 개인키 부재**다. 이번 조회는 자동 검토를 통과했고 키 복원은 시도하지 않았다. APK의 공개 인증서로 개인키를 재생성할 수 없으므로 올바르게 재서명한 APK는 아직 없다. 조회용 PR은 병합하지 않는다.
+
+기존 원래 키가 개발 PC·안전한 백업에 있으면 [Android 설정](android.md)의 secrets로 등록할 수 있다. 키 파일·비밀번호를 채팅·저장소·아티팩트로 보내지 않는다. 별도 키가 없다면 기존 앱을 유지한 상태에서 PC/ADB를 이용한 사용자 데이터 백업·복원 가능성을 먼저 검증해야 하며, 이 작업과 실기기 데이터 보존은 아직 수행·검증하지 않았다. 새 키 생성이나 기존 앱 삭제는 데이터 보존 해법이 아니다.
+
+최신 감사 head6257bae의 Source 검사39603479870/39603486607 및 Windows39603479827은 성공했다. Android39603479677은 원래 키 secret 부재로 배포를 중단했다. 사용자 승인 후 로컬 Android 준비/서명9개 검사를 다시 실행해 모두 통과했다.
 
 공식 근거: [Android 앱 서명](https://developer.android.com/studio/publish/app-signing), [GitHub 캐시 접근 범위](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#restrictions-for-accessing-a-cache), [Android16KB 검사](https://developer.android.com/guide/practices/page-sizes).
