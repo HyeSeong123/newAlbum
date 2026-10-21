@@ -7,15 +7,15 @@
     "legacyDataAutomaticallyMigrated": false,
     "windowsIdentifierChanged": false
   },
-  "productionSigningKeyGenerated": false,
-  "productionSecretsRegistered": false,
-  "newApkCreated": false,
+  "productionSigningKeyGenerated": true,
+  "productionSecretsRegistered": true,
+  "newApkCreated": true,
   "privateKeyPublished": false,
   "userDeviceOrDataModified": false,
   "localTests": {
     "existingNodePassed": 142,
     "pythonPassed": 22,
-    "androidPreparationSigningEnrollmentPassed": 11,
+    "androidPreparationSigningEnrollmentPassed": 13,
     "enrollmentUsedDisposableTestKey": true,
     "githubSecretUploadMocked": true
   },
@@ -28,10 +28,17 @@
   "ci": {
     "firstCodeHead": "d80cce57fa2bab99d6ceb891b497c718aa3f6b21",
     "android": {
-      "run": 39618998220,
-      "job": 119287071268,
-      "result": "BLOCKED: ANDROID_SIGNING_CERTIFICATE_NOT_CONFIGURED",
-      "apkPublished": false
+      "run": 39686445131,
+      "result": "PASS",
+      "apkPublished": true,
+      "job": 119521599521,
+      "apkArtifact": 12388025326,
+      "screensArtifact": 12387695756,
+      "artifactZipSha256": "5f17aa42856fea4839222663d282ed59a937a7ca8111ddf81af6b77754b571ed",
+      "screensZipSha256": "e5abe18489ad634d80450b83a734585159595bb1410f26e8b383aaccab408f77",
+      "environment": "Android API 36 x86_64 emulator",
+      "officialApksignerVerification": "PASS for ARM64 and x86_64 APKs",
+      "temporarySigningKeyRemoval": "PASS"
     },
     "firstWindows": {
       "run": 39618998214,
@@ -41,35 +48,129 @@
       "run": 39619760684,
       "result": "FAIL: incompatible PowerShell security module autoload; ACL code corrected subsequently"
     },
-    "latestRuntimeHead": "a2bf37ed01a29f820c4d7af5c3aadc6a5a4e3772",
+    "latestRuntimeHead": "a42ff166b0f8f4a17e6fc78da27aa71d397bd6d5",
     "latestWindows": {
-      "run": 39620277434,
-      "job": 119291600333,
-      "signingAndEnrollmentTests": "PASS: 11 tests; real disposable JDK key and owner-only Windows ACL verification",
-      "powershellSyntax": "PASS",
-      "fullInstallerBuild": "IN PROGRESS at report time"
+      "run": 39686445116,
+      "result": "PASS: full installer and update installer retained seeded records; bounded download preparation succeeded",
+      "jobs": [
+        119521790709,
+        119527085244
+      ],
+      "androidSigningEnrollmentTests": 13
     },
-    "sourceLatest": "PENDING at report time; local Node142/Python22/build passed"
+    "sourceLatest": {
+      "pushRun": 39686445191,
+      "prRun": 39686453266,
+      "result": "PASS: both push and PR source validation; browser 412 passed / 44 skipped, TypeScript/Vite and packaged-asset verification; native storage 115 passed",
+      "browserPassed": 412,
+      "browserSkipped": 44,
+      "rustPassed": 115,
+      "pythonPassed": 22
+    },
+    "firstActualSigningRun": {
+      "run": 39684635060,
+      "job": 119515464471,
+      "keyAndApkSignatureChecks": "PASS",
+      "installAndPhotoImport": "PASS through GPS regression",
+      "result": "FAIL: test path guard still pinned to legacy package; fixed with stricter current-package managed-media guard"
+    }
   },
   "browserSecretSettings": {
     "attemptedUrl": "https://github.com/HyeSeong123/newAlbum/settings/secrets/actions",
-    "result": "BLOCKED by automatic security review before page opened",
-    "reason": "privileged browser settings access and signing-secret management not explicitly authorized",
-    "secretsReadOrWritten": false,
-    "bypassAttempted": false
+    "result": "SUCCESS after explicit approval and user-completed secure login",
+    "reason": null,
+    "secretsReadOrWritten": true,
+    "bypassAttempted": false,
+    "secretValuesLogged": false
   },
   "notTested": [
-    "actual production key generation/storage",
-    "real GitHub secrets enrollment",
-    "signed Android APK and installation",
     "coexistence on physical phone",
-    "legacy user-data migration"
+    "legacy user-data migration",
+    "physical ARM64 phone codecs, memory, heat and accessibility",
+    "identity accuracy on an independent representative validation corpus",
+    "whole-app peak memory"
   ],
   "pm": {
     "scope": "Keep legacy Android installation/data intact; introduce a separate Android identity only. Windows identity and DB schema unchanged.",
-    "code": "CONDITIONAL PASS: local tests/build and Windows enrollment checks pass; full installer/source CI not yet complete",
-    "androidRelease": "FAIL / BLOCKED until key enrollment and installed APK verification",
+    "code": "PASS: Node 142, Android signing/preparation 13, Python 22, Rust 115, browser 412 pass / 44 skip; build and asset checks pass",
+    "androidRelease": "CONDITIONAL PASS: signed ARM64 APK verified; API36 x86_64 installation regression passed; physical phone not tested",
     "abstraction": "One shared Android ID reader; small owner-side setup tool; no new npm dependencies",
-    "remainingRisk": "New app begins empty; existing records stay in old app; no tested full-data migration yet"
+    "remainingRisk": "New app begins empty; old records remain in old app; no tested full-data migration; physical phone validation remains",
+    "windowsRelease": "PASS for tested full/update installers and seeded record retention; arbitrary user databases not tested"
+  },
+  "publicSigningIdentity": {
+    "certificateSha256": "1e63dd9f0e9ee481875de0cabe4ba479720ceee6c4c0f088cc383a6685f67ba1",
+    "algorithm": "RSA-3072",
+    "secretsCount": 4,
+    "repositoryVariable": "GAMJASSAK_ANDROID_CERTIFICATE_SHA256",
+    "publicFingerprintPinnedInGit": true,
+    "privateKeyCacheUsed": false,
+    "temporaryPlaintextTransferRemoved": true
+  },
+  "actualEnrollment": {
+    "date": "2026-10-22",
+    "method": "explicitly authorized GitHub settings UI after user completed secure authentication",
+    "allFourSecretNamesVerified": true,
+    "ciPrivateKeyAndFingerprintVerification": "PASS",
+    "temporarySecretValuesPrinted": false,
+    "dateZone": "Asia/Seoul"
+  },
+  "downloadedArm64ApkVerification": {
+    "bytes": 326652462,
+    "sha256": "f5f1191f9a919cc2e9b1170ef7bb2969a135bd03f64ea687e42d65272e8be1da",
+    "certificateSha256": "1e63dd9f0e9ee481875de0cabe4ba479720ceee6c4c0f088cc383a6685f67ba1",
+    "rsaBits": 3072,
+    "v2SignatureMathValid": true,
+    "protectedContentDigestValid": true,
+    "signingBlockIds": [
+      "0x7109871a",
+      "0xf05368c0",
+      "0x42726577"
+    ],
+    "package": "com.oraedameun.album.next",
+    "versionCode": 9015,
+    "versionName": "0.9.15",
+    "minSdk": 28,
+    "targetSdk": 36,
+    "activities": [
+      "com.oraedameun.album.next.MainActivity",
+      "com.oraedameun.album.GamjassakGalleryActivity"
+    ],
+    "libraries": [
+      {
+        "file": "lib/arm64-v8a/liboraedameun_lib.so",
+        "bytes": 309617432,
+        "zipDataOffset": 15007744,
+        "loadAlignments": [
+          16384,
+          16384,
+          16384,
+          16384
+        ]
+      }
+    ],
+    "zipCrcValid": true,
+    "excludedModelAssets": []
+  },
+  "installedAppRegression": {
+    "gpsPermissionAndRecovery": "PASS: same IDs, rating, comment and favorite retained",
+    "gallery": "PASS: modified-date sorting, photo/video import, long-press drag select/deselect, normal swipe scroll, permission denial and cancel",
+    "ui": "PASS: red favorite heart, hidden Android technical metadata/fullscreen, diary form/menu and person/pet controls",
+    "person": "PASS: offline 128-dimensional inference and native persistence; excluded512=true",
+    "pet": "PASS: dog/cat detection, manual face/direction confirmation, no inference merely on import/profile save",
+    "reanalysis": "PASS: names, object IDs and photo memberships retained",
+    "workerAlternation": {
+      "analysisCalls": 100,
+      "cycles": 50,
+      "domainSwitches": 99,
+      "independentPhotos": 1,
+      "tensorCountsStable": true,
+      "wholeAppMemoryMeasured": false
+    },
+    "restart": "PASS: Android back, same-process/Activity warm resume, full restart, SQLite/calendar retention, native picker, MP4 decode/range/seek after restart",
+    "removedPose": {
+      "automaticPoseSupported": false,
+      "removedPoseOutputsAbsent": true
+    }
   }
 }

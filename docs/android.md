@@ -53,7 +53,7 @@ ARM64 휴대폰용 **debug 서명 APK**가 `src-tauri/gen/android/app/build/outp
 
 0.9.15부터 Android 설치 ID는 `com.oraedameun.album.next`, 앱 이름은 **감자싹 새버전**이다. 원래 키를 복구하지 못해 사용자가 새 키로 계속 진행하도록 결정했다. 기존 `com.oraedameun.album` 앱과 데이터를 삭제하지 않고 함께 설치하는 새 앱이며, 기존 기록은 자동으로 옮겨지지 않는다. Windows 설치 ID는 그대로다.
 
-CI는 개발 PC에서 한 번 등록한 영구 서명키만 사용한다. 등록 전에는 배포를 중단하며 자동 키 생성·개인키 캐시를 사용하지 않는다. [한 번만 수행하는 키 생성·보관·등록 안내](android-new-identity-0.9.15.md)를 따른다.
+CI는 실제 등록 완료한 영구 서명키만 사용한다. 공개 인증서 지문을 repository variable과 Git 정책에 함께 고정했으며, 키가 없거나 다르면 배포를 중단한다. 자동 키 생성·개인키 캐시를 사용하지 않는다. 현재 키를 다시 생성하거나 등록할 필요는 없다. [새 설치·서명 검증 결과와 소유자 설정 도구](android-new-identity-0.9.15.md)를 참조한다.
 
 - Actions secrets: `GAMJASSAK_ANDROID_KEYSTORE_BASE64`, `GAMJASSAK_ANDROID_STORE_PASSWORD`, `GAMJASSAK_ANDROID_KEY_PASSWORD`, `GAMJASSAK_ANDROID_KEY_ALIAS`
 - Actions variable: `GAMJASSAK_ANDROID_CERTIFICATE_SHA256` (공개 인증서 지문)
