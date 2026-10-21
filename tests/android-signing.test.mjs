@@ -33,7 +33,9 @@ test('missing or invalid secrets stop before creating a key', async t => {
 test('private key stays owner-only and passwords never enter process arguments or reports', async t => {
   const file=await fixture(t);let args;
   const result=await prepareSigningKey(file,env,(_cmd,values)=>{args=values;return {status:0,stdout:publicCertificate};},expected);
-  assert.equal((await stat(file)).mode&0o777,0o600);
+  // Windows does not represent ACLs as POSIX mode bits. Permanent Windows keys
+  // are protected and verified by the real enrollment test's ACL helper.
+  if (process.platform !== 'win32') assert.equal((await stat(file)).mode&0o777,0o600);
   assert.equal((await readFile(file)).toString(),'synthetic-private-key-fixture');
   assert.ok(args.includes('-storepass:env'));
   for(const secret of [env.GAMJASSAK_ANDROID_STORE_PASSWORD,env.GAMJASSAK_ANDROID_KEY_PASSWORD,env.GAMJASSAK_ANDROID_KEYSTORE_BASE64]) assert.ok(!JSON.stringify({args,result}).includes(secret));
@@ -61,7 +63,7 @@ test('publishing checks the enrolled identity first and never generates or cache
   assert.ok(yaml.indexOf('node scripts/android-signing.mjs verify-apk')<yaml.indexOf('Prepare phone APK download'));
   assert.ok(yaml.indexOf('Check installed app on Android')<yaml.indexOf('Prepare phone APK download'));
   assert.doesNotMatch(yaml,/genkeypair|\.preview-keys|Preserve preview signing key/);
-  assert.match(yaml,/Remove temporary signing key\n\s+if: always\(\)/);
+  assert.match(yaml,/Remove temporary signing key\r?\n\s+if: always\(\)/);
   assert.match(yaml,/--ks-pass env:GAMJASSAK_ANDROID_STORE_PASSWORD/);
 });
 

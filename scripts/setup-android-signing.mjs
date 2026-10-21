@@ -35,8 +35,8 @@ export async function setupSigning({ directory, env = process.env, run = spawnSy
   if (enrolled && !await exists(keyFile)) throw new Error('이미 등록된 키가 있습니다. 새 키를 만들지 말고 원래 개발 PC의 키 백업을 사용해 주세요.');
   await mkdir(destination, { recursive: true, mode: 0o700 });
   if (process.platform === 'win32') {
-    const acl = "$sid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User; $acl=New-Object System.Security.AccessControl.DirectorySecurity; $acl.SetOwner($sid); $acl.SetAccessRuleProtection($true,$false); $rule=New-Object System.Security.AccessControl.FileSystemAccessRule($sid,'FullControl','ContainerInherit,ObjectInherit','None','Allow'); $acl.AddAccessRule($rule); Set-Acl -LiteralPath $env:GAMJASSAK_SIGNING_DIRECTORY -AclObject $acl";
-    const result = run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', acl], { env: { ...env, GAMJASSAK_SIGNING_DIRECTORY: destination }, windowsHide: true });
+    const script = fileURLToPath(new URL('./protect-android-signing-directory.ps1', import.meta.url));
+    const result = run('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', script, '-Directory', destination], { env, windowsHide: true });
     if (result.status !== 0) throw new Error('키 폴더의 사용자 전용 권한을 설정하지 못했습니다.');
   } else await chmod(destination, 0o700);
   const lockFile = path.join(destination, 'setup.lock');

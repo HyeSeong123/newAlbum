@@ -20,7 +20,11 @@ test('owner enrollment creates a real JDK key once, registers it privately, and 
       if (args.includes('-genkeypair')) generations++;
       return spawnSync(command, args, options);
     }
-    if (command === 'powershell.exe') return spawnSync(command,args,options);
+    if (command === 'powershell.exe') {
+      const result=spawnSync(command,args,options);
+      assert.equal(result.status,0,result.error?.message ?? result.stderr?.toString());
+      return result;
+    }
     assert.equal(command,'gh');
     if (args[0] === 'variable' && args[1] === 'list') return {status:0,stdout:Buffer.from(JSON.stringify(enrolled?[{name:policy.certificateVariable,value:enrolled}]:[]))};
     if (args[0] === 'variable' && args[1] === 'set') { enrolled=args.at(-1); return {status:0}; }

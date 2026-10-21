@@ -42,8 +42,10 @@ jobs:
           npm run test:unit
           node --test tests/android-prepare.test.mjs tests/android-signing.test.mjs tests/android-signing-setup.test.mjs
           $tokens = $null; $parseErrors = $null
-          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path scripts/setup-android-signing.ps1), [ref]$tokens, [ref]$parseErrors) | Out-Null
-          if ($parseErrors.Count) { throw ($parseErrors | Out-String) }
+          foreach ($script in @('scripts/setup-android-signing.ps1', 'scripts/protect-android-signing-directory.ps1')) {
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $script), [ref]$tokens, [ref]$parseErrors) | Out-Null
+            if ($parseErrors.Count) { throw ($parseErrors | Out-String) }
+          }
       - name: Build NSIS installer and application
         run: npm run package:windows -- --ci -- --locked
       - name: Preserve full installer

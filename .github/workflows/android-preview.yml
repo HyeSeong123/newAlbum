@@ -97,7 +97,7 @@ jobs:
       - name: Build installable preview APKs
         if: steps.preview-apks.outputs.cache-hit != 'true'
         run: npx tauri android build --debug --apk --ci --features custom-protocol --target aarch64 x86_64 --split-per-abi
-      - name: Sign previews with the verified original identity
+      - name: Sign previews with the enrolled permanent identity
         env:
           GAMJASSAK_ANDROID_STORE_PASSWORD: ${{ secrets.GAMJASSAK_ANDROID_STORE_PASSWORD }}
           GAMJASSAK_ANDROID_KEY_PASSWORD: ${{ secrets.GAMJASSAK_ANDROID_KEY_PASSWORD }}
