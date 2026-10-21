@@ -31,7 +31,7 @@ test('preparation installs the bridge, excludes backups, and requires signing on
     for (const variant of ['main', 'debug']) await copyFile(`src-tauri/android/network-security-${variant}.xml`, join(root, `src-tauri/android/network-security-${variant}.xml`));
     await mkdir(join(root, 'src-tauri/gen/android/app/src/main'), { recursive:true });
     await writeFile(join(root, 'src-tauri/gen/android/app/build.gradle.kts'), template);
-    await writeFile(join(root, 'src-tauri/gen/android/app/src/main/AndroidManifest.xml'), '<manifest><application android:allowBackup="true"></application></manifest>');
+    await writeFile(join(root, 'src-tauri/gen/android/app/src/main/AndroidManifest.xml'), '<manifest><application android:allowBackup="true"><activity android:name=".GamjassakGalleryActivity" android:exported="false" /></application></manifest>');
     await prepareAndroid(root);
     await prepareAndroid(root);
     const manifest = await readFile(join(root, 'src-tauri/gen/android/app/src/main/AndroidManifest.xml'), 'utf8');
@@ -42,7 +42,7 @@ test('preparation installs the bridge, excludes backups, and requires signing on
     for (const permission of ['READ_MEDIA_IMAGES','READ_MEDIA_VIDEO','READ_MEDIA_VISUAL_USER_SELECTED','READ_EXTERNAL_STORAGE']) assert.equal((manifest.match(new RegExp(`android.permission.${permission}`, 'g')) ?? []).length, 1);
     assert.match(manifest, /READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/);
     assert.equal((manifest.match(/GamjassakGalleryActivity/g) ?? []).length, 1);
-    assert.match(manifest, /android:exported="false"/);
+    assert.match(manifest, /android:name="com\.oraedameun\.album\.GamjassakGalleryActivity" android:exported="false"/);
     assert.ok(manifest.indexOf('ACCESS_MEDIA_LOCATION') < manifest.indexOf('<application'));
     const network = await readFile(join(root, 'src-tauri/gen/android/app/src/main/res/xml/gamjassak_network_security.xml'), 'utf8');
     assert.match(network, /base-config cleartextTrafficPermitted="false"/);

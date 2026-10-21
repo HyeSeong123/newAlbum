@@ -11,13 +11,14 @@ import { promisify } from 'node:util';
 import { appendFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { benchmarkInstalledPetRuntime, verifyInstalledCatFace } from './pet-runtime-benchmark.mjs';
+import { androidAppId } from './android-app.mjs';
 
 const run = promisify(execFile);
 // A stuck emulator command must produce diagnostics instead of holding the
 // whole release job indefinitely (including accessibility hierarchy dumps).
 const adb = async (...args) => (await run('adb', args, { maxBuffer:8 * 1024 * 1024, timeout:60_000 })).stdout.trim();
 const output = 'test-results/android-smoke';
-const appId = 'com.oraedameun.album';
+const appId = androidAppId;
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function apkFiles(path) {
   const all = [];
@@ -90,7 +91,8 @@ async function startApp() {
 async function activityRecord(label) {
   const snapshot = await adb('shell', 'dumpsys', 'activity', 'activities');
   await writeFile(join(output, `activity-${label}.txt`), snapshot);
-  const record = snapshot.match(/ActivityRecord\{([0-9a-f]+) u\d+ com\.oraedameun\.album\/(?:\.|com\.oraedameun\.album\.)?MainActivity\b/);
+  const escapedId = appId.replaceAll('.', '\\.');
+  const record = snapshot.match(new RegExp(`ActivityRecord\\{([0-9a-f]+) u\\d+ ${escapedId}\\/(?:\\.|${escapedId}\\.)?MainActivity\\b`));
   assert.ok(record, 'The native MainActivity must have an activity record');
   return record[1];
 }

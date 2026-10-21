@@ -76,10 +76,14 @@ jobs:
         run: npm run version:check
       - name: Install frontend dependencies
         run: npm ci
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
       - name: Run frontend unit tests
         run: |
           npm run test:unit
-          node --test tests/android-prepare.test.mjs tests/android-signing.test.mjs
+          node --test tests/android-prepare.test.mjs tests/android-signing.test.mjs tests/android-signing-setup.test.mjs
       - name: Test browser workflows
         run: |
           npx playwright install --with-deps chromium

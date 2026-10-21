@@ -5,10 +5,17 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const policy = JSON.parse(await readFile(new URL('./android-signing-policy.json', import.meta.url), 'utf8'));
-export function assertFingerprint(actual, expected = policy.certificateSha256) {
-  if (actual.toLowerCase().replaceAll(':', '') !== expected) throw new Error('ANDROID_UPDATE_CERTIFICATE_MISMATCH: 원래 0.9.9 서명과 다릅니다. 기존 앱을 삭제하지 말고 원래 서명키를 복구해 주세요.');
+const normalized = value => String(value ?? '').toLowerCase().replaceAll(':', '');
+export function configuredCertificate(env = process.env) {
+  const value = normalized(env[policy.certificateVariable]);
+  if (!/^[a-f0-9]{64}$/.test(value)) throw new Error('ANDROID_SIGNING_CERTIFICATE_NOT_CONFIGURED: 새 고정 서명키를 개발 PC에서 등록해 주세요.');
+  if (policy.legacyCertificates.includes(value)) throw new Error('ANDROID_LEGACY_SIGNING_IDENTITY_REJECTED');
+  return value;
 }
-export function verifyApkSignerOutput(output, expected = policy.certificateSha256) {
+export function assertFingerprint(actual, expected = configuredCertificate()) {
+  if (normalized(actual) !== expected) throw new Error('ANDROID_UPDATE_CERTIFICATE_MISMATCH: 등록된 고정 서명키와 다릅니다. 키를 새로 생성하거나 기존 앱을 삭제하지 마세요.');
+}
+export function verifyApkSignerOutput(output, expected = configuredCertificate()) {
   const fingerprints = [...output.matchAll(/^Signer #\d+ certificate SHA-256 digest:\s*([a-fA-F0-9:]+)\s*$/gm)].map(match => match[1]);
   if (fingerprints.length !== 1) throw new Error('ANDROID_APK_CERTIFICATE_MISSING_OR_MULTIPLE');
   assertFingerprint(fingerprints[0], expected);
@@ -16,13 +23,13 @@ export function verifyApkSignerOutput(output, expected = policy.certificateSha25
 }
 export function verifyApkBadging(output) {
   const fields = output.match(/^package: name='([^']+)' versionCode='(\d+)' versionName='([^']+)'/m);
-  if (!fields || fields[1] !== policy.packageName || Number(fields[2]) <= policy.verifiedFrom.versionCode) throw new Error('ANDROID_UPDATE_PACKAGE_OR_VERSION_INVALID');
+  if (!fields || fields[1] !== policy.packageName || Number(fields[2]) < policy.minimumVersionCode) throw new Error('ANDROID_UPDATE_PACKAGE_OR_VERSION_INVALID');
   const native = output.match(/^native-code:\s*(.+)$/m)?.[1];
   const nativeAbis = [...(native || '').matchAll(/'([^']+)'/g)].map(match => match[1]);
   if (!nativeAbis.length || nativeAbis.some(abi => !['arm64-v8a', 'x86_64'].includes(abi))) throw new Error('ANDROID_UPDATE_ABI_INVALID');
   return { packageName: fields[1], versionCode: Number(fields[2]), versionName: fields[3], nativeAbis };
 }
-export async function prepareSigningKey(destination, env = process.env, run = spawnSync, expected = policy.certificateSha256) {
+export async function prepareSigningKey(destination, env = process.env, run = spawnSync, expected = configuredCertificate(env)) {
   for (const name of ['GAMJASSAK_ANDROID_KEYSTORE_BASE64', 'GAMJASSAK_ANDROID_STORE_PASSWORD', 'GAMJASSAK_ANDROID_KEY_PASSWORD', 'GAMJASSAK_ANDROID_KEY_ALIAS']) {
     if (!env[name]?.trim()) throw new Error(`ANDROID_SIGNING_SECRET_MISSING:${name}. 원래 키를 repository secrets로 설정해야 합니다. 새 키는 생성하지 않습니다.`);
   }

@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import { expect } from '@playwright/test';
 import { resolve, join } from 'node:path';
 import { writeFile } from 'node:fs/promises';
+import { androidAppId } from './android-app.mjs';
 
 export async function verifyInstalledGallery({page,adb,nativeTree,tapNative,captureScreen,output}) {
-  const appId = 'com.oraedameun.album';
+  const appId = androidAppId;
   const launch = () => page.evaluate(() => {
     window.galleryPick = { done:false };
     window.__TAURI_INTERNALS__.invoke('choose_android_gallery')

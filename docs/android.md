@@ -51,20 +51,20 @@ npm run android:apk
 
 ARM64 휴대폰용 **debug 서명 APK**가 `src-tauri/gen/android/app/build/outputs/apk`에 생성된다. Play 제출용 서명과 다르다. `Android preview APK` Actions는 휴대폰용 ARM64 APK 한 개만 다운로드로 제공하고, x86_64 빌드는 내부 검사에 사용한다. 에뮬레이터 설치, 실제 폴더 선택·URI 복사·진행률·재실행 후 SQLite 보존을 검사한 뒤 휴대폰용 APK를 제공한다. 삼성 실기기의 선택기·HEIC/HDR·영상 코덱·메모리 사용도 별도 확인해야 한다.
 
-업데이트용 CI APK는 실제0.9.9 서명 인증서의 SHA-256(`cd5e4bca08caff103273368e2ce11f89a30210332d397fbd6b179e2b844d41e5`)와 일치해야 한다. 과거의 브랜치별 키 캐시/없으면 새 키 생성 경로는 제거했다. 저장소의 Actions secrets에 **원래 키**를 등록해야 하며 새 키를 만들면 기존 앱을 업데이트할 수 없다.
+0.9.15부터 Android 설치 ID는 `com.oraedameun.album.next`, 앱 이름은 **감자싹 새버전**이다. 원래 키를 복구하지 못해 사용자가 새 키로 계속 진행하도록 결정했다. 기존 `com.oraedameun.album` 앱과 데이터를 삭제하지 않고 함께 설치하는 새 앱이며, 기존 기록은 자동으로 옮겨지지 않는다. Windows 설치 ID는 그대로다.
 
-- `GAMJASSAK_ANDROID_KEYSTORE_BASE64`: 원래 keystore의 Base64(줄바꿈 없음)
-- `GAMJASSAK_ANDROID_STORE_PASSWORD`: 원래 저장소 비밀번호
-- `GAMJASSAK_ANDROID_KEY_PASSWORD`: 원래 키 비밀번호
-- `GAMJASSAK_ANDROID_KEY_ALIAS`: 원래 alias
+CI는 개발 PC에서 한 번 등록한 영구 서명키만 사용한다. 등록 전에는 배포를 중단하며 자동 키 생성·개인키 캐시를 사용하지 않는다. [한 번만 수행하는 키 생성·보관·등록 안내](android-new-identity-0.9.15.md)를 따른다.
 
-키·비밀번호·Base64를 Git, 채팅, 로그나 다운로드 아티팩트에 넣지 않는다. CI는 키를 임시 디렉터리의0600 파일로만 만들고 종료 시 삭제한다. 비밀번호는 프로세스 인수가 아닌 환경 참조로 전달한다. 비밀값 누락/인증서 불일치 시 빌드·배포를 중단한다. 최종 APK의 인증서·실제 패키지·증가한 versionCode·ABI·16KB ZIP 정렬과 설치 검사도 통과해야 다운로드 파일을 제공한다. 원래0.9.9 키는 현재 도구로 안전하게 복구/등록하지 못해 업데이트 APK 발행이 보류돼 있다. [진단 및 수정 범위](android-update-signing-2026-10-21.md)를 따른다.
+- Actions secrets: `GAMJASSAK_ANDROID_KEYSTORE_BASE64`, `GAMJASSAK_ANDROID_STORE_PASSWORD`, `GAMJASSAK_ANDROID_KEY_PASSWORD`, `GAMJASSAK_ANDROID_KEY_ALIAS`
+- Actions variable: `GAMJASSAK_ANDROID_CERTIFICATE_SHA256` (공개 인증서 지문)
+
+키·비밀번호·Base64를 Git, 채팅, 로그나 다운로드 아티팩트에 넣지 않는다. CI는 키를 임시0600 파일로만 만들고 종료 시 삭제한다. 최종 APK 서명·설치 ID·버전·ABI·16KB ZIP 정렬 및 설치 검사 이후에만 APK를 제공한다. 로컬 `android:apk` 명령의 자동 debug 키로 서명된 파일을 CI의 영구 서명 APK와 혼용하지 않는다.
 
 재실행 검증은 홈 뒤로가기 후 복귀(동일 Activity·프로세스)와 완전 종료 후 시작을 다룬다. Activity를 강제로 삭제하고 프로세스만 유지하는 재실행은 [엔진의 열린 문제](https://github.com/tauri-apps/tauri/issues/15671)가 있으므로, 전경 서비스나 프로세스 유지 기능을 추가할 때 별도 해결이 필요하다.
 
 ## Play용 AAB
 
-업로드 키는 사용자가 소유·보관한다. 기존 Android 앱을 등록한 적이 있다면 기존 서명과 패키지 이름을 확인한다. 현재 앱 ID는 `com.oraedameun.album`이며 새 Play 등록 전에 최종 확정한다.
+업로드 키는 사용자가 소유·보관한다. 기존 Android 앱을 등록한 적이 있다면 기존 서명과 패키지 이름을 확인한다. 현재 Android 앱 ID는 `com.oraedameun.album.next`이며 새 Play 등록 전에 최종 확정한다. 기존 0.9.9 패키지는 업데이트하지 않는다.
 
 [공식 서명 안내](https://v2.tauri.app/distribute/sign/android/)에 따라 키를 만들고 `src-tauri/gen/android/keystore.properties`를 로컬에 작성한다. 키 파일과 비밀번호는 Git에 올리지 않는다.
 

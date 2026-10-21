@@ -59,7 +59,9 @@ export async function prepareAndroid(projectRoot = root, requireSigning = false)
   ]) {
     if (!updated.includes(`android.permission.${permission}"`)) updated = updated.replace(/<manifest\b[^>]*>/, `$&\n    <uses-permission android:name="android.permission.${permission}"${attributes} />`);
   }
-  if (!updated.includes('.GamjassakGalleryActivity')) updated = updated.replace('</application>', '<activity android:name=".GamjassakGalleryActivity" android:exported="false" />\n    </application>');
+  // The bridge keeps its Kotlin package even when the Android application ID changes.
+  updated = updated.replace('android:name=".GamjassakGalleryActivity"', 'android:name="com.oraedameun.album.GamjassakGalleryActivity"');
+  if (!updated.includes('com.oraedameun.album.GamjassakGalleryActivity')) updated = updated.replace('</application>', '<activity android:name="com.oraedameun.album.GamjassakGalleryActivity" android:exported="false" />\n    </application>');
   if (updated !== original) await writeFile(manifest, updated);
 }
 

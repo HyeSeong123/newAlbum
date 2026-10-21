@@ -1,8 +1,14 @@
 {
-  "version": 1,
-  "packageName": "com.oraedameun.album",
-  "certificateSha256": "cd5e4bca08caff103273368e2ce11f89a30210332d397fbd6b179e2b844d41e5",
-  "verifiedFrom": { "version": "0.9.9", "versionCode": 9009, "run": 38364197843, "artifact": 11796490920 },
+  "version": 2,
+  "packageName": "com.oraedameun.album.next",
+  "minimumVersionCode": 9015,
+  "certificateVariable": "GAMJASSAK_ANDROID_CERTIFICATE_SHA256",
+  "legacyInstallation": { "packageName": "com.oraedameun.album", "version": "0.9.9", "versionCode": 9009, "run": 38364197843, "artifact": 11796490920 },
+  "legacyCertificates": [
+    "cd5e4bca08caff103273368e2ce11f89a30210332d397fbd6b179e2b844d41e5",
+    "eb17d7cb9d108c51e75d25481d91e01d9ed905a556c7dfcfaf193a52ec898e11",
+    "30f70abc717bee4b829cf50a0d95ccb015a82685b4bac11bb7feb4c7fc275fff"
+  ],
   "privateKeySource": "repository-secrets-only",
   "generateReplacementKey": false
 }

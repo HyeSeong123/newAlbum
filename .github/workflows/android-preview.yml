@@ -11,6 +11,7 @@ on:
       - 'scripts/prepare-android.mjs'
       - 'scripts/android-signing.mjs'
       - 'scripts/android-signing-policy.json'
+      - 'scripts/android-app.mjs'
       - 'tests/android-signing.test.mjs'
       - 'scripts/prepare-ai.mjs'
       - 'scripts/release/**'
@@ -45,6 +46,7 @@ jobs:
     env:
       RUSTUP_TOOLCHAIN: stable
       NDK_VERSION: '28.2.13676358'
+      GAMJASSAK_ANDROID_CERTIFICATE_SHA256: ${{ vars.GAMJASSAK_ANDROID_CERTIFICATE_SHA256 }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -59,7 +61,7 @@ jobs:
         with:
           packages: platform-tools
           log-accepted-android-sdk-licenses: false
-      - name: Require original update signing identity
+      - name: Require enrolled permanent signing identity
         env:
           GAMJASSAK_ANDROID_KEYSTORE_BASE64: ${{ secrets.GAMJASSAK_ANDROID_KEYSTORE_BASE64 }}
           GAMJASSAK_ANDROID_STORE_PASSWORD: ${{ secrets.GAMJASSAK_ANDROID_STORE_PASSWORD }}
@@ -80,7 +82,7 @@ jobs:
           npm ci
           npm run version:check
           npm run test:unit
-          node --test tests/android-prepare.test.mjs tests/android-signing.test.mjs
+          node --test tests/android-prepare.test.mjs tests/android-signing.test.mjs tests/android-signing-setup.test.mjs
       - name: Initialize Android project and approved icon
         run: |
           npx tauri android init --ci --skip-targets-install
