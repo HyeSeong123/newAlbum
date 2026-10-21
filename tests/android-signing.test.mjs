@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, writeFile, stat, access, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { policy, configuredCertificate, assertFingerprint, verifyApkSignerOutput, verifyApkBadging, prepareSigningKey } from '../scripts/android-signing.mjs';
 const env = { GAMJASSAK_ANDROID_KEYSTORE_BASE64: Buffer.from('synthetic-private-key-fixture').toString('base64'), GAMJASSAK_ANDROID_STORE_PASSWORD:'test-store-secret', GAMJASSAK_ANDROID_KEY_PASSWORD:'test-key-secret', GAMJASSAK_ANDROID_KEY_ALIAS:'test-alias' };
 const publicCertificate = Buffer.from('synthetic-public-certificate');
@@ -71,4 +72,15 @@ test('APK package, increasing version code and supported ABI are checked from th
   const badging = "package: name='com.oraedameun.album.next' versionCode='9015' versionName='0.9.15'\nnative-code: 'arm64-v8a'\n";
   assert.deepEqual(verifyApkBadging(badging), {packageName:'com.oraedameun.album.next',versionCode:9015,versionName:'0.9.15',nativeAbis:['arm64-v8a']});
   for(const value of [badging.replace('com.oraedameun.album.next','com.oraedameun.album'),badging.replace('9015','9014'),badging.replace('9015','9009'),badging.replace("native-code: 'arm64-v8a'",''),badging.replace('arm64-v8a','armeabi-v7a')]) assert.throws(()=>verifyApkBadging(value),/ANDROID_UPDATE/);
+});
+
+test('CI entry point rejects a changed repository certificate before writing a private key', async t => {
+  const file = await fixture(t);
+  assert.match(policy.enrolledCertificateSha256, /^[a-f0-9]{64}$/);
+  const result = spawnSync(process.execPath, ['scripts/android-signing.mjs', 'prepare', file], {
+    env: { ...process.env, ...env, GAMJASSAK_ANDROID_CERTIFICATE_SHA256: expected }, encoding: 'utf8',
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /CERTIFICATE_MISMATCH/);
+  await assert.rejects(access(file));
 });

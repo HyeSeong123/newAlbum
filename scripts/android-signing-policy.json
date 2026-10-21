@@ -3,6 +3,7 @@
   "packageName": "com.oraedameun.album.next",
   "minimumVersionCode": 9015,
   "certificateVariable": "GAMJASSAK_ANDROID_CERTIFICATE_SHA256",
+  "enrolledCertificateSha256": "1e63dd9f0e9ee481875de0cabe4ba479720ceee6c4c0f088cc383a6685f67ba1",
   "legacyInstallation": { "packageName": "com.oraedameun.album", "version": "0.9.9", "versionCode": 9009, "run": 38364197843, "artifact": 11796490920 },
   "legacyCertificates": [
     "cd5e4bca08caff103273368e2ce11f89a30210332d397fbd6b179e2b844d41e5",

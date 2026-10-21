@@ -52,6 +52,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   try {
     const [mode, file] = process.argv.slice(2);
     if (!file) throw new Error('Signing key or APK path is required');
+    // Keep the public enrollment record in Git as well as the repository variable.
+    // A mistaken variable/key replacement must not publish an incompatible APK.
+    assertFingerprint(configuredCertificate(), policy.enrolledCertificateSha256);
     if (mode === 'prepare') console.log(JSON.stringify(await prepareSigningKey(file)));
     else if (mode === 'verify-apk') {
       const sdk = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT;
