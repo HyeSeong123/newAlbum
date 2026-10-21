@@ -1,0 +1,75 @@
+{
+  "version": "0.9.15",
+  "newAndroidIdentity": {
+    "package": "com.oraedameun.album.next",
+    "label": "감자싹 새버전",
+    "legacyPackagePreserved": "com.oraedameun.album",
+    "legacyDataAutomaticallyMigrated": false,
+    "windowsIdentifierChanged": false
+  },
+  "productionSigningKeyGenerated": false,
+  "productionSecretsRegistered": false,
+  "newApkCreated": false,
+  "privateKeyPublished": false,
+  "userDeviceOrDataModified": false,
+  "localTests": {
+    "existingNodePassed": 142,
+    "pythonPassed": 22,
+    "androidPreparationSigningEnrollmentPassed": 11,
+    "enrollmentUsedDisposableTestKey": true,
+    "githubSecretUploadMocked": true
+  },
+  "localBuild": {
+    "originalWorktree": "BLOCKED: unrecorded temporary model file; preserved without modification",
+    "isolatedTrackedWorktree": "PASS: tsc, Vite, packaged model inventory/exclusion check",
+    "aiReleaseCheck": "PASS",
+    "removedModelsReintroduced": false
+  },
+  "ci": {
+    "firstCodeHead": "d80cce57fa2bab99d6ceb891b497c718aa3f6b21",
+    "android": {
+      "run": 39618998220,
+      "job": 119287071268,
+      "result": "BLOCKED: ANDROID_SIGNING_CERTIFICATE_NOT_CONFIGURED",
+      "apkPublished": false
+    },
+    "firstWindows": {
+      "run": 39618998214,
+      "result": "FAIL: ACL setup, POSIX mode assertion, CRLF assertion"
+    },
+    "secondWindows": {
+      "run": 39619760684,
+      "result": "FAIL: incompatible PowerShell security module autoload; ACL code corrected subsequently"
+    },
+    "latestRuntimeHead": "a2bf37ed01a29f820c4d7af5c3aadc6a5a4e3772",
+    "latestWindows": {
+      "run": 39620277434,
+      "job": 119291600333,
+      "signingAndEnrollmentTests": "PASS: 11 tests; real disposable JDK key and owner-only Windows ACL verification",
+      "powershellSyntax": "PASS",
+      "fullInstallerBuild": "IN PROGRESS at report time"
+    },
+    "sourceLatest": "PENDING at report time; local Node142/Python22/build passed"
+  },
+  "browserSecretSettings": {
+    "attemptedUrl": "https://github.com/HyeSeong123/newAlbum/settings/secrets/actions",
+    "result": "BLOCKED by automatic security review before page opened",
+    "reason": "privileged browser settings access and signing-secret management not explicitly authorized",
+    "secretsReadOrWritten": false,
+    "bypassAttempted": false
+  },
+  "notTested": [
+    "actual production key generation/storage",
+    "real GitHub secrets enrollment",
+    "signed Android APK and installation",
+    "coexistence on physical phone",
+    "legacy user-data migration"
+  ],
+  "pm": {
+    "scope": "Keep legacy Android installation/data intact; introduce a separate Android identity only. Windows identity and DB schema unchanged.",
+    "code": "CONDITIONAL PASS: local tests/build and Windows enrollment checks pass; full installer/source CI not yet complete",
+    "androidRelease": "FAIL / BLOCKED until key enrollment and installed APK verification",
+    "abstraction": "One shared Android ID reader; small owner-side setup tool; no new npm dependencies",
+    "remainingRisk": "New app begins empty; existing records stay in old app; no tested full-data migration yet"
+  }
+}

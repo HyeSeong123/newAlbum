@@ -15,7 +15,7 @@
 
 ## 개발 PC에서 한 번 실행
 
-현재 GitHub 연결 도구는 repository secrets/variables 등록을 지원하지 않는다. 여기의 임시 실행 환경에서 키를 만들면 다시 분실할 수 있으므로 **실제 배포 키는 아직 생성하지 않았다.** 소유자 PC에서 아래 설정을 한 번 실행해야 APK 빌드가 가능하다. Node.js, GitHub CLI(`gh`), JDK17의 `keytool`, 저장소 관리 권한이 필요하다.
+현재 GitHub 연결 도구는 repository secrets/variables 등록을 지원하지 않는다. 브라우저로 GitHub Actions Secrets 설정 화면에 접근하려던 시도도 자동 보안 검토가 "브라우저 기반 설정 접근·개인 서명키 관리에 대한 명시적 승인 부족"을 이유로 거절했다. 이를 다른 브라우저·비공개 API 등으로 우회하지 않았다. **실제 배포 키는 아직 생성하거나 등록하지 않았다.** 소유자 PC의 아래 설정 스크립트는 대안으로 준비했으며 실제 실행하지 않았다. 브라우저를 통한 처리는 정확한 저장소와 키 등록 범위의 승인이 필요하다. Node.js, GitHub CLI(`gh`), JDK17의 `keytool`, 저장소 관리 권한이 있으면 PC에서 직접 설정할 수 있다.
 
 저장소의 `feature/gamjassak-audit-refactor` 최신 코드를 받은 뒤 PowerShell에서 실행한다.
 
@@ -39,5 +39,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup-android-sign
 로컬: 기존 Node142개/Python22개와 Android 준비·서명·설정11개 검사를 통과했다. 설정 검사는 **폐기하는 시험용 JDK 키**로 실제 생성·반복 재사용·잘못된 비밀번호·원격 지문 불일치·분실한 등록 키 차단을 확인했다. GitHub 쓰기는 가짜 실행기로 검증했으며 실제 키/secret 등록 성공으로 표시하지 않는다.
 
 실제 배포 키 생성·Secrets 등록·서명 APK 생성·Android 동시 설치·실기기 데이터 보존은 설정 완료 전까지 **NOT TESTED / BLOCKED**다. APK가 아직 없으며 과거0.9.14 파일을 새 APK로 제공하지 않는다. PC에서 키 등록 후 Android 빌드·설치 검사 결과를 확인해야 한다.
+
+로컬 기본 작업 폴더의 빌드는 미등록 임시 모델 파일이 포함되어 자산 검사에서 정상적으로 차단됐다. 해당 파일과 다른 작업자의 미등록 파일을 수정·삭제하지 않았다. 커밋된 코드의 별도 worktree에 기존 모델 자산을 복사하되 해당 임시 파일을 포함하지 않은 상태에서는 `npm run build`와 `npm run ai:release:check`가 모두 통과했다. 검사 규칙은 약화하지 않았다.
+
+Windows CI에서 POSIX 권한 비트·CRLF 가정을 수정했고, 키 폴더 ACL 설정 실패도 발견해 수정했다. PowerShell7에서 물려받은 모듈 경로가 Windows PowerShell5의 Security 모듈 자동 로드를 방해한 실제 오류를 확인했다. 모듈 자동 로드 없이 .NET Framework ACL API로 권한을 설정하고, 현재 사용자 이외의 규칙이 없는지 실제 ACL을 다시 읽어 확인한다. 수정 후 [Windows 실행39620277434](https://github.com/HyeSeong123/newAlbum/actions/runs/39620277434)의 job119291600333에서11개 검사와 두 PowerShell 파일의 문법 검사가 실제 통과했다. 전체 Windows 설치 패키지 빌드는 보고 시점에 진행 중이며, 최신 Source CI도 아직 완료로 판정하지 않는다. [기계 판독 증빙](android-new-identity-0.9.15-evidence.json)을 참조한다.
 
 공식 근거: [Tauri 플랫폼별 설정](https://v2.tauri.app/reference/config/), [GitHub CLI secrets 등록](https://cli.github.com/manual/gh_secret_set), [브랜치를 지정한 빌드 요청](https://cli.github.com/manual/gh_workflow_run).
