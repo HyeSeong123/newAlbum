@@ -4,6 +4,7 @@ import { mkdtemp, mkdir, readFile, writeFile, copyFile, rm } from 'node:fs/promi
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { configureGradle, prepareAndroid } from '../scripts/prepare-android.mjs';
+import { androidAppId, legacyAndroidAppId, isAndroidManagedMediaPath } from '../scripts/android-app.mjs';
 
 const template = `import java.util.Properties
 android {
@@ -14,6 +15,22 @@ android {
         getByName("release") { isMinifyEnabled = true }
     }
 }`;
+
+test('GPS regression targets only the configured app managed copies and never legacy or original files', () => {
+  for (const root of ['data', 'user/0']) {
+    const owned = `/data/${root}/${androidAppId}/imported-media-v1/123/gps-smoke.jpg`;
+    assert.ok(isAndroidManagedMediaPath(owned));
+    for (const file of [
+      owned.replace(androidAppId, legacyAndroidAppId),
+      owned.replace(androidAppId, `${androidAppId}.other`),
+      owned.replace('imported-media-v1/123', 'imported-media-v1/../123'),
+      owned.replace('imported-media-v1/123', 'imported-media-v1/./123'),
+      owned.replace('imported-media-v1', 'database'),
+      owned + ';echo unsafe',
+    ]) assert.equal(isAndroidManagedMediaPath(file), false, file);
+  }
+  for (const file of ['/sdcard/DCIM/gps-smoke.jpg', null, '/data/user/10/example/imported-media-v1/photo.jpg']) assert.equal(isAndroidManagedMediaPath(file), false);
+});
 
 test('Android signing is opt-in and preparing twice does not duplicate Gradle blocks', () => {
   const text = configureGradle(template);

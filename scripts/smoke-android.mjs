@@ -11,7 +11,7 @@ import { promisify } from 'node:util';
 import { appendFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { benchmarkInstalledPetRuntime, verifyInstalledCatFace } from './pet-runtime-benchmark.mjs';
-import { androidAppId } from './android-app.mjs';
+import { androidAppId, isAndroidManagedMediaPath } from './android-app.mjs';
 
 const run = promisify(execFile);
 // A stuck emulator command must produce diagnostics instead of holding the
@@ -255,8 +255,7 @@ async function checkPhotoGps(page) {
   // Reproduce an older app's GPS-free managed copy independently of provider
   // redaction. Change only these synthetic app-owned copies, never the source.
   for (const file of [selected, gpsFree]) {
-    assert.match(file.file_path, /^\/data\/(?:user\/0|data)\/com\.oraedameun\.album\/[A-Za-z0-9_./-]+$/);
-    assert.ok(file.file_path.includes('/imported-media-v1/'));
+    assert.ok(isAndroidManagedMediaPath(file.file_path), 'GPS regression may change only managed copies inside the current Android app');
   }
   await adb('shell', 'run-as', appId, 'cp', gpsFree.file_path, selected.file_path);
   rows = await page.evaluate(path => window.__TAURI_INTERNALS__.invoke('register_paths', { paths:[path] }), selected.file_path);
