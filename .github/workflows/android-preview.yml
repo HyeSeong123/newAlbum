@@ -9,6 +9,9 @@ on:
       - 'public/**'
       - 'src-tauri/**'
       - 'scripts/prepare-android.mjs'
+      - 'scripts/android-signing.mjs'
+      - 'scripts/android-signing-policy.json'
+      - 'tests/android-signing.test.mjs'
       - 'scripts/prepare-ai.mjs'
       - 'scripts/release/**'
       - 'scripts/prepare-pet-models.mjs'
@@ -56,11 +59,13 @@ jobs:
         with:
           packages: platform-tools
           log-accepted-android-sdk-licenses: false
-      - uses: actions/cache/restore@v4
-        id: preview-key
-        with:
-          path: .preview-keys/android-debug.keystore
-          key: gamjassak-android-preview-key-v2
+      - name: Require original update signing identity
+        env:
+          GAMJASSAK_ANDROID_KEYSTORE_BASE64: ${{ secrets.GAMJASSAK_ANDROID_KEYSTORE_BASE64 }}
+          GAMJASSAK_ANDROID_STORE_PASSWORD: ${{ secrets.GAMJASSAK_ANDROID_STORE_PASSWORD }}
+          GAMJASSAK_ANDROID_KEY_PASSWORD: ${{ secrets.GAMJASSAK_ANDROID_KEY_PASSWORD }}
+          GAMJASSAK_ANDROID_KEY_ALIAS: ${{ secrets.GAMJASSAK_ANDROID_KEY_ALIAS }}
+        run: node scripts/android-signing.mjs prepare "$RUNNER_TEMP/gamjassak-update.keystore"
       - name: Prepare SDK and Rust targets
         run: |
           sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;36.0.0' "ndk;$NDK_VERSION"
@@ -75,7 +80,7 @@ jobs:
           npm ci
           npm run version:check
           npm run test:unit
-          node --test tests/android-prepare.test.mjs
+          node --test tests/android-prepare.test.mjs tests/android-signing.test.mjs
       - name: Initialize Android project and approved icon
         run: |
           npx tauri android init --ci --skip-targets-install
@@ -90,42 +95,24 @@ jobs:
       - name: Build installable preview APKs
         if: steps.preview-apks.outputs.cache-hit != 'true'
         run: npx tauri android build --debug --apk --ci --features custom-protocol --target aarch64 x86_64 --split-per-abi
-      - name: Sign previews with the persistent development key
+      - name: Sign previews with the verified original identity
+        env:
+          GAMJASSAK_ANDROID_STORE_PASSWORD: ${{ secrets.GAMJASSAK_ANDROID_STORE_PASSWORD }}
+          GAMJASSAK_ANDROID_KEY_PASSWORD: ${{ secrets.GAMJASSAK_ANDROID_KEY_PASSWORD }}
+          GAMJASSAK_ANDROID_KEY_ALIAS: ${{ secrets.GAMJASSAK_ANDROID_KEY_ALIAS }}
         run: |
-          mkdir -p .preview-keys
-          if [ ! -f .preview-keys/android-debug.keystore ]; then
-            keytool -genkeypair -noprompt -keystore .preview-keys/android-debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=Gamjassak Preview,O=Android,C=KR'
-          fi
           while IFS= read -r -d '' preview_apk; do
-            "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks .preview-keys/android-debug.keystore --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android "$preview_apk"
-            "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify "$preview_apk"
+            "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 4 "$preview_apk"
+            "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$RUNNER_TEMP/gamjassak-update.keystore" --ks-key-alias "$GAMJASSAK_ANDROID_KEY_ALIAS" --ks-pass env:GAMJASSAK_ANDROID_STORE_PASSWORD --key-pass env:GAMJASSAK_ANDROID_KEY_PASSWORD "$preview_apk"
+            node scripts/android-signing.mjs verify-apk "$preview_apk"
+            "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 4 "$preview_apk"
           done < <(find src-tauri/gen/android/app/build/outputs/apk -name '*.apk' -print0)
-      - name: Preserve preview signing key
-        if: steps.preview-key.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: .preview-keys/android-debug.keystore
-          key: gamjassak-android-preview-key-v2
       - name: Preserve successful APK build for emulator checks
         if: steps.preview-apks.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: src-tauri/gen/android/app/build/outputs/apk
           key: ${{ steps.preview-apks.outputs.cache-primary-key }}
-      - name: Prepare phone APK download
-        run: |
-          mkdir -p release-output/android
-          task_version="$(node -p 'require("./package.json").version')"
-          phone_apk="$(find src-tauri/gen/android/app/build/outputs/apk -name '*arm64*debug.apk' -print -quit)"
-          test -n "$phone_apk"
-          cp "$phone_apk" "release-output/android/Gamjassak-${task_version}.apk"
-          echo "APP_VERSION=$task_version" >> "$GITHUB_ENV"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Gamjassak-Android-${{ env.APP_VERSION }}
-          path: release-output/android/*.apk
-          if-no-files-found: error
-          retention-days: 30
       - name: Enable emulator acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -146,6 +133,20 @@ jobs:
           emulator-options: -no-window -gpu lavapipe -no-snapshot -noaudio -no-boot-anim -show-kernel
           disable-animations: true
           script: node scripts/smoke-android.mjs
+      - name: Prepare phone APK download
+        run: |
+          mkdir -p release-output/android
+          task_version="$(node -p 'require("./package.json").version')"
+          phone_apk="$(find src-tauri/gen/android/app/build/outputs/apk -name '*arm64*debug.apk' -print -quit)"
+          test -n "$phone_apk"
+          cp "$phone_apk" "release-output/android/Gamjassak-${task_version}.apk"
+          echo "APP_VERSION=$task_version" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Gamjassak-Android-${{ env.APP_VERSION }}
+          path: release-output/android/*.apk
+          if-no-files-found: error
+          retention-days: 30
       - name: Capture emulator host diagnostics
         if: failure()
         run: |
@@ -173,3 +174,6 @@ jobs:
           name: Android-failure-diagnostics
           path: test-results/android-smoke/
           if-no-files-found: ignore
+      - name: Remove temporary signing key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/gamjassak-update.keystore"

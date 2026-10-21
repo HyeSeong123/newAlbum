@@ -77,7 +77,9 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
       - name: Run frontend unit tests
-        run: npm run test:unit
+        run: |
+          npm run test:unit
+          node --test tests/android-prepare.test.mjs tests/android-signing.test.mjs
       - name: Test browser workflows
         run: |
           npx playwright install --with-deps chromium

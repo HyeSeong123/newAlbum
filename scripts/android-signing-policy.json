@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "packageName": "com.oraedameun.album",
+  "certificateSha256": "cd5e4bca08caff103273368e2ce11f89a30210332d397fbd6b179e2b844d41e5",
+  "verifiedFrom": { "version": "0.9.9", "versionCode": 9009, "run": 38364197843, "artifact": 11796490920 },
+  "privateKeySource": "repository-secrets-only",
+  "generateReplacementKey": false
+}

@@ -1,0 +1,45 @@
+{
+  "version": "0.9.14",
+  "userInstalledVersion": "0.9.9",
+  "actualApkComparisons": {
+    "0.9.9": {
+      "run": 38364197843,
+      "artifact": 11796490920,
+      "certificateSha256": "cd5e4bca08caff103273368e2ce11f89a30210332d397fbd6b179e2b844d41e5",
+      "package": "com.oraedameun.album",
+      "versionCode": 9009,
+      "minSdk": 28,
+      "targetSdk": 36
+    },
+    "0.9.14": {
+      "run": 39509115142,
+      "artifact": 12305880607,
+      "certificateSha256": "30f70abc717bee4b829cf50a0d95ccb015a82685b4bac11bb7feb4c7fc275fff",
+      "package": "com.oraedameun.album",
+      "versionCode": 9014,
+      "minSdk": 28,
+      "targetSdk": 36,
+      "bytes": 326603251,
+      "sha256": "e9985e7973c8dac548a8360aaa6ec12dfe61f13530e90645b28eb669e4171d02",
+      "zipCrcError": null,
+      "arm64ElfLoadAlignments": [
+        16384,
+        16384,
+        16384,
+        16384
+      ],
+      "arm64UncompressedZipOffset": 15007744
+    }
+  },
+  "localTests": {
+    "androidPrepareAndSigningPassed": 9,
+    "nodePassed": 142,
+    "pythonPassed": 22
+  },
+  "privateKeyRecovery": "BLOCKED by automatic approval review; not performed",
+  "privateKeyPublished": false,
+  "correctlyResignedApkCreated": false,
+  "deviceInstallFailureCode": "NOT COLLECTED",
+  "userDataChanged": false,
+  "shippingState": "BLOCKED until original signing key is securely restored/provided; never generate a replacement key"
+}

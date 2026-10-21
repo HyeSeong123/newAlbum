@@ -51,7 +51,14 @@ npm run android:apk
 
 ARM64 휴대폰용 **debug 서명 APK**가 `src-tauri/gen/android/app/build/outputs/apk`에 생성된다. Play 제출용 서명과 다르다. `Android preview APK` Actions는 휴대폰용 ARM64 APK 한 개만 다운로드로 제공하고, x86_64 빌드는 내부 검사에 사용한다. 에뮬레이터 설치, 실제 폴더 선택·URI 복사·진행률·재실행 후 SQLite 보존을 검사한 뒤 휴대폰용 APK를 제공한다. 삼성 실기기의 선택기·HEIC/HDR·영상 코덱·메모리 사용도 별도 확인해야 한다.
 
-CI 미리보기는 개발용 키를 별도로 캐시하고 APK를 같은 키로 서명한다. 키 캐시를 삭제하거나 잃으면 기존 테스트 APK에 덮어 설치할 수 없으므로 테스트용 키와 Play 업로드 키를 구분한다. 실제 배포 키는 아래 안내에 따라 사용자가 보관한다.
+업데이트용 CI APK는 실제0.9.9 서명 인증서의 SHA-256(`cd5e4bca08caff103273368e2ce11f89a30210332d397fbd6b179e2b844d41e5`)와 일치해야 한다. 과거의 브랜치별 키 캐시/없으면 새 키 생성 경로는 제거했다. 저장소의 Actions secrets에 **원래 키**를 등록해야 하며 새 키를 만들면 기존 앱을 업데이트할 수 없다.
+
+- `GAMJASSAK_ANDROID_KEYSTORE_BASE64`: 원래 keystore의 Base64(줄바꿈 없음)
+- `GAMJASSAK_ANDROID_STORE_PASSWORD`: 원래 저장소 비밀번호
+- `GAMJASSAK_ANDROID_KEY_PASSWORD`: 원래 키 비밀번호
+- `GAMJASSAK_ANDROID_KEY_ALIAS`: 원래 alias
+
+키·비밀번호·Base64를 Git, 채팅, 로그나 다운로드 아티팩트에 넣지 않는다. CI는 키를 임시 디렉터리의0600 파일로만 만들고 종료 시 삭제한다. 비밀번호는 프로세스 인수가 아닌 환경 참조로 전달한다. 비밀값 누락/인증서 불일치 시 빌드·배포를 중단한다. 최종 APK의 인증서·실제 패키지·증가한 versionCode·ABI·16KB ZIP 정렬과 설치 검사도 통과해야 다운로드 파일을 제공한다. 원래0.9.9 키는 현재 도구로 안전하게 복구/등록하지 못해 업데이트 APK 발행이 보류돼 있다. [진단 및 수정 범위](android-update-signing-2026-10-21.md)를 따른다.
 
 재실행 검증은 홈 뒤로가기 후 복귀(동일 Activity·프로세스)와 완전 종료 후 시작을 다룬다. Activity를 강제로 삭제하고 프로세스만 유지하는 재실행은 [엔진의 열린 문제](https://github.com/tauri-apps/tauri/issues/15671)가 있으므로, 전경 서비스나 프로세스 유지 기능을 추가할 때 별도 해결이 필요하다.
 
