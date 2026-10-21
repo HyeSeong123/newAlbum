@@ -1,0 +1,39 @@
+name: Locate 0.9.9 signing cache (metadata only)
+
+on:
+  pull_request:
+    branches: [feature/warm-journal-v2]
+    types: [opened, synchronize, reopened]
+    paths: ['.github/workflows/android-099-cache-check.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  locate:
+    if: github.repository == 'HyeSeong123/newAlbum' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'fix/gamjassak-099-key-check'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Explicit user approval: one-time confidential recovery/re-signing of the
+      # original 0.9.9 key. This preliminary job ONLY checks cache metadata.
+      # It does not download/extract any cache or private key, use a signing
+      # password, check out application code, create/save caches, or upload files.
+      - name: Look up original cache without downloading it
+        id: original
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .preview-keys/android-debug.keystore
+          key: gamjassak-android-preview-key-v2
+          lookup-only: true
+      - name: Report availability only
+        env:
+          CACHE_HIT: ${{ steps.original.outputs.cache-hit }}
+        run: |
+          if [ "$CACHE_HIT" = "true" ]; then
+            echo "Original cache metadata found; private key has NOT been restored or validated."
+            echo "### 0.9.9 cache lookup: FOUND (key not read or validated)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Original cache unavailable; no replacement key will be generated."
+            echo "### 0.9.9 cache lookup: NOT FOUND" >> "$GITHUB_STEP_SUMMARY"
+          fi
