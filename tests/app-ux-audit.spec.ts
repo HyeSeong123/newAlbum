@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test } from '@playwright/test';
 import { auditLibrary } from './audit-fixture';
 import { mkdir, writeFile } from 'node:fs/promises';
 
