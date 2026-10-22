@@ -292,3 +292,21 @@ fn installed_v18_upgrade_keeps_native_registry_and_adds_entity_management() {
     assert_eq!(c.query_row("SELECT count(*) FROM pragma_table_info('person') WHERE name='cover_media_id'", [], |r| r.get::<_,i64>(0)).unwrap(), 1);
     assert_eq!(c.query_row("SELECT count(*) FROM unidentified_pet_photo", [], |r| r.get::<_,i64>(0)).unwrap(), 0);
 }
+
+#[test]
+fn ux_only_v18_upgrade_adds_native_registry_without_rewriting_links() {
+    let mut c = Connection::open_in_memory().unwrap();
+    initialize(&mut c).unwrap();
+    c.execute_batch("INSERT INTO media(id,file_path,file_type,size_bytes) VALUES(1,'kept-photo','image',1);
+      INSERT INTO person(id,name,cover_media_id) VALUES(9,'kept-name',1);
+      INSERT INTO person_photo VALUES(9,1);
+      INSERT INTO unidentified_pet_photo VALUES(1);
+      DROP TABLE native_ai_feature; DROP TABLE native_ai_model; PRAGMA user_version=18;").unwrap();
+    let before = snapshot(&c);
+    initialize(&mut c).unwrap();
+    assert_eq!(snapshot(&c), before);
+    assert_eq!(version(&c).unwrap(), 19);
+    assert!(table_exists(&c, "native_ai_model").unwrap());
+    assert_eq!(c.query_row("SELECT media_id FROM unidentified_pet_photo", [], |r| r.get::<_,i64>(0)).unwrap(), 1);
+    assert_eq!(c.query_row("SELECT count(*) FROM native_ai_model", [], |r| r.get::<_,i64>(0)).unwrap(), 0);
+}

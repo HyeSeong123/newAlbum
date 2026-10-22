@@ -84,7 +84,8 @@ pub fn initialize(conn: &mut Connection) -> Result<(), String> {
             tx.execute_batch("ALTER TABLE pet_analysis_job ADD COLUMN refresh INTEGER NOT NULL DEFAULT 0 CHECK(refresh IN (0,1));").map_err(|e| e.to_string())?;
         }
     }
-    if current < 18 { tx.execute_batch(include_str!("../database/native-ai.sql")).map_err(|e|e.to_string())?; }
+    // Both integration parents used v18. The additive DDL also repairs a UX-only v18 database.
+    if current < 19 { tx.execute_batch(include_str!("../database/native-ai.sql")).map_err(|e|e.to_string())?; }
     if current < 19 && !tx.query_row("SELECT EXISTS(SELECT 1 FROM pragma_table_info('person') WHERE name='cover_media_id')",[],|r|r.get::<_,bool>(0)).map_err(|e|e.to_string())? {
         tx.execute_batch("ALTER TABLE person ADD COLUMN cover_media_id INTEGER REFERENCES media(id) ON DELETE SET NULL;").map_err(|e|e.to_string())?;
     }
