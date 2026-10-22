@@ -77,5 +77,6 @@ commands.allow = [
   "rename_face_person",
   "set_person_cover_face",
   "move_faces",
+  "register_person_from_faces",
   "clear_face_index",
 ]

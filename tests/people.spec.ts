@@ -174,6 +174,15 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
   await page.getByLabel('새 인물 이름').fill('따로 등록');
   await page.getByRole('button', { name: '인물 등록', exact:true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: '따로 등록', exact:true })).toBeVisible();
+  // Explicitly remove the new name to keep the legacy unnamed/duplicate-name
+  // merge scenario below; splitting no longer silently creates an unnamed row.
+  await page.getByRole('button', { name: '사람 관리', exact:true }).click();
+  await page.getByRole('button', { name: '이름 수정', exact:true }).click();
+  await page.getByLabel('인물 이름').fill('');
+  await page.getByRole('button', { name: '이름 저장', exact:true }).click();
+  await page.getByRole('button', { name: '사람 목록', exact:true }).click();
+  await page.getByRole('button', { name: '우리 가족 1장', exact:true }).click();
   await page.getByRole('button', { name: '사람 관리', exact:true }).click();
   await page.getByRole('button', { name: '사진 정리', exact:true }).click();
   await expect(page.locator('.personPhoto')).toHaveCount(1);
