@@ -1,0 +1,201 @@
+{
+  "version": "0.9.16",
+  "runtimeHead": "6b99ac893939e6f39c5a78e2d118c27fed18d71f",
+  "branch": "feature/gamjassak-audit-refactor",
+  "scope": {
+    "review": "existing 128-dimensional features; only unnamed AND unconfirmed faces",
+    "newPerson": "explicit selection + name; one SQLite transaction",
+    "modelTraining": false,
+    "automaticAnalysisOnImportAdded": false,
+    "dbSchemaChanged": false,
+    "migrationChanged": false,
+    "oldIdentityOrPhotoIdsReset": false,
+    "petReanalysisChanged": false,
+    "removedModelsReintroduced": false
+  },
+  "implementation": {
+    "newCommands": [
+      "register_person_from_faces"
+    ],
+    "permissionScope": "existing album-library main app window",
+    "removedFrontendFunctions": [
+      "relearnPersonPhoto"
+    ],
+    "retainedCompatibilityCommands": [
+      "refresh_face_scan"
+    ],
+    "sharedComponentsAndHooks": [
+      "EntityEditorDialog",
+      "useRowSelection"
+    ],
+    "newCommonComponents": [],
+    "sharedNativeHelper": "assign_faces"
+  },
+  "localTests": {
+    "nodePassed": 143,
+    "pythonPassed": 22,
+    "typescript": "PASS",
+    "isolatedBuild": "PASS",
+    "aiPackaging": "PASS",
+    "localPlaywright": "NOT TESTED: official Chromium download malformed",
+    "localRust": "NOT TESTED: Rust toolchain unavailable"
+  },
+  "ci": {
+    "sourcePush": {
+      "run": 39717799722,
+      "result": "PASS"
+    },
+    "sourcePr": {
+      "run": 39717803835,
+      "result": "PASS",
+      "browserPassed": 424,
+      "browserSkipped": 44,
+      "nodePassed": 143,
+      "androidPreparationSigningTestsPassed": 13,
+      "rustPassed": 116,
+      "pythonPassed": 22,
+      "build": "PASS"
+    },
+    "android": {
+      "run": 39717799735,
+      "result": "PASS",
+      "job": 119624354139,
+      "apkArtifact": 12399958690,
+      "screensArtifact": 12399929057,
+      "screensZipSha256": "30ecffa708530e142b97db3b280c3518104fdce4aedbe018119adf6587e77f65",
+      "environment": "Android API36 x86_64 emulator",
+      "manualPhotos": {
+        "personId": 1,
+        "mediaId": 9,
+        "manualPhotoWithoutFace": true,
+        "unknownOnlyReview": true,
+        "selectedFaceRegistration": true,
+        "freshPetInference": true,
+        "petObjectIdPreserved": true,
+        "photoLinksPreserved": true
+      },
+      "restartPersistence": "PASS",
+      "backNavigation": "PASS",
+      "offlineRuntime": "PASS",
+      "repetition": {
+        "cycles": 50,
+        "domainSwitches": 99,
+        "independentPhotos": 1,
+        "analysisCalls": 100,
+        "execution": "bundled Workers directly; shared client cancellation covered in development browser tests",
+        "identityLinksPreserved": true,
+        "offline": true,
+        "identityAccuracyMeasured": false,
+        "phonePerformanceMeasured": false,
+        "wholeAppPeakMemoryMeasured": false,
+        "environment": "Android API 36 x86_64 emulator"
+      }
+    },
+    "windows": {
+      "run": 39717799677,
+      "result": "PASS",
+      "installAndUpgradeJob": 119624366001,
+      "artifact": 12399873890,
+      "seededRecordsAfterFullAndUpdateInstallers": "PASS"
+    },
+    "previousSource": {
+      "head": "d8f0d75887e8a8f83eeaafc1f6831c226facb972",
+      "run": 39716746547,
+      "browserPassed": 422,
+      "browserSkipped": 44,
+      "build": "PASS"
+    }
+  },
+  "correctedFindings": [
+    {
+      "severity": "P1",
+      "issue": "native command omitted from the app allowlist; real Android save blocked",
+      "fix": "add exactly register_person_from_faces to existing album-library scope"
+    },
+    {
+      "severity": "P2",
+      "issue": "legacy UI test expected unnamed split after the new named split",
+      "fix": "test the new name, explicitly clear it, then retain original duplicate-name/cover/exclusion checks"
+    },
+    {
+      "severity": "P2",
+      "issue": "obsolete selected IDs could remain after committed save, failed reload and cancel",
+      "fix": "clear committed selections; preserve unsaved selections; reuse committed ID on retry"
+    }
+  ],
+  "notTested": [
+    "physical phone",
+    "real user database",
+    "representative identity accuracy",
+    "whole-app peak memory",
+    "full WCAG audit"
+  ],
+  "userDeviceDataModified": false,
+  "apkPublished": true,
+  "css": {
+    "baselineVersion": "0.9.15",
+    "baselineBytes": 211000,
+    "currentVersion": "0.9.16",
+    "currentBytes": 210986,
+    "breakpointsChanged": false,
+    "performanceImprovementClaimed": false
+  },
+  "screenshots": {
+    "browserArtifact": 12400595734,
+    "browserZipSha256": "84579924591c4aa8385bc072566854f8b5b20d9c3b6400d764492fd77a688ed9",
+    "browserFiles": [
+      "people-controls-unknown-face-name-mobile.png",
+      "people-controls-unknown-face-name-desktop.png",
+      "people-controls-unknown-face-review-mobile.png",
+      "people-controls-unknown-face-review-desktop.png"
+    ],
+    "androidFiles": [
+      "selected-face-new-person.png",
+      "unconfirmed-faces-only.png"
+    ],
+    "limitations": [
+      "browser dummy face image URL missing: layout only",
+      "Android registered profile screenshot taken before full media card decoded; cover face and saved native identity verified",
+      "no claim of whole-app before/after pixel equivalence"
+    ]
+  },
+  "apk": {
+    "bytes": 326697518,
+    "sha256": "5509dbc95c9ef8b0b9a3e1ce3de06ef3f6cb4229c6368cf7b31d0ba3ef459895",
+    "certificateSha256": "1e63dd9f0e9ee481875de0cabe4ba479720ceee6c4c0f088cc383a6685f67ba1",
+    "signatureAndContentDigestValid": true,
+    "metadata": {
+      "versionCode": 9016,
+      "versionName": "0.9.16",
+      "compileSdkVersion": 36,
+      "compileSdkVersionCodename": "16",
+      "package": "com.oraedameun.album.next",
+      "platformBuildVersionCode": 36,
+      "platformBuildVersionName": 16
+    },
+    "libraries": [
+      {
+        "name": "lib/arm64-v8a/liboraedameun_lib.so",
+        "bytes": 309662352,
+        "loadAlignments": [
+          16384,
+          16384,
+          16384,
+          16384
+        ]
+      }
+    ],
+    "zipCrcValid": true,
+    "removedAssets": [],
+    "artifactId": 12399958690,
+    "artifactZipSha256": "512b9e724acfa48d90f1fcfab26cbfc4cabe67656581ede870b0dd614f22f2f5",
+    "physicalDeviceTested": false
+  },
+  "commits": [
+    "55de366a86c7ab7c1ae4ec5e91cbcaf11e43fb7d",
+    "dcc4b2f72d96965bd8a20b60ecc04696171c2f62",
+    "1214b0276297ca51e9b603bf7c09d44b22350e0e",
+    "d8f0d75887e8a8f83eeaafc1f6831c226facb972",
+    "6b99ac893939e6f39c5a78e2d118c27fed18d71f"
+  ]
+}
