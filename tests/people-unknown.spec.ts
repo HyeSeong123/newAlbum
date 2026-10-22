@@ -59,16 +59,19 @@ test('review compares only unconfirmed unnamed faces and preserves other assignm
 });
 
 test('faces without suggestions can be selected across pages and registered with a new name',async({page,isMobile})=>{
-  await prepare(page,27);const dialog=await review(page);
+  await prepare(page,27);if(isMobile)await page.setViewportSize({width:360,height:800});const dialog=await review(page);
   await dialog.getByLabel('미확인 얼굴 13 선택').check();await dialog.getByLabel('미확인 얼굴 15 선택').check();
   await dialog.getByTitle('다음 페이지').click();await dialog.getByRole('checkbox').first().check();
   await expect(dialog.getByText('3개 선택',{exact:true})).toBeVisible();
-  await page.screenshot({path:`preview-results/unknown-face-review-${isMobile?'mobile':'desktop'}.png`});
+  await expect(dialog.getByRole('button',{name:'새 이름으로 등록',exact:true})).toBeInViewport();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  await page.screenshot({path:`preview-results/people-controls-unknown-face-review-${isMobile?'mobile':'desktop'}.png`});
   await dialog.getByRole('button',{name:'새 이름으로 등록',exact:true}).click();
   const form=page.getByRole('dialog',{name:'선택한 얼굴로 새 인물 등록',exact:true});
   await expect(form.getByRole('button',{name:'인물 등록',exact:true})).toBeDisabled();
   await form.getByLabel('새 인물 이름').fill('새 친구');
-  await page.screenshot({path:`preview-results/unknown-face-name-${isMobile?'mobile':'desktop'}.png`});
+  await expect(form.getByRole('button',{name:'인물 등록',exact:true})).toBeInViewport();
+  await page.screenshot({path:`preview-results/people-controls-unknown-face-name-${isMobile?'mobile':'desktop'}.png`});
   await form.getByRole('button',{name:'인물 등록',exact:true}).click();await expect(form).toBeHidden();
   await expect(page.locator('.peopleView > .entityHeader').getByRole('heading',{name:'새 친구',exact:true})).toBeVisible();
   const state=await page.evaluate(()=>JSON.parse(localStorage.getItem('unknown-state')!));
@@ -89,4 +92,37 @@ test('new face registration keeps the draft on failure and reuses a committed pe
   await form.getByRole('button',{name:'인물 등록',exact:true}).click();await expect(form).toBeHidden();
   const state=await page.evaluate(()=>JSON.parse(localStorage.getItem('unknown-state')!));expect(state.people.filter((person:any)=>person.name==='복구 확인')).toHaveLength(1);
   const calls=await page.evaluate(()=>JSON.parse(localStorage.getItem('unknown-calls')!));expect(calls.filter((call:any)=>call.command==='register_person_from_faces')).toHaveLength(2); // One failed write and one committed write, no duplicate on reload retry.
+});
+
+
+test('face overview selection keeps chosen faces when naming is cancelled',async({page})=>{
+  await prepare(page);await page.getByRole('button',{name:'얼굴 선택해 이름 등록',exact:true}).click();
+  await page.locator('.personPhoto[data-selection-id="13"] button').click();await page.locator('.personPhoto[data-selection-id="15"] button').click();
+  await page.getByRole('button',{name:'새 인물 등록',exact:true}).click();
+  const form=page.getByRole('dialog',{name:'선택한 얼굴로 새 인물 등록',exact:true});await form.getByLabel('새 인물 이름').fill('취소할 이름');
+  await form.getByRole('button',{name:'취소',exact:true}).click();await expect(form).toBeHidden();
+  await expect(page.locator('.faceSelectionHeader')).toContainText('2개 선택');
+  expect((await page.evaluate(()=>JSON.parse(localStorage.getItem('unknown-state')!))).people).toHaveLength(2);
+});
+
+test('review drag selection preserves ordinary touch scrolling',async({page,isMobile})=>{
+  await prepare(page,27);const dialog=await review(page);
+  const body=dialog.locator('.faceMatchBody');
+  if(isMobile){
+    const client=await page.context().newCDPSession(page),box=(await body.boundingBox())!;
+    const x=box.x+box.width/2,y=box.y+box.height-40;
+    await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});
+    for(let i=1;i<=6;i++){await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y:y-i*20}]});await page.waitForTimeout(20);}
+    await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    await expect.poll(()=>body.evaluate(el=>el.scrollTop)).toBeGreaterThan(0);await expect(dialog.getByRole('checkbox',{checked:true})).toHaveCount(0);
+    await body.evaluate(el=>{el.scrollTop=0;});
+    const a=(await dialog.locator('[data-selection-id="13"] img').boundingBox())!,b=(await dialog.locator('[data-selection-id="15"] img').boundingBox())!;
+    await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:a.x+a.width/2,y:a.y+a.height/2}]});await page.waitForTimeout(550);
+    await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:b.x+b.width/2,y:b.y+b.height/2}]});
+    await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await client.detach();
+  }else{
+    const a=(await dialog.locator('[data-selection-id="13"] img').boundingBox())!,b=(await dialog.locator('[data-selection-id="15"] img').boundingBox())!;
+    await page.mouse.move(a.x+a.width/2,a.y+a.height/2);await page.mouse.down();await page.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:5});await page.mouse.up();
+  }
+  await expect(dialog.getByRole('checkbox',{checked:true})).toHaveCount(2);
 });
