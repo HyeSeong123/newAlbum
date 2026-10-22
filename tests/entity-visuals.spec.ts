@@ -20,6 +20,7 @@ test('people and pets mobile before-after evidence uses the same data and viewpo
   const stage=before?'before':'after';
   async function capture(name:string) {
     await page.evaluate(async()=>{
+      window.scrollTo(0,0);
       await document.fonts.ready;
       await Promise.all([...document.querySelectorAll<HTMLImageElement>('.peopleWorkspace img')].filter(image=>image.getClientRects().length).map(image=>{image.loading='eager';return image.decode().catch(()=>undefined);}));
     });

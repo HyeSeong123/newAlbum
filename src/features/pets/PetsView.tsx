@@ -97,7 +97,7 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
           { label: '등록 사진 다시 분석', icon: <RefreshCw size={16} />, disabled: !canRetrain || analysis.progress?.running, onSelect: retrain },
           { label: '반려동물 등록 삭제', icon: <Trash2 size={16} />, danger: true, onSelect: () => void remove() },
         ]} /></>}
-        {!pet && !unknown && <button className="primaryControl entityPrimary" aria-label="반려동물 추가" disabled={loading || !desktop} onClick={() => {setEditorMode('all');setEditing({ id: 0, name: '', cover_media_id: null, media_ids: [] });}}><Plus size={18} /><span className="entityActionFull">반려동물 추가</span><span className="entityActionShort" aria-hidden="true">추가</span></button>}
+        {!pet && !unknown && <button className="primaryControl entityPrimary" aria-label="반려동물 추가" disabled={loading || !desktop} onClick={() => {setEditorMode('all');setEditing({ id: 0, name: '', cover_media_id: null, media_ids: [] });}}><Plus size={18} /><span>반려동물 추가</span></button>}
         {!pet && desktop && pets.length > 0 && <ActionMenu label="반려동물 관리" triggerText="더보기" icon={<MoreVertical size={20} />} actions={[{label:'등록 사진 다시 분석',icon:<RefreshCw size={16} />,disabled:!canRetrain || analysis.progress?.running,onSelect:retrain}]} />}
       </div>
     </div>
