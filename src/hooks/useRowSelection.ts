@@ -60,7 +60,11 @@ export function useRowSelection(enabled: boolean, toggle: (id: string) => void, 
     onPointerMove: move,
     onPointerUp: end,
     onPointerCancel: end,
-    onLostPointerCapture() { gesture.current = null; },
+    onLostPointerCapture(event: PointerEvent<HTMLDivElement>) {
+      // Touch transfers implicit capture from the starting tile to this grid.
+      // The child's bubbling loss must not end the grid's active brush.
+      if (event.target === event.currentTarget && gesture.current?.pointer === event.pointerId) gesture.current = null;
+    },
     onClickCapture(event: React.MouseEvent<HTMLDivElement>) {
       if (enabled && suppressMouseClick.current) { event.preventDefault(); event.stopPropagation(); }
       suppressMouseClick.current = false;

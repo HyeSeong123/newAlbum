@@ -38,3 +38,12 @@ test('a touch tap and a cancelled touch gesture do not preselect the starting ti
   const f=fixture();f.handlers.onPointerDown(f.event(20,20));f.handlers.onPointerUp(f.event(20,20));assert.equal(f.selected.size,0);
   f.handlers.onPointerDown(f.event(20,20));f.handlers.onPointerCancel(f.event(20,20));f.handlers.onPointerMove(f.event(240,20));assert.equal(f.selected.size,0);
 });
+test('touch capture transferred from a tile keeps dragging until the grid loses capture',()=>{
+  const f=fixture();f.handlers.onPointerDown(f.event(30,30));f.handlers.onPointerMove(f.event(45,30));
+  // Touch begins with implicit capture on the tile. Moving capture to the
+  // grid dispatches a bubbling lostpointercapture from that child first.
+  f.handlers.onLostPointerCapture({pointerId:1,target:f.tiles[0],currentTarget:f.grid});
+  f.handlers.onPointerMove(f.event(140,30));assert.deepEqual([...f.selected],['1','2']);
+  f.handlers.onLostPointerCapture({pointerId:1,target:f.grid,currentTarget:f.grid});
+  f.handlers.onPointerMove(f.event(240,30));assert.deepEqual([...f.selected],['1','2']);
+});
