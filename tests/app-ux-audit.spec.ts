@@ -67,6 +67,7 @@ test('capture current app tasks and record expectations before actions', async (
   await page.locator('.homeShortcuts').scrollIntoViewIfNeeded();
   await shot('15-home-shortcuts','홈의 일기장 다음에 사람과 반려동물 바로가기가 보인다.');
   await page.locator('.navList').getByRole('button',{name:'사람과 반려동물',exact:true}).click();
+  await page.getByRole('tab',{name:'인물',exact:true}).click();
   await page.getByRole('button',{name:'고미 도움말 열기',exact:true}).click();
   await shot('16-people-help','인물 도움말에서는 인물 기능만 확인한다.');
   await page.getByRole('button',{name:'도움말 닫기',exact:true}).click();

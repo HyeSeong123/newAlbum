@@ -12,6 +12,6 @@ export function FunctionHelp({ title, children }: { title: string; children: Rea
     {open && createPortal(<EntityEditorDialog title={`${title} 도움말`} busy={false} onClose={() => setOpen(false)} className="functionHelpDialog">
       <div className="entityEditBody functionHelpCopy">{children}</div>
       <footer className="peopleActions functionHelpFooter"><button type="button" onClick={() => setOpen(false)}>확인</button></footer>
-    </EntityEditorDialog>, document.body)}
+    </EntityEditorDialog>, document.fullscreenElement ?? document.body)}
   </>;
 }
