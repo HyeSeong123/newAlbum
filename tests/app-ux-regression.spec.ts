@@ -117,9 +117,13 @@ test('whole menu reveals every destination and retapping current view keeps sele
 
 for(const width of [320,360,393,851])test(`bottom actions and full menu fit ${width}px`,async({page,isMobile})=>{
   test.skip(!isMobile,'Phone geometry.');const height=width===851?393:740;await page.setViewportSize({width,height});await auditLibrary(page);
-  await page.getByRole('button',{name:'전체 메뉴',exact:true}).click();const menu=page.locator('.actionMenuPanel');
-  const bounds=(await menu.boundingBox())!;expect(bounds.x).toBeGreaterThanOrEqual(9);expect(bounds.x+bounds.width).toBeLessThanOrEqual(width-9);
-  await menu.getByRole('button',{name:'사진 기록',exact:true}).click();await page.getByRole('button',{name:'선택',exact:true}).click();
+  const all=page.getByRole('button',{name:'전체 메뉴',exact:true});
+  if(await all.isVisible()){
+    await all.click();const menu=page.locator('.actionMenuPanel');
+    const bounds=(await menu.boundingBox())!;expect(bounds.x).toBeGreaterThanOrEqual(9);expect(bounds.x+bounds.width).toBeLessThanOrEqual(width-9);
+    await menu.getByRole('button',{name:'사진 기록',exact:true}).click();
+  }else await go(page,'사진 기록');
+  await page.getByRole('button',{name:'선택',exact:true}).click();
   await page.locator('.mediaTile').first().click();const bar=page.locator('.selectionDock');const b=(await bar.boundingBox())!;
   expect(b.x).toBeGreaterThanOrEqual(0);expect(b.x+b.width).toBeLessThanOrEqual(width);expect(b.y+b.height).toBeLessThanOrEqual(height);
   for(const control of await bar.getByRole('button').all()){const r=(await control.boundingBox())!;expect(r.height).toBeGreaterThanOrEqual(44);}

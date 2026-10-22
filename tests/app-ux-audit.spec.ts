@@ -51,12 +51,14 @@ test('capture current app tasks and record expectations before actions', async (
   await shot('10-diary-selection','일기 선택도 사진 선택과 같은 취소·선택 개수·하단 작업을 제공한다.');
   await page.evaluate(()=>window.__gamjassakBack?.());
   notes.push({step:'11-diary-back',expected:'일기 목록에 머물고 선택 모드만 종료한다.',actual:{diary:await page.locator('.diaryView').count(),selection:await page.locator('.diaryBulk').count()}});
+  await shot('11-diary-back','뒤로 가기는 일기 목록을 유지하며 선택을 취소한다.');
   await page.locator('.navList').getByRole('button',{name:'사람과 반려동물',exact:true}).click();
   await page.getByRole('button',{name:'가족 24장',exact:true}).click();
   await shot('12-person-detail','인물 상세에서 사진 선택·이름 변경·사진 연결을 찾는다.');
   await page.getByRole('button',{name:'선택',exact:true}).click();
   await page.evaluate(()=>window.__gamjassakBack?.());
   notes.push({step:'13-person-back',expected:'인물 상세에서 선택만 취소한다.',actual:{people:await page.locator('.peopleView').count(),selection:await page.locator('.entitySelectionBar').count()}});
+  await shot('13-person-back','뒤로 가기는 인물 상세를 유지하며 선택을 취소한다.');
   await page.locator('.navList').getByRole('button',{name:'사람과 반려동물',exact:true}).click();
   await page.getByRole('tab',{name:'반려동물',exact:true}).click();
   await page.getByRole('button',{name:'보리 1장',exact:true}).click();
