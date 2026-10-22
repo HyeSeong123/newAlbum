@@ -93,7 +93,12 @@ test('horizontal touch dragging selects multiple faces and pet photos', async ({
   test.skip(!isMobile, 'Phone touch brush regression.');
   await fixture(page); await selectPerson(page);
   async function brush(tiles: Locator) {
-    await tiles.first().scrollIntoViewIfNeeded();
+    // A fixed selection bar covers the bottom of the viewport. Start the
+    // gesture on a visible tile, not merely one inside the viewport bounds.
+    await tiles.first().evaluate(el=>el.scrollIntoView({block:'center'}));
+    for (const tile of [tiles.first(),tiles.nth(1)]) await expect.poll(()=>tile.evaluate(el=>{
+      const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));
+    })).toBe(true);
     const a=(await tiles.first().boundingBox())!, b=(await tiles.nth(1).boundingBox())!;
     const x=a.x+a.width/2, y=a.y+a.height/2, end=b.x+b.width/2;
     const client=await page.context().newCDPSession(page);
