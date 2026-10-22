@@ -1,3 +1,53 @@
+# Android 0.9.17 최종 통합 결과
+
+인물·반려동물 UX 개선을 기존 0.9.16 Android 앱 작업과 통합하고, 영구 서명된 휴대폰용 APK를 생성했다. 기준 UX 브랜치의 FaceX512·QuadPose·전용 ONNX 런타임은 재도입하지 않았다.
+
+- 브랜치: `feature/people-pets-ux-android-20261022`. 앱 소스 커밋: `1dd8beecd19f72c7e81e1966cf14968393c4d1e6`.
+- 통합 커밋: `d2515df`(UX와 기존 앱 통합), `36c3f68`(Android 클릭 검증 명칭·메뉴 경로 동기화), `1dd8bee`(두 v18 DB 구조의 데이터 보존 업그레이드).
+- 원래 요청한 `feature/warm-journal-v2`의 개선은 유지하고, 최신 `feature/gamjassak-audit-refactor`의 모델 제거·고정 서명을 함께 보존했다. 두 브랜치 및 master에는 병합하지 않았다.
+- APK: `Gamjassak-0.9.17.apk`, arm64-v8a, 테스트용 debug, 327,701,038바이트. 버전 코드 9017, 패키지 `com.oraedameun.album.next`.
+- APK SHA-256: `49d91e478c2078f2a3302f7bfae510c2dbe152effc44a5266db60e696129c2ae`.
+- 기존 영구 인증서 SHA-256 유지: `1e63dd9f0e9ee481875de0cabe4ba479720ceee6c4c0f088cc383a6685f67ba1`.
+
+|검증|결과|실행 범위|
+|---|---|---|
+|단위 검사|149개 통과|선택·기존 모델·버전·기능 회귀|
+|Android 준비·서명 정책 검사|13개 통과|기존 영구 키·패키지·버전·ABI 정책|
+|브라우저 클릭 검사|65개 통과·11개 환경별 건너뜀|Chromium 데스크톱/Pixel 7. 반대 환경의 터치·마우스 조건부 제외|
+|동일 데이터의 변경 전후 캡처|1개 흐름 통과|393×851 CSS px 비교|
+|실제 Rust 저장·트랜잭션|125개 통과|같은 사진의 다른 인물/동물·원본 보존, 롤백, 기존 v18 및 UX 전용 v18 → v19|
+|SQLite 호환성|24개 통과|기존 얼굴·동물·수동 사진 연결·삭제·마이그레이션|
+|Android APK 빌드·서명|통과|arm64-v8a 및 x86_64, 등록된 영구 서명, 버전 0.9.17/9017|
+|Android 설치·실제 클릭·저장|통과|API 36 x86_64 에뮬레이터. 실제 앱과 SQLite 사용|
+|파일 검증|통과|Actions ZIP SHA-256 일치, APK ZIP 무결성, arm64 ABI, 제거 모델/런타임 부재|
+
+Android에서 실제 실행한 핵심 흐름:
+
+1. 얼굴 없는 실제 사진으로 인물 추가 → 수동 사진 연결 저장·표시.
+2. 실제 사람 fixture에서 얼굴 3개 검출 → 선택한 얼굴 1개를 새 이름으로 지정 → 나머지 2개 얼굴과 기존 수동 사진 연결 유지.
+3. ‘미확인 인물 다시 확인’에서 남은 미확인 얼굴 2개만 표시. 확인한 이름 연결은 변경하지 않음.
+4. 반려동물 추가·편집·사진 찾기·인식 결과 변경·등록 사진 재분석 후 개체 ID·방향·사진 연결 유지.
+5. 기존 오프라인 인물/반려동물 Worker를 50회 교대로 100회 분석한 뒤 저장 연결 유지.
+6. 기존 갤러리 길게 눌러 드래그 선택/해제·일반 스크롤, 사진/동영상 가져오기·즐겨찾기·앨범·일기 저장·시스템 뒤로·재시작 후 저장 유지.
+
+인물/동물 사진 이동·미확인·제외·다중 이름 지정 등의 전체 10개 UX 흐름은 아래의 브라우저 클릭 검사와 실제 Rust 검증으로 확인했다. 위 Android 흐름은 그중 실제 설치 앱에서 실행한 범위다. 원본 사진이나 다른 개체를 지우는 명령으로 바꾸지 않았다.
+
+추가 통합 수정 파일: `src-tauri/permissions/album-library.toml`(새 명령 9개 허용), `src-tauri/src/database.rs`, `database_tests.rs`(v19 업그레이드), `src/features/people/FaceMatchReview.tsx`, `PeopleView.tsx`(미확인 얼굴 전체 확인과 공통 이름 지정 연결), `src/hooks/useRowSelection.ts`(키보드 클릭 보호), `scripts/manual-photo-smoke.mjs`, `person-repetition-smoke.mjs`, `smoke-android.mjs`, `.github/workflows/android-preview.yml`, `entity-ux-validation.yml`, 앱 버전 파일. 아래에는 UX 변경 전체 파일과 모든 버튼의 평가표가 있다.
+
+검증 증거:
+
+- [Android 빌드·설치 검사 39788566932](https://github.com/HyeSeong123/newAlbum/actions/runs/39788566932): 성공. `Gamjassak-Android-0.9.17`과 `Android-screens-1dd8beecd19f72c7e81e1966cf14968393c4d1e6` 산출물.
+- [UI·Rust·SQLite 검사 39788566968](https://github.com/HyeSeong123/newAlbum/actions/runs/39788566968): 성공. `entity-ux-results-1dd8beecd19f72c7e81e1966cf14968393c4d1e6` 산출물.
+- HTML 비교 보고서에 기존 모바일 변경 전후와 APK 설치 후 `manual-person-registration.png`, `selected-face-new-person.png`, `pet-registered-photo-relearning.png`를 함께 포함했다.
+
+미검증: 실제 arm64 휴대폰 설치, TalkBack, 실제 휴대폰 성능·전체 앱 최고 메모리, 실제 가족/반려동물 식별 정확도, 실사용자 참여 실험. arm64 APK는 빌드·서명을 검사했고, 설치·클릭 종단 검사는 x86_64 에뮬레이터에서 했다. fixture의 분석 성공을 식별 정확도로 보고하지 않는다.
+
+---
+
+## 최초 UX 개선 기록
+
+아래 검사 수와 미검증 표기는 최초 UX 커밋 `f775c46` 시점이다. 최신 APK와 Android 검증 상태는 위의 0.9.17 결과를 기준으로 한다. 상세 버튼 평가·명칭·위치·클릭 흐름 및 최초 변경 전후 비교는 아래에 보존한다.
+
 # 인물 및 반려동물 UX/UI 개선 — 구현 및 검증 보고
 
 기준일: 2026-10-22 (한국 시간)
