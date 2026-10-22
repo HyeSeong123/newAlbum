@@ -126,3 +126,17 @@ test('review drag selection preserves ordinary touch scrolling',async({page,isMo
   }
   await expect(dialog.getByRole('checkbox',{checked:true})).toHaveCount(2);
 });
+
+test('closing after a committed save and failed reload clears the obsolete face selection',async({page})=>{
+  await prepare(page);const dialog=await review(page);await dialog.getByLabel('미확인 얼굴 15 선택').check();
+  await dialog.getByRole('button',{name:'새 이름으로 등록',exact:true}).click();
+  const form=page.getByRole('dialog',{name:'선택한 얼굴로 새 인물 등록',exact:true});await form.getByLabel('새 인물 이름').fill('저장된 인물');
+  await page.evaluate(()=>localStorage.setItem('fail-reload-after-save','1'));
+  await form.getByRole('button',{name:'인물 등록',exact:true}).click();await expect(form.getByRole('alert')).toBeVisible();
+  await form.getByRole('button',{name:'취소',exact:true}).click();await expect(form).toBeHidden();
+  await expect(page.locator('.faceSelectionHeader')).toContainText('0개 선택');
+  await expect(page.getByRole('button',{name:'새 인물 등록',exact:true})).toBeDisabled();
+  const state=await page.evaluate(()=>JSON.parse(localStorage.getItem('unknown-state')!));
+  expect(state.people.filter((person:any)=>person.name==='저장된 인물')).toHaveLength(1);
+  expect(state.faces.find((face:any)=>face.id===15).confirmed).toBe(true);
+});

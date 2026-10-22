@@ -136,9 +136,11 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "" }: { items
 
   function closeFaceRegistration() {
     setRegisteringFaces(null); setError('');
-    if (registeredFacePerson.current !== null) void loadFaceIndex()
-      .then(next => { if (alive.current) setIndex(next); })
-      .catch(() => { if (alive.current) setError('저장은 완료됐지만 목록을 불러오지 못했습니다. 화면을 다시 열어 주세요.'); });
+    if (registeredFacePerson.current !== null) {
+      setChosen([]); setUnknownChosen([]);
+      void loadFaceIndex().then(next => { if (alive.current) setIndex(next); })
+        .catch(() => { if (alive.current) setError('저장은 완료됐지만 목록을 불러오지 못했습니다. 화면을 다시 열어 주세요.'); });
+    }
   }
 
   async function saveSelectedFaces() {
