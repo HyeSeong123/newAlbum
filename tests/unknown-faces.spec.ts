@@ -41,6 +41,8 @@ test('unknown directory shows only unnamed faces and retains person navigation',
   await page.getByRole('button', { name: '인물 관리', exact: true }).click();
   await page.getByRole('button', { name: '얼굴 선택' }).click();
   await page.getByRole('button', { name: '얼굴 선택', exact: true }).click();
+  await expect(page.getByRole('complementary',{name:'이름을 지정한 사람'})).toHaveCount(0);
+  await page.locator('.entityHeader').getByRole('button',{name:'선택 취소',exact:true}).click();
   const directory = page.getByRole('complementary', { name: '이름을 지정한 사람' });
   const unknown = directory.locator('.unknownDirectory');
   await unknown.click();
@@ -67,8 +69,9 @@ test('unknown directory shows only unnamed faces and retains person navigation',
   await page.locator('.entitySelectionCommands').getByRole('button', { name: /^(이름 지정|다른 인물로 변경)$/ }).click();
   await page.getByRole('dialog', {name:'이름 지정',exact:true}).getByLabel('인물 선택').selectOption('1');
   await page.getByRole('dialog', {name:'이름 지정',exact:true}).getByRole('button',{name:'이름 지정',exact:true}).click();
-  await expect(unknown).toContainText('26개 얼굴');
   await expect(page.locator('.personPhoto[data-selection-id="25"]')).toHaveCount(0);
+  await page.locator('.entityHeader').getByRole('button',{name:'선택 취소',exact:true}).click();
+  await expect(unknown).toContainText('26개 얼굴');
   await directory.getByRole('button', { name: '아버님 사진 2장', exact: true }).click();
   await expect(page.locator('.personMediaGrid .personPhoto')).toHaveCount(2);
   await expect(page.locator('.faceSelectionActions')).toHaveCount(0);
@@ -86,6 +89,7 @@ test('unknown directory shows only unnamed faces and retains person navigation',
 
   await page.getByRole('button', { name: '얼굴 제외', exact: true }).click();
   await expect(page.getByText('이름을 붙일 사람이 없습니다.', { exact: true })).toBeVisible();
+  await page.locator('.entityHeader').getByRole('button',{name:'선택 취소',exact:true}).click();
   await expect(directory).toBeVisible();
   await expect(page.locator('.personTile, .personPhoto')).toHaveCount(0);
   await expect(unknown).toContainText('0개 얼굴');
