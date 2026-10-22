@@ -7,6 +7,7 @@ async function back(page:Page) { await page.keyboard.press('Escape'); }
 test('photo selection actions stay reachable and Back cancels the mode before leaving',async({page})=>{
   await auditLibrary(page);await go(page,'사진 기록');await page.getByRole('button',{name:'선택',exact:true}).click();
   const bar=page.getByRole('region',{name:'선택한 항목 관리'});
+  await expect(page.getByRole('region',{name:'사진 검색 조건'})).toHaveCount(0);
   await page.locator('.mediaTile').first().click();await expect(bar).toContainText('항목 1개 선택');
   await bar.getByRole('button',{name:'현재 결과 전체 선택 (200개)',exact:true}).click();
   await expect(bar).toContainText('항목 200개 선택');
@@ -17,6 +18,7 @@ test('photo selection actions stay reachable and Back cancels the mode before le
   await page.locator('.mediaTile').first().click();await back(page);
   await expect(page.locator('.libraryView')).toBeVisible();await expect(bar).toHaveCount(0);
   await expect(page.getByRole('button',{name:'선택',exact:true})).toBeVisible();
+  await expect(page.getByRole('region',{name:'사진 검색 조건'})).toBeVisible();
 });
 
 test('Android back and visible cancel retain the current person and pet detail',async({page,isMobile})=>{

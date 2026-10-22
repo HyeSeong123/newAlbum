@@ -105,10 +105,10 @@ export function Library({
   return (
     <div className="libraryView">
       <div className="panelHeader collectionTools">
-        {viewTabs}
+        {!selectionMode && viewTabs}
       </div>
       <section id="photo-panel-grid" role="tabpanel" aria-labelledby="photo-tab-grid">
-      <section className="librarySearchPanel" aria-label="사진 검색 조건">
+      {!selectionMode && <section className="librarySearchPanel" aria-label="사진 검색 조건">
         <div className="librarySearchHead">
           <div><h2>검색 조건</h2><span>{activeFilterCount + Number(Boolean(query.trim())) ? `${activeFilterCount + Number(Boolean(query.trim()))}개 조건 적용 중` : "원하는 기록을 찾아보세요"}</span></div>
           <div className="librarySearchActions">
@@ -131,7 +131,7 @@ export function Library({
         <label className="filterCheck"><input type="checkbox" checked={favoritesOnly} onChange={(event) => setFavoritesOnly(event.target.checked)} />즐겨찾기만</label>
         <label className="filterCheck"><input type="checkbox" checked={commentsOnly} onChange={(event) => setCommentsOnly(event.target.checked)} />댓글 있는 사진만</label>
       </section>}
-      </section>
+      </section>}
       <div className="libraryResultsBar"><strong aria-live="polite">검색 결과 {visibleCollection.length}개</strong><button className={selectionMode ? "selectionToggle activeAction" : "selectionToggle"} aria-pressed={selectionMode} onClick={() => { setBulkRegionOpen(false); onToggleSelectionMode(); }}><CheckSquare size={17} />{selectionMode ? "선택 취소" : "선택"}</button></div>
       {selectionMode && (
         <EntitySelectionBar className="selectionDock" count={selectedCount} unit="항목" allLabel={`현재 결과 전체 선택 (${visibleCollection.length}개)`} onAll={() => onSelectAll(visibleCollection.map(item => item.id))} onClear={onClearSelection} onClose={onToggleSelectionMode}>

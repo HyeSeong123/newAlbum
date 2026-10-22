@@ -31,3 +31,5 @@
 }
 
 .entitySelectionBar.diaryBulk button, .entitySelectionBar.selectionDock button { min-height:44px; }
+
+.libraryView .entitySelectionBar.selectionDock { justify-content:stretch; align-items:stretch; }

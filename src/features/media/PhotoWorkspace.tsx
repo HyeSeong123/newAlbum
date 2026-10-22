@@ -75,7 +75,7 @@ export function PhotoView({
       }}><tab.Icon size={16} />{tab.label}</button>)}
     </div>;
   return <div className={`photoWorkspace mode-${mode}`}>
-    {mode === "grid" && <PhotoDateNavigation items={allItems} activeMonth={activeMonth} onChange={onMonthChange} />}
+    {mode === "grid" && !selectionMode && <PhotoDateNavigation items={allItems} activeMonth={activeMonth} onChange={onMonthChange} />}
     {mode !== "grid" && viewTabs}
     {mode === "grid" && <Library
       viewTabs={viewTabs}
@@ -89,7 +89,7 @@ export function PhotoView({
       scopeKey={scopeKey} emptyText={allItems.length ? "조건에 맞는 기록이 없습니다. 다른 월을 선택하거나 검색을 바꿔보세요." : "아직 사진 기록이 없습니다."}
       onDateSearch={() => onMonthChange("all")}
     />}
-    {mode === "grid" && <aside className="quickAlbums" aria-label="내 앨범 미리보기">
+    {mode === "grid" && !selectionMode && <aside className="quickAlbums" aria-label="내 앨범 미리보기">
       <header><h2>내 앨범</h2><button title="새 앨범 만들기" onClick={onNewAlbum}><Plus size={17} />새 앨범</button></header>
       {albums.slice(0, 2).map((album) => <button className="quickAlbum" key={album.id} onClick={() => setQuickAlbumId(album.id)} aria-label={`${album.title} 앨범 열기`}>
         <AlbumCover title={album.title} items={album.items} color={album.coverColor} />
