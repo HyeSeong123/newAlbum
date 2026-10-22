@@ -583,8 +583,7 @@ try {
       && menu.left >= 9 && menu.right <= innerWidth - 9 && menu.bottom <= innerHeight - 9;
   })).toBe(true);
   await captureScreen('pet-anchored-menu');
-  await petHeader.getByRole('button', { name:'반려동물 관리', exact:true }).click();
-  await petHeader.getByRole('button', { name:'이름·사진 수정', exact:true }).click();
+  await page.getByRole('button', { name:'이름·사진 수정', exact:true }).click();
   await expect(page.getByRole('dialog', { name:'반려동물 편집', exact:true })).toBeVisible();
   await page.getByRole('dialog', { name:'반려동물 편집', exact:true }).getByTitle('닫기', { exact:true }).click();
   console.log('People overview and pet detail controls fit Android; pet registration, anchored menu and editing use native storage.');
@@ -616,8 +615,8 @@ try {
   // Neither importing nor saving a profile authorizes background inference.
   assert.equal(await page.evaluate(id => window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),petPhoto.id),null);
   assert.equal((await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('list_pet_jobs'))).pending,0);
-  await page.getByRole('button',{name:'등록된 사진에서 찾기',exact:true}).click();
-  const searchDialog=page.getByRole('dialog',{name:'등록된 사진에서 찾기',exact:true});
+  await page.getByRole('button',{name:'반려동물 사진 찾기',exact:true}).click();
+  const searchDialog=page.getByRole('dialog',{name:'반려동물 사진 찾기',exact:true});
   await searchDialog.getByRole('button',{name:'사진 찾기 시작',exact:true}).click();
   const petWaitStarted = Date.now();
   await expect.poll(async () => {
@@ -653,7 +652,7 @@ try {
   const beforeFaceSave=await page.evaluate(id=>window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),petPhoto.id);
   assert.equal(beforeFaceSave.detections.find(d=>d.id===dog.id).faceAppearance?.length??0,0,'Preview must not save features or change identity links');
   assert.equal(beforeFaceSave.detections.find(d=>d.id===dog.id).pet_id,registeredPet.id);
-  await faceCard.getByRole('button',{name:'확인 저장',exact:true}).click();
+  await faceCard.getByRole('button',{name:'변경 저장',exact:true}).click();
   await expect.poll(async()=>{
     const scan=await page.evaluate(id=>window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),petPhoto.id);
     return scan.detections.find(d=>d.id===dog.id)?.faceAppearance?.length;
