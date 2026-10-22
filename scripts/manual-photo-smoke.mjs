@@ -50,7 +50,9 @@ export async function verifyInstalledManualPhotos(page, mediaId, pet, capture) {
   assert.ok(named.faces.some(face=>face.id===selectedId&&face.person_id===added.id&&face.confirmed));
   assert.deepEqual(named.people.find(person=>person.id===registered.id).media_ids,[mediaId]);
   await capture('selected-face-new-person');
-  await page.locator('.entityHeader').getByRole('button',{name:'선택 취소',exact:true}).click();
+  await promisify(execFile)('adb',['shell','input','keyevent','4']);
+  await expect(page.locator('.peopleView h2')).toHaveText('미확인 인물');
+  await expect(page.locator('.entitySelectionBar')).toHaveCount(0);
   await page.getByRole('button',{name:'인물별 보기',exact:true}).click();
   await page.getByRole('button',{name:'미확인 인물 다시 확인',exact:true}).click();
   review=page.getByRole('dialog',{name:'미확인 인물 다시 확인',exact:true});

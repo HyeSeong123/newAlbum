@@ -3,7 +3,7 @@ name: Android preview APK
 on:
   workflow_dispatch:
   push:
-    branches: [feature/warm-journal-v2, feature/gamjassak-native-ai, feature/gamjassak-audit-refactor, feature/people-pets-ux-android-20261022, master]
+    branches: [feature/warm-journal-v2, feature/gamjassak-native-ai, feature/gamjassak-audit-refactor, feature/people-pets-ux-android-20261022, feature/app-ux-20261023, master]
     paths:
       - 'src/**'
       - 'public/**'
@@ -26,6 +26,7 @@ on:
       - 'scripts/pet-runtime-benchmark.mjs'
       - 'scripts/smoke-android.mjs'
       - 'scripts/manual-photo-smoke.mjs'
+      - 'scripts/app-ux-smoke.mjs'
       - 'scripts/gallery-smoke.mjs'
       - 'package*.json'
       - 'vite.config.ts'
@@ -170,6 +171,7 @@ jobs:
             test-results/android-smoke/person-security-smoke.json
             test-results/android-smoke/gallery-smoke.json
             test-results/android-smoke/manual-photos-smoke.json
+            test-results/android-smoke/app-ux-smoke.json
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: failure()

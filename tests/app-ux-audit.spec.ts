@@ -42,7 +42,9 @@ test('capture current app tasks and record expectations before actions', async (
   await page.getByRole('button',{name:'가을 산책 일기 메뉴',exact:true}).click();
   await shot('08-diary-menu','더보기 메뉴가 누른 버튼 옆에서 열리고 일기 수정을 선택한다.');
   await page.getByRole('button',{name:'일기 수정',exact:true}).click();
+  await page.getByLabel('일기 사진 파일').setInputFiles('tests/fixtures/pet-dog.jpg');
   await shot('09-diary-editor','사진 삭제는 원본 삭제인지 첨부 해제인지 분명해야 한다.');
+  page.once('dialog',dialog=>dialog.accept());
   await page.getByRole('button',{name:'닫기',exact:true}).click();
   await page.getByRole('button',{name:/^(일기 선택|선택)$/,exact:true}).click();
   await page.locator('.diaryOpen').first().click();

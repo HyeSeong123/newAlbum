@@ -77,7 +77,8 @@ test('diary selection links the album and Android Back first returns to its list
 test('diary photo detach and cancel preserve the stored diary and source photo',async({page})=>{
   await page.goto('/');await go(page,'일기장');await page.getByRole('button',{name:'첫 일기 쓰기',exact:true}).click();
   const dialog=page.getByRole('dialog',{name:'새 일기',exact:true});await dialog.getByLabel('제목',{exact:true}).fill('사진과 하루');
-  await dialog.getByLabel('일기 사진 파일').setInputFiles('tests/fixtures/pet-dog.jpg');
+  const chooser=page.waitForEvent('filechooser');await dialog.getByRole('button',{name:'사진 추가',exact:true}).click();
+  await (await chooser).setFiles('tests/fixtures/pet-dog.jpg');
   await expect(dialog.getByRole('button',{name:'1번째 사진 첨부 해제',exact:true})).toBeVisible();
   await dialog.getByRole('button',{name:'일기 저장',exact:true}).click();await page.locator('.diaryOpen').click();
   await page.getByRole('button',{name:'1번째 사진 첨부 해제',exact:true}).click();
@@ -112,12 +113,12 @@ test('whole menu reveals every destination and retapping current view keeps sele
   await expect(page.locator('.selectionDock')).toContainText('항목 1개 선택');
 });
 
-for(const width of [320,360,393])test(`bottom actions and full menu fit ${width}px`,async({page,isMobile})=>{
-  test.skip(!isMobile,'Phone geometry.');await page.setViewportSize({width,height:740});await auditLibrary(page);
+for(const width of [320,360,393,851])test(`bottom actions and full menu fit ${width}px`,async({page,isMobile})=>{
+  test.skip(!isMobile,'Phone geometry.');const height=width===851?393:740;await page.setViewportSize({width,height});await auditLibrary(page);
   await page.getByRole('button',{name:'전체 메뉴',exact:true}).click();const menu=page.locator('.actionMenuPanel');
   const bounds=(await menu.boundingBox())!;expect(bounds.x).toBeGreaterThanOrEqual(9);expect(bounds.x+bounds.width).toBeLessThanOrEqual(width-9);
   await menu.getByRole('button',{name:'사진 기록',exact:true}).click();await page.getByRole('button',{name:'선택',exact:true}).click();
   await page.locator('.mediaTile').first().click();const bar=page.locator('.selectionDock');const b=(await bar.boundingBox())!;
-  expect(b.x).toBeGreaterThanOrEqual(0);expect(b.x+b.width).toBeLessThanOrEqual(width);expect(b.y+b.height).toBeLessThanOrEqual(740);
+  expect(b.x).toBeGreaterThanOrEqual(0);expect(b.x+b.width).toBeLessThanOrEqual(width);expect(b.y+b.height).toBeLessThanOrEqual(height);
   for(const control of await bar.getByRole('button').all()){const r=(await control.boundingBox())!;expect(r.height).toBeGreaterThanOrEqual(44);}
 });

@@ -1,3 +1,4 @@
+import { verifyInstalledAppUx } from './app-ux-smoke.mjs';
 import { verifyInstalledPersonRuntime } from './person-runtime-benchmark.mjs';
 import { verifyInstalledGallery } from './gallery-smoke.mjs';
 import { verifyInstalledManualPhotos } from './manual-photo-smoke.mjs';
@@ -505,7 +506,7 @@ try {
   await reader.locator('.albumPagePhoto:has(.mediaImage)').first().click();
   const photoDetail = page.getByRole('dialog', { name:'사진 상세', exact:true });
   for (const label of ['해상도', '파일 크기', '조회 수']) await expect(photoDetail.getByText(label, { exact:true })).toHaveCount(0);
-  const favoriteControl = photoDetail.getByRole('button', { name:'즐겨찾기', exact:true });
+  const favoriteControl = photoDetail.getByTitle('즐겨찾기', {exact:true});
   await favoriteControl.click();
   await expect(photoDetail.locator('.favoritePhotoBadge svg')).toHaveCSS('color', 'rgb(216, 62, 82)');
   await expect.poll(() => page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('list_media')).some(item => item.favorite))).toBe(true);
@@ -695,6 +696,8 @@ try {
   const manualPhotoSmoke=await verifyInstalledManualPhotos(page,petPhoto.id,registeredPet,captureScreen);
   await writeFile(join(output,'manual-photos-smoke.json'),JSON.stringify(manualPhotoSmoke,null,2));
   console.log('Manual person membership, unknown-face review/new naming and pet reanalysis preserve names, links and object IDs: OK');
+  const appUxSmoke=await verifyInstalledAppUx(page,petPhoto.id,registeredPet,()=>adb('shell','input','keyevent','4'),captureScreen);
+  await writeFile(join(output,'app-ux-smoke.json'),JSON.stringify(appUxSmoke,null,2));
   const repetitionSmoke = await verifyInstalledRepetitionMeasurement(page, petPhoto.id, thumbnailPath);
   await writeFile(join(output,'person-repetition-smoke.json'),JSON.stringify({...repetitionSmoke,environment:'Android API 36 x86_64 emulator'},null,2));
   await adb('shell','svc','wifi','enable');
@@ -704,6 +707,8 @@ try {
   await writeFile(join(output,'pet-runtime-benchmark.json'),JSON.stringify({...runtimeBenchmark,environment:'Android API 36 x86_64 emulator',devicePerformanceMeasured:false},null,2));
   console.log('Android pet runtime benchmark (NOT phone performance): '+JSON.stringify({cpu:runtimeBenchmark.cpu,wasm:runtimeBenchmark.wasm}));
 
+  await adb('shell', 'input', 'keyevent', '4');
+  await expect(page.locator('.petsView h2')).toHaveText('반려동물');
   await adb('shell', 'input', 'keyevent', '4');
   await expect(page.getByRole('heading', { name:'홈', exact:true })).toBeVisible();
   await page.screenshot({ path:join(output, 'home.png') });
@@ -740,6 +745,8 @@ try {
   }
   assert.deepEqual(await page.evaluate(() => window.lifecyclePicker), { completed:true, cancelled:true });
   await page.locator('.navList').getByRole('button', { name:'사진 기록', exact:true }).click();
+  await adb('shell', 'input', 'keyevent', '4');
+  await expect(page.locator('.petsView h2')).toHaveText('반려동물');
   await adb('shell', 'input', 'keyevent', '4');
   await expect(page.getByRole('heading', { name:'홈', exact:true })).toBeVisible();
   await page.evaluate(async mediaId=>{

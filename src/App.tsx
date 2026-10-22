@@ -155,7 +155,10 @@ export function App() {
   }
 
   function navigate(view: View) {
-    if (view === activeView) return;
+    if (view === activeView) {
+      if (view === "Home" || view === "Characters") void characters.refresh();
+      return;
+    }
     setActiveView(view); setPhotoMode("grid"); setMemorySection("rediscover"); setQuery("");
     selection.reset(); setSelectionNotice("");
     if (view === "Home" || view === "Characters") void characters.refresh();
