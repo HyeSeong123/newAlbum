@@ -13,7 +13,7 @@ export function EntityPhotoPicker({ title, photos, name, initialIds = [], automa
 }) {
   const [draftName, setName] = useState(name ?? '');
   const available = useMemo(() => new Set(photos.map(photo => Number(photo.id))), [photos]);
-  const [selected, setSelected] = useState(() => new Set(initialIds.filter(id => available.has(id))));
+  const [selected, setSelected] = useState(() => new Set(initialIds));
   const automatic = useMemo(() => new Set(automaticIds.filter(id => available.has(id))), [automaticIds, available]);
   const [page, setPage] = useState(0), [busy, setBusy] = useState(false), [error, setError] = useState('');
   const lock = useRef(false);

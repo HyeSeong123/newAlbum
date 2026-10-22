@@ -130,6 +130,7 @@
 - DB v17 → v18은 `person.cover_media_id`와 미확인 수동 동물 사진 표를 추가한다. 기존 얼굴 ID, 사진 ID, 이름, 수동 연결, 학습 특징은 교체하지 않는다.
 - 대표 사진을 이동·제외하거나 직접 연결에서 해제하면 유효하지 않은 표지를 정리한다.
 - 저장 실패 시 선택과 이름 초안을 보존한다. 저장은 성공했지만 목록 갱신만 실패한 경우 성공을 분리해 재적용·중복 등록을 줄였다.
+- 반려동물의 이름 변경·대표 사진 변경은 해당 필드만 갱신한다. 이름만 바꾸면서 사진 연결 전체를 다시 쓰지 않는다. 연결 창에서도 현재 화면에 없는 기존 직접 연결을 초기화 과정에서 버리지 않는다.
 - 기존 이름 병합, 얼굴 확인, 앨범 생성, 내보내기, 사진 찾기·중단·재개, 동물 종류·방향·얼굴 영역 수정 기능은 유지했다.
 
 ## 버튼 명칭 변경 요약
@@ -201,7 +202,7 @@ SQLite 검사는 실제 마이그레이션 SQL을 SQLite에서 실행했다. 신
 주요 변경 파일:
 
 - `src/features/people/PeopleWorkspace.tsx`, `PeopleView.tsx`, `FaceMatchReview.tsx`, `faceService.ts`
-- `src/features/pets/PetsView.tsx`, `UnknownPets.tsx`, `PetPhotoSearch.tsx`, `PetPhotoResults.tsx`, `PetAnalysisStatus.tsx`, `usePetAnalysis.ts`
+- `src/features/pets/PetsView.tsx`, `UnknownPets.tsx`, `PetPhotoSearch.tsx`, `PetPhotoResults.tsx`, `PetAnalysisStatus.tsx`, `usePetAnalysis.ts`, `petService.ts`
 - `src/features/entities/EntityAssignmentDialog.tsx`, `EntitySelectionBar.tsx`, `entityService.ts`, `entities.css`
 - `src/components/EntityPhotoPicker.tsx`, `src/hooks/useRowSelection.ts`, `src/mobile-controls.css`
 - `src-tauri/src/entity_management.rs`, `database.rs`, `database_tests.rs`, `faces.rs`, `pet_recognition.rs`, `lib.rs`

@@ -1327,6 +1327,8 @@ pub fn run() {
             entity_management::assign_pet_detections,
             entity_management::list_unknown_pet_items,
             entity_management::set_person_cover_photo,
+            entity_management::rename_pet,
+            entity_management::set_pet_cover_photo,
             entity_management::remove_person_registration,
             entity_management::remove_entity_registrations,
             faces::move_faces,

@@ -26,6 +26,8 @@ async function prepare(page:Page) {
       if(command==='set_faces_excluded'){args.ids.forEach((id:number)=>args.excluded?excluded.add(id):excluded.delete(id));return;}
       if(command==='rename_face_person'){people.find(row=>row.id===args.id).name=args.name;return;}
       if(command==='set_person_cover_photo'){const owner=people.find(row=>row.id===args.personId);owner.cover_media_id=args.mediaId;return;}
+      if(command==='rename_pet'){pets.find(row=>row.id===args.id).name=args.name;return args.id;}
+      if(command==='set_pet_cover_photo'){pets.find(row=>row.id===args.petId).cover_media_id=args.mediaId;return args.petId;}
       if(command==='save_pet'){const id=args.id??Math.max(...pets.map(row=>row.id))+1;const row={id,name:args.name,media_ids:args.mediaIds,cover_media_id:args.coverMediaId};const at=pets.findIndex(pet=>pet.id===id);if(at<0)pets.push(row);else pets[at]=row;return id;}
       if(command==='assign_pet_detections'){const id=args.target??Math.max(...pets.map(row=>row.id))+1;if(args.target===null)pets.push({id,name:args.name,media_ids:[],cover_media_id:null});const owner=pets.find(row=>row.id===id);for(let i=unknown.length-1;i>=0;i--)if(args.ids.includes(unknown[i].id)){owner.media_ids=[...new Set([...owner.media_ids,unknown[i].media_id])];unknown.splice(i,1);}return id;}
       if(command==='edit_entity_photo_links'){

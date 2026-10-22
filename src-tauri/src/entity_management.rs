@@ -124,6 +124,18 @@ pub fn list_unknown_pet_items(app:AppHandle,page:i64)->Result<Vec<UnknownPetItem
     Ok(rows)
 }
 #[tauri::command]
+pub fn rename_pet(app:AppHandle,id:i64,name:String)->Result<i64,String>{
+    let name=name.trim();
+    if name.is_empty() || name.chars().count()>80 {return Err("이름을 1~80자로 입력해 주세요.".into());}
+    if super::open_database(&app)?.execute("UPDATE pet SET name=?1 WHERE id=?2",params![name,id]).map_err(|e|e.to_string())?!=1 {return Err("반려동물을 찾을 수 없습니다.".into());}
+    Ok(id)
+}
+#[tauri::command]
+pub fn set_pet_cover_photo(app:AppHandle,pet_id:i64,media_id:i64)->Result<i64,String>{
+    if super::open_database(&app)?.execute("UPDATE pet SET cover_media_id=?1 WHERE id=?2 AND EXISTS(SELECT 1 FROM pet_media WHERE pet_id=?2 AND media_id=?1)",params![media_id,pet_id]).map_err(|e|e.to_string())?!=1 {return Err("이 반려동물에 연결된 사진을 선택해 주세요.".into());}
+    Ok(pet_id)
+}
+#[tauri::command]
 pub fn set_person_cover_photo(app:AppHandle,person_id:i64,media_id:i64)->Result<(),String>{
     let mut conn=super::open_database(&app)?;
     let conn=conn.transaction().map_err(|e|e.to_string())?;

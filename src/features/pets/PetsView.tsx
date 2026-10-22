@@ -7,7 +7,7 @@ import { ActionMenu } from '../../components/ActionMenu';
 import { EntityEditorDialog } from '../../components/EntityEditorDialog';
 import { useRowSelection } from '../../hooks/useRowSelection';
 import { isTauriRuntime } from '../../services/tauriMediaService';
-import { deletePet, loadPets, Pet, savePet } from './petService';
+import { deletePet, loadPets, Pet, savePet, renamePet, setPetCoverPhoto } from './petService';
 import './pets.css';
 import { PetPhotoSearch } from './PetPhotoSearch';
 import type { PetAnalysis } from './usePetAnalysis';
@@ -139,7 +139,7 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
 function PetEditor({ pet, photos, mode='all', onClose, onSaved }: { mode?: 'all'|'name'|'cover'|'photos'; pet: Pet; photos: MediaItem[]; onClose: () => void; onSaved: (id: number) => Promise<void> }) {
   const [name, setName] = useState(pet.name);
   const savedId=useRef<number|null>(pet.id || null), savingLock=useRef(false);
-  const [selected, setSelected] = useState(() => pet.media_ids.filter((id) => photos.some((photo) => Number(photo.id) === id)));
+  const [selected, setSelected] = useState(() => [...pet.media_ids]);
   const [cover, setCover] = useState(pet.cover_media_id);
   const [page, setPage] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -155,7 +155,7 @@ function PetEditor({ pet, photos, mode='all', onClose, onSaved }: { mode?: 'all'
     if (savingLock.current || !name.trim()) return;
     savingLock.current=true;setBusy(true); setError('');
     try {
-      const id = await savePet(savedId.current, name.trim(), selected, actualCover);
+      const id = mode==='name' && pet.id ? await renamePet(pet.id,name.trim()) : mode==='cover' && pet.id && actualCover!==null ? await setPetCoverPhoto(pet.id,actualCover) : await savePet(savedId.current, name.trim(), selected, actualCover);
       savedId.current=id;
       await onSaved(id); onClose();
     } catch { setError('반려동물 정보를 저장하지 못했습니다. 입력한 이름과 선택한 사진은 화면에 남아 있습니다. 다시 저장해 주세요.'); }
