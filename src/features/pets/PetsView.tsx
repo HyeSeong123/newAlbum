@@ -102,9 +102,9 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
       </div>
     </div>
     {!desktop && <p role="status">반려동물 등록·인식은 감자싹 앱에서 사용할 수 있습니다.</p>}
-    {desktop && <div className="entityQuickActions">{pet ? <><button disabled={busy} onClick={()=>editPet('photos')}><Plus size={18}/>사진 연결</button><button disabled={busy} onClick={()=>editPet('name')}><Pencil size={18}/>이름 변경</button></> : <>{!unknown && <button disabled={busy || !matchingPets.length} onClick={()=>{setSelecting(!selecting);setChosen([]);}}>선택</button>}<button className={unknown?'active':''} onClick={()=>{setUnknown(true);setActive(null);}}>미확인 반려동물</button></>}</div>}
+    {desktop && !selecting && <div className="entityQuickActions">{pet ? <><button disabled={busy} onClick={()=>editPet('photos')}><Plus size={18}/>사진 연결</button><button disabled={busy} onClick={()=>editPet('name')}><Pencil size={18}/>이름 변경</button></> : <>{!unknown && <button disabled={busy || !matchingPets.length} onClick={()=>{setSelecting(!selecting);setChosen([]);}}>선택</button>}<button className={unknown?'active':''} onClick={()=>{setUnknown(true);setActive(null);}}>미확인 반려동물</button></>}</div>}
     {!pet && !unknown && <label className="entitySort">정렬<select aria-label="반려동물 정렬" value={sort} onChange={event=>setSort(event.target.value)}><option value="name">이름순</option><option value="photos">사진 많은 순</option></select></label>}
-    {desktop && pets.length > 0 && <div className="petFindPhotos"><div><strong>{pet ? `${pet.name}의 다른 사진도 찾아보세요` : '반려동물 사진을 한곳에 모으세요'}</strong><p className="petMatchNotice">버튼을 누르면 연결한 사진과 비교해 비슷한 사진을 찾아요.</p></div><button disabled={loading || !photos.length} onClick={() => setReviewing(true)}><ScanSearch size={18}/>반려동물 사진 찾기</button></div>}
+    {desktop && !selecting && !unknown && pets.length > 0 && <div className="petFindPhotos"><div><strong>{pet ? `${pet.name}의 다른 사진도 찾아보세요` : '반려동물 사진을 한곳에 모으세요'}</strong><p className="petMatchNotice">버튼을 누르면 연결한 사진과 비교해 비슷한 사진을 찾아요.</p></div><button disabled={loading || !photos.length} onClick={() => setReviewing(true)}><ScanSearch size={18}/>반려동물 사진 찾기</button></div>}
     {!reviewing && <PetAnalysisStatus analysis={analysis} onReview={() => setReviewing(true)} />}
 
     {loading && <p role="status"><LoaderCircle className="spinIcon" size={18} />반려동물 정보를 불러오는 중</p>}

@@ -77,7 +77,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive 
   const personFaces = active === null ? EMPTY_FACES : lookup.byPerson.get(active) ?? EMPTY_FACES;
   const faces = allFaces ? index.faces : showUnknownFaces ? unidentifiedFaces : personFaces;
   const faceItems = useMemo(() => mediaForFaces(items, faces), [items, faces]);
-  const showDirectory = !allFaces && (Boolean(person) || showUnknownFaces);
+  const showDirectory = !allFaces && !selecting && !photoSelecting && (Boolean(person) || showUnknownFaces);
   const showManualPhotos = Boolean(person && !selecting && !showFaceThumbnails);
   const personItems = useMemo(() => mediaForFaces(items, personFaces, person?.media_ids), [items, personFaces, person]);
   const automaticIds = useMemo(() => [...new Set(personFaces.map(face => face.media_id))], [personFaces]);
@@ -255,7 +255,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive 
       </div>
     </div>
     {!desktop && <p role="status">얼굴 찾기는 감자싹 앱에서 사용할 수 있습니다.</p>}
-    {desktop && <div className="entityQuickActions">
+    {desktop && !selecting && !photoSelecting && <div className="entityQuickActions">
       {person ? <><button disabled={blocked} onClick={openManualPhotos}><ImagePlus size={18} />사진 연결</button><button disabled={blocked} onClick={() => { setName(person.name); setNameMode('new'); setEditingName(true); }}><Pencil size={18} />{person.name.trim() ? '이름 변경' : '이름 지정'}</button></> : <>
       {!showFaceThumbnails && <button disabled={blocked || !matchingPeople.length} onClick={()=>{setPeopleSelecting(!peopleSelecting);setSelectedPeople([]);setSelectingUnknown(false);setUnknownChosen([]);}}>선택</button>}
       <button className={showUnknownFaces ? 'active' : ''} disabled={blocked} onClick={() => openFaceView('unknown')}>미확인 인물 · {unidentifiedFaces.length}</button>

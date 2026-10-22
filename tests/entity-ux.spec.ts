@@ -62,7 +62,7 @@ test('photo reassignment includes source identity and leaves another person in t
   await prepare(page);await page.getByRole('button',{name:'가족 2장',exact:true}).click();await page.locator('.peopleView > .entityHeader').getByRole('button',{name:'선택',exact:true}).click();await page.getByRole('button',{name:'사진 선택',exact:true}).first().click();
   await page.getByRole('button',{name:'다른 인물로 변경',exact:true}).click();const dialog=page.getByRole('dialog',{name:'이름 지정',exact:true});await dialog.getByLabel('인물 선택').selectOption('2');await dialog.getByRole('button',{name:'이름 지정',exact:true}).click();
   expect(await calls(page,'edit_entity_photo_links')).toEqual([{kind:'person',source:1,ids:[1],action:'move',target:2,name:null}]);
-  await expect(page.locator('.peopleView > .entityHeader')).toContainText('사진 1장');await expect(page.getByRole('complementary').getByRole('button',{name:'친구 사진 1장',exact:true})).toBeVisible();
+  await expect(page.locator('.peopleView > .entityHeader')).toContainText('사진 1장');await page.locator('.entityHeader').getByRole('button',{name:'선택 취소',exact:true}).click();await expect(page.getByRole('complementary').getByRole('button',{name:'친구 사진 1장',exact:true})).toBeVisible();
   expect(await calls(page,'delete_media')).toEqual([]);
 });
 
