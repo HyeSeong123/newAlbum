@@ -744,9 +744,11 @@ try {
     if (await page.evaluate(() => window.lifecyclePicker.completed)) break;
   }
   assert.deepEqual(await page.evaluate(() => window.lifecyclePicker), { completed:true, cancelled:true });
+  // Warm resume starts on Home. A root photo screen returns to Home;
+  // the pet detail/list layers were verified before backgrounding the app.
+  await expect(page.getByRole('heading', { name:'홈', exact:true })).toBeVisible();
   await page.locator('.navList').getByRole('button', { name:'사진 기록', exact:true }).click();
-  await adb('shell', 'input', 'keyevent', '4');
-  await expect(page.locator('.petsView h2')).toHaveText('반려동물');
+  await expect(page.locator('.libraryView')).toBeVisible();
   await adb('shell', 'input', 'keyevent', '4');
   await expect(page.getByRole('heading', { name:'홈', exact:true })).toBeVisible();
   await page.evaluate(async mediaId=>{
