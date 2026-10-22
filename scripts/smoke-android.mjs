@@ -695,7 +695,7 @@ try {
   console.log('Offline Android person Worker and native persistence (NOT identity accuracy or phone performance): '+JSON.stringify(personSmoke));
   const manualPhotoSmoke=await verifyInstalledManualPhotos(page,petPhoto.id,registeredPet,captureScreen);
   await writeFile(join(output,'manual-photos-smoke.json'),JSON.stringify(manualPhotoSmoke,null,2));
-  console.log('Manual person/pet photo membership and fresh registered-photo relearning preserve names, links and object IDs: OK');
+  console.log('Manual person membership, unknown-face review/new naming and pet reanalysis preserve names, links and object IDs: OK');
   const repetitionSmoke = await verifyInstalledRepetitionMeasurement(page, petPhoto.id, thumbnailPath);
   await writeFile(join(output,'person-repetition-smoke.json'),JSON.stringify({...repetitionSmoke,environment:'Android API 36 x86_64 emulator'},null,2));
   await adb('shell','svc','wifi','enable');

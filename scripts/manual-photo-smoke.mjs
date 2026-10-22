@@ -24,10 +24,13 @@ export async function verifyInstalledManualPhotos(page, mediaId, pet, capture) {
   await expect(page.getByRole('button', { name:'등록 사진 다시 분석', exact:true })).toHaveCount(0);
   // Use an actual packaged human-photo fixture through the existing SAF tree
   // grant. This verifies the installed UI/SQLite contract, not identity accuracy.
-  await promisify(execFile)('adb',['push',resolve('node_modules/@vladmandic/face-api/demo/sample1.jpg'),'/sdcard/Download/GamjassakGPS/person-smoke.jpg']);
+  await promisify(execFile)('adb',['push',resolve('node_modules/@vladmandic/face-api/demo/sample1.jpg'),'/sdcard/Download/GamjassakGPS/person-smoke.jpg'],{timeout:60_000,maxBuffer:1024*1024});
   const uri='content://com.android.externalstorage.documents/tree/primary%3ADownload%2FGamjassakGPS/document/primary%3ADownload%2FGamjassakGPS%2Fperson-smoke.jpg';
   const imported=await page.evaluate(uri=>window.__TAURI_INTERNALS__.invoke('register_paths',{paths:[uri]}),uri);
-  assert.equal(imported.length,1);const faceMediaId=imported[0].id;
+  // register_paths returns the complete library, including the earlier dog
+  // and video fixtures; isolate the newly imported test photo by its name.
+  const facePhoto=imported.find(item=>item.file_path.endsWith('/person-smoke.jpg'));
+  assert.ok(facePhoto);const faceMediaId=facePhoto.id;
   await page.reload();await page.getByRole('button',{name:'사람과 반려동물',exact:true}).click();
   await page.locator('.peopleView .toolbarGroup').getByRole('button',{name:'새 사진에서 사람 찾기',exact:true}).click();
   await expect(page.locator('.peopleView .faceProgress')).toContainText('사진 1장을 확인했습니다.',{timeout:120_000});
