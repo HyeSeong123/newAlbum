@@ -9,7 +9,7 @@ export default defineConfig({
     '**/entity-ux.spec.ts', '**/entity-visuals.spec.ts', '**/people-controls.spec.ts',
     '**/unknown-faces.spec.ts', '**/manual-photos.spec.ts', '**/pets.spec.ts',
     '**/pet-review.spec.ts', '**/people.spec.ts', '**/export-media.spec.ts',
-    '**/mobile-polish.spec.ts',
+    '**/mobile-polish.spec.ts', '**/mobile-layout.spec.ts',
   ],
   grepInvert: /local models detect faces|analysis keeps saved photos|main action retries a completed photo/,
   workers: 2,
