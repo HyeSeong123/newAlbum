@@ -2,7 +2,13 @@ import assert from 'node:assert/strict';
 import { expect } from '@playwright/test';
 
 // Real installed WebView actions and SQLite calls; no mocked IPC or app-only test APIs.
-export async function verifyInstalledAppUx(page, mediaId, pet, back, capture) {
+export async function verifyInstalledAppUx(page, mediaId, pet, back, captureNative) {
+  async function capture(name) {
+    // DOM assertions can finish before Android's compositor presents the frame.
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await new Promise(resolve => setTimeout(resolve, 200));
+    await captureNative(name);
+  }
   const petHeading=await page.locator('.petsView h2').innerText();
   await page.getByRole('button',{name:'선택',exact:true}).click();
   await page.getByRole('button',{name:'사진 선택',exact:true}).first().click();
