@@ -35,7 +35,9 @@ jobs:
       - name: Capture unchanged 0.9.17 controls with current capture checks
         run: |
           git worktree add --detach "$RUNNER_TEMP/app-ux-before" 8e7f343ba03dc20aa6146f1c6b7e5cf4555c197b
-          ln -s "$GITHUB_WORKSPACE/node_modules" "$RUNNER_TEMP/app-ux-before/node_modules"
+          # Keep font files inside the baseline Vite root so its file-system policy
+          # cannot block local Noto font assets through an external symlink.
+          cp -a "$GITHUB_WORKSPACE/node_modules" "$RUNNER_TEMP/app-ux-before/node_modules"
           cp playwright.app-ux.config.ts "$RUNNER_TEMP/app-ux-before/"
           cp tests/app-ux-audit.spec.ts "$RUNNER_TEMP/app-ux-before/tests/"
           cd "$RUNNER_TEMP/app-ux-before"
