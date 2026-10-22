@@ -1325,6 +1325,7 @@ pub fn run() {
             faces::rename_face_person,
             faces::set_person_cover_face,
             faces::move_faces,
+            faces::register_person_from_faces,
             faces::clear_face_index
         ])
         .build(tauri::generate_context!())

@@ -389,6 +389,40 @@ pub fn set_person_cover_face(app: AppHandle, person_id: i64, face_id: i64) -> Re
     set_cover_face(&super::open_database(&app)?, person_id, face_id)
 }
 
+fn assign_faces(tx: &rusqlite::Transaction<'_>, ids: &[i64], person_id: i64) -> Result<(), String> {
+    for id in ids {
+        tx.execute("UPDATE person SET cover_face_id = NULL WHERE cover_face_id = ?1 AND id<>?2", params![id,person_id]).map_err(|e|e.to_string())?;
+        if tx.execute("UPDATE detected_face SET person_id = ?1, confirmed = 1 WHERE id = ?2", params![person_id,id]).map_err(|e|e.to_string())? == 0 {
+            return Err("얼굴을 찾을 수 없습니다.".into());
+        }
+    }
+    Ok(())
+}
+
+fn register_faces(conn: &mut Connection, ids: Vec<i64>, name: &str) -> Result<i64, String> {
+    let name = name.trim();
+    if ids.is_empty() || ids.len() > 100_000 || name.is_empty() || name.chars().count() > 80 {
+        return Err("얼굴을 선택하고 이름을 1~80자로 입력해 주세요.".into());
+    }
+    let tx = conn.transaction().map_err(|e|e.to_string())?;
+    for id in &ids {
+        if !tx.query_row("SELECT EXISTS(SELECT 1 FROM detected_face WHERE id=?1 AND NOT EXISTS(SELECT 1 FROM excluded_face WHERE face_id=?1))", [id], |r|r.get::<_,bool>(0)).map_err(|e|e.to_string())? {
+            return Err("선택한 얼굴을 찾을 수 없습니다. 기존 연결은 유지했습니다.".into());
+        }
+    }
+    tx.execute("INSERT INTO person(name,profile_type) VALUES(?1,'face')", [name]).map_err(|e|e.to_string())?;
+    let person_id = tx.last_insert_rowid();
+    assign_faces(&tx, &ids, person_id)?;
+    tx.execute("UPDATE person SET cover_face_id=?1 WHERE id=?2", params![ids[0],person_id]).map_err(|e|e.to_string())?;
+    tx.commit().map_err(|e|e.to_string())?;
+    Ok(person_id)
+}
+
+#[tauri::command]
+pub fn register_person_from_faces(app: AppHandle, ids: Vec<i64>, name: String) -> Result<i64, String> {
+    register_faces(&mut super::open_database(&app)?, ids, &name)
+}
+
 fn reassign(conn: &mut Connection, ids: Vec<i64>, target: Option<i64>) -> Result<(), String> {
     if ids.is_empty() {
         return Err("얼굴을 선택해 주세요.".into());
@@ -405,22 +439,7 @@ fn reassign(conn: &mut Connection, ids: Vec<i64>, target: Option<i64>) -> Result
             tx.last_insert_rowid()
         }
     };
-    for id in ids {
-        tx.execute(
-            "UPDATE person SET cover_face_id = NULL WHERE cover_face_id = ?1 AND id<>?2",
-            params![id,person_id],
-        )
-        .map_err(|e| e.to_string())?;
-        let count = tx
-            .execute(
-                "UPDATE detected_face SET person_id = ?1, confirmed = 1 WHERE id = ?2",
-                params![person_id, id],
-            )
-            .map_err(|e| e.to_string())?;
-        if count == 0 {
-            return Err("얼굴을 찾을 수 없습니다.".into());
-        }
-    }
+    assign_faces(&tx, &ids, person_id)?;
     tx.commit().map_err(|e| e.to_string())
 }
 
@@ -474,6 +493,33 @@ fn clear_index(conn:&mut Connection)->Result<(),String>{
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn selected_faces_register_atomically_without_changing_other_people_or_manual_photos() {
+        let mut c = database();
+        c.execute("INSERT INTO person(id,name,profile_type) VALUES(1,'가족','face'),(2,'','face'),(3,'직접 등록','manual')", []).unwrap();
+        c.execute("INSERT INTO person_photo(person_id,media_id) VALUES(3,2)", []).unwrap();
+        for (id, media, owner, confirmed) in [(11,1,1,true),(12,2,2,false),(13,3,2,false),(14,4,2,false)] {
+            c.execute("INSERT INTO detected_face(id,media_id,person_id,descriptor,thumbnail,confirmed) VALUES(?1,?2,?3,?4,'thumb',?5)", params![id,media,owner,serde_json::to_string(&vec![0.1;128]).unwrap(),confirmed]).unwrap();
+        }
+        c.execute("UPDATE person SET cover_face_id=CASE id WHEN 1 THEN 11 WHEN 2 THEN 12 END", []).unwrap();
+        set_excluded(&mut c, vec![14], true).unwrap();
+        let id = register_faces(&mut c, vec![12,13,12], "  친구  ").unwrap();
+        let index = read_index(&c).unwrap();
+        assert_eq!(index.faces.iter().map(|f|f.id).collect::<Vec<_>>(), vec![11,12,13]);
+        assert_eq!(index.faces[0].person_id,1); assert!(index.faces[0].confirmed);
+        assert!(index.faces[1..].iter().all(|f|f.person_id==id && f.confirmed));
+        let added = index.people.iter().find(|p|p.id==id).unwrap();
+        assert_eq!(added.name,"친구"); assert_eq!(added.cover_face_id,Some(12));
+        assert_eq!(index.people.iter().find(|p|p.id==3).unwrap().media_ids,vec![2]);
+        assert_eq!(c.query_row("SELECT person_id FROM detected_face WHERE id=14",[],|r|r.get::<_,i64>(0)).unwrap(),2);
+        let long_name = "가".repeat(81);
+        for (ids, name) in [(vec![11,999],"새 사람"),(vec![11,14],"새 사람"),(vec![],"새 사람"),(vec![11],"  "),(vec![11],long_name.as_str())] {
+            assert!(register_faces(&mut c, ids, name).is_err());
+        }
+        assert_eq!(c.query_row("SELECT COUNT(*) FROM person",[],|r|r.get::<_,i64>(0)).unwrap(),4);
+        assert_eq!(c.query_row("SELECT cover_face_id FROM person WHERE id=1",[],|r|r.get::<_,i64>(0)).unwrap(),11);
+        assert_eq!(c.query_row("SELECT COUNT(*) FROM media",[],|r|r.get::<_,i64>(0)).unwrap(),4);
+    }
     #[test]
     fn manual_photos_work_without_faces_and_invalid_replacement_rolls_back(){
         let mut c=database();let id=save_person_photos(&mut c,None,"가족",vec![1,1,2]).unwrap();

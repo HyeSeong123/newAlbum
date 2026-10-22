@@ -1,13 +1,14 @@
 .peopleView { display: grid; gap: 20px; }
 .personPhotoGrid.selecting { touch-action: pan-y pinch-zoom; user-select: none; }
-.faceMatchReview { width: min(880px, 100%); max-height: calc(100dvh - 48px); display: flex; flex-direction: column; background: #fff; border-radius: 8px; overflow: hidden; }
-.faceMatchBody { padding: 20px; overflow: auto; }
+.entityEditDialog.faceMatchReview { width: min(880px, 100%); }
+.faceMatchBody { padding: 20px; min-height: 0; overflow: auto; }
 .faceMatchGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 20px; }
 .faceMatchItem { display: grid; gap: 10px; min-width: 0; cursor: pointer; }
+.faceMatchItem > label { display: grid; gap: 10px; cursor: pointer; }
 .faceMatchItem img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; }
 .faceMatchItem span { display: flex; align-items: center; gap: 8px; overflow-wrap: anywhere; }
 .faceMatchItem input { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--primary); }
-.faceMatchFooter { padding: 16px 20px; border-top: 1px solid var(--border); justify-content: flex-end; }
+.faceMatchFooter { padding: 16px 20px; border-top: 1px solid var(--border); justify-content: flex-end; flex-shrink: 0; }
 .peopleView h2 { margin: 0; }
 .peopleActions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .peopleActions button { min-height: 42px; padding: 8px 14px; border: 1px solid var(--border); border-radius: 9999px; background: #fff; color: var(--text); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }

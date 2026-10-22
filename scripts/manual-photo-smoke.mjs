@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { resolve } from 'node:path';
 import { expect } from '@playwright/test';
 
 // A real imported dog photo intentionally has zero human faces. This tests
-// manual membership and fresh analysis, not a human identity accuracy claim.
+// manual membership plus explicit unknown-face review, not identity accuracy.
 export async function verifyInstalledManualPhotos(page, mediaId, pet, capture) {
   await page.getByRole('button', { name:'사람과 반려동물', exact:true }).click();
   await page.getByRole('tab', { name:'사람', exact:true }).click();
@@ -18,12 +21,42 @@ export async function verifyInstalledManualPhotos(page, mediaId, pet, capture) {
   await expect(page.locator('.peopleView > .entityHeader').getByText('사진 1장', { exact:true })).toBeVisible();
   await expect(page.locator('.peopleView .personMediaGrid').getByRole('button', { name:'사진 상세보기',exact:true })).toHaveCount(1);
   await capture('manual-person-registration');
-  await page.evaluate(()=>{window.manualPersonDiagnostics=0;window.addEventListener('gamjassak-person-diagnostics',()=>window.manualPersonDiagnostics++);});
-  await page.getByRole('button', { name:'등록 사진 다시 분석', exact:true }).click();
-  await expect(page.locator('.peopleView .faceProgress')).toContainText('얼굴 못 찾음 1장', { timeout:120_000 });
-  assert.ok(await page.evaluate(()=>window.manualPersonDiagnostics>0));
-  const next=await read();assert.deepEqual(next.people.find(person=>person.id===registered.id).media_ids,[mediaId]);assert.ok(!next.faces.some(face=>face.person_id===registered.id));
-  await capture('manual-person-relearning-no-face');
+  await expect(page.getByRole('button', { name:'등록 사진 다시 분석', exact:true })).toHaveCount(0);
+  // Use an actual packaged human-photo fixture through the existing SAF tree
+  // grant. This verifies the installed UI/SQLite contract, not identity accuracy.
+  await promisify(execFile)('adb',['push',resolve('node_modules/@vladmandic/face-api/demo/sample1.jpg'),'/sdcard/Download/GamjassakGPS/person-smoke.jpg']);
+  const uri='content://com.android.externalstorage.documents/tree/primary%3ADownload%2FGamjassakGPS/document/primary%3ADownload%2FGamjassakGPS%2Fperson-smoke.jpg';
+  const imported=await page.evaluate(uri=>window.__TAURI_INTERNALS__.invoke('register_paths',{paths:[uri]}),uri);
+  assert.equal(imported.length,1);const faceMediaId=imported[0].id;
+  await page.reload();await page.getByRole('button',{name:'사람과 반려동물',exact:true}).click();
+  await page.locator('.peopleView .toolbarGroup').getByRole('button',{name:'새 사진에서 사람 찾기',exact:true}).click();
+  await expect(page.locator('.peopleView .faceProgress')).toContainText('사진 1장을 확인했습니다.',{timeout:120_000});
+  const beforeNaming=await read();const unknown=beforeNaming.faces.filter(face=>face.media_id===faceMediaId);
+  assert.equal(unknown.length,3);assert.ok(unknown.every(face=>!face.confirmed));
+  await page.getByRole('button',{name:'얼굴 관리',exact:true}).click();
+  await page.getByRole('button',{name:'미확인 얼굴 다시 확인',exact:true}).click();
+  let review=page.getByRole('dialog',{name:'미확인 얼굴 확인',exact:true});
+  await expect(review.getByRole('checkbox')).toHaveCount(3);
+  const selectedId=unknown[0].id;
+  await review.getByLabel(`미확인 얼굴 ${selectedId} 선택`,{exact:true}).check();
+  await review.getByRole('button',{name:'새 이름으로 등록',exact:true}).click();
+  const naming=page.getByRole('dialog',{name:'선택한 얼굴로 새 인물 등록',exact:true});
+  await naming.getByLabel('새 인물 이름').fill('얼굴 선택 검증');
+  await naming.getByRole('button',{name:'인물 등록',exact:true}).click();await expect(naming).toBeHidden();
+  const named=await read();const added=named.people.find(person=>person.name==='얼굴 선택 검증');assert.ok(added);
+  assert.ok(named.faces.some(face=>face.id===selectedId&&face.person_id===added.id&&face.confirmed));
+  assert.deepEqual(named.people.find(person=>person.id===registered.id).media_ids,[mediaId]);
+  await capture('selected-face-new-person');
+  await page.getByRole('button',{name:'사람 목록',exact:true}).click();
+  await page.getByRole('button',{name:'얼굴 관리',exact:true}).click();
+  await page.getByRole('button',{name:'미확인 얼굴 다시 확인',exact:true}).click();
+  review=page.getByRole('dialog',{name:'미확인 얼굴 확인',exact:true});
+  await expect(review.getByRole('checkbox')).toHaveCount(2);
+  await expect(review.getByLabel(`미확인 얼굴 ${selectedId} 선택`,{exact:true})).toHaveCount(0);
+  assert.deepEqual((await read()).faces,named.faces);
+  await capture('unconfirmed-faces-only');await review.getByTitle('닫기',{exact:true}).click();
+  await page.evaluate(id=>window.__TAURI_INTERNALS__.invoke('delete_registered_media',{ids:[id]}),faceMediaId);
+  await page.reload();await page.getByRole('button',{name:'사람과 반려동물',exact:true}).click();
 
   await page.getByRole('tab', { name:'반려동물',exact:true }).click();
   const header=page.locator('.petsView > .entityHeader');
@@ -43,5 +76,5 @@ export async function verifyInstalledManualPhotos(page, mediaId, pet, capture) {
   const kept=after.detections.find(row=>row.id===dog.id);assert.equal(kept.pet_id,pet.id);assert.equal(kept.view,dog.view);assert.equal(kept.viewSource,dog.viewSource);
   assert.deepEqual((await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('list_pets'))).find(row=>row.id===pet.id).media_ids,pet.media_ids);
   await capture('pet-registered-photo-relearning');
-  return {personId:registered.id,mediaId,manualPhotoWithoutFace:true,freshPersonInference:true,freshPetInference:true,petObjectIdPreserved:true,photoLinksPreserved:true};
+  return {personId:registered.id,mediaId,manualPhotoWithoutFace:true,unknownOnlyReview:true,selectedFaceRegistration:true,freshPetInference:true,petObjectIdPreserved:true,photoLinksPreserved:true};
 }

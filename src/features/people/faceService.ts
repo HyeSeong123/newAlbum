@@ -8,12 +8,7 @@ export const emptyFaceIndex: FaceIndex = { people: [], faces: [], scanned: [] };
 export const loadFaceIndex = () => invoke<FaceIndex>('list_face_index');
 export const saveManualPersonPhotos = (personId: number | null, name: string, mediaIds: number[]) => invoke<number>('save_manual_person_photos', { personId, name, mediaIds });
 export const mergeRegisteredPeople = (sources: number[], target: number) => invoke('merge_registered_people', { sources, target });
-export async function relearnPersonPhoto(item: MediaItem, signal: AbortSignal) {
-  const source = await invoke<{source_key:string}>('get_person_scan_source', { mediaId:Number(item.id) });
-  const faces = await analyzePersonImage(convertFileSrc(normalizeLocalFilePath(item.filePath)), signal);
-  signal.throwIfAborted();
-  return invoke<{detected:number;learned:number}>('refresh_face_scan', { mediaId:Number(item.id), faces, sourceKey:source.source_key });
-}
+export const registerPersonFromFaces = (ids: number[], name: string) => invoke<number>('register_person_from_faces', { ids, name });
 export const renamePerson = (id: number, name: string) => invoke('rename_face_person', { id, name });
 export const setPersonCoverFace = (personId: number, faceId: number) => invoke('set_person_cover_face', { personId, faceId });
 export const moveFaces = (ids: number[], target: number | null) => invoke('move_faces', { ids, target });

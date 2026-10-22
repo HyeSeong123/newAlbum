@@ -94,12 +94,15 @@ test('a new person can be registered without faces across picker pages',async({p
   expect(await page.evaluate(()=>localStorage.getItem('person-worker-inputs'))).toBeNull();
 });
 
-test('person relearning bypasses completed scans for one person and the registered list',async({page})=>{
-  await prepare(page);await page.getByRole('button',{name:'수동 등록 1장',exact:true}).click();await page.getByRole('button',{name:'등록 사진 다시 분석',exact:true}).click();
-  await expect(page.locator('.peopleView .faceProgress')).toContainText('다시 분석 완료');expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('person-refresh-ids')!))).toEqual([3]);
-  await expect(page.locator('.peopleView > .entityHeader')).toContainText('사진 1장');
-  await page.getByRole('button',{name:'사람 목록',exact:true}).click();await page.getByRole('button',{name:'등록 목록 다시 분석',exact:true}).click();await expect(page.locator('.peopleView .faceProgress')).toContainText('사진 3장');
-  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('person-refresh-ids')!))).toEqual([3,1,2,3]);expect(await page.evaluate(()=>Number(localStorage.getItem('person-worker-inputs')))).toBe(4);
+test('named manual photos are not offered for repeated analysis',async({page})=>{
+  await prepare(page);await page.getByRole('button',{name:'수동 등록 1장',exact:true}).click();
+  await expect(page.getByRole('button',{name:'등록 사진 다시 분석',exact:true})).toHaveCount(0);
+  await page.getByRole('button',{name:'사람 목록',exact:true}).click();
+  await expect(page.getByRole('button',{name:'등록 목록 다시 분석',exact:true})).toHaveCount(0);
+  await page.getByRole('button',{name:'얼굴 관리',exact:true}).click();
+  await expect(page.getByRole('button',{name:'미확인 얼굴 다시 확인',exact:true})).toBeDisabled();
+  expect(await page.evaluate(()=>localStorage.getItem('person-worker-inputs'))).toBeNull();
+  expect(await page.evaluate(()=>localStorage.getItem('person-refresh-ids'))).toBeNull();
 });
 
 test('pet manual photos can be changed and refreshed through the durable queue',async({page})=>{

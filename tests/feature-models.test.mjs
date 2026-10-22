@@ -23,6 +23,17 @@ test('manual person photo membership combines with detected faces without duplic
   assert.deepEqual(mediaForFaces(items,[],[3]).map(item=>item.id),['3']);
 });
 const ids = (items) => items.map((item) => item.id);
+test('review targets only unnamed, unconfirmed faces without changing existing assignments', () => {
+  const index = {people:[{id:1,name:'가족'},{id:2,name:''},{id:3,name:'  '}],faces:[
+    {id:11,person_id:1,confirmed:true},{id:12,person_id:1,confirmed:false},
+    {id:13,person_id:2,confirmed:false},{id:14,person_id:2,confirmed:true},
+    {id:15,person_id:3,confirmed:false},{id:16,person_id:99,confirmed:false},
+  ],scanned:[1]};
+  const before=structuredClone(index),lookup=indexFaces(index);
+  assert.deepEqual(lookup.unconfirmed.map(face=>face.id),[13,15]);
+  assert.deepEqual(lookup.unidentified.map(face=>face.id),[13,14,15]);
+  assert.deepEqual(index,before);
+});
 
 test('taken date range includes both endpoints and supports open bounds without timezone conversion', () => {
   const items = [photo(1, { takenAt: '2026-05-31' }), photo(2, { takenAt: '2026-06-01', favorite: true }),
