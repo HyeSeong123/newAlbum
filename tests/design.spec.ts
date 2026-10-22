@@ -39,7 +39,7 @@ test('redesigned views fit and retain photo workflows', async ({ page }, info) =
     const actions = await page.locator('.collectionTools').boundingBox();
     expect(Math.abs(tabs!.y + tabs!.height / 2 - actions!.y - actions!.height / 2)).toBeLessThan(4);
   }
-  await page.getByRole('button', { name: '사진 선택', exact: true }).click();
+  await page.getByRole('button', { name: '선택', exact: true }).click();
   const tiles = page.locator('.mediaTile');
   await tiles.first().evaluate(element => element.scrollIntoView({ block: 'center', behavior: 'instant' }));
   const boxes = await tiles.evaluateAll((elements) => elements.map((element) => { const box = element.getBoundingClientRect(); return { x: box.x, y: box.y, width: box.width, height: box.height }; }));
@@ -49,12 +49,12 @@ test('redesigned views fit and retain photo workflows', async ({ page }, info) =
   await page.mouse.move(boxes[secondRow].x + 20, boxes[secondRow].y + 20, { steps: 2 });
   await page.mouse.up();
   await expect(page.locator('.mediaTile.multiSelected')).toHaveCount(secondRow * 2);
-  await page.getByRole('button', { name: '선택 끝내기' }).click();
-  await page.getByRole('button', { name: '사진 선택', exact: true }).click();
+  await page.locator('.libraryResultsBar').getByRole('button', { name: '선택 취소' }).click();
+  await page.getByRole('button', { name: '선택', exact: true }).click();
   await page.locator('.mediaTile').first().click();
   await expect(page.getByRole('button', { name: /앨범 만들기/ })).toBeEnabled();
   await capture('selection');
-  await page.getByRole('button', { name: '선택 끝내기' }).click();
+  await page.locator('.libraryResultsBar').getByRole('button', { name: '선택 취소' }).click();
   await page.locator('.mediaTile').first().click();
   await expect(page.getByRole('dialog', { name: '사진 상세' })).toBeVisible();
   await capture('detail');

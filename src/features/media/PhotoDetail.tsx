@@ -1,3 +1,4 @@
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type CSSProperties } from "react";
 import { ChevronLeft, ChevronRight, Download, Heart, Minus, Plus, RotateCcw, Star, X, ZoomIn, ZoomOut } from "lucide-react";
 import type { MediaItem } from "../../types/media";
@@ -38,6 +39,7 @@ export function DetailModal({
   const photoDrag = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
   const mediaDownload = useMediaDownload(item);
   useModalBehavior(onClose, { onPrev, onNext });
+  const dialogKeyDown = useDialogFocus(dialogRef);
 
   useEffect(() => {
     setZoomViewerOpen(false);
@@ -45,11 +47,6 @@ export function DetailModal({
     photoDrag.current = null;
   }, [item.id]);
 
-  useEffect(() => {
-    const previousFocus = document.activeElement as HTMLElement | null;
-    dialogRef.current?.focus();
-    return () => { if (previousFocus?.isConnected) previousFocus.focus(); };
-  }, []);
 
   useLayoutEffect(() => {
     const viewport = photoViewportRef.current;
@@ -68,17 +65,7 @@ export function DetailModal({
 
   return (
     <div className="modalBackdrop photoLightboxBackdrop" role="presentation">
-      <section ref={dialogRef} className="detailModal photoLightbox photoInspector" role="dialog" aria-modal="true" aria-label="사진 상세" tabIndex={-1} inert={zoomViewerOpen} onKeyDown={(event) => {
-        if (event.key !== "Tab") return;
-        const controls = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input, select, textarea, video[controls], audio[controls]') ?? []);
-        const first = controls[0];
-        const last = controls.at(-1);
-        if (event.shiftKey && (document.activeElement === first || document.activeElement === dialogRef.current)) {
-          event.preventDefault(); last?.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault(); first?.focus();
-        }
-      }}>
+      <section ref={dialogRef} className="detailModal photoLightbox photoInspector" role="dialog" aria-modal="true" aria-label="사진 상세" tabIndex={-1} inert={zoomViewerOpen} onKeyDown={dialogKeyDown}>
         <header className="detailHeader">
           <button className="detailBack" onClick={onClose} aria-label="이전 화면으로 돌아가기"><ChevronLeft size={20} /><span id="detailTitle">돌아가기</span></button>
           <span className="detailDateTitle">{formatJournalDate(item.takenAt)}</span>
@@ -90,7 +77,7 @@ export function DetailModal({
               <strong className="detailActionTitle">사진 작업</strong>
               <div className="detailActionButtons">
               <button className={item.favorite ? "detailFavorite active" : "detailFavorite"} title="즐겨찾기" aria-pressed={item.favorite} onClick={() => onChange({ favorite: !item.favorite })}>
-                <Heart size={18} fill={item.favorite ? "currentColor" : "none"} /><span>즐겨찾기</span>
+                <Heart size={18} fill={item.favorite ? "currentColor" : "none"} /><span>{item.favorite ? "즐겨찾기 해제" : "즐겨찾기 추가"}</span>
               </button>
               {item.fileType === "image" && <button ref={zoomTriggerRef} className="detailExpand" title="확대 보기" onClick={() => setZoomViewerOpen(true)}><ZoomIn size={18} /><span>확대 보기</span></button>}
               {item.fileType === "image" && <button title="원본 다운로드" aria-label="원본 다운로드" disabled={mediaDownload.busy || !mediaDownload.available} onClick={() => void mediaDownload.download()}><Download size={18} /><span>{mediaDownload.busy ? "저장 중" : "다운로드"}</span></button>}

@@ -80,7 +80,7 @@ test('album creation can register an explicit one-day label without changing ori
   await page.goto('/');
   await photoView(page);
   await expect(page.locator('.mediaTile').first()).toBeVisible();
-  await page.getByRole('button', { name: '사진 선택', exact: true }).click();
+  await page.getByRole('button', { name: '선택', exact: true }).click();
   await page.locator('.mediaTile').first().click();
   await page.getByRole('button', { name: '앨범 만들기', exact: true }).click();
   const form = page.getByRole('dialog', { name: '앨범 만들기', exact: true });

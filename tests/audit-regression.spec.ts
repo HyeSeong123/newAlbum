@@ -41,7 +41,7 @@ test('long press then touch drag selects a range without scrolling or a duplicat
 test('album creation traps keyboard focus and restores its opening control', async ({ page }) => {
   await library(page);
   await page.getByRole('button', { name: '사진 기록', exact: true }).click();
-  await page.getByRole('button', { name: '사진 선택', exact: true }).click();
+  await page.getByRole('button', { name: '선택', exact: true }).click();
   await page.getByRole('button', { name: '현재 결과 전체 선택 (200개)', exact: true }).click();
   const opener = page.getByRole('button', { name: '앨범 만들기', exact: true });
   await opener.click();

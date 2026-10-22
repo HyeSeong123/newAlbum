@@ -1,3 +1,4 @@
+import { useBackAction } from '../../hooks/useBackAction';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, LoaderCircle, MoreVertical, PawPrint, Pencil, Plus, RefreshCw, Trash2, X } from 'lucide-react';
 import type { MediaItem } from '../../types/media';
@@ -44,6 +45,11 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
   useEffect(() => { setPage(0); setActive(null); setSelecting(false); setChosen([]); }, [query]);
   useEffect(()=>{setSelecting(false);setChosen([]);},[active,unknown]);
   useEffect(()=>{if(!isActive){setSelecting(false);setChosen([]);setAssigning(false);setEditing(null);setReviewing(false);}},[isActive]);
+  useBackAction(isActive && (selecting || Boolean(pet) || unknown), () => {
+    if (busy) return;
+    if (selecting) {setSelecting(false);setChosen([]);}
+    else {setActive(null);setUnknown(false);setPage(0);}
+  });
   const linked = useMemo(() => petPhotos(photos, pet), [photos, pet]);
   const pages = Math.max(1, Math.ceil((pet ? linked.length : matchingPets.length) / 24));
   const currentPage = Math.min(page, pages - 1);

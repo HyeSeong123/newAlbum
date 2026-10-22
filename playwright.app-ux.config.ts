@@ -1,3 +1,3 @@
 import { defineConfig } from '@playwright/test';
 import base from './playwright.entities.config';
-export default defineConfig({...base,testMatch:['**/app-ux-audit.spec.ts'],workers:1,timeout:90000,reporter:[['list'],['json',{outputFile:'test-results/app-ux-results.json'}]]});
+export default defineConfig({...base,testMatch:['**/app-ux-audit.spec.ts','**/app-ux-regression.spec.ts','**/menu-position.spec.ts','**/diary-photos.spec.ts','**/search-diary.spec.ts','**/photo-detail.spec.ts','**/mutations.spec.ts','**/mobile-layout.spec.ts','**/mobile-polish.spec.ts','**/entity-ux.spec.ts','**/manual-photos.spec.ts','**/pet-review.spec.ts','**/people-controls.spec.ts','**/onboarding-empty.spec.ts','**/photo-locations.spec.ts','**/calendar-registration.spec.ts','**/app.spec.ts','**/journal-preview.spec.ts'],workers:2,timeout:60000,reporter:[['list'],['json',{outputFile:'test-results/app-ux-results.json'}]]});

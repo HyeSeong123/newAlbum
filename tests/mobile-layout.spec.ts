@@ -24,7 +24,7 @@ test('touch swipes scroll selection mode without selecting photos, while taps to
   test.skip(info.project.name !== 'mobile', 'Real touch gestures are checked on the phone profile.');
   await fixture(page);
   await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
-  await page.getByRole('button', { name: '사진 선택', exact: true }).click();
+  await page.getByRole('button', { name: '선택', exact: true }).click();
   const first = page.locator('.mediaTile').first();
   await first.scrollIntoViewIfNeeded();
   const box = (await first.boundingBox())!;
@@ -70,7 +70,7 @@ test('mouse drag selection and keyboard selection still work on desktop', async 
   test.skip(info.project.name !== 'desktop', 'Mouse drag coverage belongs to the desktop profile.');
   await fixture(page);
   await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
-  await page.getByRole('button', { name: '사진 선택', exact: true }).click();
+  await page.getByRole('button', { name: '선택', exact: true }).click();
   const tiles = page.locator('.mediaTile');
   await tiles.first().scrollIntoViewIfNeeded();
   const first = (await tiles.first().boundingBox())!;
@@ -183,7 +183,7 @@ test('touch long press drags across gallery photos without a scroll gesture', as
   test.skip(info.project.name !== 'mobile', 'Native long-press selection runs on the mobile profile.');
   await fixture(page);
   await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
-  await page.getByRole('button', { name: '사진 선택', exact: true }).click();
+  await page.getByRole('button', { name: '선택', exact: true }).click();
   const tiles = page.locator('.mediaTile');
   await tiles.first().scrollIntoViewIfNeeded();
   const first = (await tiles.first().boundingBox())!;

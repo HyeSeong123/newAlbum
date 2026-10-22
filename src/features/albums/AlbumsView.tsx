@@ -1,3 +1,6 @@
+import { EntitySelectionBar } from '../entities/EntitySelectionBar';
+import { useBackAction } from '../../hooks/useBackAction';
+import { useRowSelection } from '../../hooks/useRowSelection';
 import { useMemo, useRef, useState } from "react";
 import { BookPlus, Check, CheckSquare, FolderOutput, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
 import type { MediaItem, SavedAlbum } from "../../types/media";
@@ -40,6 +43,8 @@ export function SavedAlbumsView({
   const [busy, setBusy] = useState(false);
   const deleting = useRef(false);
   const [error, setError] = useState("");
+  useBackAction(selecting, () => { if (!busy) { setSelecting(false); setChosen([]); } });
+  const drag = useRowSelection(selecting && !busy, id => setChosen(current => current.includes(id) ? current.filter(value => value !== id) : [...current, id]), id => chosen.includes(id));
   const [sort, setSort] = useState<"recent" | "old" | "name">("recent");
   const visibleAlbums = useMemo(() => {
     const search = query.toLowerCase();
@@ -67,21 +72,22 @@ export function SavedAlbumsView({
         <label className="albumSort"><select aria-label="앨범 정렬" value={sort} onChange={(event) => setSort(event.target.value as typeof sort)}><option value="recent">최근 만든 순</option><option value="old">오래된 순</option><option value="name">이름순</option></select></label>
         <div className="albumActions">
           <button disabled={busy} aria-pressed={selecting} onClick={() => { setSelecting(!selecting); setChosen([]); }}>
-            {selecting ? <X size={17} /> : <CheckSquare size={17} />}{selecting ? "선택 끝내기" : "선택"}
+            {selecting ? <X size={17} /> : <CheckSquare size={17} />}{selecting ? "선택 취소" : "선택"}
           </button>
-          {selecting && <>
-            <button disabled={chosen.length !== 1 || busy} onClick={() => { const album = albums.find(item => item.id === chosen[0]); if (album) openEditor(album); }}><Pencil size={17} />수정</button>
-            <button disabled={!chosen.length || busy} onClick={() => void removeAlbums(chosen)}><Trash2 size={17} />삭제</button>
-          </>}
+
         </div>
       </div>
       {error && <p role="alert">{error}</p>}
       {!albums.length && <EmptyState title="아직 만든 앨범이 없습니다." description="함께 보고 싶은 사진을 골라 한 권의 앨범으로 만들어보세요." actionLabel="첫 앨범 만들기" actionIcon={<BookPlus size={18} />} onAction={onNewAlbum} />}
       {albums.length > 0 && !visibleAlbums.length && <EmptyState text="검색한 이름의 앨범이 없습니다." />}
-      <div className="savedAlbumGrid">
+      {selecting && <EntitySelectionBar className="albumSelectionDock" count={chosen.length} unit="앨범" hint={false} busy={busy} onAll={()=>setChosen(visibleAlbums.map(album=>album.id))} onClear={()=>setChosen([])} onClose={()=>{setSelecting(false);setChosen([]);}}>
+        <button disabled={chosen.length !== 1 || busy} onClick={() => { const album=albums.find(item=>item.id===chosen[0]);if(album)openEditor(album); }}><Pencil size={17}/>앨범 수정</button>
+        <button disabled={!chosen.length || busy} onClick={()=>void removeAlbums(chosen)}><Trash2 size={17}/>앨범 삭제</button>
+      </EntitySelectionBar>}
+      <div className="savedAlbumGrid" {...drag}>
         {visibleAlbums.map((album) => {
           return (
-          <article key={album.id} className="savedAlbumCard">
+          <article key={album.id} className="savedAlbumCard" data-selection-id={album.id}>
             <div className="savedAlbumCover">
             <button className="savedAlbumOpen" disabled={busy} aria-pressed={selecting ? chosen.includes(album.id) : undefined} onClick={() => selecting ? setChosen((current) => current.includes(album.id) ? current.filter((id) => id !== album.id) : [...current, album.id]) : setActiveAlbumId(album.id)} aria-label={`${album.title} 앨범 ${selecting ? "선택" : "열기"}`}>
               {selecting && <span className={`albumSelectionMark ${chosen.includes(album.id) ? "checked" : ""}`}>{chosen.includes(album.id) && <Check size={22} strokeWidth={3} />}</span>}

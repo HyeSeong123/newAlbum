@@ -69,7 +69,7 @@ test('empty screens explain the next step and open their existing flows', async 
   await page.getByRole('button', { name: '첫 앨범 만들기' }).click();
   await page.getByRole('dialog', { name: '사진·영상 가져오기', exact: true }).getByRole('button', { name: '파일 선택', exact: true }).click();
   await (await albumChooser).setFiles({ name: 'album-first.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('photo') });
-  await expect(page.getByRole('button', { name: '선택 끝내기', exact: true })).toBeVisible();
+  await expect(page.locator('.libraryResultsBar').getByRole('button', { name: '선택 취소', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '현재 결과 전체 선택 (1개)', exact: true }).click();
   await page.getByRole('button', { name: '앨범 만들기', exact: true }).click();
   await expect(page.getByRole('dialog', { name: '앨범 만들기' })).toBeVisible();

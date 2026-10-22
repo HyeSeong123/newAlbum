@@ -166,11 +166,11 @@ test('mobile hides technical metadata and fullscreen, favorites show a red heart
   const detail = page.getByRole('dialog', { name: '사진 상세', exact: true });
   for (const label of ['해상도', '파일 크기', '조회 수']) await expect(detail.getByText(label, { exact: true })).toHaveCount(isMobile ? 0 : 1);
   await expect(detail.locator('.favoritePhotoBadge')).toBeVisible();
-  await detail.getByRole('button', { name: '즐겨찾기', exact: true }).click();
+  await detail.getByTitle('즐겨찾기', {exact:true}).click();
   await expect(detail.locator('.favoritePhotoBadge')).toHaveCount(0);
-  await detail.getByRole('button', { name: '즐겨찾기', exact: true }).click();
+  await detail.getByTitle('즐겨찾기', {exact:true}).click();
   await expect(detail.locator('.favoritePhotoBadge')).toBeVisible();
-  await expect(detail.getByRole('button', { name: '즐겨찾기', exact: true })).toHaveCSS('color', 'rgb(216, 62, 82)');
+  await expect(detail.getByTitle('즐겨찾기', {exact:true})).toHaveCSS('color', 'rgb(216, 62, 82)');
   await detail.getByTitle('닫기', { exact: true }).click();
   await page.locator('.navList').getByRole('button', { name: '내 앨범', exact: true }).click();
   await page.getByRole('button', { name: '추억 앨범 앨범 열기', exact: true }).click();

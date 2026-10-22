@@ -8,8 +8,12 @@ test('capture current app tasks and record expectations before actions', async (
   await mkdir(folder,{recursive:true});
   const notes:unknown[]=[];
   async function shot(step:string, expectation:string) {
-    await page.evaluate(()=>document.fonts.ready);
-    await page.screenshot({path:`${folder}/${step}.png`,fullPage:true,animations:'disabled'});
+    await page.evaluate(async()=>{
+      await document.fonts.ready;
+      await Promise.all([...document.images].filter(img=>{const r=img.getBoundingClientRect();return r.bottom>0&&r.top<innerHeight;}).map(img=>{img.loading='eager';return img.decode().catch(()=>{});}));
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    });
+    await page.screenshot({path:`${folder}/${step}.png`,fullPage:false,animations:'disabled'});
     const buttons=await page.getByRole('button').evaluateAll(nodes=>nodes.filter(n=>n.getBoundingClientRect().height>0).map(n=>({name:n.getAttribute('aria-label')||n.getAttribute('title')||n.textContent?.trim(),disabled:(n as HTMLButtonElement).disabled})));
     notes.push({step,expectation,buttons});
   }

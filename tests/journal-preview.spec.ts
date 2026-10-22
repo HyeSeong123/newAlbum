@@ -192,10 +192,10 @@ test('unregistered photos disappear from albums and clearing leaves an empty alb
   await mockEditableAlbum(page);
   await page.goto('/');
   await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
-  await page.getByRole('button', { name: '사진 선택', exact: true }).click();
+  await page.getByRole('button', { name: '선택', exact: true }).click();
   await page.locator('.mediaTile[data-media-id="1"]').click();
   page.once('dialog', (dialog) => dialog.accept());
-  await page.getByRole('button', { name: '삭제', exact: true }).click();
+  await page.getByRole('button', { name: '등록 해제', exact: true }).click();
   await expect(page.locator('.selectionNotice')).toContainText('1개 항목을 등록 목록에서 지웠습니다.');
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
   await page.getByRole('button', { name: '함께한 가을 앨범 열기', exact: true }).click();

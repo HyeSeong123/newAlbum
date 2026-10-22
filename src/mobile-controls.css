@@ -129,3 +129,6 @@
 @media (hover: none) {
   .diaryCard:hover { transform: none; }
 }
+
+.navAllMenu { flex:0 0 auto; align-self:center; padding-left:4px; }
+.navAllMenu .actionMenuTrigger { min-height:44px; display:flex; align-items:center; gap:4px; padding:8px; white-space:nowrap; }

@@ -1,3 +1,4 @@
+import { useBackAction } from '../../hooks/useBackAction';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, BookPlus, Check, FolderOutput, Image as ImageIcon, ImagePlus, LoaderCircle, MoreVertical, Pause, Pencil, Play, RefreshCw, Scissors, Trash2, Users, X } from 'lucide-react';
 import type { MediaItem } from '../../types/media';
@@ -92,6 +93,12 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive 
     { title: '미확인 인물', people: matchingPeople.filter((entry) => !entry.name.trim()), page: unknownPage, setPage: setUnknownPage },
   ];
   const blocked = running || saving || loading || evaluationBusy || benchmarkBusy || auditBusy;
+  useBackAction(isActive && (selecting || photoSelecting || peopleSelecting || selectingUnknown || choosingCover || Boolean(person) || showFaceThumbnails), () => {
+    if (blocked) return;
+    if (selecting || photoSelecting || peopleSelecting || selectingUnknown || choosingCover) {
+      setSelecting(false);setPhotoSelecting(false);setPeopleSelecting(false);setSelectingUnknown(false);setChoosingCover(false);setChosen([]);setSelectedPeople([]);setUnknownChosen([]);
+    } else openFaceView('people');
+  });
   const unknownFaceIds = useMemo(() => {
     const selectedPeople = new Set(unknownChosen);
     return unidentifiedFaces.filter((face) => selectedPeople.has(face.person_id)).map((face) => face.id);

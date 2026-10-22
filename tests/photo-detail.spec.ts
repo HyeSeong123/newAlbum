@@ -31,8 +31,8 @@ test('album overview and photo tools preserve the full frame and editing workflo
   await expect(detail.locator('.detailImageCanvas img')).toHaveCSS('object-fit', 'contain');
   const viewport = detail.locator('.detailImageViewport');
   expect(await viewport.evaluate(el => el.clientHeight > 150 && el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1)).toBe(true);
-  await detail.getByRole('button', { name: '즐겨찾기', exact: true }).click();
-  await expect(detail.getByRole('button', { name: '즐겨찾기', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await detail.getByTitle('즐겨찾기', {exact:true}).click();
+  await expect(detail.getByTitle('즐겨찾기', {exact:true})).toHaveAttribute('aria-pressed', 'true');
   await detail.getByTitle('4점', { exact: true }).click();
   await expect(detail.getByTitle('4점', { exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(detail.getByRole('button', { name: /댓글/ })).toHaveCount(0);

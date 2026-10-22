@@ -14,15 +14,32 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - run: npm ci --ignore-scripts
-      - run: npx tsc --noEmit
+      - name: Validate frontend and storage regressions
+        run: |
+          npm run version:check
+          npm run test:unit
+          python3 -m unittest discover -s tests -p 'test_*.py'
+          npx tsc --noEmit
+          npx vite build
       - run: npx playwright install --with-deps chromium
-      - name: Capture current tasks and expectations
-        run: npx playwright test -c playwright.app-ux.config.ts --project mobile
+      - name: Capture unchanged 0.9.17 controls with current capture checks
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/app-ux-before" 8e7f343ba03dc20aa6146f1c6b7e5cf4555c197b
+          ln -s "$GITHUB_WORKSPACE/node_modules" "$RUNNER_TEMP/app-ux-before/node_modules"
+          cp playwright.app-ux.config.ts "$RUNNER_TEMP/app-ux-before/"
+          cp tests/app-ux-audit.spec.ts "$RUNNER_TEMP/app-ux-before/tests/"
+          cd "$RUNNER_TEMP/app-ux-before"
+          APP_UX_STAGE=before "$GITHUB_WORKSPACE/node_modules/.bin/playwright" test -c playwright.app-ux.config.ts --project mobile --grep 'capture current'
+      - name: Verify updated user workflows and capture results
+        env:
+          APP_UX_STAGE: after
+        run: npx playwright test -c playwright.app-ux.config.ts
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -30,4 +47,5 @@ jobs:
           path: |
             preview-results/app-ux/
             test-results/
+            ${{ runner.temp }}/app-ux-before/preview-results/app-ux/
           retention-days: 14

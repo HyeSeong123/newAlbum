@@ -27,10 +27,14 @@ export function useMediaSelection(itemsById: ReadonlyMap<string, unknown>) {
     });
   }
 
+  function selectMany(ids: string[]) {
+    setIds(current => new Set([...current, ...ids]));
+  }
+
   function reset(nextEnabled = false) {
     setEnabled(nextEnabled);
     setIds((current) => current.size ? new Set() : current);
   }
 
-  return { enabled, ids, toggle, toggleMany, reset, clear: () => setIds(new Set()) };
+  return { enabled, ids, toggle, toggleMany, selectMany, reset, clear: () => setIds(new Set()) };
 }

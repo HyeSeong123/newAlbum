@@ -20,3 +20,12 @@
   .peopleView:has(.entitySelectionBar), .petsView:has(.entitySelectionBar) { padding-bottom:280px; }
 }
 .entityPhotoChoice .faceCheck, .personPhoto > .faceCheck, .petPhoto > .faceCheck, .personTile > .faceCheck { pointer-events:none; }
+
+/* Use the same reachable actions for photos, albums and diaries. */
+.libraryView .entitySelectionBar.selectionDock, .diaryView .entitySelectionBar.diaryBulk { display:grid; }
+.diaryView .entitySelectionBar select { min-height:44px; max-width:100%; }
+.albumSelectionMark { pointer-events:none; }
+@media(max-width:700px) {
+  .libraryView:has(.entitySelectionBar), .savedAlbums:has(.entitySelectionBar), .diaryView:has(.entitySelectionBar) { padding-bottom:280px; }
+  .diaryBulk .entitySelectionCommands > label { display:flex; flex-wrap:wrap; align-items:center; gap:8px; width:100%; }
+}

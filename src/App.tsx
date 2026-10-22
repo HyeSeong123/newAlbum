@@ -72,6 +72,7 @@ export function App() {
   }, []);
 
   const [activeView, setActiveView] = useState<View>("Home");
+  useLayoutEffect(() => { window.scrollTo(0, 0); }, [activeView]);
   const [photoMode, setPhotoMode] = useState<PhotoMode>("grid");
   const [memorySection, setMemorySection] = useState<"rediscover" | "timeline" | "map">("rediscover");
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
@@ -154,6 +155,7 @@ export function App() {
   }
 
   function navigate(view: View) {
+    if (view === activeView) return;
     setActiveView(view); setPhotoMode("grid"); setMemorySection("rediscover"); setQuery("");
     selection.reset(); setSelectionNotice("");
     if (view === "Home" || view === "Characters") void characters.refresh();
@@ -162,13 +164,13 @@ export function App() {
   useAndroidBack(activeView === "Home", Boolean(importing), () => navigate("Home"));
 
   function startAlbum() {
-    navigate("Library"); setSelectedMonth("all"); selection.reset(true);
+    navigate("Library"); setPhotoMode("grid"); setSelectedMonth("all"); selection.reset(true);
     setSelectionNotice(items.length ? "앨범에 담을 사진과 영상을 선택해 주세요." : "먼저 사진과 영상을 가져온 뒤 앨범에 담을 기록을 선택해 주세요.");
     if (!items.length) setImportOpen(true);
   }
 
   async function deleteSelectedItems() {
-    if (!selectedCount || !window.confirm(`선택한 ${selectedCount}개 항목을 등록 목록에서 지울까요? 원본 파일은 삭제되지 않습니다.`)) return;
+    if (!selectedCount || !window.confirm(`선택한 ${selectedCount}개 항목을 감자싹 등록과 연결 정보(앨범·인물·반려동물 등)를 해제할까요? 원본 파일은 삭제되지 않습니다.`)) return;
     const ids = new Set(selectedIds);
     if (await library.removeMedia(ids)) {
       selection.clear();
@@ -192,7 +194,7 @@ export function App() {
           <BrandLogo />
         </button>
 
-        <MainNavigation activeKey={`${activeView}:${largeLayout}`}>
+        <MainNavigation activeKey={`${activeView}:${largeLayout}`} menuItems={[...navItems.map(item => ({label:item.label, active:item.name===activeView, onSelect:()=>navigate(item.name)})), {label:"설정",active:activeView==="Settings",onSelect:()=>navigate("Settings")}]}>
           {navItems.map(({ name, label, accessibleLabel }) => (
             <button
               key={name}
@@ -271,7 +273,8 @@ export function App() {
                 selectionMode={selectionMode}
                 selectedIds={selectedIds}
                 onToggleSelection={toggleMediaSelection}
-                onSelectAll={selection.toggleMany}
+                onSelectAll={selection.selectMany}
+                onClearSelection={selection.clear}
                 onToggleSelectionMode={toggleSelectionMode}
                 selectedCount={selectedCount}
                 commentCounts={commentCounts}

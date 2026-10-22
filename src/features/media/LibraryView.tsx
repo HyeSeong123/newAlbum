@@ -1,3 +1,5 @@
+import { useBackAction } from '../../hooks/useBackAction';
+import { EntitySelectionBar } from '../entities/EntitySelectionBar';
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { ArrowUpDown, CheckSquare, ChevronLeft, ChevronRight, ImagePlus, MapPin, Music, Play, Plus, Search, SlidersHorizontal, Trash2, X } from "lucide-react";
 import type { MediaItem } from "../../types/media";
@@ -23,6 +25,7 @@ export function Library({
   selectedIds,
   onToggleSelection,
   onSelectAll,
+  onClearSelection,
   onToggleSelectionMode,
   selectedCount,
   commentCounts,
@@ -44,6 +47,7 @@ export function Library({
   selectedIds: Set<string>;
   onToggleSelection: (id: string) => void;
   onSelectAll: (ids: string[]) => void;
+  onClearSelection: () => void;
   onToggleSelectionMode: () => void;
   selectedCount: number;
   commentCounts: Record<string, number>;
@@ -57,6 +61,7 @@ export function Library({
   query: string;
   onQueryChange: (value: string) => void;
 }) {
+  useBackAction(selectionMode, () => { setBulkRegionOpen(false); onToggleSelectionMode(); });
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<LibrarySort>("date-desc");
   const mobile = useMobileLayout();
@@ -127,23 +132,13 @@ export function Library({
         <label className="filterCheck"><input type="checkbox" checked={commentsOnly} onChange={(event) => setCommentsOnly(event.target.checked)} />댓글 있는 사진만</label>
       </section>}
       </section>
-      <div className="libraryResultsBar"><strong aria-live="polite">검색 결과 {visibleCollection.length}개</strong><button className={selectionMode ? "selectionToggle activeAction" : "selectionToggle"} aria-pressed={selectionMode} onClick={() => { setBulkRegionOpen(false); onToggleSelectionMode(); }}><CheckSquare size={17} />{selectionMode ? "선택 끝내기" : "사진 선택"}</button></div>
+      <div className="libraryResultsBar"><strong aria-live="polite">검색 결과 {visibleCollection.length}개</strong><button className={selectionMode ? "selectionToggle activeAction" : "selectionToggle"} aria-pressed={selectionMode} onClick={() => { setBulkRegionOpen(false); onToggleSelectionMode(); }}><CheckSquare size={17} />{selectionMode ? "선택 취소" : "선택"}</button></div>
       {selectionMode && (
-        <div className="selectionDock" aria-label={`${selectedCount}장 선택됨`}>
-          <strong aria-live="polite">{selectedCount}개 선택</strong>
-          <button onClick={() => onSelectAll(visibleCollection.map(item => item.id))} disabled={!visibleCollection.length}>{visibleCollection.length && visibleCollection.every(item => selectedIds.has(item.id)) ? "현재 결과 선택 해제" : `현재 결과 전체 선택 (${visibleCollection.length}개)`}</button>
-          <div className="selectionActions">
-            <button className="iconText" onClick={onCreateAlbum} disabled={!selectedCount}>
-              <Plus size={17} />앨범 만들기
-            </button>
-            <button className="iconText" aria-expanded={bulkRegionOpen} aria-controls="libraryBulkRegion" onClick={() => setBulkRegionOpen(value => !value)} disabled={!locationIds.length}>
-              <MapPin size={17} />지역 일괄 수정
-            </button>
-            <button className="dangerButton" onClick={onDeleteSelected} disabled={!selectedCount}>
-              <Trash2 size={17} />삭제
-            </button>
-          </div>
-        </div>
+        <EntitySelectionBar className="selectionDock" count={selectedCount} unit="항목" allLabel={`현재 결과 전체 선택 (${visibleCollection.length}개)`} onAll={() => onSelectAll(visibleCollection.map(item => item.id))} onClear={onClearSelection} onClose={onToggleSelectionMode}>
+            <button className="iconText" onClick={onCreateAlbum} disabled={!selectedCount}><Plus size={17} />앨범 만들기</button>
+            <button className="iconText" aria-expanded={bulkRegionOpen} aria-controls="libraryBulkRegion" onClick={() => setBulkRegionOpen(value => !value)} disabled={!locationIds.length}><MapPin size={17} />지역 일괄 수정</button>
+            <button className="dangerButton" onClick={onDeleteSelected} disabled={!selectedCount}><Trash2 size={17} />등록 해제</button>
+        </EntitySelectionBar>
       )}
       {selectionMode && bulkRegionOpen && <div id="libraryBulkRegion" className="libraryBulkRegion">
         <RegionEditor count={locationIds.length} initiallyEditing onSave={(code, district, country, city) => onAssignRegion(locationIds, code, district, country, city)} />

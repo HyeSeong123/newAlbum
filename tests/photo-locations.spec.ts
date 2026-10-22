@@ -61,7 +61,7 @@ test('memory map analyzes GPS and bulk region edits preserve coordinates', async
   await page.locator('.memoryMapPlaceList button').filter({ hasText: '제주' }).click();
   await expect(page.locator('.memoryMapGallery')).toContainText('1장의 사진');
   await page.getByRole('button', { name: '사진 기록', exact: true }).click();
-  await page.getByRole('button', { name: '사진 선택', exact: true }).click();
+  await page.getByRole('button', { name: '선택', exact: true }).click();
   await page.locator('.galleryGrid .mediaTile[data-media-id="1"]').click();
   await page.locator('.galleryGrid .mediaTile[data-media-id="2"]').click();
   await page.locator('.galleryGrid .mediaTile[data-media-id="3"]').click();
@@ -73,7 +73,7 @@ test('memory map analyzes GPS and bulk region edits preserve coordinates', async
   await editor.getByLabel('시군구').selectOption('해운대구');
   await editor.getByRole('button', { name: '지역 저장' }).click();
   await expect(editor).toContainText('선택한 2개 기록');
-  await page.getByRole('button', { name: '선택 끝내기', exact: true }).click();
+  await page.locator('.libraryResultsBar').getByRole('button', { name: '선택 취소', exact: true }).click();
   await page.locator('.galleryGrid .mediaTile[data-media-id="1"]').click();
   const detail = page.getByRole('dialog', { name: '사진 상세', exact: true });
   await expect(detail.getByLabel('위치', { exact: true })).toContainText('부산광역시 · 해운대구');

@@ -62,7 +62,7 @@ test('rapid photo edits are persisted in order even when the first write fails',
   await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.locator('.mediaTile').click();
   const detail = page.getByRole('dialog', { name: '사진 상세', exact: true });
-  await detail.getByRole('button', { name: '즐겨찾기', exact: true }).click();
+  await detail.getByTitle('즐겨찾기', {exact:true}).click();
   await expect.poll(async () => JSON.parse(await page.locator('html').getAttribute('data-saves') || '[]').length).toBe(1);
   await detail.getByTitle('4점', { exact: true }).click();
   expect(JSON.parse(await page.locator('html').getAttribute('data-saves') || '[]')).toHaveLength(1);
@@ -91,13 +91,13 @@ test('albums loaded before the library remain viewable and edits survive the lat
   await page.getByRole('button', { name: '먼저 열린 앨범 앨범 열기', exact: true }).click();
   await page.getByRole('button', { name: 'early-1.jpg 상세보기', exact: true }).click();
   const detail = page.getByRole('dialog', { name: '사진 상세', exact: true });
-  await detail.getByRole('button', { name: '즐겨찾기', exact: true }).click();
+  await detail.getByTitle('즐겨찾기', {exact:true}).click();
   await detail.getByTitle('4점', { exact: true }).click();
   await page.evaluate(async () => {
     window.dispatchEvent(new Event('finish-library'));
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   });
-  await expect(detail.getByRole('button', { name: '즐겨찾기', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(detail.getByTitle('즐겨찾기', {exact:true})).toHaveAttribute('aria-pressed', 'true');
   await expect(detail.getByTitle('4점', { exact: true })).toHaveAttribute('aria-pressed', 'true');
   await detail.getByTitle('다음', { exact: true }).click();
   await expect(detail.locator('.detailFileName')).toHaveText('early-2.jpg');

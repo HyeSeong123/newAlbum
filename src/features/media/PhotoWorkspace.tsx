@@ -12,7 +12,7 @@ export type PhotoMode = "grid" | "calendar" | "album";
 
 export function PhotoView({
   mode, setMode, items, allItems, activeMonth, onMonthChange, selected, onOpen,
-  selectionMode, selectedIds, onToggleSelection, onSelectAll, onToggleSelectionMode,
+  selectionMode, selectedIds, onToggleSelection, onSelectAll, onClearSelection, onToggleSelectionMode,
   selectedCount, commentCounts, onCreateAlbum, onDeleteSelected, albums,
   onShowAlbums, onNewAlbum, onImport, onViewMedia, onAssignRegion, scopeKey, query, onQueryChange,
 }: {
@@ -28,6 +28,7 @@ export function PhotoView({
   selectedIds: Set<string>;
   onToggleSelection: (id: string) => void;
   onSelectAll: (ids: string[]) => void;
+  onClearSelection: () => void;
   onToggleSelectionMode: () => void;
   selectedCount: number;
   commentCounts: Record<string, number>;
@@ -79,7 +80,7 @@ export function PhotoView({
     {mode === "grid" && <Library
       viewTabs={viewTabs}
       items={monthItems} selected={selected} onOpen={onOpen} selectionMode={selectionMode}
-      selectedIds={selectedIds} onToggleSelection={onToggleSelection} onSelectAll={onSelectAll}
+      selectedIds={selectedIds} onToggleSelection={onToggleSelection} onSelectAll={onSelectAll} onClearSelection={onClearSelection}
       onToggleSelectionMode={onToggleSelectionMode} selectedCount={selectedCount}
       commentCounts={commentCounts} onCreateAlbum={onCreateAlbum} onDeleteSelected={onDeleteSelected}
       onAssignRegion={onAssignRegion}
