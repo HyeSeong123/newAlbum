@@ -27,7 +27,11 @@ jobs:
           python3 -m unittest discover -s tests -p 'test_*.py'
           npx tsc --noEmit
           npx vite build
-      - run: npx playwright install --with-deps chromium
+      - name: Install official Playwright browser on the hosted runner
+        timeout-minutes: 6
+        env:
+          PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT: 60000
+        run: npx playwright install chromium
       - name: Capture unchanged 0.9.17 controls with current capture checks
         run: |
           git worktree add --detach "$RUNNER_TEMP/app-ux-before" 8e7f343ba03dc20aa6146f1c6b7e5cf4555c197b
