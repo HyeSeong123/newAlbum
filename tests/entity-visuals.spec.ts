@@ -23,9 +23,10 @@ test('people and pets mobile before-after evidence uses the same data and viewpo
       window.scrollTo(0,0);
       await document.fonts.ready;
       await Promise.all([...document.querySelectorAll<HTMLImageElement>('.peopleWorkspace img')].filter(image=>image.getClientRects().length).map(image=>{image.loading='eager';return image.decode().catch(()=>undefined);}));
+      await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
     });
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
-    await page.screenshot({path:`preview-results/entity-ux-${stage}-${name}.png`,fullPage:true});
+    await page.screenshot({path:`preview-results/entity-ux-${stage}-${name}.png`,fullPage:!name.includes('assignment'),animations:'disabled'});
   }
   await page.goto('/');await page.getByRole('button',{name:'사람과 반려동물',exact:true}).click();
   await expect(page.getByRole('button',{name:'우리 가족 2장',exact:true})).toBeVisible();await capture('people-list');
@@ -47,7 +48,10 @@ test('people and pets mobile before-after evidence uses the same data and viewpo
   await page.getByRole('region',{name:'선택한 얼굴 관리'}).getByRole('button',{name:'전체 선택',exact:true}).click();await capture('unknown-faces');
   await page.getByRole('button',{name:'이름 지정',exact:true}).click();await page.getByRole('button',{name:'새 인물',exact:true}).click();await page.getByLabel('새 인물 이름').fill('할머니');await capture('face-assignment');
   for (const width of [320,360]) {
-    await page.setViewportSize({width,height:851});await capture(`face-assignment-${width}`);
+    await page.setViewportSize({width,height:851});
+    await expect(page.getByLabel('새 인물 이름')).toBeInViewport();
+    await expect(page.getByRole('dialog',{name:'이름 지정',exact:true}).getByRole('button',{name:'이름 지정',exact:true})).toBeInViewport();
+    await capture(`face-assignment-${width}`);
     const dialog=page.getByRole('dialog',{name:'이름 지정',exact:true});const box=(await dialog.boundingBox())!;
     expect(box.x).toBeGreaterThanOrEqual(0);expect(box.x+box.width).toBeLessThanOrEqual(width+1);
   }
