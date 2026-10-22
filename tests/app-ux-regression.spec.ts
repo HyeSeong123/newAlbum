@@ -124,3 +124,23 @@ for(const width of [320,360,393,851])test(`bottom actions and full menu fit ${wi
   expect(b.x).toBeGreaterThanOrEqual(0);expect(b.x+b.width).toBeLessThanOrEqual(width);expect(b.y+b.height).toBeLessThanOrEqual(height);
   for(const control of await bar.getByRole('button').all()){const r=(await control.boundingBox())!;expect(r.height).toBeGreaterThanOrEqual(44);}
 });
+
+test('person and pet details return to the same list page and scroll position',async({page})=>{
+  await auditLibrary(page);
+  await page.evaluate(()=>{
+    const bridge=(window as any).__TAURI_INTERNALS__,original=bridge.invoke;
+    bridge.invoke=async(command:string,args:unknown)=>{
+      if(command==='list_pets')return Array.from({length:26},(_,i)=>({id:i+1,name:`반려 ${String(i+1).padStart(2,'0')}`,media_ids:[1],cover_media_id:1}));
+      if(command==='list_face_index')return {people:Array.from({length:26},(_,i)=>({id:i+1,name:`인물 ${String(i+1).padStart(2,'0')}`})),faces:Array.from({length:26},(_,i)=>({id:i+1,person_id:i+1,media_id:1,thumbnail:'/audit-photo-dog-0.jpg',confirmed:true})),scanned:[1]};
+      return original(command,args);
+    };
+  });
+  await go(page,'사람과 반려동물');await page.getByRole('button',{name:'다음',exact:true}).click();
+  await expect(page.locator('.personTile')).toHaveCount(2);await page.locator('.personTile').first().scrollIntoViewIfNeeded();
+  const personScroll=await page.evaluate(()=>scrollY);await page.locator('.personTile').first().click();await back(page);
+  await expect(page.locator('.personTile')).toHaveCount(2);await expect.poll(async()=>Math.abs((await page.evaluate(()=>scrollY))-personScroll)).toBeLessThan(3);
+  await page.getByRole('tab',{name:'반려동물',exact:true}).click();await page.getByTitle('다음 페이지',{exact:true}).click();
+  await expect(page.locator('.petsView .petGrid > button')).toHaveCount(2);await page.locator('.petsView .petGrid > button').first().scrollIntoViewIfNeeded();
+  const petScroll=await page.evaluate(()=>scrollY);await page.locator('.petsView .petGrid > button').first().click();await back(page);
+  await expect(page.locator('.petsView .petGrid > button')).toHaveCount(2);await expect.poll(async()=>Math.abs((await page.evaluate(()=>scrollY))-petScroll)).toBeLessThan(3);
+});

@@ -33,6 +33,8 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
   const [active, setActive] = useState<number | null>(null);
   const [editing, setEditing] = useState<Pet | null>(null);
   const [page, setPage] = useState(0);
+  const [listPage, setListPage] = useState(0);
+  const listScroll=useRef<number|null>(null);
   const [reviewing, setReviewing] = useState(false);
   const heading = useRef<HTMLDivElement>(null);
   useEffect(() => { if (reviewRequested) { setActive(null); setPage(0); setReviewing(true); onReviewHandled?.(); } }, [reviewRequested, onReviewHandled]);
@@ -42,7 +44,7 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
   const pet = pets.find((entry) => entry.id === active);
   const search = query.trim().toLocaleLowerCase();
   const matchingPets = useMemo(() => pets.filter((entry) => entry.name.toLocaleLowerCase().includes(search)).sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'ko'):b.media_ids.length-a.media_ids.length), [pets, search, sort]);
-  useEffect(() => { setPage(0); setActive(null); setSelecting(false); setChosen([]); }, [query]);
+  useEffect(() => { setPage(0); setListPage(0); listScroll.current=null;setActive(null); setSelecting(false); setChosen([]); }, [query]);
   useEffect(()=>{setSelecting(false);setChosen([]);},[active,unknown]);
   useEffect(()=>{if(!isActive){setSelecting(false);setChosen([]);setAssigning(false);setEditing(null);setReviewing(false);}},[isActive]);
   useBackAction(isActive && (selecting || Boolean(pet) || unknown), () => {
@@ -52,12 +54,17 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
   });
   const linked = useMemo(() => petPhotos(photos, pet), [photos, pet]);
   const pages = Math.max(1, Math.ceil((pet ? linked.length : matchingPets.length) / 24));
-  const currentPage = Math.min(page, pages - 1);
+  const currentPage = Math.min(pet ? page : listPage, pages - 1);
   useEffect(() => {
+    if (active === null && !unknown && listScroll.current !== null) {
+      const position=listScroll.current;listScroll.current=null;
+      const frame=requestAnimationFrame(()=>window.scrollTo(0,position));
+      return ()=>cancelAnimationFrame(frame);
+    }
     const header = heading.current;
     const navigationBottom = document.querySelector('.sidebar')?.getBoundingClientRect().bottom ?? 0;
     if (header && header.getBoundingClientRect().top < navigationBottom) header.scrollIntoView({ block: 'start' });
-  }, [active]);
+  }, [active,unknown]);
   useEffect(() => {
     let alive = true;
     const refresh = () => {
@@ -108,7 +115,7 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
       </div>
     </div>
     {!desktop && <p role="status">반려동물 등록·인식은 감자싹 앱에서 사용할 수 있습니다.</p>}
-    {desktop && !selecting && <div className="entityQuickActions">{pet ? <><button disabled={busy} onClick={()=>editPet('photos')}><Plus size={18}/>사진 연결</button><button disabled={busy} onClick={()=>editPet('name')}><Pencil size={18}/>이름 변경</button></> : <>{!unknown && <button disabled={busy || !matchingPets.length} onClick={()=>{setSelecting(!selecting);setChosen([]);}}>선택</button>}<button className={unknown?'active':''} onClick={()=>{setUnknown(true);setActive(null);}}>미확인 반려동물</button></>}</div>}
+    {desktop && !selecting && <div className="entityQuickActions">{pet ? <><button disabled={busy} onClick={()=>editPet('photos')}><Plus size={18}/>사진 연결</button><button disabled={busy} onClick={()=>editPet('name')}><Pencil size={18}/>이름 변경</button></> : <>{!unknown && <button disabled={busy || !matchingPets.length} onClick={()=>{setSelecting(!selecting);setChosen([]);}}>선택</button>}<button className={unknown?'active':''} onClick={()=>{if(!unknown)listScroll.current=window.scrollY;setUnknown(true);setActive(null);}}>미확인 반려동물</button></>}</div>}
     {!pet && !unknown && <label className="entitySort">정렬<select aria-label="반려동물 정렬" value={sort} onChange={event=>setSort(event.target.value)}><option value="name">이름순</option><option value="photos">사진 많은 순</option></select></label>}
     {desktop && !selecting && !unknown && pets.length > 0 && <div className="petFindPhotos"><div><strong>{pet ? `${pet.name}의 다른 사진도 찾아보세요` : '반려동물 사진을 한곳에 모으세요'}</strong><p className="petMatchNotice">버튼을 누르면 연결한 사진과 비교해 비슷한 사진을 찾아요.</p></div><button disabled={loading || !photos.length} onClick={() => setReviewing(true)}><ScanSearch size={18}/>반려동물 사진 찾기</button></div>}
     {!reviewing && <PetAnalysisStatus analysis={analysis} onReview={() => setReviewing(true)} />}
@@ -120,11 +127,11 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
     {unknown && <UnknownPets selecting={selecting} onOpen={onOpen} photos={photos} pets={pets} onSaved={async()=>setPets(await loadPets())}/>}
     {!unknown && <div className="petGrid" {...drag}>{pet ? linked.slice(currentPage * 24, (currentPage + 1) * 24).map((item) => <button key={item.id} className="petPhoto" data-selection-id={item.id} aria-label={selecting ? '사진 선택' : '사진 상세보기'} aria-pressed={selecting ? chosen.includes(Number(item.id)) : undefined} onClick={() => selecting ? toggle(item.id) : onOpen(item, linked)}><MediaVisual item={item} />{selecting && <span className={`faceCheck ${chosen.includes(Number(item.id))?'checked':''}`} aria-hidden="true">{chosen.includes(Number(item.id)) && <Check size={22}/>}</span>}<span>{item.takenAt ?? '날짜 없음'}</span></button>) : matchingPets.slice(currentPage * 24, (currentPage + 1) * 24).map((entry) => {
       const cover = covers.get(entry.id);
-      return <button className="petPhoto" aria-label={`${entry.name} ${entry.media_ids.length}장`} key={entry.id} data-selection-id={entry.id} aria-pressed={selecting?chosen.includes(entry.id):undefined} onClick={() => { if(selecting)toggle(String(entry.id));else {setActive(entry.id);setPage(0);} }}>
+      return <button className="petPhoto" aria-label={`${entry.name} ${entry.media_ids.length}장`} key={entry.id} data-selection-id={entry.id} aria-pressed={selecting?chosen.includes(entry.id):undefined} onClick={() => { if(selecting)toggle(String(entry.id));else {listScroll.current=window.scrollY;setActive(entry.id);setPage(0);} }}>
         {cover ? <MediaVisual item={cover} /> : <div className="petPlaceholder"><PawPrint size={48} /></div>}<strong>{entry.name}</strong>{selecting && <span className={`faceCheck ${chosen.includes(entry.id)?'checked':''}`} aria-hidden="true">{chosen.includes(entry.id) && <Check size={22}/>}</span>}<span>{entry.media_ids.length}장</span>
       </button>;
     })}</div>}
-    {!unknown && pages > 1 && <div className="peopleActions"><button title="이전 페이지" disabled={!currentPage} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={18} /></button><span>{currentPage + 1} / {pages}</span><button title="다음 페이지" disabled={currentPage === pages - 1} onClick={() => setPage(currentPage + 1)}><ChevronRight size={18} /></button></div>}
+    {!unknown && pages > 1 && <div className="peopleActions"><button title="이전 페이지" disabled={!currentPage} onClick={() => pet ? setPage(currentPage - 1) : setListPage(currentPage - 1)}><ChevronLeft size={18} /></button><span>{currentPage + 1} / {pages}</span><button title="다음 페이지" disabled={currentPage === pages - 1} onClick={() => pet ? setPage(currentPage + 1) : setListPage(currentPage + 1)}><ChevronRight size={18} /></button></div>}
     {!pet && !unknown && selecting && <EntitySelectionBar count={chosen.length} unit="반려동물" busy={busy} onAll={()=>setChosen(matchingPets.map(entry=>entry.id))} onClear={()=>setChosen([])} onClose={()=>{setSelecting(false);setChosen([]);}}>
       <button disabled={busy || !chosen.length} onClick={async()=>{if(!window.confirm(`반려동물 ${chosen.length}마리의 이름과 사진 연결을 삭제할까요? 인식 결과는 미확인 상태로 남고 원본 사진은 유지됩니다.`))return;setBusy(true);setError('');try{await removeEntityRegistrations('pet',chosen);setChosen([]);setPets(await loadPets());setSelecting(false);}catch(reason){setError(String(reason));}finally{setBusy(false);}}}>반려동물 등록 삭제</button>
     </EntitySelectionBar>}

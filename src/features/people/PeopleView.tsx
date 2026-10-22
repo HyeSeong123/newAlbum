@@ -62,6 +62,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive 
   const controller = useRef<AbortController | null>(null);
   const locked = useRef(false);
   const heading = useRef<HTMLDivElement>(null);
+  const listScroll = useRef<number | null>(null);
   const desktop = isTauriRuntime();
   const photos = useMemo(() => items.filter((item) => item.fileType === 'image'), [items]);
   const mediaById = useMemo(() => new Map(items.map((item) => [Number(item.id), item])), [items]);
@@ -115,12 +116,18 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive 
   const chosenAlbumItems = useMemo(() => mediaForFaces(items, index.faces.filter((face) => chosenSet.has(face.id))), [items, index.faces, chosenSet]);
 
   useEffect(() => {
+    if (active === null && faceView === 'people' && listScroll.current !== null) {
+      const position=listScroll.current;listScroll.current=null;
+      const frame=requestAnimationFrame(()=>window.scrollTo(0,position));
+      return ()=>cancelAnimationFrame(frame);
+    }
     const header = heading.current;
     const navigationBottom = document.querySelector('.sidebar')?.getBoundingClientRect().bottom ?? 0;
     if (header && header.getBoundingClientRect().top < navigationBottom) header.scrollIntoView({ block: 'start' });
   }, [active, faceView]);
 
   function openFaceView(view: 'people' | 'all' | 'unknown', selectedPerson?: FaceIndex['people'][number]) {
+    if (faceView === 'people' && active === null && (selectedPerson || view !== 'people')) listScroll.current=window.scrollY;
     setFaceView(view);
     setActive(selectedPerson?.id ?? null);
     setName(selectedPerson?.name ?? '');
