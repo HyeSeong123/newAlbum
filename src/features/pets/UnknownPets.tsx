@@ -1,3 +1,4 @@
+import { FunctionHelp } from '../../components/FunctionHelp';
 import { useEffect, useState } from 'react';
 import type { MediaItem } from '../../types/media';
 import { MediaVisual } from '../../components/MediaVisual';
@@ -29,7 +30,7 @@ export function UnknownPets({ photos, pets, onSaved, selecting, onOpen }: { sele
   const toggle=(id:string)=>setSelection(current=>current.includes(Number(id))?current.filter(value=>value!==Number(id)):[...current,Number(id)]);
   const drag=useRowSelection(selecting && !loading,toggle,id=>selection.includes(Number(id)));
   return <section aria-label="미확인 반려동물">
-    <p className="entitySelectionHint">테두리가 있으면 인식한 반려동물만, 미확인 사진이면 사진 연결에 이름을 지정합니다. 같은 사진의 다른 반려동물은 유지됩니다.</p>
+    {!selecting && <FunctionHelp title="미확인 반려동물"><p>테두리가 있으면 인식한 반려동물만, 미확인 사진이면 사진 연결에 이름을 지정합니다. 같은 사진의 다른 반려동물은 유지됩니다.</p></FunctionHelp>}
     {loading && <p role="status">미확인 반려동물 불러오는 중…</p>}
     {error && <p role="alert">{error}</p>}
     {!loading && !rows.length && !error && <p>미확인 반려동물이 없습니다. ‘반려동물 사진 찾기’에서 분석을 시작할 수 있어요.</p>}
@@ -38,7 +39,7 @@ export function UnknownPets({ photos, pets, onSaved, selecting, onOpen }: { sele
       return <button key={row.id} className="petPhoto" data-selection-id={row.id} aria-label={selecting?`반려동물 선택 ${row.id}`:`반려동물 사진 상세보기 ${row.id}`} aria-pressed={selecting?selection.includes(row.id):undefined} onClick={()=>{if(selecting)toggle(String(row.id));else onOpen(item,photos);}}><div className="petDetectionPreview" style={{aspectRatio:item.width && item.height?item.width/item.height:1}}><MediaVisual item={item}/>{row.box_ && <span className="petDetectionBox" style={{left:`${row.box_[0]*100}%`,top:`${row.box_[1]*100}%`,width:`${row.box_[2]*100}%`,height:`${row.box_[3]*100}%`}}/>}</div>{selecting && <span className={`faceCheck ${selection.includes(row.id)?'checked':''}`} aria-hidden="true">{selection.includes(row.id) && <Check size={22}/>}</span>}<span>{row.id<0?'미확인 사진':'미확인 반려동물'}</span></button>;
     })}</div>
     {(page>0 || next) && <div className="peopleActions"><button disabled={loading || !page} onClick={()=>setPage(page-1)}>이전</button><span>{page+1}</span><button disabled={loading || !next} onClick={()=>setPage(page+1)}>다음</button></div>}
-    {selecting && <EntitySelectionBar count={selection.length} unit="반려동물 인식 결과" allLabel="현재 페이지 전체 선택" busy={loading} onAll={()=>setSelection(current=>[...new Set([...current,...rows.map(row=>row.id)])])} onClear={()=>setSelection([])} onClose={()=>{setSelection([]);window.dispatchEvent(new Event('gamjassak-unknown-pet-selection-close'));}}><button className="primaryControl" disabled={!selection.length} onClick={()=>setAssigning(true)}>이름 지정</button><small>전체 선택은 현재 불러온 페이지에 적용됩니다.</small></EntitySelectionBar>}
+    {selecting && <EntitySelectionBar count={selection.length} unit="반려동물 인식 결과" help={<><p>테두리가 있으면 인식한 반려동물만, 미확인 사진이면 사진 연결에 이름을 지정합니다. 같은 사진의 다른 반려동물은 유지됩니다.</p><p>전체 선택은 현재 불러온 페이지에 적용됩니다.</p></>} allLabel="현재 페이지 전체 선택" busy={loading} onAll={()=>setSelection(current=>[...new Set([...current,...rows.map(row=>row.id)])])} onClear={()=>setSelection([])} onClose={()=>{setSelection([]);window.dispatchEvent(new Event('gamjassak-unknown-pet-selection-close'));}}><button className="primaryControl" disabled={!selection.length} onClick={()=>setAssigning(true)}>이름 지정</button></EntitySelectionBar>}
     {assigning && <EntityAssignmentDialog kind="pet" entries={pets} count={selection.length} unit="반려동물 인식 결과" onClose={()=>setAssigning(false)} onSave={async value=>{
       await assignPetDetections(selection,value);setSelection([]);
       try {await onSaved();const result=await read(0);setRows(result.found);setNext(result.more);setPage(0);}

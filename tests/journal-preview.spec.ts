@@ -206,6 +206,7 @@ test('unregistered photos disappear from albums and clearing leaves an empty alb
   await expect(reader.getByRole('button', { name: 'record-1.jpg 상세보기' })).toHaveCount(0);
 
   await reader.getByTitle('닫기', { exact: true }).click();
+  if (!await page.getByRole('button', { name: '설정', exact: true }).isVisible()) await page.getByRole('button', { name: '전체 메뉴', exact: true }).click();
   await page.getByRole('button', { name: '설정', exact: true }).click();
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: '모두 비우기', exact: true }).click();

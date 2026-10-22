@@ -1,3 +1,4 @@
+import { FunctionHelp } from './FunctionHelp';
 import { useMemo, useRef, useState, type FormEvent } from 'react';
 import { Check, ChevronLeft, ChevronRight, LoaderCircle } from 'lucide-react';
 import type { MediaItem } from '../types/media';
@@ -38,8 +39,8 @@ export function EntityPhotoPicker({ title, photos, name, initialIds = [], automa
     <form onSubmit={event => void submit(event)}>
       <div className="entityEditBody">
         {name === undefined ? <label className="entityEditField">이름<input aria-label="등록할 이름" value={draftName} maxLength={80} required disabled={busy} placeholder="이름을 입력하세요" onChange={event => setName(event.target.value)} /></label> : <strong>{name}의 사진</strong>}
-        <p>자동으로 감지하지 못한 사진도 직접 등록할 수 있어요. 사진을 눌러 연결하거나 해제하세요.</p>
-        {!!automatic.size && <p>얼굴로 연결된 사진은 표시만 합니다. 연결을 바꾸려면 인물 화면의 얼굴 선택 또는 사진 선택를 사용하세요.</p>}
+        <FunctionHelp title="사진 연결"><p>자동으로 감지하지 못한 사진도 직접 등록할 수 있어요. 사진을 눌러 연결하거나 해제하세요.</p>
+        {!!automatic.size && <p>얼굴로 연결된 사진은 표시만 합니다. 연결을 바꾸려면 인물 화면의 얼굴 선택 또는 사진 선택을 사용하세요.</p>}</FunctionHelp>
         <div className="peopleActions"><button type="button" disabled={busy} onClick={() => setSelected(new Set(photos.filter(photo=>!automatic.has(Number(photo.id))).map(photo=>Number(photo.id))))}>전체 선택</button><button type="button" disabled={busy || !selected.size} onClick={() => setSelected(new Set())}>선택 해제</button></div>
         <div className="entityPhotoCount" role="status">사진 {count}장 선택</div>
         <div className="entityPhotoGrid" {...drag}>{photos.slice(currentPage * 24, (currentPage + 1) * 24).map(photo => <button type="button" key={photo.id} data-selection-id={photo.id} className="entityPhotoChoice" aria-label={`사진 선택 ${photo.fileName}`} aria-pressed={checked(photo.id)} disabled={busy || automatic.has(Number(photo.id))} onClick={() => toggle(photo.id)}>

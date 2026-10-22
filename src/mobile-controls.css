@@ -130,5 +130,7 @@
   .diaryCard:hover { transform: none; }
 }
 
-.navAllMenu { flex:0 0 auto; align-self:center; padding-left:4px; }
-.navAllMenu .actionMenuTrigger { min-height:44px; display:flex; align-items:center; gap:4px; padding:8px; white-space:nowrap; }
+.headerMenu { display:none; }
+.sidebar:has(.navScroll[data-overflow="true"]) .headerMenu { display:block; flex-shrink:0; justify-self:end; }
+.sidebar:has(.navScroll[data-overflow="true"]) .globalSettings { display:none; }
+.headerMenu .actionMenuTrigger { width:44px; height:44px; min-height:44px; padding:0; display:grid; place-items:center; color:var(--text); background:transparent; border:0; }

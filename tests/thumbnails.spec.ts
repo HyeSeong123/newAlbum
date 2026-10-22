@@ -29,6 +29,7 @@ test('list requests thumbnail while detail keeps original', async ({ page }) => 
   await page.locator('.mediaTile').first().click();
   await expect(page.locator('.detailStage img.mediaImage')).toHaveAttribute('src', /#original$/);
   await page.getByTitle('닫기', { exact: true }).click();
+  if (!await page.getByRole('button', { name: '설정', exact: true }).isVisible()) await page.getByRole('button', { name: '전체 메뉴', exact: true }).click();
   await page.getByRole('button', { name: '설정', exact: true }).click();
   await page.getByRole('button', { name: '사진 기록', exact: true }).click();
   await expect(page.locator('.mediaTile img.mediaImage')).toHaveAttribute('src', /#thumbnail$/);

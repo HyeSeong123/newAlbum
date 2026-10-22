@@ -1,6 +1,6 @@
 .gomiHelpEntry { display: flex; justify-content: flex-end; margin-bottom: 12px; }
 .gomiHelpButton { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 4px 12px 4px 6px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: #69533f; font-size: 13px; }
-.gomiHelpButton img { width: 32px; height: 32px; object-fit: contain; }
+.gomiHelpButton img { width: 24px; height: 24px; object-fit: contain; }
 .gomiGuideBackdrop { z-index: 120; }
 .gomiGuide { display: flex; flex-direction: column; width: min(580px, 100%); max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px); overflow: hidden; border-radius: 18px; background: var(--surface); box-shadow: var(--shadow-strong); }
 .gomiGuideHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 24px 12px; }

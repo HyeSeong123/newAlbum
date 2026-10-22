@@ -63,5 +63,16 @@ test('capture current app tasks and record expectations before actions', async (
   await page.getByRole('tab',{name:'반려동물',exact:true}).click();
   await page.getByRole('button',{name:'보리 1장',exact:true}).click();
   await shot('14-pet-detail','인물 상세와 같은 위치에서 같은 기능을 조작한다.');
+  await page.getByRole('button',{name:'감자싹 홈으로 이동',exact:true}).click();
+  await page.locator('.homeShortcuts').scrollIntoViewIfNeeded();
+  await shot('15-home-shortcuts','홈의 일기장 다음에 사람과 반려동물 바로가기가 보인다.');
+  await page.locator('.navList').getByRole('button',{name:'사람과 반려동물',exact:true}).click();
+  await page.getByRole('button',{name:'고미 도움말 열기',exact:true}).click();
+  await shot('16-people-help','인물 도움말에서는 인물 기능만 확인한다.');
+  await page.getByRole('button',{name:'도움말 닫기',exact:true}).click();
+  await page.getByRole('tab',{name:'반려동물',exact:true}).click();
+  await page.getByRole('button',{name:'고미 도움말 열기',exact:true}).click();
+  await shot('17-pet-help','반려동물 도움말에서는 반려동물 기능만 확인한다.');
+  await page.getByRole('button',{name:'도움말 닫기',exact:true}).click();
   await writeFile(`${folder}/observations.json`,JSON.stringify(notes,null,2));
 });

@@ -1,3 +1,4 @@
+import { FunctionHelp } from '../../components/FunctionHelp';
 import { useEffect, useMemo, useState } from 'react';
 import { Check, ChevronLeft, ChevronRight, LoaderCircle, Users } from 'lucide-react';
 import { EntityEditorDialog } from '../../components/EntityEditorDialog';
@@ -56,8 +57,8 @@ export function FaceMatchReview({ index, onClose, onSaved, onRegister }: { index
         {loading && <p role="status"><LoaderCircle className="spinIcon" size={18} />얼굴 비교 중</p>}
         {error && <p role="alert">{error}</p>}
         {!loading && !error && <p role="status">미확인 얼굴 {faces.length}개 · 이름 추천 {proposals.length}개</p>}
-        <p>이름이 없고 아직 확인하지 않은 얼굴만 다시 비교해요. 이미 확인한 인물과 사진 연결은 유지됩니다.</p>
-        <p>얼굴을 선택해 추천 이름을 확인하거나 이름 지정하세요. 저장하기 전에는 이름을 바꾸지 않아요.</p>
+        <FunctionHelp title="미확인 인물 다시 확인"><p>이름이 없고 아직 확인하지 않은 얼굴만 다시 비교해요. 이미 확인한 인물과 사진 연결은 유지됩니다.</p>
+        <p>얼굴을 선택해 추천 이름을 확인하거나 이름 지정하세요. 저장하기 전에는 이름을 바꾸지 않아요.</p></FunctionHelp>
         <div className="faceMatchGrid" {...selection}>{pageFaces.map((face) => {
           const match = proposals.find(entry => entry.face_id === face.id);
           const person = index.people.find((entry) => entry.id === match?.person_id);

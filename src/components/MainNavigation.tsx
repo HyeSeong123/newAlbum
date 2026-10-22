@@ -1,8 +1,7 @@
-import { ActionMenu } from './ActionMenu';
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { Check, ChevronLeft, ChevronRight, Menu } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-export function MainNavigation({ children, activeKey, menuItems = [] }: { children: ReactNode; activeKey: string; menuItems?: {label:string; active:boolean; onSelect:()=>void}[] }) {
+export function MainNavigation({ children, activeKey }: { children: ReactNode; activeKey: string }) {
   const nav = useRef<HTMLElement>(null);
   const [edges, setEdges] = useState({ overflow: false, left: false, right: false });
   function measure() {
@@ -39,6 +38,5 @@ export function MainNavigation({ children, activeKey, menuItems = [] }: { childr
     <button className="navScrollArrow" aria-label="이전 메뉴 보기" title="이전 메뉴 보기" disabled={!edges.left} hidden={!edges.overflow} onClick={() => scroll(-1)}><ChevronLeft size={20} /></button>
     <nav ref={nav} className="navList" aria-label="주 메뉴" onScroll={measure}>{children}</nav>
     <button className="navScrollArrow" aria-label="다음 메뉴 보기" title="다음 메뉴 보기" disabled={!edges.right} hidden={!edges.overflow} onClick={() => scroll(1)}><ChevronRight size={20} /></button>
-    {edges.overflow && menuItems.length > 0 && <div className="navAllMenu"><ActionMenu label="전체 메뉴" triggerText="전체 메뉴" icon={<Menu size={18}/>} actions={menuItems.map(item=>({label:item.label,icon:item.active?<Check size={16}/>:undefined,onSelect:item.onSelect}))}/></div>}
   </div>;
 }

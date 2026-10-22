@@ -1,3 +1,4 @@
+import { FunctionHelp } from '../../components/FunctionHelp';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronLeft, ChevronRight, LoaderCircle, ScanSearch, Pause, Play } from 'lucide-react';
 import { useRowSelection } from '../../hooks/useRowSelection';
@@ -106,7 +107,7 @@ export function PetPhotoSearch({ photos, pets, pet, analysis, onClose, onSaved }
   }
   return <EntityEditorDialog title="반려동물 사진 찾기" busy={saving} onClose={onClose} className="petPhotoSearch">
     <div className="entityEditBody">
-      <p>{pet ? `${pet.name}의 연결된 사진과 비교합니다.` : '반려동물별로 연결한 사진과 비교합니다.'} 찾은 사진에서 같은 반려동물인지 확인한 뒤 연결하세요.</p>
+      <FunctionHelp title="반려동물 사진 찾기"><p>{pet ? `${pet.name}의 연결된 사진과 비교합니다.` : '반려동물별로 연결한 사진과 비교합니다.'} 찾은 사진에서 같은 반려동물인지 확인한 뒤 연결하세요.</p></FunctionHelp>
       {!canSearch && <p>먼저 사진 연결에서 반려동물이 나온 사진을 한 장 이상 연결해 주세요.</p>}
       <div className="petSearchActions">{analysis.progress?.running ? <button disabled={saving} onClick={analysis.cancel}><Pause size={18} />찾기 중단</button> : <><button className="primaryControl" disabled={saving || !canSearch || !photos.length} onClick={search}><ScanSearch size={18} />사진 찾기 시작</button>{analysis.waiting > 0 && <button disabled={saving || !canSearch} onClick={analysis.resume}><Play size={18} />이어서 분석</button>}</>}</div>
       {analysis.progress && <p role="status">{analysis.progress.message}</p>}

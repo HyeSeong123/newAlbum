@@ -1,3 +1,4 @@
+import { FunctionHelp } from '../../components/FunctionHelp';
 import { useBackAction } from '../../hooks/useBackAction';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, BookPlus, Check, FolderOutput, Image as ImageIcon, ImagePlus, LoaderCircle, MoreVertical, Pause, Pencil, Play, RefreshCw, Scissors, Trash2, Users, X } from 'lucide-react';
@@ -278,7 +279,6 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive 
       </>}
     </div>}
     {!person && !showFaceThumbnails && <label className="entitySort">정렬<select aria-label="인물 정렬" value={sort} onChange={event => setSort(event.target.value)}><option value="name">이름순</option><option value="photos">사진 많은 순</option></select></label>}
-    {person && (selecting || photoSelecting) && <p className="entitySelectionHint">{selecting ? '얼굴을 선택합니다. 표시된 얼굴만 변경하며 같은 사진의 다른 인물은 유지됩니다.' : '사진을 선택합니다. 이 인물과의 연결만 변경합니다. 얼굴 하나만 바꾸려면 더보기의 ‘얼굴 선택’을 사용하세요.'}</p>}
     {loading && <p role="status"><LoaderCircle size={18} className="spinIcon" />인물 불러오는 중</p>}
     {(running || status) && <div className="faceProgress" role="status"><span>{status}</span>{running && <><span>{progress.done} / {progress.total}장</span><div className="peopleActions"><button onClick={() => { stop.current = true; controller.current?.abort(); void controlPersonJobs(false).catch(() => undefined); setStatus('분석을 중단하는 중'); }}><Pause size={18} />중단</button></div><progress value={progress.done} max={progress.total || 1} /></>}</div>}
     {error && !editingName && <p role="alert" className="faceError">{error}</p>}
@@ -301,7 +301,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive 
           }}><X size={18} />선택한 얼굴 제외</button></>}
         </div>}</div>
         {!loading && !group.people.length && <p>{query ? '검색한 이름의 인물이 없습니다.' : group.title === '등록된 인물' ? '이름을 등록한 인물이 없습니다.' : '이름을 붙일 사람이 없습니다.'}</p>}
-        {group.title === '미확인 인물' && group.people.length > 0 && <p className="peopleSectionHint">미확인 인물을 열어 이름을 지정하거나, 미확인 얼굴을 선택해 함께 이름을 지정하세요.</p>}
+        {group.title === '미확인 인물' && group.people.length > 0 && <FunctionHelp title="미확인 인물"><p>미확인 인물을 열어 이름을 지정하거나, 미확인 얼굴을 선택해 함께 이름을 지정하세요.</p></FunctionHelp>}
       <div className="personGrid" {...peopleDrag}>{group.people.slice(page * 24, (page + 1) * 24).map((entry) => {
         const members = lookup.byPerson.get(entry.id) ?? EMPTY_FACES;
         const selectable = peopleSelecting || !entry.name.trim() && selectingUnknown;
@@ -356,7 +356,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive 
         </article>;
       })}</div>
       {facePages > 1 && <div className="peopleActions"><button disabled={currentFacePage === 0} onClick={() => setFacePage(currentFacePage - 1)}>이전</button><span>{currentFacePage + 1} / {facePages}</span><button disabled={currentFacePage === facePages - 1} onClick={() => setFacePage(currentFacePage + 1)}>다음</button></div>}
-      {selecting && <EntitySelectionBar count={chosen.length} unit="얼굴" busy={blocked} onAll={() => setChosen(faces.map(face => face.id))} onClear={() => setChosen([])} onClose={() => { setSelecting(false); setChosen([]); }}>
+      {selecting && <EntitySelectionBar count={chosen.length} unit="얼굴" help={<p>표시된 얼굴만 변경합니다. 같은 사진의 다른 인물과 원본 사진은 유지됩니다.</p>} busy={blocked} onAll={() => setChosen(faces.map(face => face.id))} onClear={() => setChosen([])} onClose={() => { setSelecting(false); setChosen([]); }}>
         <button className="primaryControl" disabled={blocked || !chosen.length} onClick={() => setAssignment('faces')}>{person?.name.trim() ? '다른 인물로 변경' : '이름 지정'}</button>
 
         <button disabled={blocked || !chosen.length} onClick={() => void edit(() => assignPersonFaces(chosen,{target:null,name:null}))}>미확인 상태로 변경</button>
@@ -366,7 +366,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive 
           {label:'선택한 사진으로 앨범 만들기',disabled:!chosenAlbumItems.length,onSelect:()=>onCreateAlbum(chosenAlbumItems)},
         ]}/>}
       </EntitySelectionBar>}
-      {photoSelecting && person && <EntitySelectionBar count={chosen.length} unit="사진" busy={blocked} onAll={() => setChosen(personItems.map(item => Number(item.id)))} onClear={() => setChosen([])} onClose={() => { setPhotoSelecting(false); setChosen([]); }}>
+      {photoSelecting && person && <EntitySelectionBar count={chosen.length} unit="사진" help={<p>이 인물과의 사진 연결만 변경합니다. 같은 사진의 다른 인물은 유지됩니다. 얼굴 하나만 바꾸려면 더보기의 ‘얼굴 선택’을 사용하세요.</p>} busy={blocked} onAll={() => setChosen(personItems.map(item => Number(item.id)))} onClear={() => setChosen([])} onClose={() => { setPhotoSelecting(false); setChosen([]); }}>
         <button className="primaryControl" disabled={blocked || !chosen.length} onClick={() => setAssignment('photos')}>다른 인물로 변경</button>
         <button disabled={blocked || !chosen.length} onClick={() => void edit(() => editEntityPhotos('person',person.id,chosen,'unknown'))}>미확인 상태로 변경</button>
         <button disabled={blocked || !chosen.length} onClick={() => { if(window.confirm(`사진 ${chosen.length}장의 이 인물 연결만 제외할까요? 같은 사진의 다른 인물과 원본 사진은 유지됩니다.`)) void edit(() => editEntityPhotos('person',person.id,chosen,'exclude')); }}>이 인물에서 제외</button>

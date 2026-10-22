@@ -132,6 +132,7 @@ test("mobile nav is usable", async ({ page, isMobile }) => {
 
 test("settings clear button is disabled when album is empty", async ({ page }) => {
   await page.goto("/");
+  if (!await page.getByRole("button", { name: "설정", exact: true }).isVisible()) await page.getByRole("button", { name: "전체 메뉴", exact: true }).click();
   await page.getByRole("button", { name: /설정/ }).click();
   await expect(page.getByText("앱에 등록된 0개의 항목만 지웁니다. 원본 파일은 그대로 남습니다.")).toBeVisible();
   await expect(page.getByRole("region", { name: "앱 시작 화면" })).toContainText("홈");

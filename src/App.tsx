@@ -19,12 +19,13 @@ import { MediaImportProgress } from "./features/media/MediaImportProgress";
 import { useAndroidBack } from "./hooks/useAndroidBack";
 import { FirstRunGuide, FIRST_RUN_KEY } from "./components/FirstRunGuide";
 import { ChangeEvent, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { LoaderCircle, Plus, Search, Settings, X } from "lucide-react";
+import { Check, LoaderCircle, Menu, Plus, Search, Settings, X } from "lucide-react";
 import { MEDIA_FILE_ACCEPT } from "./features/media/mediaService";
 import { filterJournalMonth, journalMonthTitle, resolveJournalMonth } from "./features/media/journalModel";
 import type { MediaItem } from "./types/media";
 import { DiaryView, useDiary } from "./features/diary/DiaryView";
 import { BrandLogo } from "./components/BrandLogo";
+import { ActionMenu } from "./components/ActionMenu";
 import { MainNavigation } from "./components/MainNavigation";
 import { HomeView } from "./features/home/HomeView";
 import { CharacterBook } from "./features/characters/CharacterBook";
@@ -197,7 +198,7 @@ export function App() {
           <BrandLogo />
         </button>
 
-        <MainNavigation activeKey={`${activeView}:${largeLayout}`} menuItems={[...navItems.map(item => ({label:item.label, active:item.name===activeView, onSelect:()=>navigate(item.name)})), {label:"설정",active:activeView==="Settings",onSelect:()=>navigate("Settings")}]}>
+        <MainNavigation activeKey={`${activeView}:${largeLayout}`}>
           {navItems.map(({ name, label, accessibleLabel }) => (
             <button
               key={name}
@@ -216,6 +217,7 @@ export function App() {
         </MainNavigation>
         <button className="layoutToggle" aria-pressed={largeLayout} onClick={() => { setLargeLayout(!largeLayout); localStorage.setItem("warm-journal-large-layout", String(!largeLayout)); }}>{largeLayout ? "기본 크기" : "크게 보기"}</button>
         <button className="globalSettings" aria-label="설정" title="설정" aria-pressed={activeView === "Settings"} onClick={() => navigate("Settings")}><Settings size={20} /><span>설정</span></button>
+        <div className="headerMenu"><ActionMenu label="전체 메뉴" icon={<Menu size={22}/>} actions={[...navItems.map(item => ({label:item.label,icon:item.name===activeView?<Check size={16}/>:undefined,onSelect:()=>navigate(item.name)})),{label:"설정",icon:activeView==="Settings"?<Check size={16}/>:undefined,onSelect:()=>navigate("Settings")}]} /></div>
       </header>
 
       <section className="workspace">
@@ -257,10 +259,10 @@ export function App() {
 
         <section className="contentGrid">
           <div className="mainPanel">
-            <div className="gomiHelpEntry"><button type="button" className="gomiHelpButton" aria-label="고미 도움말 열기" onClick={() => setGuideTopic(currentGuideTopic)}><img src={gomiAffection < 60 ? "/characters/gomi/cynical.png" : "/characters/gomi/idle.png"} alt="" draggable={false} />고미 도움말</button></div>
+            <div className="gomiHelpEntry"><button type="button" className="gomiHelpButton" aria-label="고미 도움말 열기" onClick={() => setGuideTopic(currentGuideTopic)}><img src={gomiAffection < 60 ? "/characters/gomi/cynical.png" : "/characters/gomi/idle.png"} alt="" draggable={false} />도움말</button></div>
             {activeView === "Home" && <HomeView today={today} itemCount={items.length} albumCount={savedAlbums.length} diaryCount={diary.entries.length}
               mainCharacter={mainCharacter} onInteract={id => { void characters.interact(id); }} onShowCharacters={() => navigate("Characters")}
-              onShowLibrary={() => navigate("Library")} onShowAlbums={() => navigate("Albums")} onShowDiary={() => navigate("Diary")} />}
+              onShowLibrary={() => navigate("Library")} onShowAlbums={() => navigate("Albums")} onShowDiary={() => navigate("Diary")} onShowPeople={() => navigate("People")} />}
             {activeView === "Characters" && <CharacterBook characters={characters.snapshot.characters} onRename={characters.rename} onSetMain={characters.setMain} />}
             {characters.error && (activeView === "Home" || activeView === "Characters") && <p role="alert">{characters.error}</p>}
             {activeView === "Library" && (
@@ -305,7 +307,7 @@ export function App() {
           </div>
         </section>
         {firstRunOpen && <FirstRunGuide affection={gomiAffection} onLater={closeFirstRun} onGuide={() => { closeFirstRun(); setGuideTopic("photos"); }} onImport={() => { closeFirstRun(); setImportOpen(true); }} />}
-        {guideTopic && <GomiGuide affection={gomiAffection} initialTopic={guideTopic} onClose={() => setGuideTopic(null)} onAction={topic => {
+        {guideTopic && <GomiGuide affection={gomiAffection} initialTopic={guideTopic} topicOnly={activeView !== "Home"} onClose={() => setGuideTopic(null)} onAction={topic => {
           setGuideTopic(null);
           if (topic === "photos") { navigate("Library"); setImportOpen(true); }
           else {

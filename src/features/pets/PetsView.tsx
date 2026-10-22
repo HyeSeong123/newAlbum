@@ -1,3 +1,4 @@
+import { FunctionHelp } from '../../components/FunctionHelp';
 import { useBackAction } from '../../hooks/useBackAction';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, LoaderCircle, MoreVertical, PawPrint, Pencil, Plus, RefreshCw, Trash2, X } from 'lucide-react';
@@ -117,13 +118,13 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
     {!desktop && <p role="status">반려동물 등록·인식은 감자싹 앱에서 사용할 수 있습니다.</p>}
     {desktop && !selecting && <div className="entityQuickActions">{pet ? <><button disabled={busy} onClick={()=>editPet('photos')}><Plus size={18}/>사진 연결</button><button disabled={busy} onClick={()=>editPet('name')}><Pencil size={18}/>이름 변경</button></> : <>{!unknown && <button disabled={busy || !matchingPets.length} onClick={()=>{setSelecting(!selecting);setChosen([]);}}>선택</button>}<button className={unknown?'active':''} onClick={()=>{if(!unknown)listScroll.current=window.scrollY;setUnknown(true);setActive(null);}}>미확인 반려동물</button></>}</div>}
     {!pet && !unknown && <label className="entitySort">정렬<select aria-label="반려동물 정렬" value={sort} onChange={event=>setSort(event.target.value)}><option value="name">이름순</option><option value="photos">사진 많은 순</option></select></label>}
-    {desktop && !selecting && !unknown && pets.length > 0 && <div className="petFindPhotos"><div><strong>{pet ? `${pet.name}의 다른 사진도 찾아보세요` : '반려동물 사진을 한곳에 모으세요'}</strong><p className="petMatchNotice">버튼을 누르면 연결한 사진과 비교해 비슷한 사진을 찾아요.</p></div><button disabled={loading || !photos.length} onClick={() => setReviewing(true)}><ScanSearch size={18}/>반려동물 사진 찾기</button></div>}
+    {desktop && !selecting && !unknown && pets.length > 0 && <div className="entityQuickActions"><button disabled={loading || !photos.length} onClick={() => setReviewing(true)}><ScanSearch size={18}/>반려동물 사진 찾기</button><FunctionHelp title="반려동물 사진 찾기"><p>연결한 사진과 비교해 비슷한 사진을 찾습니다. 결과를 확인한 뒤 같은 반려동물의 사진만 연결하세요.</p></FunctionHelp></div>}
     {!reviewing && <PetAnalysisStatus analysis={analysis} onReview={() => setReviewing(true)} />}
 
     {loading && <p role="status"><LoaderCircle className="spinIcon" size={18} />반려동물 정보를 불러오는 중</p>}
     {error && <p role="alert">{error}</p>}
     {!pet && !unknown && <div className="peopleSummary">등록된 반려동물 {pets.length}마리</div>}
-    {!unknown && !loading && !(pet ? linked.length : matchingPets.length) && <EmptyState icon={<PawPrint size={30} />} title={pet ? '아직 연결한 사진이 없습니다.' : query ? '검색한 이름의 반려동물이 없습니다.' : '아직 등록한 반려동물이 없습니다.'} description={pet ? '‘사진 연결’에서 사진을 선택해 주세요.' : query ? '다른 이름으로 검색하거나 반려동물을 등록해 보세요.' : '‘반려동물 추가’에서 이름과 사진을 골라 주세요. 분석은 원할 때 시작할 수 있어요.'} />}
+    {!unknown && !loading && !(pet ? linked.length : matchingPets.length) && <EmptyState icon={<PawPrint size={30} />} title={pet ? '아직 연결한 사진이 없습니다.' : query ? '검색한 이름의 반려동물이 없습니다.' : '아직 등록한 반려동물이 없습니다.'} description={pet ? '사진을 연결해 보세요.' : query ? '다른 이름으로 검색하거나 반려동물을 등록해 보세요.' : '이름과 사진을 추가해 보세요.'} />}
     {unknown && <UnknownPets selecting={selecting} onOpen={onOpen} photos={photos} pets={pets} onSaved={async()=>setPets(await loadPets())}/>}
     {!unknown && <div className="petGrid" {...drag}>{pet ? linked.slice(currentPage * 24, (currentPage + 1) * 24).map((item) => <button key={item.id} className="petPhoto" data-selection-id={item.id} aria-label={selecting ? '사진 선택' : '사진 상세보기'} aria-pressed={selecting ? chosen.includes(Number(item.id)) : undefined} onClick={() => selecting ? toggle(item.id) : onOpen(item, linked)}><MediaVisual item={item} />{selecting && <span className={`faceCheck ${chosen.includes(Number(item.id))?'checked':''}`} aria-hidden="true">{chosen.includes(Number(item.id)) && <Check size={22}/>}</span>}<span>{item.takenAt ?? '날짜 없음'}</span></button>) : matchingPets.slice(currentPage * 24, (currentPage + 1) * 24).map((entry) => {
       const cover = covers.get(entry.id);
@@ -179,12 +180,11 @@ function PetEditor({ pet, photos, mode='all', onClose, onSaved }: { mode?: 'all'
       <div className="entityEditBody"><fieldset disabled={busy}>
         <div className="petFields">{(mode==='all' || mode==='name') && <label className="entityEditField">이름<input placeholder="반려동물 이름" required maxLength={80} value={name} onChange={(event) => setName(event.target.value)} /></label>}
         {(mode==='all' || mode==='cover') && <label className="entityEditField">대표 사진<select aria-label="대표 사진" value={actualCover ?? ''} disabled={!selected.length} onChange={(event) => setCover(Number(event.target.value))}>{!selected.length && <option value="">사진 없음</option>}{selected.map((id, i) => <option key={id} value={id}>{photos.find((photo) => Number(photo.id) === id)?.takenAt ?? '날짜 없음'} · {i + 1}</option>)}</select></label>}</div>
-        {mode!=='name' && <><div className="petPhotoSelectionHeading"><strong>연결할 사진</strong><span>{selected.length}장 선택</span></div><p className="petMatchNotice">{mode==='cover'?'대표로 사용할 사진을 누르세요.':'사진을 눌러 연결하거나 해제하세요. 원본 사진은 유지됩니다.'}</p>
+        {mode!=='name' && <><div className="petPhotoSelectionHeading"><strong>연결할 사진</strong><span>{selected.length}장 선택</span></div><FunctionHelp title={mode==='cover'?'대표 사진 변경':'사진 연결'}><p>{mode==='cover'?'대표로 사용할 사진을 누르세요.':'사진을 눌러 연결하거나 해제하세요. 원본 사진은 유지됩니다.'}</p><p>저장하면 이름과 사진만 연결합니다. 분석하려면 저장 후 ‘반려동물 사진 찾기’를 눌러 주세요.</p></FunctionHelp>
         {mode!=='cover' && <div className="peopleActions"><button type="button" onClick={()=>setSelected(photos.map(photo=>Number(photo.id)))}>전체 선택</button><button type="button" disabled={!selected.length} onClick={()=>setSelected([])}>선택 해제</button></div>}
         <div className="petGrid selecting" {...drag}>{availablePhotos.slice(currentPage * 24, (currentPage + 1) * 24).map((item) => <button type="button" key={item.id} className="petPhoto" data-selection-id={item.id} aria-label={mode==='cover'?'대표 사진으로 설정':'사진 선택'} aria-pressed={mode==='cover'?actualCover===Number(item.id):selected.includes(Number(item.id))} onClick={() => mode==='cover'?setCover(Number(item.id)):toggle(item.id)}>
           <MediaVisual item={item} /><span className={`faceCheck ${(mode==='cover'?actualCover===Number(item.id):selected.includes(Number(item.id))) ? 'checked' : ''}`} aria-hidden="true">{(mode==='cover'?actualCover===Number(item.id):selected.includes(Number(item.id))) && <Check size={22} />}</span><span>{item.takenAt ?? '날짜 없음'}</span>
         </button>)}</div>
-        <p className="petMatchNotice">저장하면 이름과 사진만 연결해요. 분석하려면 저장 후 ‘반려동물 사진 찾기’를 눌러 주세요.</p>
         {!photos.length && <p>등록된 사진이 없습니다.</p>}
         <div className="peopleActions">{pages > 1 && <><button type="button" title="이전 페이지" disabled={!currentPage} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={18} /></button><span>{currentPage + 1} / {pages}</span><button type="button" title="다음 페이지" disabled={currentPage === pages - 1} onClick={() => setPage(currentPage + 1)}><ChevronRight size={18} /></button></>}
         </div>

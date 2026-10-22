@@ -1,0 +1,8 @@
+.functionHelpTrigger { display:inline-flex; align-items:center; justify-content:center; gap:5px; min-height:44px; padding:8px 10px; border:0; border-radius:8px; background:transparent; color:var(--muted); font:inherit; font-size:13px; white-space:nowrap; }
+.functionHelpTrigger:hover { color:var(--text); background:var(--surface-soft); }
+.functionHelpTrigger svg { flex-shrink:0; }
+.modalBackdrop:has(> .functionHelpDialog) { z-index:160; }
+.functionHelpDialog { width:min(460px,100%); }
+.functionHelpCopy p { margin:0; color:var(--text); font-size:14px; line-height:1.75; }
+.functionHelpFooter { justify-content:flex-end; padding:12px 20px; border-top:1px solid var(--border); }
+.functionHelpFooter button { min-height:44px; padding:10px 24px; }

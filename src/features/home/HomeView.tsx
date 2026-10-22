@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, BookHeart, Heart, Images, NotebookPen } from "lucide-react";
+import { ArrowUpRight, BookHeart, Heart, Images, NotebookPen, Users } from "lucide-react";
 import { CharacterVisual } from "../characters/CharacterVisual";
 import { characterDefinitions, characterName, dialogueLines, nextDialogue, type OwnedCharacter } from "../characters/models";
 import { isGomiAngry, isGomiSleeping, isGomiSleepReaction } from "../characters/gomiBehavior";
@@ -36,12 +36,13 @@ type HomeViewProps = {
   onShowLibrary: () => void;
   onShowAlbums: () => void;
   onShowDiary: () => void;
+  onShowPeople: () => void;
   onShowCharacters: () => void;
   mainCharacter?: OwnedCharacter;
   onInteract: (id: string) => void;
 };
 
-export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibrary, onShowAlbums, onShowDiary, onShowCharacters, mainCharacter, onInteract }: HomeViewProps) {
+export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibrary, onShowAlbums, onShowDiary, onShowPeople, onShowCharacters, mainCharacter, onInteract }: HomeViewProps) {
   const [messageIndex, setMessageIndex] = useState(0);
   const [spokenLine, setSpokenLine] = useState<string | undefined>(undefined);
   const [happy, setHappy] = useState(false);
@@ -93,6 +94,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     { label: "사진 기록", description: "사진 속 하루를 다시 만나요", count: `${itemCount}개의 기록`, icon: Images, onClick: onShowLibrary },
     { label: "내 앨범", description: "함께한 순간을 한 권에 담아요", count: `${albumCount}개의 앨범`, icon: BookHeart, onClick: onShowAlbums },
     { label: "일기장", description: "오늘의 마음을 천천히 적어요", count: `${diaryCount}편의 일기`, icon: NotebookPen, onClick: onShowDiary },
+    { label: "사람과 반려동물", description: "", count: "", icon: Users, onClick: onShowPeople },
   ];
 
   return <section className="homeView" aria-label="감자싹 홈">
@@ -120,7 +122,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     <nav className="homeShortcuts" aria-label="기록 바로가기">
       {shortcuts.map(({ label, description, count, icon: Icon, onClick }) => <button type="button" className="homeShortcut" key={label} aria-label={`${label} 열기`} onClick={onClick}>
         <Icon className="homeShortcutIcon" size={21} aria-hidden="true" />
-        <span className="homeShortcutText"><strong>{label}</strong><span>{description}</span><small>{count}</small></span>
+        <span className="homeShortcutText"><strong>{label}</strong>{description && <span>{description}</span>}{count && <small>{count}</small>}</span>
         <ArrowUpRight className="homeShortcutArrow" size={17} aria-hidden="true" />
       </button>)}
     </nav>

@@ -10,6 +10,19 @@ export async function verifyInstalledAppUx(page, mediaId, pet, back, captureNati
     await captureNative(name);
   }
   const petHeading=await page.locator('.petsView h2').innerText();
+  await page.getByRole('button',{name:'감자싹 홈으로 이동',exact:true}).click();
+  await expect(page.locator('.homeShortcuts > button')).toHaveCount(4);
+  const homePeople=page.getByRole('button',{name:'사람과 반려동물 열기',exact:true});
+  await homePeople.scrollIntoViewIfNeeded();await capture('app-ux-home-people');await homePeople.click();
+  await page.getByRole('tab',{name:'반려동물',exact:true}).click();
+  await page.getByRole('button',{name:`${pet.name} ${pet.media_ids.length}장`,exact:true}).click();
+  await page.getByRole('button',{name:'고미 도움말 열기',exact:true}).click();
+  const guide=page.getByRole('dialog',{name:'고미 도움말',exact:true});
+  await expect(guide.locator('.gomiGuideTopics button')).toHaveCount(1);
+  await expect(guide.locator('.gomiGuideTopics')).toHaveText('반려동물');
+  await capture('app-ux-pet-help');await back();await expect(guide).toHaveCount(0);
+  await expect(page.locator('.petsView h2')).toHaveText(petHeading);
+
   await page.getByRole('button',{name:'선택',exact:true}).click();
   await page.getByRole('button',{name:'사진 선택',exact:true}).first().click();
   await expect(page.locator('.entitySelectionBar')).toContainText('사진 1개 선택');
@@ -25,6 +38,12 @@ export async function verifyInstalledAppUx(page, mediaId, pet, back, captureNati
   const tile=page.locator(`.mediaTile[data-media-id="${mediaId}"]`);await tile.click();
   await expect(page.locator('.selectionDock')).toContainText('항목 1개 선택');
   await capture('app-ux-photo-selection');
+  await page.locator('.selectionDock').getByRole('button',{name:'항목 선택 도움말',exact:true}).click();
+  await expect(page.getByRole('dialog',{name:'항목 선택 도움말',exact:true})).toBeVisible();
+  await capture('app-ux-selection-help');await back();
+  await expect(page.getByRole('dialog',{name:'항목 선택 도움말',exact:true})).toHaveCount(0);
+  await expect(page.locator('.selectionDock')).toContainText('항목 1개 선택');
+
   await back();await expect(page.locator('.libraryView')).toBeVisible();await expect(page.locator('.selectionDock')).toHaveCount(0);
   if(!await tile.count())for(const button of await page.getByRole('button',{name:/^기록 \d+개 더보기$/}).all())await button.click();
   await tile.scrollIntoViewIfNeeded();const scroll=await page.evaluate(()=>scrollY);await tile.click();
@@ -44,5 +63,5 @@ export async function verifyInstalledAppUx(page, mediaId, pet, back, captureNati
   await page.getByRole('button',{name:'전체 메뉴',exact:true}).click();await page.locator('.actionMenuPanel').getByRole('button',{name:'사람과 반려동물',exact:true}).click();
   await page.getByRole('tab',{name:'반려동물',exact:true}).click();
   await page.getByRole('button',{name:`${pet.name} ${pet.media_ids.length}장`,exact:true}).click();
-  return {wholeMenu:true,petSelectionBackKeepsDetail:true,photoSelectionBackKeepsList:true,diarySelectionBackKeepsList:true,favoriteNativePersistence:true,favoriteRestored:true,photoReturnScroll:true,sourceMediaId:mediaId,environment:'Android API 36 x86_64 emulator'};
+  return {homePeopleShortcut:true,helpScopedToCurrentFeature:true,helpBackKeepsSelection:true,wholeMenu:true,petSelectionBackKeepsDetail:true,photoSelectionBackKeepsList:true,diarySelectionBackKeepsList:true,favoriteNativePersistence:true,favoriteRestored:true,photoReturnScroll:true,sourceMediaId:mediaId,environment:'Android API 36 x86_64 emulator'};
 }
