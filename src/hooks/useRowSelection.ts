@@ -2,17 +2,24 @@ import { useRef, type PointerEvent } from 'react';
 
 // Across rows, include every tile in the row band, not only pointer-hit tiles.
 export function useRowSelection(enabled: boolean, toggle: (id: string) => void, isSelected: (id: string) => boolean) {
-  const gesture = useRef<{ start: string; seen: Set<string>; pointer: number; select: boolean } | null>(null);
+  const gesture = useRef<{ start: string; seen: Set<string>; pointer: number; select: boolean; x: number; y: number; dragging: boolean } | null>(null);
   const suppressMouseClick = useRef(false);
   function visit(element: HTMLElement) {
     const id = element.dataset.selectionId!;
-    if (!gesture.current || gesture.current.seen.has(id)) return;
+    if (!gesture.current || gesture.current.seen.has(id) || element.matches(':disabled') || element.querySelector('button:disabled')) return;
     gesture.current.seen.add(id);
     if (isSelected(id) !== gesture.current.select) toggle(id);
   }
   function move(event: PointerEvent<HTMLDivElement>) {
     const current = gesture.current;
     if (!enabled || !current || current.pointer !== event.pointerId) return;
+    if (!current.dragging) {
+      const dx = Math.abs(event.clientX-current.x), dy = Math.abs(event.clientY-current.y);
+      if (dy > 10 && dy > dx) { gesture.current=null; return; }
+      if (dx < 12 || dx < dy) return;
+      current.dragging=true; suppressMouseClick.current=true;
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
     const tiles = [...event.currentTarget.querySelectorAll<HTMLElement>('[data-selection-id]')];
     const start = tiles.find((tile) => tile.dataset.selectionId === current.start);
     if (!start) return;
@@ -41,22 +48,21 @@ export function useRowSelection(enabled: boolean, toggle: (id: string) => void, 
     style: enabled ? { touchAction: 'pan-y pinch-zoom' as const, userSelect: 'none' as const } : undefined,
     onPointerDown(event: PointerEvent<HTMLDivElement>) {
       suppressMouseClick.current = false;
-      // Touch and pen taps use the tile's click handler. A swipe must remain a
-      // native scroll gesture and must not select its starting tile.
-      if (!enabled || event.pointerType !== 'mouse' || event.button !== 0) return;
+      // Horizontal brush selects on touch; vertical swipes remain native scrolling.
+      if (!enabled || event.button !== 0) return;
       const tile = (event.target as HTMLElement).closest<HTMLElement>('[data-selection-id]');
       if (!tile) return;
-      suppressMouseClick.current = true;
-      gesture.current = { start: tile.dataset.selectionId!, seen: new Set(), pointer: event.pointerId, select: !isSelected(tile.dataset.selectionId!) };
-      event.currentTarget.setPointerCapture(event.pointerId);
-      visit(tile);
+      const mouse=event.pointerType==='mouse';
+      suppressMouseClick.current=mouse;
+      gesture.current = { start: tile.dataset.selectionId!, seen: new Set(), pointer: event.pointerId, select: !isSelected(tile.dataset.selectionId!), x:event.clientX, y:event.clientY, dragging:mouse };
+      if(mouse) {event.currentTarget.setPointerCapture(event.pointerId);visit(tile);}
     },
     onPointerMove: move,
     onPointerUp: end,
     onPointerCancel: end,
     onLostPointerCapture() { gesture.current = null; },
     onClickCapture(event: React.MouseEvent<HTMLDivElement>) {
-      if (enabled && suppressMouseClick.current && event.detail > 0) { event.preventDefault(); event.stopPropagation(); }
+      if (enabled && suppressMouseClick.current) { event.preventDefault(); event.stopPropagation(); }
       suppressMouseClick.current = false;
     },
   };

@@ -3,7 +3,7 @@ import type { MediaItem } from '../../types/media';
 import { normalizeLocalFilePath } from '../media/mediaSource';
 
 export interface FaceRow { id: number; media_id: number; person_id: number; thumbnail: string; confirmed: boolean; pose?:{automatic:import('./engine/pose').FacePose;manualView:import('./engine/pose').FaceView|null}|null }
-export interface FaceIndex { people: { id: number; name: string; cover_face_id?: number | null; media_ids?: number[] }[]; faces: FaceRow[]; scanned: number[] }
+export interface FaceIndex { people: { id: number; name: string; cover_face_id?: number | null; cover_media_id?: number | null; media_ids?: number[] }[]; faces: FaceRow[]; scanned: number[] }
 export const emptyFaceIndex: FaceIndex = { people: [], faces: [], scanned: [] };
 export const loadFaceIndex = () => invoke<FaceIndex>('list_face_index');
 export const saveManualPersonPhotos = (personId: number | null, name: string, mediaIds: number[]) => invoke<number>('save_manual_person_photos', { personId, name, mediaIds });

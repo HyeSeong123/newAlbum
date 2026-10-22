@@ -65,7 +65,7 @@ test('journal, person, pet, calendar, memory and album lists show complete photo
   await expectFullPhotos(page.locator('.petGrid .mediaImage'), 1);
   await page.getByRole('button', { name: '보리 3장', exact: true }).click();
   await expectFullPhotos(page.locator('.petGrid .mediaImage'), 3);
-  await page.getByRole('button', { name: '이름·사진 수정', exact: true }).click();
+  await page.getByRole('button',{name:'반려동물 관리',exact:true}).click();await page.getByRole('button', { name: '이름·사진 수정', exact: true }).click();
   await expectFullPhotos(page.locator('.petRegistrationEditor .mediaImage'), 6);
   await page.keyboard.press('Escape');
   await page.getByTitle('추억', { exact: true }).click();

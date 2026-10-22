@@ -95,6 +95,7 @@ CREATE TABLE IF NOT EXISTS person (
   name TEXT NOT NULL,
   profile_type TEXT NOT NULL DEFAULT 'person',
   cover_face_id INTEGER REFERENCES detected_face(id) ON DELETE SET NULL,
+  cover_media_id INTEGER REFERENCES media(id) ON DELETE SET NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

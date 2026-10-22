@@ -51,13 +51,13 @@ async function swipe(page: Page, tile: Locator) {
 async function selectPerson(page: Page) {
   await page.locator('.navList').getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '가족 48장', exact: true }).click();
-  await page.getByRole('button', { name: '사람 관리', exact: true }).click();
-  await page.getByRole('button', { name: '사진 정리', exact: true }).click();
+  await page.getByRole('button', { name: '인물 관리', exact: true }).click();
+  await page.getByRole('button', { name: '얼굴 선택', exact: true }).click();
 }
 
 async function editPet(page: Page) {
   await page.getByRole('tab', { name: '반려동물', exact: true }).click();
-  await page.getByRole('button', { name: '반려동물 등록', exact: true }).click();
+  await page.getByRole('button', { name: '반려동물 추가', exact: true }).click();
   return page.locator('.petRegistrationEditor');
 }
 

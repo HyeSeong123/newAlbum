@@ -1,0 +1,22 @@
+.entityQuickActions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.entityQuickActions button { min-height:44px; display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:10px 14px; border:1px solid var(--border); background:var(--surface,#fff); color:var(--text); border-radius:999px; }
+.entitySelectionBar { position:sticky; bottom:calc(12px + env(safe-area-inset-bottom,0px)); z-index:8; padding:14px; border:1px solid var(--border); border-radius:16px; background:var(--surface,#fff); box-shadow:0 4px 24px #203b3026; display:grid; gap:8px; }
+.entitySelectionSummary, .entitySelectionTools, .entitySelectionCommands { display:flex; flex-wrap:wrap; align-items:center; gap:8px; min-width:0; }
+.entitySelectionSummary { justify-content:space-between; }
+.entitySelectionBar small { color:var(--muted); line-height:1.5; }
+.entitySelectionBar button { min-height:44px; white-space:normal; }
+.entitySelectionCommands:empty { display:none; }
+.entitySelectionCommands .primaryControl { flex:1; }
+.entityAssignment { width:min(480px,100%); }
+.entityQuickActions .active { background:var(--surface-soft); border-color:var(--primary); }
+.entitySort { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:13px; }
+.entitySort select { min-height:44px; padding:8px; border:1px solid var(--border); border-radius:8px; background:var(--surface,#fff); color:var(--text); font:inherit; }
+.personFaceIdentity { position:absolute; bottom:8px; left:8px; width:44px; height:44px; border:2px solid white; border-radius:6px; object-fit:cover; pointer-events:none; }
+.entitySelectionHint { margin:0; font-size:13px; line-height:1.6; color:var(--muted); }
+@media(max-width:700px) { .entitySelectionBar { bottom:calc(8px + env(safe-area-inset-bottom,0px)); } .entitySelectionCommands > button { flex:1 1 45%; } .entityQuickActions { gap:8px; } }
+/* Selection commands remain reachable while the photo list scrolls. */
+@media(max-width:700px) {
+  .entitySelectionBar { position:fixed; left:12px; right:12px; max-height:42dvh; overflow-y:auto; }
+  .peopleView:has(.entitySelectionBar), .petsView:has(.entitySelectionBar) { padding-bottom:280px; }
+}
+.entityPhotoChoice .faceCheck, .personPhoto > .faceCheck, .petPhoto > .faceCheck, .personTile > .faceCheck { pointer-events:none; }

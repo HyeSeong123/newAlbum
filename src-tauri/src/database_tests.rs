@@ -17,7 +17,7 @@ fn version_16_upgrade_keeps_existing_face_pet_and_paused_job_records(){
       INSERT INTO pet(id,name) VALUES(8,'보리');INSERT INTO pet_media VALUES(8,1);
       INSERT INTO pet_analysis_job(media_id,pet_id,state) VALUES(1,8,'paused');").unwrap();
     let before=snapshot(&c);initialize(&mut c).unwrap();assert_eq!(snapshot(&c),before);
-    assert!(table_exists(&c,"person_photo").unwrap());assert_eq!(version(&c).unwrap(),17);
+    assert!(table_exists(&c,"person_photo").unwrap());assert_eq!(version(&c).unwrap(),VERSION);
     assert_eq!(c.query_row("SELECT state,refresh FROM pet_analysis_job",[],|r|Ok((r.get::<_,String>(0)?,r.get::<_,bool>(1)?))).unwrap(),("paused".into(),false));
     c.execute("INSERT INTO person_photo VALUES(42,1)",[]).unwrap();initialize(&mut c).unwrap();assert_eq!(c.query_row("SELECT COUNT(*) FROM person_photo",[],|r|r.get::<_,i64>(0)).unwrap(),1);
 }
@@ -267,4 +267,15 @@ fn version_one_database_upgrades_and_persists_manual_regions_on_reopen() {
     assert_eq!(albums[0].contents.len(),2);
     drop(reopened);
     fs::remove_file(path).unwrap();
+}
+
+#[test]
+fn version_17_upgrade_adds_cover_without_changing_memberships() {
+    let mut c=Connection::open_in_memory().unwrap();initialize(&mut c).unwrap();
+    c.execute_batch("ALTER TABLE person DROP COLUMN cover_media_id; PRAGMA user_version=17; INSERT INTO media(id,file_path,file_type,size_bytes) VALUES(1,'original','image',1); INSERT INTO person(id,name,profile_type) VALUES(5,'가족','manual'); INSERT INTO person_photo VALUES(5,1);").unwrap();
+    initialize(&mut c).unwrap();
+    assert_eq!(c.query_row("SELECT media_id FROM person_photo WHERE person_id=5",[],|r|r.get::<_,i64>(0)).unwrap(),1);
+    assert_eq!(c.query_row("SELECT cover_media_id FROM person WHERE id=5",[],|r|r.get::<_,Option<i64>>(0)).unwrap(),None);
+    c.execute("UPDATE person SET cover_media_id=1 WHERE id=5",[]).unwrap();initialize(&mut c).unwrap();
+    assert_eq!(c.query_row("SELECT cover_media_id FROM person WHERE id=5",[],|r|r.get::<_,i64>(0)).unwrap(),1);
 }

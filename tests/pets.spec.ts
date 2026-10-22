@@ -28,10 +28,10 @@ test('pets collect photos manually and preserve originals', async ({ page }) => 
   await page.goto('/');
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await expect(page.getByRole('button', { name: '반려동물', exact: true })).toHaveCount(0);
-  await page.getByRole('tab', { name: '사람', exact: true }).focus();
+  await page.getByRole('tab', { name: '인물', exact: true }).focus();
   await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('tab', { name: '반려동물', exact: true })).toBeFocused();
-  await page.getByRole('button', { name: '반려동물 등록', exact: true }).click();
+  await page.getByRole('button', { name: '반려동물 추가', exact: true }).click();
   await page.getByLabel('이름', { exact: true }).fill('보리');
   const choices = page.getByRole('button', { name: '사진 선택', exact: true });
   await choices.nth(0).click();
@@ -45,7 +45,7 @@ test('pets collect photos manually and preserve originals', async ({ page }) => 
   await page.getByRole('button', { name: '사진 상세보기', exact: true }).first().click();
   await expect(page.getByRole('dialog', { name: '사진 상세' })).toBeVisible();
   await page.getByTitle('닫기').click();
-  await page.getByRole('button', { name: '이름·사진 수정', exact: true }).click();
+  await page.getByRole('button',{name:'반려동물 관리',exact:true}).click();await page.getByRole('button', { name: '이름·사진 수정', exact: true }).click();
   await page.getByLabel('이름', { exact: true }).fill('우리 보리');
   await page.getByRole('button', { name: '사진 선택', exact: true }).first().click();
   await page.getByRole('button', { name: '저장', exact: true }).click();

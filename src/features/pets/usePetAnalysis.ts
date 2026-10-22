@@ -32,7 +32,7 @@ export function usePetAnalysis(media: MediaItem[]) {
         if(!queue?.jobs)break; // browser previews without native queue commands
         if(mounted.current)setWaiting(queue.paused+queue.failed);
         const pending = queue.jobs.filter(job => job.state === 'pending');
-        if(!pending.length){if(mounted.current && (done || queue.paused || queue.failed || relearning.current))setProgress({done,total:done,failed,detected,running:false,message:queue.paused+queue.failed?`완료 ${done}장 · 대기 ${queue.paused}장 · 재시도 필요 ${queue.failed}장${queue.jobs.find(j=>j.error)?.error?` (${queue.jobs.find(j=>j.error)!.error})`:''}`:retrained || relearning.current?`등록 사진 ${retrained}장 다시 학습 완료 · 인식 기준 ${learned}개 갱신${missed?` · 찾지 못함 ${missed}장 (사진 연결 유지)`:''} · 확인 필요 ${detected}마리`:`반려동물 확인 필요 ${detected}마리 · ${done}장 확인`});relearning.current=false;break;}
+        if(!pending.length){if(mounted.current && (done || queue.paused || queue.failed || relearning.current))setProgress({done,total:done,failed,detected,running:false,message:queue.paused+queue.failed?`완료 ${done}장 · 대기 ${queue.paused}장 · 재시도 필요 ${queue.failed}장${queue.jobs.find(j=>j.error)?.error?` (${queue.jobs.find(j=>j.error)!.error})`:''}`:retrained || relearning.current?`등록 사진 ${retrained}장 다시 분석 완료 · 인식 기준 ${learned}개 갱신${missed?` · 찾지 못함 ${missed}장 (사진 연결 유지)`:''} · 확인 필요 ${detected}마리`:`반려동물 확인 필요 ${detected}마리 · ${done}장 확인`});relearning.current=false;break;}
         let processedInBatch = 0;
         for (const job of pending) {
         abort.signal.throwIfAborted();
@@ -42,7 +42,7 @@ export function usePetAnalysis(media: MediaItem[]) {
         let outcome:PetProgress|undefined;
         await scanPetBatch([item],abort.signal,value=>{
           outcome=value;
-          if(mounted.current)setProgress({...value,message:job.refresh?`등록 사진 다시 학습 중 · ${item.fileName}`:value.message,done,total:done+queue.pending-processedInBatch,failed,detected,running:true});
+          if(mounted.current)setProgress({...value,message:job.refresh?`등록 사진 다시 분석 중 · ${item.fileName}`:value.message,done,total:done+queue.pending-processedInBatch,failed,detected,running:true});
         },job.pet_id!==null?{petId:job.pet_id,views:job.view==='unknown'?{}:{[item.id]:job.view}}:undefined,!!job.refresh);
         abort.signal.throwIfAborted();
         const problem=outcome?.failed ? outcome.message : null;
@@ -66,7 +66,7 @@ export function usePetAnalysis(media: MediaItem[]) {
     relearning.current=true;
     controller.current?.abort();
     const finished=settled.current;
-    setProgress({done:0,total:groups.reduce((sum,group)=>sum+group.items.length,0),failed:0,detected:0,running:true,message:'등록 사진 다시 학습 준비 중'});
+    setProgress({done:0,total:groups.reduce((sum,group)=>sum+group.items.length,0),failed:0,detected:0,running:true,message:'등록 사진 다시 분석 준비 중'});
     schedule(async()=>{
       await finished;
       for(const group of groups){const photos=group.items.filter(item=>item.fileType==='image');for(let index=0;index<photos.length;index+=1000)await invoke('enqueue_pet_jobs',{jobs:photos.slice(index,index+1000).map(item=>({mediaId:Number(item.id),petId:group.petId,view:'unknown',refresh:true}))});}

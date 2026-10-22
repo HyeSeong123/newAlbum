@@ -83,6 +83,7 @@ pub struct PersonRow {
     id: i64,
     name: String,
     cover_face_id: Option<i64>,
+    cover_media_id: Option<i64>,
     media_ids: Vec<i64>,
 }
 
@@ -94,8 +95,8 @@ pub struct FaceIndex {
 }
 
 fn read_index(conn: &Connection) -> Result<FaceIndex, String> {
-    let mut people = conn.prepare("SELECT id, name, cover_face_id FROM person WHERE profile_type='manual' OR EXISTS(SELECT 1 FROM person_photo WHERE person_id=person.id) OR EXISTS (SELECT 1 FROM detected_face WHERE person_id = person.id AND NOT EXISTS (SELECT 1 FROM excluded_face e WHERE e.face_id = detected_face.id)) ORDER BY id")
-        .map_err(|e| e.to_string())?.query_map([], |row| Ok(PersonRow { id: row.get(0)?, name: row.get(1)?, cover_face_id: row.get(2)?, media_ids: vec![] }))
+    let mut people = conn.prepare("SELECT id, name, cover_face_id, cover_media_id FROM person WHERE profile_type='manual' OR EXISTS(SELECT 1 FROM person_photo WHERE person_id=person.id) OR EXISTS (SELECT 1 FROM detected_face WHERE person_id = person.id AND NOT EXISTS (SELECT 1 FROM excluded_face e WHERE e.face_id = detected_face.id)) ORDER BY id")
+        .map_err(|e| e.to_string())?.query_map([], |row| Ok(PersonRow { id: row.get(0)?, name: row.get(1)?, cover_face_id: row.get(2)?, cover_media_id: row.get(3)?, media_ids: vec![] }))
         .map_err(|e| e.to_string())?.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())?;
     let mut memberships = std::collections::HashMap::<i64,Vec<i64>>::new();
     let mut statement=conn.prepare("SELECT person_id,media_id FROM person_photo ORDER BY person_id,media_id").map_err(|e|e.to_string())?;
@@ -137,6 +138,7 @@ fn save_person_photos(conn:&mut Connection,person_id:Option<i64>,name:&str,media
         if !tx.query_row("SELECT EXISTS(SELECT 1 FROM media WHERE id=?1 AND file_type='image')",[media],|r|r.get::<_,bool>(0)).map_err(|e|e.to_string())? {return Err("등록된 사진을 찾을 수 없습니다. 기존 연결은 유지했습니다.".into());}
         tx.execute("INSERT OR IGNORE INTO person_photo(person_id,media_id) VALUES(?1,?2)",params![id,media]).map_err(|e|e.to_string())?;
     }
+    tx.execute("UPDATE person SET cover_media_id=NULL WHERE id=?1 AND cover_media_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM person_photo WHERE person_id=?1 AND media_id=person.cover_media_id) AND NOT EXISTS(SELECT 1 FROM detected_face f WHERE person_id=?1 AND media_id=person.cover_media_id AND NOT EXISTS(SELECT 1 FROM excluded_face WHERE face_id=f.id))",[id]).map_err(|e|e.to_string())?;
     tx.commit().map_err(|e|e.to_string())?;Ok(id)
 }
 #[tauri::command]

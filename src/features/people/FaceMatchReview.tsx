@@ -39,13 +39,13 @@ export function FaceMatchReview({ index, onClose, onSaved }: { index: FaceIndex;
   const pageCount = Math.max(1, Math.ceil(matches.length / 24));
   return <div className="modalBackdrop">
     <section className="faceMatchReview" role="dialog" aria-modal="true" aria-labelledby="faceMatchTitle">
-      <header className="detailHeader"><strong id="faceMatchTitle">이름 추천 확인</strong><button className="closeButton" title="닫기" disabled={saving} onClick={onClose}><X size={18} /></button></header>
+      <header className="detailHeader"><strong id="faceMatchTitle">미확인 인물 다시 확인</strong><button className="closeButton" title="닫기" disabled={saving} onClick={onClose}><X size={18} /></button></header>
       <div className="faceMatchBody">
         {loading && <p role="status"><LoaderCircle className="spinIcon" size={18} />얼굴 비교 중</p>}
         {error && <p role="alert">{error}</p>}
-        {!loading && !error && <p role="status">{matches.length ? `확인할 얼굴 ${matches.length}개` : '닮은 사진을 찾지 못했어요. 이름 없는 사람의 사진을 열어 이름을 직접 붙여 주세요.'}</p>}
+        {!loading && !error && <p role="status">{matches.length ? `확인할 얼굴 ${matches.length}개` : '닮은 사진을 찾지 못했어요. 미확인 인물의 사진을 열어 이름을 직접 붙여 주세요.'}</p>}
         <p>사진과 이름이 맞는지 확인한 뒤 선택해 주세요. 선택하기 전에는 이름을 바꾸지 않아요.</p>
-        <p>목록에 없는 사람은 이름 없는 사람에서 이름을 붙이거나 등록한 사람에게 옮겨 주세요.</p>
+        <p>목록에 없는 사람은 미확인 인물에서 이름을 붙이거나 등록한 사람에게 옮겨 주세요.</p>
         <div className="faceMatchGrid">{matches.slice(page * 24, (page + 1) * 24).map((match) => {
           const face = index.faces.find((entry) => entry.id === match.face_id);
           const person = index.people.find((entry) => entry.id === match.person_id);

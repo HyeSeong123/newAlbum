@@ -156,7 +156,7 @@ fn confirm_with_features(conn: &mut Connection, detection_id:i64, pet_id:Option<
 pub async fn confirm_pet_detection(app:AppHandle,detection_id:i64,pet_id:Option<i64>,view:String,excluded:bool)->Result<(),String> {
     tauri::async_runtime::spawn_blocking(move||{let mut conn=super::open_database(&app)?;verify_detection_source(&conn,detection_id)?;confirm(&mut conn,detection_id,pet_id,&view,excluded)}).await.map_err(|e|e.to_string())?
 }
-fn verify_detection_source(conn:&Connection,detection_id:i64)->Result<(),String>{
+pub(crate) fn verify_detection_source(conn:&Connection,detection_id:i64)->Result<(),String>{
     let (media,key):(i64,String)=conn.query_row("SELECT d.media_id,s.source_key FROM pet_detection d JOIN pet_scan s ON s.media_id=d.media_id WHERE d.id=?1",[detection_id],|r|Ok((r.get(0)?,r.get(1)?))).map_err(|e|e.to_string())?;
     verify_source(conn,media,&key)
 }
