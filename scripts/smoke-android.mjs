@@ -560,8 +560,8 @@ try {
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   await captureScreen('people-controls-overview');
   await page.getByRole('tab', { name:'반려동물', exact:true }).click();
-  await page.getByRole('button', { name:'반려동물 등록', exact:true }).click();
-  const petEditor = page.getByRole('dialog', { name:'반려동물 등록', exact:true });
+  await page.getByRole('button', { name:'반려동물 추가', exact:true }).click();
+  const petEditor = page.getByRole('dialog', { name:'반려동물 추가', exact:true });
   await petEditor.getByLabel('이름', { exact:true }).fill('안드로이드 보리');
   await petEditor.getByRole('button', { name:'사진 선택', exact:true }).first().click();
   await petEditor.getByRole('button', { name:'저장', exact:true }).click();

@@ -3,7 +3,7 @@ name: Android preview APK
 on:
   workflow_dispatch:
   push:
-    branches: [feature/warm-journal-v2, feature/gamjassak-native-ai, feature/gamjassak-audit-refactor, master]
+    branches: [feature/warm-journal-v2, feature/gamjassak-native-ai, feature/gamjassak-audit-refactor, feature/people-pets-ux-android-20261022, master]
     paths:
       - 'src/**'
       - 'public/**'

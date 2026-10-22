@@ -17,8 +17,8 @@ export function PeopleWorkspace(props: { analysis: PetAnalysis; items: MediaItem
     if (next === 1) setPetsVisited(true);
   }
   return <section className="peopleWorkspace">
-    <div className="viewTabs" role="tablist" aria-label="인물 분류">
-      {[{ label: '사람', Icon: Users }, { label: '반려동물', Icon: PawPrint }].map(({ label, Icon }, index) =>
+    <div className="viewTabs" role="tablist" aria-label="인물 및 반려동물">
+      {[{ label: '인물', Icon: Users }, { label: '반려동물', Icon: PawPrint }].map(({ label, Icon }, index) =>
         <button key={label} ref={(node) => { buttons.current[index] = node; }} id={`people-tab-${index}`} role="tab" aria-selected={tab === index} aria-controls={`people-panel-${index}`} tabIndex={tab === index ? 0 : -1} className={tab === index ? 'active' : ''} onClick={() => select(index)} onKeyDown={(event) => {
           if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
           event.preventDefault();
@@ -26,7 +26,7 @@ export function PeopleWorkspace(props: { analysis: PetAnalysis; items: MediaItem
           select(next); buttons.current[next]?.focus();
         }}><Icon size={18} />{label}</button>)}
     </div>
-    <div id="people-panel-0" role="tabpanel" aria-labelledby="people-tab-0" hidden={tab !== 0}><PeopleView {...props} /></div>
-    <div id="people-panel-1" role="tabpanel" aria-labelledby="people-tab-1" hidden={tab !== 1}>{petsVisited && <PetsView {...props} />}</div>
+    <div id="people-panel-0" role="tabpanel" aria-labelledby="people-tab-0" hidden={tab !== 0}><PeopleView {...props} isActive={tab===0} /></div>
+    <div id="people-panel-1" role="tabpanel" aria-labelledby="people-tab-1" hidden={tab !== 1}>{petsVisited && <PetsView {...props} isActive={tab===1} />}</div>
   </section>;
 }

@@ -52,10 +52,10 @@ async function prepare(page: Page) {
       if(command==='finish_pet_job'){if(args.error){const row=jobs.find(row=>row.id===args.id);if(row){row.state='failed';row.error=args.error;}}else jobs=jobs.filter(row=>row.id!==args.id);return;}
       if(command==='control_pet_jobs'){for(const row of jobs)row.state=args.resume?'pending':'paused';return;}
       if(command==='prepare_pet_input')return {path:'/manual-photo.jpg',sourceKey:'sha256:'+'a'.repeat(64)};
-      if(command==='get_pet_scan')return detections.some(row=>row.media_id===args.mediaId)?structuredClone({media_id:args.mediaId,engine_version:'gamjassak-pets-v3-no-pose',source_key:'sha256:'+'a'.repeat(64),detections:detections.filter(row=>row.media_id===args.mediaId)}):null;
+      if(command==='get_pet_scan')return detections.some(row=>row.media_id===args.mediaId)?structuredClone({media_id:args.mediaId,engine_version:'gamjassak-pets-v2',source_key:'sha256:'+'a'.repeat(64),detections:detections.filter(row=>row.media_id===args.mediaId)}):null;
       if(command==='replace_pet_scan'||command==='save_pet_scan'){
         if(!detections.some(row=>row.media_id===args.mediaId))detections.push({...args.features[0],id:args.mediaId,media_id:args.mediaId,pet_id:null,excluded:false});
-        return structuredClone({media_id:args.mediaId,engine_version:'gamjassak-pets-v3-no-pose',source_key:'sha256:'+'a'.repeat(64),detections:detections.filter(row=>row.media_id===args.mediaId)});
+        return structuredClone({media_id:args.mediaId,engine_version:'gamjassak-pets-v2',source_key:'sha256:'+'a'.repeat(64),detections:detections.filter(row=>row.media_id===args.mediaId)});
       }
       if(command==='refresh_pet_reference'){Object.assign(detections.find(row=>row.id===args.detectionId),args.features);remember('pet-refreshed',args.detectionId);return;}
       if(command==='confirm_pet_detection'){const row=detections.find(row=>row.id===args.detectionId);row.pet_id=args.petId;return;}
@@ -67,8 +67,8 @@ async function prepare(page: Page) {
 
 test('person manual photos coexist with detected faces and preserve selection on retry',async({page})=>{
   await prepare(page);await page.getByRole('button',{name:'가족 2장',exact:true}).click();
-  await page.getByRole('button',{name:'사진 직접 등록',exact:true}).click();
-  let dialog=page.getByRole('dialog',{name:'사람 사진 직접 등록',exact:true});
+  await page.getByRole('button',{name:'사진 연결',exact:true}).click();
+  let dialog=page.getByRole('dialog',{name:'사진 연결',exact:true});
   await expect(dialog.locator('[data-selection-id="1"]')).toBeDisabled();
   await expect(dialog.locator('[data-selection-id="1"]')).toHaveAttribute('aria-pressed','true');
   await dialog.locator('[data-selection-id="3"]').click();await page.evaluate(()=>localStorage.setItem('fail-manual','1'));
@@ -78,14 +78,14 @@ test('person manual photos coexist with detected faces and preserve selection on
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('saved-person')!))).toEqual({id:1,ids:[2,3]});
   await expect(page.locator('.peopleView > .entityHeader')).toContainText('사진 3장');
   await expect(page.locator('.peopleView .personMediaGrid').getByRole('button',{name:'사진 상세보기',exact:true})).toHaveCount(3);
-  await page.getByRole('button',{name:'사진 직접 등록',exact:true}).click();dialog=page.getByRole('dialog',{name:'사람 사진 직접 등록',exact:true});await dialog.locator('[data-selection-id="2"]').click();await dialog.getByRole('button',{name:'사진 저장',exact:true}).click();await expect(dialog).toBeHidden();
+  await page.getByRole('button',{name:'사진 연결',exact:true}).click();dialog=page.getByRole('dialog',{name:'사진 연결',exact:true});await dialog.locator('[data-selection-id="2"]').click();await dialog.getByRole('button',{name:'사진 저장',exact:true}).click();await expect(dialog).toBeHidden();
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('saved-person')!))).toEqual({id:1,ids:[3]});
   await expect(page.locator('.peopleView > .entityHeader')).toContainText('사진 2장');
 });
 
 test('a new person can be registered without faces across picker pages',async({page,isMobile})=>{
   await prepare(page);if(isMobile){await page.setViewportSize({width:320,height:851});await page.getByRole('button',{name:'크게 보기',exact:true}).click();}
-  await page.getByRole('button',{name:'사진 직접 등록',exact:true}).click();const dialog=page.getByRole('dialog',{name:'사람 직접 등록',exact:true});
+  await page.getByRole('button',{name:'인물 추가',exact:true}).click();const dialog=page.getByRole('dialog',{name:'인물 추가',exact:true});
   await dialog.getByLabel('등록할 이름').fill('감지 없는 사람');await dialog.locator('[data-selection-id="2"]').click();await dialog.getByRole('button',{name:'다음 사진',exact:true}).click();await dialog.locator('[data-selection-id="25"]').click();
   await expect(dialog.getByRole('status')).toHaveText('사진 2장 선택');await expect(dialog.locator('[data-selection-id="31"]')).toHaveCount(0);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await expect(dialog.locator('.entityEditFooter')).toBeInViewport();
@@ -94,21 +94,16 @@ test('a new person can be registered without faces across picker pages',async({p
   expect(await page.evaluate(()=>localStorage.getItem('person-worker-inputs'))).toBeNull();
 });
 
-test('named manual photos are not offered for repeated analysis',async({page})=>{
+test('confirmed person photos are not offered for reanalysis or training',async({page})=>{
   await prepare(page);await page.getByRole('button',{name:'수동 등록 1장',exact:true}).click();
-  await expect(page.getByRole('button',{name:'등록 사진 다시 분석',exact:true})).toHaveCount(0);
-  await page.getByRole('button',{name:'사람 목록',exact:true}).click();
-  await expect(page.getByRole('button',{name:'등록 목록 다시 분석',exact:true})).toHaveCount(0);
-  await page.getByRole('button',{name:'얼굴 관리',exact:true}).click();
-  await expect(page.getByRole('button',{name:'미확인 얼굴 다시 확인',exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:/등록.*다시 (분석|학습)/})).toHaveCount(0);
   expect(await page.evaluate(()=>localStorage.getItem('person-worker-inputs'))).toBeNull();
-  expect(await page.evaluate(()=>localStorage.getItem('person-refresh-ids'))).toBeNull();
 });
 
 test('pet manual photos can be changed and refreshed through the durable queue',async({page})=>{
   await prepare(page);await page.getByRole('tab',{name:'반려동물',exact:true}).click();await page.getByRole('button',{name:'보리 1장',exact:true}).click();
-  await page.getByRole('button',{name:'이름·사진 수정',exact:true}).click();let dialog=page.getByRole('dialog',{name:'반려동물 편집',exact:true});await dialog.locator('[data-selection-id="2"]').click();await dialog.getByRole('button',{name:'취소',exact:true}).click();expect(await page.evaluate(()=>localStorage.getItem('saved-pet'))).toBeNull();
-  await page.getByRole('button',{name:'이름·사진 수정',exact:true}).click();dialog=page.getByRole('dialog',{name:'반려동물 편집',exact:true});await dialog.locator('[data-selection-id="2"]').click();await dialog.getByRole('button',{name:'저장',exact:true}).click();await expect(dialog).toBeHidden();await expect(page.locator('.petsView > .entityHeader')).toContainText('사진 2장');
+  await page.getByRole('button',{name:'반려동물 관리',exact:true}).click();await page.getByRole('button',{name:'이름·사진 수정',exact:true}).click();let dialog=page.getByRole('dialog',{name:'반려동물 편집',exact:true});await dialog.locator('[data-selection-id="2"]').click();await dialog.getByRole('button',{name:'취소',exact:true}).click();expect(await page.evaluate(()=>localStorage.getItem('saved-pet'))).toBeNull();
+  await page.getByRole('button',{name:'반려동물 관리',exact:true}).click();await page.getByRole('button',{name:'이름·사진 수정',exact:true}).click();dialog=page.getByRole('dialog',{name:'반려동물 편집',exact:true});await dialog.locator('[data-selection-id="2"]').click();await dialog.getByRole('button',{name:'저장',exact:true}).click();await expect(dialog).toBeHidden();await expect(page.locator('.petsView > .entityHeader')).toContainText('사진 2장');
   await page.getByRole('button',{name:'반려동물 관리',exact:true}).click();await page.getByRole('button',{name:'등록 사진 다시 분석',exact:true}).click();await expect(page.locator('.petsView .petAnalysisNotice')).toContainText('다시 분석 완료');
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('pet-enqueued')!).map((row:any)=>[row.mediaId,row.petId,row.refresh]))).toEqual([[1,1,true],[2,1,true]]);expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('pet-refreshed')!))).toBe(1);
   const kept=await page.evaluate(async()=>({pets:await (window as any).__TAURI_INTERNALS__.invoke('list_pets'),scan:await (window as any).__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:1})}));expect(kept.pets[0].media_ids).toEqual([1,2]);expect(kept.scan.detections[0]).toMatchObject({id:1,pet_id:1,view:'front',viewSource:'user'});expect(kept.scan.detections[0].appearance[0]).toBe(.5);

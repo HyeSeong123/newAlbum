@@ -1,3 +1,4 @@
+mod entity_management;
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::Serialize;
 use std::{
@@ -1324,6 +1325,15 @@ pub fn run() {
             person_evaluation::clear_person_evaluation,
             faces::rename_face_person,
             faces::set_person_cover_face,
+            entity_management::assign_person_faces,
+            entity_management::edit_entity_photo_links,
+            entity_management::assign_pet_detections,
+            entity_management::list_unknown_pet_items,
+            entity_management::set_person_cover_photo,
+            entity_management::rename_pet,
+            entity_management::set_pet_cover_photo,
+            entity_management::remove_person_registration,
+            entity_management::remove_entity_registrations,
             faces::move_faces,
             faces::register_person_from_faces,
             faces::clear_face_index

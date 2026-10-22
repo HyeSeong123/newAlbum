@@ -35,7 +35,7 @@
 .entityBack { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 44px; height: 44px; padding: 0; border-radius: 6px; background: transparent; color: var(--text); }
 .entityBack:hover:not(:disabled) { background: var(--surface-soft); }
 .entityBack:disabled { opacity: .45; }
-.entityActions .actionMenuTrigger { width: 44px; height: 44px; min-height: 44px; padding: 0; }
+.entityActions .actionMenuTrigger { width: auto; min-width: 44px; height: 44px; min-height: 44px; padding: 0 8px; font-size: 12px; }
 .entityActionShort { display: none; }
 .peopleWorkspace .peopleActions button, .peopleWorkspace .peopleActions input, .peopleWorkspace .peopleActions select { min-height: 44px; }
 .peopleWorkspace .entityActions { flex-wrap: nowrap; }

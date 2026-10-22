@@ -51,13 +51,13 @@ export function FaceMatchReview({ index, onClose, onSaved, onRegister }: { index
     setSelected(current => pageFaces.every(face => current.includes(face.id))
       ? current.filter(id => !ids.has(id)) : [...new Set([...current, ...ids])]);
   }
-  return <EntityEditorDialog title="미확인 얼굴 확인" className="faceMatchReview" busy={saving} onClose={onClose}>
+  return <EntityEditorDialog title="미확인 인물 다시 확인" className="faceMatchReview" busy={saving} onClose={onClose}>
       <div className="faceMatchBody">
         {loading && <p role="status"><LoaderCircle className="spinIcon" size={18} />얼굴 비교 중</p>}
         {error && <p role="alert">{error}</p>}
         {!loading && !error && <p role="status">미확인 얼굴 {faces.length}개 · 이름 추천 {proposals.length}개</p>}
         <p>이름이 없고 아직 확인하지 않은 얼굴만 다시 비교해요. 이미 확인한 인물과 사진 연결은 유지됩니다.</p>
-        <p>얼굴을 선택해 추천 이름을 확인하거나 새 이름으로 등록하세요. 저장하기 전에는 이름을 바꾸지 않아요.</p>
+        <p>얼굴을 선택해 추천 이름을 확인하거나 이름 지정하세요. 저장하기 전에는 이름을 바꾸지 않아요.</p>
         <div className="faceMatchGrid" {...selection}>{pageFaces.map((face) => {
           const match = proposals.find(entry => entry.face_id === face.id);
           const person = index.people.find((entry) => entry.id === match?.person_id);
@@ -76,8 +76,8 @@ export function FaceMatchReview({ index, onClose, onSaved, onRegister }: { index
         <span>{selected.length}개 선택</span>
         <button disabled={saving || loading || !faces.length} onClick={togglePage}>현재 페이지 선택/해제</button>
         {pageCount > 1 && <><button title="이전 페이지" disabled={saving || currentPage === 0} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={18} /></button><span>{currentPage + 1} / {pageCount}</span><button title="다음 페이지" disabled={saving || currentPage === pageCount - 1} onClick={() => setPage(currentPage + 1)}><ChevronRight size={18} /></button></>}
-        <button disabled={saving || loading || !selected.length} onClick={() => onRegister(selected)}><Users size={18} />새 이름으로 등록</button>
-        <button disabled={saving || !selectedProposals.length} onClick={() => void apply()}>{saving ? <LoaderCircle className="spinIcon" size={18} /> : <Check size={18} />}추천 이름으로 저장{selectedProposals.length ? ` (${selectedProposals.length})` : ''}</button>
+        <button disabled={saving || loading || !selected.length} onClick={() => onRegister(selected)}><Users size={18} />이름 지정</button>
+        <button disabled={saving || !selectedProposals.length} onClick={() => void apply()}>{saving ? <LoaderCircle className="spinIcon" size={18} /> : <Check size={18} />}이 이름으로 저장{selectedProposals.length ? ` (${selectedProposals.length})` : ''}</button>
       </footer>
   </EntityEditorDialog>;
 }

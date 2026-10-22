@@ -72,11 +72,11 @@ async function nativeLibrary(page: Page, options: { existing?: 'media' | 'album'
           media = media.map(item => item.location_status === 'queued' ? { ...item, location_status: 'no-gps' } : item);
           return overview();
         }
-        if (command === 'rename_face_person' || command === 'set_person_cover_face' || command === 'save_pet'
+        if (command === 'rename_face_person' || command === 'set_person_cover_photo' || command === 'save_pet'
           || command === 'create_album_from_media' || command === 'update_album') {
           if (calls[command] === 1) throw new Error('transient save failure');
           if (command === 'rename_face_person') index.people[0].name = args.name;
-          if (command === 'set_person_cover_face') index.people[0].cover_face_id = args.faceId;
+          if (command === 'set_person_cover_photo') index.people[0].cover_face_id = args.mediaId;
           if (command === 'save_pet') pets = [{ id: 1, name: args.name, media_ids: args.mediaIds, cover_media_id: args.coverMediaId }];
           if (command === 'create_album_from_media') albums = [{ id: 1, title: args.title, description: '',
             cover_color: args.coverColor, created_at: '2026-09-25', items: records.filter(item => args.mediaIds.includes(item.id)) }];
@@ -226,15 +226,14 @@ test('person management preserves a failed name draft and keeps cover selection 
   await page.goto('/');
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '가족 2장', exact: true }).click();
-  await page.getByRole('button', { name: '사람 관리', exact: true }).click();
-  await page.getByRole('button', { name: '이름 수정', exact: true }).click();
+  await page.getByRole('button', { name: '이름 변경', exact: true }).click();
   await page.getByLabel('인물 이름').fill('우리 가족');
   await page.getByRole('button', { name: '이름 저장', exact: true }).click();
   await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByLabel('인물 이름')).toHaveValue('우리 가족');
   await page.getByRole('button', { name: '이름 저장', exact: true }).click();
   await expect(page.getByRole('heading', { name: '우리 가족', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '사람 관리', exact: true }).click();
+  await page.getByRole('button', { name: '인물 관리', exact: true }).click();
   await page.getByRole('button', { name: '대표 사진 변경', exact: true }).click();
   await page.getByRole('button', { name: '대표 사진으로 설정', exact: true }).nth(1).click();
   await expect(page.getByRole('alert')).toBeVisible();
@@ -274,8 +273,8 @@ test('pet empty action and management preserve name, photos and cover on failed 
   await page.goto('/');
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('tab', { name: '반려동물', exact: true }).click();
-  await page.getByRole('button', { name: '반려동물 등록', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: '반려동물 등록', exact: true });
+  await page.getByRole('button', { name: '반려동물 추가', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: '반려동물 추가', exact: true });
   await dialog.getByLabel('이름', { exact: true }).fill('보리');
   await dialog.getByRole('button', { name: '사진 선택', exact: true }).nth(0).click();
   await dialog.getByRole('button', { name: '사진 선택', exact: true }).nth(1).click();

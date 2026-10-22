@@ -268,3 +268,27 @@ fn version_one_database_upgrades_and_persists_manual_regions_on_reopen() {
     drop(reopened);
     fs::remove_file(path).unwrap();
 }
+
+#[test]
+fn version_17_upgrade_adds_cover_without_changing_memberships() {
+    let mut c=Connection::open_in_memory().unwrap();initialize(&mut c).unwrap();
+    c.execute_batch("ALTER TABLE person DROP COLUMN cover_media_id; PRAGMA user_version=17; INSERT INTO media(id,file_path,file_type,size_bytes) VALUES(1,'original','image',1); INSERT INTO person(id,name,profile_type) VALUES(5,'가족','manual'); INSERT INTO person_photo VALUES(5,1);").unwrap();
+    initialize(&mut c).unwrap();
+    assert_eq!(c.query_row("SELECT media_id FROM person_photo WHERE person_id=5",[],|r|r.get::<_,i64>(0)).unwrap(),1);
+    assert_eq!(c.query_row("SELECT cover_media_id FROM person WHERE id=5",[],|r|r.get::<_,Option<i64>>(0)).unwrap(),None);
+    c.execute("UPDATE person SET cover_media_id=1 WHERE id=5",[]).unwrap();initialize(&mut c).unwrap();
+    assert_eq!(c.query_row("SELECT cover_media_id FROM person WHERE id=5",[],|r|r.get::<_,i64>(0)).unwrap(),1);
+}
+
+#[test]
+fn installed_v18_upgrade_keeps_native_registry_and_adds_entity_management() {
+    let mut c = Connection::open_in_memory().unwrap();
+    initialize(&mut c).unwrap();
+    c.execute_batch("ALTER TABLE person DROP COLUMN cover_media_id; DROP TABLE unidentified_pet_photo; PRAGMA user_version=18;").unwrap();
+    c.execute("INSERT INTO native_ai_model(model_key,task,kind,dimensions,weights_sha256,preprocess,state,provenance_json) VALUES('kept','person','identity',512,?1,'v1','untrained','{}')", ["a".repeat(64)]).unwrap();
+    initialize(&mut c).unwrap();
+    assert_eq!(c.query_row("PRAGMA user_version", [], |r| r.get::<_,i64>(0)).unwrap(), 19);
+    assert_eq!(c.query_row("SELECT model_key FROM native_ai_model", [], |r| r.get::<_,String>(0)).unwrap(), "kept");
+    assert_eq!(c.query_row("SELECT count(*) FROM pragma_table_info('person') WHERE name='cover_media_id'", [], |r| r.get::<_,i64>(0)).unwrap(), 1);
+    assert_eq!(c.query_row("SELECT count(*) FROM unidentified_pet_photo", [], |r| r.get::<_,i64>(0)).unwrap(), 0);
+}

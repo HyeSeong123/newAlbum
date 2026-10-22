@@ -51,13 +51,13 @@ async function swipe(page: Page, tile: Locator) {
 async function selectPerson(page: Page) {
   await page.locator('.navList').getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '가족 48장', exact: true }).click();
-  await page.getByRole('button', { name: '사람 관리', exact: true }).click();
-  await page.getByRole('button', { name: '사진 정리', exact: true }).click();
+  await page.getByRole('button', { name: '인물 관리', exact: true }).click();
+  await page.getByRole('button', { name: '얼굴 선택', exact: true }).click();
 }
 
 async function editPet(page: Page) {
   await page.getByRole('tab', { name: '반려동물', exact: true }).click();
-  await page.getByRole('button', { name: '반려동물 등록', exact: true }).click();
+  await page.getByRole('button', { name: '반려동물 추가', exact: true }).click();
   return page.locator('.petRegistrationEditor');
 }
 
@@ -87,6 +87,29 @@ test('touch selection in people and pets scrolls without selecting, and taps tog
   await expect(editor.locator('.petPhoto[aria-pressed="true"]')).toHaveCount(1);
   await pets.nth(8).tap();
   await expect(editor.locator('.petPhoto[aria-pressed="true"]')).toHaveCount(0);
+});
+
+test('horizontal touch dragging selects multiple faces and pet photos', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'Phone touch brush regression.');
+  await fixture(page); await selectPerson(page);
+  async function brush(tiles: Locator) {
+    // A fixed selection bar covers the bottom of the viewport. Start the
+    // gesture on a visible tile, not merely one inside the viewport bounds.
+    await tiles.first().evaluate(el=>el.scrollIntoView({block:'center'}));
+    for (const tile of [tiles.first(),tiles.nth(1)]) await expect.poll(()=>tile.evaluate(el=>{
+      const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));
+    })).toBe(true);
+    const a=(await tiles.first().boundingBox())!, b=(await tiles.nth(1).boundingBox())!;
+    const x=a.x+a.width/2, y=a.y+a.height/2, end=b.x+b.width/2;
+    const client=await page.context().newCDPSession(page);
+    await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});
+    for(let step=1;step<=10;step++) await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+(end-x)*step/10,y}]});
+    await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]}); await client.detach();
+  }
+  await brush(page.getByRole('button',{name:'얼굴 선택',exact:true}));
+  await expect(page.locator('.personOriginal[aria-pressed="true"]')).toHaveCount(2);
+  const editor=await editPet(page);await brush(editor.getByRole('button',{name:'사진 선택',exact:true}));
+  await expect(editor.locator('.petPhoto[aria-pressed="true"]')).toHaveCount(2);
 });
 
 test('desktop people and pet selection still supports mouse dragging', async ({ page, isMobile }) => {
