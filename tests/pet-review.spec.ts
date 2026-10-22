@@ -58,7 +58,7 @@ test('registered photos can be searched and each animal connected without diagno
   await page.getByRole('button', { name: '초코 0장', exact: true }).click();
   await page.getByRole('button', { name: '반려동물 사진 찾기', exact: true }).click();
   await expect(search.getByRole('button', { name: '사진 찾기 시작', exact: true })).toBeDisabled();
-  await expect(search.getByText(/먼저 이름·사진 수정에서/)).toBeVisible();
+  await expect(search.getByText(/먼저 사진 연결에서/)).toBeVisible();
 });
 
 test('failed photo connection retains candidates and can be retried', async ({ page }) => {

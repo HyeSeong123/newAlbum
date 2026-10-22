@@ -55,7 +55,7 @@ test('unknown faces can share a new name; failed save retains both selections an
   await page.evaluate(()=>localStorage.removeItem('fail-assignment'));await dialog.getByRole('button',{name:'이름 지정',exact:true}).click();await expect(dialog).toBeHidden();
   expect((await calls(page,'assign_person_faces')).at(-1)).toEqual({ids:[21,22],target:null,name:'할머니'});
   expect(await calls(page,'save_face_scan')).toEqual([]);expect(await calls(page,'refresh_face_scan')).toEqual([]);
-  await page.getByRole('button',{name:'인물별 보기',exact:true}).click();await expect(page.getByRole('button',{name:'할머니 2장',exact:true})).toBeVisible();
+  await page.locator('.entityHeader').getByRole('button',{name:'선택 취소',exact:true}).click();await page.getByRole('button',{name:'인물별 보기',exact:true}).click();await expect(page.getByRole('button',{name:'할머니 2장',exact:true})).toBeVisible();
 });
 
 test('photo reassignment includes source identity and leaves another person in that photo',async({page})=>{
@@ -70,7 +70,7 @@ test('manual person photos support cover changes and selection cancel stays in d
   await prepare(page);await page.getByRole('button',{name:'가족 2장',exact:true}).click();await page.getByRole('button',{name:'인물 관리',exact:true}).click();await page.getByRole('button',{name:'대표 사진 변경',exact:true}).click();await page.getByRole('button',{name:'대표 사진으로 설정',exact:true}).nth(1).click();
   expect(await calls(page,'set_person_cover_photo')).toEqual([{personId:1,mediaId:4}]);
   await page.getByRole('button',{name:'선택',exact:true}).click();const bar=page.getByRole('region',{name:'선택한 사진 관리'});await bar.getByRole('button',{name:'전체 선택',exact:true}).click();await expect(bar).toContainText('사진 2개 선택');await bar.getByRole('button',{name:'선택 해제',exact:true}).click();await expect(bar).toContainText('사진 0개 선택');
-  await page.getByRole('button',{name:'인물 목록',exact:true}).click();await expect(bar).toBeHidden();await expect(page.locator('.peopleView > .entityHeader')).toContainText('가족');
+  await page.locator('.entityHeader').getByRole('button',{name:'선택 취소',exact:true}).click();await expect(bar).toBeHidden();await expect(page.locator('.peopleView > .entityHeader')).toContainText('가족');
   await page.getByRole('button',{name:'이름 변경',exact:true}).click();const dialog=page.getByRole('dialog',{name:'이름 변경',exact:true});await dialog.getByLabel('인물 이름').fill('취소할 이름');await dialog.getByRole('button',{name:'취소',exact:true}).click();expect(await calls(page,'rename_face_person')).toEqual([]);
 });
 
@@ -84,7 +84,7 @@ test('unknown pet objects and manual photos both accept existing and new names',
 test('pet photo correction uses the same selection bar and keeps sibling pet membership',async({page})=>{
   await prepare(page);await page.getByRole('tab',{name:'반려동물',exact:true}).click();await page.getByRole('button',{name:'보리 2장',exact:true}).click();await page.locator('.petsView > .entityHeader').getByRole('button',{name:'선택',exact:true}).click();await page.getByRole('button',{name:'사진 선택',exact:true}).first().click();await page.getByRole('button',{name:'미확인 상태로 변경',exact:true}).click();
   expect(await calls(page,'edit_entity_photo_links')).toEqual([{kind:'pet',source:1,ids:[1],action:'unknown',target:null,name:null}]);await expect(page.locator('.petsView > .entityHeader')).toContainText('사진 1장');
-  await page.getByRole('button',{name:'반려동물 목록',exact:true}).click();await expect(page.locator('.petsView > .entityHeader')).toContainText('보리');await page.getByRole('button',{name:'반려동물 목록',exact:true}).click();await expect(page.getByRole('button',{name:'콩 1장',exact:true})).toBeVisible();
+  await page.locator('.entityHeader').getByRole('button',{name:'선택 취소',exact:true}).click();await expect(page.locator('.petsView > .entityHeader')).toContainText('보리');await page.getByRole('button',{name:'반려동물 목록',exact:true}).click();await expect(page.getByRole('button',{name:'콩 1장',exact:true})).toBeVisible();
 });
 
 test('entity lists have scoped selection; switching tabs cancels hidden selection',async({page})=>{

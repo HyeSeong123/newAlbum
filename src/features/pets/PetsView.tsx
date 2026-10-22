@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { ArrowLeft, Check, ChevronLeft, ChevronRight, LoaderCircle, MoreVertical, PawPrint, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, LoaderCircle, MoreVertical, PawPrint, Pencil, Plus, RefreshCw, Trash2, X } from 'lucide-react';
 import type { MediaItem } from '../../types/media';
 import { MediaVisual } from '../../components/MediaVisual';
 import { EmptyState } from '../../components/MediaVisual';
@@ -86,7 +86,7 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
   return <section className="petsView">
     <div className="panelHeader entityHeader" ref={heading}>
       <div className="entityHeading">
-        {(pet || unknown) && <button className="entityBack" aria-label="반려동물 목록" title="반려동물 목록" disabled={busy} onClick={() => { if(selecting){setSelecting(false);setChosen([]);}else{setActive(null);setUnknown(false);setPage(0);} }}><ArrowLeft size={20} /></button>}
+        {(pet || unknown) && <button className="entityBack" aria-label={selecting ? '선택 취소' : '반려동물 목록'} title={selecting ? '선택 취소' : '반려동물 목록'} disabled={busy} onClick={() => { if(selecting){setSelecting(false);setChosen([]);}else{setActive(null);setUnknown(false);setPage(0);} }}>{selecting ? <X size={20}/> : <ArrowLeft size={20} />}</button>}
         <div className="entityHeadingCopy"><h2>{unknown ? '미확인 반려동물' : pet?.name ?? '반려동물'}</h2>{pet && <span>사진 {linked.length}장</span>}</div>
       </div>
       <div className="peopleActions entityActions">
@@ -114,7 +114,7 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
     {unknown && <UnknownPets selecting={selecting} onOpen={onOpen} photos={photos} pets={pets} onSaved={async()=>setPets(await loadPets())}/>}
     {!unknown && <div className="petGrid" {...drag}>{pet ? linked.slice(currentPage * 24, (currentPage + 1) * 24).map((item) => <button key={item.id} className="petPhoto" data-selection-id={item.id} aria-label={selecting ? '사진 선택' : '사진 상세보기'} aria-pressed={selecting ? chosen.includes(Number(item.id)) : undefined} onClick={() => selecting ? toggle(item.id) : onOpen(item, linked)}><MediaVisual item={item} />{selecting && <span className={`faceCheck ${chosen.includes(Number(item.id))?'checked':''}`} aria-hidden="true">{chosen.includes(Number(item.id)) && <Check size={22}/>}</span>}<span>{item.takenAt ?? '날짜 없음'}</span></button>) : matchingPets.slice(currentPage * 24, (currentPage + 1) * 24).map((entry) => {
       const cover = covers.get(entry.id);
-      return <button className="petPhoto" key={entry.id} data-selection-id={entry.id} aria-pressed={selecting?chosen.includes(entry.id):undefined} onClick={() => { if(selecting)toggle(String(entry.id));else {setActive(entry.id);setPage(0);} }}>
+      return <button className="petPhoto" aria-label={`${entry.name} ${entry.media_ids.length}장`} key={entry.id} data-selection-id={entry.id} aria-pressed={selecting?chosen.includes(entry.id):undefined} onClick={() => { if(selecting)toggle(String(entry.id));else {setActive(entry.id);setPage(0);} }}>
         {cover ? <MediaVisual item={cover} /> : <div className="petPlaceholder"><PawPrint size={48} /></div>}<strong>{entry.name}</strong>{selecting && <span className={`faceCheck ${chosen.includes(entry.id)?'checked':''}`} aria-hidden="true">{chosen.includes(entry.id) && <Check size={22}/>}</span>}<span>{entry.media_ids.length}장</span>
       </button>;
     })}</div>}

@@ -222,7 +222,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive 
   return <section className="peopleView">
     <div className="panelHeader entityHeader" ref={heading}>
       <div className="entityHeading">
-        {(person || showFaceThumbnails) && <button className="entityBack" aria-label={person ? '인물 목록' : '인물별 보기'} title={person ? '인물 목록' : '인물별 보기'} disabled={blocked} onClick={() => {if(selecting || photoSelecting || choosingCover){setSelecting(false);setPhotoSelecting(false);setChoosingCover(false);setChosen([]);}else openFaceView('people');}}><ArrowLeft size={20} /></button>}
+        {(person || showFaceThumbnails) && <button className="entityBack" aria-label={selecting || photoSelecting ? '선택 취소' : choosingCover ? '대표 사진 선택 취소' : person ? '인물 목록' : '인물별 보기'} title={selecting || photoSelecting ? '선택 취소' : choosingCover ? '대표 사진 선택 취소' : person ? '인물 목록' : '인물별 보기'} disabled={blocked} onClick={() => {if(selecting || photoSelecting || choosingCover){setSelecting(false);setPhotoSelecting(false);setChoosingCover(false);setChosen([]);}else openFaceView('people');}}>{selecting || photoSelecting || choosingCover ? <X size={20}/> : <ArrowLeft size={20} />}</button>}
         <div className="entityHeadingCopy"><h2>{showUnknownFaces ? '미확인 인물' : allFaces ? '찾은 얼굴' : person ? person.name.trim() || '미확인 인물' : '인물'}</h2>
           {person && <span>사진 {personItems.length}장</span>}
           {showFaceThumbnails && <span>{faces.length}개 얼굴</span>}

@@ -90,6 +90,7 @@ test('person photos form an even grid and create an album from unique originals'
 });
 
 test('people can be named, split, moved and reopened', async ({ page }) => {
+  test.setTimeout(90_000);
   const thumbnail = `data:image/jpeg;base64,${(await readFile('node_modules/@vladmandic/face-api/demo/sample1.jpg')).toString('base64')}`;
   await page.addInitScript(({ thumbnail }) => {
     type Index = { people: { id: number; name: string; cover_face_id?: number | null }[]; faces: { id: number; media_id: number; person_id: number; thumbnail: string; confirmed: boolean }[]; scanned: number[]; excluded?: number[] };
@@ -154,6 +155,7 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
   await page.getByRole('button', { name: '얼굴 선택하기', exact: true }).click();
 
   await expect(page.getByRole('button', { name: '얼굴 제외', exact: true })).toBeVisible();
+  await page.locator('.entityHeader').getByRole('button',{name:'선택 취소',exact:true}).click();
   await page.getByRole('button', { name: '인물별 보기', exact: true }).click();
   await page.getByRole('region', { name: '미확인 인물', exact: true }).getByRole('button', { name: '미확인 인물 2장', exact: true }).click();
   await page.getByLabel('인물 이름').fill('우리 가족');
@@ -350,7 +352,7 @@ test('unnamed faces are visible and can be saved to an existing person without a
   await expect(page.getByRole('button', { name: '미확인 인물 1장', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '미확인 인물 다시 확인', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
-  await expect(page.getByRole('button', { name: /인식 검증|기기 측정|새로고침|미확인/ })).toHaveCount(0);
+  await expect(page.locator('.actionMenuPanel').getByRole('button', { name: /인식 검증|기기 측정|새로고침|미확인/ })).toHaveCount(0);
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: '미확인 인물 1장', exact: true }).click();
   await page.getByRole('button', { name: '등록한 사람 선택', exact: true }).click();

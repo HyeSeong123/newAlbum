@@ -89,6 +89,24 @@ test('touch selection in people and pets scrolls without selecting, and taps tog
   await expect(editor.locator('.petPhoto[aria-pressed="true"]')).toHaveCount(0);
 });
 
+test('horizontal touch dragging selects multiple faces and pet photos', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'Phone touch brush regression.');
+  await fixture(page); await selectPerson(page);
+  async function brush(tiles: Locator) {
+    await tiles.first().scrollIntoViewIfNeeded();
+    const a=(await tiles.first().boundingBox())!, b=(await tiles.nth(1).boundingBox())!;
+    const x=a.x+a.width/2, y=a.y+a.height/2, end=b.x+b.width/2;
+    const client=await page.context().newCDPSession(page);
+    await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});
+    for(let step=1;step<=10;step++) await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+(end-x)*step/10,y}]});
+    await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]}); await client.detach();
+  }
+  await brush(page.getByRole('button',{name:'얼굴 선택',exact:true}));
+  await expect(page.locator('.personOriginal[aria-pressed="true"]')).toHaveCount(2);
+  const editor=await editPet(page);await brush(editor.getByRole('button',{name:'사진 선택',exact:true}));
+  await expect(editor.locator('.petPhoto[aria-pressed="true"]')).toHaveCount(2);
+});
+
 test('desktop people and pet selection still supports mouse dragging', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Desktop mouse regression.');
   await fixture(page);
