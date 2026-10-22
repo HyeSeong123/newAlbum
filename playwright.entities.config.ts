@@ -3,7 +3,8 @@ import base from './playwright.config';
 
 // UI/IPC fixtures exercise classification controls without downloading or loading
 // recognition weights. Inference accuracy remains a separate validation scope.
-export default defineConfig(base, {
+export default defineConfig({
+  ...base,
   testMatch: process.env.ENTITY_UX_BASELINE === '1' ? ['**/entity-visuals.spec.ts'] : [
     '**/entity-ux.spec.ts', '**/entity-visuals.spec.ts', '**/people-controls.spec.ts',
     '**/unknown-faces.spec.ts', '**/manual-photos.spec.ts', '**/pets.spec.ts',
