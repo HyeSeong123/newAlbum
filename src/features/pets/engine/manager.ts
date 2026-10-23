@@ -13,7 +13,7 @@ export async function loadPetReferences(): Promise<PetReference[]> {
   let after = 0;
   for (;;) {
     const rows = await listPetDetections(null, after, true);
-    for (const row of rows) if (row.pet_id !== null && !row.excluded) references.push({ petId: row.pet_id, features: row });
+    for (const row of rows) if (row.pet_id !== null && !row.excluded) references.push({ petId: row.pet_id, features: row, mediaId: row.media_id, detectionId: row.id });
     if (rows.length < 100) break;
     after = rows[rows.length - 1].id;
   }
@@ -88,4 +88,15 @@ export async function scanPetBatch(items: MediaItem[], signal: AbortSignal, prog
   }
   progress({ done, total: photos.length, failed, detected, learned, missed, running: false,
     message: signal.aborted ? '반려동물 분석을 중단했습니다. 완료한 결과는 저장되었습니다.' : `반려동물 확인 필요 ${detected}마리 · ${done}장 확인${failed ? ` · 실패 ${failed}장 (${lastError})` : ''}` });
+}
+
+export const rejectPetCandidate = (detectionId:number,petId:number,rejected=true) => invoke<void>('reject_pet_candidate',{detectionId,petId,rejected});
+export async function addManualPetRegion(item:MediaItem,box:PetFeatures['box'],kind:PetFeatures['kind'],view:PetView,signal?:AbortSignal):Promise<number> {
+ const input=await invoke<{path:string;sourceKey:string}>('prepare_pet_input',{id:Number(item.id)});
+ signal?.throwIfAborted();
+ const seed:PetFeatures={kind,view,viewSource:view==='unknown'?'unknown':'user',box,detectionScore:0,detectionSource:'user',appearance:[],mirroredAppearance:[],color:[],shape:[]};
+ const [features]=await analyzePetImage(convertFileSrc(normalizeLocalFilePath(input.path)),signal,view,[seed]);
+ if(!features)throw new Error('반려동물 영역을 조금 더 크게 지정해 주세요.');
+ signal?.throwIfAborted();
+ return invoke<number>('add_manual_pet_detection',{mediaId:Number(item.id),sourceKey:input.sourceKey,features:{...features,detectionSource:'user',detectedKind:undefined}});
 }

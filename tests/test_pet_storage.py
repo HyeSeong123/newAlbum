@@ -43,3 +43,17 @@ class PetStorage(unittest.TestCase):
         self.assertIsNone(self.db.execute('SELECT pet_id FROM pet_detection').fetchone()[0])
         self.assertEqual(self.db.execute('SELECT COUNT(*) FROM media').fetchone()[0],1)
 if __name__=='__main__':unittest.main()
+
+class PetReviewStorage(unittest.TestCase):
+    def test_review_migration_and_rejections_preserve_links_and_cascade(self):
+        db=sqlite3.connect(':memory:');db.execute('PRAGMA foreign_keys=ON')
+        for name in ['schema.sql','pet-recognition.sql','pet-review.sql']:
+            db.executescript((ROOT/'src-tauri/database'/name).read_text())
+        db.executescript("INSERT INTO media(id,file_path,file_type,size_bytes) VALUES(1,'p.jpg','image',1);INSERT INTO pet(id,name) VALUES(1,'보리'),(2,'초코');INSERT INTO pet_media VALUES(1,1);INSERT INTO pet_scan VALUES(1,'test','hash','now');INSERT INTO pet_detection(id,media_id,object_index,features) VALUES(4,1,0,'{}');")
+        db.execute("INSERT INTO pet_candidate_rejection(detection_id,pet_id,source_key) VALUES(4,2,'hash')")
+        db.executescript((ROOT/'src-tauri/database/pet-review.sql').read_text())
+        self.assertEqual(db.execute('SELECT * FROM pet_media').fetchall(),[(1,1)])
+        self.assertEqual(db.execute('SELECT name FROM pet ORDER BY id').fetchall(),[('보리',),('초코',)])
+        db.execute('DELETE FROM pet WHERE id=2');self.assertEqual(db.execute('SELECT COUNT(*) FROM pet_candidate_rejection').fetchone()[0],0)
+        self.assertEqual(db.execute('SELECT COUNT(*) FROM media').fetchone()[0],1)
+        self.assertEqual(db.execute('PRAGMA foreign_key_check').fetchall(),[])

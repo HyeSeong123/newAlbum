@@ -287,7 +287,7 @@ fn installed_v18_upgrade_keeps_native_registry_and_adds_entity_management() {
     c.execute_batch("ALTER TABLE person DROP COLUMN cover_media_id; DROP TABLE unidentified_pet_photo; PRAGMA user_version=18;").unwrap();
     c.execute("INSERT INTO native_ai_model(model_key,task,kind,dimensions,weights_sha256,preprocess,state,provenance_json) VALUES('kept','person','identity',512,?1,'v1','untrained','{}')", ["a".repeat(64)]).unwrap();
     initialize(&mut c).unwrap();
-    assert_eq!(c.query_row("PRAGMA user_version", [], |r| r.get::<_,i64>(0)).unwrap(), 19);
+    assert_eq!(c.query_row("PRAGMA user_version", [], |r| r.get::<_,i64>(0)).unwrap(), VERSION);
     assert_eq!(c.query_row("SELECT model_key FROM native_ai_model", [], |r| r.get::<_,String>(0)).unwrap(), "kept");
     assert_eq!(c.query_row("SELECT count(*) FROM pragma_table_info('person') WHERE name='cover_media_id'", [], |r| r.get::<_,i64>(0)).unwrap(), 1);
     assert_eq!(c.query_row("SELECT count(*) FROM unidentified_pet_photo", [], |r| r.get::<_,i64>(0)).unwrap(), 0);
@@ -305,7 +305,7 @@ fn ux_only_v18_upgrade_adds_native_registry_without_rewriting_links() {
     let before = snapshot(&c);
     initialize(&mut c).unwrap();
     assert_eq!(snapshot(&c), before);
-    assert_eq!(version(&c).unwrap(), 19);
+    assert_eq!(version(&c).unwrap(), VERSION);
     assert!(table_exists(&c, "native_ai_model").unwrap());
     assert_eq!(c.query_row("SELECT media_id FROM unidentified_pet_photo", [], |r| r.get::<_,i64>(0)).unwrap(), 1);
     assert_eq!(c.query_row("SELECT count(*) FROM native_ai_model", [], |r| r.get::<_,i64>(0)).unwrap(), 0);

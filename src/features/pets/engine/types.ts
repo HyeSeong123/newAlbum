@@ -1,9 +1,10 @@
-export const ENGINE_VERSION = 'gamjassak-pets-v3-no-pose';
+export const ENGINE_VERSION = 'gamjassak-pets-v4-review';
 export type PetKind = 'dog' | 'cat';
 export type PetView = 'front' | 'left' | 'right' | 'rear' | 'unknown';
 export const VIEW_LABELS: Record<PetView, string> = { front: '정면', left: '왼쪽 측면', right: '오른쪽 측면', rear: '뒷모습', unknown: '방향 미확인' };
 export interface PetFeatures {
   kind: PetKind;
+  detectionSource?: 'detector' | 'user';
   detectedKind?: PetKind; // original model species; retained when a user corrects kind
   view: PetView;
   viewSource: 'unknown' | 'user' | 'cat-frontal-cascade';
@@ -23,11 +24,12 @@ export interface PetDetection extends PetFeatures {
   media_id: number;
   pet_id: number | null;
   excluded: boolean;
+  rejected_pet_ids?: number[];
 }
-export interface PetReference { petId: number; features: PetFeatures }
-export interface PetCandidate { petId: number; score: number; basis: 'appearance' | 'face-appearance' | 'shape-color' }
+export interface PetReference { petId: number; features: PetFeatures; mediaId?: number; detectionId?: number }
+export interface PetCandidate { petId: number; score: number; basis: 'appearance' | 'face-appearance' | 'shape-color'; referenceCount?: number }
 export type RecognitionState = 'confirmed' | 'needs-review' | 'unregistered' | 'rear-review';
-export interface RecognitionResult { state: RecognitionState; candidates: PetCandidate[]; autoPetId: null }
+export interface RecognitionResult { state: RecognitionState; candidates: PetCandidate[]; autoPetId: null; ambiguous?: boolean }
 export interface ScanRecord { media_id: number; engine_version: string; source_key: string; detections: PetDetection[] }
 export interface PetDetector { detect(image: ImageBitmap): Promise<PetFeatures[]> }
 export interface ViewAnalyzer { analyze(): { view: PetView; viewSource: 'unknown' | 'user' } }

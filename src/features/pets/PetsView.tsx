@@ -1,3 +1,4 @@
+import { EntityPhotoPicker } from '../../components/EntityPhotoPicker';
 import { FunctionHelp } from '../../components/FunctionHelp';
 import { useBackAction } from '../../hooks/useBackAction';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
@@ -28,6 +29,7 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
   const [error, setError] = useState('');
   const [selecting,setSelecting]=useState(false), [chosen,setChosen]=useState<number[]>([]);
   const [assigning,setAssigning]=useState(false), [unknown,setUnknown]=useState(false);
+  const [scanPicking,setScanPicking]=useState(false);
   const [sort,setSort]=useState('name');
   useEffect(()=>{const close=()=>setSelecting(false);window.addEventListener('gamjassak-unknown-pet-selection-close',close);return()=>window.removeEventListener('gamjassak-unknown-pet-selection-close',close);},[]);
   const [editorMode,setEditorMode]=useState<'all'|'name'|'cover'|'photos'>('all');
@@ -47,7 +49,7 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
   const matchingPets = useMemo(() => pets.filter((entry) => entry.name.toLocaleLowerCase().includes(search)).sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'ko'):b.media_ids.length-a.media_ids.length), [pets, search, sort]);
   useEffect(() => { setPage(0); setListPage(0); listScroll.current=null;setActive(null); setSelecting(false); setChosen([]); }, [query]);
   useEffect(()=>{setSelecting(false);setChosen([]);},[active,unknown]);
-  useEffect(()=>{if(!isActive){setSelecting(false);setChosen([]);setAssigning(false);setEditing(null);setReviewing(false);}},[isActive]);
+  useEffect(()=>{if(!isActive){setSelecting(false);setChosen([]);setAssigning(false);setEditing(null);setReviewing(false);setScanPicking(false);}},[isActive]);
   useBackAction(isActive && (selecting || Boolean(pet) || unknown), () => {
     if (busy) return;
     if (selecting) {setSelecting(false);setChosen([]);}
@@ -89,7 +91,7 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
     catch(reason){setError(String(reason));}finally{setBusy(false);}
   }
   function editPet(mode:'all'|'name'|'cover'|'photos'){if(pet){setEditorMode(mode);setEditing(pet);}}
-  function retrain() { analysis.retrain((pet ? [pet] : pets).map(entry => ({petId:entry.id,items:photos.filter(photo => entry.media_ids.includes(Number(photo.id)))}))); }
+  function retrain() { analysis.refreshReferences((pet ? [pet] : pets).map(entry => ({petId:entry.id,items:photos.filter(photo => entry.media_ids.includes(Number(photo.id)))}))); }
   async function remove() {
     if (!pet || busy || !window.confirm(`'${pet.name}'의 이름과 사진 연결을 삭제할까요? 인식 결과는 미확인 상태로 남고 원본 사진은 유지됩니다.`)) return;
     setBusy(true); setError('');
@@ -108,15 +110,15 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
         {pet && <><button className="primaryControl entityPrimary" aria-label="선택" disabled={busy || !linked.length} onClick={()=>{setSelecting(!selecting);setChosen([]);}}><Check size={18}/>선택</button><ActionMenu label="반려동물 관리" triggerText="더보기" icon={<MoreVertical size={20} />} disabled={busy} actions={[
           {label:'대표 사진 변경',disabled:!linked.length,onSelect:()=>editPet('cover')},
           {label:'이름·사진 수정',onSelect:()=>editPet('all')},
-          { label: '등록 사진 다시 분석', icon: <RefreshCw size={16} />, disabled: !canRetrain || analysis.progress?.running, onSelect: retrain },
+          { label: '인식 기준 갱신', icon: <RefreshCw size={16} />, disabled: !canRetrain || analysis.progress?.running, onSelect: retrain },
           { label: '반려동물 등록 삭제', icon: <Trash2 size={16} />, danger: true, onSelect: () => void remove() },
         ]} /></>}
         {!pet && !unknown && <button className="primaryControl entityPrimary" aria-label="반려동물 추가" disabled={loading || !desktop} onClick={() => {setEditorMode('all');setEditing({ id: 0, name: '', cover_media_id: null, media_ids: [] });}}><Plus size={18} /><span>반려동물 추가</span></button>}
-        {!pet && desktop && pets.length > 0 && <ActionMenu label="반려동물 관리" triggerText="더보기" icon={<MoreVertical size={20} />} actions={[{label:'등록 사진 다시 분석',icon:<RefreshCw size={16} />,disabled:!canRetrain || analysis.progress?.running,onSelect:retrain}]} />}
+        {!pet && desktop && pets.length > 0 && <ActionMenu label="반려동물 관리" triggerText="더보기" icon={<MoreVertical size={20} />} actions={[{label:'인식 기준 갱신',icon:<RefreshCw size={16} />,disabled:!canRetrain || analysis.progress?.running,onSelect:retrain}]} />}
       </div>
     </div>
     {!desktop && <p role="status">반려동물 등록·인식은 감자싹 앱에서 사용할 수 있습니다.</p>}
-    {desktop && !selecting && <div className="entityQuickActions">{pet ? <><button disabled={busy} onClick={()=>editPet('photos')}><Plus size={18}/>사진 연결</button><button disabled={busy} onClick={()=>editPet('name')}><Pencil size={18}/>이름 변경</button></> : <>{!unknown && <button disabled={busy || !matchingPets.length} onClick={()=>{setSelecting(!selecting);setChosen([]);}}>선택</button>}<button className={unknown?'active':''} onClick={()=>{if(!unknown)listScroll.current=window.scrollY;setUnknown(true);setActive(null);}}>미확인 반려동물</button></>}</div>}
+    {desktop && !selecting && <div className="entityQuickActions">{!pet&&<button className="primaryControl" disabled={loading||!photos.length} onClick={()=>setScanPicking(true)}><ScanSearch size={18}/>사진에서 반려동물 감지</button>}{pet ? <><button disabled={busy} onClick={()=>editPet('photos')}><Plus size={18}/>사진 연결</button><button disabled={busy} onClick={()=>editPet('name')}><Pencil size={18}/>이름 변경</button></> : <>{!unknown && <button disabled={busy || !matchingPets.length} onClick={()=>{setSelecting(!selecting);setChosen([]);}}>선택</button>}<button className={unknown?'active':''} onClick={()=>{if(!unknown)listScroll.current=window.scrollY;setUnknown(true);setActive(null);}}>미확인 반려동물</button></>}</div>}
     {!pet && !unknown && <label className="entitySort">정렬<select aria-label="반려동물 정렬" value={sort} onChange={event=>setSort(event.target.value)}><option value="name">이름순</option><option value="photos">사진 많은 순</option></select></label>}
     {desktop && !selecting && !unknown && pets.length > 0 && <div className="entityQuickActions"><button disabled={loading || !photos.length} onClick={() => setReviewing(true)}><ScanSearch size={18}/>반려동물 사진 찾기</button><FunctionHelp title="반려동물 사진 찾기"><p>연결한 사진과 비교해 비슷한 사진을 찾습니다. 결과를 확인한 뒤 같은 반려동물의 사진만 연결하세요.</p></FunctionHelp></div>}
     {!reviewing && <PetAnalysisStatus analysis={analysis} onReview={() => setReviewing(true)} />}
@@ -137,6 +139,7 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
       <button disabled={busy || !chosen.length} onClick={async()=>{if(!window.confirm(`반려동물 ${chosen.length}마리의 이름과 사진 연결을 삭제할까요? 인식 결과는 미확인 상태로 남고 원본 사진은 유지됩니다.`))return;setBusy(true);setError('');try{await removeEntityRegistrations('pet',chosen);setChosen([]);setPets(await loadPets());setSelecting(false);}catch(reason){setError(String(reason));}finally{setBusy(false);}}}>반려동물 등록 삭제</button>
     </EntitySelectionBar>}
     {pet && selecting && <EntitySelectionBar count={chosen.length} unit="사진" busy={busy} onAll={()=>setChosen(linked.map(item=>Number(item.id)))} onClear={()=>setChosen([])} onClose={()=>{setSelecting(false);setChosen([]);}}>
+      <button disabled={busy||!chosen.length||analysis.progress?.running} onClick={()=>analysis.start(linked.filter(item=>chosen.includes(Number(item.id))))}>선택한 사진 분석</button>
       <button className="primaryControl" disabled={busy || !chosen.length} onClick={()=>setAssigning(true)}>다른 반려동물로 변경</button>
       <button disabled={busy || !chosen.length} onClick={()=>void changePhotos('unknown')}>미확인 상태로 변경</button>
       <button disabled={busy || !chosen.length} onClick={()=>void changePhotos('exclude')}>이 반려동물에서 제외</button>
@@ -144,6 +147,7 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
     {assigning && pet && <EntityAssignmentDialog kind="pet" entries={pets.filter(entry=>entry.id!==pet.id)} count={chosen.length} unit="사진" onClose={()=>setAssigning(false)} onSave={async value=>{
       await editEntityPhotos('pet',pet.id,chosen,'move',value);setChosen([]);try{setPets(await loadPets());}catch{setError('저장은 완료했지만 목록을 갱신하지 못했습니다. 반려동물 메뉴를 다시 열어 주세요.');}window.dispatchEvent(new Event('gamjassak-pet-results'));
     }}/>}
+    {scanPicking&&<EntityPhotoPicker title="반려동물 감지할 사진 선택" photos={photos} selectOnly submitLabel="반려동물 감지" onClose={()=>setScanPicking(false)} onSave={async(_,ids)=>{analysis.start(photos.filter(item=>ids.includes(Number(item.id))));setUnknown(true);setActive(null);}}/>}
     {editing && <PetEditor pet={editing} mode={editorMode} photos={photos} onClose={() => setEditing(null)} onSaved={async (id) => { setPets(await loadPets()); setActive(id); setPage(0); }} />}
     {reviewing && <PetPhotoSearch pet={pet} pets={pets} photos={photos} analysis={analysis} onClose={() => setReviewing(false)} onSaved={async () => { setPets(await loadPets()); }} />}
 

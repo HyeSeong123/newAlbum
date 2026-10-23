@@ -1,10 +1,11 @@
+import { ManualPetRegion } from './ManualPetRegion';
 import { FunctionHelp } from '../../components/FunctionHelp';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { LoaderCircle } from 'lucide-react';
 import { MediaVisual } from '../../components/MediaVisual';
 import type { MediaItem } from '../../types/media';
 import { loadPets, savePet, type Pet } from './petService';
-import { confirmPetDetection, getPetScan, loadPetReferences, scanPetPhoto, extractPetCorrection, savePetCorrection } from './engine/manager';
+import { confirmPetDetection, getPetScan, loadPetReferences, scanPetPhoto, extractPetCorrection, savePetCorrection, rejectPetCandidate } from './engine/manager';
 import { recognizePet, withView } from './engine/matcher';
 import { VIEW_LABELS, type PetDetection, type PetReference, type PetView, type PetFeatures, type PetKind } from './engine/types';
 import './pets.css';
@@ -20,13 +21,14 @@ function DetectionCard({ detection, item, pets, references, preferredPet, onSave
   const [chosen, setChosen] = useState(detection.pet_id !== null ? String(detection.pet_id) : preferredPet?.media_ids.includes(detection.media_id) ? String(preferredPet.id) : '');
   const [name, setName] = useState('');
   const [imageRatio,setImageRatio]=useState(1);
+  async function reject(petId:number,rejected=true){if(locked.current)return;locked.current=true;setBusy(true);setError('');try{await rejectPetCandidate(detection.id,petId,rejected);if(rejected&&chosen===String(petId))setChosen('');await onSaved();window.dispatchEvent(new Event('gamjassak-pet-results'));}catch(reason){setError(String(reason));}finally{locked.current=false;setBusy(false);}}
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
   const [prepared,setPrepared]=useState<{selection:string;features:PetFeatures}|null>(null);
-  const locked = useRef(false);
+  const locked = useRef(false),createdPet=useRef<number|null>(null);
   const selection=JSON.stringify([view,kind,faceBox]);
   const preview=prepared?.selection===selection?prepared.features:undefined;
   const faceChanged=JSON.stringify(faceBox)!==JSON.stringify(detection.faceBox);
-  const query=preview??{...detection,kind,...(faceChanged?{faceBox:undefined,faceAppearance:[],mirroredFaceAppearance:[]}:{})};
+  const query={...detection,...(preview??{kind,...(faceChanged?{faceBox:undefined,faceAppearance:[],mirroredFaceAppearance:[]}:{})})};
   const result = recognizePet(withView(query,view), references.filter(reference => reference.features !== detection && (reference.features as PetDetection).id !== detection.id));
   const [x,y,w,h] = detection.box;
   async function compareFace(){
@@ -51,7 +53,7 @@ function DetectionCard({ detection, item, pets, references, preferredPet, onSave
         inference.current=new AbortController();
         features=await extractPetCorrection(item,detection,view,kind,faceBox,inference.current.signal);
       }
-      const id = excluded ? null : chosen === 'new' ? await savePet(null,name.trim(),[],null) : chosen ? Number(chosen) : null;
+      const id = excluded ? null : chosen === 'new' ? createdPet.current ?? (createdPet.current=await savePet(null,name.trim(),[],null)) : chosen ? Number(chosen) : null;
       if(features)await savePetCorrection(detection.id,id,features);
       else await confirmPetDetection(detection.id,id,view,excluded);
       window.dispatchEvent(new Event('gamjassak-pet-results'));
@@ -60,7 +62,7 @@ function DetectionCard({ detection, item, pets, references, preferredPet, onSave
     finally {inference.current=null;locked.current = false;setBusy(false);}
   }
   const point=(event:React.PointerEvent<HTMLDivElement>):[number,number]=>{const r=event.currentTarget.getBoundingClientRect();return [Math.max(x,Math.min(x+w,(event.clientX-r.left)/r.width)),Math.max(y,Math.min(y+h,(event.clientY-r.top)/r.height))];};
-  const state = detection.excluded ? '탐지 제외 · 변경 가능' : detection.pet_id !== null ? '연결 완료 · 변경 가능' : view === 'rear' ? '뒷모습 분석 · 확인 필요' : result.candidates.length ? '반려동물 확인 필요' : '미등록 후보 · 직접 확인';
+  const state = detection.excluded ? '탐지 제외 · 변경 가능' : detection.pet_id !== null ? '연결 완료 · 변경 가능' : view === 'rear' ? '뒷모습 분석 · 확인 필요' : result.ambiguous ? '여러 후보 · 직접 확인' : result.candidates.length ? '반려동물 확인 필요' : '미등록 후보 · 직접 확인';
   return <article className="petDetectionCard">
     <div className={`petDetectionPreview ${selectFace?'selectFace':''}`} style={{aspectRatio:imageRatio}} onPointerDown={event=>{if(!selectFace||busy)return;anchor.current=point(event);event.currentTarget.setPointerCapture(event.pointerId);}} onPointerMove={event=>{if(!selectFace||busy||!anchor.current)return;const end=point(event),start=anchor.current;setFaceBox([Math.min(start[0],end[0]),Math.min(start[1],end[1]),Math.abs(end[0]-start[0]),Math.abs(end[1]-start[1])]);}} onPointerUp={()=>{anchor.current=null;}} onPointerCancel={()=>{anchor.current=null;}} onLoadCapture={event=>{const image=event.target;if(image instanceof HTMLImageElement && image.naturalHeight)setImageRatio(image.naturalWidth/image.naturalHeight);}}><MediaVisual item={item} fit="cover" /><span className="petDetectionBox" style={{left:`${x*100}%`,top:`${y*100}%`,width:`${w*100}%`,height:`${h*100}%`}} />
       {faceBox && view!=='rear' && view!=='unknown' && <span className="petFaceBox" style={{left:`${faceBox[0]*100}%`,top:`${faceBox[1]*100}%`,width:`${faceBox[2]*100}%`,height:`${faceBox[3]*100}%`}}/>}
@@ -74,7 +76,9 @@ function DetectionCard({ detection, item, pets, references, preferredPet, onSave
       {view!=='rear' && view!=='unknown' && <div className="petFaceControls"><button disabled={busy} aria-pressed={selectFace} onClick={()=>setSelectFace(!selectFace)}>{selectFace?'얼굴 지정 마침':'얼굴 영역 지정'}</button>{faceBox && <><button disabled={busy} onClick={()=>void compareFace()}>선택한 얼굴로 후보 비교</button><button disabled={busy} onClick={()=>{setFaceBox(undefined);setSelectFace(false);}}>얼굴 영역 해제</button></>}{selectFace && <small>얼굴을 둘러싸도록 드래그하세요.</small>}</div>}
       {view==='rear' && <button disabled={busy} onClick={()=>void compareFace()}>뒷모습 체형·색상 다시 비교</button>}
       {preview && <p role="status">{view==='rear'?'체형·색상 후보를 다시 비교했습니다.':'얼굴 특징으로 후보를 다시 비교했습니다.'} 반려동물을 선택한 뒤 저장해 주세요.</p>}
-      {result.candidates.length > 0 && <p className="petMatchNotice">유사 후보: {result.candidates.map(candidate => `${pets.find(pet => pet.id===candidate.petId)?.name ?? '삭제된 등록'} (${candidate.basis === 'shape-color' ? '체형·색상' : candidate.basis==='face-appearance'?'얼굴·외형':'외형'})`).join(', ')}</p>}
+      {result.candidates.length > 0 && <div className="petCandidateActions" aria-label="반려동물 후보">{result.candidates.map(candidate=><div key={candidate.petId}><button disabled={busy} aria-pressed={chosen===String(candidate.petId)} onClick={()=>setChosen(String(candidate.petId))}>{pets.find(pet=>pet.id===candidate.petId)?.name??'반려동물'} 선택</button><button disabled={busy||detection.pet_id===candidate.petId} onClick={()=>void reject(candidate.petId)} aria-label={`${pets.find(pet=>pet.id===candidate.petId)?.name??'반려동물'} 후보 제외`}>이 후보 제외</button></div>)}</div>}
+      {!!detection.rejected_pet_ids?.length && <button disabled={busy} onClick={async()=>{for(const id of detection.rejected_pet_ids??[])await reject(id,false);}}>제외한 후보 다시 보기</button>}
+
       <label>반려동물<select aria-label="인식된 반려동물" disabled={busy} value={chosen} onChange={event => setChosen(event.target.value)}><option value="">미확인 / 연결 해제</option>{pets.map(pet => <option key={pet.id} value={pet.id}>{pet.name}</option>)}<option value="new">반려동물 추가</option></select></label>
       {chosen === 'new' && <label>새 반려동물 이름<input aria-label="새 반려동물 이름" disabled={busy} maxLength={80} value={name} onChange={event=>setName(event.target.value)} /></label>}
       <div className="peopleActions"><button disabled={busy} onClick={() => void save()}>{busy ? <LoaderCircle size={16} className="spinIcon" /> : null}변경 저장</button><button disabled={busy} onClick={() => void save(true)}>반려동물 아님</button></div>
@@ -86,6 +90,7 @@ function DetectionCard({ detection, item, pets, references, preferredPet, onSave
 
 export function PetPhotoResults({ item }: { item: MediaItem }) {
   const [rows,setRows]=useState<PetDetection[]>([]), [pets,setPets]=useState<Pet[]>([]), [references,setReferences]=useState<PetReference[]>([]);
+  const [adding,setAdding]=useState(false);
   const [review,setReview]=useState(false), [error,setError]=useState('');
   const [busy,setBusy]=useState(false), abort=useRef<AbortController|null>(null);
   const alive=useRef(true);
@@ -102,6 +107,8 @@ export function PetPhotoResults({ item }: { item: MediaItem }) {
   async function reanalyze(){if(abort.current)return;abort.current=new AbortController();setBusy(true);setError('');try{await scanPetPhoto(item,abort.current.signal,'unknown',true,true);window.dispatchEvent(new Event('gamjassak-pet-results'));await refresh();}catch(reason){if(alive.current)setError(String(reason instanceof Error?reason.message:reason));}finally{abort.current=null;if(alive.current)setBusy(false);}}
   return <section className="petPhotoResults"><h3>반려동물</h3>{error && <p role="alert">{error}</p>}
     {!review ? <><p>{rows.filter(d=>!d.excluded).map(row=>row.pet_id ? pets.find(p=>p.id===row.pet_id)?.name ?? '미확인' : row.view==='rear' ? '뒷모습 · 확인 필요' : '반려동물 확인 필요').join(' · ') || '아직 확인한 반려동물이 없습니다.'}</p>{rows.length>0 && <button disabled={busy} onClick={()=>setReview(true)}>인식 결과 확인·수정</button>}</> : <>{rows.map(row=><DetectionCard key={`${row.id}:${row.pet_id}:${row.view}:${row.kind}:${row.faceBox}`} detection={row} item={item} pets={pets} references={references} onSaved={refresh}/>)}<button onClick={()=>setReview(false)}>접기</button></>}
+    <button disabled={busy} onClick={()=>setAdding(true)}>반려동물 직접 추가</button>
+    {adding&&<ManualPetRegion item={item} onClose={()=>setAdding(false)} onSaved={async()=>{await refresh();setReview(true);}}/>}
     <button disabled={busy} onClick={()=>void reanalyze()}>{busy?'반려동물 분석 중…':'연결 유지하고 재분석'}</button>{busy && <button onClick={()=>abort.current?.abort()}>분석 중단</button>}
     <FunctionHelp title="연결 유지하고 재분석"><p>기존 사진 연결은 유지하고, 동물별 확인 내용과 특징은 새 분석으로 교체합니다.</p></FunctionHelp>
   </section>;

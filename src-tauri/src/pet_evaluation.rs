@@ -35,7 +35,7 @@ fn dataset(conn:&Connection)->Result<Value,String>{
         let sample=json!({"automaticView":row.get::<_,Option<String>>(11).map_err(|e|e.to_string())?,"sampleId":format!("sample-{id}"),"mediaKey":format!("media-{media}"),"petId":pet,"captureGroup":row.get::<_,String>(4).map_err(|e|e.to_string())?,"sourceKey":row.get::<_,String>(5).map_err(|e|e.to_string())?,"view":row.get::<_,String>(6).map_err(|e|e.to_string())?,"kind":row.get::<_,String>(7).map_err(|e|e.to_string())?,"features":text.map(|t|serde_json::from_str::<Value>(&t)).transpose().map_err(|e|e.to_string())?,"rights":row.get::<_,String>(9).map_err(|e|e.to_string())?,"engineVersion":row.get::<_,String>(10).map_err(|e|e.to_string())?});
         if role=="reference"{references.push(sample);}else{queries.push(sample);}
     }
-    Ok(json!({"schemaVersion":1,"engineVersion":"gamjassak-pets-v3-no-pose","references":references,"queries":queries,"automaticLinkingEnabled":false}))
+    Ok(json!({"schemaVersion":1,"engineVersion":"gamjassak-pets-v4-review","references":references,"queries":queries,"automaticLinkingEnabled":false}))
 }
 #[tauri::command]
 pub async fn save_pet_evaluation(app:AppHandle,sample:Sample)->Result<(),String>{
@@ -72,7 +72,7 @@ pub async fn export_pet_evaluation(app:AppHandle,destination:String)->Result<(),
 mod tests {
  use super::*;
  #[test] fn missed_detection_export_keeps_ground_truth_without_linking(){
-  let mut c=Connection::open_in_memory().unwrap();crate::database::initialize(&mut c).unwrap();c.execute_batch("INSERT INTO media(id,file_path,file_type,size_bytes) VALUES(1,'private/photo','image',1);INSERT INTO pet(id,name) VALUES(1,'private-name');INSERT INTO pet_scan(media_id,engine_version,source_key) VALUES(1,'gamjassak-pets-v3-no-pose','sha256:test');").unwrap();
+  let mut c=Connection::open_in_memory().unwrap();crate::database::initialize(&mut c).unwrap();c.execute_batch("INSERT INTO media(id,file_path,file_type,size_bytes) VALUES(1,'private/photo','image',1);INSERT INTO pet(id,name) VALUES(1,'private-name');INSERT INTO pet_scan(media_id,engine_version,source_key) VALUES(1,'gamjassak-pets-v4-review','sha256:test');").unwrap();
   save(&mut c,Sample{media_id:1,detection_id:None,pet_id:Some(1),role:"query".into(),capture_group:"session-B".into(),view:"left".into(),kind:"dog".into(),rights:"owner".into()}).unwrap();
   let data=dataset(&c).unwrap();assert!(data["queries"][0]["features"].is_null());assert_eq!(data["queries"][0]["petId"],1);assert!(!data.to_string().contains("private"));assert_eq!(c.query_row("SELECT COUNT(*) FROM pet_media",[],|r|r.get::<_,i64>(0)).unwrap(),0);
  }

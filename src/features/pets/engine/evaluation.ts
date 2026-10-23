@@ -18,7 +18,7 @@ export function evaluatePets(data:PetEvaluationDataset){
  };
  for(const reference of data.references){valid(reference);if(reference.petId===null||!reference.features||ids.has(reference.sampleId))throw new Error('Reference requires a known pet, features and unique sampleId');if(reference.kind && reference.features.kind!==reference.kind)throw new Error('Correct reference species before evaluation');groups.add(reference.captureGroup);ids.add(reference.sampleId);if(reference.sourceKey)sources.add(reference.sourceKey);}
  const refs=data.references.map(r=>({petId:r.petId!,features:{...r.features!,view:r.view}}));
- const stats={all:{total:0,correct:0},front:{total:0,correct:0},side:{total:0,correct:0},left:{total:0,correct:0},right:{total:0,correct:0},rear:{total:0,candidateHit:0},novel:{total:0,suggestedKnown:0},detectionMisses:0,species:{total:0,correct:0},humanSpeciesCorrections:0,unresolved:0};
+ const stats={all:{total:0,correct:0},front:{total:0,correct:0},side:{total:0,correct:0},left:{total:0,correct:0},right:{total:0,correct:0},rear:{total:0,candidateHit:0},novel:{total:0,suggestedKnown:0},detectionMisses:0,species:{total:0,correct:0},humanSpeciesCorrections:0,humanDetectionCorrections:0,unresolved:0};
  const sidePets=new Set<number>(),sidePhotos=new Set<string>(),sideSpecies=new Set<string>();
  const byKind={dog:{photos:new Set<string>(),pets:new Set<number>()},cat:{photos:new Set<string>(),pets:new Set<number>()}};
  const querySources=new Set<string>();
@@ -34,15 +34,16 @@ export function evaluatePets(data:PetEvaluationDataset){
   if(queryKey && querySources.has(queryKey))throw new Error('Duplicate pet/query photo: '+query.sampleId);
   if(queryKey)querySources.add(queryKey);
   if(!query.kind || query.features && !query.features.detectedKind)originalSpeciesAvailable=false;
-  if(!query.features)stats.detectionMisses++;
-  if(query.features && query.kind){stats.species.total++;if((query.features.detectedKind??query.features.kind)===query.kind)stats.species.correct++;if(query.features.detectedKind && query.features.detectedKind!==query.features.kind)stats.humanSpeciesCorrections++;}
+  if(!query.features || query.features.detectionSource==='user')stats.detectionMisses++;
+  if(query.features?.detectionSource==='user')stats.humanDetectionCorrections++;
+  if(query.features && query.features.detectionSource!=='user' && query.kind){stats.species.total++;if((query.features.detectedKind??query.features.kind)===query.kind)stats.species.correct++;if(query.features.detectedKind && query.features.detectedKind!==query.features.kind)stats.humanSpeciesCorrections++;}
   // A mistaken species prediction counts as an end-to-end identification miss.
   const result=query.features && (!query.kind || query.features.kind===query.kind)?recognizePet({...query.features,view:query.view},refs):{candidates:[]};
   const candidates=result.candidates;stats.unresolved++;
   if(query.petId===null){stats.novel.total++;if(candidates.length)stats.novel.suggestedKnown++;continue;}
   if(query.view==='rear'){stats.rear.total++;if(candidates.some(c=>c.petId===query.petId))stats.rear.candidateHit++;continue;}
   const correct=Number(candidates[0]?.petId===query.petId);stats.all.total++;stats.all.correct+=correct;
-  const modelCorrect=Number(!!correct && query.features?.detectedKind===query.kind);
+  const modelCorrect=Number(query.features?.detectionSource!=='user' && !!correct && query.features?.detectedKind===query.kind);
   modelSpeciesStats.all.total++;modelSpeciesStats.all.correct+=modelCorrect;
   const petStats=byPet.get(query.petId)??{total:0,correct:0};petStats.total++;petStats.correct+=modelCorrect;byPet.set(query.petId,petStats);
   if(query.view==='front'){stats.front.total++;stats.front.correct+=correct;}

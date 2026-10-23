@@ -47,11 +47,11 @@ async function infer(request: PetRequest) {
   if (!regions) {
     const detectedAt=performance.now();
     const input = pixels(canvas);
-    try { objects = await detector.detect(input, 20, 0.55); } finally { input.dispose(); }
+    try { objects = await detector.detect(input, 100, 0.50); } finally { input.dispose(); }
     timings.detectionMs += performance.now()-detectedAt;
   }
   const features: PetFeatures[] = [];
-  const animals = regions ? regions.map(region => ({ class: region.kind, score: region.detectionScore, bbox: [region.box[0]*width,region.box[1]*height,region.box[2]*width,region.box[3]*height] as [number,number,number,number], region })) : objects.filter(object => object.class === 'dog' || object.class === 'cat').sort((a,b) => a.bbox[0] - b.bbox[0] || a.bbox[1] - b.bbox[1]).map(object => ({...object,region:undefined}));
+  const animals = regions ? regions.map(region => ({ class: region.kind, score: region.detectionScore, bbox: [region.box[0]*width,region.box[1]*height,region.box[2]*width,region.box[3]*height] as [number,number,number,number], region })) : objects.filter(object => object.class === 'dog' || object.class === 'cat').slice(0,20).sort((a,b) => a.bbox[0] - b.bbox[0] || a.bbox[1] - b.bbox[1]).map(object => ({...object,region:undefined}));
   for (const object of animals) {
     const hint = object.region?.view ?? (animals.length === 1 ? viewHint : 'unknown');
     let view: Pick<PetFeatures,'view'|'viewSource'> = hint !== 'unknown' ? { view: hint, viewSource: 'user' } : conservativeViewAnalyzer.analyze();
@@ -100,7 +100,7 @@ async function infer(request: PetRequest) {
       mirroredFaceAppearance = await appearance(crop,embedding);
       timings.faceEmbeddingMs += performance.now()-faceAt;
     }
-    features.push({ kind: object.class as 'dog' | 'cat', detectedKind: object.region?.detectedKind ?? object.class as 'dog'|'cat', ...view,
+    features.push({ detectionSource: object.region?.detectionSource ?? 'detector', kind: object.class as 'dog' | 'cat', detectedKind: object.region?.detectedKind ?? object.class as 'dog'|'cat', ...view,
       box: object.region?.box ?? [x0/width,y0/height,(x1-x0)/width,(y1-y0)/height],
       detectionScore: object.score, appearance: vector, mirroredAppearance: mirror, faceBox, faceAppearance, mirroredFaceAppearance, ...descriptors });
   }

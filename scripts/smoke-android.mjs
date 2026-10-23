@@ -1,3 +1,4 @@
+import { verifyInstalledPetImprovements } from './pet-improvements-smoke.mjs';
 import { verifyInstalledAppUx } from './app-ux-smoke.mjs';
 import { verifyInstalledPersonRuntime } from './person-runtime-benchmark.mjs';
 import { verifyInstalledGallery } from './gallery-smoke.mjs';
@@ -703,6 +704,8 @@ try {
   const manualPhotoSmoke=await verifyInstalledManualPhotos(page,petPhoto.id,registeredPet,captureScreen);
   await writeFile(join(output,'manual-photos-smoke.json'),JSON.stringify(manualPhotoSmoke,null,2));
   console.log('Manual person membership, unknown-face review/new naming and pet reanalysis preserve names, links and object IDs: OK');
+  const petUx=await verifyInstalledPetImprovements({page,adb,appId,appDataRoot,originalId:petPhoto.id,pet:registeredPet,capture:captureScreen,output});
+  await writeFile(join(output,'pet-improvements-smoke.json'),JSON.stringify(petUx,null,2));
   const appUxSmoke=await verifyInstalledAppUx(page,petPhoto.id,registeredPet,()=>adb('shell','input','keyevent','4'),captureScreen);
   await writeFile(join(output,'app-ux-smoke.json'),JSON.stringify(appUxSmoke,null,2));
   const repetitionSmoke = await verifyInstalledRepetitionMeasurement(page, petPhoto.id, thumbnailPath);

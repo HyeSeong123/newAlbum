@@ -1299,6 +1299,8 @@ pub fn run() {
             pets::save_pet,
             pets::delete_pet,
             pet_recognition::get_pet_scan,
+            pet_recognition::add_manual_pet_detection,
+            pet_recognition::reject_pet_candidate,
             pet_recognition::list_pet_detections,
             pet_recognition::save_pet_scan,
             pet_recognition::confirm_pet_detection,

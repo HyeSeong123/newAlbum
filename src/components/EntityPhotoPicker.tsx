@@ -8,8 +8,8 @@ import { useRowSelection } from '../hooks/useRowSelection';
 import './entity-photo-picker.css';
 
 /** Manual photo membership never depends on a successful AI detection. */
-export function EntityPhotoPicker({ title, photos, name, initialIds = [], automaticIds = [], onClose, onSave }: {
-  title: string; photos: MediaItem[]; name?: string; initialIds?: number[]; automaticIds?: number[];
+export function EntityPhotoPicker({ title, photos, name, initialIds = [], automaticIds = [], onClose, onSave, selectOnly=false, submitLabel="사진 저장" }: {
+  selectOnly?: boolean; submitLabel?: string; title: string; photos: MediaItem[]; name?: string; initialIds?: number[]; automaticIds?: number[];
   onClose: () => void; onSave: (name: string, ids: number[]) => Promise<void>;
 }) {
   const [draftName, setName] = useState(name ?? '');
@@ -29,7 +29,7 @@ export function EntityPhotoPicker({ title, photos, name, initialIds = [], automa
   const count = new Set([...selected, ...automatic]).size;
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (lock.current || !draftName.trim()) return;
+    if (lock.current || (selectOnly ? !count : !draftName.trim())) return;
     lock.current = true; setBusy(true); setError('');
     try { await onSave(draftName.trim(), [...selected]); onClose(); }
     catch (reason) { setError(reason instanceof Error ? reason.message : typeof reason === 'string' && reason.trim() ? reason : '사진을 저장하지 못했습니다. 선택한 사진은 남아 있습니다. 다시 저장해 주세요.'); }
@@ -38,8 +38,8 @@ export function EntityPhotoPicker({ title, photos, name, initialIds = [], automa
   return <EntityEditorDialog title={title} busy={busy} onClose={onClose} className="entityPhotoPicker">
     <form onSubmit={event => void submit(event)}>
       <div className="entityEditBody">
-        {name === undefined ? <label className="entityEditField">이름<input aria-label="등록할 이름" value={draftName} maxLength={80} required disabled={busy} placeholder="이름을 입력하세요" onChange={event => setName(event.target.value)} /></label> : <strong>{name}의 사진</strong>}
-        <FunctionHelp title="사진 연결"><p>자동으로 감지하지 못한 사진도 직접 등록할 수 있어요. 사진을 눌러 연결하거나 해제하세요.</p>
+        {!selectOnly && (name === undefined ? <label className="entityEditField">이름<input aria-label="등록할 이름" value={draftName} maxLength={80} required disabled={busy} placeholder="이름을 입력하세요" onChange={event => setName(event.target.value)} /></label> : <strong>{name}의 사진</strong>)}
+        <FunctionHelp title={selectOnly?"반려동물 감지":"사진 연결"}><p>{selectOnly?"분석할 사진을 선택하고 반려동물 감지를 누르세요. 감지 결과에서 같은 반려동물을 확인해 이름을 지정합니다.":"자동으로 감지하지 못한 사진도 직접 등록할 수 있어요. 사진을 눌러 연결하거나 해제하세요."}</p>
         {!!automatic.size && <p>얼굴로 연결된 사진은 표시만 합니다. 연결을 바꾸려면 인물 화면의 얼굴 선택 또는 사진 선택을 사용하세요.</p>}</FunctionHelp>
         <div className="peopleActions"><button type="button" disabled={busy} onClick={() => setSelected(new Set(photos.filter(photo=>!automatic.has(Number(photo.id))).map(photo=>Number(photo.id))))}>전체 선택</button><button type="button" disabled={busy || !selected.size} onClick={() => setSelected(new Set())}>선택 해제</button></div>
         <div className="entityPhotoCount" role="status">사진 {count}장 선택</div>
@@ -51,7 +51,7 @@ export function EntityPhotoPicker({ title, photos, name, initialIds = [], automa
         {pages > 1 && <div className="peopleActions"><button type="button" aria-label="이전 사진" disabled={busy || !currentPage} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={18} /></button><span>{currentPage + 1} / {pages}</span><button type="button" aria-label="다음 사진" disabled={busy || currentPage === pages - 1} onClick={() => setPage(currentPage + 1)}><ChevronRight size={18} /></button></div>}
         {error && <p role="alert" className="entityEditError">{error}</p>}
       </div>
-      <footer className="peopleActions entityEditFooter"><button type="button" disabled={busy} onClick={onClose}>취소</button><button type="submit" className="primaryControl" disabled={busy || !draftName.trim()}>{busy ? <LoaderCircle size={18} className="spinIcon" /> : <Check size={18} />}사진 저장</button></footer>
+      <footer className="peopleActions entityEditFooter"><button type="button" disabled={busy} onClick={onClose}>취소</button><button type="submit" className="primaryControl" disabled={busy || (selectOnly ? !count : !draftName.trim())}>{busy ? <LoaderCircle size={18} className="spinIcon" /> : <Check size={18} />}{submitLabel}</button></footer>
     </form>
   </EntityEditorDialog>;
 }

@@ -112,3 +112,27 @@ test('side goal requires species balance and a 95 percent lower bound above the 
  const strong=evaluatePets(build(240));assert.equal(strong.sideGoalReached,true);assert.deepEqual(strong.sideCoverage,{dog:{photos:120,pets:5},cat:{photos:120,pets:5}});
  const unbalanced=build(240);unbalanced.queries=unbalanced.queries.filter(q=>q.kind==='dog');assert.equal(evaluatePets(unbalanced).sideGoalReached,null);
 });
+
+test('candidate evidence uses independent photos and suppresses a lone outlier',()=>{
+ const q=feature({mirroredAppearance:[1,0],color:[0,0],shape:[0,0]});
+ const ref=(petId,mediaId,cos)=>({petId,mediaId,features:feature({appearance:[cos,Math.sqrt(1-cos*cos)],mirroredAppearance:[cos,Math.sqrt(1-cos*cos)],color:[0,0],shape:[0,0]})});
+ const refs=[ref(1,10,1),ref(1,11,.2),ref(1,12,.2),ref(2,20,.8),ref(2,21,.8)];
+ const result=rankPets(q,refs);
+ assert.equal(result[0].petId,2);assert.equal(result[0].referenceCount,2);
+ const duplicated=rankPets(q,[ref(2,20,.8),ref(2,20,.8)])[0];assert.equal(duplicated.referenceCount,1);
+});
+test('rejected identities and same-photo reference leakage cannot reappear as suggestions',()=>{
+ const q={...feature(),id:1,media_id:9,rejected_pet_ids:[1]};
+ const refs=[{petId:1,mediaId:10,features:feature()},{petId:2,mediaId:9,features:feature()},{petId:3,mediaId:11,features:feature()}];
+ assert.deepEqual(recognizePet(q,refs).candidates.map(c=>c.petId),[3]);
+ assert.equal(recognizePet(q,refs).autoPetId,null);
+});
+test('ambiguous candidates require review even when both match exactly',()=>{
+ const result=recognizePet(feature(),[{petId:1,features:feature()},{petId:2,features:feature()}]);
+ assert.equal(result.ambiguous,true);assert.equal(result.autoPetId,null);
+});
+test('manually added animals remain detector misses in accuracy reports',()=>{
+ const result=evaluatePets({references:[reference()],queries:[query({kind:'dog',features:{...realDimensions(),detectionSource:'user',detectedKind:'dog'}})]});
+ assert.equal(result.stats.humanDetectionCorrections,1);assert.equal(result.stats.detectionMisses,1);
+ assert.equal(result.modelSpeciesTop1Accuracy.side,0);assert.equal(result.top1IdentificationAccuracy.side,1);
+});

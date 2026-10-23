@@ -2,7 +2,7 @@ use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 
-const ENGINE: &str = "gamjassak-pets-v3-no-pose";
+const ENGINE: &str = "gamjassak-pets-v4-review";
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Foreground {version:String,color:Vec<f64>,shape:Vec<f64>,fraction:f64}
 #[derive(Serialize, Deserialize, Clone)]
@@ -10,6 +10,7 @@ pub struct Foreground {version:String,color:Vec<f64>,shape:Vec<f64>,fraction:f64
 pub struct Features {
     kind: String, view: String, view_source: String, #[serde(rename = "box")] box_: [f64; 4], detection_score: f64,
     appearance: Vec<f64>, mirrored_appearance: Vec<f64>, color: Vec<f64>, shape: Vec<f64>,
+    #[serde(default,skip_serializing_if="Option::is_none")] detection_source:Option<String>,
     #[serde(default,skip_serializing_if="Option::is_none")] detected_kind:Option<String>,
     #[serde(default, skip_serializing_if="Option::is_none")] face_box: Option<[f64;4]>,
     #[serde(default)] face_appearance: Vec<f64>,
@@ -21,12 +22,13 @@ pub struct Features {
 
 #[derive(Serialize)]
 pub struct Detection {
-    id: i64, media_id: i64, pet_id: Option<i64>, excluded: bool,
+    id: i64, media_id: i64, pet_id: Option<i64>, excluded: bool, rejected_pet_ids: Vec<i64>,
     #[serde(flatten)] features: Features,
 }
 #[derive(Serialize)]
 pub struct Scan { media_id: i64, engine_version: String, source_key: String, detections: Vec<Detection> }
 fn validate(f: &Features) -> Result<(), String> {
+    if f.detection_source.as_ref().is_some_and(|v|v!="detector" && v!="user") {return Err("인식 출처를 확인해 주세요.".into());}
     if !["dog", "cat"].contains(&f.kind.as_str()) || !["front", "left", "right", "rear", "unknown"].contains(&f.view.as_str())
         || f.detected_kind.as_ref().is_some_and(|kind|!["dog","cat"].contains(&kind.as_str()))
         || !["unknown", "user", "cat-frontal-cascade"].contains(&f.view_source.as_str())
@@ -80,7 +82,15 @@ fn read_detections(conn: &Connection, media: Option<i64>, after: i64, limit: i64
     let mut stmt=conn.prepare(sql).map_err(|e|e.to_string())?;
     let raw = stmt.query_map(params![media,after,limit,references], |row| Ok((row.get::<_,i64>(0)?,row.get::<_,i64>(1)?,row.get::<_,Option<i64>>(2)?,row.get::<_,bool>(3)?,row.get::<_,String>(4)?)))
         .map_err(|e|e.to_string())?.collect::<Result<Vec<_>,_>>().map_err(|e|e.to_string())?;
-    raw.into_iter().map(|(id,media_id,pet_id,excluded,json)| Ok(Detection { id,media_id,pet_id,excluded,features: active_features(serde_json::from_str(&json).map_err(|e|e.to_string())?) })).collect()
+    let mut rejected=std::collections::HashMap::<i64,Vec<i64>>::new();
+    if !raw.is_empty() {
+        let ids=raw.iter().map(|r|r.0.to_string()).collect::<Vec<_>>().join(",");
+        let mut query=conn.prepare(&format!("SELECT r.detection_id,r.pet_id FROM pet_candidate_rejection r JOIN pet_detection d ON d.id=r.detection_id JOIN pet_scan s ON s.media_id=d.media_id WHERE r.detection_id IN ({ids}) AND r.source_key=s.source_key ORDER BY r.pet_id")).map_err(|e|e.to_string())?;
+        for pair in query.query_map([],|r|Ok((r.get::<_,i64>(0)?,r.get::<_,i64>(1)?))).map_err(|e|e.to_string())? {
+            let (id,pet)=pair.map_err(|e|e.to_string())?;rejected.entry(id).or_default().push(pet);
+        }
+    }
+    raw.into_iter().map(|(id,media_id,pet_id,excluded,json)| Ok(Detection { id,media_id,pet_id,excluded,rejected_pet_ids:rejected.remove(&id).unwrap_or_default(),features: active_features(serde_json::from_str(&json).map_err(|e|e.to_string())?) })).collect()
 }
 fn read_scan(conn: &Connection, media_id: i64) -> Result<Option<Scan>,String> {
     let header: Option<(String,String)> = conn.query_row("SELECT engine_version,source_key FROM pet_scan WHERE media_id=?1",[media_id],|r|Ok((r.get(0)?,r.get(1)?))).optional().map_err(|e|e.to_string())?;
@@ -131,6 +141,7 @@ fn confirm_with_features(conn: &mut Connection, detection_id:i64, pet_id:Option<
     if let Some(replacement)=replacement {
         validate(&replacement)?;
         if replacement.box_!=features.box_ {return Err("분석 영역이 변경되었습니다. 결과를 다시 불러와 주세요.".into());}
+        let mut replacement=replacement; replacement.detection_source=features.detection_source.clone();
         features=replacement;
     }
     tx.execute("UPDATE pet_direction_observation SET manual_view=?1 WHERE detection_id=?2",params![view,detection_id]).map_err(|e|e.to_string())?;
@@ -142,8 +153,12 @@ fn confirm_with_features(conn: &mut Connection, detection_id:i64, pet_id:Option<
         let mixed:bool=tx.query_row("SELECT EXISTS(SELECT 1 FROM pet_detection WHERE pet_id=?1 AND excluded=0 AND id<>?2 AND json_extract(features,'$.kind')<>?3)",params![pet,detection_id,features.kind],|r|r.get(0)).map_err(|e|e.to_string())?;
         if mixed {return Err("개와 고양이를 같은 반려동물로 연결할 수 없습니다.".into());}
     }
+    if let (Some(previous),Some(next))=(old,pet_id) {if previous!=next {
+        tx.execute("INSERT OR REPLACE INTO pet_candidate_rejection(detection_id,pet_id,source_key) SELECT ?1,?2,source_key FROM pet_scan WHERE media_id=?3",params![detection_id,previous,media]).map_err(|e|e.to_string())?;
+    }}
     tx.execute("UPDATE pet_detection SET pet_id=?1,excluded=?2,features=?3 WHERE id=?4",params![pet_id,excluded,serde_json::to_string(&features).map_err(|e|e.to_string())?,detection_id]).map_err(|e|e.to_string())?;
     if let Some(pet)=pet_id {
+        tx.execute("DELETE FROM pet_candidate_rejection WHERE detection_id=?1 AND pet_id=?2",params![detection_id,pet]).map_err(|e|e.to_string())?;
         let inserted=tx.execute("INSERT OR IGNORE INTO pet_media(pet_id,media_id) VALUES(?1,?2)",params![pet,media]).map_err(|e|e.to_string())?;
         if inserted>0 {tx.execute("INSERT OR IGNORE INTO pet_recognition_link VALUES(?1,?2)",params![pet,media]).map_err(|e|e.to_string())?;}
     }
@@ -167,11 +182,12 @@ pub async fn update_pet_features(app:AppHandle,detection_id:i64,pet_id:Option<i6
     tauri::async_runtime::spawn_blocking(move||{let mut conn=super::open_database(&app)?;verify_detection_source(&conn,detection_id)?;confirm_with_features(&mut conn,detection_id,pet_id,&view,excluded,Some(features))}).await.map_err(|e|e.to_string())?
 }
 
-fn refresh_reference(conn:&Connection,detection_id:i64,expected_key:&str,features:Features)->Result<(),String>{
+fn refresh_reference(conn:&Connection,detection_id:i64,expected_key:&str,mut features:Features)->Result<(),String>{
     validate(&features)?;
     let (json,key,owner,excluded):(String,String,Option<i64>,bool)=conn.query_row("SELECT d.features,s.source_key,d.pet_id,d.excluded FROM pet_detection d JOIN pet_scan s ON s.media_id=d.media_id WHERE d.id=?1",[detection_id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?))).map_err(|e|e.to_string())?;
     let old:Features=serde_json::from_str(&json).map_err(|e|e.to_string())?;
     if key!=expected_key || owner.is_none() || excluded || features.box_!=old.box_ || features.kind!=old.kind || features.view!=old.view || features.view_source!=old.view_source || features.face_box!=old.face_box {return Err("인식 기준이 변경되었습니다. 기존 연결을 유지하고 다시 불러와 주세요.".into());}
+    features.detection_source=old.detection_source;features.detected_kind=old.detected_kind;
     // Refresh vectors while retaining the object's ID, owner, direction and region.
     conn.execute("UPDATE pet_detection SET features=?1 WHERE id=?2",params![serde_json::to_string(&features).map_err(|e|e.to_string())?,detection_id]).map_err(|e|e.to_string())?;Ok(())
 }
@@ -192,7 +208,7 @@ fn replace_scan(conn:&mut Connection,media_id:i64,expected_key:&str,source_key:&
     let tx=conn.transaction().map_err(|e|e.to_string())?;
     let old=read_scan(&tx,media_id)?.ok_or("기존 분석을 찾을 수 없습니다.")?;
     if old.source_key!=expected_key {return Err("다른 작업에서 분석 결과가 변경되었습니다. 다시 불러와 주세요.".into());}
-    let protected:Vec<_>=old.detections.into_iter().filter(|d|d.pet_id.is_some()||d.excluded||d.features.view_source=="user").collect();
+    let protected:Vec<_>=old.detections.into_iter().filter(|d|d.pet_id.is_some()||d.excluded||d.features.view_source=="user"||d.features.detection_source.as_deref()==Some("user")||!d.rejected_pet_ids.is_empty()).collect();
     let changed=expected_key!=source_key;
     if changed && !protected.is_empty() && !allow_source_change {return Err("사진 내용 또는 기존 사진 지문이 변경되었습니다. 연결을 유지하고 재분석을 선택해 주세요.".into());}
     if changed {
@@ -201,7 +217,7 @@ fn replace_scan(conn:&mut Connection,media_id:i64,expected_key:&str,source_key:&
         tx.execute("DELETE FROM pet_recognition_link WHERE media_id=?1",[media_id]).map_err(|e|e.to_string())?;
         tx.execute("DELETE FROM pet_detection WHERE media_id=?1",[media_id]).map_err(|e|e.to_string())?;
     } else {
-        tx.execute("DELETE FROM pet_detection WHERE media_id=?1 AND pet_id IS NULL AND excluded=0 AND json_extract(features,'$.viewSource')<>'user'",[media_id]).map_err(|e|e.to_string())?;
+        tx.execute("DELETE FROM pet_detection WHERE media_id=?1 AND pet_id IS NULL AND excluded=0 AND json_extract(features,'$.viewSource')<>'user' AND COALESCE(json_extract(features,'$.detectionSource'),'detector')<>'user' AND NOT EXISTS(SELECT 1 FROM pet_candidate_rejection r WHERE r.detection_id=pet_detection.id)",[media_id]).map_err(|e|e.to_string())?;
     }
     let retained=if changed {vec![]} else {protected};
     let mut next:i64=tx.query_row("SELECT COALESCE(MAX(object_index),-1)+1 FROM pet_detection WHERE media_id=?1",[media_id],|r|r.get(0)).map_err(|e|e.to_string())?;
@@ -233,8 +249,22 @@ mod tests {
         assert_eq!(c.query_row("SELECT COUNT(*) FROM pet_media",[],|r|r.get::<_,i64>(0)).unwrap(),1);
         assert_eq!(c.query_row("SELECT manual_view FROM pet_direction_observation WHERE detection_id=?1",[id],|r|r.get::<_,String>(0)).unwrap(),"left");
     }
+    #[test] fn manual_regions_and_candidate_rejections_survive_rescan_without_changing_other_links(){
+        let mut c=database();let key=format!("sha256:{}","a".repeat(64));
+        let scan=write_scan(&mut c,1,&key,vec![features()]).unwrap();let original=scan.detections[0].id;
+        confirm(&mut c,original,Some(1),"front",false).unwrap();
+        let mut f=features();f.box_=[0.6,0.1,0.3,0.4];let manual=add_manual_detection(&mut c,1,&key,f.clone()).unwrap();
+        assert!(add_manual_detection(&mut c,1,&key,f).is_err());
+        reject_candidate(&mut c,manual,2,true).unwrap();assert!(reject_candidate(&mut c,manual,999,true).is_err());
+        let saved=read_scan(&c,1).unwrap().unwrap();let row=saved.detections.iter().find(|d|d.id==manual).unwrap();
+        assert_eq!(row.rejected_pet_ids,vec![2]);assert_eq!(row.features.detection_source.as_deref(),Some("user"));assert!(row.features.detected_kind.is_none());
+        let refreshed=replace_scan(&mut c,1,&key,&key,vec![],false).unwrap();assert_eq!(refreshed.detections.len(),2);
+        assert_eq!(c.query_row("SELECT pet_id FROM pet_detection WHERE id=?1",[original],|r|r.get::<_,i64>(0)).unwrap(),1);
+        confirm(&mut c,manual,Some(2),"left",false).unwrap();assert!(read_scan(&c,1).unwrap().unwrap().detections.iter().find(|d|d.id==manual).unwrap().rejected_pet_ids.is_empty());
+        assert!(reject_candidate(&mut c,manual,2,true).is_err());
+    }
     fn database()->Connection {let mut c=Connection::open_in_memory().unwrap();crate::database::initialize(&mut c).unwrap();c.execute_batch("INSERT INTO media(id,file_path,file_type,size_bytes) VALUES(1,'a','image',1);INSERT INTO pet(id,name) VALUES(1,'보리'),(2,'초코');").unwrap();c}
-    fn features()->Features {Features{kind:"dog".into(),detected_kind:Some("dog".into()),view:"unknown".into(),view_source:"unknown".into(),box_:[0.0,0.0,0.5,0.5],detection_score:0.9,appearance:vec![0.0;1024],mirrored_appearance:vec![0.0;1024],color:vec![0.0;120],shape:vec![0.0;10],face_box:None,face_appearance:vec![],mirrored_face_appearance:vec![],foreground:None,automatic_pose:None}}
+    fn features()->Features {Features{detection_source:None,kind:"dog".into(),detected_kind:Some("dog".into()),view:"unknown".into(),view_source:"unknown".into(),box_:[0.0,0.0,0.5,0.5],detection_score:0.9,appearance:vec![0.0;1024],mirrored_appearance:vec![0.0;1024],color:vec![0.0;120],shape:vec![0.0;10],face_box:None,face_appearance:vec![],mirrored_face_appearance:vec![],foreground:None,automatic_pose:None}}
     #[test] fn reanalysis_preserves_confirmed_ids_and_explicit_source_change_preserves_photo_links(){
         let mut c=database();let key=format!("sha256:{}","a".repeat(64));let other=format!("sha256:{}","b".repeat(64));
         let scan=write_scan(&mut c,1,&key,vec![features(),features()]).unwrap();let id=scan.detections[0].id;
@@ -337,4 +367,33 @@ mod tests {
       assert_eq!(auto,"unknown");assert_eq!(manual,"right");assert_eq!(read_scan(&c,1).unwrap().unwrap().detections[0].pet_id,Some(1));
     }
 
+}
+
+fn reject_candidate(conn:&mut Connection,detection_id:i64,pet_id:i64,rejected:bool)->Result<(),String>{
+ let tx=conn.transaction().map_err(|e|e.to_string())?;
+ let (owner,key):(Option<i64>,String)=tx.query_row("SELECT d.pet_id,s.source_key FROM pet_detection d JOIN pet_scan s ON s.media_id=d.media_id WHERE d.id=?1",[detection_id],|r|Ok((r.get(0)?,r.get(1)?))).map_err(|e|e.to_string())?;
+ if rejected && owner==Some(pet_id) {return Err("연결된 반려동물은 다른 반려동물로 변경하거나 미확인으로 바꿔 주세요.".into());}
+ if rejected {tx.execute("INSERT OR REPLACE INTO pet_candidate_rejection(detection_id,pet_id,source_key) VALUES(?1,?2,?3)",params![detection_id,pet_id,key]).map_err(|e|e.to_string())?;}
+ else {tx.execute("DELETE FROM pet_candidate_rejection WHERE detection_id=?1 AND pet_id=?2",params![detection_id,pet_id]).map_err(|e|e.to_string())?;}
+ tx.commit().map_err(|e|e.to_string())
+}
+#[tauri::command]
+pub async fn reject_pet_candidate(app:AppHandle,detection_id:i64,pet_id:i64,rejected:bool)->Result<(),String>{
+ tauri::async_runtime::spawn_blocking(move||{let mut conn=super::open_database(&app)?;verify_detection_source(&conn,detection_id)?;reject_candidate(&mut conn,detection_id,pet_id,rejected)}).await.map_err(|e|e.to_string())?
+}
+fn add_manual_detection(conn:&mut Connection,media_id:i64,source_key:&str,mut features:Features)->Result<i64,String>{
+ features.detection_source=Some("user".into());features.detected_kind=None;features.detection_score=0.0;validate(&features)?;
+ let tx=conn.transaction().map_err(|e|e.to_string())?;
+ tx.execute("INSERT OR IGNORE INTO pet_scan(media_id,engine_version,source_key) VALUES(?1,?2,?3)",params![media_id,ENGINE,source_key]).map_err(|e|e.to_string())?;
+ let scan=read_scan(&tx,media_id)?.ok_or("사진을 다시 불러와 주세요.")?;
+ if scan.source_key!=source_key {return Err("사진 내용이 변경되었습니다. 연결 유지하고 재분석을 선택해 주세요.".into());}
+ if scan.detections.len()>=20 {return Err("한 사진에는 최대 20마리까지 추가할 수 있습니다.".into());}
+ if scan.detections.iter().any(|d|!d.excluded && overlap(d.features.box_,features.box_)>=0.8) {return Err("이미 같은 영역의 반려동물이 있습니다. 기존 인식 결과를 수정해 주세요.".into());}
+ let index:i64=tx.query_row("SELECT COALESCE(MAX(object_index),-1)+1 FROM pet_detection WHERE media_id=?1",[media_id],|r|r.get(0)).map_err(|e|e.to_string())?;
+ tx.execute("INSERT INTO pet_detection(media_id,object_index,features) VALUES(?1,?2,?3)",params![media_id,index,serde_json::to_string(&features).map_err(|e|e.to_string())?]).map_err(|e|e.to_string())?;
+ let id=tx.last_insert_rowid();record_direction(&tx,id,&features)?;tx.commit().map_err(|e|e.to_string())?;Ok(id)
+}
+#[tauri::command]
+pub async fn add_manual_pet_detection(app:AppHandle,media_id:i64,source_key:String,features:Features)->Result<i64,String>{
+ tauri::async_runtime::spawn_blocking(move||{let mut conn=super::open_database(&app)?;verify_source(&conn,media_id,&source_key)?;add_manual_detection(&mut conn,media_id,&source_key,features)}).await.map_err(|e|e.to_string())?
 }

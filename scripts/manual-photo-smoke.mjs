@@ -21,7 +21,7 @@ export async function verifyInstalledManualPhotos(page, mediaId, pet, capture) {
   await expect(page.locator('.peopleView > .entityHeader').getByText('사진 1장', { exact:true })).toBeVisible();
   await expect(page.locator('.peopleView .personMediaGrid').getByRole('button', { name:'사진 상세보기',exact:true })).toHaveCount(1);
   await capture('manual-person-registration');
-  await expect(page.getByRole('button', { name:'등록 사진 다시 분석', exact:true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name:'인식 기준 갱신', exact:true })).toHaveCount(0);
   // Use an actual packaged human-photo fixture through the existing SAF tree
   // grant. This verifies the installed UI/SQLite contract, not identity accuracy.
   await promisify(execFile)('adb',['push',resolve('node_modules/@vladmandic/face-api/demo/sample1.jpg'),'/sdcard/Download/GamjassakGPS/person-smoke.jpg'],{timeout:60_000,maxBuffer:1024*1024});
@@ -75,7 +75,7 @@ export async function verifyInstalledManualPhotos(page, mediaId, pet, capture) {
   await picker.getByRole('button', { name:'저장',exact:true }).click();await expect(picker).toBeHidden();
   const count=await page.evaluate(()=>window.petDiagnostics.length);
   await page.getByRole('button', { name:'반려동물 관리',exact:true }).click();
-  await page.getByRole('button', { name:'등록 사진 다시 분석',exact:true }).click();
+  await page.getByRole('button', { name:'인식 기준 갱신',exact:true }).click();
   await expect(page.locator('.petsView .petAnalysisNotice')).toContainText('다시 분석 완료', { timeout:120_000 });
   assert.ok(await page.evaluate(before=>window.petDiagnostics.length>before,count));
   const after=await page.evaluate(id=>window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),mediaId);

@@ -44,6 +44,8 @@ commands.allow = [
   "save_pet",
   "delete_pet",
   "get_pet_scan",
+  "add_manual_pet_detection",
+  "reject_pet_candidate",
   "pet_thumbnail",
   "prepare_pet_input",
   "replace_pet_scan",

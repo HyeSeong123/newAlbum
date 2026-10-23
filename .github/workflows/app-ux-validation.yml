@@ -2,7 +2,7 @@ name: App UX persona validation
 on:
   workflow_dispatch:
   push:
-    branches: [feature/app-ux-20261023]
+    branches: [feature/app-ux-20261023, feature/pet-recognition-ux-20261023]
     paths: ['src/**', 'tests/**', 'playwright*.ts', 'package*.json', '.github/workflows/app-ux-validation.yml']
 permissions:
   contents: read
@@ -32,14 +32,14 @@ jobs:
         env:
           PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT: 60000
         run: npx playwright install chromium
-      - name: Capture unchanged 0.9.19 controls with current capture checks
+      - name: Capture unchanged 0.9.20 controls with current capture checks
         run: |
-          git worktree add --detach "$RUNNER_TEMP/app-ux-before" fc01467aa8dc8ba507f131bdc9937da7184321a2
+          git worktree add --detach "$RUNNER_TEMP/app-ux-before" f1e115d5e5bfd746d36d66ea0e9e12ad413aa134
           # Keep font files inside the baseline Vite root so its file-system policy
           # cannot block local Noto font assets through an external symlink.
           cp -a "$GITHUB_WORKSPACE/node_modules" "$RUNNER_TEMP/app-ux-before/node_modules"
           cp playwright.app-ux.config.ts "$RUNNER_TEMP/app-ux-before/"
-          cp tests/app-ux-audit.spec.ts tests/media-controls.spec.ts "$RUNNER_TEMP/app-ux-before/tests/"
+          cp tests/app-ux-audit.spec.ts tests/media-controls.spec.ts tests/pet-improvements.spec.ts "$RUNNER_TEMP/app-ux-before/tests/"
           cd "$RUNNER_TEMP/app-ux-before"
           APP_UX_STAGE=before ./node_modules/.bin/playwright test -c playwright.app-ux.config.ts --project mobile --grep 'capture current'
       - name: Verify updated user workflows and capture results

@@ -1,8 +1,8 @@
 import type { PetCandidate, PetFeatures, PetReference, RecognitionResult } from './types';
 export function cosine(a: number[], b: number[]): number {
-  if (!a.length || a.length !== b.length || !a.every(Number.isFinite) || !b.every(Number.isFinite)) return 0;
+  if (!a.length || a.length !== b.length) return 0;
   let dot = 0, aa = 0, bb = 0;
-  for (let i = 0; i < a.length; i++) { dot += a[i] * b[i]; aa += a[i] ** 2; bb += b[i] ** 2; }
+  for (let i = 0; i < a.length; i++) { if(!Number.isFinite(a[i])||!Number.isFinite(b[i]))return 0; dot += a[i] * b[i]; aa += a[i] ** 2; bb += b[i] ** 2; }
   return aa && bb ? Math.max(0, Math.min(1, dot / Math.sqrt(aa * bb))) : 0;
 }
 export function comparePets(a: PetFeatures, b: PetFeatures): { score: number; basis: PetCandidate['basis'] } {
@@ -25,27 +25,37 @@ export function comparePets(a: PetFeatures, b: PetFeatures): { score: number; ba
   }
   return { score: 0.8 * appearance + 0.15 * color + 0.05 * shape, basis };
 }
-export function rankPets(query: PetFeatures, references: PetReference[], limit = 3): PetCandidate[] {
-  const best = new Map<number, PetCandidate>();
-  const priority=(candidate:{basis:PetCandidate['basis']})=>query.view==='rear'?0:candidate.basis==='face-appearance'?0:candidate.basis==='appearance'?1:2;
-  // Prefer the available face references for this query; a high generic body
-  // similarity must not outrank a face comparison on the same pet.
-  const facePets = new Set(query.view !== 'rear' && query.view !== 'unknown' && query.faceAppearance?.length ? references.filter(r => r.features.kind === query.kind && r.features.view !== 'rear' && r.features.view !== 'unknown' && r.features.faceAppearance?.length).map(r => r.petId) : []);
-  for (const reference of references) {
-    const comparison = comparePets(query, reference.features);
-    if (facePets.has(reference.petId) && comparison.basis !== 'face-appearance') continue;
-    const existing=best.get(reference.petId);
-    if (comparison.score<=0 || existing && (priority(existing)<priority(comparison) || priority(existing)===priority(comparison) && existing.score>=comparison.score)) continue;
-    best.set(reference.petId, { petId: reference.petId, ...comparison });
+type PetQuery = PetFeatures & { media_id?: number; id?: number; rejected_pet_ids?: number[] };
+export function rankPets(query: PetQuery, references: PetReference[], limit = 3): PetCandidate[] {
+  const groups = new Map<number, Array<{score:number;basis:PetCandidate['basis'];key:string}>>();
+  const rejected = new Set(query.rejected_pet_ids ?? []);
+  const priority = (basis:PetCandidate['basis']) => query.view==='rear' ? 0 : basis==='face-appearance' ? 0 : basis==='appearance' ? 1 : 2;
+  references.forEach((reference,index) => {
+    if (rejected.has(reference.petId) || query.media_id!==undefined && reference.mediaId===query.media_id || query.id!==undefined && reference.detectionId===query.id) return;
+    const comparison=comparePets(query,reference.features);
+    if (comparison.score<=0) return;
+    const rows=groups.get(reference.petId) ?? [];
+    rows.push({...comparison,key:reference.mediaId===undefined?`reference:${index}`:`photo:${reference.mediaId}`});groups.set(reference.petId,rows);
+  });
+  const candidates:PetCandidate[]=[];
+  for(const [petId,rows] of groups) {
+    // Compare like evidence. A body-only reference must never override a face
+    // comparison, and a duplicate crop from one photo must not count twice.
+    const bestBasis=Math.min(...rows.map(row=>priority(row.basis)));
+    const unique=new Map<string,typeof rows[number]>();
+    for(const row of rows.filter(row=>priority(row.basis)===bestBasis))if(!unique.has(row.key)||unique.get(row.key)!.score<row.score)unique.set(row.key,row);
+    const supported=[...unique.values()].sort((a,b)=>b.score-a.score).slice(0,3);
+    const mean=supported.reduce((sum,row)=>sum+row.score,0)/supported.length;
+    candidates.push({petId,score:.5*supported[0].score+.5*mean,basis:supported[0].basis,referenceCount:supported.length});
   }
-  return [...best.values()].sort((a, b) => priority(a)-priority(b) || b.score - a.score || a.petId - b.petId).slice(0, limit);
+  return candidates.sort((a,b)=>priority(a.basis)-priority(b.basis)||b.score-a.score||a.petId-b.petId).slice(0,limit);
 }
 // Candidate retrieval cutoff only: 0.60 is NOT a claimed 60% accuracy.
 // No automatic identity linking until independently measured false-link rates
 // and model/view-specific calibration are available. Rear/unknown always abstain.
-export function recognizePet(query: PetFeatures, references: PetReference[]): RecognitionResult {
+export function recognizePet(query: PetQuery, references: PetReference[]): RecognitionResult {
   const candidates = rankPets(query, references,Infinity).filter(candidate => candidate.score >= 0.60).slice(0,3);
-  return { state: query.view === 'rear' ? 'rear-review' : candidates.length ? 'needs-review' : 'unregistered', candidates, autoPetId: null };
+  return { state: query.view === 'rear' ? 'rear-review' : candidates.length ? 'needs-review' : 'unregistered', candidates, autoPetId: null, ambiguous: candidates.length>1 && Math.abs(candidates[0].score-candidates[1].score)<.05 };
 }
 export function withView(features: PetFeatures, view: PetFeatures['view']): PetFeatures {
   return { ...features, view, viewSource: view === 'unknown' ? 'unknown' : 'user',

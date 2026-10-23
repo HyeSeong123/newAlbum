@@ -104,3 +104,13 @@
   .petSearchCard { padding: 8px; }
   .petSearchSelection button { padding-inline: 12px; }
 }
+
+.manualPetCanvas .mediaVisual {width:100%;height:100%;}
+.manualPetRegion .entityEditBody>label {display:grid;gap:6px;margin-top:14px;}
+.petRegionCoordinates>div {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px;}
+.petRegionCoordinates label {display:grid;gap:4px;min-width:0;}
+.petRegionCoordinates input {width:100%;box-sizing:border-box;min-height:44px;}
+.petCandidateActions {display:grid;gap:8px;}
+.petCandidateActions>div {display:flex;flex-wrap:wrap;gap:8px;}
+.petCandidateActions button {min-height:44px;}
+.petCandidateActions button[aria-pressed="true"] {background:var(--surface-soft);border-color:var(--primary);}

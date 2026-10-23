@@ -1,0 +1,40 @@
+name: Pet storage preservation
+on:
+  push:
+    branches: [feature/pet-recognition-ux-20261023]
+    paths: ['src-tauri/**','tests/test_*.py','.github/workflows/pet-storage-validation.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  database:
+    name: Native storage regression tests (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      RUSTUP_TOOLCHAIN: stable
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install Linux test dependencies
+        run: |
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev python3-pil
+          rustup toolchain install stable --profile minimal
+      - name: Prepare local test icon
+        run: /usr/bin/python3 -c "from PIL import Image; Image.open('src-tauri/icons/icon.ico').convert('RGBA').save('src-tauri/icons/icon.png')"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Run Rust storage and media tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml --lib --locked -j 2
+      - name: Test legacy album storage
+        run: |
+          python3 -m unittest discover -s tests -p test_album_storage.py
+          python3 -m unittest discover -s tests -p test_pet_storage.py
+          python3 -m unittest discover -s tests -p test_person_storage.py
+          python3 -m unittest discover -s tests -p test_person_evaluation.py
+          python3 -m unittest discover -s tests -p test_recognition_094.py
+          python3 -m unittest discover -s tests -p test_native_ai_storage.py
+
