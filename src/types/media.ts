@@ -8,6 +8,8 @@ export interface MediaItem {
   filePath: string;
   fileType: MediaType;
   takenAt: string | null;
+  /** Original registration timestamp; editing does not reset it. */
+  registeredAt?: string;
   width?: number;
   height?: number;
   duration?: string;

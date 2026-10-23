@@ -31,9 +31,18 @@ export async function verifyInstalledAppUx(page, mediaId, pet, back, captureNati
 
   await page.getByRole('button',{name:'전체 메뉴',exact:true}).click();
   const menu=page.locator('.actionMenuPanel');
-  for(const name of ['홈','사진 기록','내 앨범','일기장','추억','새싹 도감','사람과 반려동물','설정'])await expect(menu.getByRole('button',{name,exact:true})).toBeVisible();
+  for(const name of ['홈','사진 기록','내 앨범','일기장','추억','새싹 도감','사람과 반려동물','설정']) {const destination=menu.getByRole('button',{name,exact:true});await expect(destination).toBeVisible();await expect(destination.locator('svg')).toHaveCount(1);}
   await capture('app-ux-all-menu');await menu.getByRole('button',{name:'사진 기록',exact:true}).click();
   await page.getByRole('button',{name:'모든 기록',exact:true}).click();
+  const nativeRows=await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('list_media'));
+  for(const [value,field,ascending] of [['registered-desc','created_at',false],['registered-asc','created_at',true],['rating','rating',false]]) {
+    await page.getByLabel('정렬 기준',{exact:true}).selectOption(value);
+    const ids=await page.locator('.mediaTile').evaluateAll(tiles=>tiles.map(tile=>Number(tile.dataset.mediaId)));
+    const rows=ids.map(id=>nativeRows.find(row=>row.id===id));
+    for(let i=1;i<rows.length;i++) assert.ok(ascending ? rows[i-1][field]<=rows[i][field] : rows[i-1][field]>=rows[i][field],`${value} must preserve actual native ${field} order`);
+  }
+  await capture('app-ux-registration-sort');
+  await page.getByLabel('정렬 기준',{exact:true}).selectOption('date-desc');
   await page.getByRole('button',{name:'선택',exact:true}).click();
   const tile=page.locator(`.mediaTile[data-media-id="${mediaId}"]`);await tile.click();
   await expect(page.locator('.selectionDock')).toContainText('항목 1개 선택');
@@ -63,5 +72,5 @@ export async function verifyInstalledAppUx(page, mediaId, pet, back, captureNati
   await page.getByRole('button',{name:'전체 메뉴',exact:true}).click();await page.locator('.actionMenuPanel').getByRole('button',{name:'사람과 반려동물',exact:true}).click();
   await page.getByRole('tab',{name:'반려동물',exact:true}).click();
   await page.getByRole('button',{name:`${pet.name} ${pet.media_ids.length}장`,exact:true}).click();
-  return {homePeopleShortcut:true,helpScopedToCurrentFeature:true,helpBackKeepsSelection:true,wholeMenu:true,petSelectionBackKeepsDetail:true,photoSelectionBackKeepsList:true,diarySelectionBackKeepsList:true,favoriteNativePersistence:true,favoriteRestored:true,photoReturnScroll:true,sourceMediaId:mediaId,environment:'Android API 36 x86_64 emulator'};
+  return {homePeopleShortcut:true,helpScopedToCurrentFeature:true,helpBackKeepsSelection:true,wholeMenu:true,menuDestinationIcons:true,registrationAndRatingSort:true,petSelectionBackKeepsDetail:true,photoSelectionBackKeepsList:true,diarySelectionBackKeepsList:true,favoriteNativePersistence:true,favoriteRestored:true,photoReturnScroll:true,sourceMediaId:mediaId,environment:'Android API 36 x86_64 emulator'};
 }

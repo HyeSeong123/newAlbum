@@ -19,7 +19,7 @@ import { MediaImportProgress } from "./features/media/MediaImportProgress";
 import { useAndroidBack } from "./hooks/useAndroidBack";
 import { FirstRunGuide, FIRST_RUN_KEY } from "./components/FirstRunGuide";
 import { ChangeEvent, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { Check, LoaderCircle, Menu, Plus, Search, Settings, X } from "lucide-react";
+import { BookImage, History, House, Images, LoaderCircle, Menu, NotebookPen, Plus, Search, Settings, Sprout, Users, X } from "lucide-react";
 import { MEDIA_FILE_ACCEPT } from "./features/media/mediaService";
 import { filterJournalMonth, journalMonthTitle, resolveJournalMonth } from "./features/media/journalModel";
 import type { MediaItem } from "./types/media";
@@ -47,6 +47,8 @@ const viewLabels: Record<View, string> = {
   Characters: "새싹 도감",
   Settings: "설정",
 };
+
+const navigationIcons = { Home: House, Library: Images, Albums: BookImage, Diary: NotebookPen, Memories: History, Characters: Sprout, People: Users, Settings };
 
 const navItems: Array<{ name: View; label: string; accessibleLabel: string }> = [
   { name: "Home", label: "홈", accessibleLabel: "홈" },
@@ -217,7 +219,7 @@ export function App() {
         </MainNavigation>
         <button className="layoutToggle" aria-pressed={largeLayout} onClick={() => { setLargeLayout(!largeLayout); localStorage.setItem("warm-journal-large-layout", String(!largeLayout)); }}>{largeLayout ? "기본 크기" : "크게 보기"}</button>
         <button className="globalSettings" aria-label="설정" title="설정" aria-pressed={activeView === "Settings"} onClick={() => navigate("Settings")}><Settings size={20} /><span>설정</span></button>
-        <div className="headerMenu"><ActionMenu label="전체 메뉴" icon={<Menu size={22}/>} actions={[...navItems.map(item => ({label:item.label,icon:item.name===activeView?<Check size={16}/>:undefined,onSelect:()=>navigate(item.name)})),{label:"설정",icon:activeView==="Settings"?<Check size={16}/>:undefined,onSelect:()=>navigate("Settings")}]} /></div>
+        <div className="headerMenu"><ActionMenu label="전체 메뉴" icon={<Menu size={22}/>} actions={[...navItems.map(item => { const Icon = navigationIcons[item.name]; return {label:item.label,icon:<Icon size={18} aria-hidden="true"/>,current:item.name===activeView,onSelect:()=>navigate(item.name)}; }),{label:"설정",icon:<Settings size={18} aria-hidden="true"/>,current:activeView==="Settings",onSelect:()=>navigate("Settings")}]} /></div>
       </header>
 
       <section className="workspace">

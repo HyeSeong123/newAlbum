@@ -1,6 +1,6 @@
 import type { MediaItem } from "../../types/media";
 
-export type LibrarySort = "date-desc" | "date-asc" | "name" | "comments" | "rating" | "views";
+export type LibrarySort = "date-desc" | "date-asc" | "registered-desc" | "registered-asc" | "name" | "comments" | "rating" | "views";
 export type LibraryMediaType = "all" | MediaItem["fileType"];
 
 export type CollectionOptions = {
@@ -42,6 +42,20 @@ export function selectMediaCollection(items: MediaItem[], options: CollectionOpt
       && (!endDate || item.takenAt!.slice(0, 10) <= endDate)))
   ));
   return result.sort((a, b) => {
+    if (sort === "registered-desc" || sort === "registered-asc") {
+      // SQLite timestamps and ISO timestamps sort together after normalization.
+      // Unknown legacy preview dates stay at the end in either direction.
+      const timestamp = (value?: string) => {
+        if (!value) return NaN;
+        const normalized = value.replace(" ", "T");
+        return Date.parse(/(?:Z|[+-]\d{2}:\d{2})$/.test(normalized) ? normalized : `${normalized}Z`);
+      };
+      const aDate = timestamp(a.registeredAt), bDate = timestamp(b.registeredAt);
+      if (!Number.isFinite(aDate) || !Number.isFinite(bDate)) return Number.isFinite(aDate) ? -1 : Number.isFinite(bDate) ? 1 : idCollator.compare(a.id, b.id);
+      return sort === "registered-asc"
+        ? aDate - bDate || idCollator.compare(a.id, b.id)
+        : bDate - aDate || idCollator.compare(b.id, a.id);
+    }
     if (sort === "date-asc") return (a.takenAt ?? "9999").localeCompare(b.takenAt ?? "9999") || idCollator.compare(a.id, b.id);
     if (sort === "name") return nameCollator.compare(a.fileName, b.fileName);
     const byDate = (b.takenAt ?? "").localeCompare(a.takenAt ?? "");

@@ -86,6 +86,9 @@ export function Library({
   const currentPage = Math.min(page, pageCount);
   const startIndex = (currentPage - 1) * GALLERY_PAGE_SIZE;
   const visibleItems = visibleCollection.slice(startIndex, startIndex + GALLERY_PAGE_SIZE);
+  const dateGrouped = sort === "date-desc" || sort === "date-asc";
+  const sortTitles: Record<LibrarySort, string> = { "date-desc": "촬영일 최신순", "date-asc": "촬영일 오래된순", "registered-desc": "등록일 최신순", "registered-asc": "등록일 오래된순", rating: "별점 높은순", comments: "댓글 많은순", name: "이름순", views: "조회수 많은순" };
+  const displayGroups = dateGrouped ? Object.entries(groupByTakenDate(visibleItems)) : [[sortTitles[sort], visibleItems] as const];
   const rangeStart = visibleCollection.length ? startIndex + 1 : 0;
   const rangeEnd = Math.min(startIndex + GALLERY_PAGE_SIZE, visibleCollection.length);
   const locationIds = items.filter(item => item.fileType !== "audio" && selectedIds.has(item.id)).map(item => item.id);
@@ -122,7 +125,7 @@ export function Library({
         setStartDate(start); setEndDate(end); onDateSearch();
           }} />
           <label className="sortControl"><ArrowUpDown size={17} /><select aria-label="정렬 기준" value={sort} onChange={(event) => setSort(event.target.value as LibrarySort)}>
-            <option value="date-desc">날짜 최신순</option><option value="date-asc">날짜 오래된순</option><option value="comments">댓글 많은순</option><option value="rating">별점 높은순</option>{!mobile && <option value="views">조회수 많은순</option>}<option value="name">이름순</option>
+            <option value="date-desc">촬영일 최신순</option><option value="date-asc">촬영일 오래된순</option><option value="registered-desc">등록일 최신순</option><option value="registered-asc">등록일 오래된순</option><option value="comments">댓글 많은순</option><option value="rating">별점 높은순</option>{!mobile && <option value="views">조회수 많은순</option>}<option value="name">이름순</option>
           </select></label>
         </div>
       {filtersOpen && <section id="libraryFilters" className="filterPanel" aria-label="사진 필터">
@@ -148,14 +151,14 @@ export function Library({
         : <EmptyState text={emptyText} />)}
       {Boolean(items.length) && !visibleCollection.length && <EmptyState text="조건에 맞는 사진과 영상이 없습니다." />}
       <div className={selectionMode ? "galleryGrid selecting" : "galleryGrid"} {...dragSelection}>
-        {Object.entries(groupByTakenDate(visibleItems)).map(([date, datedItems], dayIndex) => {
-          const arrangedItems = arrangeJournalItems(datedItems);
-          const expanded = selectionMode || expandedDates.has(date);
+        {displayGroups.map(([date, datedItems], dayIndex) => {
+          const arrangedItems = dateGrouped ? arrangeJournalItems(datedItems) : datedItems;
+          const expanded = !dateGrouped || selectionMode || expandedDates.has(date);
           const displayedItems = expanded ? arrangedItems : arrangedItems.slice(0, 3);
-          const note = dayNotes[date] || arrangedItems.find((item) => item.comment.trim())?.comment;
+          const note = dateGrouped ? dayNotes[date] || arrangedItems.find((item) => item.comment.trim())?.comment : undefined;
           return <section className="journalDay" key={date}>
-          <header className="journalDayHeader"><h2>{formatJournalDate(date, scopeKey.startsWith("all:"))}</h2><span>{mediaSummary(datedItems)}</span></header>
-          <div className={`journalMosaic count-${Math.min(displayedItems.length, 4)} ${dayIndex > 0 ? "compact" : ""}`}>{displayedItems.map((item, index) => (
+          <header className="journalDayHeader"><h2>{dateGrouped ? formatJournalDate(date, scopeKey.startsWith("all:")) : date}</h2><span>{mediaSummary(datedItems)}</span></header>
+          <div className={`journalMosaic count-${Math.min(displayedItems.length, 4)} ${(dayIndex > 0 || !dateGrouped) ? "compact" : ""}`}>{displayedItems.map((item, index) => (
           <button
             key={item.id}
             data-media-id={item.id}
@@ -183,7 +186,7 @@ export function Library({
           </button>
           ))}</div>
           {note && <p className="journalCaption">{note}</p>}
-          {arrangedItems.length > 3 && !selectionMode && <button className="journalMore" aria-expanded={expanded} onClick={() => setExpandedDates((current) => {
+          {dateGrouped && arrangedItems.length > 3 && !selectionMode && <button className="journalMore" aria-expanded={expanded} onClick={() => setExpandedDates((current) => {
             const next = new Set(current);
             if (expanded) next.delete(date); else next.add(date);
             return next;

@@ -149,3 +149,13 @@ pub fn export_files(app: &tauri::AppHandle, sources: &[PathBuf], parent: &str, n
     }
     Ok(ExportResultDto { directory:format!("선택한 폴더/{name}"), copied:sources.len() })
 }
+
+#[derive(Deserialize)]
+struct VideoThumbnail { path: String }
+pub fn video_thumbnail(app: &tauri::AppHandle, source: &Path, target: &Path) -> Result<(), String> {
+    let bridge = app.state::<AndroidMedia>();
+    let result: VideoThumbnail = bridge.0.run_mobile_plugin("videoThumbnail", serde_json::json!({"source":source.to_string_lossy(),"target":target.to_string_lossy()}))
+        .map_err(|error| format!("동영상 썸네일을 만들 수 없습니다: {error}"))?;
+    if result.path != target.to_string_lossy() || !target.is_file() { return Err("동영상 썸네일이 없습니다.".into()); }
+    Ok(())
+}

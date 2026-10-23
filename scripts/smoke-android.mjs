@@ -179,7 +179,13 @@ async function loadedAlbumPhoto(reader) {
 
 async function checkVideoPlayback(page, label) {
   await page.locator('.navList').getByRole('button', { name:'사진 기록', exact:true }).click();
-  await page.getByRole('button', { name:'large-smoke.mp4 상세보기', exact:true }).click();
+  const tile = page.getByRole('button', { name:'large-smoke.mp4 상세보기', exact:true });
+  await tile.scrollIntoViewIfNeeded();
+  const preview = tile.locator('img.mediaImage');
+  await expect.poll(() => preview.evaluate(img => img.complete && img.naturalWidth > 0), {timeout:45_000}).toBe(true);
+  await expect(preview).toHaveAttribute('src', /video-.*\.jpg/);
+  await captureScreen(`video-thumbnail-${label}`);
+  await tile.click();
   const detail = page.getByRole('dialog', { name:'사진 상세', exact:true });
   const video = detail.locator('video');
   await expect(video).toHaveAttribute('src', /^http:\/\/127\.0\.0\.1:\d+\//);

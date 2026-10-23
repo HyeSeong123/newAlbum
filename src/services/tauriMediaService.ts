@@ -15,6 +15,7 @@ interface BackendMediaItem {
   title?: string;
   file_type: MediaType;
   taken_at: string | null;
+  created_at?: string;
   width: number | null;
   height: number | null;
   duration: number | null;
@@ -241,6 +242,7 @@ function toMediaItem(row: BackendMediaItem): MediaItem {
     filePath: row.file_path,
     fileType: row.file_type,
     takenAt: row.taken_at,
+    registeredAt: row.created_at,
     width: row.width ?? undefined,
     height: row.height ?? undefined,
     duration: row.duration ? formatDuration(row.duration) : undefined,

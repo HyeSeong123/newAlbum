@@ -54,11 +54,11 @@ async fn cached_thumbnail(app: AppHandle, id: i64, analysis: bool) -> Result<Str
         let conn =
             rusqlite::Connection::open_with_flags(db, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
                 .map_err(|e| e.to_string())?;
-        let source: String = conn
+        let (source, kind): (String, String) = conn
             .query_row(
-                "SELECT file_path FROM media WHERE id = ?1 AND file_type = 'image'",
+                "SELECT file_path, file_type FROM media WHERE id = ?1 AND file_type IN ('image','video')",
                 [id],
-                |row| row.get(0),
+                |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .map_err(|e| e.to_string())?;
         let cache = app
@@ -66,6 +66,26 @@ async fn cached_thumbnail(app: AppHandle, id: i64, analysis: bool) -> Result<Str
             .app_cache_dir()
             .map_err(|e| e.to_string())?
             .join(if analysis { "pet-thumbnails-v1" } else { "thumbnails-v1" });
+        if kind == "video" {
+            #[cfg(target_os = "android")]
+            {
+                let source = Path::new(&source);
+                let metadata = fs::metadata(source).map_err(|e| e.to_string())?;
+                let modified = metadata.modified().map_err(|e| e.to_string())?.duration_since(UNIX_EPOCH).map_err(|e| e.to_string())?.as_nanos();
+                let mut hash = std::collections::hash_map::DefaultHasher::new(); source.hash(&mut hash);
+                let target = cache.join(format!("video-{id}-{}-{}-{modified}.jpg",hash.finish(),metadata.len()));
+                if !target.is_file() {
+                    let _guard = GENERATION[id.unsigned_abs() as usize % GENERATION.len()].lock().map_err(|e|e.to_string())?;
+                    if !target.is_file() {
+                        fs::create_dir_all(&cache).map_err(|e|e.to_string())?;
+                        super::android_media::video_thumbnail(&app, source, &target)?;
+                    }
+                }
+                return Ok(target.to_string_lossy().into_owned());
+            }
+            #[cfg(not(target_os = "android"))]
+            return Err("브라우저에서 동영상 미리보기를 만듭니다.".into());
+        }
         generate(Path::new(&source), &cache, id, analysis)
             .map(|path| path.to_string_lossy().into_owned())
             .map_err(|e| e.to_string())

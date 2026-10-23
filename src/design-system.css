@@ -584,3 +584,5 @@ h3 { font-size: 15px; }
   .photoLightbox .commentBox { padding: 16px 18px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0s !important; animation-duration: 0s !important; } }
+
+.videoPreviewFallback { position: absolute; inset: 0; display: grid; place-items: center; color: #6b7378; pointer-events: none; }

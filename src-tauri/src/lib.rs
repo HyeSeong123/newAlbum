@@ -45,6 +45,7 @@ struct MediaItemDto {
     file_path: String,
     file_type: String,
     taken_at: Option<String>,
+    created_at: String,
     width: Option<i64>,
     height: Option<i64>,
     duration: Option<f64>,
@@ -1019,10 +1020,11 @@ fn media_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MediaItemDto> {
         location_source: row.get(19)?,
         district: row.get(20)?, country: row.get(21)?, city: row.get(22)?,
         gps_region_code: row.get(23)?,
+        created_at: row.get(24)?,
     })
 }
 
-const MEDIA_COLUMNS: &str = "id, file_path, file_type, taken_at, width, height, duration, size_bytes, rating, comment, favorite, metadata_status, view_count, title, latitude, longitude, region_code, region_name, location_status, location_source, district, country, city, gps_region_code";
+const MEDIA_COLUMNS: &str = "id, file_path, file_type, taken_at, width, height, duration, size_bytes, rating, comment, favorite, metadata_status, view_count, title, latitude, longitude, region_code, region_name, location_status, location_source, district, country, city, gps_region_code, created_at";
 
 // Expose exactly registered originals; DB/keys and unrelated local files are
 // outside the asset protocol. Rebuild these grants when the app restarts.
@@ -1085,7 +1087,7 @@ fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
     // Load all memberships once instead of issuing one photo query per album.
     let mut stmt = conn
         .prepare(
-            "SELECT m.id, m.file_path, m.file_type, m.taken_at, m.width, m.height, m.duration, m.size_bytes, m.rating, m.comment, m.favorite, m.metadata_status, m.view_count, m.title, m.latitude, m.longitude, m.region_code, m.region_name, m.location_status, m.location_source, m.district, m.country, m.city, m.gps_region_code, ai.album_id
+            "SELECT m.id, m.file_path, m.file_type, m.taken_at, m.width, m.height, m.duration, m.size_bytes, m.rating, m.comment, m.favorite, m.metadata_status, m.view_count, m.title, m.latitude, m.longitude, m.region_code, m.region_name, m.location_status, m.location_source, m.district, m.country, m.city, m.gps_region_code, m.created_at, ai.album_id
              FROM album_item ai
              JOIN media m ON m.id = ai.media_id
              ORDER BY ai.album_id, ai.sequence ASC",
@@ -1094,7 +1096,7 @@ fn read_albums(conn: &Connection) -> Result<Vec<AlbumDto>, String> {
 
     let rows = stmt
         .query_map([], |row| {
-            Ok((row.get::<_, i64>(24)?, media_from_row(row)?))
+            Ok((row.get::<_, i64>(25)?, media_from_row(row)?))
         })
         .map_err(|error| format!("앨범 항목을 읽을 수 없습니다: {error}"))?;
 

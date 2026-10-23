@@ -17,6 +17,7 @@ function collectBrowserItems(files: Iterable<File>, existing: MediaItem[], creat
       knownPaths.add(filePath);
       added.push({
         id: `local-${crypto.randomUUID()}`, fileName: file.name, filePath, fileType,
+        registeredAt: new Date().toISOString(),
         takenAt: new Date(file.lastModified).toISOString().slice(0, 10),
         sizeLabel: `${Math.max(0.1, file.size / 1024 / 1024).toFixed(1)} MB`,
         title: "", rating: 0, comment: "", favorite: false, viewCount: 0,

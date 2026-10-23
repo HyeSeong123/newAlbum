@@ -4,6 +4,10 @@ import android.app.Activity
 import android.Manifest
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.Bitmap
+import android.media.MediaMetadataRetriever
+import java.io.File
+import java.util.concurrent.Executors
 import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
@@ -44,10 +48,42 @@ class CreateDocumentArgs {
     var directory: Boolean = false
 }
 
+@InvokeArg
+class VideoThumbnailArgs { var source: String = ""; var target: String = "" }
+
 /** Rust owns copying/hashing/storage. This bridge only describes SAF documents
  *  and creates user-requested export destinations; it never deletes originals. */
 @TauriPlugin(permissions = [Permission(strings = [Manifest.permission.ACCESS_MEDIA_LOCATION], alias = "photoLocation")])
 class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
+    private val thumbnailWorker = Executors.newFixedThreadPool(2)
+    @Command
+    fun videoThumbnail(invoke: Invoke) {
+        val args = invoke.parseArgs(VideoThumbnailArgs::class.java)
+        thumbnailWorker.execute {
+            val temporary = File(args.target + ".tmp")
+            val reader = MediaMetadataRetriever()
+            var frame: Bitmap? = null
+            try {
+                reader.setDataSource(args.source)
+                frame = if (Build.VERSION.SDK_INT >= 27) reader.getScaledFrameAtTime(1_000_000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC, 640, 640)
+                    else reader.getFrameAtTime(1_000_000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                val decoded = frame ?: throw IllegalStateException("동영상 프레임을 읽을 수 없습니다.")
+                val ratio = minOf(1f, 640f / maxOf(decoded.width, decoded.height))
+                val scaled = Bitmap.createScaledBitmap(decoded, maxOf(1, (decoded.width * ratio).toInt()), maxOf(1, (decoded.height * ratio).toInt()), true)
+                try {
+                    temporary.outputStream().use { if (!scaled.compress(Bitmap.CompressFormat.JPEG, 85, it)) throw IllegalStateException("썸네일을 저장할 수 없습니다.") }
+                    if (!temporary.renameTo(File(args.target))) throw IllegalStateException("썸네일을 저장할 수 없습니다.")
+                } finally { if (scaled !== decoded) scaled.recycle() }
+                invoke.resolve(JSObject().put("path", args.target))
+            } catch (error: Exception) {
+                temporary.delete()
+                invoke.reject(error.message ?: "동영상 썸네일을 만들 수 없습니다.")
+            } finally {
+                frame?.recycle()
+                reader.release()
+            }
+        }
+    }
     private var back: OnBackPressedCallback? = null
     private var backOwner: ComponentActivity? = null
     private var backView: WebView? = null

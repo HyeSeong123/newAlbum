@@ -216,3 +216,14 @@ test('weekly calendar bars clip at week/month boundaries and place overlapping r
   assert.equal(end[0].continuesAfter, true);
   assert.equal(calendar.calendarWeekSegments(records, [null, '2026-06-01', '2026-06-02', '2026-06-03', '2026-06-04', '2026-06-05', '2026-06-06'])[0].startColumn, 1);
 });
+
+test('registration ordering uses saved registration time independently of capture date and rating', () => {
+ const items=[photo(1,{takenAt:'2026-10-23',registeredAt:'2026-10-20 09:00:00',rating:2}),photo(2,{takenAt:'2025-01-01',registeredAt:'2026-10-22 09:00:00',rating:5}),photo(3,{takenAt:'2026-01-01',registeredAt:'2026-10-21 09:00:00',rating:4}),photo(4)];
+ const order=sort=>ids(selectMediaCollection(items,{...defaults,sort},{}));
+ assert.deepEqual(order('registered-desc'),['2','3','1','4']);
+ assert.deepEqual(order('registered-asc'),['1','3','2','4']);
+ assert.deepEqual(order('rating'),['2','3','1','4']);
+ assert.deepEqual(order('date-desc'),['1','3','2','4']);
+ assert.deepEqual(order('date-asc'),['2','3','1','4']);
+ assert.deepEqual(ids(items),['1','2','3','4']);
+});

@@ -34,3 +34,5 @@
 .actionMenuPanel button svg { flex-shrink: 0; }
 .actionMenuPanel button:hover:not(:disabled) { background: var(--surface-soft); }
 .actionMenuPanel button.dangerAction { margin-top: 6px; border-top: 1px solid var(--border); border-radius: 0; color: #9b2828; }
+
+.actionMenuPanel button[aria-current="page"] { background: var(--surface-soft); font-weight: 700; }
