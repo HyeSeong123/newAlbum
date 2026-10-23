@@ -16,6 +16,12 @@ android {
     }
 }`;
 
+test('startup gallery comparison is authorized by the app command allowlist', async () => {
+  const permission = await readFile(new URL('../src-tauri/permissions/album-library.toml', import.meta.url), 'utf8');
+  const allowed = permission.match(/commands\.allow\s*=\s*\[([\s\S]*?)\]/)?.[1] ?? '';
+  assert.match(allowed, /"compare_android_gallery"/, 'the frontend startup command must be allowed before it can reach the gallery bridge');
+});
+
 test('GPS regression targets only the configured app managed copies and never legacy or original files', () => {
   for (const root of ['data', 'user/0']) {
     const owned = `/data/${root}/${androidAppId}/imported-media-v1/123/gps-smoke.jpg`;

@@ -247,7 +247,12 @@ async function checkPhotoGps(page) {
   await tapNative(/text="USE THIS FOLDER"/i);
   await tapNative(/text="ALLOW"/i);
   await expect(page.locator('.mediaTile')).toHaveCount(2, { timeout:60_000 });
-  await expect(page.locator('.selectionNotice')).toContainText('사진 위치정보 권한이 꺼져', { timeout:60_000 });
+  await expect(page.locator('.selectionNotice').filter({ hasText:'사진 위치정보 권한이 꺼져' })).toBeVisible({ timeout:60_000 });
+  const galleryComparison = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('compare_android_gallery'));
+  assert.equal(galleryComparison.checked, 2);
+  assert.equal(galleryComparison.missing, 0);
+  assert.equal(galleryComparison.missingCopies, 0);
+  await writeFile(join(output, 'startup-gallery-comparison.json'), JSON.stringify(galleryComparison, null, 2));
   let rows = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_media'));
   const selected = rows.find(item => item.file_path.endsWith('gps-smoke.jpg') && !item.file_path.endsWith('no-gps-smoke.jpg'));
   const gpsFree = rows.find(item => item.file_path.endsWith('no-gps-smoke.jpg'));
