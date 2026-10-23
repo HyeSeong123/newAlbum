@@ -3,6 +3,7 @@ import { mkdir } from 'node:fs/promises';
 
 async function setup(page: Page, thumbnailFailure = false) {
   await page.route('**/controls-photo.jpg*', route => route.fulfill({path:'tests/fixtures/pet-dog.jpg',contentType:'image/jpeg'}));
+  await page.route('http://127.0.0.1:7788/**', route => route.fulfill({path:'tests/fixtures/playback.mp4',contentType:'video/mp4'}));
   await page.route('**/controls-video.mp4', route => route.fulfill({path:'tests/fixtures/playback.mp4',contentType:'video/mp4'}));
   await page.addInitScript(({thumbnailFailure}) => {
     const rows = [
@@ -14,6 +15,7 @@ async function setup(page: Page, thumbnailFailure = false) {
       convertFileSrc:(path:string)=>path,
       invoke:async(command:string,{id}:{id?:number}={})=>{
         if(command==='list_media')return rows;
+        if(command==='media_playback_source')return 'http://127.0.0.1:7788/abcdef/1';
         if(command==='media_thumbnail') {if(thumbnailFailure && id===1)throw Error('unsupported native decoder');return '/controls-photo.jpg?thumbnail';}
         if(command==='list_pet_jobs')return {jobs:[],pending:0,paused:0,failed:0};
         return [];
@@ -70,5 +72,6 @@ for(const fallback of [false,true])test(`video grid decodes a real preview ${fal
   await expect.poll(()=>image.evaluate((img:HTMLImageElement)=>img.complete&&img.naturalWidth>0)).toBe(true);
   await expect(image).toHaveAttribute('src',fallback?/^data:image\/jpeg/:/thumbnail/);
   await expect(tile.locator('video')).toHaveCount(0);
-  await tile.click();await expect(page.getByRole('dialog',{name:'사진 상세',exact:true}).locator('video')).toBeVisible();
+  await tile.click();const player=page.getByRole('dialog',{name:'사진 상세',exact:true}).locator('video');
+  await expect(player).toBeVisible();await expect.poll(()=>player.evaluate(video=>video.readyState)).toBeGreaterThanOrEqual(2);
 });
