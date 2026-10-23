@@ -781,7 +781,10 @@ try {
   assert.deepEqual(restoredPeople.people.find(person=>person.id===manualPhotoSmoke.personId).media_ids,[manualPhotoSmoke.mediaId]);
   const savedQueue=await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('list_pet_jobs'));assert.equal(savedQueue.paused,1);
   assert.equal((await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('pet_evaluation_summary'))).queries,1);
-  await page.getByRole('button',{name:'이어서 분석',exact:true}).click();
+  await page.getByRole('button', { name:'분석 결과 · 진행상황 보기', exact:true }).click();
+  const restoredAnalysis = page.getByRole('region', { name:'분석 진행상황', exact:true });
+  await expect(restoredAnalysis).toContainText('이전 분석 1장이 대기 중이에요.');
+  await restoredAnalysis.getByRole('button', { name:'이어서 분석', exact:true }).click();
   await expect.poll(async()=>{const q=await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('list_pet_jobs'));return q.pending+q.paused+q.failed;},{timeout:60_000}).toBe(0);
   await writeFile(join(output,'pet-queue-restart.json'),JSON.stringify({pausedAfterRestart:1,deduplicated:true,resumedAndCompleted:true,validationSamplesPersisted:1},null,2));
   await checkVideoPlayback(page, 'after-restart');
