@@ -69,6 +69,7 @@ test('manual body region adds only one animal and preserves existing confirmed l
  await fixture(page);await photo(page);
  await page.getByRole('button',{name:'반려동물 직접 추가',exact:true}).click();
  const dialog=page.getByRole('dialog',{name:'반려동물 직접 추가',exact:true});
+ await expect(dialog.locator('header strong')).toHaveCSS('color',await dialog.evaluate(node=>getComputedStyle(node).color));
  await dialog.getByText('영역 크기 조정',{exact:true}).click();
  for(const [label,value]of [['가로 위치 (%)','60'],['세로 위치 (%)','10'],['너비 (%)','30'],['높이 (%)','50']])await dialog.getByLabel(label,{exact:true}).fill(value);
  await dialog.getByRole('button',{name:'영역 추가',exact:true}).click();await expect(dialog).toBeHidden();
