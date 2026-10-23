@@ -21,11 +21,20 @@ with tarfile.open(cache/'annotations.tar.gz','r:gz') as annotations:
  groups=defaultdict(list);species={}
  for line in lines:
   name,breed,kind,_=line.split();groups[(kind,breed)].append(name);species[name]='cat' if kind=='1' else 'dog'
- chosen=[]
+ chosen=[];masks={};excluded=[]
  for kind in ['1','2']:
   breeds=[sorted(names) for (k,b),names in sorted(groups.items()) if k==kind]
-  for index in range(100):chosen.append(breeds[index%len(breeds)][index//len(breeds)])
- wanted=set(chosen);masks={name:annotations.extractfile('annotations/trimaps/'+name+'.png').read() for name in chosen}
+  offsets=[0]*len(breeds);index=0;accepted=0
+  while accepted<100:
+   breed=index%len(breeds);index+=1
+   if offsets[breed]>=len(breeds[breed]):raise RuntimeError('Insufficient valid annotated test photos')
+   name=breeds[breed][offsets[breed]];offsets[breed]+=1
+   raw=annotations.extractfile('annotations/trimaps/'+name+'.png').read();mask=Image.open(io.BytesIO(raw));histogram=mask.histogram()
+   if histogram[1]+histogram[3]==0:
+    excluded.append({'id':name,'reason':'official trimap has no foreground/boundary pixels'});continue
+   chosen.append(name);masks[name]=raw;accepted+=1
+ wanted=set(chosen)
+
 samples=[];seen=set()
 with tarfile.open(cache/'images.tar.gz','r|gz') as images:
  for member in images:
@@ -44,5 +53,5 @@ with tarfile.open(cache/'images.tar.gz','r|gz') as images:
   image.thumbnail((640,640),Image.Resampling.BILINEAR);image.save(output/(name+'.jpg'),quality=95)
   samples.append({'id':name,'kind':species[name],'sha256':sha,'box':[x0/w,y0/h,(x1-x0)/w,(y1-y0)/h],'url':'/evaluation/oxford-200/'+name+'.jpg'})
 assert len(samples)==200 and sum(s['kind']=='dog' for s in samples)==100 and sum(s['kind']=='cat' for s in samples)==100
-manifest={'dataset':'Oxford-IIIT Pet official test split','source':'https://www.robots.ox.ac.uk/~vgg/data/pets/','license':'CC-BY-SA-4.0','attribution':'O. M. Parkhi, A. Vedaldi, A. Zisserman, C. V. Jawahar. Cats and Dogs, CVPR 2012. Image copyrights remain with original owners.','archiveMd5':resources,'independentFileHashes':True,'individualIdentityLabelsAvailable':False,'captureViewLabelsAvailable':False,'trainingOverlapAudited':False,'transform':'EXIF orientation, longest side <=640, bilinear, JPEG quality 95; same pixels for both policies.','samples':sorted(samples,key=lambda s:s['id'])}
+manifest={'dataset':'Oxford-IIIT Pet official test split','source':'https://www.robots.ox.ac.uk/~vgg/data/pets/','license':'CC-BY-SA-4.0','attribution':'O. M. Parkhi, A. Vedaldi, A. Zisserman, C. V. Jawahar. Cats and Dogs, CVPR 2012. Image copyrights remain with original owners.','archiveMd5':resources,'excludedBeforeInference':excluded,'independentFileHashes':True,'individualIdentityLabelsAvailable':False,'captureViewLabelsAvailable':False,'trainingOverlapAudited':False,'transform':'EXIF orientation, longest side <=640, bilinear, JPEG quality 95; same pixels for both policies.','samples':sorted(samples,key=lambda s:s['id'])}
 Path('benchmark-results').mkdir(exist_ok=True);Path('benchmark-results/oxford-manifest.json').write_text(json.dumps(manifest,indent=2));print('Prepared 100 dog and 100 cat test images.')
