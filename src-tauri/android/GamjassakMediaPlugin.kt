@@ -3,6 +3,8 @@ package com.oraedameun.album
 import android.app.Activity
 import android.Manifest
 import android.content.Intent
+import android.content.ContentUris
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
@@ -42,6 +44,9 @@ import java.util.ArrayDeque
 class DescribeArgs { var uri: String = "" }
 
 @InvokeArg
+class GallerySourcesArgs { var uris: Array<String> = emptyArray(); var discover: Boolean = false }
+
+@InvokeArg
 class CreateDocumentArgs {
     var uri: String = ""
     var name: String = ""
@@ -55,6 +60,55 @@ class VideoThumbnailArgs { var source: String = ""; var target: String = "" }
  *  and creates user-requested export destinations; it never deletes originals. */
 @TauriPlugin(permissions = [Permission(strings = [Manifest.permission.ACCESS_MEDIA_LOCATION], alias = "photoLocation")])
 class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
+    @Command
+    fun checkGallerySources(invoke: Invoke) {
+        val args = invoke.parseArgs(GallerySourcesArgs::class.java)
+        Thread {
+            try {
+                val resolver = activity.contentResolver
+                val rows = JSONArray()
+                fun fullAccess(uri: Uri): Boolean {
+                    if (uri.authority != MediaStore.AUTHORITY) return false
+                    val permission = if (Build.VERSION.SDK_INT >= 33) {
+                        when { uri.path?.contains("/images/") == true -> Manifest.permission.READ_MEDIA_IMAGES
+                            uri.path?.contains("/video/") == true -> Manifest.permission.READ_MEDIA_VIDEO
+                            else -> return false }
+                    } else Manifest.permission.READ_EXTERNAL_STORAGE
+                    return activity.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
+                }
+                for (value in args.uris) {
+                    val uri = Uri.parse(value)
+                    var state = "unavailable"
+                    if (uri.scheme == "content") try {
+                        val columns = mutableListOf(OpenableColumns.DISPLAY_NAME)
+                        if (uri.authority == MediaStore.AUTHORITY && Build.VERSION.SDK_INT >= 30) columns.add(MediaStore.MediaColumns.IS_TRASHED)
+                        resolver.query(uri, columns.toTypedArray(), null, null, null)?.use { cursor ->
+                            state = if (cursor.moveToFirst()) {
+                                if (columns.size > 1 && cursor.getInt(1) != 0) "missing" else "present"
+                            } else if (fullAccess(uri)) "missing" else "unavailable"
+                        }
+                    } catch (_: SecurityException) { state = "unavailable" }
+                    catch (_: java.io.FileNotFoundException) { state = if (fullAccess(uri)) "missing" else "unavailable" }
+                    catch (_: Exception) { state = "unavailable" }
+                    rows.put(JSObject().put("uri", value).put("state", state))
+                }
+                val gallery = JSONArray()
+                if (args.discover) try {
+                    val filters = mutableListOf("${MediaStore.Files.FileColumns.MEDIA_TYPE} IN (1,3)")
+                    if (Build.VERSION.SDK_INT >= 29) filters.add("${MediaStore.MediaColumns.IS_PENDING}=0")
+                    if (Build.VERSION.SDK_INT >= 30) filters.add("${MediaStore.MediaColumns.IS_TRASHED}=0")
+                    val columns = arrayOf(MediaStore.Files.FileColumns._ID, MediaStore.MediaColumns.DISPLAY_NAME, MediaStore.Files.FileColumns.MEDIA_TYPE)
+                    resolver.query(MediaStore.Files.getContentUri("external"), columns, filters.joinToString(" AND "), null, null)?.use { cursor ->
+                        while (cursor.moveToNext()) {
+                            val base = if (cursor.getInt(2) == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                            gallery.put(JSObject().put("uri", ContentUris.withAppendedId(base, cursor.getLong(0)).toString()).put("name", cursor.getString(1) ?: "기록"))
+                        }
+                    }
+                } catch (_: Exception) { /* Restricted access is not evidence of deletion. */ }
+                invoke.resolve(JSObject().put("rows", rows).put("gallery", gallery))
+            } catch (_: Exception) { invoke.reject("갤러리 원본을 확인하지 못했습니다.") }
+        }.start()
+    }
     private val thumbnailWorker = Executors.newFixedThreadPool(2)
     @Command
     fun videoThumbnail(invoke: Invoke) {
@@ -176,6 +230,20 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
 
     @ActivityCallback
     fun galleryResult(invoke: Invoke, result: ActivityResult) {
+        val selectionPath = result.data?.getStringExtra("selectionFile")
+        if (result.resultCode == Activity.RESULT_OK && selectionPath != null) {
+            Thread {
+                var file: File? = null
+                try {
+                    val candidate = File(selectionPath).canonicalFile
+                    require(candidate.parentFile == activity.cacheDir.canonicalFile && candidate.name.startsWith("gallery-selection-")) { "선택한 사진 목록을 확인할 수 없습니다." }
+                    file = candidate
+                    invoke.resolve(JSObject().put("uris", JSONArray(candidate.readText())))
+                } catch (_: Exception) { invoke.reject("선택한 사진 목록을 읽지 못했습니다. 다시 선택해 주세요.") }
+                finally { file?.delete() }
+            }.start()
+            return
+        }
         val uris = if (result.resultCode == Activity.RESULT_OK)
             result.data?.getStringArrayListExtra("uris")?.let { JSONArray(it) } else null
         invoke.resolve(JSObject().put("uris", uris))
@@ -333,3 +401,4 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
         }.start()
     }
 }
+

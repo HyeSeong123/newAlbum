@@ -140,7 +140,7 @@ export function Library({
         <EntitySelectionBar className="selectionDock" count={selectedCount} unit="항목" allLabel={`현재 결과 전체 선택 (${visibleCollection.length}개)`} onAll={() => onSelectAll(visibleCollection.map(item => item.id))} onClear={onClearSelection} onClose={onToggleSelectionMode}>
             <button className="iconText" onClick={onCreateAlbum} disabled={!selectedCount}><Plus size={17} />앨범 만들기</button>
             <button className="iconText" aria-expanded={bulkRegionOpen} aria-controls="libraryBulkRegion" onClick={() => setBulkRegionOpen(value => !value)} disabled={!locationIds.length}><MapPin size={17} />지역 일괄 수정</button>
-            <button className="dangerButton" onClick={onDeleteSelected} disabled={!selectedCount}><Trash2 size={17} />등록 해제</button>
+            <button className="dangerButton" onClick={onDeleteSelected} disabled={!selectedCount}><Trash2 size={17} />삭제</button>
         </EntitySelectionBar>
       )}
       {selectionMode && bulkRegionOpen && <div id="libraryBulkRegion" className="libraryBulkRegion">
@@ -211,3 +211,4 @@ export function Library({
     </div>
   );
 }
+

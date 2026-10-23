@@ -65,6 +65,17 @@ export async function loadRegisteredMedia(): Promise<MediaItem[]> {
   return rows.map(toMediaItem);
 }
 
+export type GalleryComparison = { checked: number; present: number; missing: number; unavailable: number; untracked: number; missingCopies: number };
+let startupGalleryCheck: Promise<GalleryComparison> | undefined;
+export function compareAndroidGallery(): Promise<GalleryComparison> {
+  // React StrictMode and concurrent startup consumers share one native scan.
+  startupGalleryCheck ??= invoke<Partial<GalleryComparison>>('compare_android_gallery').then(result => ({
+    checked: result?.checked ?? 0, present: result?.present ?? 0, missing: result?.missing ?? 0,
+    unavailable: result?.unavailable ?? 0, untracked: result?.untracked ?? 0, missingCopies: result?.missingCopies ?? 0,
+  })).catch(error => { startupGalleryCheck = undefined; throw error; });
+  return startupGalleryCheck;
+}
+
 export async function loadSavedAlbums(): Promise<SavedAlbum[]> {
   const rows = await invoke<BackendAlbum[]>("list_albums");
   return rows.map((row) => ({
@@ -289,3 +300,4 @@ export async function chooseDiaryPhotos(remaining: number): Promise<DiaryPhoto[]
   if (paths.length > remaining) throw new Error("사진은 최대 6장까지 첨부할 수 있어요.");
   return invoke<DiaryPhoto[]>("import_diary_photos", { paths });
 }
+

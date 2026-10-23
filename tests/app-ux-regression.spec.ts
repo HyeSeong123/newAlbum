@@ -14,7 +14,7 @@ test('photo selection actions stay reachable and Back cancels the mode before le
   await bar.getByRole('button',{name:'현재 결과 전체 선택 (200개)',exact:true}).click();
   await expect(bar).toContainText('항목 200개 선택');
   await bar.getByRole('button',{name:'선택 해제',exact:true}).click();await expect(bar).toContainText('항목 0개 선택');
-  await expect(bar.getByRole('button',{name:'등록 해제',exact:true})).toBeDisabled();
+  await expect(bar.getByRole('button',{name:'삭제',exact:true})).toBeDisabled();
   await page.locator('.mediaTile').first().click();await back(page);
   await expect(page.locator('.libraryView')).toBeVisible();await expect(bar).toHaveCount(0);
   await expect(page.getByRole('button',{name:'선택',exact:true})).toBeVisible();
@@ -148,3 +148,4 @@ test('person and pet details return to the same list page and scroll position',a
   const petScroll=await page.evaluate(()=>scrollY);await page.locator('.petsView .petGrid > button').first().click();await back(page);
   await expect(page.locator('.petsView .petGrid > button')).toHaveCount(2);await expect.poll(async()=>Math.abs((await page.evaluate(()=>scrollY))-petScroll)).toBeLessThan(3);
 });
+

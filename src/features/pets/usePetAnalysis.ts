@@ -7,6 +7,7 @@ import type { PetProgress } from './engine/manager';
 import { petAnalysisError } from './analysisError';
 interface Job { id:number;media_id:number;pet_id:number|null;view:PetView;state:'pending'|'paused'|'failed';error:string;refresh?:boolean }
 interface Queue {jobs:Job[];pending:number;paused:number;failed:number}
+type AnalysisCounts = { done:number; failed:number; detected:number; retrained:number; learned:number; missed:number };
 export type PetAnalysis = ReturnType<typeof usePetAnalysis>;
 export function usePetAnalysis(media: MediaItem[]) {
   const mediaRef = useRef(media);
@@ -15,6 +16,7 @@ export function usePetAnalysis(media: MediaItem[]) {
   const operations=useRef<Promise<unknown>>(Promise.resolve());
   const settled=useRef<Promise<void>>(Promise.resolve()), rerun=useRef(false);
   const relearning=useRef(false);
+  const continuation=useRef<AnalysisCounts|null>(null), resumeRequested=useRef(false);
   const [progress,setProgress]=useState<PetProgress|null>(null), [waiting,setWaiting]=useState(0);
   const report=useCallback((error:unknown)=>{if(mounted.current)setProgress({done:0,total:0,failed:1,detected:0,running:false,message:petAnalysisError(error)});},[]);
   const pump=useCallback(async():Promise<void>=>{
@@ -22,7 +24,9 @@ export function usePetAnalysis(media: MediaItem[]) {
     if(controller.current){rerun.current=true;return;}
     const abort=new AbortController();controller.current=abort;
     let release!:()=>void;settled.current=new Promise<void>(resolve=>{release=resolve;});
-    let done=0,failed=0,detected=0,retrained=0,learned=0,missed=0;
+    let {done,failed,detected,retrained,learned,missed}=resumeRequested.current && continuation.current
+      ? continuation.current : {done:0,failed:0,detected:0,retrained:0,learned:0,missed:0};
+    resumeRequested.current=false;
     try {
       const {scanPetBatch}=await import('./engine/manager');
       let items=new Map((mediaRef.current.length ? mediaRef.current : await loadRegisteredMedia()).map(item=>[Number(item.id),item]));
@@ -51,7 +55,7 @@ export function usePetAnalysis(media: MediaItem[]) {
         }
       }
     }catch(error){if(!abort.signal.aborted)report(error);}
-    finally{if(controller.current===abort)controller.current=null;release();if(rerun.current && mounted.current && !abort.signal.aborted){rerun.current=false;void pump();}}
+    finally{continuation.current=abort.signal.aborted?{done,failed,detected,retrained,learned,missed}:null;if(controller.current===abort)controller.current=null;release();if(rerun.current && mounted.current && !abort.signal.aborted){rerun.current=false;void pump();}}
   },[report]);
   const schedule=useCallback((operation:()=>Promise<void>, run=true)=>{
     operations.current=operations.current.catch(()=>undefined).then(operation).then(()=>{if(run)void pump();}).catch(report);
@@ -59,6 +63,8 @@ export function usePetAnalysis(media: MediaItem[]) {
   const start=useCallback((items:MediaItem[],petId?:number,views:Record<string,PetView>={})=>{
     if(!isTauriRuntime())return;
     const photos=items.filter(item=>item.fileType==='image');
+    if(!photos.length)return;
+    if(!controller.current)setProgress({done:0,total:photos.length,failed:0,detected:0,running:true,message:'반려동물 분석을 준비하고 있어요.'});
     schedule(async()=>{for(let index=0;index<photos.length;index+=1000)await invoke('enqueue_pet_jobs',{jobs:photos.slice(index,index+1000).map(item=>({mediaId:Number(item.id),petId:petId??null,view:views[item.id]??'unknown'}))});});
   },[schedule,report]);
   const refreshReferences=useCallback((groups:{petId:number;items:MediaItem[]}[])=>{
@@ -90,6 +96,6 @@ export function usePetAnalysis(media: MediaItem[]) {
       const queue=await invoke<Queue>('list_pet_jobs');
       if(mounted.current){setWaiting((queue?.paused??0)+(queue?.failed??0));setProgress(previous=>previous?{...previous,running:false,message:'분석을 멈췄어요. 완료한 결과는 저장되어 있어요.'}:null);}
     },false);
-  },resume:()=>{schedule(async()=>{await settled.current;await invoke('control_pet_jobs',{resume:true});});},dismiss:()=>setProgress(null)};
+  },resume:()=>{schedule(async()=>{await settled.current;await invoke('control_pet_jobs',{resume:true});resumeRequested.current=true;});},dismiss:()=>setProgress(null)};
 }
 

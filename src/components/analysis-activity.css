@@ -1,0 +1,13 @@
+.analysisActivity { position: fixed; z-index: 80; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); }
+.analysisActivityTrigger { display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid var(--primary); border-radius: 50%; color: var(--primary); background: var(--surface); box-shadow: var(--shadow); }
+.analysisActivityPanel { position: absolute; right: 0; bottom: 60px; width: min(340px, calc(100vw - 32px)); max-height: min(65dvh, 540px); overflow: auto; padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); box-shadow: var(--shadow-strong); }
+.analysisActivityPanel > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.analysisActivityPanel h2 { margin: 0; font-size: 16px; }
+.analysisActivityPanel header button { display: grid; place-items: center; width: 44px; height: 44px; color: var(--text); background: transparent; }
+.analysisActivityPanel article + article { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 16px; }
+.analysisActivityPanel h3 { margin: 8px 0; font-size: 14px; }
+.analysisActivityPanel p { margin: 8px 0; font-size: 13px; line-height: 1.6; white-space: pre-line; overflow-wrap: anywhere; }
+.analysisActivityPanel progress { width: 100%; accent-color: var(--primary); }
+.analysisActivityPanel small { color: var(--muted); }
+.analysisActivityActions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.analysisActivityActions button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; color: var(--text); background: var(--surface); font: inherit; font-size: 13px; }

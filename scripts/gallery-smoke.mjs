@@ -30,7 +30,7 @@ export async function verifyInstalledGallery({page,adb,nativeTree,tapNative,capt
     {name:'Z-new-gallery.jpg',source:'tests/fixtures/pet-dog.jpg',date:'202509010900.00'},
     {name:'M-video-gallery.mp4',source:'tests/fixtures/playback.mp4',date:'202609010900.00'},
   ];
-  const scrollFixtures = Array.from({length:33}, (_, index) => ({name:`scroll-${String(index).padStart(2,'0')}.jpg`,source:'tests/fixtures/no-gps.jpg',date:'202301010900.00'}));
+  const scrollFixtures = Array.from({length:93}, (_, index) => ({name:`scroll-${String(index).padStart(2,'0')}.jpg`,source:'tests/fixtures/no-gps.jpg',date:'202301010900.00'}));
   for (const file of [...fixtures, ...scrollFixtures]) {
     const path = `/sdcard/Pictures/GamjassakGallery/${file.name}`;
     await adb('push',resolve(file.source),path);
@@ -56,6 +56,11 @@ export async function verifyInstalledGallery({page,adb,nativeTree,tapNative,capt
   assert.ok(!tree.includes('unsupported-gallery.gif'),'Unsupported formats must not be offered for import');
   assert.ok(tree.includes('사진·영상 선택') && tree.includes('사진·영상을 골라 주세요'), 'Gallery must show a clear selection heading and footer');
   await captureScreen('gallery-recent-modified');
+  await tapNative(/text="전체 선택"/);
+  await expect.poll(async () => Number((await nativeTree()).match(/text="(\d+)개 선택됨"/)?.[1] ?? 0), {timeout:30_000}).toBeGreaterThanOrEqual(fixtures.length + scrollFixtures.length);
+  await captureScreen('gallery-all-selected');
+  await tapNative(/text="전체 선택 해제"/);
+  assert.ok((await nativeTree()).includes('사진·영상을 골라 주세요'), 'Select all must clear without importing or changing gallery originals');
   const centers = xml => order.map(name => {
     const node = (xml.match(/<node\b[^>]+>/g) ?? []).find(node => node.includes(`content-desc="${name},`));
     assert.ok(node, `Missing gesture fixture: ${name}`);
@@ -104,7 +109,8 @@ export async function verifyInstalledGallery({page,adb,nativeTree,tapNative,capt
   await page.evaluate(ids=>window.__TAURI_INTERNALS__.invoke('delete_registered_media',{ids}),records.map(row=>row.id));
   await launch();await tapNative(/text="취소"/);assert.equal((await wait()).uris,null);
   await page.reload();
-  const report={gallery:true,longPressDragSelects:true,longPressDragDeselects:true,ordinarySwipeScrollsWithoutSelection:true,sort:'date_modified DESC, _id DESC',order,photoCount:2,videoCount:1,unsupportedFormatsHidden:true,deniedPermissionCancels:true,cancelLeavesRecordsUnchanged:true};
+  const report={gallery:true,selectAllAcrossPages:true,longPressDragSelects:true,longPressDragDeselects:true,ordinarySwipeScrollsWithoutSelection:true,sort:'date_modified DESC, _id DESC',order,photoCount:2,videoCount:1,unsupportedFormatsHidden:true,deniedPermissionCancels:true,cancelLeavesRecordsUnchanged:true};
   await writeFile(join(output,'gallery-smoke.json'),JSON.stringify(report,null,2));
   console.log('Native gallery sorting, image/video multi-selection, denial, cancellation and Rust import: OK');
 }
+

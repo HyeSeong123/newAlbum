@@ -1,6 +1,6 @@
 import { useDialogFocus } from '../../hooks/useDialogFocus';
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type CSSProperties } from "react";
-import { ChevronLeft, ChevronRight, Download, Heart, Minus, Plus, RotateCcw, Star, X, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Heart, LoaderCircle, Minus, Plus, RotateCcw, Star, Trash2, X, ZoomIn, ZoomOut } from "lucide-react";
 import type { MediaItem } from "../../types/media";
 import { FavoriteBadge, MediaImage } from "../../components/MediaVisual";
 import { useMobileLayout } from "../../hooks/useMobileLayout";
@@ -20,6 +20,7 @@ export function DetailModal({
   onClose,
   onPrev,
   onNext,
+  onDelete,
 }: {
   item: MediaItem;
   onChange: (patch: Partial<MediaItem>) => void;
@@ -28,8 +29,16 @@ export function DetailModal({
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
+  onDelete?: () => Promise<boolean>;
 }) {
   const [zoomViewerOpen, setZoomViewerOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const deletionLock = useRef(false);
+  async function remove() {
+    if (!onDelete || deletionLock.current) return;
+    deletionLock.current = true; setDeleting(true);
+    try { await onDelete(); } finally { deletionLock.current = false; setDeleting(false); }
+  }
   const mobile = useMobileLayout();
   const [photoZoom, setPhotoZoom] = useState(100);
   const dialogRef = useRef<HTMLElement>(null);
@@ -38,7 +47,7 @@ export function DetailModal({
   const previousZoom = useRef(100);
   const photoDrag = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
   const mediaDownload = useMediaDownload(item);
-  useModalBehavior(onClose, { onPrev, onNext });
+  useModalBehavior(() => { if (!deleting) onClose(); }, { onPrev: () => { if (!deleting) onPrev(); }, onNext: () => { if (!deleting) onNext(); } });
   const dialogKeyDown = useDialogFocus(dialogRef);
 
   useEffect(() => {
@@ -67,9 +76,9 @@ export function DetailModal({
     <div className="modalBackdrop photoLightboxBackdrop" role="presentation">
       <section ref={dialogRef} className="detailModal photoLightbox photoInspector" role="dialog" aria-modal="true" aria-label="사진 상세" tabIndex={-1} inert={zoomViewerOpen} onKeyDown={dialogKeyDown}>
         <header className="detailHeader">
-          <button className="detailBack" onClick={onClose} aria-label="이전 화면으로 돌아가기"><ChevronLeft size={20} /><span id="detailTitle">돌아가기</span></button>
+          <button className="detailBack" disabled={deleting} onClick={onClose} aria-label="이전 화면으로 돌아가기"><ChevronLeft size={20} /><span id="detailTitle">돌아가기</span></button>
           <span className="detailDateTitle">{formatJournalDate(item.takenAt)}</span>
-          <button className="detailClose" title="닫기" onClick={onClose}><X size={18} /><span>닫기</span></button>
+          <button className="detailClose" disabled={deleting} title="닫기" onClick={onClose}><X size={18} /><span>닫기</span></button>
         </header>
         <div className="detailLayout">
           <div className="detailPhotoPane">
@@ -81,6 +90,7 @@ export function DetailModal({
               </button>
               {item.fileType === "image" && <button ref={zoomTriggerRef} className="detailExpand" title="확대 보기" onClick={() => setZoomViewerOpen(true)}><ZoomIn size={18} /><span>확대 보기</span></button>}
               {item.fileType === "image" && <button title="원본 다운로드" aria-label="원본 다운로드" disabled={mediaDownload.busy || !mediaDownload.available} onClick={() => void mediaDownload.download()}><Download size={18} /><span>{mediaDownload.busy ? "저장 중" : "다운로드"}</span></button>}
+              {onDelete && <button type="button" className="detailDelete" aria-label="삭제" disabled={deleting} onClick={() => void remove()}>{deleting ? <LoaderCircle size={18} className="spinIcon" /> : <Trash2 size={18} />}<span>{deleting ? '삭제 중' : '삭제'}</span></button>}
               </div>
               {mediaDownload.error && <p className="detailDownloadFeedback" role="alert">{mediaDownload.error}</p>}
               {mediaDownload.notice && <p className="detailDownloadFeedback" role="status">{mediaDownload.notice}</p>}
@@ -116,8 +126,8 @@ export function DetailModal({
                   </div>
                 </div>
               </> : <NativeMediaPlayback key={`${item.id}:${item.filePath}:${item.previewUrl ?? ""}`} item={item} />}
-              <button className="photoNavButton prev" title="이전" onClick={onPrev}><ChevronLeft size={22} /></button>
-              <button className="photoNavButton next" title="다음" onClick={onNext}><ChevronRight size={22} /></button>
+              <button className="photoNavButton prev" title="이전" disabled={deleting} onClick={onPrev}><ChevronLeft size={22} /></button>
+              <button className="photoNavButton next" title="다음" disabled={deleting} onClick={onNext}><ChevronRight size={22} /></button>
             </div>
             {item.fileType === "image" && <div className="detailZoomControls" aria-label="사진 배율 조절">
               <button title="축소" aria-label="축소" disabled={photoZoom <= 25} onClick={() => changePhotoZoom(photoZoom - 25)}><Minus size={22} /></button>
@@ -231,3 +241,4 @@ function PhotoZoomViewer({ item, onClose }: { item: MediaItem; onClose: () => vo
     </div>
   );
 }
+

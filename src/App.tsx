@@ -1,4 +1,6 @@
-import { PetAnalysisStatus } from './features/pets/PetAnalysisStatus';
+import { AnalysisActivity } from './components/AnalysisActivity';
+import { GalleryCheckScreen } from './components/GalleryCheckScreen';
+import type { PersonAnalysisProgress } from './features/people/PeopleView';
 import { PhotoView, type PhotoMode } from "./features/media/PhotoWorkspace";
 import { useMediaLibrary } from "./features/media/useMediaLibrary";
 import { useMediaViewer } from "./features/media/useMediaViewer";
@@ -82,6 +84,7 @@ export function App() {
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const library = useMediaLibrary();
   const petAnalysis = usePetAnalysis(library.items);
+  const [personAnalysis, setPersonAnalysis] = useState<PersonAnalysisProgress | null>(null);
   const diary = useDiary();
   const [largeLayout, setLargeLayout] = useState(() => localStorage.getItem("warm-journal-large-layout") === "true");
   const [importOpen, setImportOpen] = useState(false);
@@ -176,12 +179,19 @@ export function App() {
   }
 
   async function deleteSelectedItems() {
-    if (!selectedCount || !window.confirm(`선택한 ${selectedCount}개 항목을 감자싹 등록과 연결 정보(앨범·인물·반려동물 등)를 해제할까요? 원본 파일은 삭제되지 않습니다.`)) return;
+    if (!selectedCount || !window.confirm(`선택한 ${selectedCount}개 항목을 감자싹에서 삭제할까요? 앨범·인물·반려동물의 연결도 함께 삭제합니다. 휴대폰의 원본 파일은 그대로 보관됩니다.`)) return;
     const ids = new Set(selectedIds);
     if (await library.removeMedia(ids)) {
       selection.clear();
-      setSelectionNotice(`${ids.size}개 항목을 등록 목록에서 지웠습니다.`);
+      setSelectionNotice(`${ids.size}개 항목을 삭제했습니다.`);
     }
+  }
+
+  async function deleteCurrentItem() {
+    if (!selected || !window.confirm('이 사진을 감자싹에서 삭제할까요? 앨범·인물·반려동물의 연결도 함께 삭제합니다. 휴대폰의 원본 파일은 그대로 보관됩니다.')) return false;
+    const removed = await library.removeMedia(new Set([selected.id]));
+    if (removed) { viewer.close(); selection.clear(); setSelectionNotice('사진을 삭제했습니다.'); }
+    return removed;
   }
 
   async function createAlbumFromSelectedItems(title: string, coverColor: string, calendar?: CalendarRegistrationOptions) {
@@ -305,7 +315,7 @@ export function App() {
               onSectionChange={(section) => { setMemorySection(section); if (section === "map") setQuery(""); }}
               onAssignRegion={library.assignRegion} onLocationsAnalyzed={library.refreshLocations}
               onCreateAlbum={(records, title = "") => { setAlbumDraftItems(records); setAlbumDraftTitle(title); }} />}
-            {activeView === "People" && <PeopleWorkspace reviewRequested={petReviewRequested} onReviewHandled={() => setPetReviewRequested(false)} analysis={petAnalysis} items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} activeTab={peopleTab} onTabChange={setPeopleTab} />}
+            {(activeView === "People" || personAnalysis?.running) && <div hidden={activeView !== 'People'}><PeopleWorkspace isActive={activeView === 'People'} onPersonAnalysisChange={setPersonAnalysis} reviewRequested={petReviewRequested} onReviewHandled={() => setPetReviewRequested(false)} analysis={petAnalysis} items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} activeTab={peopleTab} onTabChange={setPeopleTab} /></div>}
             {activeView === "Settings" && <SettingsPanel photos={items.filter(item=>item.fileType==="image")} itemCount={items.length} clearing={clearing} onClear={clearAllRegisteredMedia} />}
           </div>
         </section>
@@ -326,9 +336,10 @@ export function App() {
           if (created) navigate("Albums");
         }} />}
         {library.error && <p className="selectionNotice" role="alert">{library.error}</p>}
-        {!(activeView === 'People' && peopleTab === 'pets') && <PetAnalysisStatus analysis={petAnalysis} onReview={() => { setPetReviewRequested(true); setPeopleTab('pets'); navigate('People'); }} />}
+        <AnalysisActivity person={personAnalysis} pets={petAnalysis} onShowResults={tab => { setPeopleTab(tab); navigate('People'); }} />
 
         {library.importNotice && !library.error && <p className="selectionNotice" role="status">{library.importNotice}</p>}
+        {library.galleryNotice && <p className="selectionNotice" role="status">{library.galleryNotice}</p>}
         {selectionNotice && <p className="selectionNotice" role="status">{selectionNotice}</p>}
         {albumDraftItems && <AlbumCreateModal items={albumDraftItems} initialTitle={albumDraftTitle} onClose={() => { setAlbumDraftItems(null); setAlbumDraftTitle(""); }} onCreate={createAlbumFromSelectedItems} />}
         {selected && (
@@ -337,12 +348,14 @@ export function App() {
             onChange={updateSelected}
             onSaveTitle={library.saveTitle}
             onAssignRegion={library.assignRegion}
+            onDelete={deleteCurrentItem}
             onClose={viewer.close}
             onPrev={() => viewer.move(-1)}
             onNext={() => viewer.move(1)}
           />
         )}
         {library.importProgress && <MediaImportProgress progress={library.importProgress} />}
+        {library.checkingGallery && <GalleryCheckScreen />}
       </section>
     </main>
     </HelpCharacterContext.Provider>

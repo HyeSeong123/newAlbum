@@ -28,6 +28,7 @@ mod media_dimensions;
 mod location;
 mod album_content;
 mod database;
+mod gallery_sources;
 mod diary;
 mod characters;
 #[cfg(any(target_os = "android", test))]
@@ -202,6 +203,16 @@ async fn delete_registered_media(app: AppHandle, ids: Vec<i64>) -> Result<Vec<Me
         database::delete_media(&mut conn, &ids)?;
         characters::reconcile(&mut conn)?;
         read_media_for_app(&app, &conn)
+    }).await.map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn compare_android_gallery(app: AppHandle) -> Result<gallery_sources::Comparison, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        #[cfg(target_os = "android")]
+        { android_media::compare_gallery(&app) }
+        #[cfg(not(target_os = "android"))]
+        { let _ = app; Ok(gallery_sources::Comparison::default()) }
     }).await.map_err(|error| error.to_string())?
 }
 
@@ -1275,6 +1286,7 @@ pub fn run() {
             list_albums,
             clear_registered_media,
             delete_registered_media,
+            compare_android_gallery,
             create_album_from_media,
             update_album,
             delete_albums,
@@ -1353,3 +1365,4 @@ pub fn run() {
         let _ = (app, event);
     });
 }
+

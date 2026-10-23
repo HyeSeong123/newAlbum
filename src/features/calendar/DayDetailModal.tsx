@@ -189,7 +189,7 @@ export function DayDetailModal({
           {registrations.map(record => <article key={record.id}>
             <div><strong>{record.title}</strong><small>{formatCalendarPeriod(record)}</small></div>
             {!title && <button onClick={() => onOpenRegistration(record)}>기록 보기</button>}
-            <button onClick={() => onRemoveRegistration(record.id)}><Trash2 size={15} />등록 해제</button>
+            <button onClick={() => onRemoveRegistration(record.id)}><Trash2 size={15} />삭제</button>
           </article>)}
         </section>}
         <footer className="calendarDayFooter">
@@ -204,3 +204,4 @@ export function DayDetailModal({
     </div>
   );
 }
+

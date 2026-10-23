@@ -22,7 +22,9 @@ import { EntityAssignmentDialog } from '../entities/EntityAssignmentDialog';
 import { EntitySelectionBar } from '../entities/EntitySelectionBar';
 import { assignPersonFaces, editEntityPhotos, removePersonRegistration, setPersonCoverPhoto, removeEntityRegistrations } from '../entities/entityService';
 
-export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive = true }: { isActive?: boolean; items: MediaItem[]; query?: string; onOpen: (item: MediaItem, collection?: MediaItem[]) => void; onCreateAlbum: (items: MediaItem[]) => void }) {
+export type PersonAnalysisProgress = { running: boolean; done: number; total: number; message: string; error: string; cancel: () => void };
+
+export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive = true, onPersonAnalysisChange }: { onPersonAnalysisChange?: (value: PersonAnalysisProgress) => void; isActive?: boolean; items: MediaItem[]; query?: string; onOpen: (item: MediaItem, collection?: MediaItem[]) => void; onCreateAlbum: (items: MediaItem[]) => void }) {
   const [index, setIndex] = useState<FaceIndex>(emptyFaceIndex);
   const [loading, setLoading] = useState(true);
   const [reviewing, setReviewing] = useState(false);
@@ -44,6 +46,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive 
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
+  const [analysisError, setAnalysisError] = useState('');
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [active, setActive] = useState<number | null>(null);
   const [name, setName] = useState('');
@@ -65,6 +68,12 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive 
   const heading = useRef<HTMLDivElement>(null);
   const listScroll = useRef<number | null>(null);
   const desktop = isTauriRuntime();
+  useEffect(() => {
+    onPersonAnalysisChange?.({ running, ...progress, message: status, error: analysisError, cancel: () => {
+      stop.current = true; controller.current?.abort();
+      setStatus('분석을 중단하는 중');
+    } });
+  }, [running, progress.done, progress.total, status, analysisError, onPersonAnalysisChange]);
   const photos = useMemo(() => items.filter((item) => item.fileType === 'image'), [items]);
   const mediaById = useMemo(() => new Map(items.map((item) => [Number(item.id), item])), [items]);
   const lookup = useMemo(() => indexFaces(index), [index]);
@@ -171,19 +180,23 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive 
 
   useEffect(() => {
     alive.current = true;
+    return () => { alive.current = false; stop.current = true; controller.current?.abort(); if (desktop) void controlPersonJobs(false).catch(() => undefined); };
+  }, [desktop]);
+
+  useEffect(() => {
     let disposed = false;
     if (desktop) {
       loadFaceIndex().then((next) => { if (!disposed) setIndex(next); })
         .catch(() => { if (!disposed) setError('인물 정보를 불러오지 못했습니다.'); })
         .finally(() => { if (!disposed) setLoading(false); });
     } else setLoading(false);
-    return () => { disposed = true; alive.current = false; stop.current = true; controller.current?.abort(); if (desktop) void controlPersonJobs(false).catch(() => undefined); };
+    return () => { disposed = true; };
   }, [desktop, items]);
 
   async function start(retryEmpty = false) {
     if (locked.current || !desktop) return;
     locked.current = true; stop.current = false; controller.current = new AbortController();
-    setRunning(true); setError(''); setStatus('얼굴 분석 준비 중');
+    setRunning(true); setError(''); setAnalysisError(''); setStatus('얼굴 분석 준비 중');
     setProgress({ done: 0, total: remaining.length });
     let failures = 0;
     let toScan = remaining;
@@ -215,9 +228,9 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive 
       if (alive.current) {
         const next = await loadFaceIndex();
         setIndex(next);
-        setStatus(stop.current ? '사람 찾기를 중단했습니다. 확인한 사진은 그대로 남아 있습니다.' : failures ? `얼굴 찾기를 마쳤습니다. ${toScan.length}장 중 ${done - failures}장을 확인했습니다. ${failures}장은 확인하지 못했습니다. 새 사진에서 사람 찾기를 눌러 다시 시도할 수 있습니다.` : `사진 ${done}장을 확인했습니다. 찾은 얼굴은 아래에 보여요. 미확인 인물의 사진을 눌러 이름을 붙여 주세요.`);
+        setStatus(stop.current ? '사람 찾기를 중단했습니다. 확인한 사진은 그대로 남아 있습니다.' : failures ? `얼굴 찾기를 마쳤습니다. ${toScan.length}장 중 ${done - failures}장을 확인했습니다. ${failures}장은 확인하지 못했습니다. 새 사진에서 사람 찾기를 눌러 다시 시도할 수 있습니다.` : `사진 ${done}장을 확인했습니다. 인물 화면에서 찾은 얼굴을 확인하고 이름을 붙여 주세요.`);
       }
-    } catch { if (alive.current && !stop.current) setError('사진에서 사람을 찾는 중 문제가 발생했습니다. 이미 확인한 사진과 원본은 그대로 남아 있습니다. 다시 시도해 주세요.'); }
+    } catch { if (alive.current && !stop.current) { const message = '사진에서 사람을 찾는 중 문제가 발생했습니다. 이미 확인한 사진과 원본은 그대로 남아 있습니다. 다시 시도해 주세요.'; setError(message); setAnalysisError(message); } }
     finally { if(stop.current) await controlPersonJobs(false).catch(()=>undefined); controller.current = null; locked.current = false; if (alive.current) { setRunning(false); if(stop.current) setStatus('사람 찾기를 중단했습니다. 확인한 사진은 그대로 남아 있습니다.'); } }
   }
 
@@ -403,3 +416,4 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive 
     }} />}
   </section>;
 }
+

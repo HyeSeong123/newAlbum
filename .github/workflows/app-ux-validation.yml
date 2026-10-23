@@ -2,7 +2,7 @@ name: App UX persona validation
 on:
   workflow_dispatch:
   push:
-    branches: [feature/app-ux-20261023, feature/pet-recognition-ux-20261023]
+    branches: [feature/app-ux-20261023, feature/pet-recognition-ux-20261023, final]
     paths: ['src/**', 'tests/**', 'playwright*.ts', 'package*.json', '.github/workflows/app-ux-validation.yml']
 permissions:
   contents: read

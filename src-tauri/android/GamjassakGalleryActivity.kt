@@ -35,6 +35,8 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
+import java.io.File
+import org.json.JSONArray
 
 /** Local visual media only. File names never determine gallery order. */
 class GamjassakGalleryActivity : Activity() {
@@ -52,6 +54,9 @@ class GamjassakGalleryActivity : Activity() {
     private lateinit var done: Button
     private lateinit var more: Button
     private lateinit var settings: Button
+    private lateinit var selectAll: Button
+    private var bulkSelecting = false
+    private var allSelected = false
     private val adapter = GalleryAdapter()
     private var loading = false
     private var exhausted = false
@@ -93,6 +98,16 @@ class GamjassakGalleryActivity : Activity() {
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
         selected.addAll(state?.getStringArrayList("selected") ?: emptyList())
+        state?.getString("selectionFile")?.let { path ->
+            try {
+                val saved = File(path).canonicalFile
+                if (saved.parentFile == cacheDir.canonicalFile && saved.name.startsWith("gallery-selection-")) {
+                    val rows = JSONArray(saved.readText())
+                    for (index in 0 until rows.length()) selected.add(rows.getString(index))
+                    saved.delete()
+                }
+            } catch (_: Exception) { selected.clear() }
+        }
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(cream)
@@ -126,14 +141,13 @@ class GamjassakGalleryActivity : Activity() {
             setPadding(dp(12), 0, dp(12), dp(8)); clipToPadding = false; setBackgroundColor(cream)
             stretchMode = GridView.STRETCH_COLUMN_WIDTH; this.adapter = this@GamjassakGalleryActivity.adapter
             setOnItemClickListener { _, _, position, _ ->
+                if (bulkSelecting) return@setOnItemClickListener
                 val uri = entries[position].uri.toString()
-                if (!selected.remove(uri)) {
-                    if (selected.size >= 500) Toast.makeText(this@GamjassakGalleryActivity, "한 번에 500개까지 선택해 주세요.", Toast.LENGTH_SHORT).show()
-                    else selected.add(uri)
-                }
+                if (!selected.remove(uri)) selected.add(uri)
+                allSelected = false
                 updateSelection(); updateVisibleSelection()
             }
-            setOnItemLongClickListener { _, _, position, _ -> beginSelection(position); true }
+            setOnItemLongClickListener { _, _, position, _ -> if (!bulkSelecting) beginSelection(position); true }
             setOnScrollListener(object : AbsListView.OnScrollListener {
                 override fun onScrollStateChanged(view: AbsListView?, state: Int) {}
                 override fun onScroll(view: AbsListView?, first: Int, visible: Int, total: Int) {
@@ -147,7 +161,11 @@ class GamjassakGalleryActivity : Activity() {
             elevation = dp(4).toFloat()
         }
         selectionSummary = text("사진·영상을 골라 주세요", 13f).apply { setTextColor(muted); setPadding(0, 0, 0, dp(10)) }
-        footer.addView(selectionSummary)
+        val selectionRow = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
+        selectionRow.addView(selectionSummary, LinearLayout.LayoutParams(0, -2, 1f))
+        selectAll = styledButton("전체 선택").apply { setOnClickListener { toggleAll() } }
+        selectionRow.addView(selectAll, LinearLayout.LayoutParams(-2, dp(44)).apply { bottomMargin = dp(8) })
+        footer.addView(selectionRow)
         val actions = LinearLayout(this)
         actions.addView(styledButton("취소").apply { setOnClickListener { finish() } }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { rightMargin = dp(10) })
         done = styledButton("0개 가져오기", true).apply { setOnClickListener { complete(selected.toList()) } }
@@ -183,7 +201,7 @@ class GamjassakGalleryActivity : Activity() {
     }
     private fun refresh(preserveSelection: Boolean) {
         accessSignature = permissionsSignature()
-        generation++; loading = false; exhausted = false; entries.clear(); cache.evictAll()
+        generation++; loading = false; exhausted = false; bulkSelecting = false; allSelected = false; entries.clear(); cache.evictAll()
         if (!preserveSelection) selected.clear()
         adapter.notifyDataSetChanged(); updateSelection()
         more.visibility = if (fullAccess()) View.GONE else View.VISIBLE
@@ -198,14 +216,64 @@ class GamjassakGalleryActivity : Activity() {
         loadPage()
     }
     private fun updateSelection() {
-        done.text = "${selected.size}개 가져오기"; done.isEnabled = selected.isNotEmpty()
+        done.text = "${selected.size}개 가져오기"; done.isEnabled = selected.isNotEmpty() && !bulkSelecting
+        selectAll.text = if (bulkSelecting) "선택 중…" else if (allSelected) "전체 선택 해제" else "전체 선택"
+        selectAll.isEnabled = accessible() && !bulkSelecting
         selectionSummary.text = if (selected.isEmpty()) "사진·영상을 골라 주세요" else "${selected.size}개 선택됨"
         selectionSummary.setTextColor(if (selected.isEmpty()) muted else olive)
     }
     private fun complete(uris: List<String>) {
-        if (uris.isEmpty()) return
-        setResult(RESULT_OK, Intent().putStringArrayListExtra("uris", ArrayList(uris)))
-        finish()
+        if (uris.isEmpty() || bulkSelecting) return
+        bulkSelecting = true; updateSelection()
+        queryWorker.execute {
+            try {
+                // Pass only a cache path through Binder, even for a large gallery.
+                val file = File.createTempFile("gallery-selection-", ".json", cacheDir)
+                file.writeText(JSONArray(uris).toString())
+                runOnUiThread {
+                    if (isDestroyed || isFinishing) { file.delete(); return@runOnUiThread }
+                    setResult(RESULT_OK, Intent().putExtra("selectionFile", file.absolutePath)); finish()
+                }
+            } catch (_: Exception) { runOnUiThread { bulkSelecting = false; updateSelection(); Toast.makeText(this, "선택한 사진을 전달하지 못했습니다. 다시 시도해 주세요.", Toast.LENGTH_SHORT).show() } }
+        }
+    }
+    private fun galleryFilters(): MutableList<String> {
+        val filters = mutableListOf("${MediaStore.Files.FileColumns.MEDIA_TYPE} IN (1,3)")
+        val extensions = listOf("jpg", "jpeg", "png", "webp", "heic", "mp4", "mov", "avi", "mkv", "webm")
+        filters.add("(" + extensions.joinToString(" OR ") { "LOWER(_display_name) LIKE '%.$it'" } + ")")
+        if (Build.VERSION.SDK_INT >= 29) filters.add("${MediaStore.MediaColumns.IS_PENDING}=0")
+        if (Build.VERSION.SDK_INT >= 30) filters.add("${MediaStore.MediaColumns.IS_TRASHED}=0")
+        return filters
+    }
+    private fun toggleAll() {
+        if (bulkSelecting || !accessible()) return
+        if (allSelected) { selected.clear(); allSelected = false; updateSelection(); updateVisibleSelection(); return }
+        bulkSelecting = true; updateSelection()
+        val token = generation
+        queryWorker.execute {
+            try {
+                val uris = LinkedHashSet<String>()
+                val columns = arrayOf(MediaStore.Files.FileColumns._ID, MediaStore.Files.FileColumns.MEDIA_TYPE)
+                val cursor = contentResolver.query(MediaStore.Files.getContentUri("external"), columns, galleryFilters().joinToString(" AND "), null, "date_modified DESC, _id DESC")
+                    ?: error("갤러리를 읽지 못했습니다.")
+                cursor.use {
+                    while (it.moveToNext()) {
+                        if (Thread.currentThread().isInterrupted) return@execute
+                        val base = if (it.getInt(1) == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                        uris.add(ContentUris.withAppendedId(base, it.getLong(0)).toString())
+                    }
+                }
+                runOnUiThread {
+                    if (token != generation || isDestroyed || isFinishing) return@runOnUiThread
+                    selected.clear(); selected.addAll(uris); allSelected = selected.isNotEmpty(); bulkSelecting = false
+                    updateSelection(); updateVisibleSelection()
+                }
+            } catch (_: Exception) { runOnUiThread {
+                if (token != generation || isDestroyed) return@runOnUiThread
+                bulkSelecting = false; updateSelection()
+                Toast.makeText(this, "전체 선택을 완료하지 못했습니다. 사진 접근 권한을 확인해 주세요.", Toast.LENGTH_SHORT).show()
+            } }
+        }
     }
     private fun loadPage() {
         if (loading || exhausted || !accessible() || isFinishing || isDestroyed) return
@@ -217,13 +285,7 @@ class GamjassakGalleryActivity : Activity() {
                 val collection = MediaStore.Files.getContentUri("external")
                 val columns = arrayOf(MediaStore.Files.FileColumns._ID, MediaStore.MediaColumns.DISPLAY_NAME,
                     MediaStore.MediaColumns.DATE_MODIFIED, MediaStore.Files.FileColumns.MEDIA_TYPE)
-                val filters = mutableListOf("${MediaStore.Files.FileColumns.MEDIA_TYPE} IN (1,3)")
-                // Match the existing importer so unsupported gallery items
-                // cannot be selected and then silently omitted during import.
-                val extensions = listOf("jpg", "jpeg", "png", "webp", "heic", "mp4", "mov", "avi", "mkv", "webm")
-                filters.add("(" + extensions.joinToString(" OR ") { "LOWER(_display_name) LIKE '%.$it'" } + ")")
-                if (Build.VERSION.SDK_INT >= 29) filters.add("${MediaStore.MediaColumns.IS_PENDING}=0")
-                if (Build.VERSION.SDK_INT >= 30) filters.add("${MediaStore.MediaColumns.IS_TRASHED}=0")
+                val filters = galleryFilters()
                 val args = if (last == null) null else arrayOf(last.modified.toString(), last.modified.toString(), last.id.toString())
                 if (last != null) filters.add("(date_modified < ? OR (date_modified = ? AND _id < ?))")
                 val selection = filters.joinToString(" AND ")
@@ -269,7 +331,6 @@ class GamjassakGalleryActivity : Activity() {
         private var x = 0f
         private var y = 0f
         private var lastPosition = -1
-        private var limitShown = false
         private val visited = HashSet<Int>()
         private val autoScroll = object : Runnable {
             override fun run() {
@@ -286,7 +347,7 @@ class GamjassakGalleryActivity : Activity() {
         fun beginSelection(position: Int) {
             if (position !in entries.indices) return
             dragging = true; selecting = !selected.contains(entries[position].uri.toString())
-            visited.clear(); lastPosition = position; limitShown = false
+            visited.clear(); lastPosition = position; allSelected = false
             // Clear AbsListView's pressed/click/fling state after long-press
             // recognition. Subsequent events are owned by this gesture only.
             val cancel = MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_CANCEL, x, y, 0)
@@ -301,10 +362,6 @@ class GamjassakGalleryActivity : Activity() {
             val uri = entries[position].uri.toString()
             if (!selecting) return selected.remove(uri)
             if (selected.contains(uri)) return false
-            if (selected.size >= 500) {
-                if (!limitShown) Toast.makeText(this@GamjassakGalleryActivity, "한 번에 500개까지 선택해 주세요.", Toast.LENGTH_SHORT).show()
-                limitShown = true; return false
-            }
             return selected.add(uri)
         }
         private fun selectAtPoint() {
@@ -422,6 +479,13 @@ class GamjassakGalleryActivity : Activity() {
         while (maxOf(options.outWidth, options.outHeight) / options.inSampleSize > 480) options.inSampleSize *= 2
         return contentResolver.openInputStream(entry.uri)?.use { BitmapFactory.decodeStream(it, null, options) }
     }
-    override fun onSaveInstanceState(state: Bundle) { state.putStringArrayList("selected", ArrayList(selected)); super.onSaveInstanceState(state) }
+    override fun onSaveInstanceState(state: Bundle) {
+        if (selected.isNotEmpty()) try {
+            val file = File.createTempFile("gallery-selection-", ".json", cacheDir)
+            file.writeText(JSONArray(selected.toList()).toString()); state.putString("selectionFile", file.absolutePath)
+        } catch (_: Exception) { }
+        super.onSaveInstanceState(state)
+    }
     override fun onDestroy() { generation++; queryWorker.shutdownNow(); thumbnails.shutdownNow(); cache.evictAll(); super.onDestroy() }
 }
+

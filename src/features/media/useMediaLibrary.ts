@@ -28,6 +28,8 @@ export function useMediaLibrary() {
   const [clearing, setClearing] = useState(false);
   const [error, setError] = useState("");
   const [importNotice, setImportNotice] = useState("");
+  const [checkingGallery, setCheckingGallery] = useState(api.isAndroidRuntime());
+  const [galleryNotice, setGalleryNotice] = useState('');
   const importWarning = useRef("");
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
@@ -48,12 +50,26 @@ export function useMediaLibrary() {
     let disposed = false;
     const mediaVersion = mediaRevision.current;
     const albumVersion = albumRevision.current;
-    void api.loadRegisteredMedia().then((items) => {
+    void (async () => {
+      if (api.isAndroidRuntime()) {
+        try {
+          const result = await api.compareAndroidGallery();
+          if (!disposed) setGalleryNotice([
+            result.missing ? `갤러리에서 삭제된 원본 ${result.missing}개를 확인했어요. 앱에 보관한 사진은 유지했어요.` : '',
+            result.unavailable ? `권한 또는 접근 문제로 원본 ${result.unavailable}개를 확인하지 못했어요.` : '',
+            result.untracked ? `이전에 가져온 사진 ${result.untracked}개는 원본 연결을 확인할 수 없어요.` : '',
+            result.missingCopies ? `앱의 보관 파일 ${result.missingCopies}개를 찾지 못했어요.` : '',
+          ].filter(Boolean).join(' '));
+        } catch { if (!disposed) setGalleryNotice('갤러리와 비교하지 못했어요. 앱에 보관한 사진은 계속 사용할 수 있어요.'); }
+      }
+      return api.loadRegisteredMedia();
+    })().then((items) => {
       if (!disposed && mediaVersion === mediaRevision.current) {
         publish({ items: items.map((item) => ({ ...item, ...pendingMediaEdits.current.get(item.id) })), loaded: true });
         pendingMediaEdits.current.clear();
       }
-    }).catch(() => { if (!disposed) setError("등록된 미디어를 불러오지 못했습니다."); });
+    }).catch(() => { if (!disposed) setError("등록된 미디어를 불러오지 못했습니다."); })
+      .finally(() => { if (!disposed) setCheckingGallery(false); });
     void api.loadSavedAlbums().then((records) => {
       if (!disposed) {
         if (albumVersion === albumRevision.current) publish({ albums: records });
@@ -340,6 +356,7 @@ export function useMediaLibrary() {
     });
   }
 
-  return { desktop, loaded: state.loaded && albumsLoaded, requestImport, completeImport, items: state.items, itemsById, albums, importing, importProgress, importNotice, clearing, error, fileInput, folderInput,
+  return { desktop, loaded: state.loaded && albumsLoaded, checkingGallery, galleryNotice, requestImport, completeImport, items: state.items, itemsById, albums, importing, importProgress, importNotice, clearing, error, fileInput, folderInput,
     patchMedia, saveTitle, assignRegion, refreshLocations, reloadRegisteredMedia, recordView, removeMedia, createAlbum, saveAlbum, deleteAlbums };
 }
+

@@ -68,3 +68,5 @@
   .photoInspector .detailZoomControls input { flex: 1; }
   .photoInspector .detailZoomControls button { font-size: 13px; padding-inline: 6px; }
 }
+
+.photoInspector .detailPhotoActions button.detailDelete { color: var(--danger); }

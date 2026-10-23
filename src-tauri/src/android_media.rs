@@ -60,6 +60,8 @@ pub fn prepare_paths(app: &tauri::AppHandle, paths: Vec<String>, mut on_progress
         }
     }
     let root = app.path().app_data_dir().map_err(|error| error.to_string())?.join("imported-media-v1");
+    let source_database = crate::open_database(app)?;
+    crate::gallery_sources::initialize(&source_database)?;
     let total_bytes = if documents.iter().all(|document| document.size.is_some()) { documents.iter().filter_map(|document| document.size).sum() } else { 0 };
     let photo_location = if documents.iter().any(|document| crate::media_type(Path::new(&document.name)) == Some("image")) {
         let permission: PhotoLocationPermission = bridge.0.run_mobile_plugin("requestPhotoLocation", serde_json::json!({}))
@@ -116,8 +118,59 @@ pub fn prepare_paths(app: &tauri::AppHandle, paths: Vec<String>, mut on_progress
         };
         copied += bytes; status.bytes_processed = copied; status.processed = index + 1; on_progress(status.clone());
         local.push(target.to_string_lossy().into_owned());
+        crate::gallery_sources::remember(&source_database, &crate::normalize_file_path(&target.canonicalize().unwrap_or_else(|_| target.clone())), &document.uri)?;
     }
     Ok(local)
+}
+
+#[derive(Deserialize)]
+struct GallerySourceState { uri: String, state: String }
+#[derive(Deserialize)]
+struct GalleryDocument { uri: String, name: String }
+#[derive(Deserialize)]
+struct GallerySources { rows: Vec<GallerySourceState>, gallery: Vec<GalleryDocument> }
+
+pub fn compare_gallery(app: &tauri::AppHandle) -> Result<crate::gallery_sources::Comparison, String> {
+    let conn = crate::open_database(app)?;
+    crate::gallery_sources::initialize(&conn)?;
+    let records = crate::gallery_sources::registered(&conn)?;
+    let mut result = crate::gallery_sources::Comparison::default();
+    if records.is_empty() { return Ok(result); }
+    let bridge = app.state::<AndroidMedia>();
+    let root = app.path().app_data_dir().map_err(|error| error.to_string())?.join("imported-media-v1");
+    let root = root.canonicalize().unwrap_or(root);
+    let mut states = std::collections::HashMap::new();
+    let mut legacy = std::collections::HashMap::new();
+    let uris: Vec<_> = records.iter().filter_map(|(_, uri)| uri.clone()).collect::<HashSet<_>>().into_iter().collect();
+    let discover = records.iter().any(|(path, uri)| uri.is_none() && Path::new(path).starts_with(&root));
+    // Include an empty first chunk so legacy snapshots can be matched once by
+    // their stable URI-derived path, without reading image bytes or running AI.
+    for index in 0..std::cmp::max(1, uris.len().div_ceil(200)) {
+        let start = (index * 200).min(uris.len());
+        let end = (start + 200).min(uris.len());
+        let response: GallerySources = bridge.0.run_mobile_plugin("checkGallerySources", serde_json::json!({"uris": &uris[start..end], "discover": discover && index == 0}))
+            .map_err(|_| "갤러리 원본을 확인하지 못했습니다. 앱에 보관한 사진은 그대로 사용할 수 있어요.".to_string())?;
+        for row in response.rows { states.insert(row.uri, row.state); }
+        for document in response.gallery {
+            let path = managed_import::document_target(&root, &document.uri, &managed_import::safe_file_name(&document.name, ""));
+            legacy.insert(crate::normalize_file_path(&path.canonicalize().unwrap_or(path)), document.uri);
+        }
+    }
+    for (path, source) in records {
+        result.checked += 1;
+        if !Path::new(&path).is_file() { result.missing_copies += 1; }
+        if let Some(uri) = source {
+            match states.get(&uri).map(String::as_str) {
+                Some("present") => result.present += 1,
+                Some("missing") => result.missing += 1,
+                _ => result.unavailable += 1,
+            }
+        } else if let Some(uri) = legacy.get(&path) {
+            crate::gallery_sources::remember(&conn, &path, uri)?;
+            result.present += 1;
+        } else { result.untracked += 1; }
+    }
+    Ok(result)
 }
 
 pub fn copy_to_uri(app: &tauri::AppHandle, source: &Path, destination: &str) -> Result<(), String> {
@@ -159,3 +212,4 @@ pub fn video_thumbnail(app: &tauri::AppHandle, source: &Path, target: &Path) -> 
     if result.path != target.to_string_lossy() || !target.is_file() { return Err("동영상 썸네일이 없습니다.".into()); }
     Ok(())
 }
+

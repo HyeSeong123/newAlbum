@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { PawPrint, Users } from 'lucide-react';
 import type { MediaItem } from '../../types/media';
 import { PeopleView } from './PeopleView';
+import type { PersonAnalysisProgress } from './PeopleView';
 import { PetsView } from '../pets/PetsView';
 import type { PetAnalysis } from '../pets/usePetAnalysis';
 
-export function PeopleWorkspace(props: { analysis: PetAnalysis; items: MediaItem[]; onOpen: (item: MediaItem, collection?: MediaItem[]) => void; query?: string; onCreateAlbum: (items: MediaItem[]) => void; reviewRequested?: boolean; onReviewHandled?: () => void; activeTab?: 'people' | 'pets'; onTabChange?: (tab: 'people' | 'pets') => void }) {
+export function PeopleWorkspace(props: { isActive?: boolean; onPersonAnalysisChange?: (value: PersonAnalysisProgress) => void; analysis: PetAnalysis; items: MediaItem[]; onOpen: (item: MediaItem, collection?: MediaItem[]) => void; query?: string; onCreateAlbum: (items: MediaItem[]) => void; reviewRequested?: boolean; onReviewHandled?: () => void; activeTab?: 'people' | 'pets'; onTabChange?: (tab: 'people' | 'pets') => void }) {
   const [localTab, setTab] = useState(0);
   const tab = props.activeTab ? Number(props.activeTab === 'pets') : localTab;
   const [petsVisited, setPetsVisited] = useState(props.activeTab === 'pets');
@@ -26,7 +27,8 @@ export function PeopleWorkspace(props: { analysis: PetAnalysis; items: MediaItem
           select(next); buttons.current[next]?.focus();
         }}><Icon size={18} />{label}</button>)}
     </div>
-    <div id="people-panel-0" role="tabpanel" aria-labelledby="people-tab-0" hidden={tab !== 0}><PeopleView {...props} isActive={tab===0} /></div>
-    <div id="people-panel-1" role="tabpanel" aria-labelledby="people-tab-1" hidden={tab !== 1}>{petsVisited && <PetsView {...props} isActive={tab===1} />}</div>
+    <div id="people-panel-0" role="tabpanel" aria-labelledby="people-tab-0" hidden={tab !== 0}><PeopleView {...props} isActive={props.isActive !== false && tab===0} /></div>
+    <div id="people-panel-1" role="tabpanel" aria-labelledby="people-tab-1" hidden={tab !== 1}>{petsVisited && <PetsView {...props} isActive={props.isActive !== false && tab===1} />}</div>
   </section>;
 }
+
