@@ -58,3 +58,7 @@ local.properties
 # Reproducible synthetic training and private dataset outputs
 native-ai-output/
 public/models/native-dev/
+
+/public/evaluation/
+
+/benchmark-results/

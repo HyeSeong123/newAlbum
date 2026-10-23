@@ -1,0 +1,39 @@
+name: Pet detection comparison (100 dog and 100 cat)
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/pet-recognition-ux-20261023]
+    paths: ['benchmarks/**','.github/workflows/pet-detection-benchmark.yml']
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: node scripts/prepare-pet-models.mjs
+      - run: npx playwright install chromium
+      - name: Install image preparation dependency
+        run: python3 -m pip install Pillow
+      - uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/oxford-pet-archives
+          key: oxford-iiit-pet-official-md5-v1
+      - name: Download checksum-verified official test images
+        timeout-minutes: 10
+        run: python3 benchmarks/prepare_oxford.py "$RUNNER_TEMP/oxford-pet-archives"
+      - name: Compare fixed detection policies with identical weights and pixels
+        run: npx playwright test -c benchmarks/playwright.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pet-detection-comparison-${{ github.sha }}
+          path: benchmark-results/
+          if-no-files-found: ignore
+          retention-days: 14
