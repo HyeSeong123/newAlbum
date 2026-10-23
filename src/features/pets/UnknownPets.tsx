@@ -39,7 +39,7 @@ export function UnknownPets({ photos, pets, onSaved, selecting, onOpen }: { sele
     {!selecting && <FunctionHelp title="미확인 반려동물"><p>테두리가 있으면 인식한 반려동물만, 미확인 사진이면 사진 연결에 이름을 지정합니다. 같은 사진의 다른 반려동물은 유지됩니다.</p></FunctionHelp>}
     {loading && <p role="status">미확인 반려동물 불러오는 중…</p>}
     {error && <p role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
-    {!loading && !rows.length && !error && <p>미확인 반려동물이 없습니다. ‘반려동물 사진 찾기’에서 분석을 시작할 수 있어요.</p>}
+    {!loading && !rows.length && !error && <p>미확인 반려동물이 없습니다. ‘사진에서 반려동물 감지’로 사진을 확인해 보세요.</p>}
     <div className="petGrid" {...drag}>{rows.map(row=>{
       const item=photos.find(photo=>Number(photo.id)===row.media_id)!;
       return <button key={row.id} className="petPhoto" data-selection-id={row.id} aria-label={selecting?`반려동물 선택 ${row.id}`:`반려동물 사진 상세보기 ${row.id}`} aria-pressed={selecting?selection.includes(row.id):undefined} onClick={()=>{if(selecting)toggle(String(row.id));else onOpen(item,photos);}}><div className="petDetectionPreview" style={{aspectRatio:ratios[item.id]??(item.width && item.height?item.width/item.height:1)}} onLoadCapture={event=>{const image=event.target;if(image instanceof HTMLImageElement&&image.naturalHeight){const ratio=image.naturalWidth/image.naturalHeight;setRatios(current=>current[item.id]===ratio?current:{...current,[item.id]:ratio});}}}><MediaVisual item={item}/>{row.box_ && <span className="petDetectionBox" style={{left:`${row.box_[0]*100}%`,top:`${row.box_[1]*100}%`,width:`${row.box_[2]*100}%`,height:`${row.box_[3]*100}%`}}/>}</div>{selecting && <span className={`faceCheck ${selection.includes(row.id)?'checked':''}`} aria-hidden="true">{selection.includes(row.id) && <Check size={22}/>}</span>}<span>{row.id<0?'미확인 사진':'미확인 반려동물'}</span></button>;
