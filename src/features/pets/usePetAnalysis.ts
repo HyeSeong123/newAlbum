@@ -4,6 +4,7 @@ import type { MediaItem } from '../../types/media';
 import { isTauriRuntime, loadRegisteredMedia } from '../../services/tauriMediaService';
 import type { PetView } from './engine/types';
 import type { PetProgress } from './engine/manager';
+import { petAnalysisError } from './analysisError';
 interface Job { id:number;media_id:number;pet_id:number|null;view:PetView;state:'pending'|'paused'|'failed';error:string;refresh?:boolean }
 interface Queue {jobs:Job[];pending:number;paused:number;failed:number}
 export type PetAnalysis = ReturnType<typeof usePetAnalysis>;
@@ -15,7 +16,7 @@ export function usePetAnalysis(media: MediaItem[]) {
   const settled=useRef<Promise<void>>(Promise.resolve()), rerun=useRef(false);
   const relearning=useRef(false);
   const [progress,setProgress]=useState<PetProgress|null>(null), [waiting,setWaiting]=useState(0);
-  const report=useCallback((error:unknown)=>{if(mounted.current)setProgress({done:0,total:0,failed:1,detected:0,running:false,message:error instanceof Error?error.message:String(error)});},[]);
+  const report=useCallback((error:unknown)=>{if(mounted.current)setProgress({done:0,total:0,failed:1,detected:0,running:false,message:petAnalysisError(error)});},[]);
   const pump=useCallback(async():Promise<void>=>{
     if(!isTauriRuntime() || !mounted.current)return;
     if(controller.current){rerun.current=true;return;}
@@ -31,7 +32,7 @@ export function usePetAnalysis(media: MediaItem[]) {
         if(!queue?.jobs)break; // browser previews without native queue commands
         if(mounted.current)setWaiting(queue.paused+queue.failed);
         const pending = queue.jobs.filter(job => job.state === 'pending');
-        if(!pending.length){if(mounted.current && (done || queue.paused || queue.failed || relearning.current))setProgress({done,total:done,failed,detected,running:false,message:queue.paused+queue.failed?`완료 ${done}장 · 대기 ${queue.paused}장 · 재시도 필요 ${queue.failed}장${queue.jobs.find(j=>j.error)?.error?` (${queue.jobs.find(j=>j.error)!.error})`:''}`:retrained || relearning.current?`등록 사진 ${retrained}장 다시 분석 완료 · 인식 기준 ${learned}개 갱신${missed?` · 찾지 못함 ${missed}장 (사진 연결 유지)`:''} · 확인 필요 ${detected}마리`:`반려동물 확인 필요 ${detected}마리 · ${done}장 확인`});relearning.current=false;break;}
+        if(!pending.length){if(mounted.current && (done || queue.paused || queue.failed || relearning.current))setProgress({done,total:done,failed,detected,running:false,message:queue.paused+queue.failed?`완료 ${done}장 · 대기 ${queue.paused}장 · 분석하지 못한 사진 ${queue.failed}장${queue.jobs.find(j=>j.error)?.error?`\n${petAnalysisError(queue.jobs.find(j=>j.error)!.error)}`:''}`:retrained || relearning.current?`등록 사진 ${retrained}장 다시 분석 완료 · 인식 기준 ${learned}개 갱신${missed?` · 찾지 못함 ${missed}장 (사진 연결 유지)`:''} · 확인 필요 ${detected}마리`:`반려동물 확인 필요 ${detected}마리 · ${done}장 확인`});relearning.current=false;break;}
         let processedInBatch = 0;
         for (const job of pending) {
         abort.signal.throwIfAborted();
@@ -91,3 +92,4 @@ export function usePetAnalysis(media: MediaItem[]) {
     },false);
   },resume:()=>{schedule(async()=>{await settled.current;await invoke('control_pet_jobs',{resume:true});});},dismiss:()=>setProgress(null)};
 }
+

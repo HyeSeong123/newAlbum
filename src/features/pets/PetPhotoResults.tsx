@@ -1,4 +1,5 @@
 import { ManualPetRegion } from './ManualPetRegion';
+import { petAnalysisError } from './analysisError';
 import { FunctionHelp } from '../../components/FunctionHelp';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { LoaderCircle } from 'lucide-react';
@@ -38,7 +39,7 @@ function DetectionCard({ detection, item, pets, references, preferredPet, onSave
       const features=await extractPetCorrection(item,detection,view,kind,faceBox,inference.current.signal,view==='rear');
       if(view!=='rear' && !features.faceAppearance?.length)throw new Error('비교할 얼굴 영역을 지정해 주세요.');
       setPrepared({selection,features});setSelectFace(false);
-    }catch(reason){setError(reason instanceof Error?reason.message:String(reason));}
+    }catch(reason){setError(petAnalysisError(reason));}
     finally{inference.current=null;locked.current=false;setBusy(false);}
   }
   async function save(excluded = false) {
@@ -104,7 +105,7 @@ export function PetPhotoResults({ item }: { item: MediaItem }) {
     update();window.addEventListener('gamjassak-pet-results',update);
     return()=>{alive.current=false;abort.current?.abort();window.removeEventListener('gamjassak-pet-results',update);};
   },[refresh]);
-  async function reanalyze(){if(abort.current)return;abort.current=new AbortController();setBusy(true);setError('');try{await scanPetPhoto(item,abort.current.signal,'unknown',true,true);window.dispatchEvent(new Event('gamjassak-pet-results'));await refresh();}catch(reason){if(alive.current)setError(String(reason instanceof Error?reason.message:reason));}finally{abort.current=null;if(alive.current)setBusy(false);}}
+  async function reanalyze(){if(abort.current)return;abort.current=new AbortController();setBusy(true);setError('');try{await scanPetPhoto(item,abort.current.signal,'unknown',true,true);window.dispatchEvent(new Event('gamjassak-pet-results'));await refresh();}catch(reason){if(alive.current)setError(petAnalysisError(reason));}finally{abort.current=null;if(alive.current)setBusy(false);}}
   return <section className="petPhotoResults"><h3>반려동물</h3>{error && <p role="alert">{error}</p>}
     {!review ? <><p>{rows.filter(d=>!d.excluded).map(row=>row.pet_id ? pets.find(p=>p.id===row.pet_id)?.name ?? '미확인' : row.view==='rear' ? '뒷모습 · 확인 필요' : '반려동물 확인 필요').join(' · ') || '아직 확인한 반려동물이 없습니다.'}</p>{rows.length>0 && <button disabled={busy} onClick={()=>setReview(true)}>인식 결과 확인·수정</button>}</> : <>{rows.map(row=><DetectionCard key={`${row.id}:${row.pet_id}:${row.view}:${row.kind}:${row.faceBox}`} detection={row} item={item} pets={pets} references={references} onSaved={refresh}/>)}<button onClick={()=>setReview(false)}>접기</button></>}
     <button disabled={busy} onClick={()=>setAdding(true)}>반려동물 직접 추가</button>
@@ -113,3 +114,4 @@ export function PetPhotoResults({ item }: { item: MediaItem }) {
     <FunctionHelp title="연결 유지하고 재분석"><p>기존 사진 연결은 유지하고, 동물별 확인 내용과 특징은 새 분석으로 교체합니다.</p></FunctionHelp>
   </section>;
 }
+

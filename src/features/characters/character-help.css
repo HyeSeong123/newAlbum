@@ -1,0 +1,13 @@
+.characterHelp { display: grid; grid-template-columns: 80px minmax(0, 1fr); align-items: start; gap: 14px; min-width: 0; }
+.characterHelpPortrait .characterVisual { display: inline-block; width: 80px; height: 80px; }
+.characterHelpSpeech { position: relative; min-width: 0; padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-soft); color: var(--text); }
+.characterHelpSpeech::before { content: ''; position: absolute; left: -6px; top: 22px; width: 10px; height: 10px; transform: rotate(45deg); border-left: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--surface-soft); }
+.characterHelpName { display: block; margin-bottom: 8px; color: var(--text); font-size: 13px; font-weight: 700; }
+.characterHelpLines { display: grid; gap: 12px; }
+.characterHelpLines p { margin: 0; color: var(--text); font-size: 14px; line-height: 1.75; word-break: keep-all; overflow-wrap: anywhere; }
+.gomiHelpButton .characterVisual { width: 28px; height: 28px; flex: none; }
+@media (max-width: 480px) {
+  .characterHelp { grid-template-columns: 56px minmax(0, 1fr); gap: 10px; }
+  .characterHelpPortrait .characterVisual { width: 56px; height: 56px; }
+  .characterHelpSpeech { padding: 12px; }
+}

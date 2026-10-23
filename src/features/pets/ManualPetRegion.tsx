@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { petAnalysisError } from './analysisError';
 import { LoaderCircle } from 'lucide-react';
 import { EntityEditorDialog } from '../../components/EntityEditorDialog';
 import { FunctionHelp } from '../../components/FunctionHelp';
@@ -18,7 +19,7 @@ export function ManualPetRegion({item,onClose,onSaved}:{item:MediaItem;onClose:(
  async function save(){
   if(lock.current)return;lock.current=true;setBusy(true);setError('');abort.current=new AbortController();
   try {if(!saved.current){await addManualPetRegion(item,box,kind,view,abort.current.signal);saved.current=true;}window.dispatchEvent(new Event('gamjassak-pet-results'));await onSaved();onClose();}
-  catch(reason){setError(reason instanceof Error?reason.message:String(reason));}
+  catch(reason){setError(petAnalysisError(reason));}
   finally{lock.current=false;abort.current=null;setBusy(false);}
  }
  return <EntityEditorDialog title="반려동물 직접 추가" busy={busy} onClose={onClose} className="manualPetRegion">
@@ -38,3 +39,4 @@ export function ManualPetRegion({item,onClose,onSaved}:{item:MediaItem;onClose:(
   <footer className="peopleActions entityEditFooter"><button disabled={busy} onClick={onClose}>취소</button><button className="primaryControl" disabled={busy||box[2]<=0||box[3]<=0||box[0]+box[2]>1.000001||box[1]+box[3]>1.000001} onClick={()=>void save()}>{busy&&<LoaderCircle size={18} className="spinIcon"/>}영역 추가</button></footer>
  </EntityEditorDialog>;
 }
+

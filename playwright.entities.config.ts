@@ -6,6 +6,7 @@ import base from './playwright.config';
 export default defineConfig({
   ...base,
   testMatch: process.env.ENTITY_UX_BASELINE === '1' ? ['**/entity-visuals.spec.ts'] : [
+    '**/help-review.spec.ts',
     '**/entity-ux.spec.ts', '**/entity-visuals.spec.ts', '**/people-controls.spec.ts',
     '**/unknown-faces.spec.ts', '**/manual-photos.spec.ts', '**/pets.spec.ts',
     '**/pet-review.spec.ts', '**/people.spec.ts', '**/export-media.spec.ts',
@@ -23,3 +24,4 @@ export default defineConfig({
     timeout: 120_000,
   },
 });
+

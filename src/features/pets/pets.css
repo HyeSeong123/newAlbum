@@ -114,3 +114,5 @@
 .petCandidateActions>div {display:flex;flex-wrap:wrap;gap:8px;}
 .petCandidateActions button {min-height:44px;}
 .petCandidateActions button[aria-pressed="true"] {background:var(--surface-soft);border-color:var(--primary);}
+
+.petAnalysisNotice > [role="status"] { white-space: pre-line; overflow-wrap: anywhere; line-height: 1.7; }

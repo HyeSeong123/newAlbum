@@ -1,14 +1,51 @@
 .peopleView { display: grid; gap: 20px; }
 .personPhotoGrid.selecting { touch-action: pan-y pinch-zoom; user-select: none; }
 .entityEditDialog.faceMatchReview { width: min(880px, 100%); }
-.faceMatchBody { padding: 20px; min-height: 0; overflow: auto; }
-.faceMatchGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 20px; }
-.faceMatchItem { display: grid; gap: 10px; min-width: 0; cursor: pointer; }
-.faceMatchItem > label { display: grid; gap: 10px; cursor: pointer; }
-.faceMatchItem img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; }
-.faceMatchItem span { display: flex; align-items: center; gap: 8px; overflow-wrap: anywhere; }
-.faceMatchItem input { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--primary); }
-.faceMatchFooter { padding: 16px 20px; border-top: 1px solid var(--border); justify-content: flex-end; flex-shrink: 0; }
+.faceMatchBody { padding: 20px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.faceMatchSummary { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.faceMatchSummary p { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 0; color: var(--muted); font-size: 13px; }
+.faceMatchSummary p strong { color: var(--text); }
+.faceMatchSummary p > span { flex-basis: 100%; }
+.faceMatchGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; touch-action: pan-y pinch-zoom; user-select: none; }
+.faceMatchItem { display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--surface); }
+.faceMatchItem.selected { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); background: var(--surface-soft); }
+.faceMatchItem > label { display: grid; gap: 10px; min-width: 0; cursor: pointer; }
+.faceMatchPortrait { position: relative; display: block; overflow: hidden; border-radius: var(--radius-inner); }
+.faceMatchPortrait > img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
+.faceMatchCheck { position: absolute; top: 8px; left: 8px; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--surface); color: transparent; pointer-events: none; }
+.faceMatchCheck input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; appearance: none; border: 2px solid var(--surface); border-radius: 50%; background: transparent; cursor: pointer; pointer-events: auto; }
+.faceMatchCheck:has(input:checked) { color: #fff; background: var(--primary); }
+.faceMatchCheck svg { pointer-events: none; }
+.faceMatchName { color: var(--text); font-size: 14px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.faceMatchItem > .faceMatchCandidate { margin-top: auto; gap: 6px; color: var(--muted); font-size: 12px; }
+.faceMatchCandidate select { width: 100%; min-width: 0; min-height: 44px; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-inner); color: var(--text); background: var(--surface); font: inherit; font-size: 14px; }
+.faceMatchFooter { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 14px 20px; border-top: 1px solid var(--border); flex-shrink: 0; background: var(--surface); }
+.faceMatchFooter button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; color: var(--text); background: var(--surface); font: inherit; font-size: 13px; }
+.faceMatchFooter button:hover:not(:disabled) { background: var(--surface-soft); }
+.faceMatchSelection { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 13px; }
+.faceMatchSelection button { border-color: transparent; color: var(--text); }
+.faceMatchPages { display: flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; font-size: 13px; }
+.faceMatchPages button { width: 44px; padding: 8px; }
+.faceMatchSaveActions { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 10px; }
+.faceMatchFooter .primary { color: #fff; background: var(--primary); border-color: var(--primary); }
+.faceMatchFooter .primary:hover:not(:disabled) { background: var(--secondary); border-color: var(--secondary); }
+.faceMatchError { color: var(--danger); font-size: 14px; line-height: 1.6; }
+.faceMatchEmpty { padding: 24px 0; color: var(--muted); text-align: center; }
+@media (max-width: 600px) {
+  .faceMatchBody { padding: 16px; }
+  .faceMatchGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .faceMatchItem { padding: 8px; }
+  .faceMatchFooter { padding: 12px 16px; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .faceMatchSelection { justify-content: space-between; }
+  .faceMatchPages { justify-self: center; }
+  .faceMatchSaveActions { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); }
+  .faceMatchFooter button { padding: 8px; white-space: normal; line-height: 1.4; }
+}
+@media (max-height: 500px) {
+  .faceMatchFooter { grid-template-columns: minmax(0, 1fr) auto; padding-block: 8px; }
+  .faceMatchSelection, .faceMatchPages { grid-row: 1; }
+  .faceMatchSelection { justify-content: flex-start; }
+}
 .peopleView h2 { margin: 0; }
 .peopleActions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .peopleActions button { min-height: 42px; padding: 8px 14px; border: 1px solid var(--border); border-radius: 9999px; background: #fff; color: var(--text); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
@@ -80,3 +117,4 @@
 .faceSelectionPanel .peopleSectionHint { margin: 0; }
 .faceSelectionActions:has(select[aria-label="옮길 사람"]) .faceActionField:first-child { grid-column: 1 / -1; }
 @media (max-width: 600px) { .faceSelectionPanel { padding: 12px; } .faceSelectionPanel .faceSelectionActions { grid-template-columns: minmax(0, 1fr); } .faceSelectionPanel .faceSelectionActions button { width: 100%; height: auto; min-height: 44px; white-space: normal; line-height: 1.3; padding: 10px; } }
+

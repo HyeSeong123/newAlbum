@@ -1,24 +1,25 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
-import { CharacterVisual } from "./CharacterVisual";
-import { characterDefinitions } from "./models";
+import { CharacterSpeech, useHelpCharacter } from "./CharacterHelp";
 import { guideTopics, type GuideTopic } from "./guideTopics";
 import "./gomi-guide.css";
 import { gomiGuideCopy } from "./gomiAffinity";
 
-export function GomiGuide({ initialTopic = "photos", affection = 0, topicOnly = false, onClose, onAction }: {
-  affection?: number; initialTopic?: GuideTopic; topicOnly?: boolean; onClose: () => void; onAction: (topic: GuideTopic) => void;
+export function GomiGuide({ initialTopic = "photos", topicOnly = false, onClose, onAction }: {
+  initialTopic?: GuideTopic; topicOnly?: boolean; onClose: () => void; onAction: (topic: GuideTopic) => void;
 }) {
   const topics = topicOnly ? guideTopics.filter(topic => topic.id === initialTopic) : guideTopics;
   const [topicIndex, setTopicIndex] = useState(() => Math.max(0, topics.findIndex(topic => topic.id === initialTopic)));
   const [stepIndex, setStepIndex] = useState(0);
   const panel = useRef<HTMLElement>(null);
   const body = useRef<HTMLDivElement>(null);
-  const gomi = characterDefinitions.find(def => def.id === "gomi")!;
+  const character = useHelpCharacter();
   const topic = topics[topicIndex];
   const step = topic.steps[stepIndex];
-  const copy = gomiGuideCopy(topic.id, stepIndex, affection, step.detail);
+  const copy = character.definition.type === "gomi"
+    ? gomiGuideCopy(topic.id, stepIndex, character.affection, step.detail)
+    : { line: character.definition.personality?.speechTone || "같이 차근차근 살펴볼게요.", detail: step.detail };
   useModalBehavior(onClose);
   useEffect(() => {
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -44,14 +45,16 @@ export function GomiGuide({ initialTopic = "photos", affection = 0, topicOnly = 
         if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
       }}>
-      <header className="gomiGuideHeader"><div><small>궁금한 건 고미에게</small><h2 id="gomiGuideTitle">고미 도움말</h2></div><button type="button" className="closeButton" aria-label="도움말 닫기" onClick={onClose}><X size={20} /></button></header>
+      <header className="gomiGuideHeader"><div><small>{character.name}와 함께 살펴봐요</small><h2 id="gomiGuideTitle">사용 방법</h2></div><button type="button" className="closeButton" aria-label="도움말 닫기" onClick={onClose}><X size={20} /></button></header>
       <nav className="gomiGuideTopics" aria-label="도움말 주제">{topics.map((item, index) => <button key={item.id} type="button" aria-pressed={index === topicIndex} onClick={() => { setTopicIndex(index); setStepIndex(0); }}>{item.label}</button>)}</nav>
       <div className="gomiGuideBody" ref={body}>
-        <div className="gomiGuideCompanion"><CharacterVisual definition={gomi} stage={6} affection={affection} /><p className="gomiGuideSpeech" role="status" aria-live="polite" aria-atomic="true">{copy.line}</p></div>
-        <article className="gomiGuideStep" aria-labelledby="gomiStepTitle"><small>{topic.label} · {stepIndex + 1} / {topic.steps.length}</small><h3 id="gomiStepTitle">{step.title}</h3><p>{copy.detail}</p></article>
+        <article className="gomiGuideStep" aria-labelledby="gomiStepTitle"><small>{topic.label} · {stepIndex + 1} / {topic.steps.length}</small><h3 id="gomiStepTitle">{step.title}</h3>
+          <CharacterSpeech><p>{copy.line}</p><p>{copy.detail}</p></CharacterSpeech>
+        </article>
         <button className="gomiGuideAction" type="button" onClick={() => onAction(topic.id)}>{topic.actionLabel}<ArrowUpRight size={17} aria-hidden="true" /></button>
       </div>
       <footer className="gomiGuideFooter"><button type="button" disabled={topicIndex === 0 && stepIndex === 0} onClick={previous}><ChevronLeft size={16} aria-hidden="true" />이전</button><button type="button" className="primary" onClick={next}>{topicIndex === topics.length - 1 && stepIndex === topic.steps.length - 1 ? "설명 마치기" : "다음"}<ChevronRight size={16} aria-hidden="true" /></button></footer>
     </section>
   </div>;
 }
+

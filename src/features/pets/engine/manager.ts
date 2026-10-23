@@ -5,6 +5,7 @@ import { ENGINE_VERSION, type PetDetection, type PetFeatures, type PetReference,
 import { loadPets } from '../petService';
 import { analyzePetImage } from './client';
 import { withView } from './matcher';
+import { petAnalysisError } from '../analysisError';
 export const getPetScan = (mediaId: number) => invoke<ScanRecord | null>('get_pet_scan', { mediaId });
 export const listPetDetections = (mediaId: number | null = null, afterId = 0, references = false, limit = 100) => invoke<PetDetection[]>('list_pet_detections', { mediaId, afterId, references, limit });
 export const confirmPetDetection = (detectionId: number, petId: number | null, view: PetView, excluded = false) => invoke<void>('confirm_pet_detection', { detectionId, petId, view, excluded });
@@ -81,13 +82,13 @@ export async function scanPetBatch(items: MediaItem[], signal: AbortSignal, prog
       }
       detected += scan.detections.filter(d => !d.excluded && d.pet_id === null).length;
     }
-    catch (error) { if (signal.aborted) break; failed++; lastError = error instanceof Error ? error.message : String(error); }
+    catch (error) { if (signal.aborted) break; failed++; lastError = petAnalysisError(error); }
     done++;
     window.dispatchEvent(new Event('gamjassak-pet-results'));
     await new Promise(resolve => setTimeout(resolve, 0));
   }
   progress({ done, total: photos.length, failed, detected, learned, missed, running: false,
-    message: signal.aborted ? '반려동물 분석을 중단했습니다. 완료한 결과는 저장되었습니다.' : `반려동물 확인 필요 ${detected}마리 · ${done}장 확인${failed ? ` · 실패 ${failed}장 (${lastError})` : ''}` });
+    message: signal.aborted ? '반려동물 분석을 중단했습니다. 완료한 결과는 저장되었습니다.' : `반려동물 확인 필요 ${detected}마리 · ${done}장 확인${failed ? ` · 분석하지 못한 사진 ${failed}장\n${lastError}` : ''}` });
 }
 
 export const rejectPetCandidate = (detectionId:number,petId:number,rejected=true) => invoke<void>('reject_pet_candidate',{detectionId,petId,rejected});
@@ -100,3 +101,4 @@ export async function addManualPetRegion(item:MediaItem,box:PetFeatures['box'],k
  signal?.throwIfAborted();
  return invoke<number>('add_manual_pet_detection',{mediaId:Number(item.id),sourceKey:input.sourceKey,features:{...features,detectionSource:'user',detectedKind:undefined}});
 }
+
