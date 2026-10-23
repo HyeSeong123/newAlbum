@@ -73,5 +73,5 @@ for(const fallback of [false,true])test(`video grid decodes a real preview ${fal
   await expect(image).toHaveAttribute('src',fallback?/^data:image\/jpeg/:/thumbnail/);
   await expect(tile.locator('video')).toHaveCount(0);
   await tile.click();const player=page.getByRole('dialog',{name:'사진 상세',exact:true}).locator('video');
-  await expect(player).toBeVisible();await expect.poll(()=>player.evaluate(video=>video.readyState)).toBeGreaterThanOrEqual(2);
+  await expect(player).toBeVisible();await expect.poll(()=>player.evaluate((video:HTMLVideoElement)=>video.readyState)).toBeGreaterThanOrEqual(2);
 });
