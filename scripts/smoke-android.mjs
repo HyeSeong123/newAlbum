@@ -168,9 +168,10 @@ async function keyboardSafeWebView(before) {
   assert.ok(webView[3] < before[3] - 100, 'The native WebView must shrink above the keyboard when typing');
   await writeFile(join(output, 'keyboard-bounds.json'), JSON.stringify({ before, withKeyboard:webView }, null, 2));
 }
-async function loadedAlbumPhoto(reader) {
+async function loadedAlbumPreviews(reader) {
   const photos = reader.locator('.albumPagePhoto img.mediaImage');
-  await expect(photos).toHaveCount(1);
+  // This album contains one photo and one video; both now have previews.
+  await expect(photos).toHaveCount(2);
   // Native file URLs are asynchronous. A visible <img> or book background
   // alone does not prove the imported photo decoded after activity recreation.
   await expect.poll(() => photos.evaluateAll(images => images.every(image => image.complete && image.naturalWidth > 0)), { timeout:45_000 }).toBe(true);
@@ -450,7 +451,7 @@ try {
   await page.getByRole('button', { name:'안드로이드에서 담은 추억 앨범 열기', exact:true }).click();
   let reader = page.getByRole('dialog', { name:'앨범 전체창', exact:true });
   await expect(reader.locator('.albumBookBase')).toBeVisible();
-  await loadedAlbumPhoto(reader);
+  await loadedAlbumPreviews(reader);
   await captureScreen('system-bars-book-opening-threebutton');
   await writeFile(join(output, 'book-viewport.json'), JSON.stringify(await page.evaluate(() => ({
     width:innerWidth, height:innerHeight, visualHeight:visualViewport?.height,
@@ -493,7 +494,7 @@ try {
   await page.getByRole('button', { name:'안드로이드에서 담은 추억 앨범 열기', exact:true }).click();
   reader = page.getByRole('dialog', { name:'앨범 전체창', exact:true });
   await expect(reader.locator('.albumBookBase')).toBeVisible();
-  await loadedAlbumPhoto(reader);
+  await loadedAlbumPreviews(reader);
   await expect(reader.getByLabel('앨범 책장 이동')).toBeInViewport();
   await captureScreen('system-bars-book-gestural');
   const albumMenuTrigger = reader.getByRole('button', { name:'앨범 보기 옵션', exact:true });
@@ -781,7 +782,7 @@ try {
   assert.equal((await page.evaluate(() => JSON.parse(localStorage.getItem('oraedameun.calendarRegistrations-v1')))).length, 1);
   await page.locator('.navList').getByRole('button', { name:'내 앨범', exact:true }).click();
   await page.getByRole('button', { name:'안드로이드에서 담은 추억 앨범 열기', exact:true }).click();
-  await loadedAlbumPhoto(page.getByRole('dialog', { name:'앨범 전체창', exact:true }));
+  await loadedAlbumPreviews(page.getByRole('dialog', { name:'앨범 전체창', exact:true }));
   await captureScreen('system-bars-book-after-restart');
   console.log('Android installation, system-bar bounds (three-button and gesture), import controls, bound album, real folder picker/content URI copying, byte progress, warm resume, SQLite/calendar persistence and back navigation: OK');
 } catch (error) {
