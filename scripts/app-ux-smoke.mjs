@@ -16,8 +16,8 @@ export async function verifyInstalledAppUx(page, mediaId, pet, back, captureNati
   await homePeople.scrollIntoViewIfNeeded();await capture('app-ux-home-people');await homePeople.click();
   await page.getByRole('tab',{name:'반려동물',exact:true}).click();
   await page.getByRole('button',{name:`${pet.name} ${pet.media_ids.length}장`,exact:true}).click();
-  await page.getByRole('button',{name:'고미 도움말 열기',exact:true}).click();
-  const guide=page.getByRole('dialog',{name:'고미 도움말',exact:true});
+  await page.getByRole('button',{name:'사용 방법 도움말 열기',exact:true}).click();
+  const guide=page.getByRole('dialog',{name:'사용 방법',exact:true});
   await expect(guide.locator('.gomiGuideTopics button')).toHaveCount(1);
   await expect(guide.locator('.gomiGuideTopics')).toHaveText('반려동물');
   await capture('app-ux-pet-help');await back();await expect(guide).toHaveCount(0);
