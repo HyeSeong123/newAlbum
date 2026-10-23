@@ -25,9 +25,13 @@ export function UnknownPets({ photos, pets, onSaved, selecting, onOpen }: { sele
     return {found:batch.slice(0,24).filter(row=>byId.has(row.media_id)),more:batch.length>24};
   }
   useEffect(()=>{
-    let alive=true;setLoading(true);setError('');
-    read(page).then(result=>{if(alive){setRows(result.found);setNext(result.more);}}).catch(reason=>{if(alive)setError(String(reason));}).finally(()=>{if(alive)setLoading(false);});
-    return()=>{alive=false;};
+    let alive=true,request=0;
+    const refresh=()=>{
+      const current=++request;setLoading(true);setError('');
+      read(page).then(result=>{if(alive&&current===request){setRows(result.found);setNext(result.more);}}).catch(reason=>{if(alive&&current===request)setError(String(reason));}).finally(()=>{if(alive&&current===request)setLoading(false);});
+    };
+    refresh();window.addEventListener('gamjassak-pet-results',refresh);
+    return()=>{alive=false;window.removeEventListener('gamjassak-pet-results',refresh);};
   },[page,photos]);
   const toggle=(id:string)=>setSelection(current=>current.includes(Number(id))?current.filter(value=>value!==Number(id)):[...current,Number(id)]);
   const drag=useRowSelection(selecting && !loading,toggle,id=>selection.includes(Number(id)));
