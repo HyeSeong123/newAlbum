@@ -8,7 +8,6 @@ import { REGION_NAMES } from "../map/regions";
 import { KOREAN_DISTRICTS } from "../map/koreanDistricts";
 import "./media-import.css";
 import { isAndroidRuntime } from "../../services/tauriMediaService";
-import { CameraLocationNotice } from "../../components/CameraLocationNotice";
 import { CalendarRegistrationFields } from "../calendar/CalendarRegistrationFields";
 import { calendarRegistrationError, type CalendarRegistrationOptions } from "../calendar/calendarModel";
 
@@ -39,15 +38,14 @@ export function MediaImportModal({ onClose, onImport }: { onClose: () => void; o
 
   return <div className="modalBackdrop">
     <section ref={panel} tabIndex={-1} onKeyDown={onKeyDown} className="mediaImportDialog" role="dialog" aria-modal="true" aria-labelledby="mediaImportTitle">
-      <header className="mediaImportHeader"><div><h2 id="mediaImportTitle">사진·영상 가져오기</h2><p>간직하고 싶은 순간을 기록에 담아보세요.</p></div><button type="button" className="closeButton" aria-label="닫기" disabled={busy} onClick={onClose}><X size={18} /></button></header>
+      <header className="mediaImportHeader"><div><h2 id="mediaImportTitle">사진·영상 가져오기</h2></div><button type="button" className="closeButton" aria-label="닫기" disabled={busy} onClick={onClose}><X size={18} /></button></header>
       <form onSubmit={event => void submit(event)}>
         <div className="mediaImportBody">
-        <CameraLocationNotice />
         {isAndroidRuntime() && <p className="mediaImportStorageHint">선택한 사진과 영상은 앱에 복사해 보관해요. 원본은 그대로 두며, 선택한 파일 크기만큼 휴대폰 저장 공간을 사용해요. 사진 위치정보 접근을 허용하면 원본에 저장된 촬영 위치를 읽어요.</p>}
         <fieldset disabled={busy} className="mediaImportFields">
           <fieldset className="mediaImportMethods"><legend>가져오기 방식</legend>
             {([{ value: "files", label: "사진·영상 가져오기", description: isAndroidRuntime() ? "갤러리에서 최근 수정 순으로 골라요" : "원하는 파일을 골라 담아요", Icon: Images }, { value: "folder", label: "폴더 가져오기", description: "폴더 안의 기록을 함께 담아요", Icon: FolderOpen }] as const).map(method => <label key={method.value} className={kind === method.value ? "selected" : ""}>
-              <input type="radio" name="importMethod" value={method.value} checked={kind === method.value} onChange={() => setKind(method.value)} /><method.Icon size={21} aria-hidden="true" /><span><strong>{method.label}</strong><small>{method.description}</small></span>
+              <input type="radio" data-help={method.value === "files" ? "import-files" : "import-folder"} name="importMethod" value={method.value} checked={kind === method.value} onChange={() => setKind(method.value)} /><method.Icon size={21} aria-hidden="true" /><span><strong>{method.label}</strong></span>
             </label>)}
           </fieldset>
           <fieldset className="mediaImportRegion"><legend>촬영 지역 <span>선택 사항</span></legend>

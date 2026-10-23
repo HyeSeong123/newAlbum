@@ -50,7 +50,7 @@ export function AlbumEditor({ album, onClose, onSave, initialSection = "details"
               ["photos", `사진 관리 · ${draft.items.length}`],
             ] as const).map(([key, label]) => <button key={key} type="button" aria-current={section === key ? "page" : undefined} onClick={() => { setSection(key); setError(""); }}>{label}</button>)}
           </nav>
-          {section === "details" && <section className="albumEditorSimple"><h3>앨범 정보</h3><p>앨범 이름과 표지 색상을 바꿀 수 있습니다.</p><label className="albumTitleField">제목<input required maxLength={80} value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} /></label>
+          {section === "details" && <section className="albumEditorSimple"><h3>앨범 정보</h3><label className="albumTitleField">제목<input required maxLength={80} value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} /></label>
             <AlbumColorPicker value={draft.coverColor} onChange={(coverColor) => setDraft({ ...draft, coverColor })} items={draft.items} title={draft.title} /></section>}
           {section === "photos" && <section className="albumEditorSimple"><h3>사진 관리</h3><p>앨범에서 제외할 사진을 선택하세요. 원본 사진은 유지됩니다.</p>
           <div className="albumActions"><strong>사진 {draft.items.length}장</strong><button type="button" disabled={!chosen.length} onClick={removeChosen}><Trash2 size={17} />앨범에서 삭제{chosen.length > 0 ? ` (${chosen.length})` : ""}</button></div>

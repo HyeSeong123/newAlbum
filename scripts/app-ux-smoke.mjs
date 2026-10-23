@@ -16,10 +16,12 @@ export async function verifyInstalledAppUx(page, mediaId, pet, back, captureNati
   await homePeople.scrollIntoViewIfNeeded();await capture('app-ux-home-people');await homePeople.click();
   await page.getByRole('tab',{name:'반려동물',exact:true}).click();
   await page.getByRole('button',{name:`${pet.name} ${pet.media_ids.length}장`,exact:true}).click();
-  await page.getByRole('button',{name:'사용 방법 도움말 열기',exact:true}).click();
-  const guide=page.getByRole('dialog',{name:'사용 방법',exact:true});
-  await expect(guide.locator('.gomiGuideTopics button')).toHaveCount(1);
-  await expect(guide.locator('.gomiGuideTopics')).toHaveText('반려동물');
+  await page.getByRole('button',{name:'현재 화면 도움말',exact:true}).click();
+  const guide=page.getByRole('dialog',{name:'버튼 도움말',exact:true});
+  await expect(guide.getByRole('heading',{name:'인물',exact:true})).toBeVisible();
+  await guide.getByRole('button',{name:'다음',exact:true}).click();
+  await expect(guide.getByRole('heading',{name:'반려동물',exact:true})).toBeVisible();
+  assert.equal(await page.locator('[data-help-highlighted]').getAttribute('id'),'people-tab-1');
   await capture('app-ux-pet-help');await back();await expect(guide).toHaveCount(0);
   await expect(page.locator('.petsView h2')).toHaveText(petHeading);
 
@@ -47,10 +49,10 @@ export async function verifyInstalledAppUx(page, mediaId, pet, back, captureNati
   const tile=page.locator(`.mediaTile[data-media-id="${mediaId}"]`);await tile.click();
   await expect(page.locator('.selectionDock')).toContainText('항목 1개 선택');
   await capture('app-ux-photo-selection');
-  await page.locator('.selectionDock').getByRole('button',{name:'항목 선택 도움말',exact:true}).click();
-  await expect(page.getByRole('dialog',{name:'항목 선택 도움말',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'현재 화면 도움말',exact:true}).click();
+  await expect(page.getByRole('dialog',{name:'버튼 도움말',exact:true})).toBeVisible();
   await capture('app-ux-selection-help');await back();
-  await expect(page.getByRole('dialog',{name:'항목 선택 도움말',exact:true})).toHaveCount(0);
+  await expect(page.getByRole('dialog',{name:'버튼 도움말',exact:true})).toHaveCount(0);
   await expect(page.locator('.selectionDock')).toContainText('항목 1개 선택');
 
   await back();await expect(page.locator('.libraryView')).toBeVisible();await expect(page.locator('.selectionDock')).toHaveCount(0);

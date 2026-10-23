@@ -59,12 +59,14 @@ export function ActionMenu({ label, icon, triggerText, disabled = false, actions
   useEffect(() => {
     if (!open) return;
     const closeOutside = (event: PointerEvent) => {
+      if ((event.target as Element | null)?.closest('[data-help-ui]')) return;
       if (!root.current?.contains(event.target as Node) && !panel.current?.contains(event.target as Node)) setOpen(false);
     };
     document.addEventListener("pointerdown", closeOutside);
     return () => document.removeEventListener("pointerdown", closeOutside);
   }, [open]);
   return <div className="actionMenu" ref={root} onBlur={(event) => {
+    if ((event.relatedTarget as Element | null)?.closest('[data-help-ui]')) return;
     if (!event.currentTarget.contains(event.relatedTarget as Node | null) && !panel.current?.contains(event.relatedTarget as Node | null)) setOpen(false);
   }} onKeyDown={(event) => {
     if (event.key === "Escape" && open) {

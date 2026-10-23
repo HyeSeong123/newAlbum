@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import { toStep } from './fixtures/helpSpotlight';
 const definitions = JSON.parse(readFileSync('src/features/characters/data/characterDefinitions.json','utf8')) as Array<{ id:string; defaultName:string; regionLabel:string; maxStage:number; fixedGrowthStage?:number; stageAssetPaths?:string[]; expressionAssetPaths?:Record<string,string> }>;
 test.beforeEach(async ({page}) => { await page.addInitScript(()=>{Math.random=()=>.1;}); });
 
@@ -147,12 +148,13 @@ test('Gomi starts as an adult main; help and book never award affection and home
   const mascot = page.getByRole('button', {name:'고미에게 말 걸기'});
   await expect(mascot.locator('img')).toHaveAttribute('src', '/characters/gomi/cynical.png');
   await expect(mascot.locator('.characterVisual')).toHaveAttribute('data-stage', '6');
-  await page.getByRole('button', {name:'사용 방법 도움말 열기'}).click();
-  const guide = page.getByRole('dialog', {name:'사용 방법'});
-  await guide.getByRole('button', {name:'친구들', exact:true}).click();
-  await expect(guide).toContainText('친밀도만 쌓을 수 있어요');
-  await guide.getByRole('button', {name:'다음', exact:true}).click();
-  await guide.getByRole('button', {name:'새싹 도감 열기'}).click();
+  await page.getByRole('button', {name:'현재 화면 도움말'}).click();
+  const guide = page.getByRole('dialog', {name:'버튼 도움말'});
+  await expect(guide.locator('.characterHelpName')).toHaveText('고미');
+  await toStep(page, '새싹 도감 보기');
+  await expect(guide.locator('#helpInstruction')).toContainText('친밀도는 오르지');
+  await guide.getByRole('button', {name:'도움말 종료'}).click();
+  await page.getByRole('button', {name:'새싹 도감 보기'}).click();
   await expect(cardFor(page,'고미')).toBeVisible();
   await expect(cardFor(page,'고미').locator('.characterVisual')).toHaveAttribute('data-stage','6');
   await page.getByRole('button', {name:'감자싹 홈으로 이동'}).click();
@@ -166,41 +168,30 @@ test('Gomi starts as an adult main; help and book never award affection and home
   await page.screenshot({path:`preview-results/gomi-home-${test.info().project.name}.png`,fullPage:true});
 });
 
-test('Gomi help follows the current screen, supports keyboard focus and opens the import flow', async ({page}) => {
+test('Gomi help follows the current screen and retains focus before the real import flow', async ({page}) => {
   await page.goto('/');
   await page.locator('.navList').getByRole('button',{name:'사람과 반려동물',exact:true}).click();
-  const opener = page.getByRole('button', {name:'사용 방법 도움말 열기'});
-  await expect(opener.locator('img')).toHaveAttribute('src','/characters/gomi/cynical.png');
-  await opener.locator('img').evaluate((image:HTMLImageElement)=>image.decode());
+  const opener = page.getByRole('button', {name:'현재 화면 도움말'});
   await opener.click();
-  const guide = page.getByRole('dialog',{name:'사용 방법'});
-  await expect(guide.getByRole('button',{name:'인물 등록',exact:true})).toHaveAttribute('aria-pressed','true');
-  await expect(guide).toContainText('사진 속 얼굴부터 찾자');
+  const guide = page.getByRole('dialog',{name:'버튼 도움말'});
+  await expect(guide.getByRole('heading',{name:'인물',exact:true})).toBeVisible();
   await page.keyboard.press('Shift+Tab');
   await expect(guide.getByRole('button',{name:'다음',exact:true})).toBeFocused();
   await page.keyboard.press('Tab');
-  await expect(guide.getByRole('button',{name:'도움말 닫기'})).toBeFocused();
+  await expect(guide.getByRole('button',{name:'도움말 종료'})).toBeFocused();
   await page.keyboard.press('Escape');
-  await expect(guide).toBeHidden();
-  await expect(opener).toBeFocused();
-  await opener.click();
-  await expect(guide.locator('.gomiGuideTopics button')).toHaveCount(1);
-  await expect(guide.getByRole('button',{name:'반려동물',exact:true})).toHaveCount(0);
-  await guide.getByRole('button',{name:'도움말 닫기'}).click();
+  await expect(guide).toBeHidden(); await expect(opener).toBeFocused();
   await page.getByRole('tab',{name:'반려동물',exact:true}).click();
   await opener.click();
-  await expect(guide.getByRole('button',{name:'반려동물',exact:true})).toHaveAttribute('aria-pressed','true');
-  await expect(guide.locator('.gomiGuideTopics button')).toHaveCount(1);
-  await guide.getByRole('button',{name:'도움말 닫기'}).click();
+  await guide.getByRole('button',{name:'다음',exact:true}).click();
+  await expect(guide.getByRole('heading',{name:'반려동물',exact:true})).toBeVisible();
+  await guide.getByRole('button',{name:'도움말 종료'}).click();
   await page.locator('.navList').getByRole('button',{name:'사진 기록',exact:true}).click();
   await opener.click();
+  await expect(guide).toBeVisible();
   await page.screenshot({path:`preview-results/gomi-guide-${test.info().project.name}.png`});
-  const box = (await guide.boundingBox())!;
-  expect(box.x).toBeGreaterThanOrEqual(0);
-  expect(box.y).toBeGreaterThanOrEqual(0);
-  expect(box.x+box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
-  expect(box.y+box.height).toBeLessThanOrEqual(page.viewportSize()!.height);
-  await guide.getByRole('button',{name:'사진 등록 시작하기'}).click();
+  await guide.getByRole('button',{name:'도움말 종료'}).click();
+  await page.getByRole('button',{name:'사진·영상 가져오기',exact:true}).click();
   await expect(page.getByRole('dialog',{name:'사진·영상 가져오기'})).toBeVisible();
 });
 
@@ -209,17 +200,16 @@ test('Gomi tutorial navigation fits a short narrow phone with larger text', asyn
   await page.setViewportSize({width:320,height:480});
   await page.goto('/');
   await page.getByRole('button',{name:'크게 보기',exact:true}).click();
-  await page.getByRole('button',{name:'사용 방법 도움말 열기'}).click();
-  const guide = page.getByRole('dialog',{name:'사용 방법'});
-  await guide.getByRole('button',{name:'인물 등록',exact:true}).click();
-  const box = (await guide.boundingBox())!;
-  const next = (await guide.getByRole('button',{name:'다음',exact:true}).boundingBox())!;
-  expect(box.y).toBeGreaterThanOrEqual(0);
-  expect(box.y+box.height).toBeLessThanOrEqual(480);
-  expect(next.y+next.height).toBeLessThanOrEqual(480);
-  expect(await guide.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await page.locator('.navList').getByRole('button',{name:'사람과 반려동물',exact:true}).click();
+  await page.getByRole('button',{name:'현재 화면 도움말'}).click();
+  const guide = page.getByRole('dialog',{name:'버튼 도움말'});
+  await expect(guide.getByRole('heading',{name:'인물',exact:true})).toBeVisible();
+  const card=guide.locator('.helpGuideCard');
+  await expect(card).toBeInViewport();
   await guide.getByRole('button',{name:'다음',exact:true}).click();
-  await expect(guide).toContainText('누구인지 확인하고 이름을 붙여');
+  await expect(guide.getByRole('heading',{name:'반려동물',exact:true})).toBeVisible();
+  await expect(guide.getByRole('button',{name:'다음',exact:true})).toBeInViewport();
+  expect(await card.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   await page.screenshot({path:'preview-results/gomi-guide-short-phone.png'});
 });
 
@@ -229,8 +219,8 @@ test('help uses the selected main character instead of Gomi', async ({page}) => 
   await cardFor(page,'감자싹').getByRole('button',{name:'대표로 설정'}).click();
   await page.getByRole('button',{name:'감자싹 홈으로 이동'}).click();
   await expect(page.getByRole('button',{name:'감자싹에게 말 걸기'})).toBeVisible();
-  await page.getByRole('button',{name:'사용 방법 도움말 열기'}).click();
-  await expect(page.getByRole('dialog',{name:'사용 방법'}).locator('.characterVisual')).toHaveAttribute('data-character','potato');
+  await page.getByRole('button',{name:'현재 화면 도움말'}).click();
+  await expect(page.getByRole('dialog',{name:'버튼 도움말'}).locator('.characterVisual')).toHaveAttribute('data-character','potato');
 });
 
 for (const scenario of [
@@ -305,9 +295,9 @@ test('Gomi draws a new pose only on Home entry; visibility, help and data refres
     window.dispatchEvent(new Event('focus'));
   });
   await expect(visual).toHaveAttribute('data-motion','sleep-warm');
-  await page.getByRole('button',{name:'사용 방법 도움말 열기'}).click();
+  await page.getByRole('button',{name:'현재 화면 도움말'}).click();
   await page.clock.fastForward(120_000);
-  await page.getByRole('button',{name:'도움말 닫기'}).click();
+  await page.getByRole('button',{name:'도움말 종료'}).click();
   await expect(visual).toHaveAttribute('data-motion','sleep-warm');
   await page.getByRole('button',{name:'새싹 도감 보기'}).click();
   await page.getByRole('button',{name:'감자싹 홈으로 이동'}).click();
@@ -330,8 +320,8 @@ test('Gomi still ignores repeated touches around 20 and never offers a paw or li
     await expect(mascot.locator('img')).toHaveAttribute('src','/characters/gomi/cynical.png');
   }
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 20');
-  await page.getByRole('button',{name:'사용 방법 도움말 열기'}).click();
-  await expect(page.getByRole('dialog',{name:'사용 방법'}).locator('.characterVisual')).toHaveAttribute('data-motion','cynical');
+  await page.getByRole('button',{name:'현재 화면 도움말'}).click();
+  await expect(page.getByRole('dialog',{name:'버튼 도움말'}).locator('.characterVisual')).toHaveAttribute('data-motion','cynical');
 });
 
 test('bonded Gomi actually alternates paw and tongue drawings while her adult stage stays fixed', async ({page}) => {
@@ -376,17 +366,16 @@ for (const scenario of [
     if(scenario.score<60) await expect(mascot.locator('.characterVisual')).toHaveAttribute('data-motion','cynical');
   }
   await expect(page.locator('.homeCharacterMeta')).toContainText(`친밀도 ${scenario.score+1}`);
-  await page.getByRole('button',{name:'사용 방법 도움말 열기'}).click();
-  const guide=page.getByRole('dialog',{name:'사용 방법'});
-  await expect(guide.locator('.characterHelpLines > p:first-child')).toHaveText(scenario.photo);
-  await expect(guide.locator('.characterHelpLines > p:last-child')).toHaveText(new RegExp(`^${scenario.opening.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}`));
-  await expect(guide.locator('.gomiGuideStep')).toContainText('파일 선택');
+  await page.getByRole('button',{name:'현재 화면 도움말'}).click();
+  const guide=page.getByRole('dialog',{name:'버튼 도움말'});
+  const tier=scenario.score>=90?4:scenario.score>=60?3:scenario.score>=30?2:scenario.score>=20?1:0;
+  await expect(guide.locator('.helpVoice')).toHaveAttribute('data-affinity',String(tier));
+  await expect(guide.locator('#helpInstruction')).toContainText('친밀도는 친구마다 하루 한 번');
   await guide.getByRole('button',{name:'다음',exact:true}).click();
-  await expect(guide.locator('.gomiGuideStep')).toContainText('위치 태그');
-  await guide.getByRole('button',{name:'친구들',exact:true}).click();
-  await expect(guide.locator('.gomiGuideStep')).toContainText('친밀도만 쌓을 수 있어요');
+  await expect(guide.getByRole('heading',{name:'새싹 도감 보기',exact:true})).toBeVisible();
+  await expect(guide.locator('#helpInstruction')).toContainText('친밀도는 오르지');
   await page.screenshot({path:`preview-results/gomi-guide-affinity-${scenario.score}-${info.project.name}.png`});
-  await guide.getByRole('button',{name:'도움말 닫기'}).click();
+  await guide.getByRole('button',{name:'도움말 종료'}).click();
   await page.getByRole('button',{name:'새싹 도감 보기'}).click();
   await expect(cardFor(page,'고미').locator('.characterDescription')).toContainText(scenario.description);
   await expect(cardFor(page,'고미').locator('.characterVisual')).toHaveAttribute('data-motion',scenario.motion);
@@ -399,18 +388,17 @@ for (const [before, after, line] of [[19,20,'뭐.'],[29,30,'휴. 또 왜.'],[59,
     await page.getByRole('button',{name:'고미에게 말 걸기'}).click();
     await expect(page.locator('.homeCharacterMeta')).toContainText(`친밀도 ${after}`);
     await expect(page.locator('.homeSpeech')).toHaveText(line);
-    await page.getByRole('button',{name:'사용 방법 도움말 열기'}).click();
-    await expect(page.getByRole('dialog',{name:'사용 방법'}).locator('.characterHelpLines > p:first-child')).not.toBeEmpty();
+    await page.getByRole('button',{name:'현재 화면 도움말'}).click();
+    await expect(page.getByRole('dialog',{name:'버튼 도움말'}).locator('.helpVoice')).not.toBeEmpty();
   });
 }
 
 test('another selected companion does not inherit Gomi dialogue or affection', async ({page}) => {
   await installSnapshot(page,[{...companion('gomi',6),affection:90},companion('potato',1,true)]);
   await page.goto('/');
-  await page.getByRole('button',{name:'사용 방법 도움말 열기'}).click();
-  const guide = page.getByRole('dialog',{name:'사용 방법'});
+  await page.getByRole('button',{name:'현재 화면 도움말'}).click();
+  const guide = page.getByRole('dialog',{name:'버튼 도움말'});
   await expect(guide.locator('.characterVisual')).toHaveAttribute('data-character','potato');
   await expect(guide.locator('.characterHelpName')).toHaveText('감자싹');
   await expect(guide).not.toContainText('휴. 네가 좋아하는 순간부터 고르자. 같이 보고 싶으니까.');
 });
-

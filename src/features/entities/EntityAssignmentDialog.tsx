@@ -29,7 +29,7 @@ export function EntityAssignmentDialog({ kind, entries, count, unit, onSave, onC
         {mode === 'new' && duplicate && <p role="alert">같은 이름이 있습니다. ‘기존 {noun}’에서 선택해 주세요.</p>}
         {error && <p role="alert">{error}</p>}
       </div>
-      <footer className="peopleActions entityEditFooter"><button type="button" disabled={busy} onClick={onClose}>취소</button><button type="submit" className="primaryControl" disabled={busy || (mode === 'new' ? !name.trim() || duplicate : !target)}>{busy ? '저장 중…' : '이름 지정'}</button></footer>
+      <footer className="peopleActions entityEditFooter"><button type="button" disabled={busy} onClick={onClose}>취소</button><button data-help={kind === "pet" ? "save-pet-assignment" : undefined} type="submit" className="primaryControl" disabled={busy || (mode === 'new' ? !name.trim() || duplicate : !target)}>{busy ? '저장 중…' : '이름 지정'}</button></footer>
     </form>
   </EntityEditorDialog>;
 }

@@ -51,7 +51,7 @@ export function EntityPhotoPicker({ title, photos, name, initialIds = [], automa
         {pages > 1 && <div className="peopleActions"><button type="button" aria-label="이전 사진" disabled={busy || !currentPage} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={18} /></button><span>{currentPage + 1} / {pages}</span><button type="button" aria-label="다음 사진" disabled={busy || currentPage === pages - 1} onClick={() => setPage(currentPage + 1)}><ChevronRight size={18} /></button></div>}
         {error && <p role="alert" className="entityEditError">{error}</p>}
       </div>
-      <footer className="peopleActions entityEditFooter"><button type="button" disabled={busy} onClick={onClose}>취소</button><button type="submit" className="primaryControl" disabled={busy || (selectOnly ? !count : !draftName.trim())}>{busy ? <LoaderCircle size={18} className="spinIcon" /> : <Check size={18} />}{submitLabel}</button></footer>
+      <footer className="peopleActions entityEditFooter"><button type="button" disabled={busy} onClick={onClose}>취소</button><button data-help={selectOnly ? undefined : "entity-photo-save"} type="submit" className="primaryControl" disabled={busy || (selectOnly ? !count : !draftName.trim())}>{busy ? <LoaderCircle size={18} className="spinIcon" /> : <Check size={18} />}{submitLabel}</button></footer>
     </form>
   </EntityEditorDialog>;
 }

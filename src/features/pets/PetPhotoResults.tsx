@@ -74,7 +74,7 @@ function DetectionCard({ detection, item, pets, references, preferredPet, onSave
       <FunctionHelp title="인식 결과 수정"><p>촬영 방향과 반려동물을 선택하고 변경 저장을 누르세요. 후보는 외형이 비슷한 사진이므로 같은 반려동물인지 확인해 주세요.</p>{detection.viewSource==='cat-frontal-cascade' && <p>자동으로 찾은 고양이 얼굴 테두리가 다르면 얼굴 영역 지정으로 수정하세요.</p>}<p>얼굴을 지정한 사진끼리는 얼굴 특징을 우선 비교합니다. 뒷모습은 체형과 색상을 비교하며, 방향을 모르면 직접 선택해 주세요.</p>{view==='rear' && <p>{query.foreground?'배경으로 추정한 영역을 제외한 체형·색상을 비교합니다.':'배경과 털색을 분리하기 어려워 사진 영역 전체의 체형·색상을 비교합니다.'}</p>}</FunctionHelp>
       <label>종류<select aria-label="반려동물 종류" disabled={busy} value={kind} onChange={event=>setKind(event.target.value as PetKind)}><option value="dog">강아지</option><option value="cat">고양이</option></select></label>
       <label>촬영 방향<select aria-label="촬영 방향" disabled={busy} value={view} onChange={event => {const next=event.target.value as PetView;setView(next);if(next==='rear'||next==='unknown'){setFaceBox(undefined);setSelectFace(false);}}}>{Object.entries(VIEW_LABELS).map(([key,label]) => <option key={key} value={key}>{label}</option>)}</select></label>
-      {view!=='rear' && view!=='unknown' && <div className="petFaceControls"><button disabled={busy} aria-pressed={selectFace} onClick={()=>setSelectFace(!selectFace)}>{selectFace?'얼굴 지정 마침':'얼굴 영역 지정'}</button>{faceBox && <><button disabled={busy} onClick={()=>void compareFace()}>선택한 얼굴로 후보 비교</button><button disabled={busy} onClick={()=>{setFaceBox(undefined);setSelectFace(false);}}>얼굴 영역 해제</button></>}{selectFace && <small>얼굴을 둘러싸도록 드래그하세요.</small>}</div>}
+      {view!=='rear' && view!=='unknown' && <div className="petFaceControls"><button data-help="pet-face-region" disabled={busy} aria-pressed={selectFace} onClick={()=>setSelectFace(!selectFace)}>{selectFace?'얼굴 지정 마침':'얼굴 영역 지정'}</button>{faceBox && <><button disabled={busy} onClick={()=>void compareFace()}>선택한 얼굴로 후보 비교</button><button disabled={busy} onClick={()=>{setFaceBox(undefined);setSelectFace(false);}}>얼굴 영역 해제</button></>}{selectFace && <small>얼굴을 둘러싸도록 드래그하세요.</small>}</div>}
       {view==='rear' && <button disabled={busy} onClick={()=>void compareFace()}>뒷모습 체형·색상 다시 비교</button>}
       {preview && <p role="status">{view==='rear'?'체형·색상 후보를 다시 비교했습니다.':'얼굴 특징으로 후보를 다시 비교했습니다.'} 반려동물을 선택한 뒤 저장해 주세요.</p>}
       {result.candidates.length > 0 && <div className="petCandidateActions" aria-label="반려동물 후보">{result.candidates.map(candidate=><div key={candidate.petId}><button disabled={busy} aria-pressed={chosen===String(candidate.petId)} onClick={()=>setChosen(String(candidate.petId))}>{pets.find(pet=>pet.id===candidate.petId)?.name??'반려동물'} 선택</button><button disabled={busy||detection.pet_id===candidate.petId} onClick={()=>void reject(candidate.petId)} aria-label={`${pets.find(pet=>pet.id===candidate.petId)?.name??'반려동물'} 후보 제외`}>이 후보 제외</button></div>)}</div>}
@@ -82,7 +82,7 @@ function DetectionCard({ detection, item, pets, references, preferredPet, onSave
 
       <label>반려동물<select aria-label="인식된 반려동물" disabled={busy} value={chosen} onChange={event => setChosen(event.target.value)}><option value="">미확인 / 연결 해제</option>{pets.map(pet => <option key={pet.id} value={pet.id}>{pet.name}</option>)}<option value="new">반려동물 추가</option></select></label>
       {chosen === 'new' && <label>새 반려동물 이름<input aria-label="새 반려동물 이름" disabled={busy} maxLength={80} value={name} onChange={event=>setName(event.target.value)} /></label>}
-      <div className="peopleActions"><button disabled={busy} onClick={() => void save()}>{busy ? <LoaderCircle size={16} className="spinIcon" /> : null}변경 저장</button><button disabled={busy} onClick={() => void save(true)}>반려동물 아님</button></div>
+      <div className="peopleActions"><button data-help="pet-save-correction" disabled={busy} onClick={() => void save()}>{busy ? <LoaderCircle size={16} className="spinIcon" /> : null}변경 저장</button><button disabled={busy} onClick={() => void save(true)}>반려동물 아님</button></div>
       {busy && inference.current && <button onClick={()=>inference.current?.abort()}>얼굴 분석 중단</button>}
       {error && <p role="alert">{error}</p>}
     </div>
@@ -114,4 +114,3 @@ export function PetPhotoResults({ item }: { item: MediaItem }) {
     <FunctionHelp title="연결 유지하고 재분석"><p>기존 사진 연결은 유지하고, 동물별 확인 내용과 특징은 새 분석으로 교체합니다.</p></FunctionHelp>
   </section>;
 }
-

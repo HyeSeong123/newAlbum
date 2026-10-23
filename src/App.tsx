@@ -33,10 +33,9 @@ import { HomeView } from "./features/home/HomeView";
 import { CharacterBook } from "./features/characters/CharacterBook";
 import { CharacterEventModal } from "./features/characters/CharacterEventModal";
 import { useCharacters } from "./features/characters/useCharacters";
-import { GomiGuide } from "./features/characters/GomiGuide";
-import { HelpCharacterAvatar, HelpCharacterContext } from "./features/characters/CharacterHelp";
+import { HelpCharacterContext } from "./features/characters/CharacterHelp";
 import { usePetAnalysis } from "./features/pets/usePetAnalysis";
-import type { GuideTopic } from "./features/characters/guideTopics";
+import { HelpProvider } from "./features/help/HelpProvider";
 
 type View = "Home" | "Library" | "Albums" | "Memories" | "People" | "Diary" | "Characters" | "Settings";
 
@@ -102,10 +101,9 @@ export function App() {
   const [query, setQuery] = useState("");
   const [selectionNotice, setSelectionNotice] = useState("");
   const [firstRunOpen, setFirstRunOpen] = useState(false);
-  const [guideTopic, setGuideTopic] = useState<GuideTopic | null>(null);
+  const [helpRequest, setHelpRequest] = useState(0);
   const [petReviewRequested, setPetReviewRequested] = useState(false);
   const [peopleTab, setPeopleTab] = useState<"people" | "pets">("people");
-  const currentGuideTopic: GuideTopic = activeView === "People" ? peopleTab : ({ Library: "photos", Albums: "albums", Diary: "diary", Memories: "memories", Characters: "characters" } as Partial<Record<View, GuideTopic>>)[activeView] || "photos";
 
   useEffect(() => {
     if (!library.loaded || !diary.loaded || localStorage.getItem(FIRST_RUN_KEY)) return;
@@ -205,6 +203,7 @@ export function App() {
 
   return (
     <HelpCharacterContext.Provider value={mainCharacter}>
+    <HelpProvider context={{ screen: activeView, tab: peopleTab, selection: selectionMode, selectedCount, blocked: Boolean(library.importProgress || library.checkingGallery) }} request={helpRequest}>
     <main className={`app${largeLayout ? " largeLayout" : ""}`} style={{ "--app-header-height": `${navigationHeight}px` } as CSSProperties}>
       <header ref={navigationRef} className="sidebar" aria-label="주 메뉴">
         <button type="button" className="brand" aria-label="감자싹 홈으로 이동" title="홈으로 이동" onClick={() => navigate("Home")}>
@@ -240,7 +239,7 @@ export function App() {
             <span className="collectionCount">{topbarCount}</span>
           </div>
           <div className="toolbar">
-            {activeView !== "Home" && activeView !== "Characters" && !(activeView === "Library" && photoMode === "grid") && !(activeView === "Memories" && memorySection === "map") && <label className="searchBox">
+            {activeView !== "Home" && activeView !== "Characters" && activeView !== "Settings" && !(activeView === "Library" && photoMode === "grid") && !(activeView === "Memories" && memorySection === "map") && <label className="searchBox">
               <Search size={18} />
               <input aria-label={activeView === "People" ? "이름 검색" : activeView === "Diary" ? "일기 검색" : activeView === "Albums" ? "앨범 검색" : "사진과 추억 검색"} value={query} onChange={(event) => { setQuery(event.target.value); if (activeView === "Library" && activeMonth !== "favorites") setSelectedMonth("all"); }} placeholder={activeView === "People" ? "이름 검색" : activeView === "Diary" ? "일기 검색" : activeView === "Albums" ? "앨범을 검색하세요" : "사진과 추억을 검색하세요"} />
               {query && <button className="searchClear" aria-label="검색 지우기" onClick={() => setQuery("")}><X size={15} /></button>}
@@ -272,7 +271,6 @@ export function App() {
 
         <section className="contentGrid">
           <div className="mainPanel">
-            <div className="gomiHelpEntry"><button type="button" className="gomiHelpButton" aria-label="사용 방법 도움말 열기" onClick={() => setGuideTopic(currentGuideTopic)}><HelpCharacterAvatar />도움말</button></div>
             {activeView === "Home" && <HomeView today={today} itemCount={items.length} albumCount={savedAlbums.length} diaryCount={diary.entries.length}
               mainCharacter={mainCharacter} onInteract={id => { void characters.interact(id); }} onShowCharacters={() => navigate("Characters")}
               onShowLibrary={() => navigate("Library")} onShowAlbums={() => navigate("Albums")} onShowDiary={() => navigate("Diary")} onShowPeople={() => navigate("People")} />}
@@ -319,16 +317,8 @@ export function App() {
             {activeView === "Settings" && <SettingsPanel photos={items.filter(item=>item.fileType==="image")} itemCount={items.length} clearing={clearing} onClear={clearAllRegisteredMedia} />}
           </div>
         </section>
-        {firstRunOpen && <FirstRunGuide onLater={closeFirstRun} onGuide={() => { closeFirstRun(); setGuideTopic("photos"); }} onImport={() => { closeFirstRun(); setImportOpen(true); }} />}
-        {guideTopic && <GomiGuide initialTopic={guideTopic} topicOnly={activeView !== "Home"} onClose={() => setGuideTopic(null)} onAction={topic => {
-          setGuideTopic(null);
-          if (topic === "photos") { navigate("Library"); setImportOpen(true); }
-          else {
-            if (topic === "people" || topic === "pets") setPeopleTab(topic);
-            navigate(({ people: "People", pets: "People", albums: "Albums", diary: "Diary", memories: "Memories", characters: "Characters" } as const)[topic]);
-          }
-        }} />}
-        {!firstRunOpen && !guideTopic && pendingCharacterEvent && <CharacterEventModal event={pendingCharacterEvent}
+        {firstRunOpen && <FirstRunGuide onLater={closeFirstRun} onGuide={() => { closeFirstRun(); setHelpRequest(value => value + 1); }} onImport={() => { closeFirstRun(); setImportOpen(true); }} />}
+        {!firstRunOpen && pendingCharacterEvent && <CharacterEventModal event={pendingCharacterEvent}
           onMeet={() => { void characters.dismiss(pendingCharacterEvent.id).then(saved => { if (saved) navigate("Characters"); }); }}
           onLater={() => { void characters.dismiss(pendingCharacterEvent.id); }} />}
         {importOpen && <MediaImportModal onClose={() => setImportOpen(false)} onImport={async options => {
@@ -358,7 +348,7 @@ export function App() {
         {library.checkingGallery && <GalleryCheckScreen />}
       </section>
     </main>
+    </HelpProvider>
     </HelpCharacterContext.Provider>
   );
 }
-

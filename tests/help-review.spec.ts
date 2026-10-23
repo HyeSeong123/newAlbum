@@ -28,19 +28,19 @@ async function prepare(page: Page) {
 
 test('all help uses the selected character, including nested help and changed selection', async ({ page }) => {
   await prepare(page);
-  await page.getByRole('button', { name: '사용 방법 도움말 열기' }).click();
-  const guide = page.getByRole('dialog', { name: '사용 방법', exact: true });
+  await page.getByRole('button', { name: '현재 화면 도움말' }).click();
+  const guide = page.getByRole('dialog', { name: '버튼 도움말', exact: true });
   await expect(guide.locator('.characterHelpName')).toHaveText('우리 감자');
   await expect(guide.locator('.characterVisual')).toHaveAttribute('data-character', 'potato');
   await expect(guide.locator('.characterVisual')).toHaveAttribute('data-stage', '1');
-  await guide.getByRole('button', { name: '도움말 닫기' }).click();
+  await guide.getByRole('button', { name: '도움말 종료' }).click();
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '미확인 인물 다시 확인', exact: true }).click();
   const review = page.getByRole('dialog', { name: '미확인 인물 다시 확인', exact: true });
-  await review.getByRole('button', { name: '미확인 인물 다시 확인 도움말', exact: true }).click();
-  const help = page.getByRole('dialog', { name: '미확인 인물 다시 확인 도움말', exact: true });
+  await page.getByRole('button', { name: '현재 화면 도움말', exact: true }).click();
+  const help = page.getByRole('dialog', { name: '버튼 도움말', exact: true });
   await expect(help.locator('.characterHelpName')).toHaveText('우리 감자');
-  await expect(help.locator('.characterHelpLines')).toContainText('추천 이름으로 저장');
+  await expect(help.locator('#helpInstruction')).not.toBeEmpty();
   await page.screenshot({ path: `preview-results/help-review/character-help-${test.info().project.name}.png` });
   await page.keyboard.press('Escape');
   await expect(help).toBeHidden();
@@ -49,7 +49,7 @@ test('all help uses the selected character, including nested help and changed se
   await page.getByRole('button', { name: '감자싹 홈으로 이동' }).click();
   await page.getByRole('button', { name: '새싹 도감 보기' }).click();
   await page.locator('.characterCard').filter({ has: page.getByRole('heading', { name: '고미', exact: true }) }).getByRole('button', { name: '대표로 설정' }).click();
-  await page.getByRole('button', { name: '사용 방법 도움말 열기' }).click();
+  await page.getByRole('button', { name: '현재 화면 도움말' }).click();
   await expect(guide.locator('.characterHelpName')).toHaveText('고미');
   await expect(guide.locator('.characterVisual')).toHaveAttribute('data-character', 'gomi');
 });

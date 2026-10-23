@@ -11,7 +11,7 @@ export function CharacterBook({ characters, onRename, onSetMain }: Props) {
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   return <section className="characterBook" aria-label="새싹 도감">
-    <header className="characterBookIntro"><h2>함께 자라는 작은 친구들</h2><p>오늘의 모습을 간직해요. 다음 만남에는 어떤 표정으로 인사할까요?</p></header>
+    <header className="characterBookIntro"><h2>함께 자라는 작은 친구들</h2></header>
     <div className="characterGrid">{characterDefinitions.map(def => {
       const owned = characters.find(item => item.id === def.id);
       const name = characterName(def, owned);
