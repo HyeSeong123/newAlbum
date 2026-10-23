@@ -59,7 +59,7 @@ test('first-time pet detection starts only after selected photos are submitted',
  await expect(page.locator('.petsView h2')).toHaveText('미확인 반려동물');
  await expect.poll(()=>page.evaluate(()=>(window as any).__petImprove.workers)).toBe(2);
  await expect.poll(()=>page.evaluate(()=>(window as any).__petImprove.state.jobs.length)).toBe(0);
- await expect(page.locator('.petsView .faceGrid button')).toHaveCount(2);
+ await expect(page.locator('.petsView section[aria-label="미확인 반려동물"] .petGrid button')).toHaveCount(2);
  await page.locator('.petsView .entityHeader').getByRole('button',{name:'선택',exact:true}).click();await page.getByRole('button',{name:'현재 페이지 전체 선택',exact:true}).click();await page.getByRole('button',{name:'이름 지정',exact:true}).click();
  const assignment=page.getByRole('dialog',{name:'이름 지정',exact:true});await assignment.getByLabel('새 반려동물 이름',{exact:true}).fill('우리 보리');await assignment.getByRole('button',{name:'이름 지정',exact:true}).click();await expect(assignment).toBeHidden();
  expect(await page.evaluate(()=>(window as any).__petImprove.state.pets[0].media_ids)).toEqual([1,2]);
@@ -77,12 +77,12 @@ test('manual body region adds only one animal and preserves existing confirmed l
  expect(rows).toHaveLength(2);expect(rows[0].pet_id).toBe(1);expect(rows[1].pet_id).toBe(2);expect(rows[1].detectionSource).toBe('user');expect(rows[1].box).toEqual([.6,.1,.3,.5]);
 });
 
-test('wrong candidate is remembered across searches and can be restored',async({page})=>{
+test('wrong candidate is remembered across searches and reloads',async({page})=>{
  await fixture(page);await pets(page);await page.getByRole('button',{name:'반려동물 사진 찾기',exact:true}).click();
  let dialog=page.getByRole('dialog',{name:'반려동물 사진 찾기',exact:true});const selector=()=>dialog.getByLabel('반려동물 후보 40',{exact:true});
  await expect(selector()).toHaveValue('1');await dialog.locator('.petSearchCard').getByRole('button',{name:'이 후보 제외',exact:true}).click();
  await expect(selector()).toHaveValue('2');await expect(selector().locator('option[value="1"]')).toHaveCount(0);
- await dialog.getByRole('button',{name:'닫기',exact:true}).click();await page.reload();await pets(page);await page.getByRole('button',{name:'반려동물 사진 찾기',exact:true}).click();
+ await dialog.locator('footer').getByRole('button',{name:'닫기',exact:true}).click();await page.reload();await pets(page);await page.getByRole('button',{name:'반려동물 사진 찾기',exact:true}).click();
  dialog=page.getByRole('dialog',{name:'반려동물 사진 찾기',exact:true});await expect(selector()).toHaveValue('2');
  expect(await page.evaluate(()=>(window as any).__petImprove.workers)).toBe(0);
 });
