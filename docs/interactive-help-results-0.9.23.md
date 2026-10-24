@@ -66,7 +66,7 @@
 [최신 PC·모바일 캡처와 테스트 JSON](https://github.com/HyeSeong123/newAlbum/actions/runs/40045346196)의 Artifacts에서 interactive-help-evidence-b8da06ca7b1809d9d39c9c2c91c8224d40228087을 내려받을 수 있다.
 [실제 Android 캡처와 저장 검사 JSON](https://github.com/HyeSeong123/newAlbum/actions/runs/40045346167)의 Artifacts에서 Android-screens-b8da06ca7b1809d9d39c9c2c91c8224d40228087을 선택한다.
 
-마지막 파일 저장 중 실행 환경 연결이 끊겼다. 이 때문에 로컬에 생성해 비교했던 수정 전 원본 PNG와 종합 HTML/ZIP의 최종 첨부·보존은 완료하지 못했다. 위 CI의 수정 후·Android 증거는 보관되어 있다. 수정 전 원본을 전달했다고 주장하지 않는다.
+2026-10-24 실행 환경 복구 후 실제 기준 커밋 1b638f6을 복원해 PC·모바일의 수정 전 화면을 다시 캡처했고 2개가 통과했다. 동일 fixture·viewport의 수정 후 CI 화면과 비교한 HTML 보고서, 전후·Android 캡처 ZIP, 기존 검증 APK의 직접 첨부를 복구했다. APK의 ZIP·파일 SHA-256, CRC와 내장 공개 인증서 지문도 다시 확인했다. 앱 코드나 APK는 변경하지 않았다.
 
 ## 7. 테스트 결과와 실제 버튼 동작
 
@@ -136,7 +136,16 @@ CI의 apksigner·패키지 검증에 더해 다운로드 ZIP SHA-256·APK ZIP CR
 - Windows 네이티브 설치·업데이트와 실제 화면 판독기
 - 일반 사용자 대상 관찰 연구
 - 광범위 기존 실패의 개별 원인 수정과 전체 앱 CI 성공
-- 최종 테스트·문서 전용 커밋의 전체 CI 재실행 결과
-- 실행 환경 연결 중단으로 인한 로컬 수정 전 캡처·종합 HTML/ZIP 최종 첨부와 APK 채팅 직접 첨부
+- 최신 전체 소스 CI에도 남아 있는 기존 광범위 실패의 개별 원인 수정
+- 물리 기기의 TalkBack·키보드·제스처·컷아웃 조합은 별도 확인 필요
 
-기능과 APK 검증은 완료했지만 위 전달·추가 검증 한계는 남아 있다. GitHub에 반영된 소스·이 문서·CI APK/수정 후 캡처는 환경 중단과 무관하게 보관되어 있다.
+APK와 전후 화면·검증 보고서의 전달을 복구했다. 위 실기기·접근성·Windows·전체 회귀 실패의 한계는 남아 있다.
+
+
+## 전달 복구 후 확인한 최신 CI
+
+- [테스트 보완 커밋 도움말 CI 40047493073](https://github.com/HyeSeong123/newAlbum/actions/runs/40047493073): 단위 157개, PC·모바일 135개 통과·7개 건너뜀.
+- [App UX 40047493076](https://github.com/HyeSeong123/newAlbum/actions/runs/40047493076): 282개 통과·30개 건너뜀·16개 실패.
+- [문서 반영 후 전체 소스 40047814820](https://github.com/HyeSeong123/newAlbum/actions/runs/40047814820): 491개 통과·62개 건너뜀·53개 실패. 예전 도움말 버튼을 찾던 캡처 기본값 오류는 더 이상 실패하지 않았다. 네이티브 저장소 검사도 성공했다.
+
+위 과거 실행 기록은 실패·수정 경과로 유지한다. 앱 코드와 APK는 b8da06c의 검증본 그대로다.
