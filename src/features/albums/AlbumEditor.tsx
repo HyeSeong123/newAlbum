@@ -14,6 +14,7 @@ export function AlbumEditor({ album, onClose, onSave, initialSection = "details"
   const panel = useRef<HTMLElement>(null);
   const onKeyDown = useDialogFocus(panel);
   const [draft, setDraft] = useState(() => ({ ...album, coverColor: album.coverColor || DEFAULT_ALBUM_COLOR, contents: albumContents(album) }));
+  const original = useRef(JSON.stringify(draft));
   const [section, setSection] = useState<AlbumEditorSection>(initialSection);
   const [chosen, setChosen] = useState<string[]>([]);
   const [page, setPage] = useState(0);
@@ -24,7 +25,12 @@ export function AlbumEditor({ album, onClose, onSave, initialSection = "details"
   const drag = useRowSelection(!busy && section === "photos", togglePhoto, id => chosen.includes(id));
   const pageCount = Math.max(1, Math.ceil(draft.items.length / 24));
   const currentPage = Math.min(page, pageCount - 1);
-  useModalBehavior(() => { if (!busy) onClose(); });
+  function close() {
+    if (saving.current) return;
+    if (JSON.stringify(draft) !== original.current && !window.confirm("저장하지 않은 내용이 있어요. 수정을 닫을까요?")) return;
+    onClose();
+  }
+  useModalBehavior(close);
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (saving.current || !draft.title.trim()) return;
@@ -41,7 +47,7 @@ export function AlbumEditor({ album, onClose, onSave, initialSection = "details"
   }
   return <div className="modalBackdrop">
     <section ref={panel} tabIndex={-1} onKeyDown={onKeyDown} className="albumEditor" role="dialog" aria-modal="true" aria-labelledby="albumEditorTitle">
-      <div className="detailHeader albumEditorHeader"><div><strong id="albumEditorTitle">앨범 수정</strong><small>{album.title}</small></div><button className="closeButton" title="닫기" disabled={busy} onClick={onClose}><X size={18} /></button></div>
+      <div className="detailHeader albumEditorHeader"><div><strong id="albumEditorTitle">앨범 수정</strong><small>{album.title}</small></div><button className="closeButton" title="닫기" disabled={busy} onClick={close}><X size={18} /></button></div>
       <form onSubmit={(event) => void submit(event)}>
         <fieldset disabled={busy}>
           <nav className="albumEditorTabs" aria-label="앨범 편집 메뉴">
@@ -61,7 +67,7 @@ export function AlbumEditor({ album, onClose, onSave, initialSection = "details"
           {pageCount > 1 && <div className="albumActions"><button type="button" title="이전 페이지" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={18} /></button><span>{currentPage + 1} / {pageCount}</span><button type="button" title="다음 페이지" disabled={currentPage === pageCount - 1} onClick={() => setPage(currentPage + 1)}><ChevronRight size={18} /></button></div>}
           </section>}
           {error && <p className="albumEditorError" role="alert">{error}</p>}
-          <div className="albumActions albumEditorFooter" data-help-dock><span>변경 내용은 저장을 누르면 반영됩니다.</span><button type="button" onClick={onClose}>취소</button><button type="submit" disabled={!draft.title.trim()}><Check size={18} />{busy ? "저장 중" : "저장"}</button></div>
+          <div className="albumActions albumEditorFooter" data-help-dock><span>변경 내용은 저장을 누르면 반영됩니다.</span><button type="button" onClick={close}>취소</button><button type="submit" disabled={!draft.title.trim()}><Check size={18} />{busy ? "저장 중" : "저장"}</button></div>
         </fieldset>
       </form>
     </section>

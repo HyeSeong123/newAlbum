@@ -40,7 +40,7 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
   const listScroll=useRef<number|null>(null);
   const [reviewing, setReviewing] = useState(false);
   const heading = useRef<HTMLDivElement>(null);
-  useEffect(() => { if (reviewRequested) { setActive(null); setPage(0); setReviewing(true); onReviewHandled?.(); } }, [reviewRequested, onReviewHandled]);
+  useEffect(() => { if (reviewRequested) { setActive(null); setPage(0); setUnknown(true); setSelecting(false); setReviewing(false); onReviewHandled?.(); } }, [reviewRequested, onReviewHandled]);
   const desktop = isTauriRuntime();
   const photos = useMemo(() => items.filter((item) => item.fileType === 'image'), [items]);
   const covers = useMemo(() => petCovers(photos, pets), [photos, pets]);
@@ -121,7 +121,7 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
     {desktop && !selecting && <div className="entityQuickActions">{!pet&&<button className="primaryControl" disabled={loading||!photos.length} onClick={()=>setScanPicking(true)}><ScanSearch size={18}/>사진에서 반려동물 감지</button>}{pet ? <><button disabled={busy} onClick={()=>editPet('photos')}><Plus size={18}/>사진 연결</button><button disabled={busy} onClick={()=>editPet('name')}><Pencil size={18}/>이름 변경</button></> : <>{!unknown && <button disabled={busy || !matchingPets.length} onClick={()=>{setSelecting(!selecting);setChosen([]);}}>선택</button>}<button className={unknown?'active':''} onClick={()=>{if(!unknown)listScroll.current=window.scrollY;setUnknown(true);setActive(null);}}>미확인 반려동물</button></>}</div>}
     {!pet && !unknown && <label className="entitySort">정렬<select aria-label="반려동물 정렬" value={sort} onChange={event=>setSort(event.target.value)}><option value="name">이름순</option><option value="photos">사진 많은 순</option></select></label>}
     {desktop && !selecting && !unknown && pets.length > 0 && <div className="entityQuickActions"><button disabled={loading || !photos.length} onClick={() => setReviewing(true)}><ScanSearch size={18}/>반려동물 사진 찾기</button><FunctionHelp title="반려동물 사진 찾기"><p>연결한 사진과 비교해 비슷한 사진을 찾습니다. 결과를 확인한 뒤 같은 반려동물의 사진만 연결하세요.</p></FunctionHelp></div>}
-    {!reviewing && <PetAnalysisStatus analysis={analysis} onReview={() => setReviewing(true)} />}
+    {!reviewing && <PetAnalysisStatus analysis={analysis} onReview={() => {setActive(null);setPage(0);setUnknown(true);setSelecting(false);}} />}
 
     {loading && <p role="status"><LoaderCircle className="spinIcon" size={18} />반려동물 정보를 불러오는 중</p>}
     {error && <p role="alert">{error}</p>}
@@ -157,13 +157,14 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
 function PetEditor({ pet, photos, mode='all', onClose, onSaved }: { mode?: 'all'|'name'|'cover'|'photos'; pet: Pet; photos: MediaItem[]; onClose: () => void; onSaved: (id: number) => Promise<void> }) {
   const [name, setName] = useState(pet.name);
   const savedId=useRef<number|null>(pet.id || null), savingLock=useRef(false);
+  const [pendingRefresh, setPendingRefresh] = useState<number | null>(null);
   const [selected, setSelected] = useState(() => [...pet.media_ids]);
   const [cover, setCover] = useState(pet.cover_media_id);
   const [page, setPage] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const toggle = (id: string) => setSelected((current) => current.includes(Number(id)) ? current.filter((entry) => entry !== Number(id)) : [...current, Number(id)]);
-  const drag = useRowSelection(!busy && mode!=='cover', toggle, (id) => selected.includes(Number(id)));
+  const drag = useRowSelection(!busy && pendingRefresh === null && mode!=='cover', toggle, (id) => selected.includes(Number(id)));
   const availablePhotos = mode==='cover'?photos.filter(photo=>selected.includes(Number(photo.id))):photos;
   const pages = Math.max(1, Math.ceil(availablePhotos.length / 24));
   const currentPage = Math.min(page, pages - 1);
@@ -173,15 +174,17 @@ function PetEditor({ pet, photos, mode='all', onClose, onSaved }: { mode?: 'all'
     if (savingLock.current || !name.trim()) return;
     savingLock.current=true;setBusy(true); setError('');
     try {
-      const id = mode==='name' && pet.id ? await renamePet(pet.id,name.trim()) : mode==='cover' && pet.id && actualCover!==null ? await setPetCoverPhoto(pet.id,actualCover) : await savePet(savedId.current, name.trim(), selected, actualCover);
+      const id = pendingRefresh ?? (mode==='name' && pet.id ? await renamePet(pet.id,name.trim()) : mode==='cover' && pet.id && actualCover!==null ? await setPetCoverPhoto(pet.id,actualCover) : await savePet(savedId.current, name.trim(), selected, actualCover));
       savedId.current=id;
-      await onSaved(id); onClose();
+      setPendingRefresh(id);
+      try { await onSaved(id); onClose(); }
+      catch { setError('저장은 완료했지만 목록을 갱신하지 못했습니다. 목록을 다시 불러오거나 닫아 주세요.'); }
     } catch { setError('반려동물 정보를 저장하지 못했습니다. 입력한 이름과 선택한 사진은 화면에 남아 있습니다. 다시 저장해 주세요.'); }
     finally { savingLock.current=false;setBusy(false); }
   }
   return <EntityEditorDialog title={mode==='name'?'이름 변경':mode==='cover'?'대표 사진 변경':mode==='photos'?'사진 연결':pet.id?'반려동물 편집':'반려동물 추가'} busy={busy} onClose={onClose} className="petRegistrationEditor">
     <form onSubmit={(event) => void submit(event)}>
-      <div className="entityEditBody"><fieldset disabled={busy}>
+      <div className="entityEditBody"><fieldset disabled={busy || pendingRefresh !== null}>
         <div className="petFields">{(mode==='all' || mode==='name') && <label className="entityEditField">이름<input placeholder="반려동물 이름" required maxLength={80} value={name} onChange={(event) => setName(event.target.value)} /></label>}
         {(mode==='all' || mode==='cover') && <label className="entityEditField">대표 사진<select aria-label="대표 사진" value={actualCover ?? ''} disabled={!selected.length} onChange={(event) => setCover(Number(event.target.value))}>{!selected.length && <option value="">사진 없음</option>}{selected.map((id, i) => <option key={id} value={id}>{photos.find((photo) => Number(photo.id) === id)?.takenAt ?? '날짜 없음'} · {i + 1}</option>)}</select></label>}</div>
         {mode!=='name' && <><div className="petPhotoSelectionHeading"><strong>연결할 사진</strong><span>{selected.length}장 선택</span></div><FunctionHelp title={mode==='cover'?'대표 사진 변경':'사진 연결'}><p>{mode==='cover'?'대표로 사용할 사진을 누르세요.':'사진을 눌러 연결하거나 해제하세요. 원본 사진은 유지됩니다.'}</p><p>저장하면 이름과 사진만 연결합니다. 분석하려면 저장 후 ‘반려동물 사진 찾기’를 눌러 주세요.</p></FunctionHelp>
@@ -193,9 +196,8 @@ function PetEditor({ pet, photos, mode='all', onClose, onSaved }: { mode?: 'all'
         <div className="peopleActions">{pages > 1 && <><button type="button" title="이전 페이지" disabled={!currentPage} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={18} /></button><span>{currentPage + 1} / {pages}</span><button type="button" title="다음 페이지" disabled={currentPage === pages - 1} onClick={() => setPage(currentPage + 1)}><ChevronRight size={18} /></button></>}
         </div>
         </>}
-        {error && <p role="alert">{error}</p>}
-      </fieldset></div>
-      <footer className="peopleActions entityEditFooter"><button type="button" disabled={busy} onClick={onClose}>취소</button><button type="submit" className="primaryControl" disabled={busy || !name.trim()}>{busy ? <LoaderCircle className="spinIcon" size={18} /> : <Check size={18} />}저장</button></footer>
+      </fieldset>{error && <p role="alert">{error}</p>}</div>
+      <footer className="peopleActions entityEditFooter"><button type="button" disabled={busy} onClick={onClose}>{pendingRefresh !== null ? '닫기' : '취소'}</button><button type="submit" className="primaryControl" disabled={busy || !name.trim()}>{busy ? <LoaderCircle className="spinIcon" size={18} /> : <Check size={18} />}{pendingRefresh !== null ? '목록 다시 불러오기' : '저장'}</button></footer>
     </form>
   </EntityEditorDialog>;
 }

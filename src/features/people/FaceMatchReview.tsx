@@ -1,5 +1,5 @@
 import { FunctionHelp } from '../../components/FunctionHelp';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronLeft, ChevronRight, LoaderCircle, Users } from 'lucide-react';
 import { EntityEditorDialog } from '../../components/EntityEditorDialog';
 import { useRowSelection } from '../../hooks/useRowSelection';
@@ -11,9 +11,13 @@ export function FaceMatchReview({ index, onClose, onSaved, onRegister }: { index
   const [selected, setSelected] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const busy = useRef(false);
+  const [savedFaceIds, setSavedFaceIds] = useState<number[]>([]);
   const [error, setError] = useState('');
+  const [refreshError, setRefreshError] = useState('');
+  const [closeAfterRefresh, setCloseAfterRefresh] = useState(false);
   const [page, setPage] = useState(0);
-  const faces = useMemo(() => indexFaces(index).unconfirmed, [index]);
+  const faces = useMemo(() => indexFaces(index).unconfirmed.filter(face => !savedFaceIds.includes(face.id)), [index, savedFaceIds]);
   const eligible = useMemo(() => new Set(faces.map(face => face.id)), [faces]);
   const proposals = matches.filter(match => eligible.has(match.face_id));
   const selectedProposals = proposals.filter(match => selected.includes(match.face_id));
@@ -27,22 +31,55 @@ export function FaceMatchReview({ index, onClose, onSaved, onRegister }: { index
     return () => { alive = false; };
   }, []);
   async function apply() {
-    if (saving || !selectedProposals.length) return;
+    if (busy.current || !selectedProposals.length) return;
+    busy.current = true;
     setSaving(true); setError('');
+    let savedCount = 0;
+    let saveFailed = false;
     try {
       const groups = new Map<number, number[]>();
       selectedProposals.forEach((match) => {
         groups.set(match.person_id, [...(groups.get(match.person_id) ?? []), match.face_id]);
       });
-      for (const [target, ids] of groups) await moveFaces(ids, target);
+      try {
+        for (const [target, ids] of groups) {
+          await moveFaces(ids, target);
+          savedCount += ids.length;
+          setSavedFaceIds(current => [...current, ...ids]);
+          setSelected(current => current.filter(id => !ids.includes(id)));
+          setMatches(current => current.filter(match => !ids.includes(match.face_id)));
+        }
+      } catch {
+        saveFailed = true;
+        setError(`${savedCount ? `${savedCount}개 얼굴은 저장했어요. ` : ''}남은 얼굴을 저장하지 못했어요. 선택과 추천 이름을 확인하고 다시 저장해 주세요.`);
+      }
+      // Refresh partial successes too, without discarding the remaining choices.
+      if (savedCount) {
+        setCloseAfterRefresh(!saveFailed);
+        try {
+          await onSaved();
+          setRefreshError('');
+        } catch {
+          setRefreshError(saveFailed
+            ? '저장한 얼굴의 목록을 불러오지 못했어요. 목록을 다시 불러오거나 남은 얼굴을 저장해 주세요.'
+            : '얼굴은 모두 저장했어요. 목록을 불러오지 못했어요. 다시 불러오거나 닫아 주세요.');
+          return;
+        }
+        if (!saveFailed) onClose();
+      }
+    } finally { busy.current = false; setSaving(false); }
+  }
+  async function retryRefresh() {
+    if (busy.current) return;
+    busy.current = true;
+    setSaving(true);
+    try {
       await onSaved();
-      onClose();
+      setRefreshError('');
+      if (closeAfterRefresh) onClose();
     } catch {
-      setError('일부 변경을 저장하지 못했습니다. 닫은 뒤 다시 비교해 주세요.');
-      setSelected([]);
-      setMatches([]);
-      await onSaved().catch(() => undefined);
-    } finally { setSaving(false); }
+      // Keep the saved/unsaved distinction and the retry action visible.
+    } finally { busy.current = false; setSaving(false); }
   }
   const pageCount = Math.max(1, Math.ceil(faces.length / 24));
   const currentPage = Math.min(page, pageCount - 1);
@@ -62,6 +99,7 @@ export function FaceMatchReview({ index, onClose, onSaved, onRegister }: { index
           <p>추천이 없거나 다른 이름을 붙이고 싶다면 ‘이름 지정’을 눌러 주세요. 저장하기 전까지는 사진 연결이 바뀌지 않아요.</p></FunctionHelp>
         </div>
         {error && <p className="faceMatchError" role="alert">{error}</p>}
+        {refreshError && <div className="faceMatchError"><p role="alert">{refreshError}</p><button type="button" disabled={saving} onClick={() => void retryRefresh()}>목록 다시 불러오기</button></div>}
         {!loading && !faces.length && <p className="faceMatchEmpty">다시 확인할 얼굴이 없어요.</p>}
         <div className="faceMatchGrid" {...selection}>{pageFaces.map((face) => {
           const match = proposals.find(entry => entry.face_id === face.id);

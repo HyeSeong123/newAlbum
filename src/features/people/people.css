@@ -20,8 +20,8 @@
 .faceMatchItem > .faceMatchCandidate { margin-top: auto; gap: 6px; color: var(--muted); font-size: 12px; }
 .faceMatchCandidate select { width: 100%; min-width: 0; min-height: 44px; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-inner); color: var(--text); background: var(--surface); font: inherit; font-size: 14px; }
 .faceMatchFooter { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 14px 20px; border-top: 1px solid var(--border); flex-shrink: 0; background: var(--surface); }
-.faceMatchFooter button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; color: var(--text); background: var(--surface); font: inherit; font-size: 13px; }
-.faceMatchFooter button:hover:not(:disabled) { background: var(--surface-soft); }
+.faceMatchFooter button, .faceMatchError button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; color: var(--text); background: var(--surface); font: inherit; font-size: 13px; }
+.faceMatchFooter button:hover:not(:disabled), .faceMatchError button:hover:not(:disabled) { background: var(--surface-soft); }
 .faceMatchSelection { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 13px; }
 .faceMatchSelection button { border-color: transparent; color: var(--text); }
 .faceMatchPages { display: flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; font-size: 13px; }

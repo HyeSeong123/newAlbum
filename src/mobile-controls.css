@@ -123,6 +123,13 @@
   .photoInspector .detailActionButtons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: 6px; }
   .photoInspector .detailActionButtons button { min-width: 0; min-height: 44px; padding-inline: 6px; gap: 4px; font-size: 12px; }
   .photoInspector .detailZoomControls button { min-width: 44px; min-height: 44px; }
+  .photoInspector .photoNavButton { width: 44px; height: 44px; min-height: 44px; }
+  .photoInspector .detailImageViewport { inset-inline: 54px; }
+  .photoInspector .rating button { width: 44px; min-width: 44px; min-height: 44px; }
+  .photoInspector .rating { gap: 4px; }
+  .diaryDialog .diaryRemovePhoto { width: 44px; height: 44px; min-width: 44px; min-height: 44px; top: 0; right: 0; border: 0; background: transparent; }
+  .diaryDialog .diaryRemovePhoto::before { content: ""; position: absolute; inset: 8px; border: 1px solid var(--diary-rule); border-radius: 50%; background: #fffefa; pointer-events: none; }
+  .diaryDialog .diaryRemovePhoto svg { position: relative; }
   .photoInspector .detailZoomReset span { display: none; }
   .photoInspector .detailZoomControls input { width: auto; min-width: 24px; }
 }

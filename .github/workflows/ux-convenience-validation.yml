@@ -1,0 +1,71 @@
+name: UX convenience focused validation
+on:
+  workflow_dispatch:
+  push:
+    branches: [final]
+    paths:
+      - 'src/App.tsx'
+      - 'src/features/albums/AlbumEditor.tsx'
+      - 'src/features/diary/DiaryView.tsx'
+      - 'src/features/pets/PetsView.tsx'
+      - 'src/features/pets/PetAnalysisStatus.tsx'
+      - 'src/features/people/FaceMatchReview.tsx'
+      - 'src/features/people/people.css'
+      - 'src/mobile-controls.css'
+      - 'tests/ux-convenience-*.spec.ts'
+      - 'tests/app-ux-audit.spec.ts'
+      - 'playwright.ux-convenience.config.ts'
+      - '.github/workflows/ux-convenience-validation.yml'
+permissions:
+  contents: read
+concurrency:
+  group: ux-convenience-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Prepare the official browser and local character art
+        run: |
+          npx playwright install --with-deps chromium
+          node scripts/generate-character-assets.mjs
+      - name: Capture the exact pre-change source with the same scenarios
+        env:
+          UX_AUDIT_STAGE: before
+          APP_UX_STAGE: before
+        run: |
+          git fetch --depth 1 origin 51e751ec95025e42ce053f3008daf5f28567070d
+          git worktree add --detach "$RUNNER_TEMP/ux-convenience-before" 51e751ec95025e42ce053f3008daf5f28567070d
+          cp -a node_modules "$RUNNER_TEMP/ux-convenience-before/node_modules"
+          cp playwright.ux-convenience.config.ts "$RUNNER_TEMP/ux-convenience-before/"
+          cp tests/ux-convenience-*.spec.ts tests/app-ux-audit.spec.ts "$RUNNER_TEMP/ux-convenience-before/tests/"
+          cp -a public/characters "$RUNNER_TEMP/ux-convenience-before/public/"
+          cd "$RUNNER_TEMP/ux-convenience-before"
+          npx playwright test -c playwright.ux-convenience.config.ts
+      - name: Verify the corrected button flows
+        if: ${{ !cancelled() }}
+        env:
+          UX_AUDIT_STAGE: after
+          APP_UX_STAGE: after
+        run: npx playwright test -c playwright.ux-convenience.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ux-convenience-evidence-${{ github.sha }}
+          path: |
+            preview-results/ux-convenience/
+            preview-results/app-ux/
+            test-results/
+            ${{ runner.temp }}/ux-convenience-before/preview-results/
+            ${{ runner.temp }}/ux-convenience-before/test-results/
+          retention-days: 14

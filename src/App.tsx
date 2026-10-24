@@ -326,7 +326,7 @@ export function App() {
           if (created) navigate("Albums");
         }} />}
         {library.error && <p className="selectionNotice" role="alert">{library.error}</p>}
-        <AnalysisActivity person={personAnalysis} pets={petAnalysis} onShowResults={tab => { setPeopleTab(tab); navigate('People'); }} />
+        <AnalysisActivity person={personAnalysis} pets={petAnalysis} onShowResults={tab => { setPeopleTab(tab); if (tab === 'pets') setPetReviewRequested(true); navigate('People'); }} />
 
         {library.importNotice && !library.error && <p className="selectionNotice" role="status">{library.importNotice}</p>}
         {library.galleryNotice && <p className="selectionNotice" role="status">{library.galleryNotice}</p>}
