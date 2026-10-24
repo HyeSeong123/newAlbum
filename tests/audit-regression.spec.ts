@@ -50,7 +50,11 @@ test('album creation traps keyboard focus and restores its opening control', asy
   const close = dialog.getByTitle('닫기', { exact: true });
   await close.focus();
   await page.keyboard.press('Shift+Tab');
+  await expect(page.getByRole('button', { name: '현재 화면 도움말', exact: true })).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
   await expect(dialog.getByRole('button', { name: '취소', exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: '현재 화면 도움말', exact: true })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(close).toBeFocused();
   await close.click();

@@ -1,0 +1,34 @@
+name: Interactive character help
+on:
+  workflow_dispatch:
+  push:
+    branches: [final]
+    paths: ['src/**', 'tests/**', 'playwright*.ts', 'package*.json', '.github/workflows/interactive-help-validation.yml']
+permissions:
+  contents: read
+concurrency:
+  group: interactive-help-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  help:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run version:check && npm run test:unit && npx tsc --noEmit
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y --no-install-recommends fonts-noto-cjk
+      - run: npx playwright test -c playwright.help.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: interactive-help-evidence-${{ github.sha }}
+          path: |
+            preview-results/spotlight/
+            test-results/
+          retention-days: 30

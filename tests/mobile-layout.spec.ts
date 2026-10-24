@@ -95,7 +95,14 @@ test('import header and actions stay visible when options scroll on short phones
   await expect(dialog.locator('.mediaImportHeader')).toBeInViewport();
   await expect(dialog.getByRole('button', { name: '닫기', exact: true })).toBeInViewport();
   await expect(dialog.getByRole('button', { name: /^(파일 선택|갤러리 열기)$/, exact: true })).toBeInViewport();
-  await expect(dialog.getByLabel('촬영 위치 자동 등록 안내')).toBeInViewport();
+  await expect(dialog.getByLabel('촬영 위치 자동 등록 안내')).toHaveCount(0);
+  await page.getByRole('button', { name: '현재 화면 도움말', exact: true }).click();
+  const guide = page.getByRole('dialog', { name: '버튼 도움말', exact: true });
+  await expect(guide).toBeVisible();
+  for (let i = 0; i < 8 && !await guide.locator('h3').filter({hasText: /^사진·영상$/}).isVisible(); i++) await guide.getByRole('button', {name:'다음',exact:true}).click();
+  await expect(guide).toContainText('카메라 위치 권한');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeVisible();
   await dialog.getByRole('checkbox', { name: /가져오면서 앨범 만들기/ }).check();
   await dialog.getByRole('checkbox', { name: /달력에 등록하기/ }).check();
   await dialog.getByLabel('달력 등록 날짜 방식').selectOption('range');

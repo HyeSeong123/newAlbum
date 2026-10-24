@@ -291,3 +291,27 @@ test('pet photo selection explains toggling without person-face restrictions', a
   await expect(helpDialog(page).locator('#helpInstruction')).toContainText('선택하거나 해제');
   await expect(helpDialog(page).locator('#helpInstruction')).not.toContainText('얼굴');
 });
+
+test('photo dialog help ignores covered background controls and leaves close reachable', async ({ page }) => {
+  await prepareHelp(page);
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
+  await page.getByRole('button', { name: '모든 기록', exact: true }).click();
+  await page.locator('.mediaTile').first().click();
+  // Background photo actions can occupy the same coordinates, but are covered
+  // by the current dialog and must not push help over that dialog's close.
+  await page.locator('.workspace').evaluate(e => {
+    const control = document.createElement('button');
+    control.textContent = '배경 사진 작업';
+    control.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:-1';
+    e.append(control);
+  });
+  await page.setViewportSize({ width: 412, height: 824 });
+  const detail = page.getByRole('dialog', { name: '사진 상세', exact: true });
+  const close = detail.getByTitle('닫기', { exact: true });
+  await expect.poll(async () => {
+    const a = await close.boundingBox(), b = await page.getByRole('button', { name: '현재 화면 도움말', exact: true }).boundingBox();
+    return a && b && (a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y);
+  }).toBe(true);
+  await close.click();
+  await expect(detail).toBeHidden();
+});
