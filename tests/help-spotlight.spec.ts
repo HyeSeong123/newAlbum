@@ -481,3 +481,27 @@ test('help dialogue varies on another visit but is stable through resize and pre
   await expect(guide.locator('#helpInstruction')).toHaveText(instruction);
   expect(await page.evaluate(()=>(window as any).spotlightCalls.filter((call:any)=>/interact_character/.test(call.command)).length)).toBe(0);
 });
+
+test('fullscreen dialog help settles without observing its own overlay changes',async({page,isMobile})=>{
+  test.skip(isMobile,'Fullscreen controls are desktop-only in the app.');
+  await prepareHelp(page);
+  await page.evaluate(()=>{
+    const dialog=document.createElement('section');dialog.id='fullscreen-help-fixture';
+    dialog.setAttribute('role','dialog');dialog.setAttribute('aria-label','전체 화면 도움말 검사');
+    dialog.style.cssText='position:fixed;inset:0;z-index:2000;background:var(--surface);padding:80px;';
+    const enter=document.createElement('button');enter.textContent='검사 화면 전체 보기';enter.onclick=()=>void dialog.requestFullscreen();
+    const save=document.createElement('button');save.textContent='저장';
+    dialog.append(enter,save);document.body.append(dialog);
+  });
+  await page.getByRole('button',{name:'검사 화면 전체 보기',exact:true}).click();
+  await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.id)).toBe('fullscreen-help-fixture');
+  await openHelp(page);
+  const guide=helpDialog(page);
+  await expect(guide.getByRole('heading',{name:'저장',exact:true})).toBeVisible();
+  await page.setViewportSize({width:1080,height:780});
+  await expect(guide).toHaveAttribute('aria-busy','false');
+  await expect(guide.locator('.helpGuideCard')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(guide).toBeHidden();
+  await page.evaluate(()=>document.exitFullscreen());
+});

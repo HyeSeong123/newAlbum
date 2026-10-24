@@ -142,7 +142,11 @@ export function HelpOverlay({ session, onClose }: { session: Session; onClose: (
     measure();
     const resize = new ResizeObserver(measure); resize.observe(element); if (card.current) resize.observe(card.current);
     for(let parent=element.parentElement;parent && parent!==document.body;parent=parent.parentElement)resize.observe(parent);
-    const mutations = new MutationObserver(measure); mutations.observe(session.root, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'disabled', 'aria-disabled'] });
+    const mutations = new MutationObserver(records=>{
+      // In fullscreen the portal lives inside the observed dialog itself.
+      if(records.some(record=>!layer.current?.contains(record.target)))measure();
+    });
+    mutations.observe(session.root, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'disabled', 'aria-disabled'] });
     const onScroll=(event: Event)=>{
       if(event.target instanceof Node && layer.current?.contains(event.target))return;
       measure();
