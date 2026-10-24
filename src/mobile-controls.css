@@ -126,7 +126,9 @@
   .photoInspector .photoNavButton { width: 44px; height: 44px; min-height: 44px; }
   .photoInspector .detailImageViewport { inset-inline: 54px; }
   .photoInspector .rating button { width: 44px; min-width: 44px; min-height: 44px; }
-  .photoInspector .rating { gap: 4px; }
+  .photoInspector .detailRating { flex-wrap: wrap; row-gap: 6px; }
+  .photoInspector .detailRating h3 { flex-shrink: 0; white-space: nowrap; }
+  .photoInspector .rating { flex-shrink: 0; gap: 4px; }
   .diaryDialog .diaryRemovePhoto { width: 44px; height: 44px; min-width: 44px; min-height: 44px; top: 0; right: 0; border: 0; background: transparent; }
   .diaryDialog .diaryRemovePhoto::before { content: ""; position: absolute; inset: 8px; border: 1px solid var(--diary-rule); border-radius: 50%; background: #fffefa; pointer-events: none; }
   .diaryDialog .diaryRemovePhoto svg { position: relative; }

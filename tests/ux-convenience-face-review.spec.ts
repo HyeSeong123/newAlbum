@@ -1,6 +1,33 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page, type Locator } from '@playwright/test';
 
 const stage = process.env.UX_AUDIT_STAGE === 'before' ? 'before' : 'after';
+
+async function expectDialogControlsClearOfHelp(page: Page, dialog: Locator) {
+  expect(page.viewportSize()?.width).toBe(393);
+  const help = page.getByRole('button', { name: '현재 화면 도움말', exact: true });
+  await expect(help).toBeVisible();
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  const helpBox = await help.boundingBox();
+  expect(helpBox).not.toBeNull();
+  // Measure the actual error state without scrolling the alert or candidates away.
+  for (const control of await dialog.locator('select, [role="alert"], footer button').all()) {
+    const box = await control.boundingBox();
+    expect(box).not.toBeNull();
+    if (box && helpBox) {
+      const overlaps = box.x < helpBox.x + helpBox.width && box.x + box.width > helpBox.x
+        && box.y < helpBox.y + helpBox.height && box.y + box.height > helpBox.y;
+      expect(overlaps, `Help overlaps ${await control.getAttribute('aria-label') ?? await control.textContent()}`).toBe(false);
+    }
+  }
+  const actions = dialog.locator('footer button');
+  expect(await actions.count()).toBeGreaterThan(0);
+  for (const action of await actions.all()) {
+    const dimensions = await action.evaluate(node => ({ scroll: node.scrollWidth, client: node.clientWidth }));
+    // Wrapped text is allowed; horizontal clipping is not.
+    expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.client);
+  }
+}
+
 type AuditState = { moves: { ids: number[]; target: number }[]; refreshes: number; release?: () => void };
 
 async function prepare(page: Page, mode: 'partial' | 'refresh' | 'compound') {
@@ -59,6 +86,7 @@ async function state(page: Page) {
 }
 
 test('partial face save keeps failed and unprocessed selections for an immediate retry', async ({ page }) => {
+  if (stage === 'after') await page.setViewportSize({ width: 393, height: 851 });
   const review = await prepare(page, 'partial');
   await review.getByRole('button', { name: '추천 이름으로 저장 (3)', exact: true }).click();
   await expect.poll(async () => (await state(page)).moves.length).toBe(1);
@@ -79,6 +107,7 @@ test('partial face save keeps failed and unprocessed selections for an immediate
   await expect(review.getByRole('checkbox', { name: '미확인 얼굴 13 선택', exact: true })).toBeChecked();
   await expect(review.getByRole('combobox', { name: '미확인 얼굴 12 인물 후보', exact: true })).toHaveValue('2');
   await expect(review.getByRole('combobox', { name: '미확인 얼굴 13 인물 후보', exact: true })).toHaveValue('3');
+  await expectDialogControlsClearOfHelp(page, review);
   await page.screenshot({ path: `preview-results/ux-convenience/${stage}/05-face-partial-save.png` });
   await review.getByRole('button', { name: '추천 이름으로 저장 (2)', exact: true }).click();
   await expect(review).toBeHidden();

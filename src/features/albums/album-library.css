@@ -14,6 +14,12 @@
 .savedAlbumFooter .actionMenuTrigger { display: grid; place-items: center; width: 34px; min-height: 34px; padding: 6px; border: 0; border-radius: 5px; background: transparent; color: var(--muted); }
 .savedAlbumFooter .actionMenuTrigger:hover, .savedAlbumFooter .actionMenuTrigger[aria-expanded="true"] { background: #eeeae0; color: var(--text); }
 .savedAlbumFooter .dangerAction { margin-top: 4px; border-top: 1px solid var(--border); border-radius: 0; }
+@media (max-width: 999px) {
+  /* The last card must scroll clear of the fixed help corner. Its menu also
+     keeps a horizontal slot clear while intermediate cards scroll past. */
+  .savedAlbums { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+  .savedAlbumFooter { padding-right: 64px; }
+}
 .savedAlbums .savedAlbumOpen .albumSelectionMark { top: 10px; left: 10px; }
 @media (max-width: 1440px) { .savedAlbums .savedAlbumGrid { grid-template-columns: repeat(2, minmax(0, 410px)); } }
 @media (max-width: 720px) {

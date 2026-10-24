@@ -79,7 +79,10 @@ export function HelpProvider({ context, children, request = 0, onActiveChange }:
         const menu = root?.matches('[role="menu"], .actionMenuPanel');
         // Reserve only genuinely pinned actions. Ordinary cards and inputs
         // scroll underneath the fixed corner; chasing them makes ? jump.
-        const docks = menu ? [root!] : Array.from((dialog ? root! : document).querySelectorAll<HTMLElement>(dialog ? '[data-help-dock], footer' : '[data-help-dock]'));
+        // Mobile dialog action rows reserve their own right-hand help slot.
+        // Keep the desktop dock handling where that CSS slot is not present.
+        const dialogHasSlot = dialog && window.matchMedia('(max-width: 999px)').matches;
+        const docks = dialogHasSlot ? [] : menu ? [root!] : Array.from((dialog ? root! : document).querySelectorAll<HTMLElement>(dialog ? '[data-help-dock], footer' : '[data-help-dock]'));
         const obstacles = docks.flatMap(element => {
           const style = getComputedStyle(element);
           if (!element.getClientRects().length || element.closest('[hidden], [inert]') || style.visibility === 'hidden') return [];

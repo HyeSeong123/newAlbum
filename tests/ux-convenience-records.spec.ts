@@ -10,10 +10,73 @@ async function go(page: Page, name: string) {
 }
 async function editAlbum(page: Page) {
   await go(page, '내 앨범');
-  await page.getByRole('button', { name: '함께한 가을 앨범 메뉴', exact: true }).click();
+  const menu = page.getByRole('button', { name: '함께한 가을 앨범 메뉴', exact: true });
+  if (before) {
+    await menu.scrollIntoViewIfNeeded();
+    const covered = () => menu.evaluate(button => {
+      const box = button.getBoundingClientRect();
+      return !button.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2));
+    });
+    if (await covered()) {
+      await capture(page, test.info(), `00-album-menu-covered-${test.info().title.replace(/[^a-zA-Z0-9]+/g, '-').slice(0, 64)}`);
+      await page.mouse.move(100, 400);
+      await page.mouse.wheel(0, 1200);
+      await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+      test.skip(await covered(), 'Baseline fixed help still covers the album menu after ordinary scrolling; no force click.');
+    }
+  }
+  await menu.click();
   await page.getByRole('button', { name: '앨범 수정', exact: true }).click();
   return page.getByRole('dialog', { name: '앨범 수정', exact: true });
 }
+
+test('fixed help leaves album menu and diary save controls fully reachable at 320px', async ({ page }, info) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await auditLibrary(page);
+  await go(page, '내 앨범');
+  const menu = page.getByRole('button', { name: '함께한 가을 앨범 메뉴', exact: true });
+  await menu.scrollIntoViewIfNeeded();
+  const help = page.getByRole('button', { name: '현재 화면 도움말', exact: true });
+  const initial = (await help.boundingBox())!;
+  await page.mouse.move(100, 400); await page.mouse.wheel(0, 1200);
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  const settled = (await help.boundingBox())!;
+  expect(Math.abs(initial.y - settled.y)).toBeLessThan(2);
+  await capture(page, info, '13-album-menu-help-clearance');
+  if (before) return;
+  await menu.click();
+  await page.keyboard.press('Escape');
+  await go(page, '일기장');
+  await page.getByRole('button', { name: '일기 쓰기', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: '새 일기', exact: true });
+  await dialog.getByLabel('제목', { exact: true }).fill('도움말 옆 저장');
+  await expect(dialog.locator('.diaryDialogActions button')).toHaveCount(2);
+  for (const action of await dialog.locator('.diaryDialogActions button').all()) {
+    const a = (await action.boundingBox())!, h = (await help.boundingBox())!;
+    expect(a.x + a.width <= h.x || a.x >= h.x + h.width || a.y + a.height <= h.y || a.y >= h.y + h.height).toBe(true);
+    expect(await action.evaluate(button => button.scrollWidth <= button.clientWidth)).toBe(true);
+    expect(a.x).toBeGreaterThanOrEqual(0);
+    expect(a.x + a.width).toBeLessThanOrEqual(320);
+  }
+  await capture(page, info, '14-diary-save-help-clearance');
+  await dialog.getByRole('button', { name: '일기 저장', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await page.locator('.diaryOpen').filter({ hasText: '가을 산책' }).click();
+  const existing = page.getByRole('dialog', { name: '일기 상세', exact: true });
+  await expect(existing.locator('.diaryDialogActions button')).toHaveCount(3);
+  await expect(existing.getByRole('button', { name: '일기 삭제', exact: true })).toBeVisible();
+  for (const action of await existing.locator('.diaryDialogActions button').all()) {
+    const a = (await action.boundingBox())!, h = (await help.boundingBox())!;
+    expect(a.x + a.width <= h.x || a.x >= h.x + h.width || a.y + a.height <= h.y || a.y >= h.y + h.height).toBe(true);
+    expect(await action.evaluate(button => button.scrollWidth <= button.clientWidth)).toBe(true);
+    expect(a.x).toBeGreaterThanOrEqual(0);
+    expect(a.x + a.width).toBeLessThanOrEqual(320);
+    expect(a.y + a.height).toBeLessThanOrEqual(740);
+  }
+  await capture(page, info, '15-diary-edit-actions-help-clearance');
+  await existing.getByRole('button', { name: '취소', exact: true }).click();
+  await expect(existing).toHaveCount(0);
+});
 
 // Removing the dirty-close guard must discard the draft and fail these cases.
 for (const [index, action] of ['닫기', '취소', 'Escape'].entries()) {

@@ -51,6 +51,14 @@ for (const width of [320, 393]) {
     await expect(detail.getByTitle('4점', { exact: true })).toHaveAttribute('aria-pressed', 'true');
     await expect.poll(() => page.evaluate(() => (window as any).__touchRows[0].rating)).toBe(4);
     await capture(page, `08-photo-rating-${width}`);
+    if (stage !== 'before') {
+      const labelLines = await detail.locator('.detailRating h3').evaluate(element => {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        return range.getClientRects().length;
+      });
+      expect(labelLines, 'The 별점 label stays on one line beside or above the touch targets').toBe(1);
+    }
     expect(await detail.locator('.photoInformation').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
     await detail.getByTitle('닫기', { exact: true }).click();
     await expect(detail).toBeHidden();

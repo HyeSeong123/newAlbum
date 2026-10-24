@@ -1,5 +1,32 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page, type Locator } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
+
+
+async function expectDialogControlsClearOfHelp(page: Page, dialog: Locator) {
+  expect(page.viewportSize()?.width).toBe(393);
+  const help = page.getByRole('button', { name: '현재 화면 도움말', exact: true });
+  await expect(help).toBeVisible();
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  const helpBox = await help.boundingBox();
+  expect(helpBox).not.toBeNull();
+  // Measure the actual error state without scrolling the alert or candidates away.
+  for (const control of await dialog.locator('select, [role="alert"], footer button').all()) {
+    const box = await control.boundingBox();
+    expect(box).not.toBeNull();
+    if (box && helpBox) {
+      const overlaps = box.x < helpBox.x + helpBox.width && box.x + box.width > helpBox.x
+        && box.y < helpBox.y + helpBox.height && box.y + box.height > helpBox.y;
+      expect(overlaps, `Help overlaps ${await control.getAttribute('aria-label') ?? await control.textContent()}`).toBe(false);
+    }
+  }
+  const actions = dialog.locator('footer button');
+  expect(await actions.count()).toBeGreaterThan(0);
+  for (const action of await actions.all()) {
+    const dimensions = await action.evaluate(node => ({ scroll: node.scrollWidth, client: node.clientWidth }));
+    // Wrapped text is allowed; horizontal clipping is not.
+    expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.client);
+  }
+}
 
 // Same native/worker fixture as pet-improvements.spec.ts; no model download or real user data.
 async function fixture(page:Page,empty=false){
@@ -79,6 +106,7 @@ test('pet detection completion leads to unknown animals and name assignment',asy
 });
 
 test('pet name saved before refresh failure reports committed result',async({page})=>{
+ if(!before)await page.setViewportSize({width:393,height:851});
  await fixture(page);await pets(page);
  await page.getByRole('button',{name:'보리 2장',exact:true}).click();
  await page.getByRole('button',{name:'이름 변경',exact:true}).click();
@@ -87,6 +115,7 @@ test('pet name saved before refresh failure reports committed result',async({pag
  await dialog.getByRole('button',{name:'저장',exact:true}).click();
  await expect(dialog.getByRole('alert')).toContainText(before?'저장하지 못했습니다':'저장은 완료했지만');
  expect(await page.evaluate(()=>(window as any).__petImprove.state.pets[0].name)).toBe('보리 새이름');
+ if(!before)await expectDialogControlsClearOfHelp(page,dialog);
  await capture(page,'12-pet-save-refresh-failure');
  if(before)return;
  await expect(dialog.getByRole('button',{name:'목록 다시 불러오기',exact:true})).toBeEnabled();
