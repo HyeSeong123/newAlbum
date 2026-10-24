@@ -315,3 +315,21 @@ test('photo dialog help ignores covered background controls and leaves close rea
   await close.click();
   await expect(detail).toBeHidden();
 });
+
+test('zoomed photo canvas never pushes help over the close action', async ({ page }) => {
+  await prepareHelp(page);
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
+  await page.getByRole('button', { name: '모든 기록', exact: true }).click();
+  await page.locator('.mediaTile').first().click();
+  await page.getByTitle('확대 보기', { exact: true }).click();
+  const zoom = page.getByRole('dialog', { name: '사진 확대 보기', exact: true });
+  await zoom.getByRole('slider', { name: '확대 배율', exact: true }).fill('2.5');
+  const close = zoom.getByTitle('확대 보기 닫기', { exact: true });
+  await expect.poll(async () => {
+    const a = await close.boundingBox(), b = await page.getByRole('button', { name: '현재 화면 도움말', exact: true }).boundingBox();
+    return a && b && (a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y);
+  }).toBe(true);
+  await close.click();
+  await expect(zoom).toBeHidden();
+  await expect(page.getByRole('dialog', { name: '사진 상세', exact: true })).toBeVisible();
+});
