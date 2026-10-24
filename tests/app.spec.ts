@@ -190,11 +190,13 @@ test("selection mode supports selected actions", async ({ page }) => {
   await expect(page.locator('.selectionDock').getByRole("button", { name: '앨범 만들기', exact: true })).toBeEnabled();
 
   page.once("dialog", async (dialog) => {
-    expect(dialog.message()).toContain("원본 파일은 삭제되지 않습니다");
+    expect(dialog.message()).toContain("선택한 2개 항목을 감자싹에서 삭제할까요?");
+    expect(dialog.message()).toContain("앨범·인물·반려동물의 연결도 함께 삭제합니다.");
+    expect(dialog.message()).toContain("휴대폰의 원본 파일은 그대로 보관됩니다.");
     await dialog.accept();
   });
-  await page.getByRole("button", { name: "등록 해제", exact: true }).click();
-  await expect(page.getByText("2개 항목을 등록 목록에서 지웠습니다.")).toBeVisible();
+  await page.locator('.selectionDock').getByRole("button", { name: "삭제", exact: true }).click();
+  await expect(page.getByText("2개 항목을 삭제했습니다.")).toBeVisible();
   await expect(page.getByText("아직 사진 기록이 없습니다.")).toBeVisible();
 });
 
@@ -228,7 +230,12 @@ test("created albums are visible from saved albums menu", async ({ page }) => {
   const editor = page.getByRole("dialog", { name: "앨범 수정" });
   await editor.getByRole("button", { name: "앨범 정보", exact: true }).click();
   await editor.getByLabel("제목", { exact: true }).fill("변경 취소");
+  page.once("dialog", async dialog => {
+    expect(dialog.type()).toBe("confirm");
+    await dialog.accept();
+  });
   await editor.getByRole("button", { name: "취소", exact: true }).click();
+  await expect(editor).toBeHidden();
   await expect(page.getByRole("button", { name: "가족 여행 앨범 선택" })).toBeVisible();
   await page.getByRole("button", { name: "앨범 수정", exact: true }).click();
   await editor.getByRole("button", { name: "앨범 정보", exact: true }).click();

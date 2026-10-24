@@ -42,9 +42,13 @@ test('file import assigns both photos and video districts and persists consecuti
   await photoView(page);
   await page.getByRole('button', { name: '사진·영상 가져오기', exact: true }).click();
   const form = page.getByRole('dialog', { name: '사진·영상 가져오기', exact: true });
+  await expect(form.locator('.mediaImportRegion > p')).toContainText('선택하지 않으면 사진의 촬영 위치를 사용해요.');
   if (testInfo.project.name === 'mobile') {
-    await expect(form.getByLabel('촬영 위치 자동 등록 안내')).toBeVisible();
-    await expect(form.getByLabel('촬영 위치 자동 등록 안내')).toContainText('위치 태그');
+    const storageHint = form.locator('.mediaImportStorageHint');
+    await expect(storageHint).toBeVisible();
+    await expect(storageHint).toContainText('원본은 그대로 두며');
+    await expect(storageHint).toContainText('선택한 파일 크기만큼 휴대폰 저장 공간을 사용해요.');
+    await expect(storageHint).toContainText('사진 위치정보 접근을 허용하면 원본에 저장된 촬영 위치를 읽어요.');
   }
   await form.getByLabel('가져올 기록의 시도').selectOption('KR-49');
   await form.getByLabel('가져올 기록의 시군구').selectOption('서귀포시');
@@ -53,7 +57,7 @@ test('file import assigns both photos and video districts and persists consecuti
   await page.screenshot({ path: `preview-results/calendar-import-${testInfo.project.name}.png`, fullPage: true });
   await form.getByRole('button', { name: /^(파일 선택|갤러리 열기)$/ }).click();
   await expect(form).toBeHidden();
-  expect(JSON.parse((await page.locator('html').getAttribute('data-import-regions'))!).ids).toEqual([1, 2, 3, 4]);
+  expect(JSON.parse((await page.locator('html').getAttribute('data-import-regions'))!)).toEqual(expect.objectContaining({ ids: [1, 2, 3, 4], regionCode: 'KR-49', district: '서귀포시' }));
   const records = await page.evaluate(() => JSON.parse(localStorage.getItem('oraedameun.calendarRegistrations-v1')!));
   expect(records.map((record: any) => [record.startDate, record.endDate])).toEqual([['2026-05-30', '2026-06-01'], ['2026-06-03', '2026-06-03']]);
   await month(page, '2026', '06');
@@ -70,7 +74,7 @@ test('file import assigns both photos and video districts and persists consecuti
   const details = page.getByRole('dialog');
   await expect(details.getByRole('heading', { name: '제주 여행', exact: true })).toBeVisible();
   await expect(details.locator('.calendarDayHeader')).toContainText('사진 2장 · 영상 1개');
-  await details.getByRole('button', { name: '등록 해제' }).click();
+  await details.getByRole('button', { name: '삭제', exact: true }).click();
   await expect(page.locator('.calendarPeriodBar')).toHaveCount(0);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('oraedameun.calendarRegistrations-v1')!).length)).toBe(1);
 });

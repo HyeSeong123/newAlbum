@@ -194,9 +194,14 @@ test('unregistered photos disappear from albums and clearing leaves an empty alb
   await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.getByRole('button', { name: '선택', exact: true }).click();
   await page.locator('.mediaTile[data-media-id="1"]').click();
-  page.once('dialog', (dialog) => dialog.accept());
-  await page.getByRole('button', { name: '등록 해제', exact: true }).click();
-  await expect(page.locator('.selectionNotice')).toContainText('1개 항목을 등록 목록에서 지웠습니다.');
+  page.once('dialog', async dialog => {
+    expect(dialog.message()).toContain('선택한 1개 항목을 감자싹에서 삭제할까요?');
+    expect(dialog.message()).toContain('앨범·인물·반려동물의 연결도 함께 삭제합니다.');
+    expect(dialog.message()).toContain('휴대폰의 원본 파일은 그대로 보관됩니다.');
+    await dialog.accept();
+  });
+  await page.locator('.selectionDock').getByRole('button', { name: '삭제', exact: true }).click();
+  await expect(page.locator('.selectionNotice')).toContainText('1개 항목을 삭제했습니다.');
   await page.getByRole('button', { name: '내 앨범', exact: true }).click();
   await page.getByRole('button', { name: '함께한 가을 앨범 열기', exact: true }).click();
   const reader = page.getByRole('dialog', { name: '앨범 전체창' });

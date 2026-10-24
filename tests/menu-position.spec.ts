@@ -83,7 +83,7 @@ test('album overflow fits at the trigger and keeps edit available without orderi
   }
 });
 
-test('phone titles, primary actions, tabs and photo tools retain one consistent row at narrow widths', async ({ page }, info) => {
+test('phone headings align and photo tools keep three columns with accessible targets at narrow widths', async ({ page }, info) => {
   test.skip(info.project.name !== 'mobile', 'Phone toolbar geometry.');
   await fixture(page);
   for (const width of [393, 360, 320]) {
@@ -102,8 +102,24 @@ test('phone titles, primary actions, tabs and photo tools retain one consistent 
     }
     await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
     await page.locator('.mediaTile').first().click();
-    const boxes = await page.locator('.detailActionButtons > button').evaluateAll(elements => elements.map(e => e.getBoundingClientRect().y));
-    expect(Math.max(...boxes) - Math.min(...boxes)).toBeLessThan(1);
+    const tools = page.locator('.detailActionButtons');
+    await expect(tools.getByRole('button')).toHaveCount(4);
+    const area = (await tools.boundingBox())!;
+    const boxes = await tools.getByRole('button').evaluateAll(elements => elements.map(element => {
+      const { x, y, width, height } = element.getBoundingClientRect();
+      return { x, y, width, height };
+    }));
+    for (const box of boxes) {
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.x).toBeGreaterThanOrEqual(area.x);
+      expect(box.x + box.width).toBeLessThanOrEqual(area.x + area.width + 1);
+    }
+    expect(Math.max(...boxes.slice(0, 3).map(box => box.y)) - Math.min(...boxes.slice(0, 3).map(box => box.y))).toBeLessThan(1);
+    for (let column = 1; column < 3; column++) expect(boxes[column].x).toBeGreaterThanOrEqual(boxes[column - 1].x + boxes[column - 1].width);
+    expect(Math.abs(boxes[3].x - boxes[0].x)).toBeLessThan(1);
+    expect(boxes[3].y).toBeGreaterThanOrEqual(Math.max(...boxes.slice(0, 3).map(box => box.y + box.height)));
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     await page.screenshot({ path: `preview-results/menu-photo-detail-${width}.png` });
     await page.getByTitle('닫기', { exact: true }).click();
   }

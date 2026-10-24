@@ -1,39 +1,45 @@
 import { expect, test } from '@playwright/test';
 
 for (const cancel of [true, false]) {
-  test(`late initial media load stays consistent after ${cancel ? 'canceling' : 'finishing'} import`, async ({ page }) => {
+  test(`registered media stays consistent after ${cancel ? 'canceling delayed selection' : 'finishing delayed registration'}`, async ({ page }) => {
     await page.addInitScript(({ cancel }) => {
       const media = [1, 2].map(id => ({ id, file_path: `C:/import-${id}.jpg`, file_type: 'image', taken_at: '2026-09-25', width: 640, height: 480, size_bytes: 1000, rating: 0, comment: '', favorite: false, metadata_status: 'ready' }));
       Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
         convertFileSrc: () => '/favicon.svg',
         invoke: async (command: string) => {
-          if (command === 'list_media') {
-            document.documentElement.dataset.loadPending = 'true';
-            await new Promise(resolve => window.addEventListener('finish-initial-load', resolve, { once: true }));
-            return media.slice(0, 1);
-          }
+          // Startup gallery checking must finish before testing an import.
+          if (command === 'list_media') return structuredClone(media.slice(0, 1));
           if ((command === 'plugin:dialog|open' || command === 'choose_android_gallery')) {
             document.documentElement.dataset.dialogChosen = 'true';
+            if (cancel) {
+              document.documentElement.dataset.importPending = 'true';
+              await new Promise(resolve => window.addEventListener('finish-import', resolve, { once: true }));
+            }
             return cancel ? null : ['C:/import-2.jpg'];
           }
-          if (command === 'register_paths') return media;
+          if (command === 'register_paths') {
+            document.documentElement.dataset.importPending = 'true';
+            await new Promise(resolve => window.addEventListener('finish-import', resolve, { once: true }));
+            return structuredClone(media);
+          }
           return [];
         },
       } });
     }, { cancel });
     await page.goto('/');
     await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
-    await expect(page.locator('html')).toHaveAttribute('data-load-pending', 'true');
+    await expect(page.locator('.mediaTile')).toHaveCount(1);
     await page.getByRole('button', { name: '사진·영상 가져오기', exact: true }).click();
     await page.getByRole('dialog', { name: '사진·영상 가져오기' }).getByRole('button', { name: /^(파일 선택|갤러리 열기)$/ }).click();
     await expect(page.locator('html')).toHaveAttribute('data-dialog-chosen', 'true');
-    await expect(page.getByRole('button', { name: '사진·영상 가져오기', exact: true })).toBeEnabled();
-    if (!cancel) await expect(page.locator('.mediaTile')).toHaveCount(2);
+    await expect(page.locator('html')).toHaveAttribute('data-import-pending', 'true');
+    await expect(page.locator('.mediaTile')).toHaveCount(1);
     await page.evaluate(async () => {
-      window.dispatchEvent(new Event('finish-initial-load'));
+      window.dispatchEvent(new Event('finish-import'));
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     });
     await expect(page.locator('.mediaTile')).toHaveCount(cancel ? 1 : 2);
+    await expect(page.getByRole('button', { name: '사진·영상 가져오기', exact: true })).toBeEnabled();
   });
 }
 
@@ -71,15 +77,22 @@ test('rapid photo edits are persisted in order even when the first write fails',
   await expect(detail.getByTitle('4점', { exact: true })).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('albums loaded before the library remain viewable and edits survive the late library response', async ({ page }) => {
+test('album photos remain viewable and edits survive a delayed media save', async ({ page }) => {
   await page.addInitScript(() => {
     const media = [1, 2].map(id => ({ id, file_path: `C:/early-${id}.jpg`, file_type: 'image', taken_at: '2026-09-25', width: 640, height: 480, size_bytes: 1000, rating: 0, comment: '', favorite: false, metadata_status: 'ready' }));
+    let saves = 0;
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: () => '/favicon.svg',
-      invoke: async (command: string) => {
-        if (command === 'list_media') {
-          await new Promise(resolve => window.addEventListener('finish-library', resolve, { once: true }));
-          return structuredClone(media);
+      invoke: async (command: string, args: { id: number; rating: number; favorite: boolean; comment: string }) => {
+        if (command === 'list_media') return structuredClone(media);
+        if (command === 'update_media_details') {
+          if (++saves === 1) {
+            document.documentElement.dataset.albumSavePending = 'true';
+            await new Promise(resolve => window.addEventListener('finish-album-save', resolve, { once: true }));
+          }
+          const item = media.find(item => item.id === args.id);
+          if (item) Object.assign(item, { rating: args.rating, favorite: args.favorite, comment: args.comment });
+          document.documentElement.dataset.albumPersisted = JSON.stringify(media[0]);
         }
         if (command === 'list_albums') return [{ id: 1, title: '먼저 열린 앨범', description: '', cover_color: '#ffffff', created_at: '2026-09-25', items: structuredClone(media) }];
         return [];
@@ -92,11 +105,15 @@ test('albums loaded before the library remain viewable and edits survive the lat
   await page.getByRole('button', { name: 'early-1.jpg 상세보기', exact: true }).click();
   const detail = page.getByRole('dialog', { name: '사진 상세', exact: true });
   await detail.getByTitle('즐겨찾기', {exact:true}).click();
+  await expect(page.locator('html')).toHaveAttribute('data-album-save-pending', 'true');
   await detail.getByTitle('4점', { exact: true }).click();
+  await expect(detail.getByTitle('즐겨찾기', {exact:true})).toHaveAttribute('aria-pressed', 'true');
+  await expect(detail.getByTitle('4점', { exact: true })).toHaveAttribute('aria-pressed', 'true');
   await page.evaluate(async () => {
-    window.dispatchEvent(new Event('finish-library'));
+    window.dispatchEvent(new Event('finish-album-save'));
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   });
+  await expect.poll(async () => JSON.parse(await page.locator('html').getAttribute('data-album-persisted') || '{}')).toMatchObject({ id: 1, favorite: true, rating: 4 });
   await expect(detail.getByTitle('즐겨찾기', {exact:true})).toHaveAttribute('aria-pressed', 'true');
   await expect(detail.getByTitle('4점', { exact: true })).toHaveAttribute('aria-pressed', 'true');
   await detail.getByTitle('다음', { exact: true }).click();
@@ -161,12 +178,12 @@ test('calendar unregister failure keeps the label and retry removes it', async (
     };
     window.addEventListener('restore-storage', () => { Storage.prototype.setItem = original; }, { once: true });
   });
-  await dialog.getByRole('button', { name: '등록 해제' }).click();
+  await dialog.getByRole('button', { name: '삭제', exact: true }).click();
   await expect(dialog.getByRole('alert')).toContainText('달력 등록을 해제하지 못했습니다');
   await expect(page.locator('.calendarPeriodBar')).toHaveCount(1);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('oraedameun.calendarRegistrations-v1')!).length)).toBe(1);
   await page.evaluate(() => window.dispatchEvent(new Event('restore-storage')));
-  await dialog.getByRole('button', { name: '등록 해제' }).click();
+  await dialog.getByRole('button', { name: '삭제', exact: true }).click();
   await expect(dialog.getByRole('heading', { name: '저장 확인', exact: true })).toHaveCount(0);
   await expect(page.locator('.calendarPeriodBar')).toHaveCount(0);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('oraedameun.calendarRegistrations-v1')!).length)).toBe(0);

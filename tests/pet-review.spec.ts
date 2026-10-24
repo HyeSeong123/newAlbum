@@ -5,18 +5,29 @@ async function prepare(page: import('@playwright/test').Page) {
   const thumbnail = `data:image/jpeg;base64,${(await readFile('tests/fixtures/pet-dog.jpg')).toString('base64')}`;
   await page.addInitScript(({ thumbnail }) => {
     const pets: {id: number; name: string; cover_media_id: number | null; media_ids: number[]}[] = [{ id: 1, name: '보리', cover_media_id: 1, media_ids: [1] }, { id: 2, name: '초코', cover_media_id: null, media_ids: [] }];
+    let jobs: { id: number; media_id: number; pet_id: number | null; view: string; state: string; error: string }[] = [];
+    let nextJob = 1, completedJobs = 0;
     const vector = (n: number) => Array(n).fill(0).map((_, i) => Number(i === 0));
     const base = { kind: 'dog', view: 'unknown', viewSource: 'unknown', box: [.05, .1, .4, .8], detectionScore: .9, appearance: vector(1024), mirroredAppearance: vector(1024), color: vector(120), shape: vector(10) };
     const detections = [{ ...base, id: 1, media_id: 1, pet_id: 1 as number | null, excluded: false }, { ...base, id: 2, media_id: 2, pet_id: null as number | null, excluded: false }, { ...base, id: 3, media_id: 2, pet_id: null as number | null, excluded: false, box: [.55, .1, .4, .8] }];
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: { convertFileSrc: () => thumbnail, invoke: async (command: string, args: any) => {
       if (command === 'list_media') return [1, 2].map(id => ({ id, file_path: `C:/pet/${id}.jpg`, file_type: 'image', taken_at: '2026-10-09', size_bytes: 1000, rating: 0, comment: '', favorite: false, metadata_status: 'ready' }));
       if (command === 'list_face_index') return { people: [], faces: [], scanned: [] };
-      if (command === 'list_pet_jobs') return { pending: 0, paused: 0, failed: 0, jobs: [] };
+      if (command === 'list_pet_jobs') return { pending: jobs.filter(job => job.state === 'pending').length, paused: jobs.filter(job => job.state === 'paused').length, failed: jobs.filter(job => job.state === 'failed').length, jobs: structuredClone(jobs) };
+      if (command === 'prepare_pet_input') return { path: 'cached-pet.jpg', sourceKey: 'mock' };
+      if (command === 'finish_pet_job') {
+        const job = jobs.find(job => job.id === args.id);
+        if (args.error && job) { job.state = 'failed'; job.error = args.error; }
+        else { jobs = jobs.filter(job => job.id !== args.id); completedJobs++; }
+        localStorage.setItem('pet-search-queue', JSON.stringify({ remaining: jobs.length, completed: completedJobs }));
+        return;
+      }
+      if (command === 'control_pet_jobs') { for (const job of jobs) job.state = args.resume ? 'pending' : 'paused'; return; }
       if (command === 'media_thumbnail') return 'C:/thumb.jpg';
       if (command === 'list_pets') return structuredClone(pets);
       if (command === 'get_pet_scan') return { media_id: args.mediaId, engine_version: 'gamjassak-pets-v4-review', source_key: 'mock', detections: detections.filter(d => d.media_id === args.mediaId) };
       if (command === 'list_pet_detections') return detections.filter(d => (args.mediaId === null || d.media_id === args.mediaId) && d.id > args.afterId && (!args.references || d.pet_id !== null && !d.excluded)).slice(0, args.limit);
-      if (command === 'enqueue_pet_jobs') { const calls = JSON.parse(localStorage.getItem('pet-search-jobs') ?? '[]'); calls.push(args.jobs); localStorage.setItem('pet-search-jobs', JSON.stringify(calls)); return; }
+      if (command === 'enqueue_pet_jobs') { const calls = JSON.parse(localStorage.getItem('pet-search-jobs') ?? '[]'); calls.push(args.jobs); localStorage.setItem('pet-search-jobs', JSON.stringify(calls)); jobs.push(...args.jobs.map((job: any) => ({ id: nextJob++, media_id: job.mediaId, pet_id: job.petId, view: job.view, state: 'pending', error: '' }))); return; }
       if (command === 'confirm_pet_detection') {
         if (localStorage.getItem('fail-connect')) throw new Error('연결 실패 · 다시 시도해 주세요.');
         const row = detections.find(d => d.id === args.detectionId)!; row.pet_id = args.petId; row.view = args.view; row.excluded = args.excluded;
@@ -46,6 +57,9 @@ test('registered photos can be searched and each animal connected without diagno
     [{ mediaId: 1, petId: 1, view: 'unknown' }],
     [{ mediaId: 1, petId: null, view: 'unknown' }, { mediaId: 2, petId: null, view: 'unknown' }],
   ]);
+  // Wait for the three cached queue jobs to finish before testing another pet.
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pet-search-queue') ?? 'null'))).toEqual({ remaining: 0, completed: 3 });
+  await expect(search.getByRole('button', { name: '사진 찾기 시작', exact: true })).toBeEnabled();
   await expect(search.locator('.entityEditFooter')).toBeInViewport();
   await page.screenshot({ path: `preview-results/pet-review-${test.info().project.name}.png` });
   await search.getByRole('button', { name: '보리 사진 선택 2', exact: true }).click();
