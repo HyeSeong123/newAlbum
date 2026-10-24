@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { toStep } from './fixtures/helpSpotlight';
 
 async function fixture(page: Page) {
   await page.route('**/phone-layout-*.jpg', route => route.fulfill({
@@ -99,7 +100,7 @@ test('import header and actions stay visible when options scroll on short phones
   await page.getByRole('button', { name: '현재 화면 도움말', exact: true }).click();
   const guide = page.getByRole('dialog', { name: '버튼 도움말', exact: true });
   await expect(guide).toBeVisible();
-  for (let i = 0; i < 8 && !await guide.locator('h3').filter({hasText: /^사진·영상$/}).isVisible(); i++) await guide.getByRole('button', {name:'다음',exact:true}).click();
+  await toStep(page,'사진·영상');
   await expect(guide).toContainText('카메라 위치 권한');
   await page.keyboard.press('Escape');
   await expect(dialog).toBeVisible();

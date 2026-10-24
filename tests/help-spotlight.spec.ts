@@ -482,6 +482,18 @@ test('help dialogue varies on another visit but is stable through resize and pre
   expect(await page.evaluate(()=>(window as any).spotlightCalls.filter((call:any)=>/interact_character/.test(call.command)).length)).toBe(0);
 });
 
+test('repositioning the spotlight preserves the focused help control',async({page})=>{
+  await prepareHelp(page);
+  await openHelp(page);
+  const guide=helpDialog(page),next=guide.getByRole('button',{name:'다음',exact:true});
+  await next.focus();
+  await page.setViewportSize({width:360,height:740});
+  await expect(guide).toHaveAttribute('aria-busy','false');
+  await expect(next).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(guide.getByRole('button',{name:'도움말 종료',exact:true})).toBeFocused();
+});
+
 test('fullscreen dialog help settles without observing its own overlay changes',async({page,isMobile})=>{
   test.skip(isMobile,'Fullscreen controls are desktop-only in the app.');
   await prepareHelp(page);

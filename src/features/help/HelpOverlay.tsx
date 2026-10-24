@@ -25,6 +25,7 @@ export function HelpOverlay({ session, onClose }: { session: Session; onClose: (
   const [viewport, setViewport] = useState(viewportRect);
   const [cardSize, setCardSize] = useState({ width: 340, height: 260 });
   const [readyTarget, setReadyTarget] = useState<HTMLElement | null>(null);
+  const [positioned, setPositioned] = useState(false);
   const layer = useRef<HTMLDivElement>(null), card = useRef<HTMLElement>(null);
   const closeRef = useRef(onClose); closeRef.current = onClose;
   const empty = session.steps.length === 0;
@@ -125,7 +126,7 @@ export function HelpOverlay({ session, onClose }: { session: Session; onClose: (
             setSteps(remaining);setIndex(Math.min(index,remaining.length-1));return;
           }
           const origin=layer.current?.getBoundingClientRect() ?? {x:0,y:0};
-          setTarget(helpLayerRect(rect,origin));setViewport(helpLayerRect(visibleViewport,origin));setReadyTarget(element);
+          setTarget(helpLayerRect(rect,origin));setViewport(helpLayerRect(visibleViewport,origin));setReadyTarget(element);setPositioned(true);
           if (card.current) {
             const panel = card.current, content = panel.querySelector<HTMLElement>('.helpGuideContent');
             const style = getComputedStyle(panel);
@@ -168,7 +169,7 @@ export function HelpOverlay({ session, onClose }: { session: Session; onClose: (
       <rect className="helpSpotlight" x={target.x - 6} y={target.y - 6} width={target.width + 12} height={target.height + 12} rx="10" />
       <line x1={anchor.x} y1={anchor.y} x2={point.x} y2={point.y} stroke="var(--primary, #7d835a)" strokeWidth="2" strokeDasharray="4 5" />
     </svg> : <div className="helpEmptyDim" aria-hidden="true" />}
-    <section ref={card} className="helpGuideCard" data-placement={placement.side} style={{ left: placement.x, top: placement.y, width: placement.width, maxHeight: placement.height, visibility: ready ? 'visible' : 'hidden' } as CSSProperties}>
+    <section ref={card} className="helpGuideCard" data-placement={placement.side} style={{ left: placement.x, top: placement.y, width: placement.width, maxHeight: placement.height, visibility: empty || positioned ? 'visible' : 'hidden' } as CSSProperties}>
       <header><span aria-hidden="true">{empty ? '0 / 0' : `${index + 1} / ${steps.length}`}</span><span className="helpSrOnly" role="status" aria-live="polite" aria-atomic="true">{index + 1} / {steps.length}. {step.title}. {copy.line} {copy.instruction}</span><button type="button" aria-label="도움말 종료" onClick={onClose}><X size={20} aria-hidden="true" /></button></header>
       <div className="helpGuideContent" tabIndex={0} role="region" aria-label="캐릭터 설명" key={step.id}>
         <div className="helpCharacter" aria-hidden="true" data-facing={point.x < anchor.x ? 'left' : 'right'}><CharacterVisual definition={character.definition} stage={character.stage} affection={character.affection} expression={copy.tier >= 3 ? 'happy' : 'idle'} gomiMotion={copy.tier >= 4 ? 'paw-wave' : copy.tier >= 3 ? 'happy' : 'cynical'} reactionKey={index} /></div>
