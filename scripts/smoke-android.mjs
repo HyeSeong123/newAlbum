@@ -138,8 +138,9 @@ async function tapNative(label) {
   throw new Error(`Native picker control did not settle: ${label}`);
 }
 async function downloads() {
-  // ACTION_OPEN_DOCUMENT_TREE on API 36 starts at internal storage and has
-  // no roots drawer. Navigate the visible directory rather than a file-picker UI.
+  // Imports prefer DCIM; other visits can restore a previously granted child.
+  // The first breadcrumb returns to internal storage in the API 36 tree UI.
+  await tapNative(/resource-id="com.google.android.documentsui:id\/breadcrumb_text"/);
   await tapNative(/text="Download"/);
 }
 async function safeWebViewBounds() {
@@ -242,6 +243,8 @@ async function checkPhotoGps(page) {
   const dialog = page.getByRole('dialog', { name:'사진·영상 가져오기', exact:true });
   await dialog.getByRole('radio', { name:/폴더 가져오기/ }).check();
   await dialog.getByRole('button', { name:'폴더 선택', exact:true }).click();
+  await nativeNode(/text="DCIM"[^>]*resource-id="com.google.android.documentsui:id\/breadcrumb_text"/);
+  await captureScreen('folder-picker-pictures-default');
   await downloads();
   await tapNative(/text="GamjassakGPS"/);
   await tapNative(/text="USE THIS FOLDER"/i);
@@ -792,9 +795,12 @@ try {
   assert.deepEqual(restoredPeople.people.find(person=>person.id===manualPhotoSmoke.personId).media_ids,[manualPhotoSmoke.mediaId]);
   const savedQueue=await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('list_pet_jobs'));assert.equal(savedQueue.paused,1);
   assert.equal((await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('pet_evaluation_summary'))).queries,1);
-  await page.getByRole('button', { name:'분석 결과 · 진행상황 보기', exact:true }).click();
-  const restoredAnalysis = page.getByRole('region', { name:'분석 진행상황', exact:true });
+  await expect(page.locator('.analysisActivityTrigger')).toHaveCount(0);
+  await page.locator('.navList').getByRole('button', { name:'사람과 반려동물', exact:true }).click();
+  await page.getByRole('tab', { name:'반려동물', exact:true }).click();
+  const restoredAnalysis = page.locator('.petsView .petAnalysisNotice');
   await expect(restoredAnalysis).toContainText('이전 분석 1장이 대기 중이에요.');
+  await captureScreen('restored-analysis-pending');
   await restoredAnalysis.getByRole('button', { name:'이어서 분석', exact:true }).click();
   await expect.poll(async()=>{const q=await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('list_pet_jobs'));return q.pending+q.paused+q.failed;},{timeout:60_000}).toBe(0);
   await writeFile(join(output,'pet-queue-restart.json'),JSON.stringify({pausedAfterRestart:1,deduplicated:true,resumedAndCompleted:true,validationSamplesPersisted:1},null,2));
