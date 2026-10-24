@@ -4,7 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 
 test('capture current app tasks and record expectations before actions', async ({page}, info) => {
   test.skip(info.project.name !== 'mobile', 'Android-sized audit capture.');
-  const stage=process.env.APP_UX_STAGE || 'before', folder=`preview-results/app-ux/${stage}`;
+  const stage=process.env.APP_UX_STAGE || 'after', folder=`preview-results/app-ux/${stage}`;
   await mkdir(folder,{recursive:true});
   const notes:unknown[]=[];
   async function shot(step:string, expectation:string) {
