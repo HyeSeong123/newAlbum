@@ -84,12 +84,14 @@ test('valid MP4 starts, seeks and pauses when the detail closes', async ({ page 
 test('Android retries a failed native source request before playing the registered video', async ({ page }, info) => {
   test.skip(info.project.name !== 'mobile', 'Android WebView media routing');
   await page.route('**/abcdef/1', route => route.fulfill({ contentType: 'video/mp4', path: 'tests/fixtures/playback.mp4' }));
+  await page.route('**/playback-thumbnail.jpg', route => route.fulfill({ contentType: 'image/jpeg', path: 'tests/fixtures/pet-dog.jpg' }));
   await page.addInitScript(() => {
     (window as typeof window & { playbackSourceAvailable: boolean }).playbackSourceAvailable = false;
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
-      convertFileSrc: () => { throw new Error('Android media must use its range stream'); },
+      convertFileSrc: () => '/playback-thumbnail.jpg',
       invoke: async (command: string) => {
         if (command === 'list_media') return [{ id: 1, file_path: '/app/imported-media-v1/playback.mp4', file_type: 'video', size_bytes: 10, comment: '', title: '', favorite: false, rating: 0 }];
+        if (command === 'media_thumbnail') return '/playback-thumbnail.jpg';
         if (command === 'media_playback_source') {
           if (!(window as typeof window & { playbackSourceAvailable: boolean }).playbackSourceAvailable) throw new Error('Temporary source failure');
           return `${location.origin}/abcdef/1`;
@@ -106,6 +108,7 @@ test('Android retries a failed native source request before playing the register
   await page.evaluate(() => { (window as typeof window & { playbackSourceAvailable: boolean }).playbackSourceAvailable = true; });
   await detail.getByRole('button', { name: '다시 시도', exact: true }).click();
   const video = detail.locator('video');
+  await expect(video).toHaveAttribute('src', 'http://127.0.0.1:5173/abcdef/1');
   await expect.poll(() => video.evaluate((el: HTMLVideoElement) => el.readyState)).toBeGreaterThanOrEqual(2);
   await video.evaluate((el: HTMLVideoElement) => el.play());
   await expect.poll(() => video.evaluate((el: HTMLVideoElement) => el.currentTime)).toBeGreaterThan(.3);

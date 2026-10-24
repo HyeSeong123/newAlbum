@@ -258,7 +258,7 @@ test('person empty action reports a mixed face scan failure and retries only the
   });
   await page.goto('/');
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
-  await page.locator('.emptyState').getByRole('button', { name: '사진에서 사람 찾기', exact: true }).click();
+  await page.getByRole('group', { name: '사진에서 인물 찾기', exact: true }).getByRole('button', { name: '사진에서 사람 찾기', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('2장 중 1장을 확인했습니다. 1장은 확인하지 못했습니다.');
   await expect(page.getByRole('button', { name: '가족 1장', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '새 사진에서 사람 찾기', exact: true }).click();
@@ -294,7 +294,7 @@ test('album creation and editing preserve title and written content after failed
   await nativeLibrary(page);
   await page.goto('/');
   await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
-  await page.getByRole('button', { name: '사진 선택', exact: true }).click();
+  await page.locator('.libraryResultsBar').getByRole('button', { name: '선택', exact: true }).click();
   await page.getByRole('button', { name: '현재 결과 전체 선택 (2개)', exact: true }).click();
   await page.getByRole('button', { name: '앨범 만들기', exact: true }).click();
   const creation = page.getByRole('dialog', { name: '앨범 만들기' });

@@ -21,8 +21,8 @@ test('long press then touch drag selects a range without scrolling or a duplicat
   await library(page);
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '가족 24장', exact: true }).click();
-  await page.getByRole('button', { name: '사람 관리', exact: true }).click();
-  await page.getByRole('button', { name: '사진 정리', exact: true }).click();
+  await page.getByRole('button', { name: '인물 관리', exact: true }).click();
+  await page.getByRole('group', { name: '인물 관리', exact: true }).getByRole('button', { name: '얼굴 선택', exact: true }).click();
   const tiles = page.getByRole('button', { name: '얼굴 선택', exact: true });
   await tiles.first().scrollIntoViewIfNeeded();
   const a = (await tiles.nth(0).boundingBox())!, b = (await tiles.nth(1).boundingBox())!;
@@ -66,7 +66,7 @@ test('Android back dismisses the open action menu before leaving its screen', as
   await library(page);
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('button', { name: '가족 24장', exact: true }).click();
-  await page.getByRole('button', { name: '사람 관리', exact: true }).click();
+  await page.getByRole('button', { name: '인물 관리', exact: true }).click();
   await expect(page.locator('.actionMenuPanel')).toBeVisible();
   expect(await page.evaluate(() => window.__gamjassakBack?.())).toBe(true);
   await expect(page.locator('.actionMenuPanel')).toHaveCount(0);

@@ -75,6 +75,7 @@
 .photoInspector .detailHeader { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; padding-inline: 16px; }
 .photoInspector .detailHeader button { min-width: 44px; min-height: 44px; }
 .photoInspector .detailHeader .detailBack { min-width: 44px; margin: 0; }
+.photoInspector .detailHeader .detailClose { min-width: 44px; min-height: 44px; }
 .photoInspector .detailHeader .detailDateTitle { position: static; transform: none; margin: 0; text-align: center; white-space: normal; line-height: 1.4; }
 .photoInspector .detailPhotoActions button,
 .photoInspector .detailZoomControls button,

@@ -146,7 +146,7 @@ test('people can be named, split, moved and reopened', async ({ page }) => {
   await page.getByRole('button', { name: '미확인 인물 다시 확인', exact: true }).click();
   await expect(page.getByRole('dialog', { name: '미확인 인물 다시 확인' })).toBeVisible();
   await expect(page.getByRole('checkbox')).toHaveCount(2);
-  await expect(page.getByRole('button', { name: '이 이름으로 저장', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '추천 이름으로 저장', exact: true })).toBeDisabled();
   await page.getByRole('checkbox').first().check();
   await page.screenshot({ path: `test-results/people-match-review-${test.info().project.name}.png` });
   await page.getByTitle('닫기', { exact: true }).click();
@@ -275,7 +275,7 @@ test('review applies only checked face suggestions', async ({ page }) => {
   await page.getByRole('button', { name: '미확인 인물 다시 확인', exact: true }).click();
   await expect(page.getByRole('checkbox')).toHaveCount(2);
   await page.getByRole('checkbox').first().check();
-  await page.getByRole('button', { name: '이 이름으로 저장 (1)', exact: true }).click();
+  await page.getByRole('button', { name: '추천 이름으로 저장 (1)', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.locator('html')).toHaveAttribute('data-reassigned', '[2]');
   await expect(page.getByRole('button', { name: '아버님 2장', exact: true })).toBeVisible();
@@ -392,7 +392,7 @@ test('the main action retries a completed photo with no faces and keeps existing
   });
   await page.goto('/');
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
-  const retry = page.getByRole('group', { name: '얼굴 분석', exact: true }).getByRole('button', { name: '못 찾은 사진 다시 찾기', exact: true });
+  const retry = page.getByRole('group', { name: '사진에서 인물 찾기', exact: true }).getByRole('button', { name: '못 찾은 사진 다시 찾기', exact: true });
   await expect(retry).toBeEnabled();
   await retry.click();
   await expect(page.locator('html')).toHaveAttribute('data-retry-photos', '[2]');

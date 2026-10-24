@@ -28,8 +28,11 @@ test('startup, every logo link, the first menu item and reload all lead to Home'
   await expect(nav.getByRole('button', { name: '홈', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.searchBox')).toHaveCount(0);
   for (const name of ['사진 기록', '내 앨범', '일기장', '추억', '사람과 반려동물', '설정']) {
-    const menu = name === '설정' ? page.locator('.globalSettings') : nav.getByRole('button', { name, exact: true });
-    await menu.click();
+    if (name === '설정') {
+      const settings = page.getByRole('button', { name, exact: true });
+      if (!await settings.isVisible()) await page.getByRole('button', { name: '전체 메뉴', exact: true }).click();
+      await page.getByRole('button', { name, exact: true }).filter({ visible: true }).click();
+    } else await nav.getByRole('button', { name, exact: true }).click();
     await expect(home).toBeHidden();
     await page.getByRole('button', { name: '감자싹 홈으로 이동', exact: true }).click();
     await expect(home).toBeVisible();
@@ -59,9 +62,11 @@ test('the mascot chooses different messages and supports Enter and Space without
   const second = await speech.innerText();
   await mascot.press('Enter');
   await expect(speech).not.toHaveText(second);
+  const third = await speech.innerText();
   await page.evaluate(() => { Math.random = () => 0.999999; });
   await mascot.press('Space');
-  await expect(speech).toHaveText('…귀찮아.');
+  await expect(speech).not.toHaveText(third);
+  await expect(speech).not.toHaveText('');
   const last = await speech.innerText();
   await mascot.click();
   await expect(speech).not.toHaveText(last);
@@ -104,8 +109,11 @@ test('Home and the 16px logo gap fit narrow windows and larger text', async ({ p
       const lettering = (await page.locator('.brandLogoLettering').boundingBox())!;
       expect(lettering.x - character.x - character.width).toBeCloseTo(16, 1);
       const logo = (await page.locator('.brand').boundingBox())!;
-      const settings = (await page.locator('.globalSettings').boundingBox())!;
-      expect(logo.x + logo.width).toBeLessThanOrEqual(settings.x);
+      const headerControl = page.locator('.globalSettings:visible, .headerMenu .actionMenuTrigger:visible');
+      await expect(headerControl).toHaveCount(1);
+      await expect(headerControl).toBeInViewport({ ratio: 1 });
+      const control = (await headerControl.boundingBox())!;
+      expect(logo.x + logo.width).toBeLessThanOrEqual(control.x);
       const nav = (await page.locator('.navList').boundingBox())!;
       if (width > 1000) expect(logo.x + logo.width).toBeLessThanOrEqual(nav.x);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);

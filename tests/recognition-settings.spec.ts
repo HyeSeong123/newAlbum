@@ -8,7 +8,9 @@ test('advanced evaluation is in settings and keeps automatic and manual directio
   if(command==='move_faces'||command==='rename_face_person'||command==='save_face_scan')throw new Error('Direction correction must preserve links');
   return [];
  }}}));
- await page.goto('/');await page.locator('.globalSettings').click();
+ await page.goto('/');
+ if (!await page.getByRole('button',{name:'설정',exact:true}).isVisible()) await page.getByRole('button',{name:'전체 메뉴',exact:true}).click();
+ await page.getByRole('button',{name:'설정',exact:true}).filter({visible:true}).click();
  await page.getByRole('button',{name:'인식 검증 열기 · 고급',exact:true}).click();
  await expect(page.getByText('512차원 모델 제외',{exact:false})).toBeVisible();
  const panel=page.getByRole('region',{name:'인물 정확도 평가'});

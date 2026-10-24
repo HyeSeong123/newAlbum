@@ -60,6 +60,7 @@ export function useMediaLibrary() {
             result.missingCopies ? `앱의 보관 파일 ${result.missingCopies}개를 찾지 못했어요.` : '',
           ].filter(Boolean).join(' '));
         } catch { if (!disposed) setGalleryNotice('갤러리와 비교하지 못했어요. 앱에 보관한 사진은 계속 사용할 수 있어요.'); }
+        finally { if (!disposed) setCheckingGallery(false); }
       }
       return api.loadRegisteredMedia();
     })().then((items) => {
@@ -67,8 +68,7 @@ export function useMediaLibrary() {
         publish({ items: items.map((item) => ({ ...item, ...pendingMediaEdits.current.get(item.id) })), loaded: true });
         pendingMediaEdits.current.clear();
       }
-    }).catch(() => { if (!disposed) setError("등록된 미디어를 불러오지 못했습니다."); })
-      .finally(() => { if (!disposed) setCheckingGallery(false); });
+    }).catch(() => { if (!disposed) setError("등록된 미디어를 불러오지 못했습니다."); });
     void api.loadSavedAlbums().then((records) => {
       if (!disposed) {
         if (albumVersion === albumRevision.current) publish({ albums: records });

@@ -13,6 +13,7 @@ async function expectControl(button: Locator) {
   const size = await button.boundingBox();
   expect(size!.width).toBeGreaterThanOrEqual(44);
   expect(size!.height).toBeGreaterThanOrEqual(44);
+  expect(await button.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
 }
 
 for (const width of [320, 393]) {

@@ -13,7 +13,11 @@ for (const width of [360, 390, 430, 768, 1280, 1440]) {
       await page.evaluate(() => document.fonts.ready);
       const stage = process.env.AUDIT_STAGE || 'after';
       for (const [key, name] of [['home', '홈'], ['photos', '사진 기록'], ['albums', '내 앨범'], ['diary', '일기장'], ['memories', '추억'], ['characters', '새싹 도감'], ['people', '사람과 반려동물'], ['settings', '설정']]) {
-        await page.locator(key === 'settings' ? '.sidebar' : '.navList').getByRole('button', { name, exact: true }).click();
+        if (key === 'settings') {
+          const settings = page.getByRole('button', { name, exact: true });
+          if (!await settings.isVisible()) await page.getByRole('button', { name: '전체 메뉴', exact: true }).click();
+          await page.getByRole('button', { name, exact: true }).filter({ visible: true }).click();
+        } else await page.locator('.navList').getByRole('button', { name, exact: true }).click();
         await expect(page.locator('.mainPanel')).toBeVisible();
         // Let both font swapping and reduced-motion character images settle.
         await page.evaluate(() => document.fonts.ready);

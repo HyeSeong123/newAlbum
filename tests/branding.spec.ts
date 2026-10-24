@@ -31,8 +31,11 @@ test('approved spaced logo loads across views and narrow headers without losing 
   for (const width of sizes) {
     await page.setViewportSize({ width, height: width <= 393 ? 851 : 960 });
     const logoBox = (await logo.boundingBox())!;
-    const settingsBox = (await page.locator('.globalSettings').boundingBox())!;
-    expect(logoBox.x + logoBox.width).toBeLessThanOrEqual(settingsBox.x);
+    const headerControl = page.locator('.globalSettings:visible, .headerMenu .actionMenuTrigger:visible');
+    await expect(headerControl).toHaveCount(1);
+    await expect(headerControl).toBeInViewport({ ratio: 1 });
+    const controlBox = (await headerControl.boundingBox())!;
+    expect(logoBox.x + logoBox.width).toBeLessThanOrEqual(controlBox.x);
     expect(logoBox.x + logoBox.width).toBeLessThanOrEqual(width);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     await page.screenshot({ path: `test-results/branding-header-${width}.png` });
@@ -49,10 +52,13 @@ test('new users meet Gomi and dismissing the guide survives a reload', async ({ 
   await page.goto('/');
   const guide = page.getByRole('dialog', { name: '감자싹에 사진을 담아보세요' });
   await expect(guide).toBeVisible();
-  await guide.locator('.firstRunMascot img').evaluate((image: HTMLImageElement) => image.decode());
-  await expect(guide.locator('.firstRunMascot img')).toHaveAttribute('src', '/characters/gomi/cynical.png');
-  await expect(guide.locator('#firstRunDescription')).toContainText('…휴. 사진은 직접 골라.');
-  await expect(guide).toContainText('감자싹은 원본 사진과 영상 파일을 삭제하거나 수정하지 않습니다.');
+  const introduction = guide.getByLabel('고미의 안내');
+  const mascot = introduction.locator('[data-character="gomi"] img');
+  await mascot.evaluate((image: HTMLImageElement) => image.decode());
+  await expect(mascot).toHaveAttribute('src', '/characters/gomi/cynical.png');
+  await expect(introduction.locator('.characterHelpName')).toHaveText('고미');
+  await expect(guide.locator('#firstRunDescription')).toContainText('사진과 영상을 가져오면 날짜별로 둘러보고, 앨범과 추억으로 다시 볼 수 있어요.');
+  await expect(guide).toContainText('원본 사진과 영상 파일은 그대로 두고 함께 추억을 정리해 봐요.');
   await page.screenshot({ path: `test-results/branding-guide-${test.info().project.name}.png` });
   await guide.getByRole('button', { name: '나중에 하기' }).click();
   await page.reload();
