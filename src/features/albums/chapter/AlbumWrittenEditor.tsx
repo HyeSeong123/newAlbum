@@ -55,7 +55,7 @@ export function AlbumWrittenEditor({ album, request, onClose, onSave }: {
       <form onSubmit={submit}><fieldset disabled={busy}>
         <AlbumContentEditor contents={contents} items={album.items} onChange={setContents} selectedId={entryId} />
         {error && <p className="albumEditorError" role="alert">{error}</p>}
-        <div className="albumActions albumEditorFooter">
+        <div className="albumActions albumEditorFooter" data-help-dock>
           {request.entryId && <button type="button" className="albumEntryDelete" onClick={() => void save(contents.filter(entry => entry.id !== entryId))}><Trash2 size={17} />삭제</button>}
           <span>저장하면 앨범에 반영됩니다.</span><button type="button" onClick={onClose}>취소</button><button type="submit"><Check size={18} />{busy ? "저장 중" : "저장"}</button>
         </div>

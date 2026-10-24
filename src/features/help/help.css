@@ -6,23 +6,26 @@
 .helpMask { position: absolute; inset: 0; pointer-events: none; }
 .helpEmptyDim { position: absolute; inset: 0; background: rgba(0,0,0,.82); }
 .helpSpotlight { fill: none; stroke: #f5f1d9; stroke-width: 2; filter: drop-shadow(0 0 5px #e5e7b7); }
-.helpGuideCard { position: fixed; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; padding: 10px 12px; border: 1px solid var(--border, #dfddd2); border-radius: 12px; background: var(--surface, #fffdf8); color: var(--text); box-shadow: 0 8px 32px #0005; font-size: 14px; line-height: 1.6; }
-.helpGuideCard > header { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; min-height: 44px; }
+.helpGuideCard { position: fixed; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; padding: 16px 20px; border: 1px solid var(--border, #dfddd2); border-radius: 16px; background: var(--surface, #fffdf8); color: var(--text); box-shadow: 0 8px 32px #0005; font-size: 14px; line-height: 1.7; }
+.helpGuideCard > header { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; min-height: 44px; padding-bottom: 8px; }
 .helpGuideCard > header span { color: var(--muted); font-size: 12px; }
-.helpGuideCard button { display: inline-flex; align-items: center; justify-content: center; gap: 2px; min-width: 44px; min-height: 44px; padding: 6px 8px; font: inherit; font-size: 13px; }
-.helpGuideCard > header button { border: 0; background: transparent; color: var(--text); }
-.helpGuideContent { display: flex; align-items: flex-start; gap: 10px; min-height: 0; overflow: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.helpGuideCard button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 44px; min-height: 44px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 9999px; background: var(--surface-soft); color: var(--text); font: inherit; font-size: 13px; line-height: 1.4; }
+.helpGuideCard > header button { width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--text); }
+.helpGuideContent { display: flex; align-items: flex-start; gap: 16px; min-height: 0; padding-block: 8px 16px; overflow: auto; overscroll-behavior: contain; touch-action: pan-y; }
 .helpCharacter { width: 76px; min-width: 76px; align-self: flex-end; }
 .helpCharacter .characterVisual { display: block; width: 76px; height: 96px; }
 .helpCharacter .characterBody, .helpCharacter img { width: 100%; height: 100%; object-fit: contain; }
 .helpCharacter[data-facing="right"] { transform: scaleX(-1); }
 .helpSpeech { flex: 1; min-width: 0; }
 .helpSpeech .characterHelpName { color: var(--primary); font-size: 12px; }
-.helpSpeech h3 { margin: 2px 0 6px; font-size: 16px; line-height: 1.4; overflow-wrap: anywhere; }
-.helpSpeech p { margin: 5px 0 9px; font-size: 13px; overflow-wrap: anywhere; }
+.helpSpeech h3 { margin: 6px 0 10px; font-size: 16px; line-height: 1.4; overflow-wrap: anywhere; }
+.helpSpeech p { margin: 8px 0 12px; font-size: 13px; overflow-wrap: anywhere; }
 .helpVoice { color: var(--muted); }
-.helpGuideCard > footer { display: flex; align-items: center; justify-content: space-between; gap: 4px; flex-shrink: 0; padding-top: 8px; }
+.helpGuideCard > footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; flex-shrink: 0; padding-top: 16px; border-top: 1px solid var(--border); }
+.helpGuideCard > footer button { flex: 1 1 auto; }
+.helpGuideCard .primary { border-color: var(--primary); background: var(--primary); color: #fff; }
 .helpGuideCard .helpSkip { border: 0; background: transparent; color: var(--muted); }
 .helpSrOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-@media (max-height: 460px) { .helpCharacter { width: 48px; min-width: 48px; } .helpCharacter .characterVisual { width: 48px; height: 62px; } .helpGuideCard { padding: 4px 10px; } .helpGuideCard > footer { padding-top: 2px; } }
+@media (max-width: 360px) { .helpGuideCard { padding: 14px 16px; } .helpGuideContent { gap: 12px; } .helpGuideCard > footer button { padding-inline: 10px; } }
+@media (max-height: 460px) { .helpCharacter { width: 48px; min-width: 48px; } .helpCharacter .characterVisual { width: 48px; height: 62px; } .helpGuideCard { padding: 4px 10px; } .helpGuideCard > header { padding-bottom: 0; } .helpGuideContent { padding-block: 0; } .helpGuideCard > footer { padding-top: 6px; border-top: 0; } }
 @media (prefers-reduced-motion: reduce) { .helpOverlay *, .helpTriggerHost * { animation: none !important; transition: none !important; } }

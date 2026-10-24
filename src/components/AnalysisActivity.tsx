@@ -23,8 +23,8 @@ export function AnalysisActivity({ person, pets, onShowResults }: { person: Pers
   }, [open]);
   if (!showPerson && !showPets) return null;
   function close() { setOpen(false); trigger.current?.focus(); }
-  return <div className="analysisActivity" ref={root} onKeyDown={event => { if (event.key === 'Escape' && open) { event.preventDefault(); event.stopPropagation(); close(); } }}>
-    {open && <section id="analysisActivityPanel" className="analysisActivityPanel" role="region" aria-label="분석 진행상황">
+  return <div className="analysisActivity" data-help-dock ref={root} onKeyDown={event => { if (event.key === 'Escape' && open) { event.preventDefault(); event.stopPropagation(); close(); } }}>
+    {open && <section id="analysisActivityPanel" className="analysisActivityPanel" data-help-dock role="region" aria-label="분석 진행상황">
       <header><h2>분석 진행상황</h2><button type="button" aria-label="진행상황 접기" onClick={close}><X size={18} /></button></header>
       {showPerson && person && <article><h3>인물 분석</h3><p role="status">{person.error || person.message}</p>
         {person.running && <progress aria-label="인물 분석 진행" value={person.done} max={person.total || 1} />}

@@ -1,12 +1,12 @@
 import { expect, type Page } from '@playwright/test';
 
 /** Native storage is substituted; all help, focus and click behavior is real UI. */
-export async function prepareHelp(page: Page, character = 'gomi', affection = 0, mediaCount = 12, pendingEvent = false) {
+export async function prepareHelp(page: Page, character = 'gomi', affection = 0, mediaCount = 12, pendingEvent = false, waitingJob = false) {
   await page.route('**/spotlight-photo.jpg', route => route.fulfill({ path: 'node_modules/@vladmandic/face-api/demo/sample1.jpg', contentType: 'image/jpeg' }));
   // Model the native asset protocol: packaged character art remains local even
   // while external networking is disabled in the HTTP browser harness.
   await page.route(url => url.pathname.startsWith('/characters/'), route => route.fulfill({ path: `public${new URL(route.request().url()).pathname}` }));
-  await page.addInitScript(({ character, affection, mediaCount, pendingEvent }) => {
+  await page.addInitScript(({ character, affection, mediaCount, pendingEvent, waitingJob }) => {
     localStorage.setItem('geuruteogi.first-run-completed-v1', 'true');
     let media = Array.from({ length: mediaCount }, (_, i) => ({ id: i + 1, file_path: `/photos/${i + 1}.jpg`, file_type: 'image', taken_at: '2026-10-23', title: `사진 ${i + 1}`, rating: 0, favorite: i === 0, comment: '', metadata_status: 'ready' }));
     let characters = ['gomi', 'potato', 'sweet-potato'].map(id => ({ id, customName: id === 'potato' ? '우리 감자' : null, growthStage: id === 'gomi' ? 6 : 1, affection, isMain: character === id, regionPhotoCount: 0 }));
@@ -26,14 +26,14 @@ export async function prepareHelp(page: Page, character = 'gomi', affection = 0,
         if (command === 'list_face_index') return { people: [{ id: 1, name: '미정', media_ids: [1] }, { id: 9, name: '' }], faces: [{ id: 1, person_id: 9, media_id: 2, confirmed: false, thumbnail: '/spotlight-photo.jpg' }], scanned: [2] };
         if (command === 'find_face_matches') return [{ face_id: 1, person_id: 1, candidates: [{ person_id: 1, distance: .3, references: 2 }] }];
         if (command === 'list_pets') return [{ id: 1, name: '보리', media_ids: [1], cover_media_id: 1 }];
-        if (command === 'list_pet_jobs') return { pending: 0, paused: 0, failed: 0, jobs: [] };
+        if (command === 'list_pet_jobs') return { pending: 0, paused: waitingJob ? 1 : 0, failed: 0, jobs: waitingJob ? [{ id: 1, media_id: 1, pet_id: null, view: 'unknown', state: 'paused', error: '' }] : [] };
         if (command === 'compare_android_gallery') return { checked: 0, present: 0, missing: 0, unavailable: 0, untracked: 0, missingCopies: 0 };
         if (command === 'list_albums' || command === 'list_diary' || command === 'list_unknown_pet_items' || command === 'list_pet_detections') return [];
         if (command === 'delete_registered_media') { media = media.filter(m => !args.ids.includes(m.id)); return structuredClone(media); }
         return [];
       },
     } });
-  }, { character, affection, mediaCount, pendingEvent });
+  }, { character, affection, mediaCount, pendingEvent, waitingJob });
   await page.goto('/');
   await expect(page.getByRole('heading', { name: '홈', exact: true })).toBeVisible();
 }

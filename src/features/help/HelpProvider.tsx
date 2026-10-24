@@ -75,13 +75,32 @@ export function HelpProvider({ context, children, request = 0, onActiveChange }:
         const height = viewport?.height ?? window.innerHeight;
         const width = viewport?.width ?? window.innerWidth;
         const offset = viewport?.offsetTop ?? 0;
-        const controls = Array.from((root ?? document).querySelectorAll<HTMLElement>('button, input, select, textarea'))
-          .filter(e => !e.closest('[data-help-ui], [hidden], .entityPhotoGrid, .galleryGrid, .petGrid, .albumEditPhotos, .faceMatchGrid, .characterGrid, .photoZoomCanvas') && e.getClientRects().length)
-          .map(e => e.getBoundingClientRect());
+        const dialog = root?.matches('[role="dialog"]');
+        const menu = root?.matches('[role="menu"], .actionMenuPanel');
+        // Reserve only genuinely pinned actions. Ordinary cards and inputs
+        // scroll underneath the fixed corner; chasing them makes ? jump.
+        const docks = menu ? [root!] : Array.from((dialog ? root! : document).querySelectorAll<HTMLElement>(dialog ? '[data-help-dock], footer' : '[data-help-dock]'));
+        const obstacles = docks.flatMap(element => {
+          const style = getComputedStyle(element);
+          if (!element.getClientRects().length || element.closest('[hidden], [inert]') || style.visibility === 'hidden') return [];
+          const pinned = style.position === 'fixed' || style.position === 'sticky';
+          if (!pinned && !(dialog && element.tagName === 'FOOTER' && style.flexShrink === '0')) return [];
+          const rect = element.getBoundingClientRect();
+          // Expanded panels may sit outside their fixed wrapper's own box.
+          const dockTop = Math.min(rect.top, ...Array.from(element.querySelectorAll<HTMLElement>('[data-help-dock]'))
+            .filter(child => child.getClientRects().length && getComputedStyle(child).visibility !== 'hidden')
+            .map(child => child.getBoundingClientRect().top));
+          const occupiedHeight = rect.bottom - dockTop;
+          // A sticky dock reserves its bottom slot even before it sticks.
+          const top = pinned && style.bottom !== 'auto'
+            ? offset + height - parseFloat(style.bottom) - occupiedHeight : dockTop;
+          return [{ left: rect.left, right: rect.right, top, bottom: top + occupiedHeight }];
+        }).sort((a, b) => b.bottom - a.bottom);
         let inset = 16;
-        for (; inset < height - 70; inset += 56) {
+        for (const obstacle of obstacles) {
           const x = width - 64, y = offset + height - inset - 48;
-          if (!controls.some(r => r.right > x - 8 && r.left < x + 56 && r.bottom > y - 8 && r.top < y + 56)) break;
+          if (obstacle.right > x - 8 && obstacle.left < x + 56 && obstacle.bottom > y - 8 && obstacle.top < y + 56)
+            inset = Math.max(inset, offset + height - obstacle.top + 12);
         }
         setBottom(Math.max(16, window.innerHeight - offset - height + Math.min(inset, Math.max(16, height - 64))));
         setRight(Math.max(16, document.documentElement.clientWidth - (viewport?.offsetLeft ?? 0) - width + 16));

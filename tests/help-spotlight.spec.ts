@@ -1,6 +1,86 @@
 import { expect, test } from '@playwright/test';
 import { prepareHelp, openHelp, helpDialog, toStep } from './fixtures/helpSpotlight';
 
+async function scrollAndSettle(page: import('@playwright/test').Page, y: number) {
+  await page.evaluate(async value => {
+    window.scrollTo(0, value);
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  }, y);
+}
+
+test('home help stays in the bottom corner while ordinary shortcut cards scroll past', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 });
+  await prepareHelp(page);
+  const trigger = page.getByRole('button', { name: '현재 화면 도움말', exact: true });
+  const positions = [];
+  for (const y of [0, 200, 500, 900, 100]) {
+    await scrollAndSettle(page, y);
+    const box = (await trigger.boundingBox())!;
+    positions.push(box.y);
+    await page.screenshot({ path: `preview-results/spotlight/${process.env.HELP_POLISH_STAGE ?? 'after'}-home-scroll-${test.info().project.name}-${y}.png` });
+    expect(390 - box.x - box.width).toBeLessThan(32);
+    expect(780 - box.y - box.height).toBeLessThan(80);
+  }
+  expect(Math.max(...positions) - Math.min(...positions)).toBeLessThan(2);
+  await trigger.click();
+  await toStep(page, '사진 기록 열기');
+  await page.screenshot({ path: `preview-results/spotlight/${process.env.HELP_POLISH_STAGE ?? 'after'}-home-guide-${test.info().project.name}.png` });
+  await helpDialog(page).getByRole('button', { name: '다음', exact: true }).click();
+  await helpDialog(page).getByRole('button', { name: '이전', exact: true }).click();
+  await expect(helpDialog(page).getByRole('heading', { name: '사진 기록 열기', exact: true })).toBeVisible();
+  await helpDialog(page).getByRole('button', { name: '건너뛰기', exact: true }).click();
+  await expect(helpDialog(page).getByRole('heading', { name: '사진 기록 열기', exact: true })).toBeHidden();
+  await helpDialog(page).getByRole('button', { name: '도움말 종료', exact: true }).click();
+  await expect(helpDialog(page)).toBeHidden();
+});
+
+test('home help stays above the actual analysis indicator without following scrolling cards', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 });
+  await prepareHelp(page, 'gomi', 0, 90, false, true);
+  const activity = page.getByRole('button', { name: '분석 결과 · 진행상황 보기', exact: true });
+  await expect(activity).toBeVisible();
+  const trigger = page.getByRole('button', { name: '현재 화면 도움말', exact: true });
+  const positions = [];
+  for (const y of [0, 200, 500, 900, 100]) {
+    await scrollAndSettle(page, y);
+    const a = (await activity.boundingBox())!, b = (await trigger.boundingBox())!;
+    positions.push(b.y);
+    expect(b.y + b.height).toBeLessThanOrEqual(a.y - 8);
+  }
+  expect(Math.max(...positions) - Math.min(...positions)).toBeLessThan(2);
+  await activity.click();
+  const panel = page.getByRole('region', { name: '분석 진행상황', exact: true });
+  await expect(panel).toBeVisible();
+  await expect.poll(async () => {
+    const a = (await panel.boundingBox())!, b = (await trigger.boundingBox())!;
+    return b.y + b.height <= a.y - 8;
+  }).toBe(true);
+  await page.getByRole('button', { name: '진행상황 접기', exact: true }).click();
+  await trigger.click();
+  await expect(helpDialog(page)).toBeVisible();
+});
+
+test('photo selection keeps help above its pinned commands as the list scrolls', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 });
+  await prepareHelp(page, 'gomi', 0, 90);
+  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
+  await page.getByRole('button', { name: '모든 기록', exact: true }).click();
+  await page.locator('.libraryView .selectionToggle').click();
+  await page.locator('.mediaTile').first().click();
+  const dock = page.locator('.libraryView .entitySelectionBar');
+  await expect(dock).toBeVisible();
+  const positions = [];
+  for (const y of [0, 250, 600, 50]) {
+    await scrollAndSettle(page, y);
+    const a = (await dock.boundingBox())!, b = (await page.getByRole('button', { name: '현재 화면 도움말', exact: true }).boundingBox())!;
+    positions.push(b.y);
+    expect(b.y + b.height).toBeLessThanOrEqual(a.y - 8);
+  }
+  expect(Math.max(...positions) - Math.min(...positions)).toBeLessThan(2);
+  await dock.getByRole('button', { name: '선택 취소', exact: true }).click();
+  await expect(dock).toBeHidden();
+});
+
 test('baseline current help capture', async ({ page }) => {
   test.skip(process.env.HELP_BASELINE !== '1');
   await prepareHelp(page);

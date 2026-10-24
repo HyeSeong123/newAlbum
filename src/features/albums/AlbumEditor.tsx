@@ -61,7 +61,7 @@ export function AlbumEditor({ album, onClose, onSave, initialSection = "details"
           {pageCount > 1 && <div className="albumActions"><button type="button" title="이전 페이지" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={18} /></button><span>{currentPage + 1} / {pageCount}</span><button type="button" title="다음 페이지" disabled={currentPage === pageCount - 1} onClick={() => setPage(currentPage + 1)}><ChevronRight size={18} /></button></div>}
           </section>}
           {error && <p className="albumEditorError" role="alert">{error}</p>}
-          <div className="albumActions albumEditorFooter"><span>변경 내용은 저장을 누르면 반영됩니다.</span><button type="button" onClick={onClose}>취소</button><button type="submit" disabled={!draft.title.trim()}><Check size={18} />{busy ? "저장 중" : "저장"}</button></div>
+          <div className="albumActions albumEditorFooter" data-help-dock><span>변경 내용은 저장을 누르면 반영됩니다.</span><button type="button" onClick={onClose}>취소</button><button type="submit" disabled={!draft.title.trim()}><Check size={18} />{busy ? "저장 중" : "저장"}</button></div>
         </fieldset>
       </form>
     </section>
