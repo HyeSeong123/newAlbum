@@ -215,6 +215,6 @@ test('diary can link a newly selected result after clearing a search', async ({ 
   await expect(page.locator('.diaryCardFoot')).toContainText('함께한 가을');
   await page.getByRole('button', { name: '선택 취소', exact: true }).first().click();
   await page.locator('.diaryOpen').click();
-  await page.getByRole('dialog', { name: '일기 상세', exact: true }).getByRole('button', { name: '일기 수정', exact: true }).click();
+  if (!before) await page.getByRole('dialog', { name: '일기 상세', exact: true }).getByRole('button', { name: '일기 수정', exact: true }).click();
   await expect(page.getByRole('dialog').getByLabel('앨범', { exact: true })).toHaveValue('1');
 });

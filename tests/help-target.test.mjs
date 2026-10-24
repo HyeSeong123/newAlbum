@@ -33,6 +33,18 @@ test('nested vertical and horizontal scroll ports constrain the highlight',()=>{
   }finally{globalThis.getComputedStyle=previous;}
 });
 
+test('a viewport-fixed dialog escapes clipping from the underlying scrolled photo panel',()=>{
+  const previous=globalThis.getComputedStyle;globalThis.getComputedStyle=element=>element.style;
+  try{
+    const background=pane(0,600,393,100,'hidden','auto');
+    const fixed=pane(0,0,393,800,'visible','visible',background);fixed.style.position='fixed';
+    const body=pane(12,100,369,500,'hidden','auto',fixed);
+    const target={parentElement:body,getBoundingClientRect:()=>rect(28,140,180,44)};
+    assert.deepEqual(helpTargetViewport(target,viewport),{x:12,y:100,width:369,height:500});
+    assert.deepEqual(visibleHelpTargetRect(target,viewport),{x:28,y:140,width:180,height:44});
+  }finally{globalThis.getComputedStyle=previous;}
+});
+
 test('offset visual viewport, pinned header and layer origin share one coordinate system',()=>{
   const target={parentElement:null,getBoundingClientRect:()=>rect(35,90,120,44),scrollIntoView:()=>{target.scrolled=true;}};
   const shifted={x:15,y:75,width:360,height:420};

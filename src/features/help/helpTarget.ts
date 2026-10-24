@@ -11,11 +11,14 @@ export function helpTargetViewport(element: HTMLElement, viewport: Viewport, hea
     if (parent.tagName === 'BODY' || parent.tagName === 'HTML') continue;
     const style = getComputedStyle(parent);
     const clipX = clips(style.overflowX), clipY = clips(style.overflowY);
-    if (!clipX && !clipY) continue;
-    const bounds = parent.getBoundingClientRect();
-    const x = bounds.left + parent.clientLeft, y = bounds.top + parent.clientTop;
-    if (clipX) { left = Math.max(left, x); right = Math.min(right, x + parent.clientWidth); }
-    if (clipY) { top = Math.max(top, y); bottom = Math.min(bottom, y + parent.clientHeight); }
+    if (clipX || clipY) {
+      const bounds = parent.getBoundingClientRect();
+      const x = bounds.left + parent.clientLeft, y = bounds.top + parent.clientTop;
+      if (clipX) { left = Math.max(left, x); right = Math.min(right, x + parent.clientWidth); }
+      if (clipY) { top = Math.max(top, y); bottom = Math.min(bottom, y + parent.clientHeight); }
+    }
+    // A viewport-fixed popup escapes the scrolled page/panel that contains it.
+    if (style.position === 'fixed') break;
   }
   return { x: left, y: top, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
 }

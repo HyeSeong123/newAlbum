@@ -215,10 +215,11 @@ test('disabled and hidden controls are omitted and a disappearing target is skip
   await openHelp(page);
   const titles: string[] = [];
   for (let i = 0; i < 20; i++) {
+    await expect(helpDialog(page)).toHaveAttribute('aria-busy','false');
     const target = page.locator('[data-help-highlighted]');
     expect(await target.evaluate(e => e.matches(':disabled, [aria-disabled="true"]') || Boolean(e.closest('[hidden]')))).toBe(false);
     titles.push(await helpDialog(page).locator('h3').innerText());
-    if (await helpDialog(page).getByRole('button', { name: '마치기', exact: true }).isVisible()) break;
+    if ((await helpDialog(page).locator('footer .primary').textContent())?.includes('마치기')) break;
     await helpDialog(page).getByRole('button', { name: '다음', exact: true }).click();
   }
   expect(titles).not.toContain('사진 저장');

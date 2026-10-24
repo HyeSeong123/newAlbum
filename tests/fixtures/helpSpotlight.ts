@@ -50,10 +50,11 @@ export async function toStep(page: Page, title: string) {
   const guide = helpDialog(page);
   await expect(guide).toBeVisible();
   for (let i = 0; i < 35; i++) {
+    await expect(guide).toHaveAttribute('aria-busy','false');
     await expect(guide.locator('.helpGuideCard')).toBeVisible();
     if (await guide.getByRole('heading', { name: title, exact: true }).isVisible()) return;
     const next = guide.getByRole('button', { name: '다음', exact: true });
-    if (!await next.isVisible()) break;
+    if ((await guide.locator('footer .primary').textContent())?.includes('마치기')) break;
     const before = await guide.locator('h3').innerText();
     await next.click();
     await expect(guide.locator('h3')).not.toHaveText(before);
