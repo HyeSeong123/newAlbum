@@ -327,11 +327,11 @@ test('album creation and editing preserve title and written content after failed
 test('empty memory and map actions return to photo records', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: '추억', exact: true }).click();
-  await page.getByRole('button', { name: '사진 기록 보기', exact: true }).click();
+  await page.getByRole('button', { name: '내 사진 펼치기', exact: true }).click();
   await expect(page.getByRole('heading', { name: '사진 기록', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '추억', exact: true }).click();
   await page.getByRole('group', { name: '추억 보기' }).getByRole('button', { name: '추억 지도' }).click();
-  await page.getByRole('button', { name: '사진 기록 보기', exact: true }).click();
+  await page.getByRole('button', { name: '내 사진 펼치기', exact: true }).click();
   await expect(page.getByRole('heading', { name: '사진 기록', exact: true })).toBeVisible();
 });
 
