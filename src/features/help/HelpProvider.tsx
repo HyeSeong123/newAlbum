@@ -16,6 +16,7 @@ export function HelpProvider({ context, children, request = 0, onActiveChange }:
   const [bottom, setBottom] = useState(16);
   const [right, setRight] = useState(16);
   const [owner, setOwner] = useState<HTMLElement | null>(null);
+  const [fullscreenRoot, setFullscreenRoot] = useState(() => document.fullscreenElement);
   const triggerId = useId();
   const contextRef = useRef(context); contextRef.current = context;
   const trigger = useRef<HTMLButtonElement>(null);
@@ -36,6 +37,11 @@ export function HelpProvider({ context, children, request = 0, onActiveChange }:
   useEffect(() => { onActiveChange?.(Boolean(session)); }, [session, onActiveChange]);
   const identity = `${context.screen}:${context.tab}`;
   useEffect(() => { setSession(null); }, [identity, context.blocked]);
+  useEffect(() => {
+    const syncFullscreen = () => setFullscreenRoot(document.fullscreenElement);
+    document.addEventListener('fullscreenchange', syncFullscreen);
+    return () => document.removeEventListener('fullscreenchange', syncFullscreen);
+  }, []);
   useEffect(() => {
     if (!owner) return;
     const previous = owner.getAttribute('aria-owns');
@@ -122,7 +128,7 @@ export function HelpProvider({ context, children, request = 0, onActiveChange }:
     {children}
     {createPortal(<div data-help-ui="trigger" className="helpTriggerHost" style={{ bottom: `max(${bottom}px, env(safe-area-inset-bottom))`, right: `max(${right}px, env(safe-area-inset-right))` }}>
       {available && <button ref={trigger} id={triggerId} hidden={Boolean(session)} type="button" className="helpTrigger" aria-label="현재 화면 도움말" aria-haspopup="dialog" onPointerDown={event => event.stopPropagation()} onClick={start}><CircleHelp size={24} aria-hidden="true" /></button>}
-    </div>, document.fullscreenElement ?? document.body)}
+    </div>, fullscreenRoot ?? document.body)}
     {session && <HelpOverlay session={session} onClose={close} />}
   </HelpContextValue.Provider>;
 }

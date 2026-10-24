@@ -507,13 +507,16 @@ test('fullscreen dialog help settles without observing its own overlay changes',
   });
   await page.getByRole('button',{name:'검사 화면 전체 보기',exact:true}).click();
   await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.id)).toBe('fullscreen-help-fixture');
+  await expect(page.locator('#fullscreen-help-fixture > .helpTriggerHost')).toBeVisible();
   await openHelp(page);
   const guide=helpDialog(page);
   await expect(guide.getByRole('heading',{name:'저장',exact:true})).toBeVisible();
   await page.setViewportSize({width:1080,height:780});
   await expect(guide).toHaveAttribute('aria-busy','false');
   await expect(guide.locator('.helpGuideCard')).toBeVisible();
-  await page.keyboard.press('Escape');
+  await page.screenshot({path:'preview-results/spotlight/after-fullscreen-help-desktop.png'});
+  await guide.getByRole('button',{name:'도움말 종료',exact:true}).click();
   await expect(guide).toBeHidden();
   await page.evaluate(()=>document.exitFullscreen());
+  await expect(page.locator('body > .helpTriggerHost')).toBeVisible();
 });
