@@ -1,5 +1,20 @@
 import { expect, test } from '@playwright/test';
 
+test('map Back leaves selection before returning from a place to its map', async ({ page }) => {
+  await map(page);
+  const place = page.locator('.memoryMapPlaceList').getByRole('button', { name: /제주/ });
+  await place.click();
+  const gallery = page.locator('.memoryMapGallery');
+  await gallery.getByRole('button', { name: '사진 선택', exact: true }).click();
+  await expect(gallery.getByRole('button', { name: '선택 취소', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(gallery).toBeVisible();
+  await expect(gallery.getByRole('button', { name: '사진 선택', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(gallery).toHaveCount(0);
+  await expect(place).toBeFocused();
+});
+
 test.beforeEach(async ({ page }) => {
   await page.route('**/region-photo-*.jpg', route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360"><rect width="480" height="360" fill="#e1e7d1"/></svg>' }));
   await page.addInitScript(() => {
@@ -62,7 +77,7 @@ async function map(page: import('@playwright/test').Page, query='') {
 
 test('manual region editing persists, updates map counts, and failed saves keep the old region',async({page})=>{
   await map(page);
-  await page.getByRole('button',{name:'지역 미분류'}).click();
+  await page.getByRole('button',{name:'장소 미정'}).click();
   await page.getByRole('button',{name:'기록 1 상세보기',exact:true}).click();
   const detail=page.getByRole('dialog',{name:'사진 상세'});
   await detail.getByRole('button',{name:'지역 지정',exact:true}).click();
@@ -80,7 +95,7 @@ test('manual region editing persists, updates map counts, and failed saves keep 
   await expect(detail.getByLabel('위치',{exact:true})).toContainText('서울특별시 · 종로구');
   await expect(detail.getByText('직접 지정')).toBeVisible();
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('button',{name:/지역 미분류/}).locator('strong')).toHaveText('1');
+  await expect(page.getByRole('button',{name:/장소 미정/}).locator('strong')).toHaveText('1');
   await page.reload();
   await page.getByRole('button',{name:'추억',exact:true}).click();
   await page.getByRole('group',{name:'추억 보기'}).getByRole('button',{name:'추억 지도'}).click();
@@ -112,7 +127,7 @@ test('stored districts outside the current code list remain selectable and are n
 });
 
 test('bulk unclassified assignment and GPS override update their existing records',async({page})=>{
-  await map(page); await page.getByRole('button',{name:'지역 미분류'}).click();
+  await map(page); await page.getByRole('button',{name:'장소 미정'}).click();
   const gallery=page.locator('.memoryMapGallery');
   await gallery.getByRole('button',{name:'사진 선택',exact:true}).click();
   await gallery.getByRole('button',{name:'기록 1 선택',exact:true}).click();
@@ -143,7 +158,7 @@ test('combined region filters, stable sort and selected album order use existing
   await gallery.getByRole('button',{name:'사진 선택',exact:true}).click();
   await gallery.getByRole('button',{name:'기록 7 선택',exact:true}).click();
   await gallery.getByRole('button',{name:'기록 3 선택',exact:true}).click();
-  await gallery.getByRole('button',{name:'앨범 만들기'}).click();
+  await gallery.getByRole('button',{name:'이곳의 앨범 만들기'}).click();
   const modal=page.getByRole('dialog',{name:'앨범 만들기'});
   await expect(modal).toContainText('2개의 기록');
   await modal.getByLabel('제목',{exact:true}).fill('제주의 기록');
@@ -157,7 +172,7 @@ test('combined region filters, stable sort and selected album order use existing
 test('large region requires selection, retains choices across pages and clears on filter change',async({page})=>{
   await map(page,'?large'); await page.locator('.memoryMapPlaceList button').filter({hasText:'제주'}).click();
   const gallery=page.locator('.memoryMapGallery');
-  await gallery.getByRole('button',{name:'앨범 만들기'}).click();
+  await gallery.getByRole('button',{name:'이곳의 앨범 만들기'}).click();
   await expect(page.getByRole('dialog',{name:'앨범 만들기'})).toHaveCount(0);
   await expect(gallery).toContainText('기록이 많아요');
   await gallery.locator('.recordMediaGrid > button').first().click();
@@ -166,7 +181,7 @@ test('large region requires selection, retains choices across pages and clears o
   await expect(gallery.locator('.recordMediaGrid > button')).toHaveCount(12);
   await gallery.locator('.recordMediaGrid > button').first().click();
   await expect(gallery).toContainText('2개 선택');
-  await gallery.getByRole('button',{name:'앨범 만들기'}).click();
+  await gallery.getByRole('button',{name:'이곳의 앨범 만들기'}).click();
   await expect(page.getByRole('dialog',{name:'앨범 만들기'})).toContainText('2개의 기록');
   await page.getByRole('dialog',{name:'앨범 만들기'}).getByRole('button',{name:'취소',exact:true}).click();
   await gallery.getByLabel('기록 종류').selectOption('video');
@@ -179,7 +194,7 @@ test('a small filtered region opens an editable album draft without saving autom
   const gallery=page.locator('.memoryMapGallery');
   await gallery.getByLabel('기록 연도').selectOption('2025');
   await expect(gallery).toContainText('필터 결과 4개');
-  await gallery.getByRole('button',{name:'앨범 만들기'}).click();
+  await gallery.getByRole('button',{name:'이곳의 앨범 만들기'}).click();
   const modal=page.getByRole('dialog',{name:'앨범 만들기'});
   await expect(modal).toContainText('4개의 기록');
   expect(await page.evaluate(()=>localStorage.getItem('created-region-album'))).toBeNull();
@@ -191,7 +206,7 @@ test('a small filtered region opens an editable album draft without saving autom
 
 test('memories timeline opens dates and reuses photo detail',async({page})=>{
   await page.goto('/'); await page.getByRole('button',{name:'추억',exact:true}).click();
-  await page.getByRole('group',{name:'추억 보기'}).getByRole('button',{name:'우리의 기록'}).click();
+  await page.getByRole('group',{name:'추억 보기'}).getByRole('button',{name:'시간 산책'}).click();
   await expect(page.getByLabel('우리의 기록 타임라인')).toBeVisible();
   await page.locator('.timelineDay').first().click();
   await expect(page.getByLabel('날짜별 기록')).toBeVisible();
@@ -234,7 +249,7 @@ test('region and page navigation focus the gallery and return to the original ma
   await gallery.getByRole('navigation',{name:'지역 사진 페이지'}).getByRole('button',{name:'다음',exact:true}).click();
   await expect(gallery).toContainText('49–60번째 기록');
   await expect(heading).toBeFocused(); await expect(heading).toBeInViewport();
-  await gallery.getByRole('button',{name:'전체 지도 보기'}).click();
+  await gallery.getByRole('button',{name:'추억 지도로'}).click();
   await expect(gallery).toHaveCount(0); await expect(region).toBeFocused(); await expect(region).toBeInViewport();
 });
 
@@ -249,7 +264,7 @@ test('page selection retains other pages and clearing selections disables region
   await expect(gallery).toContainText('60개 선택');
   await gallery.getByRole('button',{name:'이 페이지 선택 해제',exact:true}).click();
   await expect(gallery).toContainText('48개 선택');
-  await gallery.getByRole('button',{name:'앨범 만들기'}).click();
+  await gallery.getByRole('button',{name:'이곳의 앨범 만들기'}).click();
   const draft=page.getByRole('dialog',{name:'앨범 만들기'});
   await expect(draft).toContainText('48개의 기록');
   await draft.getByRole('button',{name:'취소',exact:true}).click();
@@ -257,10 +272,10 @@ test('page selection retains other pages and clearing selections disables region
   await gallery.getByLabel('지정할 지역').selectOption('KR-11');
   await gallery.getByRole('button',{name:'선택 모두 해제',exact:true}).click();
   await expect(gallery.getByRole('button',{name:'지역 저장',exact:true})).toBeDisabled();
-  await expect(gallery.getByRole('button',{name:'앨범 만들기'})).toBeDisabled();
+  await expect(gallery.getByRole('button',{name:'이곳의 앨범 만들기'})).toBeDisabled();
   await gallery.getByLabel('기록 종류').selectOption('video');
   await expect(gallery).toContainText('필터 결과 1개');
-  await gallery.getByRole('button',{name:'필터 초기화'}).click();
+  await gallery.getByRole('button',{name:'모든 기록 보기'}).click();
   await expect(gallery).toContainText('필터 결과 60개');
   await expect(gallery).toContainText('1–48번째 기록');
   await expect(gallery.getByRole('button',{name:'사진 선택',exact:true})).toHaveAttribute('aria-pressed','false');
@@ -271,7 +286,7 @@ test('failed overview and filtered page queries can retry without losing the fil
   await expect(page.getByRole('alert')).toContainText('위치 정보를 불러오지 못했습니다');
   await expect(page.locator('.memoryMapStats')).toHaveCount(0);
   await page.evaluate(()=>localStorage.setItem('overview-recovered','1'));
-  await page.getByRole('button',{name:'지도 다시 불러오기'}).click();
+  await page.getByRole('button',{name:'추억 지도 다시 열기'}).click();
   await page.locator('.memoryMapPlaceList button').filter({hasText:'제주'}).click();
   const gallery=page.locator('.memoryMapGallery');
   await expect(gallery).toContainText('필터 결과 6개');
@@ -282,7 +297,7 @@ test('failed overview and filtered page queries can retry without losing the fil
   await expect(gallery.getByLabel('기록 연도')).toHaveValue('2025');
   await expect(gallery.getByLabel('기록 연도').locator('option')).toHaveCount(3);
   await page.evaluate(()=>localStorage.removeItem('region-page-fail'));
-  await gallery.getByRole('button',{name:'사진 다시 불러오기'}).click();
+  await gallery.getByRole('button',{name:'이곳의 사진 다시 열기'}).click();
   await expect(gallery).toContainText('필터 결과 4개');
   await expect(gallery.getByLabel('기록 연도')).toHaveValue('2025');
   await expect(gallery.getByRole('alert')).toHaveCount(0);
@@ -305,6 +320,6 @@ test('map hides the unrelated global search and resets it when opened', async ({
   const sections = page.getByRole('group',{name:'추억 보기'});
   await sections.getByRole('button',{name:'추억 지도'}).click();
   await expect(search).toHaveCount(0);
-  await sections.getByRole('button',{name:'다시 만난 추억'}).click();
+  await sections.getByRole('button',{name:'그날 다시'}).click();
   await expect(search).toHaveValue('');
 });

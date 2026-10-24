@@ -45,7 +45,8 @@ test('Gomi rests awake with front paws extended and returns to the pose after ta
   await expect(visual).toHaveAttribute('data-expression','cynical');
   await expect(mascot.locator('img')).toHaveAttribute('src','/characters/gomi/rest-front.png');
   await mascot.locator('img').evaluate((img:HTMLImageElement)=>img.decode());
-  await expect(page.locator('#homeMascotHint')).toContainText('앞발을 쭉 내밀고');
+  await expect(page.locator('#homeMascotHint')).toHaveCount(0);
+  await expect(mascot).not.toHaveAttribute('aria-describedby', 'homeMascotHint');
   await mascot.click();
   await expect(visual).toHaveAttribute('data-motion','cynical');
   await page.clock.fastForward(1_800);

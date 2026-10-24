@@ -53,6 +53,20 @@ test('daily greeting survives repeat entries and stored restarts, and resets on 
   assert.equal(claimGomiGreeting('2026-10-13','disabled-test',20,disabled),'......왔네....');
   assert.equal(claimGomiGreeting('2026-10-13','disabled-test',20,disabled),undefined);
 });
+
+test('Gomi has varied everyday and event dialogue at every current personality boundary',()=>{
+  for(const affection of [0,20,30,60,90]){
+    const idle=affinity.gomiDialogueLines(affection,'idle');
+    assert.ok(new Set(idle).size>=16,`affection ${affection} needs more everyday lines`);
+    for(const context of ['photoAdded','regionMemory','selectedAsMain','sad']){
+      const lines=affinity.gomiDialogueLines(affection,context);
+      assert.ok(new Set(lines).size>=4,`${affection}/${context} needs more situation-specific lines`);
+      assert.ok(lines.some(line=>!idle.includes(line)));
+    }
+    idle.splice(0,idle.length,'changed outside the model');
+    assert.ok(affinity.gomiDialogueLines(affection,'idle').length>=16);
+  }
+});
 test('sleeping has two different poses and all expressions and motion frames are transparent local PNGs', () => {
   const assets = new Set(Object.values(gomiMotionFrames).flat());
   assert.equal(assets.size, 22);

@@ -21,7 +21,7 @@ function season(month: number): string {
   return month === 12 || month <= 2 ? "겨울" : month <= 5 ? "봄" : month <= 8 ? "여름" : "가을";
 }
 
-export function discoverTrips(items: MediaItem[]): TripCandidate[] {
+export function discoverTrips(items: MediaItem[], visibleIds?: ReadonlySet<string>): TripCandidate[] {
   // Work solely on metadata. Local EXIF calendar days are never shifted through
   // the viewer's timezone; UTC is used only to subtract validated date strings.
   const dated = items.flatMap(item => {
@@ -31,11 +31,14 @@ export function discoverTrips(items: MediaItem[]): TripCandidate[] {
   const candidates: TripCandidate[] = [];
   let group: typeof dated = [];
   function finish() {
-    if (group.length < TRIP_MIN_MEDIA) { group = []; return; }
-    const days = new Set(group.map(entry => entry.date)).size;
-    if (days < TRIP_MIN_DAYS && group.length < TRIP_SINGLE_DAY_MIN_MEDIA) { group = []; return; }
-    const records = group.map(entry => entry.item);
-    const start = group[0].date, end = group[group.length - 1].date;
+    // Search narrows an already separated visit. Hidden moves still divide trips.
+    const visible = visibleIds ? group.filter(entry => visibleIds.has(entry.item.id)) : group;
+    group = [];
+    if (visible.length < TRIP_MIN_MEDIA) return;
+    const days = new Set(visible.map(entry => entry.date)).size;
+    if (days < TRIP_MIN_DAYS && visible.length < TRIP_SINGLE_DAY_MIN_MEDIA) return;
+    const records = visible.map(entry => entry.item);
+    const start = visible[0].date, end = visible[visible.length - 1].date;
     const regionCode = records[0].regionCode!;
     const cover = chooseTripCover(records)!;
     const label = REGION_LABELS[regionCode];

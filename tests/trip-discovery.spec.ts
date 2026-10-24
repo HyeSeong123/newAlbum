@@ -43,28 +43,28 @@ test('travel candidates separate visits, show counts and open the existing photo
   expect(imageBox!.x).toBeGreaterThanOrEqual(coverBox!.x);
   expect(imageBox!.y).toBeGreaterThanOrEqual(coverBox!.y);
   expect(imageBox!.y+imageBox!.height).toBeLessThanOrEqual(coverBox!.y+coverBox!.height+1);
-  await card.getByRole('button',{name:'기록 보기'}).click();
+  await card.getByRole('button',{name:'여행 펼치기'}).click();
   const records=page.getByRole('region',{name:'여행 기록 목록'});
   await expect(records.locator('.recordMediaGrid > button')).toHaveCount(3);
   await records.getByRole('button',{name:'여행 기록 1 상세보기',exact:true}).click();
   const detail=page.getByRole('dialog',{name:'사진 상세'});
   await expect(detail.getByLabel('사진 제목',{exact:true})).toHaveValue('여행 기록 1');
   await detail.getByTitle('닫기',{exact:true}).click();
-  await records.getByRole('button',{name:'여행 후보 목록'}).click();
+  await records.getByRole('button',{name:'여행 목록'}).click();
   await expect(page.locator('.tripCard')).toHaveCount(3);
 });
 
 test('candidate album uses an editable suggested title and chronological media only after confirmation',async({page})=>{
   await memories(page);
   const card=page.locator('.tripCard').filter({hasText:'2026-08-12 ~ 2026-08-13'});
-  await card.getByRole('button',{name:'앨범 만들기'}).click();
+  await card.getByRole('button',{name:'여행 앨범 만들기'}).click();
   const modal=page.getByRole('dialog',{name:'앨범 만들기'});
   await expect(modal.getByLabel('제목',{exact:true})).toHaveValue('2026년 제주 여행');
   expect(await page.evaluate(()=>localStorage.getItem('trip-created-album'))).toBeNull();
   await modal.getByRole('button',{name:'취소',exact:true}).click();
   expect(await page.evaluate(()=>localStorage.getItem('trip-created-album'))).toBeNull();
-  await card.getByRole('button',{name:'기록 보기'}).click();
-  await page.getByRole('region',{name:'여행 기록 목록'}).getByRole('button',{name:'앨범 만들기'}).click();
+  await card.getByRole('button',{name:'여행 펼치기'}).click();
+  await page.getByRole('region',{name:'여행 기록 목록'}).getByRole('button',{name:'여행 앨범 만들기'}).click();
   await modal.getByLabel('제목',{exact:true}).fill('우리의 제주 여행');
   await modal.getByRole('button',{name:'만들기',exact:true}).click();
   await expect(modal).toHaveCount(0);

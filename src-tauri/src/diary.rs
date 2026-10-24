@@ -41,7 +41,7 @@ pub fn list(conn: &Connection) -> Result<Vec<Entry>, String> {
 fn valid(entry: &Entry) -> Result<(), String> {
     if entry.title.trim().is_empty() || entry.title.chars().count() > 120 || entry.body.chars().count() > 20000 ||
         entry.date.len() != 10 || !entry.date.bytes().enumerate().all(|(i, b)| if i == 4 || i == 7 { b == b'-' } else { b.is_ascii_digit() }) ||
-        !["기쁨", "평온", "그리움", "슬픔", "설렘"].contains(&entry.mood.as_str()) ||
+        !["기쁨", "평온", "그리움", "슬픔", "설렘", "배고픔", "보고싶음", "사랑함"].contains(&entry.mood.as_str()) ||
         !["맑음", "흐림", "비", "눈", "바람"].contains(&entry.weather.as_str()) {
         return Err("일기 입력을 확인해 주세요.".into());
     }
@@ -115,6 +115,25 @@ pub fn import_photos(conn: &mut Connection, paths: Vec<String>) -> Result<Vec<Ph
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn new_moods_roundtrip_and_updates_preserve_diary_photos() {
+        let mut conn = photo_database();
+        for mood in ["배고픔", "보고싶음", "사랑함"] {
+            let mut diary = entry(vec![1, 2]);
+            diary.mood = mood.into();
+            save(&mut conn, diary).unwrap();
+        }
+        let entries = list(&conn).unwrap();
+        assert_eq!(entries.len(), 3);
+        for mood in ["배고픔", "보고싶음", "사랑함"] {
+            let diary = entries.iter().find(|diary| diary.mood == mood).unwrap();
+            assert_eq!(diary.photos.iter().map(|photo| photo.id).collect::<Vec<_>>(), vec![1, 2]);
+        }
+        let mut diary = entries.into_iter().next().unwrap();
+        diary.mood = "평온".into();
+        save(&mut conn, diary).unwrap();
+        assert_eq!(list(&conn).unwrap().len(), 3);
+    }
     #[test]
     fn diary_roundtrip_and_album_move_preserve_other_entries() {
         let mut conn = Connection::open_in_memory().unwrap();

@@ -52,8 +52,8 @@ test('province counts, region gallery, unclassified list and existing detail sta
   await expect(detail.locator('.detailFileName')).toHaveText('map-photo-2.jpg');
   await expect(detail.locator('.detailImageCanvas img')).toBeVisible();
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: '지역 미분류' }).click();
-  await expect(page.locator('.memoryMapGallery')).toContainText('지역 미분류');
+  await page.getByRole('button', { name: '장소 미정' }).click();
+  await expect(page.locator('.memoryMapGallery')).toContainText('장소 미정');
   await expect(page.locator('.memoryMapGallery .recordMediaGrid > button')).toHaveCount(1);
   await expect(page.locator('.memoryMapGallery')).toContainText('사진관');
   await page.locator('.memoryMapAll').click();
@@ -63,9 +63,9 @@ test('province counts, region gallery, unclassified list and existing detail sta
 
 test('existing photos are analyzed in batches, totals refresh and video is listed', async ({ page }) => {
   await expect(page.locator('.memoryMapAnalysis')).toContainText('3 / 4');
-  await page.getByRole('button', { name: '위치 정보 분석하기', exact: true }).click();
+  await page.getByRole('button', { name: '사진 속 장소 찾기', exact: true }).click();
   await expect(page.locator('.memoryMapAnalysis')).toContainText('4 / 4');
-  await expect(page.getByRole('button', { name: '위치 정보 분석하기', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '사진 속 장소 찾기', exact: true })).toBeDisabled();
   await page.locator('.memoryMapPlaceList button').filter({ hasText: '제주' }).click();
   await expect(page.locator('.memoryMapGallery')).toContainText('1장의 사진 · 1개의 영상');
   await expect(page.locator('.memoryMapGallery .recordMediaGrid > button')).toHaveCount(2);

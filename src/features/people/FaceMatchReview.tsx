@@ -120,7 +120,7 @@ export function FaceMatchReview({ index, onClose, onSaved, onRegister }: { index
           </div>;
         })}</div>
       </div>
-      <footer className="faceMatchFooter">
+      <footer className="faceMatchFooter" data-help-dock>
         <div className="faceMatchSelection"><strong role="status" aria-live="polite">{selected.length}개 선택</strong>
           <button type="button" disabled={saving || loading || !faces.length} aria-pressed={pageSelected} onClick={togglePage}>{pageSelected ? '이 페이지 선택 해제' : '이 페이지 전체 선택'}</button>
         </div>

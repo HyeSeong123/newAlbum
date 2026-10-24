@@ -41,6 +41,8 @@ export async function prepareHelp(page: Page, character = 'gomi', affection = 0,
 export async function openHelp(page: Page) {
   await page.getByRole('button', { name: '현재 화면 도움말', exact: true }).click();
   await expect(helpDialog(page)).toBeVisible();
+  await expect(helpDialog(page)).toHaveAttribute('aria-busy','false');
+  await expect(helpDialog(page).locator('.helpGuideCard')).toBeVisible();
 }
 export const helpDialog = (page: Page) => page.getByRole('dialog', { name: '버튼 도움말', exact: true });
 
@@ -48,6 +50,7 @@ export async function toStep(page: Page, title: string) {
   const guide = helpDialog(page);
   await expect(guide).toBeVisible();
   for (let i = 0; i < 35; i++) {
+    await expect(guide.locator('.helpGuideCard')).toBeVisible();
     if (await guide.getByRole('heading', { name: title, exact: true }).isVisible()) return;
     const next = guide.getByRole('button', { name: '다음', exact: true });
     if (!await next.isVisible()) break;

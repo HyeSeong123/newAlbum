@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import './entities.css';
 import { FunctionHelp } from '../../components/FunctionHelp';
-export function EntitySelectionBar({ count, unit, busy = false, onAll, onClear, onClose, children, allLabel = '전체 선택', className = '', counter = '개', hint = true, help }: {
+import { entityCounter } from './entityLabels';
+export function EntitySelectionBar({ count, unit, busy = false, onAll, onClear, onClose, children, allLabel = '전체 선택', className = '', counter = entityCounter(unit), hint = true, help }: {
   count: number; unit: string; allLabel?: string; className?: string; counter?: string; hint?: boolean; help?: ReactNode; busy?: boolean; onAll: () => void; onClear: () => void; onClose: () => void; children?: ReactNode;
 }) {
   return <section className={`entitySelectionBar peopleActions ${className}`} data-help-dock data-help-selection-count={count} data-help-selection-unit={unit} aria-label={`선택한 ${unit} 관리`}>

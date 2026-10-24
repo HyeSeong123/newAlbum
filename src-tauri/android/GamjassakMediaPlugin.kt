@@ -44,6 +44,9 @@ import java.util.ArrayDeque
 class DescribeArgs { var uri: String = "" }
 
 @InvokeArg
+class PickDirectoryArgs { var preferPictures: Boolean = false }
+
+@InvokeArg
 class GallerySourcesArgs { var uris: Array<String> = emptyArray(); var discover: Boolean = false }
 
 @InvokeArg
@@ -252,7 +255,13 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
     @Command
     fun pickDirectory(invoke: Invoke) {
         try {
+            val args = invoke.parseArgs(PickDirectoryArgs::class.java)
             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+            if (args.preferPictures && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                // A starting-location hint; access still requires user selection.
+                intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI,
+                    DocumentsContract.buildDocumentUri("com.android.externalstorage.documents", "primary:DCIM"))
+            }
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
             startActivityForResult(invoke, intent, "directoryResult")

@@ -70,3 +70,35 @@
 }
 
 .photoInspector .detailPhotoActions button.detailDelete { color: var(--danger); }
+
+/* Every detail action shares a visible control and a full touch target. */
+.photoInspector .detailHeader { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; padding-inline: 16px; }
+.photoInspector .detailHeader button { min-width: 44px; min-height: 44px; }
+.photoInspector .detailHeader .detailBack { min-width: 44px; margin: 0; }
+.photoInspector .detailHeader .detailDateTitle { position: static; transform: none; margin: 0; text-align: center; white-space: normal; line-height: 1.4; }
+.photoInspector .detailPhotoActions button,
+.photoInspector .detailZoomControls button,
+.photoTitleControls button { min-height: 44px; min-width: 44px; }
+.photoTitleControls input { height: 44px; }
+.photoInspector .detailZoomControls input { min-height: 44px; }
+.photoInspector .photoNavButton { width: 44px; min-width: 44px; height: 44px; min-height: 44px; }
+.photoInspector .rating button { width: 44px; min-width: 44px; min-height: 44px; }
+.photoInspector .detailRating { flex-wrap: wrap; }
+.photoInspector .rating { flex-shrink: 0; gap: 4px; }
+.photoInspector .detailFileName { overflow-wrap: anywhere; }
+.photoInspector .detailPhotoActions button:hover:not(:disabled),
+.photoInspector .detailZoomControls button:hover:not(:disabled) { background: var(--surface-soft); border-color: var(--primary); }
+.photoInspector .detailPhotoActions button:disabled,
+.photoInspector .detailZoomControls button:disabled,
+.photoTitleControls button:disabled { opacity: .45; cursor: default; }
+.photoZoomToolbar button { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
+.photoZoomViewer button:focus-visible { outline: 2px solid #a9c9f7; outline-offset: 2px; }
+@media (max-width: 700px) {
+  .photoInspector .detailHeader { padding-inline: 10px; gap: 4px; }
+  .photoInspector .detailHeader .detailDateTitle { font-size: 12px; }
+  .photoZoomViewer { grid-template-rows: auto minmax(0, 1fr); }
+  .photoZoomToolbar { position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr) 52px 44px; gap: 8px; padding: 8px 60px 8px 12px; }
+  .photoZoomToolbar input { width: 100%; min-width: 0; min-height: 44px; }
+  .photoZoomToolbar .photoZoomReset { grid-column: 1 / -1; justify-self: start; }
+  .photoZoomToolbar .photoZoomClose { top: 8px; right: 8px; }
+}

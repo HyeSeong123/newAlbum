@@ -209,6 +209,8 @@ function PhotoTitleEditor({ item, onSave }: { item: MediaItem; onSave: (id: stri
 
 function PhotoZoomViewer({ item, onClose }: { item: MediaItem; onClose: () => void }) {
   const [scale, setScale] = useState(1);
+  const dialogRef = useRef<HTMLElement>(null);
+  const onKeyDown = useDialogFocus(dialogRef, true, '.photoZoomClose');
   useModalBehavior(onClose);
 
   function changeScale(next: number) {
@@ -217,7 +219,7 @@ function PhotoZoomViewer({ item, onClose }: { item: MediaItem; onClose: () => vo
 
   return (
     <div className="photoZoomBackdrop" role="presentation">
-      <section className="photoZoomViewer" role="dialog" aria-modal="true" aria-label="사진 확대 보기">
+      <section ref={dialogRef} tabIndex={-1} onKeyDown={onKeyDown} className="photoZoomViewer" role="dialog" aria-modal="true" aria-label="사진 확대 보기">
         <div className="photoZoomToolbar" aria-label="확대 배율 조절">
           <button title="축소" onClick={() => changeScale(scale - 0.25)} disabled={scale <= 1}><ZoomOut size={20} /></button>
           <input aria-label="확대 배율" type="range" min="1" max="4" step="0.1" value={scale} onChange={(event) => changeScale(Number(event.target.value))} />

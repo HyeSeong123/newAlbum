@@ -41,6 +41,22 @@
 .libraryResultsBar button { margin-left: auto; }
 .libraryView .selectionDock { flex-wrap: wrap; padding: 12px; border-radius: 8px; background: var(--surface-soft); }
 .libraryView .selectionDock > button { min-height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
+
+.libraryView .librarySearchActions button,
+.libraryView .libraryResultsBar button,
+.libraryView .takenDateControls button,
+.libraryView .pagination button { min-height: 44px; }
+.libraryView .libraryKeywordSearch .searchClear { flex-shrink: 0; width: 44px; min-width: 44px; height: 44px; }
+.libraryView .librarySearchBasics .libraryKeywordSearch { min-height: 46px; }
+.libraryView .filterPanel .filterCheck { min-height: 44px; }
+.libraryView .filterPanel select, .libraryView .sortControl { min-height: 44px; }
+.libraryView .takenDateControls input { min-height: 44px; }
+.photoWorkspace .monthRail button,
+.photoWorkspace .journalMore,
+.photoWorkspace .quickAlbums header button,
+.photoWorkspace .quickAlbumEmpty button,
+.photoWorkspace .showAllAlbums { min-height: 44px; border-radius: var(--control-radius, 6px); }
+.photoWorkspace .monthRail button { min-width: 44px; }
 @media (max-width: 760px) {
   .librarySearchPanel { padding: 16px; }
   .librarySearchHead > div:first-child { flex-wrap: wrap; }

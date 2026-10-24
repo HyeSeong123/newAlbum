@@ -1,12 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 
-async function prepare(page: Page, deferredGallery = false) {
+async function prepare(page: Page, deferredGallery = false, waitingJob = false) {
   await page.route('**/lifecycle-photo.jpg', route => route.fulfill({ path: 'node_modules/@vladmandic/face-api/demo/sample1.jpg', contentType: 'image/jpeg' }));
-  await page.addInitScript(({ deferredGallery }) => {
+  await page.addInitScript(({ deferredGallery, waitingJob }) => {
     const calls: { command: string; args: any }[] = [];
     let media = Array.from({ length: 6 }, (_, i) => ({ id: i + 1, file_path: `/pictures/${i + 1}.jpg`, file_type: 'image', taken_at: '2026-10-23', size_bytes: 1000, rating: 0, favorite: false, comment: '', metadata_status: 'ready' }));
     const scanned = new Set<number>(), petScans = new Map<number, any>();
-    const jobs: any[] = [];
+    const jobs: any[] = waitingJob ? [{ id: 1, media_id: 1, pet_id: null, view: 'unknown', state: 'paused', error: '' }] : [];
     let personStarted = false, pausedDuringPersonWork = false;
     Object.assign(window, { lifecycle: { calls, scanned, jobs, get pausedDuringPersonWork() { return pausedDuringPersonWork; } } });
     class FixtureWorker extends EventTarget {
@@ -45,7 +45,7 @@ async function prepare(page: Page, deferredGallery = false) {
         return [];
       },
     } });
-  }, { deferredGallery });
+  }, { deferredGallery, waitingJob });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
 }
 
@@ -59,10 +59,30 @@ test('startup compares gallery once, blocks briefly, and preserves saved copies 
   await expect(waiting).toBeHidden();
   await expect(page.locator('main.app')).not.toHaveAttribute('inert', '');
   await expect(page.getByText(/갤러리에서 삭제된 원본 1개/)).toBeVisible();
-  await expect(page.getByText(/권한 또는 접근 문제로 원본 1개/)).toBeVisible();
+  await expect(page.getByText(/권한 또는 접근 문제로 원본 1개/)).toHaveCount(0);
   const calls = await page.evaluate(() => (window as any).lifecycle.calls);
   expect(calls.filter((c: any) => c.command === 'compare_android_gallery')).toHaveLength(1);
   expect(calls.filter((c: any) => ['delete_registered_media', 'enqueue_pet_jobs', 'enqueue_person_jobs'].includes(c.command))).toHaveLength(0);
+});
+
+test('startup stays quiet with a saved analysis queue until the user resumes it', async ({ page }) => {
+  await prepare(page, false, true);
+  await expect(page.locator('.homeView')).toBeVisible();
+  await page.screenshot({ path: `preview-results/home-cleanup/${process.env.HOME_QA_STAGE ?? 'after'}-${test.info().project.name}.png`, fullPage: true });
+  await expect(page.locator('.analysisActivityTrigger')).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator('.homeView')).toBeVisible();
+  await expect(page.locator('.analysisActivityTrigger')).toHaveCount(0);
+  await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
+  await page.getByRole('tab', { name: '반려동물', exact: true }).click();
+  await page.locator('.petAnalysisNotice').getByRole('button', { name: '이어서 분석', exact: true }).click();
+  await expect(page.getByRole('button', { name: '분석 중 · 진행상황 보기' })).toBeVisible();
+  await page.getByRole('button', { name: '감자싹 홈으로 이동' }).click();
+  await page.getByRole('button', { name: '분석 결과 · 진행상황 보기' }).click();
+  const panel = page.getByRole('region', { name: '분석 진행상황', exact: true });
+  await expect(panel).toContainText('1 / 1장');
+  await panel.getByRole('button', { name: '알림 닫기', exact: true }).click();
+  await expect(page.locator('.analysisActivityTrigger')).toHaveCount(0);
 });
 
 test('person analysis survives screen changes and media updates; its progress panel never locks navigation', async ({ page }) => {

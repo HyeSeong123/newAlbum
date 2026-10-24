@@ -10,7 +10,7 @@ test('diary preserves six photos, dates and text across reloads and detaches one
   await expect(page.locator('.diaryEmpty h2')).toHaveCSS('font-family', /Noto Serif KR/);
   await expect(page.locator('.diaryEmpty .emptyState')).toHaveCount(0);
   await page.getByRole('button', { name: '첫 일기 쓰기', exact: true }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.locator('.diaryDialog:not(.diaryReadDialog)');
   const bounds = (await dialog.boundingBox())!;
   expect(bounds.width).toBeGreaterThan(page.viewportSize()!.width * .85);
   expect(bounds.height).toBeGreaterThan(page.viewportSize()!.height * .9);
@@ -41,6 +41,7 @@ test('diary preserves six photos, dates and text across reloads and detaches one
   }
   await page.screenshot({ path: `test-results/diary-list-${test.info().project.name}.png` });
   await page.locator('.diaryOpen').click();
+  await page.getByRole('dialog', { name: '일기 상세', exact: true }).getByRole('button', { name: '일기 수정', exact: true }).click();
   await expect(dialog.getByLabel('내용', { exact: true })).toHaveValue('사진 여섯 장과 함께 남기는 이야기');
   await expect(dialog.getByLabel('날씨', { exact: true })).toHaveValue('흐림');
   await expect(dialog.locator('.diaryAttachmentPrint img')).toHaveCount(6);
@@ -65,9 +66,11 @@ test('legacy text diary migrates when saved without changing its backup', async 
   await page.goto('/');
   await page.getByRole('button', { name: '일기장', exact: true }).click();
   await page.locator('.diaryOpen').click();
+  await page.getByRole('dialog', { name: '일기 상세', exact: true }).getByRole('button', { name: '일기 수정', exact: true }).click();
   await page.getByLabel('내용', { exact: true }).fill('이어서 쓴 기록');
   await page.getByRole('button', { name: '일기 저장', exact: true }).click();
-  await expect(page.getByRole('dialog')).toBeHidden();
+  await expect(page.getByRole('dialog', { name: '일기 수정', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: '일기 상세', exact: true })).toBeVisible();
   await page.reload();
   await page.getByRole('button', { name: '일기장', exact: true }).click();
   await expect(page.locator('.diaryCard')).toContainText('이어서 쓴 기록');

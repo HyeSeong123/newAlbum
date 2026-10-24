@@ -286,15 +286,15 @@ async fn choose_android_gallery(app: AppHandle) -> Result<Option<Vec<String>>, S
 }
 
 #[tauri::command]
-async fn choose_android_directory(app: AppHandle) -> Result<Option<String>, String> {
+async fn choose_android_directory(app: AppHandle, prefer_pictures: Option<bool>) -> Result<Option<String>, String> {
     #[cfg(target_os = "android")]
     {
-        tauri::async_runtime::spawn_blocking(move || android_media::pick_directory(&app))
+        tauri::async_runtime::spawn_blocking(move || android_media::pick_directory(&app, prefer_pictures.unwrap_or(false)))
             .await.map_err(|error| error.to_string())?
     }
     #[cfg(not(target_os = "android"))]
     {
-        let _ = app;
+        let _ = (app, prefer_pictures);
         Err("Android 폴더 선택기는 휴대폰 앱에서 사용할 수 있습니다.".into())
     }
 }

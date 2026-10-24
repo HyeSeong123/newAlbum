@@ -59,7 +59,7 @@ export function AlbumEditor({ album, onClose, onSave, initialSection = "details"
           {section === "details" && <section className="albumEditorSimple"><h3>앨범 정보</h3><label className="albumTitleField">제목<input required maxLength={80} value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} /></label>
             <AlbumColorPicker value={draft.coverColor} onChange={(coverColor) => setDraft({ ...draft, coverColor })} items={draft.items} title={draft.title} /></section>}
           {section === "photos" && <section className="albumEditorSimple"><h3>사진 관리</h3><p>앨범에서 제외할 사진을 선택하세요. 원본 사진은 유지됩니다.</p>
-          <div className="albumActions"><strong>사진 {draft.items.length}장</strong><button type="button" disabled={!chosen.length} onClick={removeChosen}><Trash2 size={17} />앨범에서 삭제{chosen.length > 0 ? ` (${chosen.length})` : ""}</button></div>
+          <div className="albumActions"><strong>사진 {draft.items.length}장</strong><button type="button" className="dangerButton" disabled={!chosen.length} onClick={removeChosen}><Trash2 size={17} />앨범에서 삭제{chosen.length > 0 ? ` (${chosen.length})` : ""}</button></div>
           <div className="albumEditPhotos" {...drag}>{draft.items.slice(currentPage * 24, (currentPage + 1) * 24).map((item) => <button type="button" key={item.id} data-selection-id={item.id} aria-label={`${item.takenAt ?? "날짜 없음"} 사진 선택`} aria-pressed={chosen.includes(item.id)} onClick={() => togglePhoto(item.id)}>
             <MediaVisual item={item} /><span className={`albumSelectionMark ${chosen.includes(item.id) ? "checked" : ""}`}>{chosen.includes(item.id) && <Check size={22} strokeWidth={3} />}</span>
           </button>)}</div>
@@ -67,7 +67,7 @@ export function AlbumEditor({ album, onClose, onSave, initialSection = "details"
           {pageCount > 1 && <div className="albumActions"><button type="button" title="이전 페이지" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={18} /></button><span>{currentPage + 1} / {pageCount}</span><button type="button" title="다음 페이지" disabled={currentPage === pageCount - 1} onClick={() => setPage(currentPage + 1)}><ChevronRight size={18} /></button></div>}
           </section>}
           {error && <p className="albumEditorError" role="alert">{error}</p>}
-          <div className="albumActions albumEditorFooter" data-help-dock><span>변경 내용은 저장을 누르면 반영됩니다.</span><button type="button" onClick={close}>취소</button><button type="submit" disabled={!draft.title.trim()}><Check size={18} />{busy ? "저장 중" : "저장"}</button></div>
+          <div className="albumActions albumEditorFooter" data-help-dock><span>변경 내용은 저장을 누르면 반영됩니다.</span><button type="button" onClick={close}>취소</button><button type="submit" className="primaryControl" disabled={!draft.title.trim()}><Check size={18} />{busy ? "저장 중" : "저장"}</button></div>
         </fieldset>
       </form>
     </section>

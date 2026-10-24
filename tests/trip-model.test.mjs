@@ -62,3 +62,15 @@ test('same-day region transitions respect timestamps and deterministically break
   ]);
   assert.equal(trips.length,0);
 });
+
+test('search filters completed visits without erasing the travel boundaries between them', () => {
+  const records = [
+    item(1,'2026-08-01'), item(2,'2026-08-01'), item(3,'2026-08-02'),
+    item(4,'2026-08-03','KR-26'),
+    item(5,'2026-08-04'), item(6,'2026-08-04'), item(7,'2026-08-05'),
+  ];
+  const visible = new Set(['1','2','3']);
+  assert.deepEqual(discoverTrips(records, visible).map(trip => trip.items.map(record => record.id)), [['1','2','3']]);
+  assert.deepEqual(discoverTrips(records, new Set(['1','2','5','6'])), []);
+  assert.equal(records.length, 7);
+});

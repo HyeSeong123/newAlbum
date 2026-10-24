@@ -5,6 +5,7 @@ import { EmptyState, MediaVisual } from "../../components/MediaVisual";
 import { formatDateKo, formatMediaCount, loadDayNotes } from "../calendar/calendarModel";
 import { RecordMediaGrid } from "../media/RecordMediaGrid";
 import { buildTimeline } from "./timelineModel";
+import { useDetailListNavigation } from '../../hooks/useDetailListNavigation';
 import "./timeline.css";
 
 export function TimelineView({ items, onOpen }: { items: MediaItem[]; onOpen: (item: MediaItem, collection?: MediaItem[]) => void }) {
@@ -14,15 +15,16 @@ export function TimelineView({ items, onOpen }: { items: MediaItem[]; onOpen: (i
   const [monthsOpen, setMonthsOpen] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<string | null>(null);
   const selectedDay = selected === "undated" ? timeline.undated : timeline.years.flatMap(year => year.months.flatMap(month => month.days)).find(day => day.date === selected);
+  const navigation = useDetailListNavigation(selectedDay?.date, () => setSelected(null));
   if (selectedDay) return <section className="timelineView" aria-label="날짜별 기록">
-    <header className="timelineDetailHeader"><button onClick={() => setSelected(null)}><ChevronLeft size={17} />타임라인으로 돌아가기</button><div>
-      <h2>{selectedDay.date === "undated" ? "날짜 없는 기록" : formatDateKo(selectedDay.date)}</h2><p>{formatMediaCount(selectedDay.items)}</p>
+    <header className="timelineDetailHeader"><button onClick={navigation.close}><ChevronLeft size={17} />시간 산책으로</button><div>
+      <h2 ref={navigation.heading} tabIndex={-1}>{selectedDay.date === "undated" ? "날짜를 기다리는 기록" : formatDateKo(selectedDay.date)}</h2><p>{formatMediaCount(selectedDay.items)}</p>
       {selectedDay.summary && <p>{selectedDay.summary}</p>}
     </div></header>
     <RecordMediaGrid key={selectedDay.date} items={selectedDay.items} onOpen={onOpen} />
   </section>;
   return <section className="timelineView" aria-label="우리의 기록 타임라인">
-    <header className="timelineHeading"><h2>우리의 기록</h2><p>날짜를 따라 다시 펼쳐보세요.</p></header>
+    <header className="timelineHeading"><h2>시간을 따라 걷다</h2></header>
     {!items.length && <EmptyState text="아직 표시할 기록이 없습니다." />}
     {timeline.years.map((year, yearIndex) => {
       const expanded = yearsOpen[year.year] ?? yearIndex === 0;
@@ -37,7 +39,7 @@ export function TimelineView({ items, onOpen }: { items: MediaItem[]; onOpen: (i
               {monthExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}<strong>{Number(month.month.slice(5))}월</strong><span>{month.days.length}일</span>
             </button>
             {monthExpanded && <ol id={`timeline-month-${month.month}`} className="timelineDays">{month.days.map(day => <li key={day.date}>
-              <button className="timelineDay" aria-label={`${formatDateKo(day.date)} · ${formatMediaCount(day.items)}`} onClick={() => setSelected(day.date)}>
+              <button ref={navigation.bindControl(day.date)} className="timelineDay" aria-label={`${formatDateKo(day.date)} · ${formatMediaCount(day.items)}`} onClick={() => { navigation.remember(); setSelected(day.date); }}>
                 <time dateTime={day.date}>{day.date.slice(5).replace("-", ".")}</time>
                 <MediaVisual item={day.cover}>{day.cover.fileType === "video" && <Play size={24} />}{day.cover.fileType === "audio" && <Music size={24} />}</MediaVisual>
                 <span className="timelineDayText"><strong>{formatMediaCount(day.items)}</strong>{day.summary && <span>{day.summary}</span>}</span><ChevronRight size={16} />
@@ -47,6 +49,6 @@ export function TimelineView({ items, onOpen }: { items: MediaItem[]; onOpen: (i
         })}</div>}
       </section>;
     })}
-    {timeline.undated && <button className="timelineUndated" onClick={() => setSelected("undated")}>날짜 없는 기록 · {formatMediaCount(timeline.undated.items)}<ChevronRight size={16} /></button>}
+    {timeline.undated && <button ref={navigation.bindControl('undated')} className="timelineUndated" onClick={() => { navigation.remember(); setSelected("undated"); }}>날짜를 기다리는 기록 · {formatMediaCount(timeline.undated.items)}<ChevronRight size={16} /></button>}
   </section>;
 }

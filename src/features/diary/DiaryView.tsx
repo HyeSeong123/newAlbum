@@ -1,7 +1,7 @@
 import { EntitySelectionBar } from '../entities/EntitySelectionBar';
 import { useBackAction } from '../../hooks/useBackAction';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { Bookmark, CalendarDays, CheckSquare, ChevronLeft, ChevronRight, Cloud, CloudRain, CloudSnow, MoreHorizontal, Pencil, Plus, Search, Smile, Sun, Trash2, Wind, X } from "lucide-react";
+import { Bookmark, CalendarDays, CheckSquare, ChevronLeft, ChevronRight, Cloud, CloudRain, CloudSnow, MoreHorizontal, Pencil, Plus, Search, Sun, Trash2, Wind, X } from "lucide-react";
 import { localDateKey } from "../calendar/calendarModel";
 import { ActionMenu } from "../../components/ActionMenu";
 import { useModalBehavior } from "../../hooks/useModalBehavior";
@@ -9,8 +9,9 @@ import { useDialogFocus } from "../../hooks/useDialogFocus";
 import type { SavedAlbum } from "../../types/media";
 import { chooseDiaryPhotos, isTauriRuntime } from "../../services/tauriMediaService";
 import { readDiaryPhotoFiles } from "./browserDiaryStorage";
-import { appendDiaryPhotos, diaryDateLabel, DIARY_PHOTO_ACCEPT, MAX_DIARY_PHOTOS, type DiaryEntry, type DiaryPhoto as Photo } from "./diaryModel";
+import { appendDiaryPhotos, diaryDateLabel, DIARY_MOODS, DIARY_PHOTO_ACCEPT, MAX_DIARY_PHOTOS, type DiaryEntry, type DiaryPhoto as Photo } from "./diaryModel";
 import { DiaryPhoto } from "./DiaryPhoto";
+import { DiaryMoodIcon } from "./DiaryMoodIcon";
 import "@fontsource/noto-serif-kr/400.css";
 import "@fontsource/noto-serif-kr/500.css";
 import "@fontsource/noto-serif-kr/korean-400.css";
@@ -19,7 +20,6 @@ import "./diary.css";
 export { useDiary } from "./useDiary";
 export type { DiaryEntry } from "./diaryModel";
 
-const moods = ["기쁨", "평온", "그리움", "슬픔", "설렘"];
 const weathers = ["맑음", "흐림", "비", "눈", "바람"];
 const weatherIcons = { 맑음: Sun, 흐림: Cloud, 비: CloudRain, 눈: CloudSnow, 바람: Wind };
 function Weather({ value }: { value: string }) { const Icon = weatherIcons[value as keyof typeof weatherIcons] ?? Sun; return <Icon size={17} aria-hidden="true" />; }
@@ -31,6 +31,8 @@ export function DiaryView({ entries, albums, query = "", onQueryChange, onSave, 
 }) {
   const blank = (): DiaryEntry => ({ id: 0, date: localDateKey(new Date()), title: "", body: "", mood: "평온", weather: "맑음", album_id: null, photos: [] });
   const [draft, setDraft] = useState<DiaryEntry | null>(null);
+  const [readingId, setReadingId] = useState<number | null>(null);
+  const reading = entries.find(entry => entry.id === readingId);
   const original = useRef("");
   const [month, setMonth] = useState("");
   const monthTouched = useRef(false);
@@ -55,7 +57,10 @@ export function DiaryView({ entries, albums, query = "", onQueryChange, onSave, 
   }, [entries, month]);
 
   function updateDraft(patch: Partial<DiaryEntry>) { setDraft(current => current ? { ...current, ...patch } : current); }
+  function read(entry: DiaryEntry) { setMessage(""); setReadingId(entry.id); }
   function open(entry: DiaryEntry) {
+    if (!entry.id) setReadingId(null);
+    setMessage("");
     const next = { ...entry, photos: [...(entry.photos ?? [])] };
     original.current = JSON.stringify(next); setDraftError(""); setDraft(next);
   }
@@ -85,7 +90,7 @@ export function DiaryView({ entries, albums, query = "", onQueryChange, onSave, 
   }
   function remove(entry: DiaryEntry) {
     if (window.confirm("이 일기를 삭제할까요? 원본 사진은 그대로 남습니다."))
-      void run(async () => { await onDelete(entry.id); if (draft?.id === entry.id) setDraft(null); }, "일기를 삭제했습니다.");
+      void run(async () => { await onDelete(entry.id); if (draft?.id === entry.id) setDraft(null); if (readingId === entry.id) setReadingId(null); }, "일기를 삭제했습니다.");
   }
   async function attach(read: () => Promise<Photo[]>) {
     if (!draft || saving.current || importing.current) return;
@@ -146,19 +151,20 @@ export function DiaryView({ entries, albums, query = "", onQueryChange, onSave, 
     <div className="diaryCards">{visible.map(entry => <article key={entry.id} className={`diaryCard${selected.includes(entry.id) ? " isSelected" : ""}`}>
       <Bookmark className="diaryBookmark" size={28} fill="currentColor" strokeWidth={0} aria-hidden="true" />
       <div className="diaryCardMenu">{selecting ? <label className="diarySelect"><input type="checkbox" checked={selected.includes(entry.id)} onChange={e => setSelected(current => e.target.checked ? [...current, entry.id] : current.filter(id => id !== entry.id))} aria-label={`${entry.title} 선택`} /><span>선택</span></label> : <ActionMenu label={`${entry.title} 일기 메뉴`} icon={<MoreHorizontal size={19} />} disabled={busy} actions={[{ label: "일기 수정", icon: <Pencil size={16} />, onSelect: () => open(entry) }, { label: "일기 삭제", icon: <Trash2 size={16} />, danger: true, onSelect: () => remove(entry) }]} />}</div>
-      <button className="diaryOpen" onClick={() => selecting ? setSelected(current => current.includes(entry.id) ? current.filter(id => id !== entry.id) : [...current, entry.id]) : open(entry)} aria-pressed={selecting ? selected.includes(entry.id) : undefined}>
+      <button className="diaryOpen" disabled={busy || adding} onClick={() => selecting ? setSelected(current => current.includes(entry.id) ? current.filter(id => id !== entry.id) : [...current, entry.id]) : read(entry)} aria-pressed={selecting ? selected.includes(entry.id) : undefined}>
         <time dateTime={entry.date}>{diaryDateLabel(entry.date)}</time>
-        <span className="diaryAtmosphere"><Weather value={entry.weather} />{entry.weather}<span aria-hidden="true">·</span>{entry.mood}</span>
+        <span className="diaryAtmosphere"><Weather value={entry.weather} />{entry.weather}<span aria-hidden="true">·</span><DiaryMoodIcon value={entry.mood} />{entry.mood}</span>
         <h3>{entry.title}</h3><p className={(entry.photos?.length ?? 0) ? "" : "diaryLongExcerpt"}>{entry.body || "그날의 이야기를 이어 적어 보세요."}</p>
         {!!entry.photos?.length && <span className="diaryPhotoPrints">{entry.photos.slice(0, 2).map(photo => <span className="diaryPhotoPrint" key={photo.id}><DiaryPhoto photo={photo} /></span>)}</span>}
         <span className="diaryCardFoot">{entry.photos?.length ? `사진 ${entry.photos.length}장` : ""}<span>{albums.find(a => Number(a.id) === entry.album_id)?.title ?? "내 일기장"}</span></span>
       </button>
     </article>)}</div>
-    {draft && <div className="modalBackdrop diaryBackdrop"><section className="diaryDialog" role="dialog" aria-modal="true" aria-label={draft.id ? "일기 상세" : "새 일기"}>
+    {reading && !draft && <DiaryReadDialog entry={reading} notice={message} albumTitle={albums.find(album => Number(album.id) === reading.album_id)?.title} onClose={() => setReadingId(null)} onEdit={() => open(reading)} />}
+    {draft && <div className="modalBackdrop diaryBackdrop"><section className="diaryDialog" role="dialog" aria-modal="true" aria-label={draft.id ? "일기 수정" : "새 일기"}>
       <Bookmark className="diaryBookmark" size={30} fill="currentColor" strokeWidth={0} aria-hidden="true" />
       <form ref={form} tabIndex={-1} onSubmit={submit} onKeyDown={onDialogKeyDown}><fieldset disabled={busy || adding}>
-        <div className="diaryDialogTop"><span>{draft.id ? "그날의 기록" : "오늘의 기록"}</span><button className="diaryIconButton" type="button" aria-label="닫기" onClick={close}><X size={21} /></button></div>
-        <div className="diaryMetadata"><label className="diaryDateInput"><CalendarDays size={18} /><span>{diaryDateLabel(draft.date, true)}</span><input aria-label="날짜" type="date" required value={draft.date} onInput={e => updateDraft({ date: e.currentTarget.value })} /></label><div className="diaryMoodWeather"><label><Weather value={draft.weather} /><select aria-label="날씨" value={draft.weather} onChange={e => updateDraft({ weather: e.target.value })}>{weathers.map(w => <option key={w}>{w}</option>)}</select></label><label><Smile size={18} /><select aria-label="오늘의 기분" value={draft.mood} onChange={e => updateDraft({ mood: e.target.value })}>{moods.map(m => <option key={m}>{m}</option>)}</select></label></div></div>
+        <div className="diaryDialogTop"><span>{draft.id ? "일기 수정" : "오늘의 기록"}</span><button className="diaryIconButton" type="button" aria-label="닫기" onClick={close}><X size={21} /></button></div>
+        <div className="diaryMetadata"><label className="diaryDateInput"><CalendarDays size={18} /><span>{diaryDateLabel(draft.date, true)}</span><input aria-label="날짜" type="date" required value={draft.date} onInput={e => updateDraft({ date: e.currentTarget.value })} /></label><div className="diaryMoodWeather"><label><Weather value={draft.weather} /><select aria-label="날씨" value={draft.weather} onChange={e => updateDraft({ weather: e.target.value })}>{weathers.map(w => <option key={w}>{w}</option>)}</select></label><label><DiaryMoodIcon value={draft.mood} /><select aria-label="오늘의 기분" value={draft.mood} onChange={e => updateDraft({ mood: e.target.value })}>{DIARY_MOODS.map(m => <option key={m}>{m}</option>)}</select></label></div></div>
         <div className="diaryEditorBody"><div className="diaryWriting"><input className="diaryTitleInput" aria-label="제목" required maxLength={120} placeholder="오늘을 기억할 제목" value={draft.title} onChange={e => updateDraft({ title: e.target.value })} /><textarea aria-label="내용" maxLength={20000} rows={8} placeholder="오늘은 어떤 하루였나요?" value={draft.body} onChange={e => updateDraft({ body: e.target.value })} /></div>
         <div className="diaryEditorSide"><div className="diaryAttachments"><div className="diaryAttachmentHeading"><span>오늘의 사진 <strong aria-live="polite">{photos.length} / {MAX_DIARY_PHOTOS}</strong></span><button type="button" disabled={photos.length >= MAX_DIARY_PHOTOS || busy || adding} onClick={addPhotos}><Plus size={15} />사진 추가</button></div>
           <input ref={fileInput} type="file" accept={DIARY_PHOTO_ACCEPT} multiple hidden aria-label="일기 사진 파일" onChange={event => { const files = Array.from(event.target.files ?? []); event.target.value = ""; if (files.length) void attach(() => readDiaryPhotoFiles(files, MAX_DIARY_PHOTOS - photos.length)); }} />
@@ -170,5 +176,31 @@ export function DiaryView({ entries, albums, query = "", onQueryChange, onSave, 
         </div></div>
         <div className="diaryDialogActions">{draft.id > 0 && <button className="diaryDelete" type="button" onClick={() => remove(draft)}><Trash2 size={15} />일기 삭제</button>}<button className="diaryCancel" type="button" onClick={close}>취소</button><button className="diaryPrimary" type="submit" disabled={busy || adding}>{busy ? "저장 중" : "일기 저장"}</button></div>
       </fieldset></form></section></div>}
+  </div>;
+}
+
+function DiaryReadDialog({ entry, albumTitle, notice, onClose, onEdit }: {
+  entry: DiaryEntry; albumTitle?: string; notice: string; onClose: () => void; onEdit: () => void;
+}) {
+  const panel = useRef<HTMLElement>(null);
+  const onKeyDown = useDialogFocus(panel);
+  useModalBehavior(onClose);
+  return <div className="modalBackdrop diaryBackdrop">
+    <section ref={panel} tabIndex={-1} onKeyDown={onKeyDown} className="diaryDialog diaryReadDialog" role="dialog" aria-modal="true" aria-label="일기 상세">
+      <Bookmark className="diaryBookmark" size={30} fill="currentColor" strokeWidth={0} aria-hidden="true" />
+      <header className="diaryDialogTop"><span>그날의 기록</span><button className="diaryIconButton" type="button" aria-label="닫기" onClick={onClose}><X size={21} /></button></header>
+      <article className="diaryReadContent">
+        <time dateTime={entry.date}>{diaryDateLabel(entry.date, true)}</time>
+        <div className="diaryAtmosphere"><Weather value={entry.weather} />{entry.weather}<span aria-hidden="true">·</span><DiaryMoodIcon value={entry.mood} />{entry.mood}</div>
+        <h2>{entry.title}</h2>
+        <p className="diaryReadBody">{entry.body || "아직 적어 둔 이야기가 없어요."}</p>
+        {!!entry.photos?.length && <section className="diaryReadPhotos" aria-label={`첨부 사진 ${entry.photos.length}장`}>
+          {entry.photos.map(photo => <div className="diaryReadPhoto" key={photo.id}><DiaryPhoto photo={photo} /></div>)}
+        </section>}
+        <p className="diaryReadAlbum"><Bookmark size={16} aria-hidden="true" />{albumTitle ?? "내 일기장"}</p>
+        {notice && <p className="diaryNotice" role="status">{notice}</p>}
+      </article>
+      <footer className="diaryDialogActions"><button className="diaryCancel" type="button" onClick={onClose}>닫기</button><button className="diaryPrimary" type="button" onClick={onEdit}><Pencil size={16} />일기 수정</button></footer>
+    </section>
   </div>;
 }

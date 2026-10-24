@@ -75,11 +75,11 @@
 /* Soft, consistently sized actions for list, detail, editor and analysis. */
 .petsView { gap: 20px; }
 .petsView .entityHeader { padding-bottom: 18px; }
-.petsView .entityPrimary, .petsView .entityBack, .petsView .actionMenuTrigger { border-radius: 14px; }
+.petsView .entityPrimary, .petsView .entityBack, .petsView .actionMenuTrigger { border-radius:var(--control-radius,6px); }
 .petFindPhotos { padding: 20px; border-radius: 20px; gap: 16px; background: linear-gradient(135deg, var(--surface-soft), var(--surface)); }
 .petFindPhotos button, .petSearchActions button, .petSearchSelection button, .petStatusActions button, .petSearchCard button {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px;
-  padding: 10px 16px; border: 1px solid var(--border); border-radius: 14px;
+  padding: 10px 16px; border: 1px solid var(--border); border-radius:var(--control-radius,6px);
   background: var(--surface); color: var(--text); font: inherit; font-size: 14px; line-height: 1.4;
 }
 .petFindPhotos button { border-color: var(--primary); color: var(--primary); font-weight: 600; }
@@ -87,17 +87,17 @@
 .petSearchActions, .petStatusActions { display: flex; flex-wrap: wrap; gap: 8px; }
 .petSearchSelection { display: grid; gap: 10px; }
 .petSearchSelection > div { display: flex; flex-wrap: wrap; gap: 8px; }
-.petSearchCard { padding: 10px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+.petSearchCard { padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
 .petSearchCard.selected { border-color: var(--primary); background: var(--surface-soft); }
-.petSearchCard button[aria-pressed=true] { border-color: var(--primary); background: var(--primary); color: #fff; }
+.petSearchCard button[aria-pressed=true] { border-color: var(--secondary); background: var(--secondary); color: #fff; }
 .petSearchCard button:disabled, .petSearchActions button:disabled, .petSearchSelection button:disabled { opacity: .5; }
 .petSearchGrid { touch-action: pan-y pinch-zoom; }
 .petSearchActions button:focus-visible, .petSearchSelection button:focus-visible, .petStatusActions button:focus-visible, .petSearchCard button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
-.petPhoto > div { border-radius: 14px; }
-.petAnalysisNotice:has(.petStatusActions) { width: 100%; margin: 0; padding: 16px; text-align: left; display: grid; gap: 12px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface-soft); }
+.petPhoto > div { border-radius: 4px; }
+.petAnalysisNotice:has(.petStatusActions) { width: 100%; margin: 0; padding: 16px; text-align: left; display: grid; gap: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-soft); }
 .petAnalysisNotice > span { overflow-wrap: anywhere; line-height: 1.65; }
 .petAnalysisNotice progress { width: 100%; }
-.petRegistrationEditor .entityEditFooter button, .petPhotoSearch .entityEditFooter button { border-radius: 14px; }
+.petRegistrationEditor .entityEditFooter button, .petPhotoSearch .entityEditFooter button { border-radius:var(--control-radius,6px); }
 @media (max-width: 600px) {
   .petFindPhotos { padding: 16px; }
   .petStatusActions button { flex: 1 1 auto; }
@@ -116,3 +116,40 @@
 .petCandidateActions button[aria-pressed="true"] {background:var(--surface-soft);border-color:var(--primary);}
 
 .petAnalysisNotice > [role="status"] { white-space: pre-line; overflow-wrap: anywhere; line-height: 1.7; }
+
+/* These controls are also opened directly from a photo's information panel. */
+.petPhotoResults { display: grid; min-width: 0; gap: 12px; padding-block: 16px; border-top: 1px solid var(--border); }
+.petPhotoResults > h3, .petPhotoResults > p { margin: 0; line-height: 1.6; }
+.petPhotoResults > p { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.petPhotoResults > [role="alert"] { color: var(--danger); }
+.petPhotoResults > button,
+.petPhotoResults .petDetectionFields > button,
+.petPhotoResults .petFaceControls > button,
+.petPhotoResults .petCandidateActions button,
+.petPhotoResults .petDetectionFields > .peopleActions > button,
+.manualPetRegion .entityEditBody > button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-width: 44px; min-height: 44px; max-width: 100%; padding: 10px 12px;
+  border: 1px solid var(--border); border-radius: var(--control-radius, 6px);
+  background: var(--surface); color: var(--text); font: inherit; font-size: 13px; line-height: 1.5; white-space: normal;
+}
+.petPhotoResults > button { width: 100%; }
+.petPhotoResults button:hover:not(:disabled) { border-color: var(--primary); background: var(--surface-soft); }
+.petPhotoResults button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.petPhotoResults .petDetectionFields > .peopleActions > button[data-help="pet-save-correction"] { color: #fff; background: var(--primary); border-color: var(--primary); }
+.manualPetRegion .petRegionCoordinates > summary { display: flex; align-items: center; min-height: 44px; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--control-radius, 6px); cursor: pointer; }
+.manualPetRegion .petRegionCoordinates > summary::after { content: "+"; margin-left: auto; }
+.manualPetRegion .petRegionCoordinates[open] > summary::after { content: "−"; }
+
+.petSearchScope, .petSearchCard > label { min-width:0; display:grid; gap:6px; color:var(--muted); font-size:13px; }
+.petSearchScope select, .petSearchCard select { width:100%; min-width:0; min-height:44px; padding:10px; border:1px solid var(--border); border-radius:var(--control-radius,6px); background:var(--surface); color:var(--text); font:inherit; }
+.entityEditDialog.petPhotoSearch .entityEditFooter.petSearchFooter { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.petSearchFooter > .primaryControl { grid-column:auto; }
+.petStatusActions button:first-child:not(:only-child) { border-color:var(--primary); }
+.petPhoto[aria-pressed="true"] > div, .petPhoto[aria-pressed="true"] > .mediaVisual { outline:2px solid var(--primary); outline-offset:3px; }
+.petSearchSelection strong { overflow-wrap:anywhere; line-height:1.5; }
+@media(max-width:600px) {
+  .entityEditDialog.petPhotoSearch .entityEditFooter.petSearchFooter { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .petSearchFooter > .primaryControl { grid-column:1 / -1; }
+  .petSearchScope select, .petSearchCard select { font-size:16px; }
+}

@@ -1,4 +1,4 @@
-import { useCallback, useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useHelpCharacter } from '../characters/CharacterHelp';
@@ -6,19 +6,15 @@ import { CharacterVisual } from '../characters/CharacterVisual';
 import { resolveHelpDialogue } from './helpDialogue';
 import { isHelpTarget, type HelpStep } from './helpContent';
 import { placeGuide, type Rect, type Viewport } from './helpGeometry';
+import { helpLayerRect, keepHelpTargetInView, visibleHelpTargetRect } from './helpTarget';
 
-type Session = { steps: HelpStep[]; root: HTMLElement; opener: HTMLElement | null; scope: string };
+type Session = { steps: HelpStep[]; root: HTMLElement; opener: HTMLElement | null; scope: string; variation?: number };
 const viewportRect = (): Viewport => ({ x: window.visualViewport?.offsetLeft ?? 0, y: window.visualViewport?.offsetTop ?? 0, width: window.visualViewport?.width ?? window.innerWidth, height: window.visualViewport?.height ?? window.innerHeight });
-function keepTargetInView(element: HTMLElement, scope: string) {
-  const viewport = viewportRect();
+function headerBottom(scope: string, viewport: Viewport) {
   const header = scope === 'screen' ? document.querySelector<HTMLElement>('.sidebar') : null;
   const headerStyle = header && getComputedStyle(header);
-  const top = header && (headerStyle?.position === 'sticky' || headerStyle?.position === 'fixed')
+  return header && (headerStyle?.position === 'sticky' || headerStyle?.position === 'fixed')
     ? Math.max(viewport.y, Math.min(header.getBoundingClientRect().bottom, viewport.y + viewport.height * .45)) : viewport.y;
-  const bounds = element.getBoundingClientRect();
-  if (bounds.top < top + 8 || bounds.bottom > viewport.y + viewport.height - 8 || bounds.left < viewport.x || bounds.right > viewport.x + viewport.width)
-    element.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
-  return element.getBoundingClientRect();
 }
 
 export function HelpOverlay({ session, onClose }: { session: Session; onClose: () => void }) {
@@ -28,12 +24,22 @@ export function HelpOverlay({ session, onClose }: { session: Session; onClose: (
   const [target, setTarget] = useState<Rect>({ x: 0, y: 0, width: 0, height: 0 });
   const [viewport, setViewport] = useState(viewportRect);
   const [cardSize, setCardSize] = useState({ width: 340, height: 260 });
+  const [readyTarget, setReadyTarget] = useState<HTMLElement | null>(null);
   const layer = useRef<HTMLDivElement>(null), card = useRef<HTMLElement>(null);
   const closeRef = useRef(onClose); closeRef.current = onClose;
   const empty = session.steps.length === 0;
   const step = steps[Math.min(index, steps.length - 1)] ?? { id: 'empty', target: session.root, title: '현재 안내할 작업이 없어요', instruction: '지금 화면에는 사용할 수 있는 작업이 없어요. 항목을 추가하거나 다른 화면을 연 뒤 다시 도움말을 눌러 주세요.' };
   const mask = useId().replace(/:/g, '');
-  const copy = resolveHelpDialogue(character.definition, character.affection, step?.instruction ?? '');
+  const copies = useMemo(() => {
+    let previousLine: string | undefined;
+    return new Map(session.steps.map(item => {
+      const copy=resolveHelpDialogue(character.definition,character.affection,item.instruction,{stepId:item.id,variation:session.variation,previousLine});
+      previousLine=copy.line;
+      return [item.target,copy] as const;
+    }));
+  }, [session.steps, character.definition, character.affection, session.variation]);
+  const copy = copies.get(step.target) ?? resolveHelpDialogue(character.definition,character.affection,step.instruction,{stepId:'empty',variation:session.variation});
+  const ready = empty || readyTarget === step.target;
   const move = useCallback((direction: number) => {
     const next = index + direction;
     if (next >= steps.length) closeRef.current();
@@ -56,7 +62,6 @@ export function HelpOverlay({ session, onClose }: { session: Session; onClose: (
       current = current.parentElement;
     }
     document.body.style.overflow = 'hidden';
-    card.current?.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true });
     function keyboard(event: KeyboardEvent) {
       if (event.key === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); closeRef.current(); return; }
       if (event.key === 'Tab') {
@@ -85,53 +90,81 @@ export function HelpOverlay({ session, onClose }: { session: Session; onClose: (
   }, [session]);
 
   useLayoutEffect(() => {
-    if (empty) return;
+    if(ready && !layer.current?.contains(document.activeElement))card.current?.querySelector<HTMLButtonElement>('button')?.focus({preventScroll:true});
+  }, [ready]);
+
+  useLayoutEffect(() => {
+    if (empty) {
+      const measure=()=>setViewport(helpLayerRect(viewportRect(),layer.current?.getBoundingClientRect() ?? {x:0,y:0}));
+      measure();
+      window.addEventListener('resize',measure);
+      window.visualViewport?.addEventListener('resize',measure);window.visualViewport?.addEventListener('scroll',measure);
+      return ()=>{window.removeEventListener('resize',measure);window.visualViewport?.removeEventListener('resize',measure);window.visualViewport?.removeEventListener('scroll',measure);};
+    }
     const element = step.target;
     element.dataset.helpHighlighted = step.id;
     element.dataset.helpScope = session.scope;
-    keepTargetInView(element, session.scope);
     let frame = 0;
     function measure() {
       cancelAnimationFrame(frame);
+      setReadyTarget(null);
       frame = requestAnimationFrame(() => {
         const valid = steps.filter(item => isHelpTarget(item.target));
         if (!valid.length) { closeRef.current(); return; }
         if (valid.length !== steps.length) { const position = Math.max(0, valid.findIndex(item => item.target === element)); setSteps(valid); setIndex(Math.min(position, valid.length - 1)); return; }
-        const rect = keepTargetInView(element, session.scope);
-        setTarget({ x: rect.x, y: rect.y, width: rect.width, height: rect.height }); setViewport(viewportRect());
-        if (card.current) {
-          const panel = card.current, content = panel.querySelector<HTMLElement>('.helpGuideContent');
-          const style = getComputedStyle(panel);
-          // A constrained flex box's scrollHeight feeds back its clipped height.
-          // Measure the intrinsic children to retain the speech and character.
-          const height = (panel.querySelector('header')?.getBoundingClientRect().height ?? 44)
-            + (panel.querySelector('footer')?.getBoundingClientRect().height ?? 52)
-            + (content?.scrollHeight ?? 170) + parseFloat(style.paddingTop) + parseFloat(style.paddingBottom) + 2;
-          setCardSize({ width: Math.min(340, viewportRect().width - 20), height });
-        }
+        const view = viewportRect();
+        keepHelpTargetInView(element,view,headerBottom(session.scope,view));
+        // Internal scroll, sticky headings and locked body layout settle first.
+        frame=requestAnimationFrame(()=>{
+          if(!element.isConnected)return;
+          const visibleViewport=viewportRect();
+          const rect=visibleHelpTargetRect(element,visibleViewport,headerBottom(session.scope,visibleViewport));
+          if(!rect.width || !rect.height){
+            const remaining=steps.filter(item=>item.target!==element);
+            if(!remaining.length){closeRef.current();return;}
+            setSteps(remaining);setIndex(Math.min(index,remaining.length-1));return;
+          }
+          const origin=layer.current?.getBoundingClientRect() ?? {x:0,y:0};
+          setTarget(helpLayerRect(rect,origin));setViewport(helpLayerRect(visibleViewport,origin));setReadyTarget(element);
+          if (card.current) {
+            const panel = card.current, content = panel.querySelector<HTMLElement>('.helpGuideContent');
+            const style = getComputedStyle(panel);
+            // A constrained flex box's scrollHeight feeds back its clipped height.
+            // Measure the intrinsic children to retain the speech and character.
+            const height = (panel.querySelector('header')?.getBoundingClientRect().height ?? 44)
+              + (panel.querySelector('footer')?.getBoundingClientRect().height ?? 52)
+              + (content?.scrollHeight ?? 170) + parseFloat(style.paddingTop) + parseFloat(style.paddingBottom) + 2;
+            setCardSize({ width: Math.min(340, visibleViewport.width - 20), height });
+          }
+        });
       });
     }
     measure();
     const resize = new ResizeObserver(measure); resize.observe(element); if (card.current) resize.observe(card.current);
+    for(let parent=element.parentElement;parent && parent!==document.body;parent=parent.parentElement)resize.observe(parent);
     const mutations = new MutationObserver(measure); mutations.observe(session.root, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'disabled', 'aria-disabled'] });
-    window.addEventListener('scroll', measure, true); window.addEventListener('resize', measure);
+    const onScroll=(event: Event)=>{
+      if(event.target instanceof Node && layer.current?.contains(event.target))return;
+      measure();
+    };
+    window.addEventListener('scroll', onScroll, true); window.addEventListener('resize', measure);
     window.visualViewport?.addEventListener('resize', measure); window.visualViewport?.addEventListener('scroll', measure);
-    return () => { cancelAnimationFrame(frame); resize.disconnect(); mutations.disconnect(); window.removeEventListener('scroll', measure, true); window.removeEventListener('resize', measure); window.visualViewport?.removeEventListener('resize', measure); window.visualViewport?.removeEventListener('scroll', measure); delete element.dataset.helpHighlighted; delete element.dataset.helpScope; };
-  }, [step, steps, session, onClose, empty]);
+    return () => { cancelAnimationFrame(frame); resize.disconnect(); mutations.disconnect(); window.removeEventListener('scroll', onScroll, true); window.removeEventListener('resize', measure); window.visualViewport?.removeEventListener('resize', measure); window.visualViewport?.removeEventListener('scroll', measure); delete element.dataset.helpHighlighted; delete element.dataset.helpScope; };
+  }, [step.target, step.id, steps, session, onClose, empty, index]);
 
   const placement = empty ? { x: viewport.x + Math.max(10, (viewport.width - 340) / 2), y: viewport.y + Math.max(10, (viewport.height - 280) / 2), width: Math.min(340, viewport.width - 20), height: Math.min(280, viewport.height - 20), side: 'below' } : placeGuide(target, cardSize, viewport);
   const point = { x: target.x + target.width / 2, y: target.y + target.height / 2 };
   const anchor = { x: placement.x + placement.width / 2, y: placement.y + placement.height / 2 };
-  return createPortal(<div ref={layer} data-help-ui="overlay" className="helpOverlay" role="dialog" aria-modal="true" aria-labelledby="helpDialogTitle" aria-describedby="helpInstruction"
+  return createPortal(<div ref={layer} data-help-ui="overlay" className="helpOverlay" role="dialog" aria-modal="true" aria-busy={!ready} aria-labelledby="helpDialogTitle" aria-describedby="helpInstruction"
     onClick={event => event.stopPropagation()} onPointerDown={event => event.stopPropagation()}>
     <h2 id="helpDialogTitle" className="helpSrOnly">버튼 도움말</h2>
-    {!empty ? <svg className="helpMask" width="100%" height="100%" aria-hidden="true">
+    {!empty && ready ? <svg className="helpMask" width="100%" height="100%" aria-hidden="true">
       <defs><mask id={mask}><rect width="100%" height="100%" fill="white" /><rect x={target.x - 6} y={target.y - 6} width={target.width + 12} height={target.height + 12} rx="10" fill="black" /></mask></defs>
       <rect width="100%" height="100%" fill="rgba(0,0,0,.82)" mask={`url(#${mask})`} />
       <rect className="helpSpotlight" x={target.x - 6} y={target.y - 6} width={target.width + 12} height={target.height + 12} rx="10" />
       <line x1={anchor.x} y1={anchor.y} x2={point.x} y2={point.y} stroke="var(--primary, #7d835a)" strokeWidth="2" strokeDasharray="4 5" />
     </svg> : <div className="helpEmptyDim" aria-hidden="true" />}
-    <section ref={card} className="helpGuideCard" data-placement={placement.side} style={{ left: placement.x, top: placement.y, width: placement.width, maxHeight: placement.height } as CSSProperties}>
+    <section ref={card} className="helpGuideCard" data-placement={placement.side} style={{ left: placement.x, top: placement.y, width: placement.width, maxHeight: placement.height, visibility: ready ? 'visible' : 'hidden' } as CSSProperties}>
       <header><span aria-hidden="true">{empty ? '0 / 0' : `${index + 1} / ${steps.length}`}</span><span className="helpSrOnly" role="status" aria-live="polite" aria-atomic="true">{index + 1} / {steps.length}. {step.title}. {copy.line} {copy.instruction}</span><button type="button" aria-label="도움말 종료" onClick={onClose}><X size={20} aria-hidden="true" /></button></header>
       <div className="helpGuideContent" tabIndex={0} role="region" aria-label="캐릭터 설명" key={step.id}>
         <div className="helpCharacter" aria-hidden="true" data-facing={point.x < anchor.x ? 'left' : 'right'}><CharacterVisual definition={character.definition} stage={character.stage} affection={character.affection} expression={copy.tier >= 3 ? 'happy' : 'idle'} gomiMotion={copy.tier >= 4 ? 'paw-wave' : copy.tier >= 3 ? 'happy' : 'cynical'} reactionKey={index} /></div>

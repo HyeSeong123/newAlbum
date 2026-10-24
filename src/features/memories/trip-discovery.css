@@ -13,3 +13,16 @@
 .tripDetailHeader { justify-content:space-between; margin-bottom:20px; }
 .tripDiscovery button { border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text); padding:8px 12px; font:inherit; font-size:13px; }
 .tripDiscovery button:disabled { opacity:.5; }
+
+.tripCard { min-width: 0; border-radius: 8px; background: var(--surface); }
+.tripCard h3, .tripDetailHeader h3 { overflow-wrap: anywhere; line-height: 1.5; }
+.tripDiscovery button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 10px 12px; border-radius: 6px; line-height: 1.4; white-space: nowrap; }
+.tripActions { gap: 8px; }
+.tripActions button { flex: 1 0 auto; }
+.tripDetailHeader { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; }
+.tripDetailHeader > div { min-width: 0; }
+@media (max-width: 600px) {
+  .tripDetailHeader { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .tripDetailHeader > div { grid-row: 1; }
+  .tripDetailHeader button { justify-self: stretch; }
+}

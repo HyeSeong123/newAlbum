@@ -4,7 +4,7 @@ import { installRecordFixture } from './record-fixture';
 test('timeline preserves date groups, counts, notes and navigation into a day', async ({ page }) => {
   await installRecordFixture(page); await page.goto('/');
   await page.getByRole('button',{ name:'추억',exact:true }).click();
-  await page.getByRole('button',{ name:'우리의 기록',exact:true }).click();
+  await page.getByRole('button',{ name:'시간 산책',exact:true }).click();
   const timeline = page.getByRole('region',{ name:'우리의 기록 타임라인',exact:true });
   await timeline.getByRole('button',{ name:'2023년 기록',exact:true }).click();
   const autumn = timeline.getByRole('button',{ name:'2023년 9월 27일 · 사진 2장',exact:true });
@@ -17,14 +17,14 @@ test('timeline preserves date groups, counts, notes and navigation into a day', 
   await page.getByRole('button',{ name:'첫 가을 상세보기',exact:true }).click();
   await expect(page.getByRole('dialog',{ name:'사진 상세' })).toBeVisible();
   await page.getByRole('dialog',{ name:'사진 상세' }).getByTitle('닫기',{ exact:true }).click();
-  await page.getByRole('button',{ name:'타임라인으로 돌아가기',exact:true }).click();
+  await page.getByRole('button',{ name:'시간 산책으로',exact:true }).click();
   await timeline.getByRole('button',{ name:'2023년 8월 기록',exact:true }).click();
   const summer = timeline.getByRole('button',{ name:'2023년 8월 12일 · 사진 1장',exact:true });
   await expect(summer).toContainText('여름휴가');
   await summer.click();
   await expect(page.locator('.timelineDetailHeader')).toContainText('여름휴가 · 바다에서 함께 보낸 하루');
-  await page.getByRole('button',{ name:'타임라인으로 돌아가기',exact:true }).click();
-  await timeline.getByRole('button',{ name:'날짜 없는 기록 · 사진 2장',exact:true }).click();
+  await page.getByRole('button',{ name:'시간 산책으로',exact:true }).click();
+  await timeline.getByRole('button',{ name:'날짜를 기다리는 기록 · 사진 2장',exact:true }).click();
   await expect(page.locator('.recordMediaGrid>button')).toHaveCount(2);
 });
 

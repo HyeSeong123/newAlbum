@@ -1,4 +1,5 @@
 export const MAX_DIARY_PHOTOS = 6;
+export const DIARY_MOODS = ["기쁨", "평온", "그리움", "슬픔", "설렘", "배고픔", "보고싶음", "사랑함"] as const;
 export const DIARY_PHOTO_ACCEPT = ".jpg,.jpeg,.png,.webp,.heic";
 
 export interface DiaryPhoto { id: number | string; file_path: string; data_url?: string }

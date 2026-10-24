@@ -21,6 +21,12 @@ export function RegionEditor({ current, district: initialDistrict = "", country:
   const [notice, setNotice] = useState("");
   const districtOptions = KOREAN_DISTRICTS[code] ?? [];
   const hasLegacyDistrict = !!district && !districtOptions.includes(district);
+  function startEditing() {
+    setOverseas(current === "overseas");
+    setCode(current === "KR-29" ? "KR-46" : current ?? "");
+    setDistrict(initialDistrict); setCountry(initialCountry); setCity(initialCity);
+    setError(""); setNotice(""); setEditing(true);
+  }
   async function save() {
     if (busy || !count || (overseas ? !country.trim() || !city.trim() : !code)) return;
     setBusy(true); setError(""); setNotice("");
@@ -31,7 +37,7 @@ export function RegionEditor({ current, district: initialDistrict = "", country:
   const place = current === "overseas" ? [initialCountry, initialCity].filter(Boolean).join(" · ") : [REGION_NAMES[current ?? ""], initialDistrict].filter(Boolean).join(" · ");
   return <section className="regionEditor" aria-label="위치">
     {!editing ? <><span>{count > 1 ? `선택한 ${count}개 기록` : place || "지역 미분류"}{source === "manual" && <small>직접 지정</small>}</span>
-      <button disabled={!count} onClick={() => setEditing(true)}>{current ? "지역 변경" : "지역 지정"}</button></> : <>
+      <button type="button" disabled={!count} onClick={startEditing}>{current ? "지역 변경" : "지역 지정"}</button></> : <>
       <label className="overseasCheck"><input type="checkbox" checked={overseas} disabled={busy} onChange={event => setOverseas(event.target.checked)} /> 해외 지역</label>
       {overseas ? <>
         <label>나라<input aria-label="나라" maxLength={80} placeholder="예: 일본" value={country} disabled={busy} onChange={event => setCountry(event.target.value)} /></label>
@@ -46,8 +52,10 @@ export function RegionEditor({ current, district: initialDistrict = "", country:
           {districtOptions.map(name => <option key={name} value={name}>{name}</option>)}
         </select></label>
       </>}
-      <button disabled={busy || !count || (overseas ? !country.trim() || !city.trim() : !code)} onClick={() => void save()}>{busy ? "저장 중" : "지역 저장"}</button>
-      <button disabled={busy} onClick={() => setEditing(false)}>취소</button>
+      <div className="regionEditorActions">
+        <button type="button" disabled={busy} onClick={() => { setEditing(false); setError(""); setNotice(""); }}>취소</button>
+        <button type="button" className="primaryControl" disabled={busy || !count || (overseas ? !country.trim() || !city.trim() : !code)} onClick={() => void save()}>{busy ? "저장 중" : "지역 저장"}</button>
+      </div>
     </>}
     {!current && locationStatusText(status) && <p className="regionLocationStatus" data-location-status={status}>{locationStatusText(status)}{status === "failed" ? " · 원본 사진은 유지됩니다. 추억 지도에서 다시 분석할 수 있습니다." : status === "no-gps" ? " · 가져온 파일에서 촬영 위치를 찾지 못했습니다. 휴대폰 원본에 위치가 있다면 사진 위치정보 접근을 허용한 뒤 다시 가져와 주세요. 직접 지역을 지정할 수도 있습니다." : ""}</p>}
     {error && <p role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}

@@ -3,17 +3,21 @@ import { Check, FolderOpen, FolderOutput, X } from "lucide-react";
 import type { MediaItem } from "../types/media";
 import { isAndroidRuntime, isTauriRuntime } from "../services/tauriMediaService";
 import { useMediaExport } from "../features/export/useMediaExport";
+import { useDialogFocus } from "../hooks/useDialogFocus";
 import { useModalBehavior } from "../hooks/useModalBehavior";
 
 export function ExportModal({ title, items, onClose }: { title: string; items: MediaItem[]; onClose: () => void }) {
   const { folderName, setFolderName, destination, setDestination, busy, error, result, chooseDestination, submit } = useMediaExport(title, items);
   const androidFolder = isAndroidRuntime() && destination.startsWith("content://");
   const nameInput = useRef<HTMLInputElement>(null);
+  const panel = useRef<HTMLElement>(null);
+  const onKeyDown = useDialogFocus(panel);
   useModalBehavior(() => { if (!busy) onClose(); });
   useEffect(() => { nameInput.current?.focus(); }, []);
+  useEffect(() => { if (result) panel.current?.querySelector<HTMLButtonElement>('.exportComplete button')?.focus(); }, [result]);
 
   return <div className="modalBackdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) onClose(); }}>
-    <section className="exportModal" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle">
+    <section ref={panel} tabIndex={-1} onKeyDown={onKeyDown} className="exportModal" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle">
       <header className="detailHeader"><strong id="exportModalTitle">내보내기</strong><button type="button" className="closeButton" title="닫기" disabled={busy} onClick={onClose}><X size={18} /></button></header>
       {result ? <div className="exportComplete">
         <span className="exportCompleteIcon"><Check size={24} /></span>

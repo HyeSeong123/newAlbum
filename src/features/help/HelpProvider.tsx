@@ -5,7 +5,7 @@ import { collectHelpSteps, currentHelpRoot, type HelpContext, type HelpStep } fr
 import { HelpOverlay } from './HelpOverlay';
 import './help.css';
 
-type Session = { steps: HelpStep[]; root: HTMLElement; opener: HTMLElement | null; scope: string };
+type Session = { steps: HelpStep[]; root: HTMLElement; opener: HTMLElement | null; scope: string; variation: number };
 const HelpContextValue = createContext<{ start: () => void; active: boolean }>({ start() {}, active: false });
 export const useInteractiveHelp = () => useContext(HelpContextValue);
 
@@ -19,6 +19,7 @@ export function HelpProvider({ context, children, request = 0, onActiveChange }:
   const triggerId = useId();
   const contextRef = useRef(context); contextRef.current = context;
   const trigger = useRef<HTMLButtonElement>(null);
+  const dialogueVisit = useRef(0);
   const start = useCallback(() => {
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : trigger.current;
     // A first-run/menu handler may close its own layer in this same event.
@@ -27,7 +28,7 @@ export function HelpProvider({ context, children, request = 0, onActiveChange }:
       const root = currentHelpRoot();
       if (!root) return;
       const steps = collectHelpSteps(root, contextRef.current);
-      setSession({ steps, root, opener, scope: root.matches('[role="dialog"], [role="menu"], .actionMenuPanel') ? 'dialog' : 'screen' });
+      setSession({ steps, root, opener, variation:dialogueVisit.current++, scope: root.matches('[role="dialog"], [role="menu"], .actionMenuPanel') ? 'dialog' : 'screen' });
     });
   }, []);
   const close = useCallback(() => setSession(null), []);

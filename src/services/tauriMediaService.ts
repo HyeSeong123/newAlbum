@@ -1,5 +1,6 @@
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { Channel, invoke } from "@tauri-apps/api/core";
+import { pictureDir } from "@tauri-apps/api/path";
 import type { MediaImportProgress } from "../features/media/importProgress";
 import type { AlbumContent, MediaItem, MediaType, SavedAlbum } from "../types/media";
 import { albumContents } from "../features/albums/albumContent";
@@ -164,9 +165,10 @@ export async function chooseAndRegisterFiles(onProgress?: (progress: MediaImport
 }
 
 export async function chooseAndRegisterFolder(onProgress?: (progress: MediaImportProgress) => void): Promise<MediaItem[]> {
-  const selected = isAndroidRuntime() ? await invoke<string | null>("choose_android_directory") : await open({
+  const selected = isAndroidRuntime() ? await invoke<string | null>("choose_android_directory", { preferPictures: true }) : await open({
     multiple: false,
     directory: true,
+    defaultPath: await pictureDir().catch(() => undefined),
   });
   return registerSelection(selected, onProgress);
 }

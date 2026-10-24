@@ -8,11 +8,19 @@ import './analysis-activity.css';
 export function AnalysisActivity({ person, pets, onShowResults }: { person: PersonAnalysisProgress | null; pets: PetAnalysis; onShowResults: (tab: 'people' | 'pets') => void }) {
   const [open, setOpen] = useState(false);
   const [dismissedPerson, setDismissedPerson] = useState('');
+  const [personStarted, setPersonStarted] = useState(false);
+  const [petsStarted, setPetsStarted] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const personKey = `${person?.message}|${person?.error}`;
-  const showPerson = Boolean(person && (person.running || (person.message || person.error) && dismissedPerson !== personKey));
-  const showPets = Boolean(pets.progress);
+  // Restored queues and ordinary editing messages are not completed analyses.
+  // Keep results available only after this app session observed actual analysis.
+  useEffect(() => {
+    if (person?.running) setPersonStarted(true);
+    if (pets.progress?.running) setPetsStarted(true);
+  }, [person?.running, pets.progress?.running]);
+  const showPerson = Boolean(person && (person.running || personStarted && (person.message || person.error) && dismissedPerson !== personKey));
+  const showPets = Boolean(pets.progress && (pets.progress.running || petsStarted));
   const running = Boolean(person?.running || pets.progress?.running);
   useEffect(() => { if (!showPerson && !showPets) setOpen(false); }, [showPerson, showPets]);
   useEffect(() => {

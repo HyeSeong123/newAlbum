@@ -371,7 +371,9 @@ try {
   await page.getByRole('button', { name:'현재 화면 도움말', exact:true }).click();
   const gomiGuide = page.getByRole('dialog', { name:'버튼 도움말', exact:true });
   await expect(gomiGuide.locator('.characterHelpName')).toHaveText('고미');
-  await expect(gomiGuide.locator('.helpVoice')).toHaveText('…설명은 할게.');
+  await expect(gomiGuide).toHaveAttribute('aria-busy','false');
+  await expect(gomiGuide.locator('.helpVoice')).toHaveAttribute('data-affinity','0');
+  await expect(gomiGuide.locator('.helpVoice')).not.toBeEmpty();
   await expect(gomiGuide.locator('#helpInstruction')).toContainText('친밀도는 친구마다 하루 한 번');
   await expect(gomiGuide.locator('.characterVisual')).toHaveAttribute('data-expression', 'cynical');
   await expect.poll(() => gomiGuide.locator('img').evaluate(el => el.complete && el.naturalWidth === 1254)).toBe(true);
@@ -571,8 +573,13 @@ try {
   })).toBe(true);
   await captureScreen('diary-anchored-menu');
   await page.getByRole('button', { name:'일기 수정', exact:true }).click();
-  await expect(page.getByRole('dialog', { name:'일기 상세', exact:true })).toBeVisible();
-  await page.getByRole('dialog', { name:'일기 상세', exact:true }).getByRole('button', { name:'닫기', exact:true }).click();
+  await expect(page.getByRole('dialog', { name:'일기 수정', exact:true })).toBeVisible();
+  await page.getByRole('dialog', { name:'일기 수정', exact:true }).getByRole('button', { name:'닫기', exact:true }).click();
+  await page.locator('.diaryOpen').first().click();
+  const diaryReading=page.getByRole('dialog',{name:'일기 상세',exact:true});
+  await expect(diaryReading).toBeVisible();
+  await expect(diaryReading.locator('input,textarea')).toHaveCount(0);
+  await diaryReading.getByRole('button',{name:'닫기',exact:true}).last().click();
   console.log('Diary frame and save actions fit the Android visual viewport; long text saved through native storage.');
   await page.locator('.navList').getByRole('button', { name:'사람과 반려동물', exact:true }).click();
   await expect(page.locator('.peopleView > .entityHeader')).toBeVisible();

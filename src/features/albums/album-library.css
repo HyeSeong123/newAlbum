@@ -36,3 +36,8 @@
   .workspace:has(.savedAlbums) .topbar .searchBox { width: 320px; min-height: 48px; }
   .workspace:has(.savedAlbums) .topbar .importActions .primary { min-height: 48px; padding-inline: 20px; font-size: 15px; }
 }
+
+.savedAlbums .savedAlbumTitle { min-height: 44px; }
+.savedAlbums .albumSort select, .savedAlbums .albumActions button { min-height: 44px; }
+.savedAlbumFooter .actionMenuTrigger { width: 44px; min-width: 44px; min-height: 44px; }
+.savedAlbums button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }

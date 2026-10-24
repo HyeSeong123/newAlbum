@@ -420,6 +420,32 @@
 .albumSwipeCorner { position: absolute; inset: 0; background: linear-gradient(135deg, #b3ac9f66, #fffcf3 65%, #e9e1d3); filter: drop-shadow(-3px -3px 4px #4842374d); clip-path: polygon(100% 100%, calc(100% - var(--swipe-size)) 100%, 100% calc(100% - var(--swipe-size))); }
 .albumSwipePreview.prev .albumSwipeCorner { background: linear-gradient(225deg, #b3ac9f66, #fffcf3 65%, #e9e1d3); filter: drop-shadow(3px -3px 4px #4842374d); clip-path: polygon(0 100%, var(--swipe-size) 100%, 0 calc(100% - var(--swipe-size))); }
 .albumEditorHeader { justify-content: space-between; }
+
+/* Album creation and editing keep complete labels and reachable actions. */
+.albumCreateModal { display: flex; flex-direction: column; min-height: 0; max-height: calc(100dvh - 40px); overflow: hidden; }
+.albumCreateModal > .detailHeader { flex-shrink: 0; }
+.albumCreateModal form { min-height: 0; overflow-y: auto; padding-block: 0; }
+.albumCreateModal form > fieldset { padding-top: 20px; }
+.albumCreateFooter { position: sticky; bottom: 0; margin-inline: -24px; padding: 14px 24px; border-top: 1px solid var(--border); background: var(--surface); }
+.albumEditor .albumEditorFooter, .albumCreateFooter { flex-wrap: wrap; gap: 10px; }
+.albumEditor .albumActions button, .albumCreateModal .albumActions button { min-width: 44px; min-height: 44px; white-space: nowrap; }
+.albumEditor .albumActions .primaryControl, .albumCreateModal .albumActions .primaryControl { background: var(--primary); border-color: var(--primary); color: #fff; }
+.albumEditor .albumActions .dangerButton, .albumEditor .albumEntryDelete { color: var(--danger); }
+.albumEditor .detailHeader .closeButton, .albumCreateModal .detailHeader .closeButton { width: 44px; min-width: 44px; min-height: 44px; }
+.albumEditor .albumEditorTabs button { min-height: 44px; }
+.albumEditor .albumColorOptions > button, .albumCreateModal .albumColorOptions > button { min-width: 44px; min-height: 44px; }
+.albumEditor .customAlbumColor input, .albumCreateModal .customAlbumColor input { min-width: 44px; min-height: 44px; }
+.albumEditorHeader > div { min-width: 0; }
+.albumEditorHeader small { overflow-wrap: anywhere; }
+.albumJournalPager button { min-width: 44px; min-height: 44px; }
+.albumJournalPager .albumProgress { min-height: 44px; }
+.albumJournal { grid-template-rows: 76px minmax(0, 1fr) auto; }
+.albumJournalPager { gap: 4px; padding-block: 8px; }
+.albumContentEditor .albumOutlinePager button, .albumWrittenPage .writtenPageEdit { min-width: 44px; min-height: 44px; }
+.exportModal .detailHeader .closeButton { min-width: 44px; min-height: 44px; }
+.exportModal .exportPathField button, .exportModal .exportActions button, .exportModal .exportComplete button { min-width: 44px; min-height: 44px; white-space: nowrap; }
+.exportModal .exportActions { flex-wrap: wrap; }
+@media (max-width: 600px) { .albumCreateFooter { margin-inline: -18px; padding-inline: 18px; } }
 .albumWrittenEditor .albumContentEditor { gap: 12px; padding: 14px 0; }
 .albumWrittenEditor .albumContentToolbar { padding: 10px 12px; }
 .albumWrittenEditor .albumWritingFields { margin-top: 0; }

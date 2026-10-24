@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { modelUrl } from './model-loader.mjs';
-const { appendDiaryPhotos, validateDiary, diaryDateLabel } = await import(await modelUrl('features/diary/diaryModel.ts'));
+const { appendDiaryPhotos, validateDiary, diaryDateLabel, DIARY_MOODS } = await import(await modelUrl('features/diary/diaryModel.ts'));
 const photo = id => ({ id, file_path: `${id}.jpg` });
 const entry = { id: 1, date: '2026-09-28', title: '하루', body: '', mood: '평온', weather: '맑음', album_id: null };
 test('six photos are allowed, duplicates preserve order and seventh fails without changing the draft', () => {
@@ -19,4 +19,9 @@ test('legacy text diaries stay valid and invalid dates or attachments are reject
   assert.throws(() => validateDiary({ ...entry, title: '   ' }));
   assert.throws(() => validateDiary({ ...entry, photos: [photo(1),photo('1')] }));
   assert.equal(diaryDateLabel('2026-09-28'), '09.28 월요일');
+});
+
+test('diary mood choices preserve existing feelings and include hunger, missing someone and love', () => {
+  assert.deepEqual(DIARY_MOODS, ['기쁨', '평온', '그리움', '슬픔', '설렘', '배고픔', '보고싶음', '사랑함']);
+  for (const mood of DIARY_MOODS) assert.doesNotThrow(() => validateDiary({ ...entry, mood }));
 });

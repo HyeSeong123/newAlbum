@@ -32,3 +32,16 @@
 .mediaImportActions button { min-height: 42px; padding: 0 18px; border-radius: 5px; font-size: 14px; }
 .mediaImportDialog [role="alert"] { margin: 0; color: #a44336; font-size: 14px; }
 @media (max-width: 600px) { .mediaImportDialog { padding: 22px 18px; } .mediaImportMethods { grid-template-columns: 1fr; } .mediaImportMethods > label { padding: 13px; } .mediaImportActions button { flex: 1; } .mediaImportRegionFields { grid-template-columns: 1fr; } }
+
+.mediaImportHeader .closeButton { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 44px; min-height: 44px; padding: 0; }
+.mediaImportActions button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 44px; min-height: 44px; padding: 10px 18px; border: 1px solid var(--border); border-radius: var(--control-radius, 6px); color: var(--text); background: var(--surface); line-height: 1.4; }
+.mediaImportActions button.primary { color: #fff; border-color: var(--primary); background: var(--primary); }
+.mediaImportActions button:hover:not(:disabled):not(.primary) { background: var(--surface-soft); border-color: var(--primary); }
+.mediaImportDialog .mediaImportAlbumToggle, .mediaImportDialog .calendarRegistrationToggle { min-height: 44px; padding-bottom: 8px; }
+.mediaImportDialog .albumColorOptions button, .mediaImportDialog .customAlbumColor { min-width: 44px; min-height: 44px; }
+.mediaImportDialog .customAlbumColor input { min-width: 44px; min-height: 44px; }
+.mediaImportDialog button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.mediaImportStorageHint { margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.mediaImportActions { flex-wrap: wrap; }
+.mediaImportActions button { flex: 0 0 auto; white-space: nowrap; }
+.mediaImportActions button.primary { flex: 1 0 auto; }

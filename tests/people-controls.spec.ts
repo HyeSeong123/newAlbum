@@ -72,6 +72,7 @@ test('people and pet controls stay aligned and anchored on narrow screens', asyn
     await expect(nameDialog.locator('.entityEditFooter')).toBeInViewport();
     await page.screenshot({ path: `preview-results/people-controls-name-editor-${width}-${large ? 'large' : 'normal'}.png` });
     await page.getByLabel('인물 이름').fill('취소할 이름');
+    page.once('dialog', dialog=>dialog.accept());
     await page.locator('.personEditor').getByRole('button', { name: '취소', exact: true }).click();
     await expect(peopleHeader.getByRole('heading')).toHaveText('아주 긴 이름을 가진 우리 가족');
     await page.getByRole('button', { name: '인물 목록', exact: true }).click();

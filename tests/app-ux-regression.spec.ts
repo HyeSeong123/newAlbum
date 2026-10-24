@@ -83,12 +83,13 @@ test('diary photo detach and cancel preserve the stored diary and source photo',
   await (await chooser).setFiles('tests/fixtures/pet-dog.jpg');
   await expect(dialog.getByRole('button',{name:'1번째 사진 첨부 해제',exact:true})).toBeVisible();
   await dialog.getByRole('button',{name:'일기 저장',exact:true}).click();await page.locator('.diaryOpen').click();
+  await page.getByRole('dialog', { name: '일기 상세', exact: true }).getByRole('button', { name: '일기 수정', exact: true }).click();
   await page.getByRole('button',{name:'1번째 사진 첨부 해제',exact:true}).click();
   await expect(page.locator('.diaryAttachmentPrint')).toHaveCount(0);
   page.once('dialog',d=>d.dismiss());await page.getByRole('dialog').getByRole('button',{name:'취소',exact:true}).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   page.once('dialog',d=>d.accept());await page.getByRole('dialog').getByRole('button',{name:'취소',exact:true}).click();
-  await page.locator('.diaryOpen').click();await expect(page.locator('.diaryAttachmentPrint')).toHaveCount(1);
+  await page.getByRole('dialog', { name: '일기 상세', exact: true }).getByRole('button', { name: '일기 수정', exact: true }).click();await expect(page.locator('.diaryAttachmentPrint')).toHaveCount(1);
 });
 
 test('favorite action names, red badge and return scroll reflect actual toggles',async({page})=>{

@@ -161,10 +161,12 @@ test('100 imported photos and profile saves stay idle until an explicit request'
 
 test('pending work stays idle and result review opens unknown animals while search remains available',async({page})=>{
   await prepareLargeLibrary(page,true);
-  await expect(page.getByRole('button',{name:'분석 결과 · 진행상황 보기',exact:true})).toBeVisible();
+  await expect(page.locator('.analysisActivityTrigger')).toHaveCount(0);
   await page.reload();
-  await page.getByRole('button',{name:'분석 결과 · 진행상황 보기',exact:true}).click();
-  await page.getByRole('region',{name:'분석 진행상황',exact:true}).getByRole('button',{name:'반려동물 보기',exact:true}).click();
+  await expect(page.locator('.analysisActivityTrigger')).toHaveCount(0);
+  await page.getByRole('button',{name:'사람과 반려동물',exact:true}).click();
+  await page.getByRole('tab',{name:'반려동물',exact:true}).click();
+  await page.locator('.petAnalysisNotice').getByRole('button',{name:'찾은 반려동물 확인',exact:true}).click();
   await expect(page.getByRole('tab',{name:'반려동물',exact:true})).toHaveAttribute('aria-selected','true');
   await expect(page.locator('.petsView h2')).toHaveText('미확인 반려동물');
   const search=page.getByRole('dialog',{name:'반려동물 사진 찾기',exact:true});

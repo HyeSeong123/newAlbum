@@ -27,3 +27,18 @@
 .regionEditor input:not([type="checkbox"]) { padding:9px 10px; min-width:140px; max-width:220px; border:1px solid #ccc; border-radius:6px; font:inherit; }
 .regionEditor .regionLocationStatus { flex-basis:100%; margin:0; color:var(--muted); font-size:12px; line-height:1.6; overflow-wrap:anywhere; }
 .regionEditor .regionLocationStatus[data-location-status="failed"] { color:var(--danger); }
+
+.regionEditor button, .regionEditor select, .regionEditor input:not([type="checkbox"]) {
+  min-height: 44px; border: 1px solid var(--border); border-radius: var(--control-radius, 6px);
+  background: var(--surface); color: var(--text); font: inherit;
+}
+.regionEditor > label:not(.overseasCheck) { display: grid; flex: 1 1 160px; min-width: 0; }
+.regionEditor > label > select, .regionEditor > label > input:not([type="checkbox"]) { width: 100%; min-width: 0; max-width: 100%; }
+.regionEditor .overseasCheck { flex-basis: 100%; min-height: 44px; cursor: pointer; }
+.regionEditorActions { display: flex; flex: 1 0 100%; flex-wrap: wrap; gap: 8px; }
+.regionEditorActions button { flex: 1; padding: 10px 12px; line-height: 1.4; }
+.regionEditorActions .primaryControl { background: var(--primary); border-color: var(--primary); color: #fff; }
+.regionEditor button:hover:not(:disabled):not(.primaryControl) { border-color: var(--primary); background: var(--surface-soft); }
+.regionEditor button:focus-visible, .regionEditor input:focus-visible, .regionEditor select:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.regionEditor > [role="alert"] { flex-basis: 100%; margin: 0; color: var(--danger); line-height: 1.6; }
+.regionEditor > [role="status"] { flex-basis: 100%; margin: 0; color: var(--muted); line-height: 1.6; }

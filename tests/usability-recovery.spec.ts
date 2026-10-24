@@ -201,7 +201,7 @@ test('GPS absence and analysis failure are distinct, retries only failed files, 
   await page.goto('/');
   await page.getByRole('button', { name: '추억', exact: true }).click();
   await page.getByRole('group', { name: '추억 보기' }).getByRole('button', { name: '추억 지도' }).click();
-  await page.locator('.memoryMapPlaces').getByRole('button', { name: /지역 미분류/ }).click();
+  await page.locator('.memoryMapPlaces').getByRole('button', { name: /장소 미정/ }).click();
   const gallery = page.locator('.memoryMapGallery');
   await expect(gallery.locator('[data-location-status="no-gps"]')).toHaveText('GPS 정보 없음');
   await expect(gallery.locator('[data-location-status="failed"]')).toHaveText('위치 정보 읽기 실패');

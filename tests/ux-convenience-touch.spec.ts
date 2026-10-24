@@ -94,6 +94,7 @@ for (const width of [320, 393]) {
     await editor.getByRole('button', { name: '일기 저장', exact: true }).click();
     await expect(editor).toBeHidden();
     await page.locator('.diaryOpen').click();
+    await page.getByRole('dialog', { name: '일기 상세', exact: true }).getByRole('button', { name: '일기 수정', exact: true }).click();
     await expect(page.getByRole('dialog').locator('.diaryAttachmentPrint')).toHaveCount(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });

@@ -56,7 +56,6 @@ export function useMediaLibrary() {
           const result = await api.compareAndroidGallery();
           if (!disposed) setGalleryNotice([
             result.missing ? `갤러리에서 삭제된 원본 ${result.missing}개를 확인했어요. 앱에 보관한 사진은 유지했어요.` : '',
-            result.unavailable ? `권한 또는 접근 문제로 원본 ${result.unavailable}개를 확인하지 못했어요.` : '',
             result.untracked ? `이전에 가져온 사진 ${result.untracked}개는 원본 연결을 확인할 수 없어요.` : '',
             result.missingCopies ? `앱의 보관 파일 ${result.missingCopies}개를 찾지 못했어요.` : '',
           ].filter(Boolean).join(' '));

@@ -23,6 +23,7 @@ export function PetPhotoSearch({ photos, pets, pet, analysis, onClose, onSaved }
   const [ratios, setRatios] = useState<Record<string, number>>({});
   const [hasNext, setHasNext] = useState(false), [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [selection, setSelection] = useState(() => new Map<number, Match>());
   const [albums,setAlbums]=useState<SavedAlbum[]>([]),[scope,setScope]=useState('all');
   const [notice, setNotice] = useState('');
@@ -67,11 +68,17 @@ export function PetPhotoSearch({ photos, pets, pet, analysis, onClose, onSaved }
   }, [searchById, registered, page, pet]);
   useEffect(() => {
     alive.current = true;
+    let active = true, loadId = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const load = () => void refresh().catch(reason => { if (alive.current) setError(String(reason instanceof Error ? reason.message : reason)); });
+    const load = () => {
+      const id = ++loadId;
+      setLoading(true);
+      void refresh().catch(reason => { if (active && id === loadId) setError(String(reason instanceof Error ? reason.message : reason)); })
+        .finally(()=>{if(active && id === loadId)setLoading(false);});
+    };
     const update = () => { clearTimeout(timer); timer = setTimeout(load, 250); };
     load(); window.addEventListener('gamjassak-pet-results', update);
-    return () => { alive.current = false; request.current++; clearTimeout(timer); window.removeEventListener('gamjassak-pet-results', update); };
+    return () => { active = false; alive.current = false; request.current++; clearTimeout(timer); window.removeEventListener('gamjassak-pet-results', update); };
   }, [refresh]);
   function toggle(id: string) {
     if (locked.current) return;
@@ -137,8 +144,9 @@ export function PetPhotoSearch({ photos, pets, pet, analysis, onClose, onSaved }
       {analysis.progress?.running && <progress aria-label="반려동물 사진 찾기 진행" value={analysis.progress.done} max={analysis.progress.total || 1} />}
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
-      <div className="petSearchSelection"><strong>연결할 사진 · {selection.size}개 선택</strong><div><button disabled={saving || !matches.length} onClick={() => setSelection(current => new Map([...current, ...matches.map(match => [match.detection.id,match] as const)]))}>현재 페이지 선택</button><button disabled={saving || !selection.size} onClick={() => setSelection(new Map())}>선택 해제</button></div></div>
-      {!matches.length && <p>{analysis.progress?.running ? '사진을 찾고 있어요. 발견한 사진은 여기에 표시됩니다.' : '아직 연결할 사진이 없습니다. 사진 찾기를 실행하거나 다른 사진을 연결해 보세요.'}</p>}
+      <div className="petSearchSelection"><strong role="status" aria-live="polite">연결할 인식 결과 · {selection.size}개 선택</strong><div><button disabled={saving || loading || !matches.length} onClick={() => setSelection(current => new Map([...current, ...matches.map(match => [match.detection.id,match] as const)]))}>현재 페이지 선택</button><button disabled={saving || !selection.size} onClick={() => setSelection(new Map())}>선택 해제</button></div></div>
+      {loading && <p role="status"><LoaderCircle size={18} className="spinIcon"/>연결할 사진을 불러오는 중</p>}
+      {!loading && !matches.length && <p>{analysis.progress?.running ? '사진을 찾고 있어요. 발견한 사진은 여기에 표시됩니다.' : '아직 연결할 사진이 없습니다. 사진 찾기를 실행하거나 다른 사진을 연결해 보세요.'}</p>}
       <div className="petSearchGrid" {...drag}>{matches.map(match => <article key={match.detection.id} className={`petSearchCard${selection.has(match.detection.id) ? ' selected' : ''}`}>
         <div className="petDetectionPreview" style={{ aspectRatio: ratios[match.item.id] ?? (match.item.width && match.item.height ? match.item.width / match.item.height : 1) }} onLoadCapture={event => {
           const image = event.target;
@@ -153,6 +161,6 @@ export function PetPhotoSearch({ photos, pets, pet, analysis, onClose, onSaved }
       </article>)}</div>
       {(page > 0 || hasNext) && <div className="peopleActions"><button title="이전 사진" disabled={!page || saving} onClick={() => setPage(page - 1)}><ChevronLeft size={18}/></button><span>{page + 1}</span><button title="다음 사진" disabled={!hasNext || saving} onClick={() => setPage(page + 1)}><ChevronRight size={18}/></button></div>}
     </div>
-    <footer className="peopleActions entityEditFooter"><button disabled={saving} onClick={onClose}>닫기</button><button disabled={saving || !selection.size} onClick={()=>void rejectSelected([...selection.values()])}>선택한 후보 제외</button><button className="primaryControl" disabled={saving || !selection.size} onClick={() => void connectSelected()}>{saving ? <LoaderCircle size={18} className="spinIcon" /> : <Check size={18}/>}선택한 사진 연결{selection.size > 0 ? ` (${selection.size})` : ''}</button></footer>
+    <footer className="peopleActions entityEditFooter petSearchFooter" data-help-dock><button disabled={saving} onClick={onClose}>닫기</button><button className="dangerControl" disabled={saving || !selection.size} onClick={()=>void rejectSelected([...selection.values()])}>선택한 후보 제외</button><button className="primaryControl" disabled={saving || !selection.size} onClick={() => void connectSelected()}>{saving ? <LoaderCircle size={18} className="spinIcon" /> : <Check size={18}/>}선택한 사진 연결{selection.size > 0 ? ` (${selection.size})` : ''}</button></footer>
   </EntityEditorDialog>;
 }

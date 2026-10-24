@@ -25,7 +25,7 @@ test('first run can start Gomi tutorial and the tutorial can be reopened after d
   await page.addInitScript(() => localStorage.removeItem('geuruteogi.first-run-completed-v1'));
   await page.goto('/');
   const firstRun = page.getByRole('dialog',{name:'감자싹에 사진을 담아보세요'});
-  await expect(firstRun).toContainText('…설명은 할게.');
+  await expect(firstRun).toContainText('…여기 봐.');
   await firstRun.getByRole('button',{name:'고미와 사용 방법 살펴보기'}).click();
   const guide = page.getByRole('dialog',{name:'버튼 도움말'});
   await expect(guide).toBeVisible();
@@ -90,6 +90,6 @@ test('a map without GPS offers direct region assignment while keeping the photo'
   await page.getByRole('group', { name: '추억 보기' }).getByRole('button', { name: '추억 지도' }).click();
   await expect(page.getByText('아직 지도에 표시할 기록이 없습니다.')).toBeVisible();
   await expect(page.getByText('위치가 없는 사진은 직접 지역을 지정할 수 있습니다.')).toBeVisible();
-  await page.getByRole('button', { name: '지역 미분류 사진 보기' }).click();
+  await page.getByRole('button', { name: '장소 미정 기록 보기' }).click();
   await expect(page.locator('.memoryMapGallery')).toContainText('without-gps.jpg');
 });

@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, BookHeart, Heart, Images, NotebookPen, Users } from "lucide-react";
 import { CharacterVisual } from "../characters/CharacterVisual";
 import { characterDefinitions, characterName, dialogueLines, nextDialogue, type OwnedCharacter } from "../characters/models";
-import { isGomiAngry, isGomiSleeping, isGomiSleepReaction } from "../characters/gomiBehavior";
-import { gomiAffinity, gomiInteractionHints } from "../characters/gomiAffinity";
+import { gomiAffinity } from "../characters/gomiAffinity";
 import { useGomiBehavior } from "../characters/useGomiBehavior";
 import { claimGomiGreeting } from "../characters/gomiGreeting";
 import "../characters/characters.css";
@@ -104,18 +103,12 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
       <p className="homeIntroduction">소중한 순간도, 평범한 하루도 차곡차곡 담아두세요.</p>
       <div className="homeCompanion">
         <p id="homeMessage" className="homeSpeech" role="status" aria-live="polite" aria-atomic="true">{spokenLine || lines[0]}</p>
-        <button className={`homeMascot${happy ? " happy" : ""}`} type="button" aria-label={`${definition ? characterName(definition, mainCharacter) : "감자싹"}에게 말 걸기`} aria-describedby="homeMascotHint" onClick={talk}>
+        <button className={`homeMascot${happy ? " happy" : ""}`} type="button" aria-label={`${definition ? characterName(definition, mainCharacter) : "감자싹"}에게 말 걸기`} onClick={talk}>
           {definition && mainCharacter ? <CharacterVisual definition={definition} stage={mainCharacter.growthStage} expression={happy ? "happy" : "idle"}
             gomiMotion={isGomi ? gomi.motion : undefined} affection={mainCharacter.affection} reactionKey={isGomi ? gomi.sequence : messageIndex} />
             : <img key={messageIndex} src="/brand/gamjassak-symbol.png" alt="" width={1254} height={1254} draggable={false} />}
         </button>
         {definition && mainCharacter && <p className="homeCharacterMeta"><strong>{characterName(definition, mainCharacter)}</strong><span className="homeAffection"><Heart size={14} aria-hidden="true" />친밀도 {mainCharacter.affection}</span></p>}
-        <p id="homeMascotHint" className="homeMascotHint">{isGomi && isGomiAngry(gomi.motion)
-          ? "잠을 여러 번 깨워서 고미가 뾰로통해졌어요. 잠시 쉬게 해 주세요"
-          : isGomi && isGomiSleepReaction(gomi.motion) ? "고미가 한쪽 눈을 살짝 떴어요. 아직 졸린가 봐요"
-          : isGomi && isGomiSleeping(gomi.motion) ? "고미가 자고 있어요. 살짝 톡, 건드리면 실눈으로 쳐다봐요"
-          : isGomi && gomi.motion === "stretch" ? "고미가 쭉, 기지개를 켜고 있어요"
-          : isGomi && gomi.motion === "rest-front" ? "고미가 앞발을 쭉 내밀고 편하게 쉬고 있어요. 조용히 말을 걸어 보세요" : isGomi ? gomiInteractionHints[affinity!] : "홈에서 톡, 쓰다듬으며 말을 걸어 주세요"}</p>
         <button className="homeCharacterLink" type="button" onClick={onShowCharacters}>새싹 도감 보기</button>
       </div>
     </div>

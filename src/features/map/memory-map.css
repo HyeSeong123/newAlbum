@@ -64,3 +64,17 @@
 .memoryMapAlert button { padding: 8px 12px; border: 1px solid currentColor; border-radius: 8px; background: transparent; color: inherit; cursor: pointer; }
 .regionGallerySelection { padding: 12px; border-radius: 10px; background: var(--surface-soft, #f4f1e9); }
 .regionGallerySelection p { flex: 1 1 260px; margin: 0; }
+
+.memoryMapAll, .memoryMapPager button, .memoryMapAlert button,
+.memoryMapGallery .regionGalleryTools button, .memoryMapGallery .regionGalleryTools select { min-height: 44px; border-radius: 6px; }
+.memoryMapGallery .regionGalleryTools button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.memoryMapGallery > header > div { min-width: 0; }
+.memoryMapGallery h3 { overflow-wrap: anywhere; }
+.memoryMapAutoButton { border-radius: 6px; max-width: 100%; }
+.memoryMapAutoButton svg { flex-shrink: 0; }
+@media (max-width: 600px) {
+  .memoryMapIntroActions { width: 100%; }
+  .memoryMapAutoButton { width: 100%; }
+  .memoryMapGallery .regionGalleryActions { gap: 8px; }
+  .memoryMapGallery .regionGalleryActions button { flex: 1 0 auto; white-space: nowrap; }
+}

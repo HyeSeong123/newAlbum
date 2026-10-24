@@ -1,5 +1,18 @@
 /* Approved paper-journal direction, scoped to Diary so other workspaces stay intact. */
 .topbar.view-diary { display: none; }
+
+/* Opening a saved entry starts with reading; editing is an explicit action. */
+.diaryDialog.diaryReadDialog { display: flex; flex-direction: column; width: min(900px, 100%); overflow: hidden; }
+.diaryReadDialog .diaryDialogTop, .diaryReadDialog .diaryDialogActions { flex-shrink: 0; }
+.diaryReadContent { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 8px 6px 20px; }
+.diaryReadContent > time { display: block; color: var(--diary-muted); font-size: 14px; line-height: 1.6; }
+.diaryReadContent > h2 { margin: 22px 0 16px; font: 500 23px/1.7 var(--diary-serif); overflow-wrap: anywhere; }
+.diaryReadBody { margin: 0; min-height: 128px; font: 400 15px/32px var(--diary-serif); white-space: pre-wrap; overflow-wrap: anywhere; background: repeating-linear-gradient(transparent 0 31px, #e7dfd077 31px 32px); }
+.diaryReadPhotos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 20px 2px; }
+.diaryReadPhoto { display: grid; place-items: center; min-width: 0; aspect-ratio: 4 / 3; padding: 6px; background: #fffefa; box-shadow: 0 2px 5px #55432222; }
+.diaryReadPhoto img { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+.diaryReadAlbum { display: flex; align-items: center; gap: 8px; color: var(--diary-muted); font-size: 13px; overflow-wrap: anywhere; }
+.diaryMoodIcon { flex-shrink: 0; vertical-align: middle; }
 .diaryView, .diaryDialog {
   --diary-ink: #494437;
   --diary-muted: #686254;
@@ -195,3 +208,11 @@
   .diaryEditorBody .diaryWriting { min-height: 0; }
   .diaryEditorSide { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 }
+
+.diaryDialog .diaryIconButton, .diarySearch button { min-width: 44px; min-height: 44px; }
+.diaryMonthNav > button, .diaryListCount > button, .diaryCardMenu .actionMenuTrigger { min-width: 44px; min-height: 44px; }
+.diaryDateInput, .diaryMonthNav label { min-height: 44px; }
+.diaryDialog .diaryMoodWeather select, .diaryDialog .diaryAlbumChoice select { min-height: 44px; }
+.diaryDialog .diaryAttachmentHeading button { min-height: 44px; }
+.diaryMoodWeather { flex-wrap: wrap; }
+.diaryReadDialog .diaryDialogActions { flex-wrap: wrap; }

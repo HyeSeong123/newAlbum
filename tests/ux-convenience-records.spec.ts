@@ -62,7 +62,8 @@ test('fixed help leaves album menu and diary save controls fully reachable at 32
   await dialog.getByRole('button', { name: '일기 저장', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await page.locator('.diaryOpen').filter({ hasText: '가을 산책' }).click();
-  const existing = page.getByRole('dialog', { name: '일기 상세', exact: true });
+  await page.getByRole('dialog', { name: '일기 상세', exact: true }).getByRole('button', { name: '일기 수정', exact: true }).click();
+  const existing = page.getByRole('dialog', { name: '일기 수정', exact: true });
   await expect(existing.locator('.diaryDialogActions button')).toHaveCount(3);
   await expect(existing.getByRole('button', { name: '일기 삭제', exact: true })).toBeVisible();
   for (const action of await existing.locator('.diaryDialogActions button').all()) {
@@ -214,5 +215,6 @@ test('diary can link a newly selected result after clearing a search', async ({ 
   await expect(page.locator('.diaryCardFoot')).toContainText('함께한 가을');
   await page.getByRole('button', { name: '선택 취소', exact: true }).first().click();
   await page.locator('.diaryOpen').click();
+  await page.getByRole('dialog', { name: '일기 상세', exact: true }).getByRole('button', { name: '일기 수정', exact: true }).click();
   await expect(page.getByRole('dialog').getByLabel('앨범', { exact: true })).toHaveValue('1');
 });

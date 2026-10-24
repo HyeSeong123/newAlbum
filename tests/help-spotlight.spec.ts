@@ -34,28 +34,19 @@ test('home help stays in the bottom corner while ordinary shortcut cards scroll 
   await expect(helpDialog(page)).toBeHidden();
 });
 
-test('home help stays above the actual analysis indicator without following scrolling cards', async ({ page }) => {
+test('home help stays fixed while restored analysis remains idle', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 780 });
   await prepareHelp(page, 'gomi', 0, 90, false, true);
-  const activity = page.getByRole('button', { name: '분석 결과 · 진행상황 보기', exact: true });
-  await expect(activity).toBeVisible();
+  await expect(page.locator('.analysisActivityTrigger')).toHaveCount(0);
   const trigger = page.getByRole('button', { name: '현재 화면 도움말', exact: true });
   const positions = [];
   for (const y of [0, 200, 500, 900, 100]) {
     await scrollAndSettle(page, y);
-    const a = (await activity.boundingBox())!, b = (await trigger.boundingBox())!;
+    const b = (await trigger.boundingBox())!;
     positions.push(b.y);
-    expect(b.y + b.height).toBeLessThanOrEqual(a.y - 8);
+    expect(b.y + b.height).toBeLessThanOrEqual(780);
   }
   expect(Math.max(...positions) - Math.min(...positions)).toBeLessThan(2);
-  await activity.click();
-  const panel = page.getByRole('region', { name: '분석 진행상황', exact: true });
-  await expect(panel).toBeVisible();
-  await expect.poll(async () => {
-    const a = (await panel.boundingBox())!, b = (await trigger.boundingBox())!;
-    return b.y + b.height <= a.y - 8;
-  }).toBe(true);
-  await page.getByRole('button', { name: '진행상황 접기', exact: true }).click();
   await trigger.click();
   await expect(helpDialog(page)).toBeVisible();
 });
@@ -412,4 +403,80 @@ test('zoomed photo canvas never pushes help over the close action', async ({ pag
   await close.click();
   await expect(zoom).toBeHidden();
   await expect(page.getByRole('dialog', { name: '사진 상세', exact: true })).toBeVisible();
+});
+
+test('help reveals a control clipped inside a scrolled editor and restores the draft scroll',async({page})=>{
+  await page.setViewportSize({width:393,height:800});
+  await prepareHelp(page,'gomi',30,90);
+  await page.getByRole('button',{name:'사람과 반려동물',exact:true}).click();
+  await page.getByRole('button',{name:'인물 추가',exact:true}).click();
+  const editor=page.getByRole('dialog',{name:'인물 추가',exact:true});
+  const input=editor.getByLabel('등록할 이름');
+  await input.fill('스크롤 뒤에도 남길 이름');
+  const body=editor.locator('.entityEditBody');
+  // The target is above the body's clip edge, while still inside the window.
+  const before=await body.evaluate(element=>{
+    element.style.maxHeight='240px';
+    const field=element.querySelector('input')!;
+    const bounds=field.getBoundingClientRect(),pane=element.getBoundingClientRect();
+    element.scrollTop+=bounds.bottom-pane.top+12;
+    return element.scrollTop;
+  });
+  expect(before).toBeGreaterThan(0);
+  const clipped=await input.boundingBox(),pane=await body.boundingBox();
+  expect(clipped!.y).toBeGreaterThan(0);
+  expect(clipped!.y+clipped!.height).toBeLessThan(pane!.y);
+  await openHelp(page);
+  await toStep(page,'등록할 이름');
+  await expect.poll(async()=>{
+    const field=await input.boundingBox(),area=await body.boundingBox(),ring=await page.locator('.helpSpotlight').boundingBox();
+    return Boolean(field&&area&&ring&&field.y>=area.y&&field.y+field.height<=area.y+area.height
+      &&Math.abs(ring.x-(field.x-6))<2&&Math.abs(ring.y-(field.y-6))<2);
+  }).toBe(true);
+  await page.screenshot({path:`preview-results/spotlight/scrolled-editor-${test.info().project.name}.png`});
+  await page.keyboard.press('Escape');
+  await expect.poll(()=>body.evaluate(element=>element.scrollTop)).toBe(before);
+  await expect(input).toHaveValue('스크롤 뒤에도 남길 이름');
+  expect(await page.evaluate(()=>(window as any).spotlightCalls.filter((call:any)=>/save_manual_person_photos|rename_face_person/.test(call.command)).length)).toBe(0);
+});
+
+test('a horizontally clipped action is revealed before highlighting and its scroll is restored',async({page})=>{
+  await prepareHelp(page);
+  await page.locator('.workspace').evaluate(root=>{
+    const rail=document.createElement('div');rail.id='help-scroll-rail';
+    rail.style.cssText='position:fixed;left:40px;top:240px;width:220px;height:64px;overflow-x:auto;white-space:nowrap;z-index:5;';
+    const strip=document.createElement('div');strip.style.cssText='width:900px;';
+    const button=document.createElement('button');button.textContent='사진 제목 저장';
+    button.style.cssText='margin-left:180px;width:140px;height:44px;';
+    strip.append(button);rail.append(strip);root.append(rail);rail.scrollLeft=40;
+  });
+  const rail=page.locator('#help-scroll-rail');
+  const before=await rail.evaluate(element=>element.scrollLeft);
+  await openHelp(page);await toStep(page,'사진 제목 저장');
+  await expect.poll(()=>rail.evaluate(element=>{
+    const control=element.querySelector('button')!.getBoundingClientRect(),area=element.getBoundingClientRect();
+    return control.left>=area.left&&control.right<=area.right;
+  })).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect.poll(()=>rail.evaluate(element=>element.scrollLeft)).toBe(before);
+});
+
+test('help dialogue varies on another visit but is stable through resize and previous',async({page})=>{
+  await prepareHelp(page,'gomi',60);
+  await openHelp(page);
+  const guide=helpDialog(page);
+  const voice=guide.locator('.helpVoice');
+  const first=await voice.innerText(),instruction=await guide.locator('#helpInstruction').innerText();
+  await page.setViewportSize({width:320,height:700});
+  await expect(voice).toHaveText(first);
+  await guide.getByRole('button',{name:'다음',exact:true}).click();
+  await expect(guide.locator('.helpGuideCard')).toBeVisible();
+  await expect(voice).not.toHaveText(first);
+  await guide.getByRole('button',{name:'이전',exact:true}).click();
+  await expect(voice).toHaveText(first);
+  await page.keyboard.press('Escape');
+  await openHelp(page);
+  await expect(voice).not.toHaveText(first);
+  await expect(guide.locator('#helpInstruction')).toHaveText(instruction);
+  expect(await page.evaluate(()=>(window as any).spotlightCalls.filter((call:any)=>/interact_character/.test(call.command)).length)).toBe(0);
 });

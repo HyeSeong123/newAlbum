@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useBackAction } from "../../hooks/useBackAction";
+import { BookPlus, ChevronLeft } from "lucide-react";
 import type { MediaItem } from "../../types/media";
 import { EmptyState } from "../../components/MediaVisual";
 import { RecordMediaGrid } from "../media/RecordMediaGrid";
@@ -29,6 +31,8 @@ export function RegionGallery({ code, items, revision, focusVersion, summary, on
   const byId = useMemo(() => new Map(items.map(item => [item.id, item])), [items]);
   const selection = useMediaSelection(byId);
   const desktop = isTauriRuntime();
+  useBackAction(selection.enabled, () => { selection.reset(); setNotice(""); });
+  useBackAction(!selection.enabled, onClose);
   useEffect(() => {
     let disposed = false;
     setLoading(true); setError("");
@@ -50,7 +54,7 @@ export function RegionGallery({ code, items, revision, focusVersion, summary, on
     if (!selection.enabled && result.total > REGION_ALBUM_LIMIT) {
       selection.reset(true); setNotice("기록이 많아요. 앨범에 담을 사진과 영상을 선택해 주세요. 페이지를 넘겨서도 선택할 수 있어요."); return;
     }
-    if (selected.length) onCreateAlbum(selected);
+    if (selected.length) onCreateAlbum(selected, code === "unclassified" ? "다시 모은 순간" : code === "overseas" ? "해외에서 남긴 추억" : `${REGION_NAMES[code]}에서의 순간`);
   }
   const pages = Math.max(1, Math.ceil(result.total / 48));
   const groups = useMemo(() => groupByDistrict(result.items, code), [result.items, code]);
@@ -58,9 +62,9 @@ export function RegionGallery({ code, items, revision, focusVersion, summary, on
   const allPageSelected = pageIds.length > 0 && pageIds.every(id => selection.ids.has(id));
   const districts = useMemo(() => [...new Set(items.filter(item => item.regionCode === code).map(item => item.district || "__unset__"))].sort((a,b) => a.localeCompare(b,"ko")), [items,code]);
   const filtered = filters.fileType !== "all" || filters.year !== "" || filters.oldest || Boolean(filters.district);
-  return <section className="memoryMapGallery" aria-label={`${code === "unclassified" ? "지역 미분류" : code === "overseas" ? "해외 지역" : REGION_NAMES[code]} 기록`}>
-    <header><div><span className="memoryMapEyebrow">장소가 간직한 순간</span><h3 ref={heading} tabIndex={-1}>{code === "unclassified" ? "지역 미분류" : code === "overseas" ? "해외 지역" : REGION_NAMES[code]}</h3><p>{summary}</p></div>
-      <button className="memoryMapAll" onClick={onClose}>전체 지도 보기</button></header>
+  return <section className="memoryMapGallery" aria-label={`${code === "unclassified" ? "장소 미정" : code === "overseas" ? "해외의 추억" : REGION_NAMES[code]} 기록`}>
+    <header><div><span className="memoryMapEyebrow">장소가 간직한 순간</span><h3 ref={heading} tabIndex={-1}>{code === "unclassified" ? "장소 미정" : code === "overseas" ? "해외의 추억" : REGION_NAMES[code]}</h3><p>{summary}</p></div>
+      <button className="memoryMapAll" onClick={onClose}><ChevronLeft size={17} />추억 지도로</button></header>
     <div className="regionGalleryToolbar"><div className="regionGalleryTools regionGalleryFilters">
       <label>종류<select aria-label="기록 종류" value={filters.fileType} onChange={event => filter({ fileType: event.target.value as RegionFilters["fileType"] })}>
         <option value="all">전체</option><option value="image">사진</option><option value="video">영상</option></select></label>
@@ -70,10 +74,10 @@ export function RegionGallery({ code, items, revision, focusVersion, summary, on
         <option value="">전체 시·군·구</option>{districts.map(name => <option key={name} value={name}>{name === "__unset__" ? "지역 미지정" : name}</option>)}</select></label>}
       <label>정렬<select aria-label="기록 정렬" value={filters.oldest ? "oldest" : "newest"} onChange={event => filter({ oldest: event.target.value === "oldest" })}>
         <option value="newest">최신순</option><option value="oldest">오래된순</option></select></label>
-      {filtered && <button onClick={() => filter({ fileType: "all", year: "", oldest: false, district: "" })}>필터 초기화</button>}
+      {filtered && <button onClick={() => filter({ fileType: "all", year: "", oldest: false, district: "" })}>모든 기록 보기</button>}
     </div><div className="regionGalleryTools regionGalleryActions">
-      <button aria-pressed={selection.enabled} onClick={() => { selection.reset(!selection.enabled); setNotice(""); }}>{selection.enabled ? "선택 끝내기" : "사진 선택"}</button>
-      <button className="primaryControl" disabled={loading || Boolean(error) || (selection.enabled ? !selection.ids.size : !result.total)} onClick={createAlbum}>앨범 만들기</button>
+      <button aria-pressed={selection.enabled} onClick={() => { selection.reset(!selection.enabled); setNotice(""); }}>{selection.enabled ? "선택 취소" : "사진 선택"}</button>
+      <button className="primaryControl" disabled={loading || Boolean(error) || (selection.enabled ? !selection.ids.size : !result.total)} onClick={createAlbum}><BookPlus size={17} />이곳의 앨범 만들기</button>
     </div></div>
     {selection.enabled && <><div className="regionGalleryTools regionGallerySelection">
       <p role="status">{selection.ids.size}개 선택 · 페이지를 넘겨도 유지돼요. 필터를 바꾸면 초기화됩니다.</p>
@@ -83,7 +87,7 @@ export function RegionGallery({ code, items, revision, focusVersion, summary, on
       <RegionEditor key={`${code}-${filters.fileType}-${filters.year}`} count={selection.ids.size} onSave={async (region, district, country, city) => {
         await onAssignRegion([...selection.ids], region, district, country, city); selection.clear(); setNotice("선택한 기록의 지역을 저장했습니다.");
       }} /></>}
-    {notice && <p role="status">{notice}</p>}{error && <div className="memoryMapAlert" role="alert">{error}<button onClick={() => setRefresh(value => value + 1)}>사진 다시 불러오기</button></div>}
+    {notice && <p role="status">{notice}</p>}{error && <div className="memoryMapAlert" role="alert">{error}<button onClick={() => setRefresh(value => value + 1)}>이곳의 사진 다시 열기</button></div>}
     {!loading && !error && <p aria-live="polite">필터 결과 {result.total}개{result.total > 0 && ` · ${page * 48 + 1}–${page * 48 + result.items.length}번째 기록`}</p>}
     {loading ? <p role="status">사진을 불러오는 중이에요.</p> : !error && (result.items.length ? groups.map(group => <div className="memoryMapPlaceGroup" key={group.place}>
       {group.place && <h4>{group.place}</h4>}

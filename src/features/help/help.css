@@ -13,7 +13,7 @@
 .helpMask { position: absolute; inset: 0; pointer-events: none; }
 .helpEmptyDim { position: absolute; inset: 0; background: rgba(0,0,0,.82); }
 .helpSpotlight { fill: none; stroke: #f5f1d9; stroke-width: 2; filter: drop-shadow(0 0 5px #e5e7b7); }
-.helpGuideCard { position: fixed; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; padding: 16px 20px; border: 1px solid var(--border, #dfddd2); border-radius: 16px; background: var(--surface, #fffdf8); color: var(--text); box-shadow: 0 8px 32px #0005; font-size: 14px; line-height: 1.7; }
+.helpGuideCard { position: absolute; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; padding: 16px 20px; border: 1px solid var(--border, #dfddd2); border-radius: 16px; background: var(--surface, #fffdf8); color: var(--text); box-shadow: 0 8px 32px #0005; font-size: 14px; line-height: 1.7; }
 .helpGuideCard > header { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; min-height: 44px; padding-bottom: 8px; }
 .helpGuideCard > header span { color: var(--muted); font-size: 12px; }
 .helpGuideCard button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 44px; min-height: 44px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 9999px; background: var(--surface-soft); color: var(--text); font: inherit; font-size: 13px; line-height: 1.4; }

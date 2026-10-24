@@ -1,7 +1,7 @@
 import { EntitySelectionBar } from '../entities/EntitySelectionBar';
 import { useBackAction } from '../../hooks/useBackAction';
 import { useRowSelection } from '../../hooks/useRowSelection';
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BookPlus, Check, CheckSquare, FolderOutput, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
 import type { MediaItem, SavedAlbum } from "../../types/media";
 import { EmptyState } from "../../components/MediaVisual";
@@ -46,6 +46,7 @@ export function SavedAlbumsView({
   useBackAction(selecting, () => { if (!busy) { setSelecting(false); setChosen([]); } });
   const drag = useRowSelection(selecting && !busy, id => setChosen(current => current.includes(id) ? current.filter(value => value !== id) : [...current, id]), id => chosen.includes(id));
   const [sort, setSort] = useState<"recent" | "old" | "name">("recent");
+  useEffect(() => { setChosen([]); }, [query]);
   const visibleAlbums = useMemo(() => {
     const search = query.toLowerCase();
     return albums.filter((album) => album.title.toLowerCase().includes(search)).sort((a, b) => {
@@ -82,7 +83,7 @@ export function SavedAlbumsView({
       {albums.length > 0 && !visibleAlbums.length && <EmptyState text="검색한 이름의 앨범이 없습니다." />}
       {selecting && <EntitySelectionBar className="albumSelectionDock" count={chosen.length} unit="앨범" hint={false} busy={busy} onAll={()=>setChosen(visibleAlbums.map(album=>album.id))} onClear={()=>setChosen([])} onClose={()=>{setSelecting(false);setChosen([]);}}>
         <button disabled={chosen.length !== 1 || busy} onClick={() => { const album=albums.find(item=>item.id===chosen[0]);if(album)openEditor(album); }}><Pencil size={17}/>앨범 수정</button>
-        <button disabled={!chosen.length || busy} onClick={()=>void removeAlbums(chosen)}><Trash2 size={17}/>앨범 삭제</button>
+        <button className="dangerButton" disabled={!chosen.length || busy} onClick={()=>void removeAlbums(chosen)}><Trash2 size={17}/>앨범 삭제</button>
       </EntitySelectionBar>}
       <div className="savedAlbumGrid" {...drag}>
         {visibleAlbums.map((album) => {

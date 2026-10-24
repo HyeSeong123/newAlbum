@@ -39,9 +39,9 @@ pub fn pick_gallery(app: &tauri::AppHandle) -> Result<Option<Vec<String>>, Strin
     Ok(selected.uris)
 }
 
-pub fn pick_directory(app: &tauri::AppHandle) -> Result<Option<String>, String> {
+pub fn pick_directory(app: &tauri::AppHandle, prefer_pictures: bool) -> Result<Option<String>, String> {
     let bridge = app.state::<AndroidMedia>();
-    let selected: PickedDirectory = bridge.0.run_mobile_plugin("pickDirectory", serde_json::json!({}))
+    let selected: PickedDirectory = bridge.0.run_mobile_plugin("pickDirectory", serde_json::json!({ "preferPictures": prefer_pictures }))
         .map_err(|error| format!("폴더를 선택하지 못했습니다: {error}"))?;
     Ok(selected.uri)
 }

@@ -309,7 +309,7 @@ export function App() {
             )}
             {activeView === "Diary" && <DiaryView onQueryChange={setQuery} onPhotosImported={library.reloadRegisteredMedia} entries={diary.entries} albums={savedAlbums} query={query} error={diary.error} onSave={diary.save} onAssign={diary.assign} onDelete={diary.remove} />}
             {activeView === "Albums" && <SavedAlbumsView diaries={diary.entries} albums={savedAlbums} query={query} onNewAlbum={startAlbum} onOpen={openViewer} onSave={library.saveAlbum} onDelete={library.deleteAlbums} />}
-            {activeView === "Memories" && <MemoriesWorkspace items={filtered} allItems={items} today={today} onOpen={openViewer} onShowLibrary={() => navigate("Library")}
+            {activeView === "Memories" && <MemoriesWorkspace items={filtered} allItems={items} today={today} query={query} onClearSearch={() => setQuery("")} onOpen={openViewer} onShowLibrary={() => navigate("Library")}
               onSectionChange={(section) => { setMemorySection(section); if (section === "map") setQuery(""); }}
               onAssignRegion={library.assignRegion} onLocationsAnalyzed={library.refreshLocations}
               onCreateAlbum={(records, title = "") => { setAlbumDraftItems(records); setAlbumDraftTitle(title); }} />}

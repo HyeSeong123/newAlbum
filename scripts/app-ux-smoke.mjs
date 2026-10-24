@@ -27,7 +27,7 @@ export async function verifyInstalledAppUx(page, mediaId, pet, back, captureNati
 
   await page.getByRole('button',{name:'선택',exact:true}).click();
   await page.getByRole('button',{name:'사진 선택',exact:true}).first().click();
-  await expect(page.locator('.entitySelectionBar')).toContainText('사진 1개 선택');
+  await expect(page.locator('.entitySelectionBar')).toContainText('사진 1장 선택');
   await back();await expect(page.locator('.petsView h2')).toHaveText(petHeading);await expect(page.locator('.entitySelectionBar')).toHaveCount(0);
   await capture('app-ux-pet-back');
 

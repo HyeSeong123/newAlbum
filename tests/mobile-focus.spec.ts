@@ -43,12 +43,12 @@ test('selection guidance opens on demand and Back preserves the selection',async
   await auditLibrary(page);await page.locator('.navList').getByRole('button',{name:'사람과 반려동물',exact:true}).click();
   await page.getByRole('button',{name:'가족 24장',exact:true}).click();await page.getByRole('button',{name:'선택',exact:true}).click();
   await page.locator('.personOriginal').first().click();const bar=page.locator('.entitySelectionBar');
-  await expect(bar).toContainText('사진 1개 선택');await expect(page.getByText('이 인물과의 사진 연결만 변경합니다.',{exact:false})).toHaveCount(0);
+  await expect(bar).toContainText('사진 1장 선택');await expect(page.getByText('이 인물과의 사진 연결만 변경합니다.',{exact:false})).toHaveCount(0);
   const opener=page.getByRole('button',{name:'현재 화면 도움말',exact:true});await opener.click();
   const help=page.getByRole('dialog',{name:'버튼 도움말',exact:true});await toStep(page,'전체 선택');await expect(help).toContainText('같은 사진의 다른 인물은 유지됩니다');
   await expect(help).not.toContainText('반려동물 사진 찾기');
   if(isMobile)await page.evaluate(()=>window.__gamjassakBack?.());else await page.keyboard.press('Escape');
-  await expect(help).toHaveCount(0);await expect(opener).toBeFocused();await expect(bar).toContainText('사진 1개 선택');
+  await expect(help).toHaveCount(0);await expect(opener).toBeFocused();await expect(bar).toContainText('사진 1장 선택');
 });
 
 test('photo connection help closes before the editor and keeps the name and photos',async({page})=>{

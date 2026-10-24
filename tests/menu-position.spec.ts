@@ -49,7 +49,7 @@ test('diary overflow stays beside its button after scrolling and remains clickab
   await expect(trigger).toBeFocused();
   await trigger.click();
   await page.getByRole('button', { name: '일기 수정', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: '일기 상세' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: '일기 수정' })).toBeVisible();
   await expect(page.getByLabel('제목', { exact: true })).toHaveValue('하루의 기록');
   await page.getByRole('button', { name: '닫기', exact: true }).click();
   await trigger.click();

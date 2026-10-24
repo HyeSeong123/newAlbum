@@ -3,3 +3,32 @@
 .memoryGroupCard>.mediaVisual{aspect-ratio:4/3;position:relative;display:grid;place-items:center}.memoryGroupCard>.mediaVisual img{width:100%;height:100%;object-fit:contain}.memoryGroupCard>div:last-child{display:grid;gap:8px;padding:18px}.memoryGroupCard strong{font-size:22px;font-weight:550}.memoryGroupCard time,.memoryGroupCard span{font-size:13px;color:var(--muted)}.memoryGroupCard p{font-size:13px;margin:0;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
 .memoryDetailHeader{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:24px}.memoryDetailHeader>div{flex:1}.memoryDetailHeader h2{margin:0}.memoryDetailHeader p{margin:8px 0 0;font-size:13px}.memoryDetailHeader button{display:flex;align-items:center;gap:6px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:5px}
 @media(max-width:600px){.memoryGroups{grid-template-columns:1fr}.memoryDetailHeader{gap:12px}.memoryDetailHeader>div{min-width:180px}}
+
+/* Warm, compact navigation; each label still describes its destination. */
+.memoriesWorkspace { min-width: 0; padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+.memoriesWorkspace > .memorySectionTabs.memoryPeriod { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin-bottom: 24px; padding: 4px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-soft); }
+.memoriesWorkspace > .memorySectionTabs.memoryPeriod button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 0; min-height: 48px; padding: 8px 6px; border: 1px solid transparent; border-radius: 6px; font-size: 13px; line-height: 1.4; white-space: nowrap; background: transparent; color: var(--muted); }
+.memoriesWorkspace > .memorySectionTabs button[aria-pressed="true"] { background: var(--surface); border-color: var(--border); color: var(--secondary); font-weight: 650; box-shadow: 0 1px 4px #48483d12; }
+.memoriesWorkspace button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.memoriesWorkspace button:disabled { opacity: .45; cursor: default; }
+.memories .memoryPeriod { gap: 8px; margin-bottom: 20px; }
+.memories .memoryPeriod button { flex: 1 0 auto; min-height: 44px; font-size: 13px; border-radius: 6px; }
+.memorySectionHeading { margin: 0 0 20px; font-size: 22px; font-weight: 600; line-height: 1.5; }
+.memorySearchNotice { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.memorySearchNotice > span { min-width: 0; overflow-wrap: anywhere; color: var(--muted); font-size: 13px; }
+.memorySearchNotice button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-soft); color: var(--text); font-size: 13px; white-space: nowrap; }
+.memoryGroupCard { min-width: 0; border-radius: 8px; transition: border-color .16s, box-shadow .16s; }
+.memoryGroupCard:hover { border-color: var(--primary); box-shadow: 0 4px 16px #48483d12; }
+.memoryGroupCard strong { overflow-wrap: anywhere; line-height: 1.4; }
+.memoryDetailHeader { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: center; }
+.memoryDetailHeader > div { min-width: 0; }
+.memoryDetailHeader button { min-height: 44px; justify-content: center; padding: 10px 12px; border-radius: 6px; color: var(--text); font-size: 13px; white-space: nowrap; }
+.memoriesWorkspace .memoryPrimaryAction { color: #fff; background: var(--primary); border-color: var(--primary); font-weight: 600; }
+.memoriesWorkspace .recordGridPager button { min-width: 44px; min-height: 44px; }
+@media (max-width: 600px) {
+  .memoryDetailHeader { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .memoryDetailHeader > div { grid-row: 1; grid-column: 1 / -1; min-width: 0; }
+  .memoryDetailHeader button { min-width: 0; padding-inline: 8px; }
+}
+@media (max-width: 380px) { .memoriesWorkspace > .memorySectionTabs.memoryPeriod button { gap: 4px; font-size: 12px; padding-inline: 3px; } }
+@media (prefers-reduced-motion: reduce) { .memoryGroupCard { transition: none; } }

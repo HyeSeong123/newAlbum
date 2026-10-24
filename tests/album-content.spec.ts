@@ -1,5 +1,26 @@
 import { expect, test } from '@playwright/test';
 
+test('unsaved letter stays open after declining close, cancel and Back', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: '내 앨범', exact: true }).click();
+  await page.getByRole('button', { name: '제주 여행 앨범 열기', exact: true }).click();
+  await page.getByRole('button', { name: '편지+', exact: true }).click();
+  const letter = page.getByRole('dialog', { name: '편지 상세', exact: true });
+  await letter.getByLabel('편지 내용', { exact: true }).fill('아직 저장하지 않은 이야기');
+  for (const action of ['close', 'cancel', 'back']) {
+    page.once('dialog', dialog => dialog.dismiss());
+    if (action === 'close') await letter.getByRole('button', { name: '닫기', exact: true }).click();
+    else if (action === 'cancel') await letter.getByRole('button', { name: '취소', exact: true }).click();
+    else await page.keyboard.press('Escape');
+    await expect(letter).toBeVisible();
+    await expect(letter.getByLabel('편지 내용', { exact: true })).toHaveValue('아직 저장하지 않은 이야기');
+  }
+  page.once('dialog', dialog => dialog.accept());
+  await letter.getByRole('button', { name: '취소', exact: true }).click();
+  await expect(letter).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem('album-content-test'))).toBeNull();
+});
+
 test.afterEach(async ({ page }, info) => {
   if (info.status !== info.expectedStatus) {
     console.log('Album failure DOM:', await page.locator('.albumEditor').innerHTML().catch(() => 'No editor'));

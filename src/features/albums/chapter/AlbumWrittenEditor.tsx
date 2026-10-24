@@ -26,10 +26,16 @@ export function AlbumWrittenEditor({ album, request, onClose, onSave }: {
     return entries;
   });
   const [busy, setBusy] = useState(false);
+  const original = useRef(JSON.stringify(contents));
   const [error, setError] = useState("");
   const saving = useRef(false);
   const name = request.kind === "CHAPTER" ? "챕터" : "편지";
-  useModalBehavior(() => { if (!saving.current) onClose(); });
+  function close() {
+    if (saving.current) return;
+    if (JSON.stringify(contents) !== original.current && !window.confirm("저장하지 않은 내용이 있어요. 수정을 닫을까요?")) return;
+    onClose();
+  }
+  useModalBehavior(close);
 
   async function save(entries: AlbumContent[]) {
     if (saving.current) return;
@@ -51,13 +57,13 @@ export function AlbumWrittenEditor({ album, request, onClose, onSave }: {
   }
   return <div className="modalBackdrop">
     <section ref={panel} tabIndex={-1} onKeyDown={onKeyDown} className="albumEditor albumWrittenEditor" role="dialog" aria-modal="true" aria-labelledby="albumWrittenEditorTitle">
-      <div className="detailHeader albumEditorHeader"><div><strong id="albumWrittenEditorTitle">{name} 상세</strong><small>{album.title}</small></div><button className="closeButton" title="닫기" disabled={busy} onClick={onClose}><X size={18} /></button></div>
+      <div className="detailHeader albumEditorHeader"><div><strong id="albumWrittenEditorTitle">{name} 상세</strong><small>{album.title}</small></div><button className="closeButton" title="닫기" disabled={busy} onClick={close}><X size={18} /></button></div>
       <form onSubmit={submit}><fieldset disabled={busy}>
         <AlbumContentEditor contents={contents} items={album.items} onChange={setContents} selectedId={entryId} />
         {error && <p className="albumEditorError" role="alert">{error}</p>}
         <div className="albumActions albumEditorFooter" data-help-dock>
           {request.entryId && <button type="button" className="albumEntryDelete" onClick={() => void save(contents.filter(entry => entry.id !== entryId))}><Trash2 size={17} />삭제</button>}
-          <span>저장하면 앨범에 반영됩니다.</span><button type="button" onClick={onClose}>취소</button><button type="submit"><Check size={18} />{busy ? "저장 중" : "저장"}</button>
+          <span>저장하면 앨범에 반영됩니다.</span><button type="button" onClick={close}>취소</button><button type="submit" className="primaryControl"><Check size={18} />{busy ? "저장 중" : "저장"}</button>
         </div>
       </fieldset></form>
     </section>

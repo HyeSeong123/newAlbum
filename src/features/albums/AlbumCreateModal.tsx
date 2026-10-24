@@ -34,7 +34,7 @@ export function AlbumCreateModal({ items, initialTitle = "", onClose, onCreate }
           <AlbumColorPicker value={color} onChange={setColor} items={items} title={title || "나의 추억"} />
           <CalendarRegistrationFields value={calendar} onChange={setCalendar} title={title} items={items} />
           {error && <p role="alert">{error}</p>}
-          <div className="albumActions"><button type="button" onClick={onClose}>취소</button><button type="submit" disabled={!title.trim() || !items.length || Boolean(calendar && calendarRegistrationError(calendar, items))}>{busy ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}{busy ? "만드는 중" : "만들기"}</button></div>
+          <div className="albumActions albumCreateFooter" data-help-dock><button type="button" onClick={onClose}>취소</button><button type="submit" className="primaryControl" disabled={!title.trim() || !items.length || Boolean(calendar && calendarRegistrationError(calendar, items))}>{busy ? <LoaderCircle className="spinIcon" size={17} /> : <Check size={17} />}{busy ? "만드는 중" : "만들기"}</button></div>
         </fieldset>
       </form>
     </section>
