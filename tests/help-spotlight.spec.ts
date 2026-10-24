@@ -502,7 +502,7 @@ test('fullscreen dialog help settles without observing its own overlay changes',
     dialog.setAttribute('role','dialog');dialog.setAttribute('aria-label','전체 화면 도움말 검사');
     dialog.style.cssText='position:fixed;inset:0;z-index:2000;background:var(--surface);padding:80px;';
     const enter=document.createElement('button');enter.textContent='검사 화면 전체 보기';enter.onclick=()=>void dialog.requestFullscreen();
-    const save=document.createElement('button');save.textContent='저장';
+    const save=document.createElement('button');save.id='fullscreen-help-save';save.textContent='저장';
     dialog.append(enter,save);document.body.append(dialog);
   });
   await page.getByRole('button',{name:'검사 화면 전체 보기',exact:true}).click();
@@ -511,7 +511,15 @@ test('fullscreen dialog help settles without observing its own overlay changes',
   await openHelp(page);
   const guide=helpDialog(page);
   await expect(guide.getByRole('heading',{name:'저장',exact:true})).toBeVisible();
-  await page.setViewportSize({width:1080,height:780});
+  // Chromium cannot resize a fullscreen native window through CDP. Move the
+  // live target and deliver the viewport event without leaving fullscreen.
+  await page.locator('#fullscreen-help-save').evaluate(button=>{
+    button.style.marginLeft='120px';window.dispatchEvent(new Event('resize'));
+  });
+  await expect.poll(()=>page.evaluate(()=>{
+    const target=document.querySelector('#fullscreen-help-save')!.getBoundingClientRect();
+    return Math.abs(Number(document.querySelector('.helpSpotlight')?.getAttribute('x'))-(target.left-6))<1;
+  })).toBe(true);
   await expect(guide).toHaveAttribute('aria-busy','false');
   await expect(guide.locator('.helpGuideCard')).toBeVisible();
   await page.screenshot({path:'preview-results/spotlight/after-fullscreen-help-desktop.png'});
