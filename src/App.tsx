@@ -20,6 +20,7 @@ import { MediaImportModal } from "./features/media/MediaImportModal";
 import { MediaImportProgress } from "./features/media/MediaImportProgress";
 import { useAndroidBack } from "./hooks/useAndroidBack";
 import { FirstRunGuide, FIRST_RUN_KEY } from "./components/FirstRunGuide";
+import { LocationSetupRibbon } from "./components/LocationSetupRibbon";
 import { ChangeEvent, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { BookImage, History, House, Images, LoaderCircle, Menu, NotebookPen, Plus, Search, Settings, Sprout, Users, X } from "lucide-react";
 import { MEDIA_FILE_ACCEPT } from "./features/media/mediaService";
@@ -233,6 +234,7 @@ export function App() {
       </header>
 
       <section className="workspace">
+        <LocationSetupRibbon />
         <header className={`topbar view-${activeView.toLowerCase()}`}>
           <div className="collectionHeading">
             <h1 aria-label={viewLabels[activeView]}>{topbarTitle}</h1>

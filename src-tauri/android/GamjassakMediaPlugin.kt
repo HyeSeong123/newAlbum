@@ -14,6 +14,9 @@ import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
 import android.provider.MediaStore
+import android.provider.Settings
+import android.location.LocationManager
+import android.content.Context
 import android.provider.OpenableColumns
 import android.view.View
 import android.view.ViewGroup
@@ -42,6 +45,9 @@ import java.util.ArrayDeque
 
 @InvokeArg
 class DescribeArgs { var uri: String = "" }
+
+@InvokeArg
+class LocationSettingsArgs { var kind: String = "" }
 
 @InvokeArg
 class PickDirectoryArgs { var preferPictures: Boolean = false }
@@ -272,6 +278,30 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
     fun directoryResult(invoke: Invoke, result: ActivityResult) {
         val uri = if (result.resultCode == Activity.RESULT_OK) result.data?.data?.toString() else null
         invoke.resolve(JSObject().put("uri", uri))
+    }
+
+    @Command
+    fun checkLocationSetup(invoke: Invoke) {
+        try {
+            val manager = activity.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            val enabled = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) manager.isLocationEnabled else
+                manager.isProviderEnabled(LocationManager.GPS_PROVIDER) || manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+            val granted = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
+                activity.checkSelfPermission(Manifest.permission.ACCESS_MEDIA_LOCATION) == PackageManager.PERMISSION_GRANTED
+            invoke.resolve(JSObject().put("locationEnabled", enabled).put("photoLocationGranted", granted))
+        } catch (error: Exception) { invoke.reject(error.message ?: "위치 설정을 확인하지 못했습니다.") }
+    }
+
+    @Command
+    fun openLocationSettings(invoke: Invoke) {
+        try {
+            val kind = invoke.parseArgs(LocationSettingsArgs::class.java).kind
+            val intent = if (kind == "device") Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                else if (kind == "app") Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + activity.packageName))
+                else throw IllegalArgumentException("지원하지 않는 설정입니다.")
+            activity.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            invoke.resolve(JSObject())
+        } catch (error: Exception) { invoke.reject(error.message ?: "설정을 열 수 없습니다.") }
     }
 
     @Command

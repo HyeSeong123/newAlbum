@@ -63,7 +63,7 @@ for(const claimed of [false,true])test(`sleeping Home entry stays asleep with ${
   await page.goto('/');
   for(let entry=0;entry<2;entry++){
     await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-motion','sleep-curled');
-    await expect(page.locator('.homeActivityMood')).toContainText('자는 중');
+    await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-motion',/^sleep-/);
     await expect(page.locator('#homeMessage')).toHaveText('…쌔근.');
     if(!claimed)expect(await page.evaluate(()=>localStorage.getItem('gamjassak:gomi-greeting:gomi'))).toBeNull();
     if(entry===0){
@@ -77,18 +77,18 @@ test('sleeping Gomi keeps her sleep state and loses bounded affection when distu
   await installAi(page,{gomi:true,affection:20});
   await page.addInitScript(()=>localStorage.setItem('gamjassak:companion:v1:gomi',JSON.stringify({version:1,mood:'curious',energy:3,history:[]})));
   await page.goto('/');
-  await expect(page.locator('.homeActivityMood')).toContainText('자는 중');
-  await expect(page.locator('.homeActivityMood')).not.toContainText('호기심');
+  await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-motion',/^sleep-/);
+  await expect(page.locator('.homeActivityMood')).toHaveCount(0);
   await page.getByRole('button',{name:'함께하기',exact:true}).click();
   for(const [index,name] of ['함께 산책','쓰다듬기','함께 놀기','간식 주기'].entries()){
     await page.getByRole('button',{name,exact:true}).click();
     await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-motion',/^sleep-/);
-    await expect(page.locator('.homeActivityMood')).toContainText('짜증');
+    await expect(page.locator('.homeActivityMood')).toHaveCount(0);
     await expect(page.locator('.homeCharacterMeta')).toContainText(`친밀도 ${20-Math.min(index+1,3)}`);
   }
   await page.getByRole('button',{name:'함께 쉬기',exact:true}).click();
-  await expect(page.locator('.homeActivityMood')).toContainText('자는 중');
-  await expect(page.locator('.homeActivityMood')).not.toContainText('짜증');
+  await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-motion',/^sleep-/);
+  await expect(page.locator('.homeActivityMood')).toHaveCount(0);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 17');
 });
 

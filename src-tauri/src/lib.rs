@@ -122,6 +122,22 @@ async fn list_media(app: AppHandle) -> Result<Vec<MediaItemDto>, String> {
 }
 
 #[tauri::command]
+async fn check_android_location_setup(app: AppHandle) -> Result<serde_json::Value, String> {
+    #[cfg(target_os = "android")]
+    { android_media::check_location_setup(&app) }
+    #[cfg(not(target_os = "android"))]
+    { let _ = app; Ok(serde_json::json!({"locationEnabled":true,"photoLocationGranted":true})) }
+}
+#[tauri::command]
+async fn open_android_location_settings(app: AppHandle, kind: String) -> Result<(), String> {
+    if kind != "device" && kind != "app" { return Err("지원하지 않는 설정입니다.".into()); }
+    #[cfg(target_os = "android")]
+    { android_media::open_location_settings(&app, &kind) }
+    #[cfg(not(target_os = "android"))]
+    { let _ = app; Ok(()) }
+}
+
+#[tauri::command]
 async fn location_overview(app: AppHandle) -> Result<location::Overview, String> {
     tauri::async_runtime::spawn_blocking(move || location::overview(&open_database(&app)?))
         .await.map_err(|error| error.to_string())?
@@ -1280,7 +1296,7 @@ pub fn run() {
             sync_characters, rename_character, set_main_character, interact_character, dismiss_character_event,
             list_diary, save_diary, assign_diary_album, delete_diary, import_diary_photos,
             list_media,
-            location_overview,
+            location_overview, check_android_location_setup, open_android_location_settings,
             analyze_locations,
             queue_failed_locations,
             region_media_page,

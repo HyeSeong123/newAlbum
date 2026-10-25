@@ -9,7 +9,7 @@ import { gomiAffinity } from "../characters/gomiAffinity";
 import { gomiSleepLine } from "../characters/gomiBehavior";
 import { useGomiBehavior } from "../characters/useGomiBehavior";
 import { claimGomiGreeting } from "../characters/gomiGreeting";
-import { COMPANION_ACTIONS, companionActionLabel, companionMoodLabel, emptyCompanionMemory, performCompanionActivity, readCompanionMemory, saveCompanionMemory, type CompanionAction } from "../characters/companionActivities";
+import { COMPANION_ACTIONS, companionActionLabel, performCompanionActivity, readCompanionMemory, saveCompanionMemory, type CompanionAction } from "../characters/companionActivities";
 import "../characters/characters.css";
 import "./home.css";
 
@@ -54,7 +54,6 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   const [aiSetupOpen, setAiSetupOpen] = useState(false);
   const [messageSource, setMessageSource] = useState("local-rules");
   const ai = useCompanionReactions(mainCharacter?.id, line => { setSpokenLine(line); setMessageSource("on-device"); });
-  const [activityMemory, setActivityMemory] = useState(() => mainCharacter?.id ? readCompanionMemory(mainCharacter.id) : emptyCompanionMemory());
   const lastLine = useRef(0);
   const timer = useRef<number | undefined>(undefined);
   const reactionRequest = useRef(0);
@@ -64,7 +63,6 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   useEffect(() => {
     ++reactionRequest.current;
     storedInteraction.current = Promise.resolve(undefined);
-    setActivityMemory(mainCharacter?.id ? readCompanionMemory(mainCharacter.id) : emptyCompanionMemory());
     setActivitiesOpen(false);
     setAiSetupOpen(false);
     setMessageSource("local-rules");
@@ -72,7 +70,6 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   }, [mainCharacter?.id]);
   const isGomi = definition?.type === "gomi";
   const gomi = useGomiBehavior(isGomi, mainCharacter?.affection || 0, today, mainCharacter?.id);
-  const moodLabel = isGomi && !gomi.ready ? "" : isGomi && gomi.sleeping ? (gomi.irritated ? "자는 중 · 짜증" : "자는 중") : companionMoodLabel(activityMemory.mood);
   const lines = definition && mainCharacter ? dialogueLines(definition, mainCharacter.growthStage, mainCharacter.affection >= 20 ? "highAffection" : "idle", mainCharacter.affection) : messages;
   const affinity = isGomi ? gomiAffinity(mainCharacter?.affection || 0) : undefined;
   const dialogueEntry = useRef("");
@@ -138,7 +135,6 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     const sleeping = isGomi && gomi.sleeping;
     const result = performCompanionActivity(definition, readCompanionMemory(mainCharacter.id), action, mainCharacter.affection, today, { sleeping });
     saveCompanionMemory(mainCharacter.id, result.memory);
-    setActivityMemory(result.memory);
     setSpokenLine(result.line);
     setMessageSource("local-rules");
     void reactWithStoredRelationship({ definition, appearance, owned: mainCharacter, memory: result.memory, action, fallback: result.line }, sleeping && action !== "rest" ? "sleep" : undefined);
@@ -185,9 +181,6 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
               </button>;
             })}
           </div>}
-          <p className="homeActivityMood" aria-label={"친구의 현재 기분 " + moodLabel}>
-            {moodLabel && <>지금 기분 · {moodLabel}</>}
-          </p>
         </div>}
         <button className="homeCharacterLink" type="button" onClick={onShowCharacters}>새싹 도감 보기</button>
       </div>

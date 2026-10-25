@@ -32,6 +32,18 @@ struct PickedDirectory { uri: Option<String> }
 #[derive(Deserialize)]
 struct PickedGallery { uris: Option<Vec<String>> }
 
+pub fn check_location_setup(app: &tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let bridge = app.state::<AndroidMedia>();
+    bridge.0.run_mobile_plugin("checkLocationSetup", serde_json::json!({}))
+        .map_err(|error| format!("위치 설정을 확인할 수 없습니다: {error}"))
+}
+pub fn open_location_settings(app: &tauri::AppHandle, kind: &str) -> Result<(), String> {
+    let bridge = app.state::<AndroidMedia>();
+    let _: serde_json::Value = bridge.0.run_mobile_plugin("openLocationSettings", serde_json::json!({ "kind": kind }))
+        .map_err(|error| format!("설정 화면을 열 수 없습니다: {error}"))?;
+    Ok(())
+}
+
 pub fn pick_gallery(app: &tauri::AppHandle) -> Result<Option<Vec<String>>, String> {
     let bridge = app.state::<AndroidMedia>();
     let selected: PickedGallery = bridge.0.run_mobile_plugin("pickGallery", serde_json::json!({}))

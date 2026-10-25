@@ -61,6 +61,16 @@ export function isAndroidRuntime(): boolean {
   return isTauriRuntime() && /Android/i.test(navigator.userAgent);
 }
 
+export type AndroidLocationSetup = { locationEnabled: boolean; photoLocationGranted: boolean };
+export async function checkAndroidLocationSetup(): Promise<AndroidLocationSetup | null> {
+  if (!isAndroidRuntime()) return null;
+  return invoke<AndroidLocationSetup>("check_android_location_setup");
+}
+export async function openAndroidLocationSettings(kind: "device" | "app"): Promise<void> {
+  if (!isAndroidRuntime()) return;
+  await invoke("open_android_location_settings", { kind });
+}
+
 export async function loadRegisteredMedia(): Promise<MediaItem[]> {
   const rows = await invoke<BackendMediaItem[]>("list_media");
   return rows.map(toMediaItem);

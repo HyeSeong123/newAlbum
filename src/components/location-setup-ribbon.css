@@ -1,0 +1,12 @@
+.locationSetupRibbon { margin: 0 0 16px; border: 1px solid #d9d5b6; background: #faf6e8; border-radius: 9px; color: #514834; overflow: hidden; }
+.locationSetupRibbonBar { display: flex; gap: 9px; align-items: center; padding: 5px 8px 5px 12px; min-height: 48px; }
+.locationSetupRibbonBar > svg { flex-shrink: 0; color: #776c39; }
+.locationSetupRibbonBar strong { flex: 1; min-width: 0; font-size: 13px; font-weight: 650; }
+.locationSetupRibbon button { min-height: 44px; display: inline-flex; gap: 5px; align-items: center; justify-content: center; padding: 7px 10px; border-radius: 6px; color: #514834; background: transparent; font-size: 12px; font-weight: 600; }
+.locationSetupRibbon button:hover { background: #eee8cf; }
+.locationSetupRibbon .locationSetupDismiss { flex: 0 0 44px; width: 44px; padding: 0; }
+.locationSetupDetails { border-top: 1px solid #e6dfc4; padding: 10px 12px 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.locationSetupDetails p { flex-basis: 100%; margin: 0; font-size: 13px; line-height: 1.6; }
+.locationSetupDetails > button, .cameraSetupCheck button { border: 1px solid #c9c19c; background: #fffdf5; }
+.cameraSetupCheck { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; width: 100%; }
+@media (max-width: 440px) { .locationSetupRibbonBar { gap: 5px; } .locationSetupRibbonBar strong { font-size: 12px; } .locationSetupRibbonBar button { padding: 5px; font-size: 12px; } }
