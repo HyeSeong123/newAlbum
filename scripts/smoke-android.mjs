@@ -387,6 +387,9 @@ try {
   await page.locator('[data-help-highlighted]').click({force:true});
   await captureScreen('gomi-cynical-guide');
   await gomiGuide.getByRole('button', { name:'다음', exact:true }).click();
+  await expect(gomiGuide.getByRole('heading', {name:'친구와 함께하기',exact:true})).toBeVisible();
+  await expect(gomiGuide.locator('#helpInstruction')).toContainText('친밀도는 캐릭터에게 직접 말을 걸 때만');
+  await gomiGuide.getByRole('button', { name:'다음', exact:true }).click();
   await expect(gomiGuide.getByRole('heading', {name:'새싹 도감 보기',exact:true})).toBeVisible();
   await expect(gomiGuide.locator('#helpInstruction')).toContainText('친밀도는 오르지');
   await captureScreen('gomi-varied-help');

@@ -122,3 +122,38 @@ test('Home and the 16px logo gap fit narrow windows and larger text', async ({ p
     }
   }
 });
+
+
+test('Home companion actions expand, respond, remember locally and never award affection', async ({ page }) => {
+  await page.goto('/');
+  const speech = page.locator('#homeMessage');
+  const toggle = page.getByRole('button', { name: '함께하기', exact: true });
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByRole('group', { name: '친구와 함께하기' })).toHaveCount(0);
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  const actions = page.getByRole('group', { name: '친구와 함께하기' });
+  await expect(actions.getByRole('button')).toHaveCount(5);
+
+  await actions.getByRole('button', { name: '함께 산책' }).click();
+  await expect(speech).toContainText('나가기 싫어');
+  await expect(page.getByText('지금 기분 · 호기심')).toBeVisible();
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('gamjassak:companion:v1:gomi') || 'null'));
+  expect(saved?.history?.at(-1)?.action).toBe('walk');
+  expect(saved?.mood).toBe('curious');
+
+  await actions.getByRole('button', { name: '간식 주기' }).click();
+  await expect(speech).toContainText('뭐야');
+  await expect(page.getByText('지금 기분 · 기쁨')).toBeVisible();
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('gamjassak:companion:v1:gomi') || 'null'));
+  expect(saved.history.map((entry: { action: string }) => entry.action)).toEqual(['walk', 'treat']);
+
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(actions).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByText('지금 기분 · 기쁨')).toBeVisible();
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
+});

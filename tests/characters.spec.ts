@@ -373,6 +373,10 @@ for (const scenario of [
   await expect(guide.locator('.helpVoice')).toHaveAttribute('data-affinity',String(tier));
   await expect(guide.locator('#helpInstruction')).toContainText('친밀도는 친구마다 하루 한 번');
   await guide.getByRole('button',{name:'다음',exact:true}).click();
+  // The Home companion menu is now a genuine help target between talking and the book.
+  await expect(guide.getByRole('heading',{name:'친구와 함께하기',exact:true})).toBeVisible();
+  await expect(guide.locator('#helpInstruction')).toContainText('친밀도는 캐릭터에게 직접 말을 걸 때만');
+  await guide.getByRole('button',{name:'다음',exact:true}).click();
   await expect(guide.getByRole('heading',{name:'새싹 도감 보기',exact:true})).toBeVisible();
   await expect(guide.locator('#helpInstruction')).toContainText('친밀도는 오르지');
   await page.screenshot({path:`preview-results/gomi-guide-affinity-${scenario.score}-${info.project.name}.png`});
