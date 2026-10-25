@@ -6,7 +6,7 @@ import { buildCompanionPrompt, type CompanionAction, type CompanionMemory } from
 export type OnDeviceCompanionGenerator = (prompt: { system: string; user: string }, signal?: AbortSignal) => Promise<string>;
 export type CompanionGeneration = { source: "on-device" | "local-rules"; line: string };
 export function cleanCompanionGeneratedText(text: string): string {
-  const result = text.replace(/<think>[\s\S]*?<\/think>/gi, "")
+  const result = text.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "")
     .replace(/<\|[^>]+\|>/g, "")
     .replace(/^\s*(?:assistant|캐릭터)\s*[:：]\s*/i, "")
     .replace(/[\r\n]+/g, " ").trim();

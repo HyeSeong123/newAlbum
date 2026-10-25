@@ -5,7 +5,7 @@ type Meaning = { id: string; title?: string; instruction: string };
 type Rule = readonly [RegExp, string, string];
 
 const explicitContent: Record<string, { title: string; instruction: string }> = {
-  'companion-chat': { title: '친구와 대화하기', instruction: 'AI를 한 번 준비하면 인터넷 없이 이야기를 나눌 수 있어요. 대화는 이 기기에만 저장해요. 대답은 중간에 멈추거나 다시 받을 수 있어요.' },
+  'companion-ai': { title: '친구의 AI 반응', instruction: 'AI를 한 번 준비하면 캐릭터를 터치할 때 기분과 성격, 친밀도와 함께한 행동에 맞춰 새로운 말을 해요. 준비 후에는 인터넷 없이 반응하며, 글을 입력할 필요가 없어요.' },
   'companion-actions': { title: '친구와 함께하기', instruction: '홈의 대표 친구와 산책을 상상하거나 놀이와 휴식을 즐겨요. 여기서 선택한 행동은 실제 GPS 산책이나 음식 섭취를 뜻하지 않으며, 친밀도는 캐릭터에게 직접 말을 걸 때만 하루 한 번 올라요.' },
   'companion-walk': { title: '함께 산책', instruction: '친구와 산책하는 상황을 상상하며 대화를 나눠요. 실제 이동을 추적하거나 사진 위치를 읽지는 않아요.' },
   'companion-treat': { title: '작은 선물', instruction: '고미에게는 간식을, 식물 친구들에게는 햇살을 선물해요. 실제 물건이나 보상을 소비하지 않아요.' },

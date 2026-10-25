@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, BookHeart, ChevronDown, Footprints, Gamepad2, HandHeart, Heart, Images, Moon, NotebookPen, Sun, Users } from "lucide-react";
 import { CharacterVisual } from "../characters/CharacterVisual";
-import { CompanionChat } from "../characters/CompanionChat";
+import { CompanionAiSetup } from "../characters/CompanionAiSetup";
+import { useCompanionReactions } from "../characters/useCompanionReactions";
+import { characterPortraits } from "../characters/characterPortraits";
 import { characterDefinitions, characterName, dialogueLines, nextDialogue, type OwnedCharacter } from "../characters/models";
 import { gomiAffinity } from "../characters/gomiAffinity";
 import { useGomiBehavior } from "../characters/useGomiBehavior";
@@ -48,15 +50,19 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   const [spokenLine, setSpokenLine] = useState<string | undefined>(undefined);
   const [happy, setHappy] = useState(false);
   const [activitiesOpen, setActivitiesOpen] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
+  const [aiSetupOpen, setAiSetupOpen] = useState(false);
+  const [messageSource, setMessageSource] = useState("local-rules");
+  const ai = useCompanionReactions(mainCharacter?.id, line => { setSpokenLine(line); setMessageSource("on-device"); });
   const [activityMemory, setActivityMemory] = useState(() => mainCharacter?.id ? readCompanionMemory(mainCharacter.id) : emptyCompanionMemory());
   const lastLine = useRef(0);
   const timer = useRef<number | undefined>(undefined);
   const definition = characterDefinitions.find(item => item.id === mainCharacter?.id);
+  const appearance = definition?.id === "peach" ? "ㄱ 모양을 닮은 기린" : characterPortraits[definition?.id || ""]?.subject || "강아지 고미";
   useEffect(() => {
     setActivityMemory(mainCharacter?.id ? readCompanionMemory(mainCharacter.id) : emptyCompanionMemory());
     setActivitiesOpen(false);
-    setChatOpen(false);
+    setAiSetupOpen(false);
+    setMessageSource("local-rules");
   }, [mainCharacter?.id]);
   const isGomi = definition?.type === "gomi";
   const gomi = useGomiBehavior(isGomi, mainCharacter?.affection || 0, today, mainCharacter?.id);
@@ -92,7 +98,13 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     lastLine.current=next;
     setMessageIndex(next);
     const restLine = isGomi ? gomi.react() : undefined;
-    setSpokenLine(restLine || lines[next]);
+    const fallback = restLine || lines[next];
+    setSpokenLine(fallback);
+    setMessageSource("local-rules");
+    if (definition && mainCharacter) {
+      const memory = readCompanionMemory(mainCharacter.id);
+      ai.react({ definition, appearance, owned: mainCharacter, memory: restLine ? { ...memory, mood: "sleepy", energy: Math.min(1, memory.energy) } : memory, action: "touch", fallback });
+    }
     setHappy(!isGomi && !restLine);
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setHappy(false), 1000);
@@ -107,6 +119,8 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     saveCompanionMemory(mainCharacter.id, result.memory);
     setActivityMemory(result.memory);
     setSpokenLine(result.line);
+    setMessageSource("local-rules");
+    ai.react({ definition, appearance, owned: mainCharacter, memory: result.memory, action, fallback: result.line });
     if (isGomi) gomi.activity();
     else setHappy(true);
     window.clearTimeout(timer.current);
@@ -122,13 +136,14 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   ];
 
   return <section className="homeView" aria-label="감자싹 홈">
-    {chatOpen && definition && mainCharacter && <CompanionChat key={mainCharacter.id} definition={definition} owned={mainCharacter} onClose={() => setChatOpen(false)} />}
+    {aiSetupOpen && definition && mainCharacter && <CompanionAiSetup key={mainCharacter.id} definition={definition} owned={mainCharacter} onClose={() => setAiSetupOpen(false)} />}
     <div className="homeWelcome">
       <time className="homeDate" dateTime={today}>{dateLabel}</time>
       <h2>작은 하루가 자라는 곳</h2>
       <p className="homeIntroduction">소중한 순간도, 평범한 하루도 차곡차곡 담아두세요.</p>
       <div className="homeCompanion">
-        <p id="homeMessage" className="homeSpeech" role="status" aria-live="polite" aria-atomic="true">{spokenLine || lines[0]}</p>
+        <p id="homeMessage" className="homeSpeech" data-source={messageSource} role="status" aria-live="polite" aria-atomic="true">{spokenLine || lines[0]}</p>
+        {ai.thinking && <div className="homeAiThinking" aria-live="polite"><span>친구가 생각 중…</span><button type="button" onClick={ai.cancel} aria-label="AI 반응 멈추기">멈추기</button></div>}
         <button className={`homeMascot${happy ? " happy" : ""}`} type="button" aria-label={`${definition ? characterName(definition, mainCharacter) : "감자싹"}에게 말 걸기`} onClick={talk}>
           {definition && mainCharacter ? <CharacterVisual definition={definition} stage={mainCharacter.growthStage} expression={happy ? "happy" : "idle"}
             gomiMotion={isGomi ? gomi.motion : undefined} affection={mainCharacter.affection} reactionKey={isGomi ? gomi.sequence : messageIndex} />
@@ -136,7 +151,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
         </button>
         {definition && mainCharacter && <p className="homeCharacterMeta"><strong>{characterName(definition, mainCharacter)}</strong><span className="homeAffection"><Heart size={14} aria-hidden="true" />친밀도 {mainCharacter.affection}</span></p>}
         {definition && mainCharacter && <div className="homeActivities">
-          <button type="button" className="homeActivitiesToggle" data-help="companion-chat" onClick={() => setChatOpen(true)}>대화하기</button>
+          <button type="button" className="homeActivitiesToggle" data-help="companion-ai" onClick={() => { ai.cancel(); setAiSetupOpen(true); }}>AI 반응 설정</button>
           <button type="button" className="homeActivitiesToggle" aria-expanded={activitiesOpen} aria-controls="homeActivitiesChoices"
             data-help="companion-actions" onClick={() => setActivitiesOpen(value => !value)}>
             함께하기 <ChevronDown size={17} aria-hidden="true" className={activitiesOpen ? "expanded" : ""} />

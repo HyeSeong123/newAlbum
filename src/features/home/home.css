@@ -85,3 +85,5 @@
 @media (prefers-reduced-motion: reduce) {
   .homeActivitiesToggle svg { transition: none; }
 }
+.homeAiThinking { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; margin: 6px 0; }
+.homeAiThinking button { min-height: 44px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--muted); }
