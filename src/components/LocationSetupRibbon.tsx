@@ -55,11 +55,12 @@ export function LocationSetupRibbon() {
         refresh();
       }
     };
-    window.addEventListener("focus", refresh);
+    const onFocus = () => refresh();
+    window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisible);
     return () => {
       ++lastCheck.current;
-      window.removeEventListener("focus", refresh);
+      window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [android, refresh]);
