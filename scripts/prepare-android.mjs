@@ -40,6 +40,7 @@ export async function prepareAndroid(projectRoot = root, requireSigning = false)
   await copyFile(resolve(projectRoot, 'src-tauri/android/GamjassakMediaPlugin.kt'), destination);
   await copyFile(resolve(projectRoot, 'src-tauri/android/GamjassakGalleryActivity.kt'), resolve(dirname(destination), 'GamjassakGalleryActivity.kt'));
   await copyFile(resolve(projectRoot, 'src-tauri/android/GamjassakCompanionPlugin.kt'), resolve(dirname(destination), 'GamjassakCompanionPlugin.kt'));
+  await copyFile(resolve(projectRoot, 'src-tauri/android/CompanionModelRegistry.java'), resolve(dirname(destination), 'CompanionModelRegistry.java'));
   await cp(resolve(projectRoot, 'src-tauri/android/companion'), resolve(android, 'app/src/main/cpp/companion'), { recursive: true });
   for (const variant of ['main', 'debug']) {
     const config = resolve(android, `app/src/${variant}/res/xml/gamjassak_network_security.xml`);

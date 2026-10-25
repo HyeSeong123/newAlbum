@@ -29,10 +29,7 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity) {
     companion object {
         // JNI cancellation watermarks survive Activity recreation, so IDs must too.
         private val NEXT_REQUEST = AtomicLong(0)
-        const val MODEL_REVISION = "d7f544eead698dbd1f15126ef60b45a1e1933222"
-        const val MODEL_SHA = "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897"
-        const val MODEL_BYTES = 1107409472L
-        const val MODEL_URL = "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/$MODEL_REVISION/Qwen3-1.7B-Q4_K_M.gguf"
+        private val DOWNLOAD = CompanionModelRegistry.DIALOGUE
     }
     private val executor = Executors.newSingleThreadExecutor()
     private val working = AtomicBoolean(false)
@@ -42,9 +39,9 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity) {
     @Volatile private var phase = "missing"
     @Volatile private var downloaded = 0L
     @Volatile private var notice = "처음 한 번 AI를 준비하면 인터넷 없이 대화할 수 있어요."
-    private val root get() = File(appContext.filesDir, "companion-ai-v1")
-    private val model get() = File(root, "qwen3-1.7b-q4-k-m.gguf")
-    private val prefs get() = appContext.getSharedPreferences("companion-ai-v1", Context.MODE_PRIVATE)
+    private val root get() = File(appContext.filesDir, DOWNLOAD.directory)
+    private val model get() = File(root, DOWNLOAD.filename)
+    private val prefs get() = appContext.getSharedPreferences(DOWNLOAD.directory, Context.MODE_PRIVATE)
     private external fun nativeGenerate(path: String, prompt: String, requestId: Long): ByteArray
     private external fun nativeCancel(requestId: Long)
 
@@ -55,17 +52,24 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity) {
         val phone = (appContext.resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK) < Configuration.SCREENLAYOUT_SIZE_LARGE
         return phone && android.os.Build.SUPPORTED_ABIS.contains("arm64-v8a") && info.totalMem >= 7L * 1024 * 1024 * 1024
     }
-    private fun installed() = model.isFile && model.length() == MODEL_BYTES && prefs.getString("sha", "") == MODEL_SHA && prefs.getLong("mtime", -1) == model.lastModified()
+    private fun installed(spec: CompanionModelRegistry.Model = DOWNLOAD): Boolean {
+        val file = File(File(appContext.filesDir, spec.directory), spec.filename)
+        val proof = appContext.getSharedPreferences(spec.directory, Context.MODE_PRIVATE)
+        return file.isFile && spec.verified(file.length(), proof.getString("sha", "") ?: "", proof.getLong("mtime", -1), file.lastModified())
+    }
+    private fun activeModel() = CompanionModelRegistry.select(installed(), installed(CompanionModelRegistry.LEGACY))
     @Command fun modelStatus(invoke: Invoke) {
         val supported = supported()
-        val ready = installed()
-        val shown = if (!supported) "unsupported" else if (!working.get() && ready) "ready" else phase
+        val active = activeModel()
+        val ready = active != null
+        val shown = if (!supported) "unsupported" else if (phase == "error") "error" else if (!working.get() && ready) "ready" else phase
         val text = if (!supported) "AI 대화는 RAM 8GB 이상 Android 스마트폰에서 사용할 수 있어요." else if (shown == "ready") "인터넷 없이 대화할 준비가 됐어요." else notice
         invoke.resolve(JSObject().put("phase", shown).put("supported", supported).put("installed", ready)
-            .put("downloaded", downloaded).put("total", MODEL_BYTES).put("message", text))
+            .put("downloaded", downloaded).put("total", DOWNLOAD.bytes).put("message", text)
+            .put("model", active?.id ?: "missing").put("upgradeAvailable", active?.id == "legacy"))
     }
     private fun openDownload(): HttpURLConnection {
-        var target = URL(MODEL_URL)
+        var target = URL(DOWNLOAD.url)
         repeat(8) {
             val host = target.host.lowercase()
             require(target.protocol == "https" && (host == "huggingface.co" || host.endsWith(".huggingface.co") || host == "hf.co" || host.endsWith(".hf.co"))) { "안전한 다운로드 주소를 확인하지 못했어요." }
@@ -96,8 +100,8 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity) {
             var connection: HttpURLConnection? = null
             try {
                 check(root.exists() || root.mkdirs()) { "AI 저장 공간을 만들지 못했어요." }
-                check(root.usableSpace >= MODEL_BYTES + 256L * 1024 * 1024) { "저장 공간을 1.4GB 이상 비운 뒤 다시 시도해 주세요." }
                 partial.delete()
+                check(DOWNLOAD.canDownload(root.usableSpace)) { "저장 공간을 2.8GB 이상 비운 뒤 다시 시도해 주세요." }
                 connection = openDownload()
                 val digest = MessageDigest.getInstance("SHA-256")
                 connection.inputStream.use { input -> partial.outputStream().use { output ->
@@ -107,7 +111,7 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity) {
                         val count = input.read(bytes)
                         if (count < 0) break
                         downloaded += count
-                        check(downloaded <= MODEL_BYTES) { "AI 파일 크기가 올바르지 않아요." }
+                        check(downloaded <= DOWNLOAD.bytes) { "AI 파일 크기가 올바르지 않아요." }
                         digest.update(bytes, 0, count); output.write(bytes, 0, count)
                     }
                     output.fd.sync()
@@ -115,9 +119,9 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity) {
                 phase = "verifying"; notice = "AI 파일을 확인하고 있어요."
                 val sha = digest.digest().joinToString("") { "%02x".format(it.toInt() and 255) }
                 check(!cancelled.get()) { "다운로드를 취소했어요." }
-                check(downloaded == MODEL_BYTES && sha == MODEL_SHA) { "AI 파일이 완전하지 않아요. 다시 다운로드해 주세요." }
+                check(downloaded == DOWNLOAD.bytes && sha == DOWNLOAD.sha256) { "AI 파일이 완전하지 않아요. 다시 다운로드해 주세요." }
                 check(partial.renameTo(model)) { "AI 파일을 저장하지 못했어요." }
-                check(prefs.edit().putString("sha", MODEL_SHA).putLong("mtime", model.lastModified()).commit()) { "AI 준비 상태를 저장하지 못했어요." }
+                check(prefs.edit().putString("sha", DOWNLOAD.sha256).putLong("mtime", model.lastModified()).commit()) { "AI 준비 상태를 저장하지 못했어요." }
                 phase = "ready"; notice = "대화할 준비가 됐어요."
             } catch (error: Exception) {
                 phase = if (cancelled.get()) "missing" else "error"
@@ -128,7 +132,8 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity) {
     }
     @Command fun generate(invoke: Invoke) {
         val prompt = invoke.parseArgs(CompanionGenerateArgs::class.java).prompt
-        if (!supported() || !installed()) { invoke.reject("먼저 AI를 다운로드해 주세요."); return }
+        val selected = activeModel()
+        if (!supported() || selected == null) { invoke.reject("먼저 AI를 다운로드해 주세요."); return }
         if (prompt.isBlank() || prompt.length > 12000) { invoke.reject("이야기가 너무 길어요. 조금 짧게 적어 주세요."); return }
         if (!working.compareAndSet(false, true)) { invoke.reject("진행 중인 작업이 끝난 뒤 다시 시도해 주세요."); return }
         cancelled.set(false); phase = "generating"; notice = "친구가 생각하고 있어요."
@@ -138,10 +143,11 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity) {
             try {
                 val info = ActivityManager.MemoryInfo()
                 (appContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(info)
-                check(!info.lowMemory && info.availMem >= 1800L * 1024 * 1024) { "다른 앱을 잠시 닫고 다시 이야기해 주세요." }
+                check(selected.canGenerate(info.availMem, info.lowMemory)) { "다른 앱을 잠시 닫고 다시 이야기해 주세요." }
                 if (!nativeLoaded) { System.loadLibrary("gamjassak_companion"); nativeLoaded = true }
                 check(!cancelled.get()) { "대답을 멈췄어요." }
-                val reply = nativeGenerate(model.absolutePath, prompt, request).toString(Charsets.UTF_8)
+                val selectedFile = File(File(appContext.filesDir, selected.directory), selected.filename)
+                val reply = nativeGenerate(selectedFile.absolutePath, selected.preparePrompt(prompt), request).toString(Charsets.UTF_8)
                 check(!cancelled.get()) { "대답을 멈췄어요." }
                 invoke.resolve(JSObject().put("text", reply))
             } catch (error: Throwable) {

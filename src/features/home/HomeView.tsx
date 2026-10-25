@@ -58,6 +58,11 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   const timer = useRef<number | undefined>(undefined);
   const reactionRequest = useRef(0);
   const storedInteraction = useRef<Promise<OwnedCharacter | undefined>>(Promise.resolve(undefined));
+  useEffect(() => {
+    const invalidate = () => { if (document.hidden) ++reactionRequest.current; };
+    document.addEventListener("visibilitychange", invalidate);
+    return () => document.removeEventListener("visibilitychange", invalidate);
+  }, []);
   const definition = characterDefinitions.find(item => item.id === mainCharacter?.id);
   const appearance = definition?.id === "peach" ? "ㄱ 모양을 닮은 기린" : characterPortraits[definition?.id || ""]?.subject || "강아지 고미";
   useEffect(() => {
@@ -100,10 +105,11 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
 
   async function reactWithStoredRelationship(context: Parameters<typeof ai.react>[0], source?: CharacterInteractionSource) {
     const request = ++reactionRequest.current;
-    ai.cancel();
+    ai.waitForContext();
     if (source) storedInteraction.current = onInteract(context.owned.id, source);
     const updated = await storedInteraction.current;
-    if (request !== reactionRequest.current || (source && !updated)) return;
+    if (request !== reactionRequest.current) return;
+    if (source && !updated) { ai.cancel(); return; }
     ai.react({ ...context, owned:updated?.id === context.owned.id ? { ...context.owned, affection:updated.affection } : context.owned });
   }
 

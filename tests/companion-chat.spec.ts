@@ -1,11 +1,11 @@
 import {test,expect} from '@playwright/test';
 
-async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:boolean;affection?:number;statusDelay?:number;interactionDelay?:number}={}) {
+async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:boolean;affection?:number;statusDelay?:number;interactionDelay?:number;error?:string;longReply?:boolean;echoFirst?:boolean;legacy?:boolean;controlledGeneration?:boolean}={}) {
   await page.addInitScript((settings:any)=>{
     Math.random=()=>settings.gomi?.55:.1;
     let downloading=false, interacted=false, calls=0, disturbances=0;
     const owned={id:settings.gomi?'gomi':'potato',customName:null,growthStage:6,affection:settings.affection||0,isMain:true};
-    const state=(window as any).touchProbe={prompts:[] as string[],stops:0};
+    const state=(window as any).touchProbe={prompts:[] as string[],stops:0,error:settings.error};
     (window as any).__TAURI_INTERNALS__={convertFileSrc:()=>'/favicon.png',invoke:async(command:string,args:any={})=>{
       if(command==='sync_characters'||command==='interact_character'){
         if(command==='interact_character'&&settings.interactionDelay)await new Promise(resolve=>setTimeout(resolve,settings.interactionDelay));
@@ -15,19 +15,100 @@ async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:b
       }
       if(command==='chat_model_status'){
         if(settings.statusDelay)await new Promise(resolve=>setTimeout(resolve,settings.statusDelay));
-        return {phase:settings.ready===false?(downloading?'downloading':'missing'):'ready',installed:settings.ready!==false,supported:true,total:100,downloaded:downloading?42:0,message:'AI를 한 번 준비해 주세요.'};
+        return {phase:downloading?'downloading':settings.ready===false?'missing':'ready',installed:settings.ready!==false,supported:true,total:100,downloaded:downloading?42:0,message:'AI를 한 번 준비해 주세요.',model:settings.legacy?'legacy':'dialogue',upgradeAvailable:Boolean(settings.legacy)};
       }
       if(command==='download_chat_model')downloading=true;
       if(command==='stop_chat_model'){downloading=false;state.stops++;}
       if(command==='generate_chat_reply'){
         state.prompts.push(args.prompt);const call=++calls;
+        if(settings.controlledGeneration)await new Promise(resolve=>{(state as any).finish=resolve;});
         if(settings.delay)await new Promise(resolve=>setTimeout(resolve,settings.delay));
+        if(state.error)throw state.error;
+        if(settings.longReply)return '조용히 곁에 있어 줘. 조금 더 자고 싶어. '+ '따뜻하고 편안한 잠을 자고 싶은 아침이야. '.repeat(8);
+        if(settings.echoFirst&&call===1)return document.querySelector('#homeMessage')!.textContent;
         return settings.gomi?(call===1?'…조용히 해. 나 아직 졸려.':'…귀찮지만 네 옆에 있을게.'):call===1?'오늘은 네 손길이 반가워! 같이 놀아 볼까?':'오늘은 네 옆에서 느긋하게 쉬고 싶어.';
       }
       return [];
     }};
   },options);
 }
+
+test('an installed legacy AI stays available and its upgrade is explicit and cancellable',async({page})=>{
+  await page.setViewportSize({width:320,height:700});await installAi(page,{legacy:true});await page.goto('/');
+  await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
+  const dialog=page.getByRole('dialog');
+  await expect(dialog).toContainText('2.5GB');
+  await page.getByRole('button',{name:'더 자연스러운 AI 받기',exact:true}).click();
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value','42');
+  await page.getByRole('button',{name:'다운로드 취소',exact:true}).click();
+  await expect(page.getByRole('button',{name:'더 자연스러운 AI 받기',exact:true})).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await page.getByRole('dialog').screenshot({path:'preview-results/ai-optional-upgrade-320.png'});
+});
+
+test('repeated touches finish one slow AI reaction without restarting it',async({page})=>{
+  await installAi(page,{delay:1400});await page.goto('/');
+  await page.locator('.homeMascot').click();
+  await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
+  for(let i=0;i<4;i++){await page.locator('.homeMascot').click();await page.waitForTimeout(100);}
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
+  await expect(page.locator('#homeMessage')).toContainText('네 손길이 반가워');
+  expect(await page.evaluate(()=>(window as any).touchProbe.stops)).toBe(0);
+  expect(await page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
+  await expect(page.getByText('친구가 생각 중',{exact:false})).toHaveCount(0);
+});
+
+test('same-state storage resumes an already completed AI answer without generating again',async({page})=>{
+  await installAi(page,{interactionDelay:800,controlledGeneration:true});await page.goto('/');
+  await page.locator('.homeMascot').click();
+  await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
+  await page.locator('.homeMascot').dispatchEvent('click');
+  await page.evaluate(()=>(window as any).touchProbe.finish());
+  await page.waitForTimeout(150);
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','local-rules');
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
+  await expect(page.locator('#homeMessage')).toContainText('네 손길이 반가워');
+  expect(await page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
+});
+
+test('a completed old AI answer stays hidden while a changed sleeping relationship is saving',async({page})=>{
+  await installAi(page,{gomi:true,affection:20,interactionDelay:1400,delay:800});await page.goto('/');
+  await page.locator('.homeMascot').click();
+  await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
+  await page.getByRole('button',{name:'함께하기',exact:true}).click();
+  await page.getByRole('button',{name:'함께 산책',exact:true}).click();
+  await page.waitForTimeout(950);
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','local-rules');
+  await expect(page.locator('#homeMessage')).not.toContainText('나 아직 졸려');
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
+  const prompts=await page.evaluate(()=>(window as any).touchProbe.prompts);
+  expect(prompts).toHaveLength(2);expect(prompts[1]).toContain('친밀도: 19');expect(prompts[1]).toContain('짜증');
+});
+
+for(const echoFirst of [false,true])test(`${echoFirst?'copied':'long'} AI answer reaches the bubble as a fresh short line`,async({page})=>{
+  await installAi(page,{echoFirst,longReply:!echoFirst});await page.goto('/');
+  await page.getByRole('button',{name:'함께하기',exact:true}).click();
+  await page.getByRole('button',{name:'함께 쉬기',exact:true}).click();
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
+  await expect(page.locator('#homeMessage')).toHaveText(echoFirst?'오늘은 네 옆에서 느긋하게 쉬고 싶어.':'조용히 곁에 있어 줘. 조금 더 자고 싶어.');
+});
+
+test('a failed AI run is explained in settings and a successful retry clears it',async({page})=>{
+  await installAi(page,{error:'다른 앱을 잠시 닫고 다시 이야기해 주세요.'});await page.goto('/');
+  await page.locator('.homeMascot').click();
+  await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
+  await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
+  await expect(page.getByRole('dialog')).toContainText('터치하면 이야기가 달라져요');
+  await page.getByRole('dialog').screenshot({path:`preview-results/ai-execution-status-${process.env.RELIABILITY_BASELINE?'before':'after'}.png`});
+  await expect(page.getByRole('dialog')).toContainText('메모리가 부족해');
+  await page.keyboard.press('Escape');
+  await page.evaluate(()=>(window as any).touchProbe.error=undefined);
+  await page.locator('.homeMascot').click();
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
+  await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
+  await expect(page.getByRole('dialog')).toContainText('AI가 새 대사를 만들었어요');
+  await expect(page.getByRole('dialog')).not.toContainText('메모리가 부족해');
+});
 
 test('opening AI settings cancels a reaction still waiting for relationship storage',async({page})=>{
   await installAi(page,{interactionDelay:800});await page.goto('/');
@@ -36,6 +117,18 @@ test('opening AI settings cancels a reaction still waiting for relationship stor
   await expect(page.getByRole('dialog',{name:'AI 반응 설정',exact:true})).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.waitForTimeout(1800);
+  expect(await page.evaluate(()=>(window as any).touchProbe.prompts)).toHaveLength(0);
+});
+
+test('background and return invalidate a reaction still waiting for relationship storage',async({page})=>{
+  await installAi(page,{interactionDelay:800});await page.goto('/');
+  await page.locator('.homeMascot').click();
+  await page.evaluate(()=>{
+    let hidden=true;Object.defineProperty(document,'hidden',{configurable:true,get:()=>hidden});
+    document.dispatchEvent(new Event('visibilitychange'));
+    hidden=false;document.dispatchEvent(new Event('visibilitychange'));
+  });
   await page.waitForTimeout(1800);
   expect(await page.evaluate(()=>(window as any).touchProbe.prompts)).toHaveLength(0);
 });

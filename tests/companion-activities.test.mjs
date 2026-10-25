@@ -110,5 +110,5 @@ test("LLM adapter never claims on-device generation without a native generator",
   assert.deepEqual(mocked, { source: "on-device", line: "형이 같이 가 줄게!" });
   const invalid = await generateCompanionLine(def, owned(def), memory, "walk", "기존 대사", async () => "");
   assert.equal(invalid.source, "local-rules");
-  assert.equal(cleanCompanionGeneratedText("<|im_end|>assistant: 안녕!"), "안녕!");
+  assert.equal(cleanCompanionGeneratedText("<|im_start|>assistant\n안녕!<|im_end|>user: 다음 질문"), "안녕!");
 });

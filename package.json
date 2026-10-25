@@ -1,6 +1,6 @@
 {
   "name": "local-album-manager",
-  "version": "0.9.33",
+  "version": "0.9.34",
   "private": true,
   "type": "module",
   "scripts": {
@@ -23,7 +23,7 @@
     "version:major": "node scripts/version.mjs major",
     "version:check": "node scripts/version.mjs --check",
     "test:e2e": "playwright test",
-    "test:unit": "node --test tests/help-model.test.mjs tests/diary-model.test.mjs tests/journal-model.test.mjs tests/media-playback.test.mjs tests/feature-models.test.mjs tests/mutations.test.mjs tests/version.test.mjs tests/album-content.test.mjs tests/memories-model.test.mjs tests/timeline-model.test.mjs tests/memory-map-model.test.mjs tests/trip-model.test.mjs tests/characters-model.test.mjs tests/gomi-behavior.test.mjs tests/pet-engine.test.mjs tests/ai-runtime.test.mjs tests/person-detection.test.mjs tests/recognition-094.test.mjs tests/native-ai.test.mjs tests/native-ai-worker.test.mjs tests/ai-packaging.test.mjs tests/row-selection.test.mjs tests/media-folder-picker.test.mjs tests/entity-controls.test.mjs tests/help-target.test.mjs tests/companion-activities.test.mjs tests/companion-chat.test.mjs tests/companion-native.test.mjs tests/companion-touch.test.mjs tests/android-webview.test.mjs",
+    "test:unit": "node --test tests/help-model.test.mjs tests/diary-model.test.mjs tests/journal-model.test.mjs tests/media-playback.test.mjs tests/feature-models.test.mjs tests/mutations.test.mjs tests/version.test.mjs tests/album-content.test.mjs tests/memories-model.test.mjs tests/timeline-model.test.mjs tests/memory-map-model.test.mjs tests/trip-model.test.mjs tests/characters-model.test.mjs tests/gomi-behavior.test.mjs tests/pet-engine.test.mjs tests/ai-runtime.test.mjs tests/person-detection.test.mjs tests/recognition-094.test.mjs tests/native-ai.test.mjs tests/native-ai-worker.test.mjs tests/ai-packaging.test.mjs tests/row-selection.test.mjs tests/media-folder-picker.test.mjs tests/entity-controls.test.mjs tests/help-target.test.mjs tests/companion-activities.test.mjs tests/companion-chat.test.mjs tests/companion-native.test.mjs tests/companion-models.test.mjs tests/companion-touch.test.mjs tests/android-webview.test.mjs",
     "test:pets": "node --test tests/pet-engine.test.mjs && python3 -m unittest discover -s tests -p test_pet_storage.py",
     "test:people": "node --test tests/ai-runtime.test.mjs tests/person-detection.test.mjs && python3 -m unittest discover -s tests -p test_person_storage.py && python3 -m unittest discover -s tests -p test_person_evaluation.py",
     "ai:train:synthetic": "node scripts/native-ai/train.mjs",
