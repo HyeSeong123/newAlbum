@@ -1,0 +1,30 @@
+.settingsAppInfo {
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.settingsAppInfo h2 {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 650;
+}
+.settingsAppVersion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+}
+.settingsAppVersion span {
+  color: var(--muted);
+  font-size: 14px;
+}
+.settingsAppVersion strong {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

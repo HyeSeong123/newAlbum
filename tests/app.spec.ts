@@ -1,4 +1,7 @@
 import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
+
+const sourceAppVersion = (JSON.parse(readFileSync("package.json", "utf8")) as { version: string }).version;
 
 test("past memories count appears in the menu", async ({ page }) => {
   await page.addInitScript(() => {
@@ -134,10 +137,38 @@ test("settings clear button is disabled when album is empty", async ({ page }) =
   await page.goto("/");
   if (!await page.getByRole("button", { name: "설정", exact: true }).isVisible()) await page.getByRole("button", { name: "전체 메뉴", exact: true }).click();
   await page.getByRole("button", { name: "설정", exact: true }).click();
+  const appInfo = page.getByRole("region", { name: "앱 정보" });
+  await expect(appInfo).toBeVisible();
+  await expect(appInfo.getByText("현재 버전")).toBeVisible();
+  await expect(appInfo.getByTestId("current-app-version")).toHaveText(`v${sourceAppVersion}`);
   await expect(page.getByText("앱에 등록된 0개의 항목만 지웁니다. 원본 파일은 그대로 남습니다.")).toBeVisible();
   await expect(page.getByRole("button", { name: "현재 화면 도움말", exact: true })).toBeVisible();
   await expect(page.locator(".settingsPanel")).not.toContainText("오래담은");
   await expect(page.getByRole("button", { name: /모두 비우기/ })).toBeDisabled();
+});
+
+test("settings uses native installed version and stays usable on narrow Android-sized screens", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("gamjassak:camera-location-confirmed:v1", "true");
+    Object.defineProperty(window, "__TAURI_INTERNALS__", { configurable: true, value: {
+      convertFileSrc: () => "/favicon.svg",
+      invoke: async (command: string) => {
+        if (command === "plugin:app|version") return "9.8.7";
+        if (command === "sync_characters") return { characters: [], events: [] };
+        if (command === "check_android_location_setup") return { locationEnabled: true, photoLocationGranted: true };
+        return [];
+      },
+    } });
+  });
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.goto("/");
+  const settingsButton = page.getByRole("button", { name: "설정", exact: true });
+  if (!await settingsButton.isVisible()) await page.getByRole("button", { name: "전체 메뉴", exact: true }).click();
+  await page.getByRole("button", { name: "설정", exact: true }).filter({ visible: true }).click();
+  await expect(page.getByRole("region", { name: "앱 정보" }).getByTestId("current-app-version")).toHaveText("v9.8.7");
+  await expect(page.getByRole("button", { name: /모두 비우기/ })).toBeDisabled();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await page.screenshot({ path: `test-results/settings-version-${test.info().project.name}.png`, fullPage: true, animations: "disabled" });
 });
 
 test("clicking a media tile opens detail modal", async ({ page }) => {

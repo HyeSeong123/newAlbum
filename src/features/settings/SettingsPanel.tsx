@@ -1,13 +1,37 @@
-import { useState, lazy, Suspense } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
+import { getVersion } from '@tauri-apps/api/app';
+import appPackage from '../../../package.json';
+import { isTauriRuntime } from '../../services/tauriMediaService';
 import type { MediaItem } from '../../types/media';
 // Evaluation exports and benchmarks belong to developer builds, not photo management.
 const RecognitionEvaluation=import.meta.env.DEV ? lazy(()=>import('./RecognitionEvaluation').then(m=>({default:m.RecognitionEvaluation}))) : null;
 import { LoaderCircle, Trash2 } from "lucide-react";
+import './settings.css';
 
 export function SettingsPanel({ itemCount, clearing, onClear, photos=[] }: { photos?:MediaItem[]; itemCount: number; clearing: boolean; onClear: () => void }) {
   const [evaluation,setEvaluation]=useState(false);
+  const [version, setVersion] = useState(appPackage.version);
+
+  useEffect(() => {
+    if (!isTauriRuntime()) return;
+    let mounted = true;
+    void getVersion().then(installedVersion => {
+      if (mounted && installedVersion) setVersion(installedVersion);
+    }).catch(() => {
+      // The bundled version remains visible if the native bridge is unavailable.
+    });
+    return () => { mounted = false; };
+  }, []);
+
   return (
     <div className="settingsPanel">
+      <section className="settingsAppInfo" aria-label="앱 정보">
+        <h2>앱 정보</h2>
+        <div className="settingsAppVersion">
+          <span>현재 버전</span>
+          <strong data-testid="current-app-version">v{version}</strong>
+        </div>
+      </section>
       {RecognitionEvaluation && <section className="settingsSummary"><h2>개발용 인식 검증</h2><p>별도 평가 자료로 성능을 확인합니다.</p><button aria-expanded={evaluation} onClick={()=>setEvaluation(!evaluation)}>{evaluation?'인식 검증 닫기':'인식 검증 열기 · 고급'}</button>{evaluation&&<Suspense fallback={<p>불러오는 중</p>}><RecognitionEvaluation photos={photos}/></Suspense>}</section>}
       <section className="dangerPanel" aria-label="등록 목록 관리">
         <div>
