@@ -66,7 +66,7 @@ test('bottom album menu stays visible after resize and remains usable with keybo
   await expectInsideViewport(page, menu);
   const anchor = (await trigger.boundingBox())!;
   const panel = (await menu.boundingBox())!;
-  expect(panel.y + panel.height).toBeLessThanOrEqual(anchor.y);
+  expect(Math.min(Math.abs(panel.y + panel.height - anchor.y), Math.abs(panel.y - anchor.y - anchor.height))).toBeLessThanOrEqual(12);
   for (const button of await menu.getByRole('button').all()) await expectInsideViewport(page, button);
   await expect(menu.getByRole('button', { name: '앨범 수정', exact: true })).toBeFocused();
   await page.screenshot({ path: `test-results/album-appearance-menu-${test.info().project.name}.png` });

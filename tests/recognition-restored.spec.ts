@@ -23,7 +23,8 @@ test('restored recognition waits for an explicit request, including existing pen
   expect(modelRequests).toEqual([]);
   const mutations = await page.evaluate(() => (window as unknown as { recognitionCalls: string[] }).recognitionCalls.filter(command => ['enqueue_person_jobs', 'enqueue_pet_jobs', 'prepare_pet_input', 'save_face_scan', 'save_pet_scan'].includes(command)));
   expect(mutations).toEqual([]);
-  await page.locator('.globalSettings').click();
+  if (!await page.getByRole('button', { name: '설정', exact: true }).isVisible()) await page.getByRole('button', { name: '전체 메뉴', exact: true }).click();
+  await page.getByRole('button', { name: '설정', exact: true }).filter({ visible: true }).click();
   await page.getByRole('button', { name: '인식 검증 열기 · 고급', exact: true }).click();
   await expect(page.getByText('자체 AI 준비 중', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: '합성 모델 실행 점검', exact: true })).toHaveCount(0);

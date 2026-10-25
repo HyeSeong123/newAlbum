@@ -62,6 +62,11 @@ jobs:
           python3 -m unittest discover -s tests -p test_native_ai_storage.py
 
   verify:
+    name: Browser regression ${{ matrix.shard }}/4
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -73,6 +78,7 @@ jobs:
           node-version: 24
           cache: npm
       - name: Check source versions
+        if: matrix.shard == 1
         run: npm run version:check
       - name: Install frontend dependencies
         run: npm ci
@@ -81,6 +87,7 @@ jobs:
           distribution: temurin
           java-version: '17'
       - name: Run frontend unit tests
+        if: matrix.shard == 1
         run: |
           npm run test:unit
           node --test tests/android-prepare.test.mjs tests/android-signing.test.mjs tests/android-signing-setup.test.mjs
@@ -88,12 +95,12 @@ jobs:
         run: |
           npx playwright install --with-deps chromium
           sudo apt-get install -y --no-install-recommends fonts-noto-cjk
-          npx playwright test --workers=2
+          npx playwright test --workers=2 --shard=${{ matrix.shard }}/4
       - name: Upload audit screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: audit-screens-${{ github.sha }}
+          name: audit-screens-${{ github.sha }}-shard-${{ matrix.shard }}
           path: |
             preview-results/audit/**
             test-results/**/test-failed-*.png
@@ -104,7 +111,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: album-appearance-previews
+          name: album-appearance-previews-shard-${{ matrix.shard }}
           path: |
             preview-results/album-appearance-*.png
             test-results/album-appearance-*.png
@@ -114,7 +121,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: calendar-previews
+          name: calendar-previews-shard-${{ matrix.shard }}
           path: |
             preview-results/calendar-*.png
             preview-results/mobile-*.png
@@ -135,7 +142,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: gamjassak-brand-previews
+          name: gamjassak-brand-previews-shard-${{ matrix.shard }}
           path: |
             preview-results/gomi-*.png
             preview-results/home-*.png
@@ -144,4 +151,5 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
       - name: Build TypeScript frontend
+        if: matrix.shard == 1
         run: npm run build

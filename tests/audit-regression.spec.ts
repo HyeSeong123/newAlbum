@@ -16,7 +16,7 @@ test('native import of 100 dog and 100 cat records never authorizes inference', 
   expect(inferenceRequests).toBe(0);
 });
 
-test('long press then touch drag selects a range without scrolling or a duplicate click', async ({ page, isMobile }) => {
+test('a held touch selects only after horizontal movement without scrolling or a duplicate click', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'Native touch input requires a mobile context.');
   await library(page);
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
@@ -30,7 +30,7 @@ test('long press then touch drag selects a range without scrolling or a duplicat
   const before = await page.evaluate(() => scrollY);
   await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: a.x + a.width / 2, y: a.y + a.height / 2 }] });
   await page.waitForTimeout(550);
-  await expect(page.locator('.personOriginal[aria-pressed="true"]')).toHaveCount(1);
+  await expect(page.locator('.personOriginal[aria-pressed="true"]')).toHaveCount(0);
   await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: b.x + b.width / 2, y: b.y + b.height / 2 }] });
   await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await expect(page.locator('.personOriginal[aria-pressed="true"]')).toHaveCount(2);

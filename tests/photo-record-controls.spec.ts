@@ -40,11 +40,15 @@ for (const width of [320, 393]) {
     await expect(detail).toBeVisible();
     await detail.getByTitle('확대 보기', { exact: true }).click();
     const zoom = page.getByRole('dialog', { name: '사진 확대 보기', exact: true });
+    const help = page.getByRole('button', { name: '현재 화면 도움말', exact: true });
+    const helpId = await help.getAttribute('id');
+    expect(helpId).toBeTruthy();
+    await expect(zoom).toHaveAttribute('aria-owns', helpId!);
     for (const button of await zoom.locator('.photoZoomToolbar button').all()) await expectControl(button);
     expect(await zoom.locator('.photoZoomToolbar').evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
     for (let index = 0; index < 12; index++) {
       await page.keyboard.press('Tab');
-      expect(await zoom.evaluate(node => node.contains(document.activeElement))).toBe(true);
+      expect(await zoom.evaluate((node, ownedId) => node.contains(document.activeElement) || document.activeElement?.id === ownedId, helpId)).toBe(true);
     }
     await page.keyboard.press('Escape');
     await expect(zoom).toHaveCount(0);
