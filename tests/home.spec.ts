@@ -157,3 +157,48 @@ test('Home companion actions expand, respond, remember locally and never award a
   await expect(page.locator('.homeActivityMood')).toHaveCount(0);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
 });
+
+
+test('Android location ribbon opens device and app settings and keeps the Home usable', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0 (Linux; Android 17; Pixel 7)' });
+    (window as any).setupCommands = [];
+    (window as any).__TAURI_INTERNALS__ = {
+      convertFileSrc: () => '/favicon.png',
+      invoke: async (command: string, args: unknown) => {
+        if (command === 'check_android_location_setup') return { locationEnabled: false, photoLocationGranted: false };
+        if (command === 'open_android_location_settings') { (window as any).setupCommands.push(args); return null; }
+        return [];
+      },
+    };
+  });
+  await page.goto('/');
+  const ribbon = page.getByRole('complementary', { name: '촬영 위치 설정 알림' });
+  await expect(ribbon).toBeVisible();
+  await expect(ribbon).toContainText('휴대폰 위치 기능이 꺼져 있어요');
+  await ribbon.getByRole('button', { name: '설정 안내' }).click();
+  await ribbon.getByRole('button', { name: '휴대폰 위치 설정 열기' }).click();
+  await ribbon.getByRole('button', { name: '감자싹 앱 권한 설정 열기' }).click();
+  expect(await page.evaluate(() => (window as any).setupCommands)).toEqual([{ kind: 'device' }, { kind: 'app' }]);
+  await ribbon.getByRole('button', { name: '카메라 위치 태그 확인했어요' }).click();
+  await expect(ribbon).toBeVisible();
+  await ribbon.getByRole('button', { name: '이번에는 알림 닫기' }).click();
+  await expect(ribbon).toHaveCount(0);
+  await expect(page.locator('.homeMascot')).toBeVisible();
+  await expect(page.locator('.homeActivityMood')).toHaveCount(0);
+});
+
+test('Android location ribbon disappears after resolved settings and confirmed camera tag', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0 (Linux; Android 17; Pixel 7)' });
+    localStorage.setItem('gamjassak:camera-location-confirmed:v1', 'true');
+    (window as any).__TAURI_INTERNALS__ = {
+      convertFileSrc: () => '/favicon.png',
+      invoke: async (command: string) => command === 'check_android_location_setup'
+        ? { locationEnabled: true, photoLocationGranted: true } : [],
+    };
+  });
+  await page.goto('/');
+  await expect(page.getByRole('complementary', { name: '촬영 위치 설정 알림' })).toHaveCount(0);
+  await expect(page.locator('.homeMascot')).toBeVisible();
+});
