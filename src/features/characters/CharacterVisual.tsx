@@ -1,6 +1,8 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useId } from "react";
 import { characterAsset, type CharacterDefinition } from "./models";
 import { GomiVisual } from "./GomiVisual";
+import { characterPortraits } from "./characterPortraits";
 import type { GomiMotion } from "./gomiBehavior";
 
 export type Expression = "idle" | "happy" | "sad" | "grow";
@@ -28,6 +30,9 @@ function BotanicalVisual({ definition, stage, expression = "idle", className = "
   const [hop, tilt] = reactions[signature] || [4, 2];
   const excited = expression === "happy" || expression === "grow";
   const src = characterAsset(definition, currentStage, expression);
+  const portrait = characterPortraits[definition.id];
+  const clipId = useId();
+  const crop = portrait?.viewBox.split(" ").map(Number);
   const idleTilt = signature === "brother-wink" ? 1.5 : signature === "bashful-peek" ? -.8 : .6;
   const idleDuration = signature === "brother-wink" ? 5.4 : signature === "bashful-peek" ? 4.8 : 4.6;
   return <span className={`characterVisual characterVisual--${definition.type} characterMotion--${signature} ${className}`.trim()}
@@ -39,8 +44,12 @@ function BotanicalVisual({ definition, stage, expression = "idle", className = "
         : expression === "sad" ? { y:[0,2,0],rotate:[0,-tilt*.4,0],scale:[1,.995,1] }
         : { y:[0,-2,0],rotate:[0,idleTilt,0],scale:[1,1.012,1] }}
       transition={reduced ? { duration:0 } : excited ? { duration:.9,ease:"easeInOut" } : { duration:idleDuration,repeat:Infinity,ease:"easeInOut" }}>
-      <img className="characterIllustration" src={src} data-stage={currentStage} data-expression={expression}
-        alt="" draggable={false} width={220} height={220} />
+      {portrait && crop ? <svg className="characterIllustration characterPortrait" viewBox={portrait.viewBox} data-portrait={portrait.subject}
+        data-stage={currentStage} data-expression={expression} aria-hidden="true" width={220} height={220} overflow="hidden">
+        <defs><clipPath id={clipId}>{portrait.clip ? <polygon points={portrait.clip} /> : <rect x={crop[0]} y={crop[1]} width={crop[2]} height={crop[3]} />}</clipPath></defs>
+        <image href={portrait.src} width={portrait.width} height={portrait.height} clipPath={`url(#${clipId})`} /></svg> :
+        <img className="characterIllustration" src={src} data-stage={currentStage} data-expression={expression}
+          alt="" draggable={false} width={220} height={220} />}
     </motion.span>
     <AnimatePresence>{excited && !reduced && <motion.span key={reactionKey} className="characterHeart" aria-hidden="true"
       initial={{ opacity:0,y:6,scale:.6,rotate:-12 }} animate={{ opacity:[0,1,1,0],y:-28,scale:1,rotate:10 }}

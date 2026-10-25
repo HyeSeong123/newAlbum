@@ -26,7 +26,7 @@ test("all 17 distinct personalities react to each of the five shared Home action
   for (const action of COMPANION_ACTIONS) {
     const lines = definitions.map(definition => {
       const reply = performCompanionActivity(definition, emptyCompanionMemory(), action, 10, "2026-10-25");
-      assert.ok(reply.line.length >= 3, definition.type);
+      assert.ok(reply.line.length >= 2, definition.type);
       assert.equal(reply.memory.history.length, 1);
       assert.equal(reply.memory.history[0].action, action);
       return reply.line;

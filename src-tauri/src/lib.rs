@@ -31,6 +31,7 @@ mod database;
 mod gallery_sources;
 mod diary;
 mod characters;
+mod companion_chat;
 #[cfg(any(target_os = "android", test))]
 mod managed_import;
 #[cfg(any(target_os = "android", test))]
@@ -1221,7 +1222,7 @@ pub fn run() {
             }
         }));
     #[cfg(target_os = "android")]
-    let builder = builder.plugin(tauri_plugin_fs::init()).plugin(android_media::init());
+    let builder = builder.plugin(tauri_plugin_fs::init()).plugin(android_media::init()).plugin(companion_chat::init());
     let app = builder
         .setup(|app| {
             #[cfg(desktop)]
@@ -1271,6 +1272,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             native_ai::save_native_ai_feature,
             native_ai::list_native_ai_features,
+            companion_chat::chat_model_status, companion_chat::download_chat_model, companion_chat::generate_chat_reply, companion_chat::stop_chat_model,
             sync_characters, rename_character, set_main_character, interact_character, dismiss_character_event,
             list_diary, save_diary, assign_diary_album, delete_diary, import_diary_photos,
             list_media,

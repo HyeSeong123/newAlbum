@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readFile, writeFile, access } from 'node:fs/promises';
+import { copyFile, cp, mkdir, readFile, writeFile, access } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -34,11 +34,13 @@ export async function prepareAndroid(projectRoot = root, requireSigning = false)
     try { await access(resolve(android, 'keystore.properties')); }
     catch { throw new Error('Play 업로드용 서명 설정이 없습니다. docs/android.md에 따라 keystore.properties를 준비해 주세요.'); }
   }
-  const configured = configureGradle(text);
+  const configured = configureCompanionGradle(configureGradle(text));
   const destination = resolve(android, 'app/src/main/java/com/oraedameun/album/GamjassakMediaPlugin.kt');
   await mkdir(dirname(destination), { recursive: true });
   await copyFile(resolve(projectRoot, 'src-tauri/android/GamjassakMediaPlugin.kt'), destination);
   await copyFile(resolve(projectRoot, 'src-tauri/android/GamjassakGalleryActivity.kt'), resolve(dirname(destination), 'GamjassakGalleryActivity.kt'));
+  await copyFile(resolve(projectRoot, 'src-tauri/android/GamjassakCompanionPlugin.kt'), resolve(dirname(destination), 'GamjassakCompanionPlugin.kt'));
+  await cp(resolve(projectRoot, 'src-tauri/android/companion'), resolve(android, 'app/src/main/cpp/companion'), { recursive: true });
   for (const variant of ['main', 'debug']) {
     const config = resolve(android, `app/src/${variant}/res/xml/gamjassak_network_security.xml`);
     await mkdir(dirname(config), { recursive: true });
@@ -63,6 +65,19 @@ export async function prepareAndroid(projectRoot = root, requireSigning = false)
   updated = updated.replace('android:name=".GamjassakGalleryActivity"', 'android:name="com.oraedameun.album.GamjassakGalleryActivity"');
   if (!updated.includes('com.oraedameun.album.GamjassakGalleryActivity')) updated = updated.replace('</application>', '<activity android:name="com.oraedameun.album.GamjassakGalleryActivity" android:exported="false" />\n    </application>');
   if (updated !== original) await writeFile(manifest, updated);
+}
+
+export function configureCompanionGradle(text) {
+  if (text.includes('// gamjassak companion JNI')) return text;
+  if (!text.includes('android {')) throw new Error('Android Gradle 설정을 확인해 주세요.');
+  return text.replace('android {', `android {
+    // gamjassak companion JNI: fixed llama.cpp source, CPU only, no model bundled in APK.
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/companion/CMakeLists.txt")
+            version = "3.22.1"
+        }
+    }`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

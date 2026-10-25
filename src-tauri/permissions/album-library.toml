@@ -2,6 +2,7 @@
 identifier = "album-library"
 description = "Allow the main album window to use the existing photo, album, face and pet commands."
 commands.allow = [
+  "chat_model_status", "download_chat_model", "generate_chat_reply", "stop_chat_model",
   "choose_android_gallery", "compare_android_gallery", "retry_empty_face_scans",
   "person_runtime_environment",
   "save_person_evaluation",

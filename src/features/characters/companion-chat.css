@@ -1,0 +1,38 @@
+.companionChatBackdrop { position: fixed; inset: 0; z-index: 1050; display: grid; place-items: center; background: #20251dcc; padding: 20px; }
+.companionChat { display: flex; flex-direction: column; width: min(100%, 520px); height: min(760px, calc(100dvh - 40px)); min-height: 0; border: 1px solid var(--border); border-radius: 22px; background: var(--surface, #fffefa); color: var(--text); overflow: hidden; box-shadow: 0 20px 80px #0003; }
+.companionChat button { display: inline-flex; justify-content: center; align-items: center; gap: 8px; min-width: 44px; min-height: 44px; border-radius: 14px; padding: 10px 14px; }
+.companionChatHeader { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.companionChatHeader h2 { margin: 0 0 5px; font-size: 17px; }
+.companionChatHeader span { font-size: 12px; color: var(--muted); }
+.companionChatHeader > button { margin-left: auto; flex-shrink: 0; }
+.companionChatAvatar { width: 48px; height: 52px; flex: none; }
+.companionChatAvatar .characterVisual { width: 100%; height: 100%; }
+.companionChatSetup { display: grid; justify-items: center; gap: 10px; padding: 22px 20px; text-align: center; overflow-y: auto; flex-shrink: 1; }
+.companionChatSetup > svg { color: var(--primary); flex-shrink: 0; }
+.companionChatSetup h3, .companionChatSetup p { margin: 0; }
+.companionChatSetup p { font-size: 13px; line-height: 1.8; word-break: keep-all; }
+.companionChatSetup a { color: var(--muted); font-size: 12px; }
+.companionChatSetup progress { width: 100%; accent-color: var(--primary); }
+.companionChatMessages { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 18px; }
+.companionChatEmpty { display: grid; place-items: center; height: 100%; min-height: 90px; color: var(--muted); text-align: center; font-size: 14px; }
+.companionChatTurn { display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 18px; }
+.companionChatTurn small { color: var(--muted); font-size: 12px; margin: 0 5px 6px; }
+.companionChatTurn p { margin: 0; padding: 13px 16px; max-width: 90%; border-radius: 4px 17px 17px; background: #f0f1e8; line-height: 1.75; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.companionChatTurn.user { align-items: flex-end; }
+.companionChatTurn.user p { background: #e4edda; border-radius: 17px 4px 17px 17px; }
+.companionChatThinking { color: var(--muted); font-size: 13px; }
+.companionChatNotice { margin: 0; padding: 8px 16px; color: #8a492b; background: #fff5e6; font-size: 13px; line-height: 1.6; }
+.companionChatNotice p { margin: 0; overflow-wrap: anywhere; }
+.companionChatNotice button { margin-top: 6px; }
+.companionChatComposer { display: flex; gap: 8px; align-items: flex-end; border-top: 1px solid var(--border); padding: 12px 14px max(14px, env(safe-area-inset-bottom)); }
+.companionChatComposer textarea { flex: 1; min-width: 0; min-height: 48px; max-height: 110px; resize: none; padding: 12px; border: 1px solid var(--border); border-radius: 15px; font: inherit; font-size: 16px; background: #fffefa; color: var(--text); }
+.companionChatComposer button { flex: none; }
+.companionChatComposer .srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media(max-width: 999px) {
+  .companionChatComposer { padding-right: max(80px, calc(72px + env(safe-area-inset-right))); }
+}
+@media(max-width: 600px) {
+  .companionChatBackdrop { padding: 0; }
+  .companionChat { width: 100%; height: 100dvh; max-height: 100dvh; border: 0; border-radius: 0; padding-top: env(safe-area-inset-top); }
+  .companionChatMessages { padding: 16px 12px; }
+}

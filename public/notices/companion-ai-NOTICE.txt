@@ -1,0 +1,23 @@
+감자싹 캐릭터 AI 대화 / Companion AI
+
+캐릭터별 대화는 이 기기의 앱 저장소에 보관합니다. 사진·일기·GPS는 모델에 자동 제공하지 않습니다.
+모델 파일만 최초 다운로드하며 대화와 프롬프트는 서버에 전송하지 않습니다.
+AI 대화는 실수할 수 있습니다. 앱의 사진·일기·파일을 수정하는 기능과 연결하지 않았습니다.
+
+Model: Qwen3-1.7B, Copyright 2025 Alibaba Cloud, Apache License 2.0.
+Original: https://huggingface.co/Qwen/Qwen3-1.7B
+GGUF Q4_K_M conversion: https://huggingface.co/unsloth/Qwen3-1.7B-GGUF
+Revision: d7f544eead698dbd1f15126ef60b45a1e1933222
+File: Qwen3-1.7B-Q4_K_M.gguf
+Bytes: 1107409472
+SHA256: b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897
+License: Qwen3-1.7B-LICENSE.txt (included next to this file).
+The quantized model is downloaded separately and is not bundled in the APK.
+
+Engine: llama.cpp, https://github.com/ggml-org/llama.cpp
+Pinned commit: a7a98e0fffed794396b3fbad4dcdbbc184963645 (b6500)
+License: llama-cpp-MIT.txt (included next to this file).
+The application-specific JNI wrapper is original code, not a modified upstream source file.
+
+Character artwork: user-supplied 4608 / 4609 / 4610 / 4613 / 4615 / 4616.
+Original PNGs are preserved. Individual characters are framed with an SVG viewBox.

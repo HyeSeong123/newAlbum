@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { toStep } from './fixtures/helpSpotlight';
+import { characterPortraits } from '../src/features/characters/characterPortraits';
 const definitions = JSON.parse(readFileSync('src/features/characters/data/characterDefinitions.json','utf8')) as Array<{ id:string; defaultName:string; regionLabel:string; maxStage:number; fixedGrowthStage?:number; stageAssetPaths?:string[]; expressionAssetPaths?:Record<string,string> }>;
 test.beforeEach(async ({page}) => { await page.addInitScript(()=>{Math.random=()=>.1;}); });
 
@@ -61,13 +62,13 @@ test('the starter potato has a visible portrait and the book reveals no discover
   await page.getByRole('button',{name:'새싹 도감 보기'}).click();
   const book=page.locator('.characterBook');
   const potato=cardFor(page,'감자싹');
-  await expect(potato.locator('.characterCardArt img')).toHaveAttribute('src','/characters/potato/stage1-idle.png');
-  await potato.locator('img').evaluate((img:HTMLImageElement)=>img.decode());
+  await expect(potato.locator('.characterPortrait image')).toHaveAttribute('href','/characters/portraits/potato-source.png');
+  await expect(potato.locator('[data-portrait="감자"]')).toBeVisible();
   const box=(await potato.locator('.characterVisual').boundingBox())!;
   expect(box.width).toBeGreaterThan(160);
   expect(box.height).toBeGreaterThan(160);
   await expect(page.locator('.characterCard.locked')).toHaveCount(14);
-  await expect(book.locator('img')).toHaveCount(3);
+  await expect(book.locator('.characterVisual')).toHaveCount(3);
   await expect(book.locator('details,progress,.characterStats,.characterPersonality,.characterRegion')).toHaveCount(0);
   await expect(book.getByRole('button',{name:/교감|말 걸기/})).toHaveCount(0);
   await expect(book).not.toContainText(/GPS|친밀도|성장 과정|완성하면|10장|30장|60장/);
@@ -91,7 +92,7 @@ test('book viewing, portraits, rename and main selection never interact; only Ho
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
   await page.getByRole('button',{name:'귤이에게 말 걸기'}).click();
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
-  await expect(page.locator('.homeMascot img')).toHaveAttribute('src',/happy.svg$/);
+  await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-expression','happy');
   expect((await interactions())[0].args).toEqual({ id:'orange',source:'home' });
   await page.getByRole('button',{name:'새싹 도감 보기'}).click();
   await cardFor(page,'귤이').locator('.characterCardArt').click();
@@ -118,11 +119,19 @@ test('each of the six current forms loads without showing any future form',async
   for(const stage of [1,2,3,4,5,6]) {
     await page.evaluate(stage=>(window as unknown as {setSproutStage:(stage:number)=>void}).setSproutStage(stage),stage);
     await expect(cardFor(page,'감자싹').locator('.characterVisual')).toHaveAttribute('data-stage',String(stage));
-    await expect(page.locator('.characterBook img')).toHaveCount(17);
+    await expect(page.locator('.characterBook .characterVisual')).toHaveCount(17);
     for(const def of definitions) {
-      const image=cardFor(page,def.defaultName).locator('.characterCardArt img');
-      await expect(image).toHaveAttribute('src',def.id === 'gomi' ? '/characters/gomi/cynical.png' : def.expressionAssetPaths?.idle ?? def.stageAssetPaths?.[stage-1] ?? `/characters/${def.id}/stage${def.fixedGrowthStage || stage}-idle.svg`);
-      await image.evaluate((img:HTMLImageElement)=>img.decode());
+      const art=cardFor(page,def.defaultName);
+      const portrait=characterPortraits[def.id];
+      if(portrait){
+        await expect(art.locator('.characterPortrait image')).toHaveAttribute('href',portrait.src);
+        await expect(art.locator('.characterPortrait')).toHaveAttribute('viewBox',portrait.viewBox);
+        await expect(art.locator('.characterPortrait')).toBeVisible();
+      }else{
+        const image=art.locator('.characterCardArt img');
+        await expect(image).toHaveAttribute('src','/characters/gomi/cynical.png');
+        await image.evaluate((img:HTMLImageElement)=>img.decode());
+      }
     }
     expect(await page.evaluate(()=>document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     if(test.info().project.name === 'desktop') await page.screenshot({path:`test-results/sprouts-current-stage-${stage}.png`,fullPage:true});
@@ -134,13 +143,13 @@ test('redesigned completed potato uses its new picture and reduced motion still 
   await installSnapshot(page,[companion('potato',6,true),companion('sweet-potato')]);
   await page.goto('/');
   const mascot=page.getByRole('button',{name:'감자싹에게 말 걸기'});
-  await expect(mascot.locator('img')).toHaveAttribute('src','/characters/potato/stage6-idle.png');
+  await expect(mascot.locator('.characterPortrait image')).toHaveAttribute('href','/characters/portraits/potato-source.png');
   await expect(mascot.locator('.characterVisual')).toHaveAttribute('data-reduced-motion','true');
   await mascot.click();
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
-  await expect(mascot.locator('img')).toHaveAttribute('src','/characters/potato/stage6-idle.png');
+  await expect(mascot.locator('.characterPortrait image')).toHaveAttribute('href','/characters/portraits/potato-source.png');
   await expect(mascot.locator('.characterHeart')).toHaveCount(0);
-  await expect(mascot.locator('img')).toHaveAttribute('data-expression','idle',{timeout:2500});
+  await expect(mascot.locator('.characterVisual')).toHaveAttribute('data-expression','idle',{timeout:2500});
 });
 
 test('Gomi starts as an adult main; help and book never award affection and home changes her expression', async ({page}) => {
@@ -374,6 +383,8 @@ for (const scenario of [
   await expect(guide.locator('#helpInstruction')).toContainText('친밀도는 친구마다 하루 한 번');
   await guide.getByRole('button',{name:'다음',exact:true}).click();
   // The Home companion menu is now a genuine help target between talking and the book.
+  await expect(guide.getByRole('heading',{name:'친구와 대화하기',exact:true})).toBeVisible();
+  await guide.getByRole('button', {name:'다음',exact:true}).click();
   await expect(guide.getByRole('heading',{name:'친구와 함께하기',exact:true})).toBeVisible();
   await expect(guide.locator('#helpInstruction')).toContainText('친밀도는 캐릭터에게 직접 말을 걸 때만');
   await guide.getByRole('button',{name:'다음',exact:true}).click();

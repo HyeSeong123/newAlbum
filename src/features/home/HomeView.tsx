@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, BookHeart, ChevronDown, Footprints, Gamepad2, HandHeart, Heart, Images, Moon, NotebookPen, Sun, Users } from "lucide-react";
 import { CharacterVisual } from "../characters/CharacterVisual";
+import { CompanionChat } from "../characters/CompanionChat";
 import { characterDefinitions, characterName, dialogueLines, nextDialogue, type OwnedCharacter } from "../characters/models";
 import { gomiAffinity } from "../characters/gomiAffinity";
 import { useGomiBehavior } from "../characters/useGomiBehavior";
@@ -47,6 +48,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   const [spokenLine, setSpokenLine] = useState<string | undefined>(undefined);
   const [happy, setHappy] = useState(false);
   const [activitiesOpen, setActivitiesOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [activityMemory, setActivityMemory] = useState(() => mainCharacter?.id ? readCompanionMemory(mainCharacter.id) : emptyCompanionMemory());
   const lastLine = useRef(0);
   const timer = useRef<number | undefined>(undefined);
@@ -54,6 +56,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   useEffect(() => {
     setActivityMemory(mainCharacter?.id ? readCompanionMemory(mainCharacter.id) : emptyCompanionMemory());
     setActivitiesOpen(false);
+    setChatOpen(false);
   }, [mainCharacter?.id]);
   const isGomi = definition?.type === "gomi";
   const gomi = useGomiBehavior(isGomi, mainCharacter?.affection || 0, today, mainCharacter?.id);
@@ -119,6 +122,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   ];
 
   return <section className="homeView" aria-label="감자싹 홈">
+    {chatOpen && definition && mainCharacter && <CompanionChat key={mainCharacter.id} definition={definition} owned={mainCharacter} onClose={() => setChatOpen(false)} />}
     <div className="homeWelcome">
       <time className="homeDate" dateTime={today}>{dateLabel}</time>
       <h2>작은 하루가 자라는 곳</h2>
@@ -132,6 +136,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
         </button>
         {definition && mainCharacter && <p className="homeCharacterMeta"><strong>{characterName(definition, mainCharacter)}</strong><span className="homeAffection"><Heart size={14} aria-hidden="true" />친밀도 {mainCharacter.affection}</span></p>}
         {definition && mainCharacter && <div className="homeActivities">
+          <button type="button" className="homeActivitiesToggle" data-help="companion-chat" onClick={() => setChatOpen(true)}>대화하기</button>
           <button type="button" className="homeActivitiesToggle" aria-expanded={activitiesOpen} aria-controls="homeActivitiesChoices"
             data-help="companion-actions" onClick={() => setActivitiesOpen(value => !value)}>
             함께하기 <ChevronDown size={17} aria-hidden="true" className={activitiesOpen ? "expanded" : ""} />

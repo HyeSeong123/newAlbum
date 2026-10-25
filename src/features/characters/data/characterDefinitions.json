@@ -2192,8 +2192,8 @@
     "regionCode": "KR-50",
     "regionName": "세종특별자치시",
     "regionLabel": "세종",
-    "defaultName": "복숭아싹",
-    "description": "새침하게 고개를 돌려도 당신이 오면 볼이 발그레해져요. 은근히 먼저 불러 주길 기다려요.",
+    "defaultName": "한글",
+    "description": "ㄱ을 닮은 기린 친구예요. 새침한 말투 뒤에 다정한 마음을 숨기고 있어요.",
     "maxStage": 6,
     "growthConditions": {
       "stage1": 1,

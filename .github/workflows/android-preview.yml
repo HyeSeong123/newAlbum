@@ -72,7 +72,7 @@ jobs:
         run: node scripts/android-signing.mjs prepare "$RUNNER_TEMP/gamjassak-update.keystore"
       - name: Prepare SDK and Rust targets
         run: |
-          sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;36.0.0' "ndk;$NDK_VERSION"
+          sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;36.0.0' 'cmake;3.22.1' "ndk;$NDK_VERSION"
           echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
           rustup target add aarch64-linux-android x86_64-linux-android
       - uses: Swatinem/rust-cache@v2
