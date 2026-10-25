@@ -10,6 +10,7 @@ export async function auditLibrary(page: Page, empty = false) {
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: (path: string) => path,
       invoke: async (command: string) => {
+        if (command === 'check_android_location_setup') return { locationEnabled: true, photoLocationGranted: true };
         calls.push(command);
         if (command === 'media_thumbnail') return '';
         if (command === 'list_media') return imported ? media : [];

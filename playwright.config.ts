@@ -6,7 +6,7 @@ export default defineConfig({
   timeout: 30_000,
   use: {
     baseURL: "http://127.0.0.1:5173",
-    storageState: { cookies: [], origins: [{ origin: "http://127.0.0.1:5173", localStorage: [{ name: "geuruteogi.first-run-completed-v1", value: "true" }] }] },
+    storageState: { cookies: [], origins: [{ origin: "http://127.0.0.1:5173", localStorage: [{ name: "geuruteogi.first-run-completed-v1", value: "true" }, { name: "gamjassak:camera-location-confirmed:v1", value: "true" }] }] },
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },

@@ -20,6 +20,7 @@ test('large native import shows full-screen byte progress through region and alb
       transformCallback: (callback: (message: unknown) => void) => { const id = ++nextCallback; callbacks.set(id, callback); return id; },
       unregisterCallback: (id: number) => callbacks.delete(id),
       invoke: async (command: string, args: any) => {
+        if (command === 'check_android_location_setup') return { locationEnabled: true, photoLocationGranted: true };
         if (command === 'list_media') return registered;
         if (command === 'list_albums') return albums;
         if (command === 'plugin:dialog|open' || command === 'choose_android_directory' || command === 'choose_android_gallery') return 'C:/memories';
@@ -98,6 +99,7 @@ for (const kind of ['files', 'folder'] as const) {
       Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
         convertFileSrc: () => '/favicon.svg',
         invoke: async (command: string, args: any) => {
+        if (command === 'check_android_location_setup') return { locationEnabled: true, photoLocationGranted: true };
           if (command === 'list_media') return registered;
           if (command === 'list_albums') return albums;
           if (command === 'plugin:dialog|open') {
@@ -186,6 +188,7 @@ test('canceling the native picker leaves no empty album or stale album settings'
     let registered: unknown[] = [];
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: () => '/favicon.svg', invoke: async (command: string) => {
+        if (command === 'check_android_location_setup') return { locationEnabled: true, photoLocationGranted: true };
         if (command === 'list_media') return registered;
         if (command === 'plugin:dialog|open' || command === 'choose_android_directory' || command === 'choose_android_gallery') return ++attempts === 1 ? null : ['C:/cancel.jpg'];
         if (command === 'register_paths') { registered = media; return registered; }
@@ -275,6 +278,7 @@ for (const failRegion of [false, true]) {
       Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
         convertFileSrc: () => '/favicon.svg',
         invoke: async (command: string, args: any) => {
+        if (command === 'check_android_location_setup') return { locationEnabled: true, photoLocationGranted: true };
           if (command === 'list_media') return registered;
           if (command === 'plugin:dialog|open' || command === 'choose_android_directory' || command === 'choose_android_gallery') return 'C:/place';
           if (command === 'register_paths') { registered = media; return registered; }

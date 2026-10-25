@@ -7,6 +7,7 @@ async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:b
     const owned={id:settings.gomi?'gomi':'potato',customName:null,growthStage:6,affection:settings.affection||0,isMain:true};
     const state=(window as any).touchProbe={prompts:[] as string[],stops:0,error:settings.error};
     (window as any).__TAURI_INTERNALS__={convertFileSrc:()=>'/favicon.png',invoke:async(command:string,args:any={})=>{
+        if (command === 'check_android_location_setup') return { locationEnabled: true, photoLocationGranted: true };
       if(command==='sync_characters'||command==='interact_character'){
         if(command==='interact_character'&&settings.interactionDelay)await new Promise(resolve=>setTimeout(resolve,settings.interactionDelay));
         if(command==='interact_character'&&args.source==='home'&&!interacted){owned.affection++;interacted=true;}

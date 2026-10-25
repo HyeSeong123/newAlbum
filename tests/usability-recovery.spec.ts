@@ -26,6 +26,7 @@ async function nativeLibrary(page: Page, options: { existing?: 'media' | 'album'
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: () => '/favicon.svg',
       invoke: async (command: string, args: any = {}) => {
+        if (command === 'check_android_location_setup') return { locationEnabled: true, photoLocationGranted: true };
         calls[command] = (calls[command] ?? 0) + 1;
         document.documentElement.dataset.recoveryCalls = JSON.stringify(calls);
         if (command === 'list_media' || command === 'list_albums' || command === 'list_diary') {

@@ -161,6 +161,7 @@ test('Home companion actions expand, respond, remember locally and never award a
 
 test('Android location ribbon opens device and app settings and keeps the Home usable', async ({ page }) => {
   await page.addInitScript(() => {
+    localStorage.removeItem('gamjassak:camera-location-confirmed:v1');
     Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0 (Linux; Android 17; Pixel 7)' });
     (window as any).setupCommands = [];
     (window as any).__TAURI_INTERNALS__ = {
@@ -205,13 +206,16 @@ test('Android location ribbon disappears after resolved settings and confirmed c
 
 test('location ribbon reports native settings failure and a subsequent successful recheck', async ({ page }) => {
   await page.addInitScript(() => {
+    localStorage.removeItem('gamjassak:camera-location-confirmed:v1');
     Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0 (Linux; Android 17; Pixel 7)' });
     (window as any).locationTry = 0;
+    (window as any).locationReadable = false;
     (window as any).__TAURI_INTERNALS__ = {
       convertFileSrc: () => '/favicon.png',
       invoke: async (command: string) => {
         if (command === 'check_android_location_setup') {
-          if (!(window as any).locationTry++) throw new Error('Native bridge unavailable');
+          (window as any).locationTry++;
+          if (!(window as any).locationReadable) throw new Error('Native bridge unavailable');
           return { locationEnabled: true, photoLocationGranted: true };
         }
         if (command === 'open_android_location_settings') throw new Error('Cannot open native settings');
@@ -227,6 +231,7 @@ test('location ribbon reports native settings failure and a subsequent successfu
   await expect(ribbon.getByRole('alert')).toContainText('설정 앱에서');
   await ribbon.getByRole('button', { name: '감자싹 앱 권한 설정 열기' }).click();
   await expect(ribbon.getByRole('alert')).toContainText('애플리케이션');
+  await page.evaluate(() => { (window as any).locationReadable = true; });
   await ribbon.getByRole('button', { name: '설정 다시 확인' }).click();
   await expect(ribbon).toHaveAttribute('data-check-state', 'ready');
   await expect(ribbon.getByRole('status')).toContainText('접근을 확인했어요');

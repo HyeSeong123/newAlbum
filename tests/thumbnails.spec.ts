@@ -9,6 +9,7 @@ test('list requests thumbnail while detail keeps original', async ({ page }) => 
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: (path: string) => `${image}#${path.includes('cache') ? 'thumbnail' : 'original'}`,
       invoke: async (command: string) => {
+        if (command === 'check_android_location_setup') return { locationEnabled: true, photoLocationGranted: true };
         if (command === 'list_media') return [{ id: 1, file_path: 'C:/original.jpg', file_type: 'image', taken_at: '2026-09-08', size_bytes: 10000000, rating: 0, comment: '', favorite: false, metadata_status: 'ready' }];
         if (command === 'media_thumbnail') { state.thumbnailCalls += 1; await new Promise<void>((resolve) => { state.releaseThumbnail = resolve; }); return 'C:/cache/1.png'; }
         if (command === 'list_albums') return [];

@@ -20,10 +20,10 @@ test.beforeEach(async ({ page }) => {
         entry('d2', 'TEXT', '마지막 날', '다시 오고 싶은 곳.')] };
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: () => '/favicon.svg',
-      invoke: async (command: string) => command === 'list_media' ? structuredClone(media) : command === 'list_albums'
+      invoke: async (command: string) => { if (command === 'check_android_location_setup') return { locationEnabled: true, photoLocationGranted: true }; return command === 'list_media' ? structuredClone(media) : command === 'list_albums'
         ? [structuredClone(album), { ...album, id: 2, title: '사진만 있는 앨범', contents: undefined },
           { ...album, id: 3, title: '일기만 있는 앨범', items: [], contents: [album.contents[2]] }]
-        : command === 'increment_media_view' ? 1 : [],
+        : command === 'increment_media_view' ? 1 : []; },
     } });
   });
   await page.goto('/');

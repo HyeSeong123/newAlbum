@@ -25,6 +25,7 @@ test('memory map analyzes GPS and bulk region edits preserve coordinates', async
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: (path: string) => '/' + path.split('/').pop(),
       invoke: async (command: string, args: { ids?: number[]; regionCode?: string; district?: string; id?: number }) => {
+        if (command === 'check_android_location_setup') return { locationEnabled: true, photoLocationGranted: true };
         if (command === 'list_media') return media.map(item => ({ ...item }));
         if (command === 'list_albums') return [];
         if (command === 'location_overview') return overview();

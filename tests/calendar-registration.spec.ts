@@ -16,6 +16,7 @@ async function fixture(page: Page, initiallyRegistered = false) {
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: () => '/favicon.svg',
       invoke: async (command: string, args: any) => {
+        if (command === 'check_android_location_setup') return { locationEnabled: true, photoLocationGranted: true };
         if (command === 'list_media') return registered;
         if (command === 'list_albums') return albums;
         if ((command === 'plugin:dialog|open' || command === 'choose_android_gallery')) return media.map(item => item.file_path);

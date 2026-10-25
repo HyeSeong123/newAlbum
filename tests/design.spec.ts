@@ -4,7 +4,7 @@ test('mobile album menus remain clickable alongside the fixed help corner',async
   test.skip(!isMobile,'Mobile help-corner geometry.');
   await page.addInitScript(()=>{
     const albums=Array.from({length:6},(_,index)=>({id:index+1,title:`간직한 하루 ${index+1}`,description:'',cover_color:'#D8DDCB',created_at:'2026-10-25',items:[]}));
-    Object.defineProperty(window,'__TAURI_INTERNALS__',{value:{convertFileSrc:()=>'/favicon.png',invoke:async(command:string)=>command==='list_albums'?albums:[]}});
+    Object.defineProperty(window,'__TAURI_INTERNALS__',{value:{convertFileSrc:()=>'/favicon.png',invoke:async(command:string)=>{ if (command === 'check_android_location_setup') return { locationEnabled: true, photoLocationGranted: true }; return command==='list_albums'?albums:[]; }}});
   });
   await page.goto('/');
   await page.locator('.navList').getByRole('button',{name:'내 앨범',exact:true}).click();
@@ -42,6 +42,7 @@ test('redesigned views fit and retain photo workflows', async ({ page }, info) =
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: (path: string) => `/${path.split('/').pop()}`,
       invoke: async (command: string) => {
+        if (command === 'check_android_location_setup') return { locationEnabled: true, photoLocationGranted: true };
         if (command === 'list_media') return media;
         if (command === 'list_albums') return Array.from({ length: 9 }, (_, index) => ({ id: index + 1, title: ['우리의 봄', '함께 걷던 날', '여름의 기억', '가족 여행', '오래된 순간', '다시, 가을', '소중한 하루', '그해 겨울', '우리집 앨범'][index], description: '', cover_color: ['#B9C58E', '#AFC5CF', '#D8B18F'][index % 3], created_at: '2026-09-06', items: media.slice(index, index + 4) }));
         return [];
@@ -51,7 +52,9 @@ test('redesigned views fit and retain photo workflows', async ({ page }, info) =
   await page.goto('/');
   await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
   await expect(page.locator('.galleryGrid .mediaTile')).toHaveCount(18);
-  await page.locator('.galleryGrid img').first().evaluate((img: HTMLImageElement) => img.decode());
+  await expect.poll(() => page.locator('.galleryGrid img').first().evaluate(async (img: HTMLImageElement) => {
+    try { await img.decode(); return img.naturalWidth > 0; } catch { return false; }
+  })).toBe(true);
   const capture = async (name: string) => {
     await page.screenshot({ path: `test-results/design-${name}-${test.info().project.name}.png` });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
@@ -175,6 +178,7 @@ test('album cards handle empty covers and varying photo counts', async ({ page }
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: () => '/favicon.svg',
       invoke: async (command: string) => {
+        if (command === 'check_android_location_setup') return { locationEnabled: true, photoLocationGranted: true };
         if (command === 'list_media') return media;
         if (command === 'list_albums') return Array.from({ length: 5 }, (_, count) => ({ id: count + 1, title: '우리 가족이 함께 남긴 소중한 봄날의 추억', description: '', cover_color: count % 2 ? '#334239' : '#AFC5CF', created_at: '2026-09-01', items: media.slice(0, count) }));
         return [];

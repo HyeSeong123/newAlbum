@@ -14,6 +14,7 @@ async function prepare(page: Page, count = 2) {
     remember();
     Object.defineProperty(window,'Worker',{value:class { constructor(){throw new Error('Candidate review must not run inference');} }});
     Object.defineProperty(window,'__TAURI_INTERNALS__',{value:{convertFileSrc:()=>'/favicon.svg',invoke:async(command:string,args:any={})=>{
+        if (command === 'check_android_location_setup') return { locationEnabled: true, photoLocationGranted: true };
       const calls=JSON.parse(localStorage.getItem('unknown-calls')??'[]');calls.push({command,args});localStorage.setItem('unknown-calls',JSON.stringify(calls));
       if(command==='list_media')return faces.map(face=>({id:face.media_id,file_path:`/photo${face.id}.jpg`,file_type:'image',taken_at:'2026-10-22',size_bytes:1,rating:0,comment:'',favorite:false,metadata_status:'ready'}));
       if(command==='list_face_index'){
