@@ -14,6 +14,7 @@ import { appendFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promise
 import { join, resolve } from 'node:path';
 import { benchmarkInstalledPetRuntime, verifyInstalledCatFace } from './pet-runtime-benchmark.mjs';
 import { androidAppId, isAndroidManagedMediaPath } from './android-app.mjs';
+import { parseAppProcessIds, selectAppWebView } from './android-webview.mjs';
 
 const run = promisify(execFile);
 // A stuck emulator command must produce diagnostics instead of holding the
@@ -38,7 +39,20 @@ async function connect() {
     device = (await android.devices({ omitDriverInstall:true })).find(item => item.serial().startsWith('emulator-'));
     assert.ok(device, 'The Android emulator must be connected through ADB');
   }
-  const webView = await device.webView({ pkg:appId }, { timeout:60_000 });
+  let webView;
+  let discovery;
+  try {
+    await expect.poll(async () => {
+      const processOutput = await adb('shell', 'pidof', appId).catch(error => { if (error.code === 1) return ''; throw error; });
+      const processIds = parseAppProcessIds(processOutput);
+      const views = device.webViews();
+      discovery = { processIds, views:views.map(view => ({ pid:view.pid(), pkg:view.pkg() })) };
+      webView = selectAppWebView(views, processIds);
+      return Boolean(webView);
+    }, { timeout:60_000, intervals:[250, 500, 1000], message:'Find the WebView belonging to the actual app process after recreation' }).toBe(true);
+  } finally {
+    await appendFile(join(output, 'webview-discovery.jsonl'), JSON.stringify(discovery ?? { error:'App process discovery failed' }) + '\n');
+  }
   const firstPage = await webView.page();
   const context = firstPage.context();
   context.setDefaultTimeout(45_000);

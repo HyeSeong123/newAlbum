@@ -24,7 +24,8 @@ class CompanionGenerateArgs { var prompt: String = "" }
 
 /** One shared local model. No photo, diary, account or location data enters this bridge. */
 @TauriPlugin
-class GamjassakCompanionPlugin(private val activity: Activity) : Plugin(activity) {
+class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity) {
+    private val appContext = activity.applicationContext
     companion object {
         // JNI cancellation watermarks survive Activity recreation, so IDs must too.
         private val NEXT_REQUEST = AtomicLong(0)
@@ -41,17 +42,17 @@ class GamjassakCompanionPlugin(private val activity: Activity) : Plugin(activity
     @Volatile private var phase = "missing"
     @Volatile private var downloaded = 0L
     @Volatile private var notice = "처음 한 번 AI를 준비하면 인터넷 없이 대화할 수 있어요."
-    private val root get() = File(activity.filesDir, "companion-ai-v1")
+    private val root get() = File(appContext.filesDir, "companion-ai-v1")
     private val model get() = File(root, "qwen3-1.7b-q4-k-m.gguf")
-    private val prefs get() = activity.getSharedPreferences("companion-ai-v1", Context.MODE_PRIVATE)
+    private val prefs get() = appContext.getSharedPreferences("companion-ai-v1", Context.MODE_PRIVATE)
     private external fun nativeGenerate(path: String, prompt: String, requestId: Long): ByteArray
     private external fun nativeCancel(requestId: Long)
 
     private fun supported(): Boolean {
         val info = ActivityManager.MemoryInfo()
-        (activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(info)
+        (appContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(info)
         // Android reserves some advertised RAM for the system; 8GB phones report about 7.x GiB.
-        val phone = (activity.resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK) < Configuration.SCREENLAYOUT_SIZE_LARGE
+        val phone = (appContext.resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK) < Configuration.SCREENLAYOUT_SIZE_LARGE
         return phone && android.os.Build.SUPPORTED_ABIS.contains("arm64-v8a") && info.totalMem >= 7L * 1024 * 1024 * 1024
     }
     private fun installed() = model.isFile && model.length() == MODEL_BYTES && prefs.getString("sha", "") == MODEL_SHA && prefs.getLong("mtime", -1) == model.lastModified()
@@ -136,7 +137,7 @@ class GamjassakCompanionPlugin(private val activity: Activity) : Plugin(activity
         executor.execute {
             try {
                 val info = ActivityManager.MemoryInfo()
-                (activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(info)
+                (appContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(info)
                 check(!info.lowMemory && info.availMem >= 1800L * 1024 * 1024) { "다른 앱을 잠시 닫고 다시 이야기해 주세요." }
                 if (!nativeLoaded) { System.loadLibrary("gamjassak_companion"); nativeLoaded = true }
                 check(!cancelled.get()) { "대답을 멈췄어요." }
@@ -161,6 +162,7 @@ class GamjassakCompanionPlugin(private val activity: Activity) : Plugin(activity
     override fun onDestroy(activity: AppCompatActivity) {
         cancelled.set(true)
         if (nativeLoaded) nativeCancel(generation.get())
-        executor.shutdown()
+        // Tauri retains plugins across Activity recreation. Keep the worker usable;
+        // cancellation releases the current model, context and temporary download.
     }
 }

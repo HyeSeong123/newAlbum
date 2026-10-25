@@ -1,0 +1,25 @@
+# 0.9.30 CI 실패 복구
+
+기준: final ad8fe5b. 사용자 오류 ‘The process /usr/bin/sh failed with exit code 1’의 실제 실패 단계를 확인했다.
+
+## 확인한 실패
+
+- Android [40170248932](https://github.com/HyeSeong123/newAlbum/actions/runs/40170248932): APK 컴파일·기존 영구 키 서명은 통과. 설치 후 3버튼 → 제스처 내비게이션 전환으로 Activity를 재생성한 뒤 Playwright가 WebView를 다시 찾는 60초 대기에서 실패했다(`scripts/smoke-android.mjs`의 connect).
+- 실패 캡처에는 정상 홈과 새 AI 반응 설정이 표시돼 있고, crashes.txt는 비어 있으며 logcat에는 PID 2656의 재생성된 홈/플러그인 동작이 기록돼 있다. 앱 빌드 실패나 데이터 손실로 단정하지 않는다.
+- Source validation의 브라우저 shard 1/3과 App UX 검사: `tests/app.spec.ts:136`의 `/설정/` 부분 일치가 ‘설정’과 ‘AI 반응 설정’ 두 버튼을 잡아 strict mode 오류. 다른 브라우저 shard와 도움말 검사는 통과했다.
+
+## 수정
+
+1. 앱 설정 검사는 `name: '설정', exact: true`로 실제 대상만 클릭한다. 기존의 빈 목록/비우기 비활성화 검사는 유지한다. 데스크톱·모바일에서 실패를 재현한 뒤 같은 시나리오를 통과했다.
+2. Android 재연결은 `adb pidof`로 확인한 정확한 앱 프로세스의 `WebView.pid()`를 선택한다. Playwright의 패키지 이름 추정(`ps -A | grep PID`, 부분 PID 일치 가능)에 의존하지 않는다. 새 앱으로 강제 재시작하거나 시스템 바/재생성 검사를 건너뛰지 않는다. 현재 PID와 발견한 WebView 메타데이터를 `webview-discovery.jsonl`에 남긴다.
+3. Tauri 플러그인은 Activity 재생성 후 재사용되므로 AI 플러그인의 `onDestroy`에서 executor를 영구 shutdown하던 부분을 제거했다. 진행 중인 추론/다운로드는 취소하고 모델은 기존 RAII로 반환한다. 파일·설정·메모리 접근은 Application Context를 사용한다. 기존 영구 서명과 SQLite/사진/캐릭터 기록은 바꾸지 않는다.
+
+패키지 추정 오류 자체는 이전 실패 자료에 실제 발견 목록이 없어 원인 후보로 구분한다. 수정된 Android CI의 재연결 결과와 추가 진단 기록으로 확인해야 한다.
+
+## 검증
+
+- 앱 설정 시나리오: 1440px·393px 모두 실패 재현 → 수정 후 통과. 버튼 이름·실제 앱 동작은 변경하지 않았다.
+- PID 파싱/타 앱 배제/잘못 추정된 pkg/최신 앱 WebView 선택 단위 검사 4개와 Android 준비 검사 통과.
+- 전체 단위 검사·프런트 빌드·스크립트 문법·버전 일치는 커밋 전 실행 로그를 기준으로 한다.
+- 별도 코드 검토에서 중요한 추가 결함은 없었고, Android 원인 후보와 확인된 사실의 구분을 유지했다.
+- 새 APK의 Android 설치·화면 재생성·다운로드 제공 여부는 후속 Actions 결과로 판단한다. 로컬 환경에는 SDK/에뮬레이터가 없어 Android 재실행 통과를 미리 주장하지 않는다.
