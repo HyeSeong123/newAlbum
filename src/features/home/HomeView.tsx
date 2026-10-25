@@ -4,8 +4,9 @@ import { CharacterVisual } from "../characters/CharacterVisual";
 import { CompanionAiSetup } from "../characters/CompanionAiSetup";
 import { useCompanionReactions } from "../characters/useCompanionReactions";
 import { characterPortraits } from "../characters/characterPortraits";
-import { characterDefinitions, characterName, dialogueLines, nextDialogue, type OwnedCharacter } from "../characters/models";
+import { characterDefinitions, characterName, dialogueLines, nextDialogue, type OwnedCharacter, type CharacterInteractionSource } from "../characters/models";
 import { gomiAffinity } from "../characters/gomiAffinity";
+import { gomiSleepLine } from "../characters/gomiBehavior";
 import { useGomiBehavior } from "../characters/useGomiBehavior";
 import { claimGomiGreeting } from "../characters/gomiGreeting";
 import { COMPANION_ACTIONS, companionActionLabel, companionMoodLabel, emptyCompanionMemory, performCompanionActivity, readCompanionMemory, saveCompanionMemory, type CompanionAction } from "../characters/companionActivities";
@@ -42,7 +43,7 @@ type HomeViewProps = {
   onShowPeople: () => void;
   onShowCharacters: () => void;
   mainCharacter?: OwnedCharacter;
-  onInteract: (id: string) => void;
+  onInteract: (id: string, source: CharacterInteractionSource) => Promise<OwnedCharacter | undefined>;
 };
 
 export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibrary, onShowAlbums, onShowDiary, onShowPeople, onShowCharacters, mainCharacter, onInteract }: HomeViewProps) {
@@ -56,30 +57,38 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   const [activityMemory, setActivityMemory] = useState(() => mainCharacter?.id ? readCompanionMemory(mainCharacter.id) : emptyCompanionMemory());
   const lastLine = useRef(0);
   const timer = useRef<number | undefined>(undefined);
+  const reactionRequest = useRef(0);
+  const storedInteraction = useRef<Promise<OwnedCharacter | undefined>>(Promise.resolve(undefined));
   const definition = characterDefinitions.find(item => item.id === mainCharacter?.id);
   const appearance = definition?.id === "peach" ? "ㄱ 모양을 닮은 기린" : characterPortraits[definition?.id || ""]?.subject || "강아지 고미";
   useEffect(() => {
+    ++reactionRequest.current;
+    storedInteraction.current = Promise.resolve(undefined);
     setActivityMemory(mainCharacter?.id ? readCompanionMemory(mainCharacter.id) : emptyCompanionMemory());
     setActivitiesOpen(false);
     setAiSetupOpen(false);
     setMessageSource("local-rules");
+    return () => { ++reactionRequest.current; };
   }, [mainCharacter?.id]);
   const isGomi = definition?.type === "gomi";
   const gomi = useGomiBehavior(isGomi, mainCharacter?.affection || 0, today, mainCharacter?.id);
+  const moodLabel = isGomi && !gomi.ready ? "" : isGomi && gomi.sleeping ? (gomi.irritated ? "자는 중 · 짜증" : "자는 중") : companionMoodLabel(activityMemory.mood);
   const lines = definition && mainCharacter ? dialogueLines(definition, mainCharacter.growthStage, mainCharacter.affection >= 20 ? "highAffection" : "idle", mainCharacter.affection) : messages;
   const affinity = isGomi ? gomiAffinity(mainCharacter?.affection || 0) : undefined;
   const dialogueEntry = useRef("");
   useEffect(() => {
+    if (isGomi && !gomi.ready) return;
     const entry = `${mainCharacter?.id}:${mainCharacter?.growthStage}:${affinity}`;
     if (dialogueEntry.current === entry) return;
     dialogueEntry.current = entry;
-    lastLine.current=0; setMessageIndex(0); setSpokenLine(undefined);
-  }, [mainCharacter?.id,mainCharacter?.growthStage,affinity]);
+    lastLine.current=0; setMessageIndex(0);
+    setSpokenLine(isGomi && gomi.sleeping ? (gomi.irritated ? gomiSleepLine(3,mainCharacter?.affection || 0) : "…쌔근.") : undefined);
+  }, [mainCharacter?.id,mainCharacter?.growthStage,affinity,gomi.ready]);
   const greetingEntry = useRef("");
   const greetingAffection = useRef(0);
   greetingAffection.current = mainCharacter?.affection || 0;
   useEffect(() => {
-    if (!isGomi || !mainCharacter?.id) return;
+    if (!isGomi || !gomi.ready || gomi.sleeping || !mainCharacter?.id) return;
     const entry = `${mainCharacter.id}:${today}`;
     if (greetingEntry.current === entry) return;
     greetingEntry.current = entry;
@@ -87,45 +96,57 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     try { storage = window.localStorage; } catch { /* Session fallback handles disabled storage. */ }
     const greeting = claimGomiGreeting(today, mainCharacter.id, greetingAffection.current, storage);
     if (greeting) setSpokenLine(greeting);
-  }, [isGomi, mainCharacter?.id, today]);
+  }, [isGomi, gomi.ready, gomi.sleeping, mainCharacter?.id, today]);
   useEffect(() => () => window.clearTimeout(timer.current), []);
   const dateLabel = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long" })
     .format(new Date(`${today}T12:00:00`));
 
+  async function reactWithStoredRelationship(context: Parameters<typeof ai.react>[0], source?: CharacterInteractionSource) {
+    const request = ++reactionRequest.current;
+    ai.cancel();
+    if (source) storedInteraction.current = onInteract(context.owned.id, source);
+    const updated = await storedInteraction.current;
+    if (request !== reactionRequest.current || (source && !updated)) return;
+    ai.react({ ...context, owned:updated?.id === context.owned.id ? { ...context.owned, affection:updated.affection } : context.owned });
+  }
+
   function talk() {
+    if (isGomi && !gomi.ready) return;
     // Draw from every other message, so even rapid clicks never repeat the last line.
     const next = nextDialogue(lines,lastLine.current);
     lastLine.current=next;
     setMessageIndex(next);
-    const restLine = isGomi ? gomi.react() : undefined;
+    const reaction = isGomi ? gomi.react() : undefined;
+    const restLine = reaction?.line;
     const fallback = restLine || lines[next];
     setSpokenLine(fallback);
     setMessageSource("local-rules");
     if (definition && mainCharacter) {
       const memory = readCompanionMemory(mainCharacter.id);
-      ai.react({ definition, appearance, owned: mainCharacter, memory: restLine ? { ...memory, mood: "sleepy", energy: Math.min(1, memory.energy) } : memory, action: "touch", fallback });
+      const source = reaction?.sleeping ? (reaction.disturbed ? "sleep" : undefined) : "home";
+      void reactWithStoredRelationship({ definition, appearance, owned: mainCharacter, memory: reaction?.sleeping ? { ...memory, mood:reaction.disturbed ? "irritated" : "sleepy", energy:Math.min(1,memory.energy) } : memory, action:"touch", fallback }, source);
     }
     setHappy(!isGomi && !restLine);
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setHappy(false), 1000);
-    if (mainCharacter) onInteract(mainCharacter.id);
   }
 
   const activityIcons = { walk: Footprints, treat: Sun, pet: HandHeart, play: Gamepad2, rest: Moon };
 
   function chooseActivity(action: CompanionAction) {
-    if (!definition || !mainCharacter) return;
-    const result = performCompanionActivity(definition, readCompanionMemory(mainCharacter.id), action, mainCharacter.affection, today);
+    if (!definition || !mainCharacter || (isGomi && !gomi.ready)) return;
+    const sleeping = isGomi && gomi.sleeping;
+    const result = performCompanionActivity(definition, readCompanionMemory(mainCharacter.id), action, mainCharacter.affection, today, { sleeping });
     saveCompanionMemory(mainCharacter.id, result.memory);
     setActivityMemory(result.memory);
     setSpokenLine(result.line);
     setMessageSource("local-rules");
-    ai.react({ definition, appearance, owned: mainCharacter, memory: result.memory, action, fallback: result.line });
-    if (isGomi) gomi.activity();
+    void reactWithStoredRelationship({ definition, appearance, owned: mainCharacter, memory: result.memory, action, fallback: result.line }, sleeping && action !== "rest" ? "sleep" : undefined);
+    if (isGomi) gomi.activity(action);
     else setHappy(true);
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setHappy(false), 1000);
-    // The existing once-per-day affection increase belongs only to the mascot's talk button.
+    // Awake activities keep affection; deliberate sleep disturbance is saved separately.
   }
 
   const shortcuts = [
@@ -142,8 +163,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
       <h2>작은 하루가 자라는 곳</h2>
       <p className="homeIntroduction">소중한 순간도, 평범한 하루도 차곡차곡 담아두세요.</p>
       <div className="homeCompanion">
-        <p id="homeMessage" className="homeSpeech" data-source={messageSource} role="status" aria-live="polite" aria-atomic="true">{spokenLine || lines[0]}</p>
-        <div className="homeAiThinking" aria-live="polite">{ai.thinking && <><span>친구가 생각 중…</span><button type="button" onClick={ai.cancel} aria-label="AI 반응 멈추기">멈추기</button></>}</div>
+        <p id="homeMessage" className="homeSpeech" data-source={messageSource} role="status" aria-live="polite" aria-atomic="true">{isGomi && !gomi.ready ? "…" : spokenLine || lines[0]}</p>
         <button className={`homeMascot${happy ? " happy" : ""}`} type="button" aria-label={`${definition ? characterName(definition, mainCharacter) : "감자싹"}에게 말 걸기`} onClick={talk}>
           {definition && mainCharacter ? <CharacterVisual definition={definition} stage={mainCharacter.growthStage} expression={happy ? "happy" : "idle"}
             gomiMotion={isGomi ? gomi.motion : undefined} affection={mainCharacter.affection} reactionKey={isGomi ? gomi.sequence : messageIndex} />
@@ -151,7 +171,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
         </button>
         {definition && mainCharacter && <p className="homeCharacterMeta"><strong>{characterName(definition, mainCharacter)}</strong><span className="homeAffection"><Heart size={14} aria-hidden="true" />친밀도 {mainCharacter.affection}</span></p>}
         {definition && mainCharacter && <div className="homeActivities">
-          <button type="button" className="homeActivitiesToggle" data-help="companion-ai" onClick={() => { ai.cancel(); setAiSetupOpen(true); }}>AI 반응 설정</button>
+          <button type="button" className="homeActivitiesToggle" data-help="companion-ai" onClick={() => { ++reactionRequest.current; ai.cancel(); setAiSetupOpen(true); }}>AI 반응 설정</button>
           <button type="button" className="homeActivitiesToggle" aria-expanded={activitiesOpen} aria-controls="homeActivitiesChoices"
             data-help="companion-actions" onClick={() => setActivitiesOpen(value => !value)}>
             함께하기 <ChevronDown size={17} aria-hidden="true" className={activitiesOpen ? "expanded" : ""} />
@@ -165,8 +185,8 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
               </button>;
             })}
           </div>}
-          <p className="homeActivityMood" aria-label={"친구의 현재 기분 " + companionMoodLabel(activityMemory.mood)}>
-            지금 기분 · {companionMoodLabel(activityMemory.mood)}
+          <p className="homeActivityMood" aria-label={"친구의 현재 기분 " + moodLabel}>
+            {moodLabel && <>지금 기분 · {moodLabel}</>}
           </p>
         </div>}
         <button className="homeCharacterLink" type="button" onClick={onShowCharacters}>새싹 도감 보기</button>

@@ -3,7 +3,7 @@ use std::time::Duration;
 
 // Versions before this migration used user_version = 0 (including existing installs).
 // Future schema changes must increment this and add an ordered migration here.
-pub(crate) const VERSION: i64 = 20;
+pub(crate) const VERSION: i64 = 21;
 
 fn version(conn: &Connection) -> Result<i64, String> {
     conn.query_row("PRAGMA user_version", [], |row| row.get(0))
@@ -92,6 +92,7 @@ pub fn initialize(conn: &mut Connection) -> Result<(), String> {
     if current < 19 {tx.execute_batch(include_str!("../database/unidentified-pet-photos.sql")).map_err(|e|e.to_string())?;}
 
     if current < 20 {tx.execute_batch(include_str!("../database/pet-review.sql")).map_err(|e|e.to_string())?;}
+    if current < 21 {tx.execute_batch(include_str!("../database/character-sleep.sql")).map_err(|e|e.to_string())?;}
 
     tx.pragma_update(None, "user_version", VERSION).map_err(|error| error.to_string())?;
     tx.commit().map_err(|error| error.to_string())

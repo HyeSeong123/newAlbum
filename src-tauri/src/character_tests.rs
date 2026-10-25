@@ -1,5 +1,35 @@
 use super::*;
 
+#[test]
+fn sleep_disturbance_is_bounded_persistent_and_separate_from_daily_greeting() {
+    let mut conn = database();
+    conn.execute("UPDATE owned_character SET affection=20,custom_name='우리 고미' WHERE character_id='gomi'",[]).unwrap();
+    for _ in 0..10 { disturb_sleep(&mut conn,"gomi").unwrap(); }
+    let gomi = snapshot(&conn).unwrap().characters.into_iter().find(|c| c.id=="gomi").unwrap();
+    assert_eq!(gomi.affection,17);
+    assert_eq!(gomi.custom_name.as_deref(),Some("우리 고미"));
+    assert_eq!(gomi.growth_stage,6);
+    crate::database::initialize(&mut conn).unwrap();
+    disturb_sleep(&mut conn,"gomi").unwrap();
+    assert_eq!(snapshot(&conn).unwrap().characters.iter().find(|c| c.id=="gomi").unwrap().affection,17);
+    interact(&mut conn,"gomi").unwrap();
+    assert_eq!(snapshot(&conn).unwrap().characters.iter().find(|c| c.id=="gomi").unwrap().affection,18);
+    conn.execute("UPDATE character_sleep_day SET interaction_day='2000-01-01'",[]).unwrap();
+    disturb_sleep(&mut conn,"gomi").unwrap();
+    assert_eq!(snapshot(&conn).unwrap().characters.iter().find(|c| c.id=="gomi").unwrap().affection,17);
+}
+
+#[test]
+fn sleep_disturbance_never_goes_negative_or_changes_a_background_character() {
+    let mut conn=database();
+    conn.execute("UPDATE owned_character SET affection=1 WHERE character_id='gomi'",[]).unwrap();
+    for _ in 0..5 { disturb_sleep(&mut conn,"gomi").unwrap(); }
+    assert_eq!(snapshot(&conn).unwrap().characters.iter().find(|c| c.id=="gomi").unwrap().affection,0);
+    set_main(&mut conn,"potato").unwrap();
+    assert!(disturb_sleep(&mut conn,"gomi").is_err());
+    assert!(disturb_sleep(&mut conn,"potato").is_err());
+}
+
 fn database() -> Connection {
     let mut conn = Connection::open_in_memory().unwrap();
     crate::database::initialize(&mut conn).unwrap();

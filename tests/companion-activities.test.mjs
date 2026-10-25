@@ -46,6 +46,18 @@ test("Gomi stays guarded at low affection and affectionate at high affection", (
   }
 });
 
+test("sleeping Gomi stays sleepy or irritated instead of accepting awake activities", () => {
+  const gomi = definitions[0];
+  for (const action of ["walk", "treat", "pet", "play"]) {
+    const reply = performCompanionActivity(gomi, emptyCompanionMemory(), action, 20, "2026-10-25", { sleeping:true });
+    assert.equal(reply.memory.mood, "irritated", action);
+    assert.equal(reply.memory.history.at(-1).action, action);
+    assert.notEqual(reply.line, performCompanionActivity(gomi, emptyCompanionMemory(), action, 20, "2026-10-25").line);
+  }
+  const rest = performCompanionActivity(gomi, emptyCompanionMemory(), "rest", 20, "2026-10-25", { sleeping:true });
+  assert.equal(rest.memory.mood, "sleepy");
+});
+
 test("actions vary when repeated and only change their own bounded memory", () => {
   const def = definitions[1];
   let state = emptyCompanionMemory();

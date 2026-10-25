@@ -14,6 +14,7 @@ async function installSnapshot(page:Page,initial:Companion[],event?:{ id:number;
     let events = event ? [event] : [];
     const commands:Array<{ command:string; args:Record<string,unknown> }> = [];
     const clicked = new Set<string>();
+    let sleepDisturbances=0;
     Object.assign(window, { sproutCommands:commands,setSproutStage:(stage:number) => {
       characters = characters.map(c => ({ ...c,growthStage:stage }));
       window.dispatchEvent(new Event('focus'));
@@ -27,6 +28,10 @@ async function installSnapshot(page:Page,initial:Companion[],event?:{ id:number;
       if(command === 'interact_character' && args.source === 'home' && !clicked.has(args.id as string)) {
         clicked.add(args.id as string);
         characters=characters.map(c=>c.id === args.id && c.isMain ? { ...c,affection:c.affection+1 } : c);
+      }
+      if(command === 'interact_character' && args.source === 'sleep' && sleepDisturbances<3) {
+        sleepDisturbances++;
+        characters=characters.map(c=>c.id === args.id && c.isMain ? { ...c,affection:Math.max(0,c.affection-1) } : c);
       }
       return { characters,events };
     } } });
@@ -267,8 +272,8 @@ for (const scenario of [
   await expect(visual).toHaveAttribute('data-motion',`${scenario.pose}-angry`);
   await expect(visual).toHaveAttribute('data-expression','angry');
   await expect(mascot.locator('img')).toHaveAttribute('src',`/characters/gomi/${scenario.pose}-angry.png`);
-  await expect(page.locator('#homeMessage')).toHaveText('그만. 건들지 마.');
-  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 21');
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 19');
+  await expect(page.locator('#homeMessage')).toHaveText('휴...');
   await expect(visual).toHaveAttribute('data-stage','6');
   await page.screenshot({path:`preview-results/gomi-${scenario.pose}-angry-${test.info().project.name}.png`});
   await page.clock.fastForward(2_600);
@@ -276,8 +281,8 @@ for (const scenario of [
   await page.clock.fastForward(10_001);
   await mascot.click();
   await expect(visual).toHaveAttribute('data-motion',`${scenario.pose}-peek`);
-  await expect(page.locator('#homeMessage')).toHaveText('뭐. 자잖아.');
-  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 21');
+  await expect(page.locator('#homeMessage')).toHaveText('……');
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 19');
 });
 
 test('Gomi draws a new pose only on Home entry; visibility, help and data refresh do not reroll', async ({page}) => {

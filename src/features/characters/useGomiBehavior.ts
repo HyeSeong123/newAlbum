@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { GOMI_SLEEP_TOUCH_WINDOW_MS, gomiHomeMotion, gomiInteractionMotion, gomiMotionDuration, gomiSleepLine, gomiSleepReaction, isGomiSleeping, type GomiMotion } from "./gomiBehavior";
+import { GOMI_SLEEP_TOUCH_WINDOW_MS, gomiHomeMotion, gomiInteractionMotion, gomiMotionDuration, gomiSleepLine, gomiSleepReaction, isGomiAngry, isGomiSleeping, type GomiMotion } from "./gomiBehavior";
+import type { CompanionAction } from "./companionActivities";
 
-// Resting never writes character data. Only Home's existing talk handler awards affection.
+// Sleep poses stay local; Home persists only explicit relationship interactions.
 export function useGomiBehavior(enabled: boolean, affection: number, today: string, characterId?: string) {
   const [motion, setMotion] = useState<GomiMotion>("idle");
+  const [settledCharacter, setSettledCharacter] = useState<string | undefined>(undefined);
   const [sequence, setSequence] = useState(0);
   const [visible, setVisible] = useState(() => !document.hidden);
   const rest = useRef<GomiMotion>("idle");
@@ -17,6 +19,7 @@ export function useGomiBehavior(enabled: boolean, affection: number, today: stri
     const initial = enabled ? gomiHomeMotion(entryDate.current) : "idle";
     rest.current = initial === "stretch" ? "idle" : initial;
     setMotion(initial);
+    setSettledCharacter(enabled ? characterId : undefined);
   }, [enabled, characterId]);
   useEffect(() => {
     const visibility = () => setVisible(!document.hidden);
@@ -28,25 +31,32 @@ export function useGomiBehavior(enabled: boolean, affection: number, today: stri
     const timer = window.setTimeout(() => setMotion(rest.current), gomiMotionDuration(motion));
     return () => window.clearTimeout(timer);
   }, [enabled, visible, motion, sequence]);
-  function react(): string | undefined {
+  function react(): { line?:string; sleeping:boolean; disturbed:boolean } {
     if (isGomiSleeping(rest.current)) {
       const now = Date.now();
       const touches = now - sleepTouches.current.lastAt <= GOMI_SLEEP_TOUCH_WINDOW_MS ? sleepTouches.current.count + 1 : 1;
       sleepTouches.current = { count:touches, lastAt:now };
       setMotion(gomiSleepReaction(rest.current, touches));
       setSequence(value => value + 1);
-      return gomiSleepLine(touches, affection);
+      return { line:gomiSleepLine(touches, affection), sleeping:true, disturbed:touches >= 3 };
     }
     setMotion(gomiInteractionMotion(affection, ++interactions.current));
     setSequence(value => value + 1);
+    return { sleeping:false, disturbed:false };
   }
-  function activity() {
-    if (!enabled) return;
-    // Explicit play/treat/walk may wake Gomi; ordinary mascot touches retain the sleep rules.
-    if (isGomiSleeping(rest.current)) rest.current = "idle";
+  function activity(action: CompanionAction) {
+    if (!enabled) return { sleeping:false, disturbed:false };
+    if (isGomiSleeping(rest.current)) {
+      const disturbed = action !== "rest";
+      sleepTouches.current = { count:disturbed ? 3 : 0, lastAt:Date.now() };
+      setMotion(disturbed ? gomiSleepReaction(rest.current,3) : rest.current);
+      setSequence(value => value + 1);
+      return { sleeping:true, disturbed };
+    }
     sleepTouches.current = { count:0, lastAt:0 };
     setMotion(gomiInteractionMotion(affection, ++interactions.current));
     setSequence(value => value + 1);
+    return { sleeping:false, disturbed:false };
   }
-  return { motion, sequence, react, activity };
+  return { motion, sequence, react, activity, ready:!enabled || settledCharacter === characterId, sleeping:enabled && isGomiSleeping(rest.current), irritated:enabled && isGomiAngry(motion) };
 }

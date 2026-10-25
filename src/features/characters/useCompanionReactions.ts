@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { chatModelStatus, generateChatReply, stopChatModel } from "./companionChatService";
 import { createTouchReactionQueue, generateTouchLine, recentTouchLines, rememberTouchLine, type TouchContext } from "./companionTouch";
 
 export function useCompanionReactions(characterId: string | undefined, onLine: (line: string) => void) {
-  const [thinking, setThinking] = useState(false);
   const callback = useRef(onLine); callback.current = onLine;
   const queue = useRef<ReturnType<typeof createTouchReactionQueue> | undefined>(undefined);
   useEffect(() => {
@@ -20,13 +19,13 @@ export function useCompanionReactions(characterId: string | undefined, onLine: (
       if (reply.source !== "on-device" || document.hidden || document.querySelector('[role="dialog"]')) return;
       rememberTouchLine(context.owned.id, reply.line);
       callback.current(reply.line);
-    }, setThinking);
+    }, () => {});
     queue.current = current;
     const visibility = () => { if (document.hidden) current.cancel(); };
     document.addEventListener("visibilitychange", visibility);
     return () => { current.dispose(); queue.current = undefined; document.removeEventListener("visibilitychange", visibility); };
   }, [characterId]);
-  return { thinking,
+  return {
     react: (context: Omit<TouchContext, "previous" | "hour">) => queue.current?.enqueue({ ...context, previous: recentTouchLines(context.owned.id), hour: new Date().getHours() }),
     cancel: () => queue.current?.cancel(),
   };

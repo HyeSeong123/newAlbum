@@ -6,7 +6,7 @@ type Rule = readonly [RegExp, string, string];
 
 const explicitContent: Record<string, { title: string; instruction: string }> = {
   'companion-ai': { title: '친구의 AI 반응', instruction: 'AI를 한 번 준비하면 캐릭터를 터치할 때 기분과 성격, 친밀도와 함께한 행동에 맞춰 새로운 말을 해요. 준비 후에는 인터넷 없이 반응하며, 글을 입력할 필요가 없어요.' },
-  'companion-actions': { title: '친구와 함께하기', instruction: '홈의 대표 친구와 산책을 상상하거나 놀이와 휴식을 즐겨요. 여기서 선택한 행동은 실제 GPS 산책이나 음식 섭취를 뜻하지 않으며, 친밀도는 캐릭터에게 직접 말을 걸 때만 하루 한 번 올라요.' },
+  'companion-actions': { title: '친구와 함께하기', instruction: '친밀도는 캐릭터에게 직접 말을 걸 때만 하루 한 번 올라요. 깨어 있을 때만 오르며, 잠든 고미를 깨우는 행동은 친밀도가 1씩, 하루 최대 3까지 줄어요. 함께 쉬기는 잠을 지켜 줘요. 화면 속 행동은 실제 GPS 산책이나 음식 섭취를 뜻하지 않아요.' },
   'companion-walk': { title: '함께 산책', instruction: '친구와 산책하는 상황을 상상하며 대화를 나눠요. 실제 이동을 추적하거나 사진 위치를 읽지는 않아요.' },
   'companion-treat': { title: '작은 선물', instruction: '고미에게는 간식을, 식물 친구들에게는 햇살을 선물해요. 실제 물건이나 보상을 소비하지 않아요.' },
   'companion-pet': { title: '쓰다듬기', instruction: '친구의 성격에 따라 다른 반응을 보여요. 친밀도 상승 횟수와 성장 상태는 바꾸지 않아요.' },
@@ -201,7 +201,7 @@ function meaning(element: HTMLElement, root: HTMLElement, context: HelpContext):
   if (/인물.*열기|인물 사진 보기/.test(name)) return { id: 'person-card', title: '인물 사진 보기', instruction: '이 이름에 연결된 사진을 열어요. 상세 화면에서 이름과 사진 연결을 관리할 수 있어요.' };
   if (/반려동물.*열기/.test(name)) return { id: 'pet-card', title: '반려동물 사진 보기', instruction: '이 반려동물에 연결한 사진을 열어요. 이름과 사진 연결을 관리할 수 있어요.' };
   if (/앨범 열기$/.test(name)) return { id: 'album-card', title: '앨범 열기', instruction: '이 앨범을 책처럼 펼쳐요. 이전·다음으로 넘기며 담아 둔 기록을 살펴볼 수 있어요.' };
-  if (/에게 말 걸기|와 이야기/.test(name)) return { id: 'character-talk', title: '친구에게 말 걸기', instruction: '홈의 대표 친구에게 말을 걸어요. 친밀도는 친구마다 하루 한 번 오르며 도움말에서는 오르지 않아요.' };
+  if (/에게 말 걸기|와 이야기/.test(name)) return { id: 'character-talk', title: '친구에게 말 걸기', instruction: '친밀도는 친구마다 하루 한 번, 깨어 있을 때 말을 걸면 올라요. 잠든 고미를 계속 깨우면 친밀도가 1씩, 하루 최대 3까지 줄어요. 도움말에서는 친밀도가 변하지 않아요.' };
   return undefined;
 }
 

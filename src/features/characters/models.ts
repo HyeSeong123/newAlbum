@@ -2,6 +2,7 @@ import definitions from "./data/characterDefinitions.json";
 import { gomiAffinity, gomiDescriptions, gomiDialogueLines } from "./gomiAffinity";
 
 export type DialogueContext = "greeting" | "photoAdded" | "regionMemory" | "highAffection" | "growth" | "selectedAsMain" | "idle" | "sad";
+export type CharacterInteractionSource = "home" | "sleep";
 export type CharacterPersonality = {
   archetype?: string;
   keywords: string[];

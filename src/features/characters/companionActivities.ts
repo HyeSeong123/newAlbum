@@ -4,7 +4,7 @@ import { gomiAffinity } from "./gomiAffinity";
 // Home-only, imaginary interactions. No GPS, media contents, account data or native AI work is accessed.
 export const COMPANION_ACTIONS = ["walk", "treat", "pet", "play", "rest"] as const;
 export type CompanionAction = typeof COMPANION_ACTIONS[number];
-export type CompanionMood = "calm" | "curious" | "delighted" | "playful" | "sleepy";
+export type CompanionMood = "calm" | "curious" | "delighted" | "playful" | "sleepy" | "irritated";
 export type CompanionMemory = {
   version: 1;
   mood: CompanionMood;
@@ -14,7 +14,7 @@ export type CompanionMemory = {
 export type CompanionReply = { line: string; memory: CompanionMemory };
 const memoryCache = new Map<string, CompanionMemory>();
 const moodLabels: Record<CompanionMood, string> = {
-  calm: "차분함", curious: "호기심", delighted: "기쁨", playful: "신남", sleepy: "나른함",
+  calm: "차분함", curious: "호기심", delighted: "기쁨", playful: "신남", sleepy: "나른함", irritated: "짜증",
 };
 export function companionMoodLabel(mood: CompanionMood) { return moodLabels[mood]; }
 export function emptyCompanionMemory(): CompanionMemory {
@@ -102,7 +102,7 @@ const afterLines: Record<CompanionAction, readonly string[]> = {
   rest: ["오늘은 서두르지 말자.", "조용한 시간도 소중해.", "잠깐의 휴식도 남겨 두자."],
 };
 export function performCompanionActivity(definition: CharacterDefinition, previous: CompanionMemory,
-  action: CompanionAction, affection: number, day: string): CompanionReply {
+  action: CompanionAction, affection: number, day: string, state: { sleeping?:boolean } = {}): CompanionReply {
   const before = previous.history.filter(entry => entry.action === action).length;
   const deltas: Record<CompanionAction, number> = { walk: -1, treat: 1, pet: 0, play: -1, rest: 2 };
   const moods: Record<CompanionAction, CompanionMood> = {
@@ -114,6 +114,12 @@ export function performCompanionActivity(definition: CharacterDefinition, previo
     history: [...previous.history, { action, day }].slice(-12),
   };
   const tier = gomiAffinity(affection);
+  if (definition.type === "gomi" && state.sleeping) {
+    memory.mood = action === "rest" ? "sleepy" : "irritated";
+    const restLines = ["……쌔근.","조용히… 잘게.","쉬게 둬서 고마워.","네 옆이라… 편하네.","조금 더 같이 쉬자."];
+    const annoyedLines = ["휴… 자는데 건들지 마.","자잖아. 나중에 해.","지금은 졸려. 조금만 기다려.","지금은 더 자고 싶어… 옆에만 있어 줘.","너라도 지금 깨우면 서운해… 조금만 더 잘게."];
+    return { line:(action === "rest" ? restLines : annoyedLines)[tier], memory };
+  }
   const basis = definition.type === "gomi" ? gomiByAffinity[action][tier] :
     (personaLines[definition.type] || personaLines.potato)[COMPANION_ACTIONS.indexOf(action)];
   // Repeated actions vary their closing, but never silently change affection or growth.

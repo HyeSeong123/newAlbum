@@ -202,6 +202,17 @@ pub fn dismiss(conn: &mut Connection, event_id: i64) -> Result<Snapshot, String>
     let result=snapshot(&tx)?; tx.commit().map_err(|e| e.to_string())?; Ok(result)
 }
 
+pub fn disturb_sleep(conn: &mut Connection, id: &str) -> Result<Snapshot, String> {
+    let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate).map_err(|e| e.to_string())?;
+    require_owned(&tx,id)?;
+    let main: bool = tx.query_row("SELECT is_main FROM owned_character WHERE character_id=?1", [id], |r| r.get(0)).map_err(|e| e.to_string())?;
+    if id != "gomi" || !main { return Err("홈에서 자고 있는 고미의 반응만 저장할 수 있어요.".into()); }
+    tx.execute_batch(include_str!("../database/character-sleep-penalty.sql")).map_err(|e| e.to_string())?;
+    let result = snapshot(&tx)?;
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
 #[cfg(test)]
 #[path="character_tests.rs"]
 mod tests;

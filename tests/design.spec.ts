@@ -12,6 +12,10 @@ test('mobile album menus remain clickable alongside the fixed help corner',async
   const help=page.getByRole('button',{name:'현재 화면 도움말',exact:true});
   await expect(trigger).toBeAttached();await expect(help).toBeVisible();
   await page.evaluate(()=>document.fonts.ready);
+  const cover=page.locator('.savedAlbumCard .frontAlbum').first();
+  const photo=await cover.locator('.frontAlbumWindow').boundingBox();
+  const title=await cover.locator('.frontAlbumTitle').boundingBox();
+  expect(title!.y-(photo!.y+photo!.height)).toBeGreaterThanOrEqual(8);
   await trigger.evaluate((button,corner)=>{
     const menu=button.getBoundingClientRect();const help=corner!.getBoundingClientRect();
     window.scrollBy(0,menu.y+menu.height/2-help.y-help.height/2);

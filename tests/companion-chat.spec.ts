@@ -1,17 +1,22 @@
 import {test,expect} from '@playwright/test';
 
-async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:boolean}={}) {
+async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:boolean;affection?:number;statusDelay?:number;interactionDelay?:number}={}) {
   await page.addInitScript((settings:any)=>{
     Math.random=()=>settings.gomi?.55:.1;
-    let downloading=false, interacted=false, calls=0;
-    const owned={id:settings.gomi?'gomi':'potato',customName:null,growthStage:6,affection:0,isMain:true};
+    let downloading=false, interacted=false, calls=0, disturbances=0;
+    const owned={id:settings.gomi?'gomi':'potato',customName:null,growthStage:6,affection:settings.affection||0,isMain:true};
     const state=(window as any).touchProbe={prompts:[] as string[],stops:0};
     (window as any).__TAURI_INTERNALS__={convertFileSrc:()=>'/favicon.png',invoke:async(command:string,args:any={})=>{
       if(command==='sync_characters'||command==='interact_character'){
-        if(command==='interact_character'&&!interacted){owned.affection++;interacted=true;}
+        if(command==='interact_character'&&settings.interactionDelay)await new Promise(resolve=>setTimeout(resolve,settings.interactionDelay));
+        if(command==='interact_character'&&args.source==='home'&&!interacted){owned.affection++;interacted=true;}
+        if(command==='interact_character'&&args.source==='sleep'&&disturbances<3){owned.affection=Math.max(0,owned.affection-1);disturbances++;}
         return {characters:[{...owned}],events:[]};
       }
-      if(command==='chat_model_status')return {phase:settings.ready===false?(downloading?'downloading':'missing'):'ready',installed:settings.ready!==false,supported:true,total:100,downloaded:downloading?42:0,message:'AI를 한 번 준비해 주세요.'};
+      if(command==='chat_model_status'){
+        if(settings.statusDelay)await new Promise(resolve=>setTimeout(resolve,settings.statusDelay));
+        return {phase:settings.ready===false?(downloading?'downloading':'missing'):'ready',installed:settings.ready!==false,supported:true,total:100,downloaded:downloading?42:0,message:'AI를 한 번 준비해 주세요.'};
+      }
       if(command==='download_chat_model')downloading=true;
       if(command==='stop_chat_model'){downloading=false;state.stops++;}
       if(command==='generate_chat_reply'){
@@ -24,7 +29,70 @@ async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:b
   },options);
 }
 
-for (const gomi of [false, true]) test(`${gomi ? 'Gomi' : 'portrait'} touch and activity keep artwork visible and the AI status in a stable row`,async({page})=>{
+test('opening AI settings cancels a reaction still waiting for relationship storage',async({page})=>{
+  await installAi(page,{interactionDelay:800});await page.goto('/');
+  await page.locator('.homeMascot').click();
+  await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
+  await expect(page.getByRole('dialog',{name:'AI 반응 설정',exact:true})).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.waitForTimeout(1800);
+  expect(await page.evaluate(()=>(window as any).touchProbe.prompts)).toHaveLength(0);
+});
+
+for(const ready of [false,true])test(`Home never flashes a thinking label when AI is ${ready?'generating':'unavailable'}`,async({page})=>{
+  await installAi(page,{ready,statusDelay:200,delay:1000});await page.goto('/');
+  await page.locator('.homeMascot').evaluate(element=>{
+    const home=element.closest('.homeCompanion')!;
+    (window as any).thinkingLabelSeen=false;
+    const observer=new MutationObserver(()=>{if(home.textContent?.includes('친구가 생각 중'))(window as any).thinkingLabelSeen=true;});
+    observer.observe(home,{childList:true,subtree:true,characterData:true});
+  });
+  await page.locator('.homeMascot').click();
+  if(ready)await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
+  else await page.waitForTimeout(1000);
+  expect(await page.evaluate(()=>(window as any).thinkingLabelSeen)).toBe(false);
+});
+
+for(const claimed of [false,true])test(`sleeping Home entry stays asleep with ${claimed?'claimed':'unclaimed'} daily greeting`,async({page})=>{
+  await installAi(page,{gomi:true,affection:60});
+  if(claimed)await page.addInitScript(()=>{
+    const now=new Date();const day=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+    localStorage.setItem('gamjassak:gomi-greeting:gomi',day);
+  });
+  await page.goto('/');
+  for(let entry=0;entry<2;entry++){
+    await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-motion','sleep-curled');
+    await expect(page.locator('.homeActivityMood')).toContainText('자는 중');
+    await expect(page.locator('#homeMessage')).toHaveText('…쌔근.');
+    if(!claimed)expect(await page.evaluate(()=>localStorage.getItem('gamjassak:gomi-greeting:gomi'))).toBeNull();
+    if(entry===0){
+      await page.locator('.navList').getByRole('button',{name:'사진 기록',exact:true}).click();
+      await page.locator('.navList').getByRole('button',{name:'홈',exact:true}).click();
+    }
+  }
+});
+
+test('sleeping Gomi keeps her sleep state and loses bounded affection when disturbed',async({page})=>{
+  await installAi(page,{gomi:true,affection:20});
+  await page.addInitScript(()=>localStorage.setItem('gamjassak:companion:v1:gomi',JSON.stringify({version:1,mood:'curious',energy:3,history:[]})));
+  await page.goto('/');
+  await expect(page.locator('.homeActivityMood')).toContainText('자는 중');
+  await expect(page.locator('.homeActivityMood')).not.toContainText('호기심');
+  await page.getByRole('button',{name:'함께하기',exact:true}).click();
+  for(const [index,name] of ['함께 산책','쓰다듬기','함께 놀기','간식 주기'].entries()){
+    await page.getByRole('button',{name,exact:true}).click();
+    await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-motion',/^sleep-/);
+    await expect(page.locator('.homeActivityMood')).toContainText('짜증');
+    await expect(page.locator('.homeCharacterMeta')).toContainText(`친밀도 ${20-Math.min(index+1,3)}`);
+  }
+  await page.getByRole('button',{name:'함께 쉬기',exact:true}).click();
+  await expect(page.locator('.homeActivityMood')).toContainText('자는 중');
+  await expect(page.locator('.homeActivityMood')).not.toContainText('짜증');
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 17');
+});
+
+for (const gomi of [false, true]) test(`${gomi ? 'Gomi' : 'portrait'} touch and activity keep artwork visible while AI responds quietly`,async({page})=>{
   await page.emulateMedia({reducedMotion:'no-preference'});
   await installAi(page,{gomi,delay:1000});await page.goto('/');
   const mascot=page.locator('.homeMascot');
@@ -47,7 +115,6 @@ for (const gomi of [false, true]) test(`${gomi ? 'Gomi' : 'portrait'} touch and 
       requestAnimationFrame(sample);
     });
     await button.click();
-    await expect(page.getByRole('button',{name:'AI 반응 멈추기'})).toBeVisible();
     await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
     const observation=await page.evaluate(()=>{
       const p=(window as any).continuity;p.running=false;
@@ -111,7 +178,6 @@ test('touch and shared activities generate new AI lines using mood without user 
 test('leaving Home during generation cancels it and never shows its old answer on return',async({page})=>{
   await installAi(page,{delay:1400});await page.goto('/');
   await page.getByRole('button',{name:'감자싹에게 말 걸기'}).click();
-  await expect(page.getByRole('button',{name:'AI 반응 멈추기'})).toBeVisible();
   await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
   await page.locator('.navList').getByRole('button',{name:'사진 기록',exact:true}).click();
   await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.stops)).toBeGreaterThan(0);

@@ -1,4 +1,30 @@
 use super::*;
+
+#[test]
+fn v20_sleep_ledger_upgrade_preserves_existing_character_records() {
+    let mut conn=Connection::open_in_memory().unwrap();
+    initialize(&mut conn).unwrap();
+    conn.execute("UPDATE owned_character SET affection=42,custom_name='그대로',last_click_day='2026-01-01' WHERE character_id='gomi'",[]).unwrap();
+    conn.execute_batch("DROP TABLE character_sleep_day; PRAGMA user_version=20;").unwrap();
+    initialize(&mut conn).unwrap();
+    assert_eq!(version(&conn).unwrap(),VERSION);
+    assert!(table_exists(&conn,"character_sleep_day").unwrap());
+    assert_eq!(conn.query_row("SELECT affection,custom_name,last_click_day FROM owned_character WHERE character_id='gomi'",[],|r| Ok((r.get::<_,i64>(0)?,r.get::<_,String>(1)?,r.get::<_,String>(2)?))).unwrap(),(42,"그대로".into(),"2026-01-01".into()));
+}
+
+#[test]
+fn failed_sleep_ledger_upgrade_rolls_back_version_and_keeps_affection() {
+    let mut conn=Connection::open_in_memory().unwrap();
+    initialize(&mut conn).unwrap();
+    conn.execute("UPDATE owned_character SET affection=37 WHERE character_id='gomi'",[]).unwrap();
+    conn.execute_batch("DROP TABLE character_sleep_day; CREATE INDEX character_sleep_day ON owned_character(affection); PRAGMA user_version=20;").unwrap();
+    assert!(initialize(&mut conn).is_err());
+    assert_eq!(version(&conn).unwrap(),20);
+    assert_eq!(conn.query_row("SELECT affection FROM owned_character WHERE character_id='gomi'",[],|r|r.get::<_,i64>(0)).unwrap(),37);
+    conn.execute_batch("DROP INDEX character_sleep_day;").unwrap();
+    initialize(&mut conn).unwrap();
+    assert_eq!(version(&conn).unwrap(),VERSION);
+}
 use rusqlite::types::Value;
 use std::{fs, sync::{Arc, Barrier}, time::{SystemTime, UNIX_EPOCH}};
 

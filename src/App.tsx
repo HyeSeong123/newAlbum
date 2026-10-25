@@ -272,7 +272,7 @@ export function App() {
         <section className="contentGrid">
           <div className="mainPanel">
             {activeView === "Home" && <HomeView today={today} itemCount={items.length} albumCount={savedAlbums.length} diaryCount={diary.entries.length}
-              mainCharacter={mainCharacter} onInteract={id => { void characters.interact(id); }} onShowCharacters={() => navigate("Characters")}
+              mainCharacter={mainCharacter} onInteract={characters.interact} onShowCharacters={() => navigate("Characters")}
               onShowLibrary={() => navigate("Library")} onShowAlbums={() => navigate("Albums")} onShowDiary={() => navigate("Diary")} onShowPeople={() => navigate("People")} />}
             {activeView === "Characters" && <CharacterBook characters={characters.snapshot.characters} onRename={characters.rename} onSetMain={characters.setMain} />}
             {characters.error && (activeView === "Home" || activeView === "Characters") && <p role="alert">{characters.error}</p>}
