@@ -1,5 +1,5 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useId } from "react";
+import { AnimatePresence, motion, useAnimationControls, useReducedMotion } from "motion/react";
+import { useEffect, useId } from "react";
 import { characterAsset, type CharacterDefinition } from "./models";
 import { GomiVisual } from "./GomiVisual";
 import { characterPortraits } from "./characterPortraits";
@@ -25,6 +25,7 @@ export function CharacterVisual(props: CharacterVisualProps) {
 }
 function BotanicalVisual({ definition, stage, expression = "idle", className = "", reactionKey = 0 }: CharacterVisualProps) {
   const reduced = useReducedMotion();
+  const controls = useAnimationControls();
   const currentStage = definition.fixedGrowthStage || Math.max(1, Math.min(definition.maxStage, stage));
   const signature = definition.personality?.signatureAnimation || "soft-bounce";
   const [hop, tilt] = reactions[signature] || [4, 2];
@@ -35,15 +36,20 @@ function BotanicalVisual({ definition, stage, expression = "idle", className = "
   const crop = portrait?.viewBox.split(" ").map(Number);
   const idleTilt = signature === "brother-wink" ? 1.5 : signature === "bashful-peek" ? -.8 : .6;
   const idleDuration = signature === "brother-wink" ? 5.4 : signature === "bashful-peek" ? 4.8 : 4.6;
+  useEffect(() => {
+    // Replay the motion, keeping the decoded portrait and SVG clip in place.
+    void controls.start(reduced ? { y:0,rotate:0,scale:1 } : excited
+      ? { y:[0,-hop,2,-hop*.35,0],rotate:[0,-tilt,tilt,-tilt*.3,0],scale:[1,1.025,.97,1.01,1] }
+      : expression === "sad" ? { y:[0,2,0],rotate:[0,-tilt*.4,0],scale:[1,.995,1] }
+      : { y:[0,-2,0],rotate:[0,idleTilt,0],scale:[1,1.012,1] },
+    reduced ? { duration:0 } : excited ? { duration:.9,ease:"easeInOut" } : { duration:idleDuration,repeat:Infinity,ease:"easeInOut" });
+    return () => controls.stop();
+  }, [controls, reduced, excited, expression, hop, tilt, idleTilt, idleDuration, currentStage, reactionKey]);
   return <span className={`characterVisual characterVisual--${definition.type} characterMotion--${signature} ${className}`.trim()}
     data-character={definition.type} data-stage={currentStage} data-expression={expression} data-reduced-motion={Boolean(reduced)}>
-    <motion.span key={`${currentStage}:${excited}:${excited ? reactionKey : 0}`} className="characterBody"
+    <motion.span className="characterBody"
       initial={false} style={{ transformOrigin: "50% 84%" }}
-      animate={reduced ? { y:0,rotate:0,scale:1 } : excited
-        ? { y:[0,-hop,2,-hop*.35,0],rotate:[0,-tilt,tilt,-tilt*.3,0],scale:[1,1.025,.97,1.01,1] }
-        : expression === "sad" ? { y:[0,2,0],rotate:[0,-tilt*.4,0],scale:[1,.995,1] }
-        : { y:[0,-2,0],rotate:[0,idleTilt,0],scale:[1,1.012,1] }}
-      transition={reduced ? { duration:0 } : excited ? { duration:.9,ease:"easeInOut" } : { duration:idleDuration,repeat:Infinity,ease:"easeInOut" }}>
+      animate={controls}>
       {portrait && crop ? <svg className="characterIllustration characterPortrait" viewBox={portrait.viewBox} data-portrait={portrait.subject}
         data-stage={currentStage} data-expression={expression} aria-hidden="true" width={220} height={220} overflow="hidden">
         <defs><clipPath id={clipId}>{portrait.clip ? <polygon points={portrait.clip} /> : <rect x={crop[0]} y={crop[1]} width={crop[2]} height={crop[3]} />}</clipPath></defs>

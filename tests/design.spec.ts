@@ -1,4 +1,28 @@
 import { expect, test } from '@playwright/test';
+
+test('mobile album menus remain clickable alongside the fixed help corner',async({page,isMobile})=>{
+  test.skip(!isMobile,'Mobile help-corner geometry.');
+  await page.addInitScript(()=>{
+    const albums=Array.from({length:6},(_,index)=>({id:index+1,title:`간직한 하루 ${index+1}`,description:'',cover_color:'#D8DDCB',created_at:'2026-10-25',items:[]}));
+    Object.defineProperty(window,'__TAURI_INTERNALS__',{value:{convertFileSrc:()=>'/favicon.png',invoke:async(command:string)=>command==='list_albums'?albums:[]}});
+  });
+  await page.goto('/');
+  await page.locator('.navList').getByRole('button',{name:'내 앨범',exact:true}).click();
+  const trigger=page.locator('.savedAlbumFooter .actionMenuTrigger').nth(3);
+  const help=page.getByRole('button',{name:'현재 화면 도움말',exact:true});
+  await expect(trigger).toBeAttached();await expect(help).toBeVisible();
+  await page.evaluate(()=>document.fonts.ready);
+  await trigger.evaluate((button,corner)=>{
+    const menu=button.getBoundingClientRect();const help=corner!.getBoundingClientRect();
+    window.scrollBy(0,menu.y+menu.height/2-help.y-help.height/2);
+  },await help.elementHandle());
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  expect(await trigger.evaluate(button=>{
+    const box=button.getBoundingClientRect();
+    return button.contains(document.elementFromPoint(box.x+box.width/2,box.y+box.height/2));
+  })).toBe(true);
+  await trigger.click();await expect(page.locator('.actionMenuPanel')).toBeVisible();
+});
 import { ALBUM_TURN_TIMING } from '../src/features/albums/albumAnimation';
 
 test('redesigned views fit and retain photo workflows', async ({ page }, info) => {

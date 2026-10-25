@@ -17,12 +17,66 @@ async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:b
       if(command==='generate_chat_reply'){
         state.prompts.push(args.prompt);const call=++calls;
         if(settings.delay)await new Promise(resolve=>setTimeout(resolve,settings.delay));
-        return settings.gomi?'…조용히 해. 나 아직 졸려.':call===1?'오늘은 네 손길이 반가워! 같이 놀아 볼까?':'오늘은 네 옆에서 느긋하게 쉬고 싶어.';
+        return settings.gomi?(call===1?'…조용히 해. 나 아직 졸려.':'…귀찮지만 네 옆에 있을게.'):call===1?'오늘은 네 손길이 반가워! 같이 놀아 볼까?':'오늘은 네 옆에서 느긋하게 쉬고 싶어.';
       }
       return [];
     }};
   },options);
 }
+
+for (const gomi of [false, true]) test(`${gomi ? 'Gomi' : 'portrait'} touch and activity keep artwork visible and the AI status in a stable row`,async({page})=>{
+  await page.emulateMedia({reducedMotion:'no-preference'});
+  await installAi(page,{gomi,delay:1000});await page.goto('/');
+  const mascot=page.locator('.homeMascot');
+  await expect(mascot.locator('.characterBody')).toHaveCSS('opacity','1');
+  await page.getByRole('button',{name:'함께하기',exact:true}).click();
+  for (const button of [mascot,page.getByRole('button',{name:gomi?'함께 산책':'함께 쉬기',exact:true})]) {
+    await mascot.evaluate(element=>{
+      const body=element.querySelector('.characterBody')!;
+      const illustration=element.querySelector('.characterIllustration')!;
+      const gap=()=>element.getBoundingClientRect().top-document.querySelector('#homeMessage')!.getBoundingClientRect().bottom;
+      const initialGap=gap();
+      const probe=(window as any).continuity={running:true,artworkPreserved:true,opaque:true,stableGap:true};
+      function sample(){
+        probe.artworkPreserved&&=body.isConnected&&illustration.isConnected;
+        const current=element.querySelector('.characterBody');
+        probe.opaque&&=Boolean(current)&&Number(getComputedStyle(current!).opacity)>.99;
+        probe.stableGap&&=Math.abs(gap()-initialGap)<1;
+        if(probe.running)requestAnimationFrame(sample);
+      }
+      requestAnimationFrame(sample);
+    });
+    await button.click();
+    await expect(page.getByRole('button',{name:'AI 반응 멈추기'})).toBeVisible();
+    await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
+    const observation=await page.evaluate(()=>{
+      const p=(window as any).continuity;p.running=false;
+      return {artworkPreserved:p.artworkPreserved,opaque:p.opaque,stableGap:p.stableGap};
+    });
+    expect(observation).toEqual({artworkPreserved:true,opaque:true,stableGap:true});
+  }
+});
+
+test('a slow Gomi pose keeps the decoded resting picture until its replacement is ready',async({page})=>{
+  await installAi(page,{gomi:true});
+  let release!:()=>void;
+  const ready=new Promise<void>(resolve=>{release=resolve;});
+  let requested=false;
+  await page.route('**/characters/gomi/sleep-curled-peek.png',async route=>{
+    requested=true;await ready;await route.continue();
+  });
+  await page.goto('/');
+  const image=page.locator('.homeMascot img');
+  await expect(image).toHaveAttribute('src','/characters/gomi/sleep-curled.png');
+  await image.evaluate((element:HTMLImageElement)=>element.decode());
+  await page.locator('.homeMascot').click();
+  try {
+    await expect.poll(()=>requested).toBe(true);
+    expect(await image.getAttribute('src')).toBe('/characters/gomi/sleep-curled.png');
+    expect(await image.evaluate((element:HTMLImageElement)=>element.complete&&element.naturalWidth>0)).toBe(true);
+  } finally {release();}
+  await expect(image).toHaveAttribute('src','/characters/gomi/sleep-curled-peek.png');
+});
 
 test('AI setup explains touch reactions without any typing UI and Back restores focus',async({page})=>{
   await page.goto('/');

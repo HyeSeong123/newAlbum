@@ -16,7 +16,7 @@
   place-items: center;
   width: min(100%, 350px);
   min-height: 88px;
-  margin: 0 0 18px;
+  margin: 0;
   padding: 18px 24px;
   border: 1px solid #dcdccd;
   border-radius: 18px;
@@ -85,5 +85,5 @@
 @media (prefers-reduced-motion: reduce) {
   .homeActivitiesToggle svg { transition: none; }
 }
-.homeAiThinking { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; margin: 6px 0; }
+.homeAiThinking { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; color: var(--muted); font-size: 12px; margin: 0 0 4px; }
 .homeAiThinking button { min-height: 44px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--muted); }

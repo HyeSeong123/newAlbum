@@ -143,11 +143,11 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
       <p className="homeIntroduction">소중한 순간도, 평범한 하루도 차곡차곡 담아두세요.</p>
       <div className="homeCompanion">
         <p id="homeMessage" className="homeSpeech" data-source={messageSource} role="status" aria-live="polite" aria-atomic="true">{spokenLine || lines[0]}</p>
-        {ai.thinking && <div className="homeAiThinking" aria-live="polite"><span>친구가 생각 중…</span><button type="button" onClick={ai.cancel} aria-label="AI 반응 멈추기">멈추기</button></div>}
+        <div className="homeAiThinking" aria-live="polite">{ai.thinking && <><span>친구가 생각 중…</span><button type="button" onClick={ai.cancel} aria-label="AI 반응 멈추기">멈추기</button></>}</div>
         <button className={`homeMascot${happy ? " happy" : ""}`} type="button" aria-label={`${definition ? characterName(definition, mainCharacter) : "감자싹"}에게 말 걸기`} onClick={talk}>
           {definition && mainCharacter ? <CharacterVisual definition={definition} stage={mainCharacter.growthStage} expression={happy ? "happy" : "idle"}
             gomiMotion={isGomi ? gomi.motion : undefined} affection={mainCharacter.affection} reactionKey={isGomi ? gomi.sequence : messageIndex} />
-            : <img key={messageIndex} src="/brand/gamjassak-symbol.png" alt="" width={1254} height={1254} draggable={false} />}
+            : <img src="/brand/gamjassak-symbol.png" alt="" width={1254} height={1254} draggable={false} />}
         </button>
         {definition && mainCharacter && <p className="homeCharacterMeta"><strong>{characterName(definition, mainCharacter)}</strong><span className="homeAffection"><Heart size={14} aria-hidden="true" />친밀도 {mainCharacter.affection}</span></p>}
         {definition && mainCharacter && <div className="homeActivities">

@@ -139,9 +139,23 @@
   .diaryMonthNav { gap: 7px; }
   .diaryMonthNav .diaryAllMonths { position: static; }
   .diaryMonthNav label { min-width: 126px; font-size: 15px; }
-  .diaryCards { grid-template-columns: minmax(0, 1fr); padding-top: 28px; }
-  .diaryCard { min-height: 480px; padding-inline: 25px; }
-  .diaryOpen { min-height: 418px; }
+  .diaryCards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 12px; padding-top: 28px; }
+  .diaryCard { min-height: 0; padding: 22px 12px 14px; }
+  .diaryOpen { min-height: 300px; height: 100%; }
+  .diaryOpen time { padding: 0 30px 0 0; font-size: 12px; line-height: 1.6; }
+  .diaryBookmark { left: 10px; }
+  .diaryCards .diaryCardMenu { top: 10px; right: 6px; }
+  .diaryAtmosphere { flex-wrap: wrap; gap: 4px; margin-top: 10px; padding-bottom: 8px; font-size: 11px; }
+  .diaryAtmosphere svg { width: 14px; height: 14px; flex: none; }
+  .diaryOpen h3 { margin: 12px 0 6px; font-size: 16px; line-height: 1.5; }
+  .diaryOpen p, .diaryOpen p.diaryLongExcerpt { min-height: 0; margin-bottom: 10px; font-size: 13px; line-height: 22px; background: repeating-linear-gradient(transparent 0 21px, #e7dfd077 21px 22px); }
+  .diaryOpen p { -webkit-line-clamp: 3; }
+  .diaryOpen p.diaryLongExcerpt { -webkit-line-clamp: 5; }
+  .diaryPhotoPrints { height: 90px; margin-bottom: 8px; }
+  .diaryPhotoPrint, .diaryPhotoPrint:only-child { height: 76px; padding: 4px 4px 8px; }
+  .diaryPhotoPrint::after { left: calc(50% - 16px); width: 32px; height: 12px; top: -6px; }
+  .diaryCardFoot { flex-wrap: wrap; gap: 3px; font-size: 11px; }
+  .diaryCardFoot > span { max-width: 100%; }
   .diaryBackdrop { padding: 12px; }
   .diaryDialog { max-height: calc(100dvh - 24px); padding: 20px; }
   .diaryMetadata { align-items: flex-start; gap: 8px; }
