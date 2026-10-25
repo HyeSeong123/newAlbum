@@ -284,8 +284,14 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
     fun checkLocationSetup(invoke: Invoke) {
         try {
             val manager = activity.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-            val enabled = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) manager.isLocationEnabled else
-                manager.isProviderEnabled(LocationManager.GPS_PROVIDER) || manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+            val enabled = try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) manager.isLocationEnabled else
+                    manager.isProviderEnabled(LocationManager.GPS_PROVIDER) || manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+            } catch (_: SecurityException) {
+                // Only read the system toggle; never request live location permission.
+                Settings.Secure.getInt(activity.contentResolver, Settings.Secure.LOCATION_MODE,
+                    Settings.Secure.LOCATION_MODE_OFF) != Settings.Secure.LOCATION_MODE_OFF
+            }
             val granted = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
                 activity.checkSelfPermission(Manifest.permission.ACCESS_MEDIA_LOCATION) == PackageManager.PERMISSION_GRANTED
             invoke.resolve(JSObject().put("locationEnabled", enabled).put("photoLocationGranted", granted))
@@ -294,14 +300,26 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
 
     @Command
     fun openLocationSettings(invoke: Invoke) {
-        try {
-            val kind = invoke.parseArgs(LocationSettingsArgs::class.java).kind
-            val intent = if (kind == "device") Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-                else if (kind == "app") Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + activity.packageName))
-                else throw IllegalArgumentException("지원하지 않는 설정입니다.")
-            activity.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            invoke.resolve(JSObject())
-        } catch (error: Exception) { invoke.reject(error.message ?: "설정을 열 수 없습니다.") }
+        val kind = try { invoke.parseArgs(LocationSettingsArgs::class.java).kind }
+            catch (error: Exception) {
+                invoke.reject(error.message ?: "설정 종류를 확인할 수 없습니다.")
+                return
+            }
+        // Android Settings must be launched from the foreground Activity's UI thread.
+        activity.runOnUiThread {
+            try {
+                val intent = when (kind) {
+                    "device" -> Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                    "app" -> Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:" + activity.packageName))
+                    else -> throw IllegalArgumentException("지원하지 않는 설정입니다.")
+                }
+                activity.startActivity(intent)
+                invoke.resolve(JSObject().put("opened", true))
+            } catch (error: Exception) {
+                invoke.reject(error.message ?: "설정 화면을 열 수 없습니다.")
+            }
+        }
     }
 
     @Command

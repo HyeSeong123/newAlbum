@@ -124,7 +124,11 @@ async fn list_media(app: AppHandle) -> Result<Vec<MediaItemDto>, String> {
 #[tauri::command]
 async fn check_android_location_setup(app: AppHandle) -> Result<serde_json::Value, String> {
     #[cfg(target_os = "android")]
-    { android_media::check_location_setup(&app) }
+    {
+        // The Android plugin bridge is synchronous; keep it off Tauri's async thread.
+        tauri::async_runtime::spawn_blocking(move || android_media::check_location_setup(&app))
+            .await.map_err(|error| error.to_string())?
+    }
     #[cfg(not(target_os = "android"))]
     { let _ = app; Ok(serde_json::json!({"locationEnabled":true,"photoLocationGranted":true})) }
 }
@@ -132,7 +136,10 @@ async fn check_android_location_setup(app: AppHandle) -> Result<serde_json::Valu
 async fn open_android_location_settings(app: AppHandle, kind: String) -> Result<(), String> {
     if kind != "device" && kind != "app" { return Err("지원하지 않는 설정입니다.".into()); }
     #[cfg(target_os = "android")]
-    { android_media::open_location_settings(&app, &kind) }
+    {
+        tauri::async_runtime::spawn_blocking(move || android_media::open_location_settings(&app, &kind))
+            .await.map_err(|error| error.to_string())?
+    }
     #[cfg(not(target_os = "android"))]
     { let _ = app; Ok(()) }
 }
