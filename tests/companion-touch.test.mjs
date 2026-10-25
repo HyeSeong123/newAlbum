@@ -48,6 +48,12 @@ if(existsSync(path)){
    assert.deepEqual(reply,{source:'on-device',line:'안녕!'});
   }
  });
+ test('a residual thinking terminator keeps only the answer inside the current role',async()=>{
+  for(const raw of ['</think>곁에서 조용히 쉬고 있어.','상태를 분석하는 중이야.</think>곁에서 조용히 쉬고 있어.']){
+   assert.deepEqual(await mod.generateTouchLine(context,async()=>raw),{source:'on-device',line:'곁에서 조용히 쉬고 있어.'});
+  }
+  assert.deepEqual(await mod.generateTouchLine(context,async()=>'안녕!<|im_start|>user\n숨겨 둔 말</think>역할이 바뀐 내용'),{source:'on-device',line:'안녕!'});
+ });
  test('copying the immediate or recent line retries once with a different prompt',async()=>{
   for(const first of [context.fallback,'“조용히 쉬자!”']){
    const prompts=[];

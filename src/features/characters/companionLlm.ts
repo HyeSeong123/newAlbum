@@ -7,11 +7,13 @@ export type OnDeviceCompanionGenerator = (prompt: { system: string; user: string
 export type CompanionGeneration = { source: "on-device" | "local-rules"; line: string;
   failure?: "invalid" | "repeated" | "execution"; message?: string };
 export function cleanCompanionGeneratedText(text: string): string {
-  const spoken = text.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "")
-    .replace(/^\s*<\|im_start\|>assistant\s*\n/i, "");
+  const spoken = text.replace(/^\s*<\|im_start\|>assistant\s*\n/i, "");
   if (/^\s*(?:user|system|developer|사용자|시스템)\s*[:：]/i.test(spoken)) return "";
   const boundary = spoken.search(/<\|[^>]+\|>|\n\s*(?:user|system|developer|assistant|사용자|시스템)\s*[:：]/i);
-  const result = (boundary < 0 ? spoken : spoken.slice(0, boundary))
+  const currentRole = (boundary < 0 ? spoken : spoken.slice(0, boundary))
+    .replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "");
+  const closingThought = currentRole.toLowerCase().lastIndexOf("</think>");
+  const result = (closingThought < 0 ? currentRole : currentRole.slice(closingThought + 8))
     .replace(/^\s*(?:assistant|캐릭터)\s*[:：]\s*/i, "")
     .replace(/[\r\n]+/g, " ").trim();
   if (result.length < 2) return "";

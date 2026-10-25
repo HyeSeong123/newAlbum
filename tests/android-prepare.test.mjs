@@ -50,7 +50,7 @@ test('preparation installs the bridge, excludes backups, and requires signing on
   const root = await mkdtemp(join(tmpdir(), 'gamjassak-android-'));
   try {
     await mkdir(join(root, 'src-tauri/android'), { recursive:true });
-    for (const file of ['GamjassakMediaPlugin.kt', 'GamjassakGalleryActivity.kt', 'GamjassakCompanionPlugin.kt']) await copyFile(`src-tauri/android/${file}`, join(root, `src-tauri/android/${file}`));
+    for (const file of ['GamjassakMediaPlugin.kt', 'GamjassakGalleryActivity.kt', 'GamjassakCompanionPlugin.kt', 'CompanionModelRegistry.java']) await copyFile(`src-tauri/android/${file}`, join(root, `src-tauri/android/${file}`));
     const { cp } = await import('node:fs/promises');
     await cp('src-tauri/android/companion', join(root, 'src-tauri/android/companion'), {recursive:true});
     for (const variant of ['main', 'debug']) await copyFile(`src-tauri/android/network-security-${variant}.xml`, join(root, `src-tauri/android/network-security-${variant}.xml`));
@@ -75,6 +75,7 @@ test('preparation installs the bridge, excludes backups, and requires signing on
     assert.match(await readFile(join(root, 'src-tauri/gen/android/app/src/debug/res/xml/gamjassak_network_security.xml'), 'utf8'), /base-config cleartextTrafficPermitted="true"/);
     assert.match(await readFile(join(root, 'src-tauri/gen/android/app/src/main/java/com/oraedameun/album/GamjassakMediaPlugin.kt'), 'utf8'), /class GamjassakMediaPlugin/);
     assert.match(await readFile(join(root, 'src-tauri/gen/android/app/src/main/java/com/oraedameun/album/GamjassakCompanionPlugin.kt'), 'utf8'), /nativeGenerate/);
+    assert.deepEqual(await readFile(join(root, 'src-tauri/gen/android/app/src/main/java/com/oraedameun/album/CompanionModelRegistry.java')), await readFile('src-tauri/android/CompanionModelRegistry.java'));
     assert.match(await readFile(join(root, 'src-tauri/gen/android/app/src/main/cpp/companion/CMakeLists.txt'), 'utf8'), /4d78e6aa4a9124b58dff994416525294fbab2990fe905a640d4cbd26bf563a31/);
     await assert.rejects(prepareAndroid(root, true), /서명 설정이 없습니다/);
     await writeFile(join(root, 'src-tauri/gen/android/keystore.properties'), 'storeFile=private-upload-key.jks');
