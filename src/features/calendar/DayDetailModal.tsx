@@ -109,8 +109,11 @@ export function DayDetailModal({
     if (!strip || !active) return;
     const left = active.offsetLeft;
     const right = left + active.offsetWidth;
-    if (left < strip.scrollLeft) strip.scrollLeft = left;
-    else if (right > strip.scrollLeft + strip.clientWidth) strip.scrollLeft = right - strip.clientWidth;
+    const current = strip.scrollLeft;
+    const target = left < current ? left : right > current + strip.clientWidth ? right - strip.clientWidth : current;
+    // A previous thumbnail-arrow animation may still be heading away from the
+    // selected photo. Stop it even when this preview is visible in this frame.
+    strip.scrollTo({ left: target, behavior: "instant" });
     updateScrollControls();
   }, [mainIndex, items.length]);
 

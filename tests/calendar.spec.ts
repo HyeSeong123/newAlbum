@@ -178,3 +178,18 @@ test('calendar opens today regardless of the latest photo month', async ({ page 
   await page.locator('.calendarGrid [aria-current="date"]').click();
   await expect(page.getByRole('dialog', { name: `${today.key} 기록`, exact: true })).toBeVisible();
 });
+
+test('changing a photo during filmstrip scrolling keeps its preview in view', async ({ page }) => {
+  await page.locator('.calendarGrid').getByRole('button', { name: '2025년 5월 31일, 사진 150장, 메모 있음' }).click();
+  const dialog = page.getByRole('dialog', { name: '2025-05-31 기록' });
+  // A next-photo click can arrive in the first frame of a smooth thumbnail scroll.
+  // Wait for that scroll to finish, so an initially-visible preview cannot pass early.
+  await dialog.locator('.calendarThumbnails').evaluate(strip => new Promise<void>(resolve => {
+    const timer = window.setTimeout(resolve, 1000);
+    strip.addEventListener('scrollend', () => { window.clearTimeout(timer); requestAnimationFrame(() => resolve()); }, { once:true });
+    strip.scrollTo({ left:strip.clientWidth * .85, behavior:'smooth' });
+    (document.querySelector('.calendarPhotoArrow.next') as HTMLButtonElement).click();
+  }));
+  await expect(dialog.locator('.calendarPhotoPosition')).toHaveText('2 / 150');
+  await expect(dialog.getByRole('button', { name:'사진 미리보기 2', exact:true })).toBeInViewport();
+});
