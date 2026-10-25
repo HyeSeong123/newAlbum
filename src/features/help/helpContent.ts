@@ -5,6 +5,12 @@ type Meaning = { id: string; title?: string; instruction: string };
 type Rule = readonly [RegExp, string, string];
 
 const explicitContent: Record<string, { title: string; instruction: string }> = {
+  'companion-actions': { title: '친구와 함께하기', instruction: '홈의 대표 친구와 산책을 상상하거나 놀이와 휴식을 즐겨요. 여기서 선택한 행동은 실제 GPS 산책이나 음식 섭취를 뜻하지 않으며, 친밀도는 캐릭터에게 직접 말을 걸 때만 하루 한 번 올라요.' },
+  'companion-walk': { title: '함께 산책', instruction: '친구와 산책하는 상황을 상상하며 대화를 나눠요. 실제 이동을 추적하거나 사진 위치를 읽지는 않아요.' },
+  'companion-treat': { title: '작은 선물', instruction: '고미에게는 간식을, 식물 친구들에게는 햇살을 선물해요. 실제 물건이나 보상을 소비하지 않아요.' },
+  'companion-pet': { title: '쓰다듬기', instruction: '친구의 성격에 따라 다른 반응을 보여요. 친밀도 상승 횟수와 성장 상태는 바꾸지 않아요.' },
+  'companion-play': { title: '함께 놀기', instruction: '친구와 짧은 상상 놀이를 해요. 최근 행동과 기분을 기기 안에 기억해요.' },
+  'companion-rest': { title: '함께 쉬기', instruction: '친구와 잠깐 쉬면서 활력을 회복해요. 앱의 다른 기록은 변경하지 않아요.' },
   'pet-body-region': { title: '반려동물 영역 지정', instruction: '사진에서 한 마리의 몸 전체를 드래그해 감싸세요. 드래그가 어려우면 여기서 위치와 크기를 백분율로 조절할 수 있어요. 얼굴 영역은 추가 후 인식 결과 수정에서 따로 지정해요.' },
   'pet-kind': { title: '반려동물 종류', instruction: '강아지인지 고양이인지 확인하고 잘못 분류됐다면 바꿔요. 영역 추가 또는 변경 저장을 눌러야 반영돼요.' },
   'pet-view': { title: '촬영 방향', instruction: '정면·측면·뒷모습 등 실제 촬영 방향을 골라요. 뒷모습이나 모름으로 바꾸면 얼굴 영역 선택이 해제돼요. 뒷모습은 체형과 색상을 비교해요.' },

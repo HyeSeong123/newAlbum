@@ -40,5 +40,13 @@ export function useGomiBehavior(enabled: boolean, affection: number, today: stri
     setMotion(gomiInteractionMotion(affection, ++interactions.current));
     setSequence(value => value + 1);
   }
-  return { motion, sequence, react };
+  function activity() {
+    if (!enabled) return;
+    // Explicit play/treat/walk may wake Gomi; ordinary mascot touches retain the sleep rules.
+    if (isGomiSleeping(rest.current)) rest.current = "idle";
+    sleepTouches.current = { count:0, lastAt:0 };
+    setMotion(gomiInteractionMotion(affection, ++interactions.current));
+    setSequence(value => value + 1);
+  }
+  return { motion, sequence, react, activity };
 }

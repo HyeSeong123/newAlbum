@@ -67,3 +67,21 @@
   .homeMascot > img { animation: none; transition: none; }
   .homeMascot:hover > img, .homeMascot:active > img { transform: none; }
 }
+
+/* Home-only companion actions: revealed on demand so the photo shortcuts remain primary. */
+.homeActivities { display: grid; justify-items: center; gap: 9px; width: min(100%, 360px); margin: 12px 0 2px; }
+.homeActivitiesToggle { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 18px; border: 1px solid #c9d0bc; border-radius: 999px; background: #f4f6ec; color: #455441; font-size: 14px; font-weight: 650; }
+.homeActivitiesToggle svg { transition: transform .16s ease; }
+.homeActivitiesToggle svg.expanded { transform: rotate(180deg); }
+.homeActivitiesChoices { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; width: 100%; padding: 12px; border: 1px solid #dcdccd; border-radius: 14px; background: #fffefa; }
+.homeActivity { display: flex; min-width: 0; min-height: 48px; align-items: center; justify-content: center; gap: 8px; padding: 10px 8px; border: 1px solid #e0e4d8; border-radius: 9px; background: #f8f9f3; color: #455441; font-size: 13px; font-weight: 600; }
+.homeActivity svg { flex: none; }
+.homeActivity:active, .homeActivity:hover { background: #e8efdc; }
+.homeActivityMood { margin: 0; color: var(--muted); font-size: 12px; }
+@media (max-width: 360px) {
+  .homeActivitiesChoices { gap: 7px; padding: 9px; }
+  .homeActivity { gap: 5px; font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .homeActivitiesToggle svg { transition: none; }
+}

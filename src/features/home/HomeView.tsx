@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, BookHeart, Heart, Images, NotebookPen, Users } from "lucide-react";
+import { ArrowUpRight, BookHeart, ChevronDown, Footprints, Gamepad2, HandHeart, Heart, Images, Moon, NotebookPen, Sun, Users } from "lucide-react";
 import { CharacterVisual } from "../characters/CharacterVisual";
 import { characterDefinitions, characterName, dialogueLines, nextDialogue, type OwnedCharacter } from "../characters/models";
 import { gomiAffinity } from "../characters/gomiAffinity";
 import { useGomiBehavior } from "../characters/useGomiBehavior";
 import { claimGomiGreeting } from "../characters/gomiGreeting";
+import { COMPANION_ACTIONS, companionActionLabel, companionMoodLabel, emptyCompanionMemory, performCompanionActivity, readCompanionMemory, saveCompanionMemory, type CompanionAction } from "../characters/companionActivities";
 import "../characters/characters.css";
 import "./home.css";
 
@@ -45,9 +46,15 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   const [messageIndex, setMessageIndex] = useState(0);
   const [spokenLine, setSpokenLine] = useState<string | undefined>(undefined);
   const [happy, setHappy] = useState(false);
+  const [activitiesOpen, setActivitiesOpen] = useState(false);
+  const [activityMemory, setActivityMemory] = useState(() => mainCharacter?.id ? readCompanionMemory(mainCharacter.id) : emptyCompanionMemory());
   const lastLine = useRef(0);
   const timer = useRef<number | undefined>(undefined);
   const definition = characterDefinitions.find(item => item.id === mainCharacter?.id);
+  useEffect(() => {
+    setActivityMemory(mainCharacter?.id ? readCompanionMemory(mainCharacter.id) : emptyCompanionMemory());
+    setActivitiesOpen(false);
+  }, [mainCharacter?.id]);
   const isGomi = definition?.type === "gomi";
   const gomi = useGomiBehavior(isGomi, mainCharacter?.affection || 0, today, mainCharacter?.id);
   const lines = definition && mainCharacter ? dialogueLines(definition, mainCharacter.growthStage, mainCharacter.affection >= 20 ? "highAffection" : "idle", mainCharacter.affection) : messages;
@@ -89,6 +96,21 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     if (mainCharacter) onInteract(mainCharacter.id);
   }
 
+  const activityIcons = { walk: Footprints, treat: Sun, pet: HandHeart, play: Gamepad2, rest: Moon };
+
+  function chooseActivity(action: CompanionAction) {
+    if (!definition || !mainCharacter) return;
+    const result = performCompanionActivity(definition, readCompanionMemory(mainCharacter.id), action, mainCharacter.affection, today);
+    saveCompanionMemory(mainCharacter.id, result.memory);
+    setActivityMemory(result.memory);
+    setSpokenLine(result.line);
+    if (isGomi) gomi.activity();
+    else setHappy(true);
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setHappy(false), 1000);
+    // The existing once-per-day affection increase belongs only to the mascot's talk button.
+  }
+
   const shortcuts = [
     { label: "사진 기록", description: "사진 속 하루를 다시 만나요", count: `${itemCount}개의 기록`, icon: Images, onClick: onShowLibrary },
     { label: "내 앨범", description: "함께한 순간을 한 권에 담아요", count: `${albumCount}개의 앨범`, icon: BookHeart, onClick: onShowAlbums },
@@ -109,6 +131,24 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
             : <img key={messageIndex} src="/brand/gamjassak-symbol.png" alt="" width={1254} height={1254} draggable={false} />}
         </button>
         {definition && mainCharacter && <p className="homeCharacterMeta"><strong>{characterName(definition, mainCharacter)}</strong><span className="homeAffection"><Heart size={14} aria-hidden="true" />친밀도 {mainCharacter.affection}</span></p>}
+        {definition && mainCharacter && <div className="homeActivities">
+          <button type="button" className="homeActivitiesToggle" aria-expanded={activitiesOpen} aria-controls="homeActivitiesChoices"
+            data-help="companion-actions" onClick={() => setActivitiesOpen(value => !value)}>
+            함께하기 <ChevronDown size={17} aria-hidden="true" className={activitiesOpen ? "expanded" : ""} />
+          </button>
+          {activitiesOpen && <div id="homeActivitiesChoices" className="homeActivitiesChoices" role="group" aria-label="친구와 함께하기">
+            {COMPANION_ACTIONS.map(action => {
+              const Icon = activityIcons[action];
+              return <button key={action} type="button" className="homeActivity" data-help={"companion-" + action}
+                onClick={() => chooseActivity(action)}>
+                <Icon size={19} aria-hidden="true" /><span>{companionActionLabel(definition, action)}</span>
+              </button>;
+            })}
+          </div>}
+          <p className="homeActivityMood" aria-label={"친구의 현재 기분 " + companionMoodLabel(activityMemory.mood)}>
+            지금 기분 · {companionMoodLabel(activityMemory.mood)}
+          </p>
+        </div>}
         <button className="homeCharacterLink" type="button" onClick={onShowCharacters}>새싹 도감 보기</button>
       </div>
     </div>
