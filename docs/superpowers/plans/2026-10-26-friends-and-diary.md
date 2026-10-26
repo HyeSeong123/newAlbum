@@ -27,9 +27,9 @@
 
 **Files:** diary.css, App.tsx, CharacterBook/useCharacters/HomeView/helpContent와 관련 검사.
 **Interfaces:** 기존 화면 경로와 캐릭터 ID 유지, 사용자에게 보이는 명칭만 변경.
-- [ ] 관련 브라우저 기대값을 한 열과 친구들로 정하고 변경 전 동작을 확인한다.
+- [x] 관련 브라우저 기대값을 한 열과 친구들로 정하고 최종 CI로 확인한다. 변경 전 브라우저 실행은 다운로드 환경 문제로 미검증이다.
 - [x] 작은 화면의 일기 한 열·읽기 여백을 복원하고 메뉴·도움말 이름을 통일한다.
-- [ ] 일기 저장/재진입과 친구 대표/이름 변경 관련 검사를 수행한다.
+- [x] 일기 저장/재진입과 친구 대표/이름 변경 관련 검사를 수행한다.
 
 ### Task 2: 친구 몸짓
 
@@ -39,11 +39,14 @@ companionMotionForAction(action), companionMotionAnimation(motion, signature),
 useCompanionBehavior(enabled, characterId, signature) → motion/sequence/paused/react/activity.
 - [x] 순수 동작 선택·다섯 행동·성격별 강도 검사를 작성하고 실패를 확인한다.
 - [x] 모듈/훅/렌더러를 연결하고 같은 원본 노드를 유지한다.
-- [ ] 휴식 유지, 연속 터치, 상태 전환, 타이머 정리와 고미 회귀를 확인한다.
+- [x] 휴식 유지, 연속 터치, 상태 전환, 타이머 정리와 고미 회귀를 확인한다.
 
 ### Task 3: 배포 확인
 
 **Files:** 관련 테스트, package/버전 파일, 변경 검증 기록.
 - [x] 영향 단위 검사와 타입/빌드를 수행한다. UI 검사는 가능한 환경에서 수행한다.
 - [x] 한 번의 독립 코드 검토로 중요한 결함을 확인하고 필요한 수정만 적용한다.
-- [ ] 버전을 올려 final에 반영하고 CI/APK 결과와 미검증 항목을 구분해 보고한다.
+- [x] 버전을 올려 final에 반영하고 CI/APK 결과와 미검증 항목을 구분해 보고한다.
+
+최종 근거는 [0.9.37 검증 기록](../../friends-and-diary-0.9.37.md#최종-ci와-apk-확인)에 정리했다.
+실물 Android 휴대폰 및 Windows 설치 검증은 이번 작업에서 수행하지 않았다.

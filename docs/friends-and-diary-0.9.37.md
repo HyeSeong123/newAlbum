@@ -42,5 +42,51 @@
   진입 때의 설정을 보관한다는 구현을 확인했다. 다른 기존 검사와 같이 진입 전 설정을
   켜는 독립 검사로 분리해 진입 시와 함께하기 반응에서 모두 변형이 없는지 확인한다.
 - Android 설치 검사에는 실제 친구들 메뉴/대표 전환/다섯 행동/그림 노드 유지/친밀도 보존을
-  확인하는 `friend-motions-smoke.mjs`를 추가했다. 최종 실행 결과는 같은 커밋의 Actions로
-  확인한다. 실물 휴대폰은 이번 환경에서 확인하지 않았다.
+  확인하는 `friend-motions-smoke.mjs`를 추가했고 아래 실행에서 통과했다.
+
+## 최종 CI와 APK 확인
+
+2026-10-27(한국 시간)에 `final` HEAD와 아래 실행 로그를 다시 확인했다. 열린 `final` 대상
+PR은 없었고, 기능/APK 커밋은 `aa92f12dbd09071c2535cf3381e53c4caca5cae8`, 최종 검사
+커밋은 `5bcab46c035ae81f9a0d5304ed546036dd071424`다. 두 커밋 사이의 `src`, `src-tauri`,
+`public`, `scripts`, `package.json`, `package-lock.json` 차이는 없어 APK의 앱 코드가 같다.
+
+| 검증 | 실제 결과 | 근거 |
+| --- | --- | --- |
+| 전체 브라우저 | 713개 통과, 환경 조건에 따른 67개 생략 | [Source validation](https://github.com/HyeSeong123/newAlbum/actions/runs/40350725895) |
+| Rust 저장소 | 132개 통과, 실패 0개 | 위 실행의 Native storage regression tests |
+| 추가 사용자 흐름 | 337개 통과, 31개 생략 | [사용자 흐름 실행](https://github.com/HyeSeong123/newAlbum/actions/runs/40350725481) |
+| Android APK | 빌드·영구 서명·에뮬레이터 설치 및 실제 버튼 검사 통과 | [Android 실행](https://github.com/HyeSeong123/newAlbum/actions/runs/40347845362) |
+| 별도 도움말 실행 | 환경 설치 단계에서 취소, 해당 실행의 UI 검사는 미실행 | [취소된 실행](https://github.com/HyeSeong123/newAlbum/actions/runs/40350725582) |
+
+별도 도움말 실행은 Chromium 의존성 및 한글 글꼴 설치에 시간이 걸린 뒤 취소됐다.
+앱 테스트 실패로 분류하지 않으며, 취소된 실행을 통과로 세지 않는다. 같은 캐릭터·도움말
+검사는 성공한 전체 브라우저 실행 및 추가 사용자 흐름 실행에 포함된다. 중복 전체 검사나
+APK 재빌드를 다시 요청하지 않았다.
+
+### 실제 버튼과 화면 결과
+
+- 모바일 320px 일기: 두 편이 한 열로 표시되고 카드 폭 250px 초과, 본문 14px, 가로
+  넘침 없음, 저장과 상세 진입을 확인했다. 기존 일기 수정·재진입 검사도 통과했다.
+- 친구들: 메뉴 진입, 대표 친구 변경과 이름 변경을 확인했다. Android 설치 검사에서는
+  감자로 대표를 변경한 뒤 다섯 행동을 누르고 원래 대표 친구로 복구했다.
+- 함께 산책 → `walk`, 햇살 선물 → `treat`, 쓰다듬기 → `pet`, 함께 놀기 → `play`,
+  함께 쉬기 → `rest`로 서로 다른 움직임을 확인했다. 원본 그림 노드와 친밀도는 유지됐다.
+- 홈 진입·연속 터치·휴식 복귀·백그라운드 중지/복귀·홈 이탈 시 타이머 정리·움직임
+  줄이기·고미 수면 반응은 브라우저 검사에서 통과했다.
+- Android 로그의 `Installed Android friends menu, five distinct motions, stable drawing
+  and unchanged affection: OK` 및 위치 설정/앱 권한/자동 복귀/수동 재확인 성공을 확인했다.
+
+### 배포 파일과 미검증 범위
+
+- 파일: `Gamjassak-0.9.37.apk` (370,430,595바이트).
+- [서명·설치 검증된 APK ZIP](https://github.com/HyeSeong123/newAlbum/actions/runs/40347845362/artifacts/12663248408).
+- ZIP SHA-256: `7ce65f170d91a9f7cdc16a0c39be8fa6f3681b3c88168987abe6b9ccb4887a54`.
+- 최초 전달 시 추출한 APK SHA-256: `e8140d987ce079d41f11661b96521be6e15ff27176e7127129086fb7a67cc747`.
+- 영구 서명 인증서 SHA-256: `1e63dd9f0e9ee481875de0cabe4ba479720ceee6c4c0f088cc383a6685f67ba1`.
+- Android 검증 환경은 API 36 x86_64 에뮬레이터다. 실물 휴대폰·Windows 설치 및 실제
+  Qwen 추론 속도/메모리 측정은 이번 변경에서 수행하지 않았다. 기존 사용자의 실물 기기에
+  실제 업데이트 설치를 완료했다는 뜻은 아니다.
+
+이번 후속 작업은 검증 기록과 계획 체크만 갱신했다. 앱 실행 코드·버전·데이터·서명은
+변경하지 않았고 새 APK를 만들지 않았다.
