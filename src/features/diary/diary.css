@@ -139,22 +139,22 @@
   .diaryMonthNav { gap: 7px; }
   .diaryMonthNav .diaryAllMonths { position: static; }
   .diaryMonthNav label { min-width: 126px; font-size: 15px; }
-  .diaryCards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 12px; padding-top: 28px; }
-  .diaryCard { min-height: 0; padding: 22px 12px 14px; }
-  .diaryOpen { min-height: 300px; height: 100%; }
-  .diaryOpen time { padding: 0 30px 0 0; font-size: 12px; line-height: 1.6; }
+  .diaryCards { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-top: 28px; }
+  .diaryCard { min-height: 0; padding: 26px 22px 20px; }
+  .diaryOpen { min-height: 320px; height: 100%; }
+  .diaryOpen time { padding: 0 38px 0 0; font-size: 13px; line-height: 1.6; }
   .diaryBookmark { left: 10px; }
-  .diaryCards .diaryCardMenu { top: 10px; right: 6px; }
-  .diaryAtmosphere { flex-wrap: wrap; gap: 4px; margin-top: 10px; padding-bottom: 8px; font-size: 11px; }
+  .diaryCards .diaryCardMenu { top: 14px; right: 12px; }
+  .diaryAtmosphere { flex-wrap: wrap; gap: 6px; margin-top: 12px; padding-bottom: 10px; font-size: 13px; }
   .diaryAtmosphere svg { width: 14px; height: 14px; flex: none; }
-  .diaryOpen h3 { margin: 12px 0 6px; font-size: 16px; line-height: 1.5; }
-  .diaryOpen p, .diaryOpen p.diaryLongExcerpt { min-height: 0; margin-bottom: 10px; font-size: 13px; line-height: 22px; background: repeating-linear-gradient(transparent 0 21px, #e7dfd077 21px 22px); }
-  .diaryOpen p { -webkit-line-clamp: 3; }
-  .diaryOpen p.diaryLongExcerpt { -webkit-line-clamp: 5; }
-  .diaryPhotoPrints { height: 90px; margin-bottom: 8px; }
-  .diaryPhotoPrint, .diaryPhotoPrint:only-child { height: 76px; padding: 4px 4px 8px; }
+  .diaryOpen h3 { margin: 16px 0 10px; font-size: 19px; line-height: 1.5; }
+  .diaryOpen p, .diaryOpen p.diaryLongExcerpt { min-height: 0; margin-bottom: 14px; font-size: 14px; line-height: 26px; background: repeating-linear-gradient(transparent 0 25px, #e7dfd077 25px 26px); }
+  .diaryOpen p { -webkit-line-clamp: 4; }
+  .diaryOpen p.diaryLongExcerpt { -webkit-line-clamp: 7; }
+  .diaryPhotoPrints { height: 140px; margin-bottom: 14px; }
+  .diaryPhotoPrint, .diaryPhotoPrint:only-child { height: 120px; padding: 5px 5px 10px; }
   .diaryPhotoPrint::after { left: calc(50% - 16px); width: 32px; height: 12px; top: -6px; }
-  .diaryCardFoot { flex-wrap: wrap; gap: 3px; font-size: 11px; }
+  .diaryCardFoot { flex-wrap: wrap; gap: 5px; font-size: 12px; }
   .diaryCardFoot > span { max-width: 100%; }
   .diaryBackdrop { padding: 12px; }
   .diaryDialog { max-height: calc(100dvh - 24px); padding: 20px; }

@@ -12,7 +12,7 @@ for (const width of [360, 390, 430, 768, 1280, 1440]) {
       if (populated) await auditLibrary(page); else await page.goto('/');
       await page.evaluate(() => document.fonts.ready);
       const stage = process.env.AUDIT_STAGE || 'after';
-      for (const [key, name] of [['home', '홈'], ['photos', '사진 기록'], ['albums', '내 앨범'], ['diary', '일기장'], ['memories', '추억'], ['characters', '새싹 도감'], ['people', '사람과 반려동물'], ['settings', '설정']]) {
+      for (const [key, name] of [['home', '홈'], ['photos', '사진 기록'], ['albums', '내 앨범'], ['diary', '일기장'], ['memories', '추억'], ['characters', '친구들'], ['people', '사람과 반려동물'], ['settings', '설정']]) {
         if (key === 'settings') {
           const settings = page.getByRole('button', { name, exact: true });
           if (!await settings.isVisible()) await page.getByRole('button', { name: '전체 메뉴', exact: true }).click();

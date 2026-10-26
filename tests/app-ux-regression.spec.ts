@@ -108,7 +108,7 @@ test('favorite action names, red badge and return scroll reflect actual toggles'
 test('whole menu reveals every destination and retapping current view keeps selection',async({page,isMobile})=>{
   test.skip(!isMobile,'Overflow menu is shown only when navigation overflows.');
   await auditLibrary(page);const all=page.getByRole('button',{name:'전체 메뉴',exact:true});await all.click();
-  const menu=page.locator('.actionMenuPanel');for(const name of ['홈','사진 기록','내 앨범','일기장','추억','새싹 도감','사람과 반려동물','설정'])await expect(menu.getByRole('button',{name,exact:true})).toBeVisible();
+  const menu=page.locator('.actionMenuPanel');for(const name of ['홈','사진 기록','내 앨범','일기장','추억','친구들','사람과 반려동물','설정'])await expect(menu.getByRole('button',{name,exact:true})).toBeVisible();
   await menu.getByRole('button',{name:'사진 기록',exact:true}).click();
   await page.getByRole('button',{name:'선택',exact:true}).click();await page.locator('.mediaTile').first().click();
   await go(page,'사진 기록');await expect(page.locator('.selectionDock')).toContainText('항목 1개 선택');

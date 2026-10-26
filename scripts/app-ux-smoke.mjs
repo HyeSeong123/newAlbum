@@ -33,7 +33,7 @@ export async function verifyInstalledAppUx(page, mediaId, pet, back, captureNati
 
   await page.getByRole('button',{name:'전체 메뉴',exact:true}).click();
   const menu=page.locator('.actionMenuPanel');
-  for(const name of ['홈','사진 기록','내 앨범','일기장','추억','새싹 도감','사람과 반려동물','설정']) {const destination=menu.getByRole('button',{name,exact:true});await expect(destination).toBeVisible();await expect(destination.locator('svg')).toHaveCount(1);}
+  for(const name of ['홈','사진 기록','내 앨범','일기장','추억','친구들','사람과 반려동물','설정']) {const destination=menu.getByRole('button',{name,exact:true});await expect(destination).toBeVisible();await expect(destination.locator('svg')).toHaveCount(1);}
   await capture('app-ux-all-menu');await menu.getByRole('button',{name:'사진 기록',exact:true}).click();
   await page.getByRole('button',{name:'모든 기록',exact:true}).click();
   const nativeRows=await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('list_media'));

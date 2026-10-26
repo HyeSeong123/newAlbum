@@ -47,7 +47,7 @@ test('all help uses the selected character, including nested help and changed se
   await expect(review).toBeVisible();
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: '감자싹 홈으로 이동' }).click();
-  await page.getByRole('button', { name: '새싹 도감 보기' }).click();
+  await page.getByRole('button', { name: '친구들 보기' }).click();
   await page.locator('.characterCard').filter({ has: page.getByRole('heading', { name: '고미', exact: true }) }).getByRole('button', { name: '대표로 설정' }).click();
   await page.getByRole('button', { name: '현재 화면 도움말' }).click();
   await expect(guide.locator('.characterHelpName')).toHaveText('고미');

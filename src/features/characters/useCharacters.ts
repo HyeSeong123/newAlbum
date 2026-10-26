@@ -13,7 +13,7 @@ export function useCharacters(mediaRevision: string) {
     try {
       const result = await service.syncCharacters();
       if (ticket === sequence.current) { setSnapshot(result); setError(""); }
-    } catch { if (ticket === sequence.current) setError("새싹 도감을 불러오지 못했습니다. 다시 시도해 주세요."); }
+    } catch { if (ticket === sequence.current) setError("친구들을 불러오지 못했습니다. 다시 시도해 주세요."); }
   }, []);
   useEffect(() => { void refresh(); }, [refresh, mediaRevision]);
   useEffect(() => {

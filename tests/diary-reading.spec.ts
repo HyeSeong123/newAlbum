@@ -1,5 +1,29 @@
 import { expect, test, type Page } from '@playwright/test';
 
+test('mobile diary uses the full row for readable entries and keeps detail navigation',async({page},testInfo)=>{
+  test.skip(testInfo.project.name !== 'mobile');
+  await page.setViewportSize({width:320,height:740});
+  await page.goto('/');
+  await page.locator('.navList').getByRole('button',{name:'일기장',exact:true}).click();
+  for(const title of ['조금 길어도 편하게 읽고 싶은 하루의 기록','두 번째 하루']) {
+    await page.getByRole('button',{name:/^(첫 )?일기 쓰기$/}).first().click();
+    const editor=page.getByRole('dialog',{name:'새 일기',exact:true});
+    await editor.getByLabel('제목',{exact:true}).fill(title);
+    await editor.locator('textarea').fill('작은 화면에서도 문장이 충분히 넓게 보였으면 좋겠어. 오늘의 소중한 순간을 천천히 기록한다.');
+    await editor.getByRole('button',{name:'일기 저장',exact:true}).click();
+  }
+  const cards=page.locator('.diaryCard');
+  await expect(cards).toHaveCount(2);
+  const first=(await cards.nth(0).boundingBox())!,second=(await cards.nth(1).boundingBox())!;
+  expect(first.width).toBeGreaterThan(250);
+  expect(second.y).toBeGreaterThanOrEqual(first.y+first.height);
+  await expect(page.locator('.diaryOpen p').first()).toHaveCSS('font-size','14px');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.screenshot({path:testInfo.outputPath('diary-wide-mobile.png')});
+  await page.locator('.diaryOpen').first().click();
+  await expect(page.getByRole('dialog',{name:'일기 상세',exact:true})).toBeVisible();
+});
+
 async function createDiary(page: Page, mood: string) {
   await page.goto('/');
   await page.locator('.navList').getByRole('button', { name: '일기장', exact: true }).click();

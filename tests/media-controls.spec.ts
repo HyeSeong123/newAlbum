@@ -56,7 +56,7 @@ test('every hamburger destination has its own icon and the current page remains 
   await page.getByRole('button',{name:'전체 메뉴',exact:true}).click();
   const menu=page.locator('.actionMenuPanel');
   const icons=[];
-  for(const name of ['홈','사진 기록','내 앨범','일기장','추억','새싹 도감','사람과 반려동물','설정']){
+  for(const name of ['홈','사진 기록','내 앨범','일기장','추억','친구들','사람과 반려동물','설정']){
     const button=menu.getByRole('button',{name,exact:true});await expect(button.locator('svg')).toHaveCount(1);
     icons.push(await button.locator('svg').getAttribute('class'));
   }

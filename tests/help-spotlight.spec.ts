@@ -182,7 +182,7 @@ test('opened action menu stays open and its help contains only menu actions', as
 
 test('help is available across major screens and fields retain unsaved input', async ({ page }) => {
   await prepareHelp(page);
-  for (const name of ['사진 기록', '내 앨범', '일기장', '추억', '새싹 도감', '사람과 반려동물']) {
+  for (const name of ['사진 기록', '내 앨범', '일기장', '추억', '친구들', '사람과 반려동물']) {
     await page.locator('.navList').getByRole('button', { name, exact: true }).click();
     await openHelp(page);
     await expect(helpDialog(page)).toBeVisible();

@@ -10,8 +10,8 @@ type Props = {
 export function CharacterBook({ characters, onRename, onSetMain }: Props) {
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
-  return <section className="characterBook" aria-label="새싹 도감">
-    <header className="characterBookIntro"><h2>함께 자라는 작은 친구들</h2></header>
+  return <section className="characterBook" aria-label="친구들">
+    <header className="characterBookIntro"><h2>함께하는 작은 친구들</h2></header>
     <div className="characterGrid">{characterDefinitions.map(def => {
       const owned = characters.find(item => item.id === def.id);
       const name = characterName(def, owned);
@@ -23,11 +23,11 @@ export function CharacterBook({ characters, onRename, onSetMain }: Props) {
         {owned ? <>
           <p className="characterDescription">{characterDescription(def, owned)}</p>
           <div className="characterCardActions">
-            {owned.isMain ? <span className="characterMainBadge">대표 새싹</span> : <button type="button" onClick={() => void onSetMain(def.id)}>대표로 설정</button>}
+            {owned.isMain ? <span className="characterMainBadge">대표 친구</span> : <button type="button" onClick={() => void onSetMain(def.id)}>대표로 설정</button>}
             <button type="button" onClick={() => { setDraft(owned.customName || ""); setEditing(def.id); }}>이름 바꾸기</button>
           </div>
           {editing === def.id && <form onSubmit={event => { event.preventDefault(); void onRename(def.id, draft).then(saved => { if (saved) setEditing(null); }); }}>
-            <label htmlFor={`character-name-${def.id}`}>새싹 이름</label><input id={`character-name-${def.id}`} maxLength={20} value={draft} placeholder={def.defaultName} onChange={event => setDraft(event.target.value)} />
+            <label htmlFor={`character-name-${def.id}`}>친구 이름</label><input id={`character-name-${def.id}`} maxLength={20} value={draft} placeholder={def.defaultName} onChange={event => setDraft(event.target.value)} />
             <button type="submit">저장</button><button type="button" onClick={() => setEditing(null)}>취소</button>
           </form>}
         </> : <p className="characterDescription">어느 날, 작은 친구가 찾아올 거예요.</p>}

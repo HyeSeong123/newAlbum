@@ -5,6 +5,7 @@ import { verifyInstalledGallery } from './gallery-smoke.mjs';
 import { verifyInstalledManualPhotos } from './manual-photo-smoke.mjs';
 import { verifyInstalledRepetitionMeasurement } from './person-repetition-smoke.mjs';
 import { verifyInstalledLocationSettings } from './location-settings-smoke.mjs';
+import { verifyInstalledFriendMotions } from './friend-motions-smoke.mjs';
 import { expect } from '@playwright/test';
 import { _android as android } from 'playwright';
 import assert from 'node:assert/strict';
@@ -407,7 +408,7 @@ try {
   await expect(gomiGuide.getByRole('heading', {name:'친구와 함께하기',exact:true})).toBeVisible();
   await expect(gomiGuide.locator('#helpInstruction')).toContainText('친밀도는 캐릭터에게 직접 말을 걸 때만');
   await gomiGuide.getByRole('button', { name:'다음', exact:true }).click();
-  await expect(gomiGuide.getByRole('heading', {name:'새싹 도감 보기',exact:true})).toBeVisible();
+  await expect(gomiGuide.getByRole('heading', {name:'친구들 보기',exact:true})).toBeVisible();
   await expect(gomiGuide.locator('#helpInstruction')).toContainText('친밀도는 오르지');
   await captureScreen('gomi-varied-help');
   await gomiGuide.getByRole('button', { name:'도움말 종료', exact:true }).click();
@@ -425,6 +426,9 @@ try {
   const locationSettings = await verifyInstalledLocationSettings({page, adb, appId, captureScreen, tapNative});
   await writeFile(join(output, 'location-settings.json'), JSON.stringify(locationSettings, null, 2));
   console.log('Installed Android location settings, app permissions and manual/resume recheck: OK');
+  const friendMotions=await verifyInstalledFriendMotions({page,captureScreen});
+  await writeFile(join(output,'friend-motions.json'),JSON.stringify(friendMotions,null,2));
+  console.log('Installed Android friends menu, five distinct motions, stable drawing and unchanged affection: OK');
   const appDataRoot=await checkPhotoGps(page);
   await verifyInstalledGallery({page,adb,nativeTree,tapNative,captureScreen,output});
   const security=await page.evaluate(async root=>{

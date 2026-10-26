@@ -39,6 +39,65 @@ async function installSnapshot(page:Page,initial:Companion[],event?:{ id:number;
 }
 const cardFor = (page:Page,name:string) => page.locator('.characterCard').filter({ has:page.getByRole('heading',{ name,exact:true }) });
 
+test('other friends keep their drawing while five activities and quiet rest have distinct motions', async ({page},testInfo) => {
+  await installSnapshot(page,[companion('potato',6,true)]);
+  await page.clock.install({time:new Date('2026-10-26T12:00:00')});
+  await page.clock.pauseAt(new Date('2026-10-26T12:01:00'));
+  await page.goto('/');
+  const visual=page.locator('.homeMascot .characterVisual');
+  await page.clock.fastForward(3_000);
+  await expect(visual).toHaveAttribute('data-motion','idle');
+  await page.evaluate(()=>{(window as any).originalFriendDrawing=document.querySelector('.homeMascot .characterPortrait image');});
+  await page.getByRole('button',{name:'함께하기',exact:true}).click();
+  for(const [label,motion] of [['함께 산책','walk'],['햇살 선물','treat'],['쓰다듬기','pet'],['함께 놀기','play'],['함께 쉬기','rest']]) {
+    await page.getByRole('button',{name:label,exact:true}).click();
+    await expect(visual).toHaveAttribute('data-motion',motion);
+    expect(await page.evaluate(()=>(window as any).originalFriendDrawing===document.querySelector('.homeMascot .characterPortrait image'))).toBe(true);
+    await expect(page.locator('.homeSpeech')).not.toContainText(/생각\s*중|로딩/);
+  }
+  await page.clock.fastForward(60_000);
+  await expect(visual).toHaveAttribute('data-motion','rest');
+  await expect(page.locator('.homeMascot .characterHeart')).toHaveCount(0);
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
+  expect(await page.evaluate(()=>(window as any).sproutCommands.filter((c:any)=>c.command==='interact_character').length)).toBe(0);
+  await page.screenshot({path:testInfo.outputPath('friend-rest.png')});
+  await page.locator('.homeMascot').click();
+  await expect(visual).toHaveAttribute('data-motion','nod');
+  await page.clock.fastForward(1_800);
+  await expect(visual).toHaveAttribute('data-motion','rest');
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
+});
+
+test('friend reactions pause in background and cleanly restart on another Home entry',async({page})=>{
+  await installSnapshot(page,[companion('potato',6,true)]);
+  await page.clock.install({time:new Date('2026-10-26T12:00:00')});
+  await page.clock.pauseAt(new Date('2026-10-26T12:01:00'));
+  await page.goto('/');
+  const visual=page.locator('.homeMascot .characterVisual');
+  await page.clock.fastForward(3_000);
+  await page.locator('.homeMascot').click();
+  await expect(visual).toHaveAttribute('data-motion','bounce');
+  await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));});
+  await expect(visual).toHaveAttribute('data-paused','true');
+  await page.clock.fastForward(30_000);
+  await expect(visual).toHaveAttribute('data-motion','bounce');
+  await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});
+  await expect(visual).toHaveAttribute('data-paused','false');
+  await page.clock.fastForward(1_200);
+  await expect(visual).toHaveAttribute('data-motion','idle');
+  await page.locator('.navList').getByRole('button',{name:'사진 기록',exact:true}).click();
+  await page.clock.fastForward(10_000);
+  await page.locator('.navList').getByRole('button',{name:'홈',exact:true}).click();
+  await expect(visual).toHaveAttribute('data-motion','look-around');
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await expect(visual).toHaveAttribute('data-reduced-motion','true');
+  await page.clock.fastForward(50);
+  expect(await visual.locator('.characterBody').evaluate(el=>{
+    const transform=getComputedStyle(el).transform;
+    return transform==='none'||new DOMMatrix(transform).isIdentity;
+  })).toBe(true);
+});
+
 test('Gomi rests awake with front paws extended and returns to the pose after talking', async ({page}) => {
   await page.emulateMedia({reducedMotion:'reduce'});
   await installSnapshot(page,[companion('gomi',6,true)]);
@@ -64,7 +123,7 @@ test('Gomi rests awake with front paws extended and returns to the pose after ta
 
 test('the starter potato has a visible portrait and the book reveals no discovery or growth hints',async({page}) => {
   await page.goto('/');
-  await page.getByRole('button',{name:'새싹 도감 보기'}).click();
+  await page.getByRole('button',{name:'친구들 보기'}).click();
   const book=page.locator('.characterBook');
   const potato=cardFor(page,'감자싹');
   await expect(potato.locator('.characterPortrait image')).toHaveAttribute('href','/characters/portraits/potato-source.png');
@@ -84,11 +143,11 @@ test('the starter potato has a visible portrait and the book reveals no discover
 test('book viewing, portraits, rename and main selection never interact; only Home raises affection',async({page}) => {
   await installSnapshot(page,[companion('potato',1,true),companion('sweet-potato'),companion('orange',3)]);
   await page.goto('/');
-  await page.getByRole('button',{name:'새싹 도감 보기'}).click();
+  await page.getByRole('button',{name:'친구들 보기'}).click();
   const orange=page.locator('.characterCard').filter({has:page.locator('.characterVisual[data-character="orange"]')});
   await orange.locator('.characterCardArt').click();
   await orange.getByRole('button',{name:'이름 바꾸기'}).click();
-  await orange.getByLabel('새싹 이름').fill('귤이');
+  await orange.getByLabel('친구 이름').fill('귤이');
   await orange.getByRole('button',{name:'저장'}).click();
   await orange.getByRole('button',{name:'대표로 설정'}).click();
   const interactions = () => page.evaluate(()=> (window as unknown as { sproutCommands:Array<{command:string;args:Record<string,unknown>}> }).sproutCommands.filter(c=>c.command === 'interact_character'));
@@ -99,7 +158,7 @@ test('book viewing, portraits, rename and main selection never interact; only Ho
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
   await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-expression','happy');
   expect((await interactions())[0].args).toEqual({ id:'orange',source:'home' });
-  await page.getByRole('button',{name:'새싹 도감 보기'}).click();
+  await page.getByRole('button',{name:'친구들 보기'}).click();
   await cardFor(page,'귤이').locator('.characterCardArt').click();
   await page.getByRole('button',{name:'감자싹 홈으로 이동'}).click();
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
@@ -120,7 +179,7 @@ test('each of the six current forms loads without showing any future form',async
   await page.emulateMedia({reducedMotion:'reduce'});
   await installSnapshot(page,definitions.map(d=>companion(d.id,1,d.id === 'potato')));
   await page.goto('/');
-  await page.getByRole('button',{name:'새싹 도감 보기'}).click();
+  await page.getByRole('button',{name:'친구들 보기'}).click();
   for(const stage of [1,2,3,4,5,6]) {
     await page.evaluate(stage=>(window as unknown as {setSproutStage:(stage:number)=>void}).setSproutStage(stage),stage);
     await expect(cardFor(page,'감자싹').locator('.characterVisual')).toHaveAttribute('data-stage',String(stage));
@@ -166,10 +225,10 @@ test('Gomi starts as an adult main; help and book never award affection and home
   await page.getByRole('button', {name:'현재 화면 도움말'}).click();
   const guide = page.getByRole('dialog', {name:'버튼 도움말'});
   await expect(guide.locator('.characterHelpName')).toHaveText('고미');
-  await toStep(page, '새싹 도감 보기');
+  await toStep(page, '친구들 보기');
   await expect(guide.locator('#helpInstruction')).toContainText('친밀도는 오르지');
   await guide.getByRole('button', {name:'도움말 종료'}).click();
-  await page.getByRole('button', {name:'새싹 도감 보기'}).click();
+  await page.getByRole('button', {name:'친구들 보기'}).click();
   await expect(cardFor(page,'고미')).toBeVisible();
   await expect(cardFor(page,'고미').locator('.characterVisual')).toHaveAttribute('data-stage','6');
   await page.getByRole('button', {name:'감자싹 홈으로 이동'}).click();
@@ -230,7 +289,7 @@ test('Gomi tutorial navigation fits a short narrow phone with larger text', asyn
 
 test('help uses the selected main character instead of Gomi', async ({page}) => {
   await page.goto('/');
-  await page.getByRole('button',{name:'새싹 도감 보기'}).click();
+  await page.getByRole('button',{name:'친구들 보기'}).click();
   await cardFor(page,'감자싹').getByRole('button',{name:'대표로 설정'}).click();
   await page.getByRole('button',{name:'감자싹 홈으로 이동'}).click();
   await expect(page.getByRole('button',{name:'감자싹에게 말 걸기'})).toBeVisible();
@@ -300,7 +359,7 @@ test('Gomi draws a new pose only on Home entry; visibility, help and data refres
   await page.evaluate(()=>{Math.random=()=>.8;});
   await page.clock.fastForward(600_000);
   await expect(visual).toHaveAttribute('data-motion','cynical');
-  await page.getByRole('button',{name:'새싹 도감 보기'}).click();
+  await page.getByRole('button',{name:'친구들 보기'}).click();
   await page.getByRole('button',{name:'감자싹 홈으로 이동'}).click();
   await expect(visual).toHaveAttribute('data-motion','sleep-warm');
   await page.evaluate(()=>{
@@ -319,7 +378,7 @@ test('Gomi draws a new pose only on Home entry; visibility, help and data refres
   await page.clock.fastForward(120_000);
   await page.getByRole('button',{name:'도움말 종료'}).click();
   await expect(visual).toHaveAttribute('data-motion','sleep-warm');
-  await page.getByRole('button',{name:'새싹 도감 보기'}).click();
+  await page.getByRole('button',{name:'친구들 보기'}).click();
   await page.getByRole('button',{name:'감자싹 홈으로 이동'}).click();
   await expect(visual).toHaveAttribute('data-motion','stretch');
   await page.clock.fastForward(2_400);
@@ -398,11 +457,11 @@ for (const scenario of [
   await expect(guide.getByRole('heading',{name:'친구와 함께하기',exact:true})).toBeVisible();
   await expect(guide.locator('#helpInstruction')).toContainText('친밀도는 캐릭터에게 직접 말을 걸 때만');
   await guide.getByRole('button',{name:'다음',exact:true}).click();
-  await expect(guide.getByRole('heading',{name:'새싹 도감 보기',exact:true})).toBeVisible();
+  await expect(guide.getByRole('heading',{name:'친구들 보기',exact:true})).toBeVisible();
   await expect(guide.locator('#helpInstruction')).toContainText('친밀도는 오르지');
   await page.screenshot({path:`preview-results/gomi-guide-affinity-${scenario.score}-${info.project.name}.png`});
   await guide.getByRole('button',{name:'도움말 종료'}).click();
-  await page.getByRole('button',{name:'새싹 도감 보기'}).click();
+  await page.getByRole('button',{name:'친구들 보기'}).click();
   await expect(cardFor(page,'고미').locator('.characterDescription')).toContainText(scenario.description);
   await expect(cardFor(page,'고미').locator('.characterVisual')).toHaveAttribute('data-motion',scenario.motion);
 });

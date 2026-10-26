@@ -47,7 +47,7 @@ const viewLabels: Record<View, string> = {
   Memories: "추억",
   People: "사람과 반려동물",
   Diary: "일기장",
-  Characters: "새싹 도감",
+  Characters: "친구들",
   Settings: "설정",
 };
 
@@ -59,7 +59,7 @@ const navItems: Array<{ name: View; label: string; accessibleLabel: string }> = 
   { name: "Albums", label: "내 앨범", accessibleLabel: "내 앨범" },
   { name: "Diary", label: "일기장", accessibleLabel: "일기장" },
   { name: "Memories", label: "추억", accessibleLabel: "추억" },
-  { name: "Characters", label: "새싹 도감", accessibleLabel: "새싹 도감" },
+  { name: "Characters", label: "친구들", accessibleLabel: "친구들" },
   { name: "People", label: "사람과 반려동물", accessibleLabel: "사람과 반려동물" },
 ];
 
