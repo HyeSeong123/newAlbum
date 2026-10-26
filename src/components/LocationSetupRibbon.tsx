@@ -56,11 +56,17 @@ export function LocationSetupRibbon() {
       }
     };
     const onFocus = () => refresh();
+    const onNativeResume = () => {
+      setDismissed(false);
+      refresh();
+    };
     window.addEventListener("focus", onFocus);
+    window.addEventListener("gamjassak:android-resume", onNativeResume);
     document.addEventListener("visibilitychange", onVisible);
     return () => {
       ++lastCheck.current;
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener("gamjassak:android-resume", onNativeResume);
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [android, refresh]);

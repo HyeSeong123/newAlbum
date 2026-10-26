@@ -164,6 +164,9 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
             val webView = findWebView(activity.window.decorView) ?: return@post
             attachInsets(activity)
             attachBack(activity, webView)
+            // Android can resume this WebView without dispatching DOM focus or
+            // visibilitychange. Tell the existing document to reread settings.
+            webView.evaluateJavascript("window.dispatchEvent(new Event('gamjassak:android-resume'))", null)
         }
     }
     private fun attachInsets(component: ComponentActivity) {

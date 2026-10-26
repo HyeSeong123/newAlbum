@@ -204,6 +204,30 @@ test('Android location ribbon disappears after resolved settings and confirmed c
   await expect(page.locator('.homeMascot')).toBeVisible();
 });
 
+test('Android native resume refreshes location state without browser focus or visibility events', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.removeItem('gamjassak:camera-location-confirmed:v1');
+    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0 (Linux; Android 17; Pixel 7)' });
+    (window as any).nativeLocationEnabled = false;
+    (window as any).__TAURI_INTERNALS__ = {
+      convertFileSrc: () => '/favicon.png',
+      invoke: async (command: string) => command === 'check_android_location_setup'
+        ? { locationEnabled: (window as any).nativeLocationEnabled, photoLocationGranted: false } : [],
+    };
+  });
+  await page.goto('/');
+  const ribbon = page.getByRole('complementary', { name: '촬영 위치 설정 알림' });
+  await expect(ribbon).toContainText('휴대폰 위치 기능이 꺼져 있어요');
+  await ribbon.getByRole('button', { name: '설정 안내', exact: true }).click();
+  await page.evaluate(() => {
+    (window as any).nativeLocationEnabled = true;
+    window.dispatchEvent(new Event('gamjassak:android-resume'));
+  });
+  await expect(ribbon).toContainText('사진 위치정보 접근을 확인해 주세요');
+  await expect(ribbon.getByRole('button', { name: '휴대폰 위치 설정 열기', exact: true })).toHaveCount(0);
+  await expect(page.locator('.homeMascot')).toBeVisible();
+});
+
 test('location ribbon reports native settings failure and a subsequent successful recheck', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.removeItem('gamjassak:camera-location-confirmed:v1');
