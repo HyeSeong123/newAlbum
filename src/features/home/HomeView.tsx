@@ -6,7 +6,6 @@ import { useCompanionReactions } from "../characters/useCompanionReactions";
 import { chooseCompanionFallback, companionFallbackCandidates } from "../characters/companionFallback";
 import { characterPortraits } from "../characters/characterPortraits";
 import { characterDefinitions, characterName, dialogueLines, nextDialogue, type OwnedCharacter, type CharacterInteractionSource } from "../characters/models";
-import { gomiAffinity } from "../characters/gomiAffinity";
 import { gomiSleepLine } from "../characters/gomiBehavior";
 import { useGomiBehavior } from "../characters/useGomiBehavior";
 import { claimGomiGreeting } from "../characters/gomiGreeting";
@@ -77,16 +76,17 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   const isGomi = definition?.type === "gomi";
   const gomi = useGomiBehavior(isGomi, mainCharacter?.affection || 0, today, mainCharacter?.id);
   const lines = definition && mainCharacter ? dialogueLines(definition, mainCharacter.growthStage, mainCharacter.affection >= 20 ? "highAffection" : "idle", mainCharacter.affection) : messages;
-  const affinity = isGomi ? gomiAffinity(mainCharacter?.affection || 0) : undefined;
   const dialogueEntry = useRef("");
   useEffect(() => {
     if (isGomi && !gomi.ready) return;
-    const entry = `${mainCharacter?.id}:${mainCharacter?.growthStage}:${affinity}`;
+    // Saving a sleep disturbance can cross an affection tier. Keep the reaction
+    // the user just triggered rather than resetting it to a fixed sleep line.
+    const entry = `${mainCharacter?.id}:${mainCharacter?.growthStage}`;
     if (dialogueEntry.current === entry) return;
     dialogueEntry.current = entry;
     lastLine.current=0; setMessageIndex(0);
     setSpokenLine(isGomi && gomi.sleeping ? (gomi.irritated ? gomiSleepLine(3,mainCharacter?.affection || 0) : "…쌔근.") : undefined);
-  }, [mainCharacter?.id,mainCharacter?.growthStage,affinity,gomi.ready]);
+  }, [mainCharacter?.id,mainCharacter?.growthStage,gomi.ready]);
   const greetingEntry = useRef("");
   const greetingAffection = useRef(0);
   greetingAffection.current = mainCharacter?.affection || 0;

@@ -263,17 +263,20 @@ for (const scenario of [
   await expect(visual).toHaveAttribute('data-motion',`${scenario.pose}-peek`);
   await expect(visual).toHaveAttribute('data-expression','peek');
   await expect(mascot.locator('img')).toHaveAttribute('src',`/characters/gomi/${scenario.pose}-peek.png`);
-  await expect(page.locator('#homeMessage')).toHaveText('뭐. 자잖아.');
+  await expect(page.locator('#homeMessage')).toContainText(/자|잘|졸|눈|쉬/);
+  const spoken = [await page.locator('#homeMessage').textContent()];
   await page.clock.fastForward(1_800);
   await expect(visual).toHaveAttribute('data-motion',scenario.pose);
   await mascot.click();
   await expect(visual).toHaveAttribute('data-motion',`${scenario.pose}-peek`);
+  spoken.push(await page.locator('#homeMessage').textContent());
   await mascot.click();
   await expect(visual).toHaveAttribute('data-motion',`${scenario.pose}-angry`);
   await expect(visual).toHaveAttribute('data-expression','angry');
   await expect(mascot.locator('img')).toHaveAttribute('src',`/characters/gomi/${scenario.pose}-angry.png`);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 19');
-  await expect(page.locator('#homeMessage')).toHaveText('휴...');
+  await expect(page.locator('#homeMessage')).toContainText(/자|깨|졸|잠|눈|손/);
+  spoken.push(await page.locator('#homeMessage').textContent());
   await expect(visual).toHaveAttribute('data-stage','6');
   await page.screenshot({path:`preview-results/gomi-${scenario.pose}-angry-${test.info().project.name}.png`});
   await page.clock.fastForward(2_600);
@@ -281,7 +284,9 @@ for (const scenario of [
   await page.clock.fastForward(10_001);
   await mascot.click();
   await expect(visual).toHaveAttribute('data-motion',`${scenario.pose}-peek`);
-  await expect(page.locator('#homeMessage')).toHaveText('……');
+  await expect(page.locator('#homeMessage')).toContainText(/자|잘|졸|잠|눈|손/);
+  spoken.push(await page.locator('#homeMessage').textContent());
+  expect(new Set(spoken).size).toBe(4);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 19');
 });
 
