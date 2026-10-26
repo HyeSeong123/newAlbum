@@ -89,13 +89,23 @@ test('friend reactions pause in background and cleanly restart on another Home e
   await page.clock.fastForward(10_000);
   await page.locator('.navList').getByRole('button',{name:'홈',exact:true}).click();
   await expect(visual).toHaveAttribute('data-motion','nod');
+});
+
+test('other friends respect reduced motion from Home entry through explicit activities',async({page})=>{
   await page.emulateMedia({reducedMotion:'reduce'});
+  await installSnapshot(page,[companion('potato',6,true)]);
+  await page.goto('/');
+  const visual=page.locator('.homeMascot .characterVisual');
   await expect(visual).toHaveAttribute('data-reduced-motion','true');
-  await page.clock.fastForward(50);
-  expect(await visual.locator('.characterBody').evaluate(el=>{
+  const isStill=()=>visual.locator('.characterBody').evaluate(el=>{
     const transform=getComputedStyle(el).transform;
     return transform==='none'||new DOMMatrix(transform).isIdentity;
-  })).toBe(true);
+  });
+  await expect.poll(isStill).toBe(true);
+  await page.getByRole('button',{name:'함께하기',exact:true}).click();
+  await page.getByRole('button',{name:'함께 산책',exact:true}).click();
+  await expect(visual).toHaveAttribute('data-motion','walk');
+  await expect.poll(isStill).toBe(true);
 });
 
 test('Gomi rests awake with front paws extended and returns to the pose after talking', async ({page}) => {
