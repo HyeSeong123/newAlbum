@@ -50,6 +50,7 @@ function similarSentence(a: string, b: string): boolean {
 function repeatsLine(previous: string, line: string): boolean {
   const before = normalized(cleanCompanionGeneratedText(previous)), next = normalized(line);
   if (before === next) return true;
+  if (before.length >= 6 && next.length >= 6 && similarSentence(before, next)) return true;
   const formerSentences = (previous.match(/[^.!?。！？]+/gu) || []).map(normalized).filter(part => part.length >= 6);
   const nextSentences = (line.match(/[^.!?。！？]+/gu) || []).map(normalized).filter(part => part.length >= 6);
   return formerSentences.some(former => nextSentences.some(current => similarSentence(former, current)));

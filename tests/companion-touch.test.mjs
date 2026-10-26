@@ -82,6 +82,11 @@ if(existsSync(path)){
   const reply=await mod.generateTouchLine({...context,previous:['뭐야, 그냥 손 떨어져.']},async()=>++calls===1?'뭐야, 그냥 떨어져.':'만지지 말고 잠깐 내버려 둬.');
   assert.equal(calls,2);assert.equal(reply.line,'만지지 말고 잠깐 내버려 둬.');
  });
+ test('short real-model sentences cannot evade repetition checks by moving ellipses',async()=>{
+  let calls=0;
+  const reply=await mod.generateTouchLine({...context,previous:['아, 또 그런 거야. 귀찮아.']},async()=>++calls===1?'아... 또 그런 거야.':'손은 천천히 움직여. 갑자기 만지면 놀라잖아.');
+  assert.equal(calls,2);assert.equal(reply.line,'손은 천천히 움직여. 갑자기 만지면 놀라잖아.');
+ });
  test('repeated unusable answers stop after one retry and cancellation never retries',async()=>{
   let calls=0;
   const repeated=await mod.generateTouchLine(context,async()=>{calls++;return context.fallback;});
