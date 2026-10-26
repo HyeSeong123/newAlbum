@@ -412,6 +412,13 @@ try {
   await gomiGuide.getByRole('button', { name:'도움말 종료', exact:true }).click();
   const gomiState = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('sync_characters'));
   assert.equal(gomiState.characters.find(character => character.id === 'gomi').affection, 0);
+  const companionBefore = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('chat_model_status'));
+  assert.equal(typeof companionBefore.runtime.resident, 'boolean');
+  assert.equal(companionBefore.runtime.resident, false, 'Home must not eagerly load a model');
+  await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('release_chat_model', {sessionId:'android-install-smoke'}));
+  const companionAfter = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('chat_model_status'));
+  assert.equal(companionAfter.runtime.resident, false);
+  console.log('Installed Android companion status/release bridge resolves without eager inference: OK');
   console.log('Gomi cynical art, cold low-affection help and no guide affection award: OK');
   console.log('Installed Android app launched and rendered its native home.');
   const appDataRoot=await checkPhotoGps(page);

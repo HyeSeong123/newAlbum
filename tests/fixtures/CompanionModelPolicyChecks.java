@@ -13,7 +13,7 @@ public class CompanionModelPolicyChecks {
     check(!upgrade.verified(upgrade.bytes,old.sha256,18,18),"wrong hash rejected");
     check(!upgrade.verified(upgrade.bytes,upgrade.sha256,17,18),"modified file rejected");
     check(old.canGenerate(2000L*1024*1024,false),"legacy stays usable at previous memory level");
-    check(!upgrade.canGenerate(2000L*1024*1024,false),"upgrade cannot load with legacy-only memory");
+    check(upgrade.canGenerate(2000L*1024*1024,false),"upgrade can attempt mmap allocation when Android reports healthy memory");
     check(upgrade.canGenerate(3600L*1024*1024,false),"upgrade has headroom");
     check(!upgrade.canGenerate(3600L*1024*1024,true),"Android low-memory signal respected");
     check(!upgrade.canDownload(2497281120L),"download reserves verification headroom");
@@ -21,6 +21,10 @@ public class CompanionModelPolicyChecks {
     String prompt="<|im_start|>user\n터치 /no_think<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n";
     check(old.preparePrompt(prompt).equals(prompt),"legacy chat template unchanged");
     check(upgrade.preparePrompt(prompt).equals("<|im_start|>user\n터치 <|im_end|>\n<|im_start|>assistant\n"),"non-thinking instruct template");
-    System.out.println("17 companion model policy checks passed");
+        check(upgrade.canGenerate(2000L * 1024 * 1024, false, 300L * 1024 * 1024), "a healthy 8GB phone can try allocation below the old 3400MiB gate");
+        check(!upgrade.canGenerate(2000L * 1024 * 1024, true, 300L * 1024 * 1024), "Android low-memory blocks a new context");
+        check(!upgrade.canGenerate(700L * 1024 * 1024, false, 600L * 1024 * 1024), "leave Android's threshold plus working reserve");
+        check(!old.canGenerate(400L * 1024 * 1024, false, 100L * 1024 * 1024), "minimum context reserve also protects a resident legacy model");
+        System.out.println("21 companion model policy checks passed");
   }
 }

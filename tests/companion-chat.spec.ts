@@ -1,11 +1,11 @@
 import {test,expect} from '@playwright/test';
 
-async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:boolean;affection?:number;statusDelay?:number;interactionDelay?:number;error?:string;longReply?:boolean;echoFirst?:boolean;legacy?:boolean;controlledGeneration?:boolean}={}) {
+async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:boolean;affection?:number;statusDelay?:number;interactionDelay?:number;error?:string;longReply?:boolean;echoFirst?:boolean;legacy?:boolean;controlledGeneration?:boolean;actionReplies?:boolean}={}) {
   await page.addInitScript((settings:any)=>{
     Math.random=()=>settings.gomi?.55:.1;
     let downloading=false, interacted=false, calls=0, disturbances=0;
     const owned={id:settings.gomi?'gomi':'potato',customName:null,growthStage:6,affection:settings.affection||0,isMain:true};
-    const state=(window as any).touchProbe={prompts:[] as string[],stops:0,error:settings.error};
+    const state=(window as any).touchProbe={prompts:[] as string[],stops:0,releases:0,error:settings.error};
     (window as any).__TAURI_INTERNALS__={convertFileSrc:()=>'/favicon.png',invoke:async(command:string,args:any={})=>{
         if (command === 'check_android_location_setup') return { locationEnabled: true, photoLocationGranted: true };
       if(command==='sync_characters'||command==='interact_character'){
@@ -20,11 +20,13 @@ async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:b
       }
       if(command==='download_chat_model')downloading=true;
       if(command==='stop_chat_model'){downloading=false;state.stops++;}
+      if(command==='release_chat_model'){state.releases++;}
       if(command==='generate_chat_reply'){
         state.prompts.push(args.prompt);const call=++calls;
         if(settings.controlledGeneration)await new Promise(resolve=>{(state as any).finish=resolve;});
         if(settings.delay)await new Promise(resolve=>setTimeout(resolve,settings.delay));
         if(state.error)throw state.error;
+        if(settings.actionReplies)return ['오늘은 걷는 얘기를 하자.','네가 건넨 마음은 기억할게.','조심스러운 손길이면 괜찮아.','규칙부터 같이 정해 보자.','이제 조금 조용해져도 좋겠네.'][call-1];
         if(settings.longReply)return '조용히 곁에 있어 줘. 조금 더 자고 싶어. '+ '따뜻하고 편안한 잠을 자고 싶은 아침이야. '.repeat(8);
         if(settings.echoFirst&&call===1)return document.querySelector('#homeMessage')!.textContent;
         return settings.gomi?(call===1?'…조용히 해. 나 아직 졸려.':'…귀찮지만 네 옆에 있을게.'):call===1?'오늘은 네 손길이 반가워! 같이 놀아 볼까?':'오늘은 네 옆에서 느긋하게 쉬고 싶어.';
@@ -99,7 +101,7 @@ test('a failed AI run is explained in settings and a successful retry clears it'
   await page.locator('.homeMascot').click();
   await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
   await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
-  await expect(page.getByRole('dialog')).toContainText('터치하면 이야기가 달라져요');
+  await expect(page.getByRole('dialog')).toContainText('AI 모델이 설치되어 있어요');
   await page.getByRole('dialog').screenshot({path:`preview-results/ai-execution-status-${process.env.RELIABILITY_BASELINE?'before':'after'}.png`});
   await expect(page.getByRole('dialog')).toContainText('메모리가 부족해');
   await page.keyboard.press('Escape');
@@ -107,19 +109,82 @@ test('a failed AI run is explained in settings and a successful retry clears it'
   await page.locator('.homeMascot').click();
   await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
   await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
-  await expect(page.getByRole('dialog')).toContainText('AI가 새 대사를 만들었어요');
+  await expect(page.getByRole('dialog')).toContainText('AI가 새로운 대사를 만들었어요');
   await expect(page.getByRole('dialog')).not.toContainText('메모리가 부족해');
 });
 
-test('opening AI settings cancels a reaction still waiting for relationship storage',async({page})=>{
+test('opening AI settings retains a reaction waiting for relationship storage and shows its actual outcome',async({page})=>{
   await installAi(page,{interactionDelay:800});await page.goto('/');
   await page.locator('.homeMascot').click();
   await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
   await expect(page.getByRole('dialog',{name:'AI 반응 설정',exact:true})).toBeVisible();
+  await expect(page.getByRole('dialog')).toContainText('AI가 새로운 대사를 만들었어요');
+  expect(await page.evaluate(()=>(window as any).touchProbe.stops)).toBe(0);
+  expect(await page.evaluate(()=>(window as any).touchProbe.releases)).toBe(0);
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page.waitForTimeout(1800);
-  expect(await page.evaluate(()=>(window as any).touchProbe.prompts)).toHaveLength(0);
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
+});
+
+test('settings during slow generation preserves the new bubble and Home navigation releases the model',async({page})=>{
+  await installAi(page,{controlledGeneration:true});await page.goto('/');
+  await page.locator('.homeMascot').click();
+  await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
+  await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
+  await expect(page.getByRole('dialog')).toContainText('Qwen3 4B · 설치됨');
+  await page.evaluate(()=>(window as any).touchProbe.finish());
+  await expect(page.getByRole('dialog')).toContainText('AI가 새로운 대사를 만들었어요');
+  expect(await page.evaluate(()=>(window as any).touchProbe.stops)).toBe(0);
+  await page.getByRole('dialog').screenshot({path:'preview-results/ai-home-session-success.png'});
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#homeMessage')).toContainText('네 손길이 반가워');
+  await page.locator('.navList').getByRole('button',{name:'사진 기록',exact:true}).click();
+  await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.releases)).toBe(1);
+});
+
+test('another character does not inherit an unattributed native failure as its own recent reaction',async({page})=>{
+  await installAi(page);
+  await page.addInitScript(()=>{
+    const internals=(window as any).__TAURI_INTERNALS__,original=internals.invoke;
+    internals.invoke=async(command:string,args:any)=>command==='chat_model_status'
+      ?{...(await original(command,args)),lastOutcome:'error',lastError:'AI_ENGINE: AI 실행기를 불러오지 못했어요.',runtime:{resident:false,stage:'error',loadMs:12}}
+      :original(command,args);
+  });
+  await page.goto('/');await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
+  await expect(page.locator('.companionAiOutcome > p').last()).toContainText('아직 AI 반응 결과가 없어요');
+  await page.getByText('앱의 최근 실행 기록 보기',{exact:true}).click();
+  await expect(page.getByRole('dialog')).toContainText('AI 실행기를 불러오지 못했어요');
+});
+
+test('five sleeping fallback reactions stay distinct when the AI cannot allocate',async({page})=>{
+  await installAi(page,{gomi:true,error:'AI_MEMORY: 메모리가 부족해요.'});await page.goto('/');
+  const lines=[];
+  for(let i=0;i<5;i++){
+    await page.locator('.homeMascot').click();
+    lines.push(await page.locator('#homeMessage').textContent());
+  }
+  expect(new Set(lines).size).toBe(5);
+  await page.getByRole('button',{name:'함께하기',exact:true}).click();
+  const rest=[];
+  for(let i=0;i<6;i++){
+    await page.getByRole('button',{name:'함께 쉬기',exact:true}).click();
+    rest.push(await page.locator('#homeMessage').textContent());
+  }
+  expect(new Set(rest).size).toBe(6);
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
+});
+
+test('all five actions send their current situation to AI and show the returned new line',async({page})=>{
+  await installAi(page,{gomi:true,actionReplies:true});await page.goto('/');
+  await page.getByRole('button',{name:'함께하기',exact:true}).click();
+  const replies=['오늘은 걷는 얘기를 하자.','네가 건넨 마음은 기억할게.','조심스러운 손길이면 괜찮아.','규칙부터 같이 정해 보자.','이제 조금 조용해져도 좋겠네.'];
+  for(const [index,name] of ['함께 산책','간식 주기','쓰다듬기','함께 놀기','함께 쉬기'].entries()){
+    await page.getByRole('button',{name,exact:true}).click();
+    await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
+    await expect(page.locator('#homeMessage')).toHaveText(replies[index]);
+    const prompt=await page.evaluate((i)=>(window as any).touchProbe.prompts[i],index);
+    expect(prompt).toContain(`'${name}' 행동`);
+    expect(prompt).toContain(index===4?'나른함':'짜증');
+  }
 });
 
 test('background and return invalidate a reaction still waiting for relationship storage',async({page})=>{

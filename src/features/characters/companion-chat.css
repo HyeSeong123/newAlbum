@@ -23,3 +23,12 @@
   .companionChatBackdrop { padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); }
   .companionChat { max-height: calc(100dvh - 48px); }
 }
+.companionAiOutcome { width:100%; text-align:left; padding:16px; border-radius:var(--radius-md, 12px); background:var(--surface-soft, #f3f2ed); }
+.companionAiOutcome > strong { display:block; margin-top:12px; }
+.companionAiOutcome > strong:first-child { margin-top:0; }
+.companionAiOutcome p { overflow-wrap:anywhere; }
+.companionAiOutcome details { margin-top:12px; }
+.companionAiOutcome summary { cursor:pointer; padding:8px 0; }
+.companionAiMetrics { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px 12px; font-size:.85rem; }
+.companionAiMetrics dt { min-width:0; }
+.companionAiMetrics dd { margin:0; text-align:right; }

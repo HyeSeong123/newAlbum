@@ -29,6 +29,9 @@ export function cleanCompanionGeneratedText(text: string): string {
 }
 export function companionExecutionError(cause: unknown): string {
   const message = typeof cause === "string" ? cause : cause instanceof Error ? cause.message : "";
+  if (/AI_LOAD_TIMEOUT/.test(message)) return "AI 모델을 불러오는 시간이 길어 기본 반응을 보여 줬어요.";
+  if (/AI_GENERATION_TIMEOUT/.test(message)) return "AI 대사 생성 시간이 길어 기본 반응을 보여 줬어요.";
+  if (/AI_ENGINE|실행기/.test(message)) return "AI 실행기를 불러오지 못했어요. 앱 업데이트를 확인해 주세요.";
   if (/메모리|다른 앱|memory/i.test(message)) return "메모리가 부족해 AI 대사를 만들지 못했어요. 다른 앱을 잠시 닫고 다시 터치해 주세요.";
   if (/실행기|불러오지|load/i.test(message)) return "AI를 불러오지 못했어요. 앱을 다시 연 뒤 터치해 주세요.";
   if (/오래 걸|시간.*초과|timeout/i.test(message)) return "AI 대사를 만드는 시간이 길어 중단됐어요. 잠시 후 다시 터치해 주세요.";

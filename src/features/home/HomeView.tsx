@@ -3,6 +3,7 @@ import { ArrowUpRight, BookHeart, ChevronDown, Footprints, Gamepad2, HandHeart, 
 import { CharacterVisual } from "../characters/CharacterVisual";
 import { CompanionAiSetup } from "../characters/CompanionAiSetup";
 import { useCompanionReactions } from "../characters/useCompanionReactions";
+import { chooseCompanionFallback, companionFallbackCandidates } from "../characters/companionFallback";
 import { characterPortraits } from "../characters/characterPortraits";
 import { characterDefinitions, characterName, dialogueLines, nextDialogue, type OwnedCharacter, type CharacterInteractionSource } from "../characters/models";
 import { gomiAffinity } from "../characters/gomiAffinity";
@@ -121,7 +122,10 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     setMessageIndex(next);
     const reaction = isGomi ? gomi.react() : undefined;
     const restLine = reaction?.line;
-    const fallback = restLine || lines[next];
+    const fallback = mainCharacter ? chooseCompanionFallback(mainCharacter.id, companionFallbackCandidates({
+      gomi:Boolean(isGomi), affection:mainCharacter.affection, action:"touch", sleeping:reaction?.sleeping, disturbed:reaction?.disturbed,
+      basis:restLine || lines[next], touchLines:lines,
+    })) : lines[next];
     setSpokenLine(fallback);
     setMessageSource("local-rules");
     if (definition && mainCharacter) {
@@ -141,9 +145,11 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     const sleeping = isGomi && gomi.sleeping;
     const result = performCompanionActivity(definition, readCompanionMemory(mainCharacter.id), action, mainCharacter.affection, today, { sleeping });
     saveCompanionMemory(mainCharacter.id, result.memory);
-    setSpokenLine(result.line);
+    const fallback = chooseCompanionFallback(mainCharacter.id, companionFallbackCandidates({ gomi:Boolean(isGomi), affection:mainCharacter.affection,
+      action, sleeping, disturbed:sleeping && action !== "rest", basis:result.line }));
+    setSpokenLine(fallback);
     setMessageSource("local-rules");
-    void reactWithStoredRelationship({ definition, appearance, owned: mainCharacter, memory: result.memory, action, fallback: result.line }, sleeping && action !== "rest" ? "sleep" : undefined);
+    void reactWithStoredRelationship({ definition, appearance, owned: mainCharacter, memory: result.memory, action, fallback }, sleeping && action !== "rest" ? "sleep" : undefined);
     if (isGomi) gomi.activity(action);
     else setHappy(true);
     window.clearTimeout(timer.current);
@@ -173,7 +179,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
         </button>
         {definition && mainCharacter && <p className="homeCharacterMeta"><strong>{characterName(definition, mainCharacter)}</strong><span className="homeAffection"><Heart size={14} aria-hidden="true" />친밀도 {mainCharacter.affection}</span></p>}
         {definition && mainCharacter && <div className="homeActivities">
-          <button type="button" className="homeActivitiesToggle" data-help="companion-ai" onClick={() => { ++reactionRequest.current; ai.cancel(); setAiSetupOpen(true); }}>AI 반응 설정</button>
+          <button type="button" className="homeActivitiesToggle" data-help="companion-ai" onClick={() => setAiSetupOpen(true)}>AI 반응 설정</button>
           <button type="button" className="homeActivitiesToggle" aria-expanded={activitiesOpen} aria-controls="homeActivitiesChoices"
             data-help="companion-actions" onClick={() => setActivitiesOpen(value => !value)}>
             함께하기 <ChevronDown size={17} aria-hidden="true" className={activitiesOpen ? "expanded" : ""} />

@@ -30,20 +30,28 @@ pub async fn download_chat_model(app: AppHandle) -> Result<(), String> {
     { let _ = app; Err("Android 스마트폰에서 준비해 주세요.".into()) }
 }
 #[tauri::command]
-pub async fn generate_chat_reply(app: AppHandle, prompt: String) -> Result<String, String> {
+pub async fn generate_chat_reply(app: AppHandle, prompt: String, session_id: Option<String>) -> Result<String, String> {
     if prompt.trim().is_empty() || prompt.chars().count() > 12000 { return Err("이야기를 12000자 이내로 적어 주세요.".into()); }
     #[cfg(target_os = "android")]
     { tauri::async_runtime::spawn_blocking(move || {
-        let value = call(&app, "generate", serde_json::json!({"prompt":prompt}))?;
+        let value = call(&app, "generate", serde_json::json!({"prompt":prompt,"sessionId":session_id.unwrap_or_default()}))?;
         value.get("text").and_then(|x| x.as_str()).map(str::to_owned).ok_or_else(|| "답변을 받지 못했어요.".into())
     }).await.map_err(|e| e.to_string())? }
     #[cfg(not(target_os = "android"))]
-    { let _ = app; Err("Android 스마트폰에서 대화해 주세요.".into()) }
+    { let _ = (app, session_id); Err("Android 스마트폰에서 대화해 주세요.".into()) }
 }
 #[tauri::command]
-pub async fn stop_chat_model(app: AppHandle) -> Result<(), String> {
+pub async fn stop_chat_model(app: AppHandle, session_id: Option<String>) -> Result<(), String> {
     #[cfg(target_os = "android")]
-    { tauri::async_runtime::spawn_blocking(move || call(&app, "stop", serde_json::json!({})).map(|_| ())).await.map_err(|e| e.to_string())? }
+    { tauri::async_runtime::spawn_blocking(move || call(&app, "stop", serde_json::json!({"sessionId":session_id.unwrap_or_default()})).map(|_| ())).await.map_err(|e| e.to_string())? }
     #[cfg(not(target_os = "android"))]
-    { let _ = app; Ok(()) }
+    { let _ = (app, session_id); Ok(()) }
+}
+#[tauri::command]
+pub async fn release_chat_model(app: AppHandle, session_id: String) -> Result<(), String> {
+    if session_id.len() > 128 { return Err("AI 세션을 확인하지 못했어요.".into()); }
+    #[cfg(target_os = "android")]
+    { tauri::async_runtime::spawn_blocking(move || call(&app, "releaseModel", serde_json::json!({"sessionId":session_id})).map(|_| ())).await.map_err(|e| e.to_string())? }
+    #[cfg(not(target_os = "android"))]
+    { let _ = (app, session_id); Ok(()) }
 }
