@@ -4,7 +4,7 @@ import { expect } from '@playwright/test';
 /** Exercise the installed APK's IPC ACL, Kotlin settings intents and resume refresh.
  * Only the emulator's system location toggle changes; no app data or photo grants.
  */
-export async function verifyInstalledLocationSettings({ page, adb, appId, captureScreen }) {
+export async function verifyInstalledLocationSettings({ page, adb, appId, captureScreen, tapNative }) {
   const read = () => page.evaluate(() => window.__TAURI_INTERNALS__.invoke('check_android_location_setup'));
   const before = await read();
   assert.equal(typeof before.locationEnabled, 'boolean');
@@ -13,8 +13,22 @@ export async function verifyInstalledLocationSettings({ page, adb, appId, captur
   const setLocation = enabled => adb('shell', 'cmd', 'location', 'set-location-enabled', String(enabled));
   const foreground = async () => (await adb('shell', 'dumpsys', 'activity', 'activities'))
     .split('\n').filter(line => /topResumedActivity|mResumedActivity/.test(line)).join('\n');
+  async function closeLocationWarning() {
+    // Google APIs can show this asynchronous system Activity after the device
+    // toggle turns off. Close the real prompt; never disable the system package.
+    const deadline = Date.now() + 5_000;
+    do {
+      if ((await foreground()).includes('LocationOffWarningActivity')) {
+        await tapNative(/text="Close"/);
+        await expect.poll(foreground, { timeout: 15_000 }).toContain(appId);
+        return;
+      }
+      await new Promise(resolve => setTimeout(resolve, 200));
+    } while (Date.now() < deadline);
+  }
   try {
     await setLocation(false);
+    await closeLocationWarning();
     await page.reload();
     await expect(ribbon).toHaveAttribute('data-check-state', 'ready');
     await expect(ribbon).toContainText('휴대폰 위치 기능이 꺼져 있어요');
@@ -38,9 +52,10 @@ export async function verifyInstalledLocationSettings({ page, adb, appId, captur
     await adb('shell', 'input', 'keyevent', '4');
     await expect(page.locator('.homeMascot')).toBeVisible();
 
-    // The toggle changes while Home remains foreground; only the recheck button
-    // can update this displayed state. Never replace the real invoke with a mock.
+    // Recheck both actual toggle states. The Google APIs system image may
+    // overlay Home with its location warning, which must be closed natively.
     await setLocation(false);
+    await closeLocationWarning();
     await ribbon.getByRole('button', { name: '설정 다시 확인', exact: true }).click();
     await expect(ribbon).toHaveAttribute('data-check-state', 'ready');
     await expect(ribbon).toContainText('휴대폰 위치 기능이 꺼져 있어요');
@@ -52,9 +67,9 @@ export async function verifyInstalledLocationSettings({ page, adb, appId, captur
     await expect(ribbon.getByRole('alert')).toHaveCount(0);
     await captureScreen('location-settings-rechecked');
     assert.deepEqual(await read(), { locationEnabled: true, photoLocationGranted: false });
+    await ribbon.getByRole('button', { name: '이번에는 알림 닫기', exact: true }).click();
     return { deviceSettingsOpened: true, correctAppSettingsOpened: true, automaticResumeRefresh: true, manualRecheck: true, environment: 'Android API 36 x86_64 emulator' };
   } finally {
     await setLocation(before.locationEnabled);
-    if (await ribbon.isVisible()) await ribbon.getByRole('button', { name: '이번에는 알림 닫기', exact: true }).click();
   }
 }

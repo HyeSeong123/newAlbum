@@ -422,7 +422,7 @@ try {
   console.log('Installed Android companion status/release bridge resolves without eager inference: OK');
   console.log('Gomi cynical art, cold low-affection help and no guide affection award: OK');
   console.log('Installed Android app launched and rendered its native home.');
-  const locationSettings = await verifyInstalledLocationSettings({page, adb, appId, captureScreen});
+  const locationSettings = await verifyInstalledLocationSettings({page, adb, appId, captureScreen, tapNative});
   await writeFile(join(output, 'location-settings.json'), JSON.stringify(locationSettings, null, 2));
   console.log('Installed Android location settings, app permissions and manual/resume recheck: OK');
   const appDataRoot=await checkPhotoGps(page);
