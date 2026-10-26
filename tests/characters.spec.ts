@@ -407,15 +407,28 @@ for (const scenario of [
   await expect(cardFor(page,'고미').locator('.characterVisual')).toHaveAttribute('data-motion',scenario.motion);
 });
 
-for (const [before, after, line] of [[19,20,'뭐.'],[29,30,'휴. 또 왜.'],[59,60,'휴. 왔네. 무슨 일이야.'],[89,90,'휴. 너니까 해 주는 거야.']] as const) {
-  test(`Gomi immediately replaces stale speech when affection crosses ${after}`, async ({page}) => {
+for (const [before, after, tier, relation] of [[19,20,1,'아직 서먹한 사이'],[29,30,2,'서로 익숙한 사이'],[59,60,3,'가까운 사이'],[89,90,4,'아주 친밀한 사이']] as const) {
+  test(`Gomi uses the saved relationship for AI and help when affection crosses ${after}`, async ({page}) => {
     await installSnapshot(page,[{...companion('gomi',6,true),affection:before}]);
+    await page.addInitScript(()=>{
+      const native=(window as any).__TAURI_INTERNALS__, original=native.invoke;
+      (window as any).affinityPrompts=[];
+      native.invoke=async(command:string,args:Record<string,unknown>={})=>{
+        if(command==='chat_model_status')return {phase:'ready',supported:true,installed:true,model:'dialogue',downloaded:0,total:2497281120,message:'설치됨'};
+        if(command==='generate_chat_reply'){(window as any).affinityPrompts.push(args.prompt);return '들었어. 지금은 조금 조용히 있고 싶네.';}
+        return original(command,args);
+      };
+    });
     await page.goto('/');
     await page.getByRole('button',{name:'고미에게 말 걸기'}).click();
     await expect(page.locator('.homeCharacterMeta')).toContainText(`친밀도 ${after}`);
-    await expect(page.locator('.homeSpeech')).toHaveText(line);
+    await expect(page.locator('.homeSpeech')).toHaveAttribute('data-source','on-device');
+    const prompts=await page.evaluate(()=>(window as any).affinityPrompts);
+    expect(prompts).toHaveLength(1);
+    expect(prompts[0]).toContain(`친밀도: ${after}`);
+    expect(prompts[0]).toContain(`현재 관계: ${relation}`);
     await page.getByRole('button',{name:'현재 화면 도움말'}).click();
-    await expect(page.getByRole('dialog',{name:'버튼 도움말'}).locator('.helpVoice')).not.toBeEmpty();
+    await expect(page.getByRole('dialog',{name:'버튼 도움말'}).locator('.helpVoice')).toHaveAttribute('data-affinity',String(tier));
   });
 }
 
