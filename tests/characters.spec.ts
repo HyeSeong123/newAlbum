@@ -46,7 +46,7 @@ test('other friends keep their drawing while five activities and quiet rest have
   await page.goto('/');
   const visual=page.locator('.homeMascot .characterVisual');
   await page.clock.fastForward(3_000);
-  await expect(visual).toHaveAttribute('data-motion','idle');
+  await expect(visual).toHaveAttribute('data-motion','nod');
   await page.evaluate(()=>{(window as any).originalFriendDrawing=document.querySelector('.homeMascot .characterPortrait image');});
   await page.getByRole('button',{name:'함께하기',exact:true}).click();
   for(const [label,motion] of [['함께 산책','walk'],['햇살 선물','treat'],['쓰다듬기','pet'],['함께 놀기','play'],['함께 쉬기','rest']]) {
@@ -68,6 +68,23 @@ test('other friends keep their drawing while five activities and quiet rest have
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
 });
 
+test('returning Home rotates visible poses without changing affection', async ({page}) => {
+  await installSnapshot(page,[companion('potato',6,true)]);
+  await page.goto('/');
+  const visual=page.locator('.homeMascot .characterVisual');
+  const poses:string[]=[];
+  for (let visit=0;visit<4;visit++) {
+    const pose=await visual.getAttribute('data-motion');
+    expect(pose).toBeTruthy();
+    poses.push(pose!);
+    await expect(visual).toHaveAttribute('data-motion',pose!);
+    await page.locator('.navList').getByRole('button',{name:'사진 기록',exact:true}).click();
+    await page.locator('.navList').getByRole('button',{name:'홈',exact:true}).click();
+  }
+  expect(new Set(poses).size).toBe(4);
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
+});
+
 test('friend reactions pause in background and cleanly restart on another Home entry',async({page})=>{
   await installSnapshot(page,[companion('potato',6,true)]);
   await page.clock.install({time:new Date('2026-10-26T12:00:00')});
@@ -76,19 +93,19 @@ test('friend reactions pause in background and cleanly restart on another Home e
   const visual=page.locator('.homeMascot .characterVisual');
   await page.clock.fastForward(3_000);
   await page.locator('.homeMascot').click();
-  await expect(visual).toHaveAttribute('data-motion','nod');
+  await expect(visual).toHaveAttribute('data-motion','sway');
   await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));});
   await expect(visual).toHaveAttribute('data-paused','true');
   await page.clock.fastForward(30_000);
-  await expect(visual).toHaveAttribute('data-motion','nod');
+  await expect(visual).toHaveAttribute('data-motion','sway');
   await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});
   await expect(visual).toHaveAttribute('data-paused','false');
   await page.clock.fastForward(2_000);
-  await expect(visual).toHaveAttribute('data-motion','idle');
+  await expect(visual).toHaveAttribute('data-motion','nod');
   await page.locator('.navList').getByRole('button',{name:'사진 기록',exact:true}).click();
   await page.clock.fastForward(10_000);
   await page.locator('.navList').getByRole('button',{name:'홈',exact:true}).click();
-  await expect(visual).toHaveAttribute('data-motion','nod');
+  await expect(visual).toHaveAttribute('data-motion','look-around');
 });
 
 test('other friends respect reduced motion from Home entry through explicit activities',async({page})=>{

@@ -4,7 +4,7 @@ import { characterAsset, type CharacterDefinition } from "./models";
 import { GomiVisual } from "./GomiVisual";
 import { characterPortraits } from "./characterPortraits";
 import type { GomiMotion } from "./gomiBehavior";
-import { companionMotionAnimation, type CompanionMotion } from "./companionBehavior";
+import { companionMotionAnimation, companionMotionStillFrame, type CompanionMotion } from "./companionBehavior";
 
 export type Expression = "idle" | "happy" | "sad" | "grow";
 type CharacterVisualProps = {
@@ -33,7 +33,7 @@ function BotanicalVisual({ definition, stage, expression = "idle", className = "
     if (paused) { controls.stop(); return; }
     // Replay the motion, keeping the decoded portrait and SVG clip in place.
     const plan = companionMotionAnimation(playbackMotion,signature);
-    void controls.start(reduced ? { x:0,y:0,rotate:0,scaleX:1,scaleY:1 } : plan.keyframes,
+    void controls.start(reduced ? companionMotionStillFrame(playbackMotion,signature) : plan.keyframes,
       reduced ? { duration:0 } : { duration:plan.duration,repeat:plan.repeat,ease:"easeInOut" });
     return () => controls.stop();
   }, [controls,reduced,playbackMotion,signature,currentStage,reactionKey,paused]);

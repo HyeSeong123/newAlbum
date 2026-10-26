@@ -134,7 +134,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
       const source = reaction?.sleeping ? (reaction.disturbed ? "sleep" : undefined) : "home";
       void reactWithStoredRelationship({ definition, appearance, owned: mainCharacter, memory: reaction?.sleeping ? { ...memory, mood:reaction.disturbed ? "irritated" : "sleepy", energy:Math.min(1,memory.energy) } : memory, action:"touch", fallback }, source);
     }
-    setHappy(!isGomi && !restLine);
+    setHappy(!isGomi && !restLine && !companion.resting);
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setHappy(false), 1000);
   }
