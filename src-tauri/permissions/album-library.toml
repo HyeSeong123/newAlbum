@@ -20,6 +20,8 @@ commands.allow = [
   "delete_diary",
   "import_diary_photos",
   "list_media",
+  "check_android_location_setup",
+  "open_android_location_settings",
   "location_overview",
   "analyze_locations",
   "queue_failed_locations",

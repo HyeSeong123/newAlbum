@@ -29,6 +29,7 @@ on:
       - 'scripts/app-ux-smoke.mjs'
       - 'scripts/pet-improvements-smoke.mjs'
       - 'scripts/gallery-smoke.mjs'
+      - 'scripts/location-settings-smoke.mjs'
       - 'package*.json'
       - 'vite.config.ts'
       - 'index.html'
@@ -173,6 +174,7 @@ jobs:
             test-results/android-smoke/gallery-smoke.json
             test-results/android-smoke/manual-photos-smoke.json
             test-results/android-smoke/app-ux-smoke.json
+            test-results/android-smoke/location-settings.json
             test-results/android-smoke/pet-improvements-smoke.json
           if-no-files-found: error
       - uses: actions/upload-artifact@v4

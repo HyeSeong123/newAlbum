@@ -22,6 +22,18 @@ test('startup gallery comparison is authorized by the app command allowlist', as
   assert.match(allowed, /"compare_android_gallery"/, 'the frontend startup command must be allowed before it can reach the gallery bridge');
 });
 
+test('Android location controls are authorized in the bundled main window', async () => {
+  const capability = JSON.parse(await readFile(new URL('../src-tauri/capabilities/android.json', import.meta.url), 'utf8'));
+  assert.ok(capability.platforms.includes('android'));
+  assert.ok(capability.windows.includes('main'));
+  assert.ok(capability.permissions.includes('album-library'));
+  const permission = await readFile(new URL('../src-tauri/permissions/album-library.toml', import.meta.url), 'utf8');
+  const allowed = new Set((permission.match(/commands\.allow\s*=\s*\[([\s\S]*?)\]/)?.[1]?.match(/"[^"]+"/g) ?? []).map(value => JSON.parse(value)));
+  for (const command of ['check_android_location_setup', 'open_android_location_settings']) {
+    assert.ok(allowed.has(command), `${command} must reach the Android bridge instead of being rejected by the app ACL`);
+  }
+});
+
 test('GPS regression targets only the configured app managed copies and never legacy or original files', () => {
   for (const root of ['data', 'user/0']) {
     const owned = `/data/${root}/${androidAppId}/imported-media-v1/123/gps-smoke.jpg`;

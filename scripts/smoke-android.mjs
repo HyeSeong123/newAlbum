@@ -4,6 +4,7 @@ import { verifyInstalledPersonRuntime } from './person-runtime-benchmark.mjs';
 import { verifyInstalledGallery } from './gallery-smoke.mjs';
 import { verifyInstalledManualPhotos } from './manual-photo-smoke.mjs';
 import { verifyInstalledRepetitionMeasurement } from './person-repetition-smoke.mjs';
+import { verifyInstalledLocationSettings } from './location-settings-smoke.mjs';
 import { expect } from '@playwright/test';
 import { _android as android } from 'playwright';
 import assert from 'node:assert/strict';
@@ -421,6 +422,9 @@ try {
   console.log('Installed Android companion status/release bridge resolves without eager inference: OK');
   console.log('Gomi cynical art, cold low-affection help and no guide affection award: OK');
   console.log('Installed Android app launched and rendered its native home.');
+  const locationSettings = await verifyInstalledLocationSettings({page, adb, appId, captureScreen});
+  await writeFile(join(output, 'location-settings.json'), JSON.stringify(locationSettings, null, 2));
+  console.log('Installed Android location settings, app permissions and manual/resume recheck: OK');
   const appDataRoot=await checkPhotoGps(page);
   await verifyInstalledGallery({page,adb,nativeTree,tapNative,captureScreen,output});
   const security=await page.evaluate(async root=>{
