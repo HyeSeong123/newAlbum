@@ -63,7 +63,10 @@ test('other friends keep their drawing while five activities and quiet rest have
   await page.screenshot({path:testInfo.outputPath('friend-rest.png')});
   await page.locator('.homeMascot').click();
   await expect(visual).toHaveAttribute('data-motion','nod');
-  await page.clock.fastForward(1_800);
+  // The visible nod lasts 3.1 seconds; it must neither end early nor get stuck.
+  await page.clock.runFor(3_000);
+  await expect(visual).toHaveAttribute('data-motion','nod');
+  await page.clock.runFor(200);
   await expect(visual).toHaveAttribute('data-motion','rest');
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
 });
@@ -100,7 +103,10 @@ test('friend reactions pause in background and cleanly restart on another Home e
   await expect(visual).toHaveAttribute('data-motion','sway');
   await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});
   await expect(visual).toHaveAttribute('data-paused','false');
-  await page.clock.fastForward(2_000);
+  // Resuming starts the full 3.8-second sway again before restoring the Home pose.
+  await page.clock.runFor(3_700);
+  await expect(visual).toHaveAttribute('data-motion','sway');
+  await page.clock.runFor(200);
   await expect(visual).toHaveAttribute('data-motion','nod');
   await page.locator('.navList').getByRole('button',{name:'사진 기록',exact:true}).click();
   await page.clock.fastForward(10_000);
@@ -111,18 +117,36 @@ test('friend reactions pause in background and cleanly restart on another Home e
 test('other friends respect reduced motion from Home entry through explicit activities',async({page})=>{
   await page.emulateMedia({reducedMotion:'reduce'});
   await installSnapshot(page,[companion('potato',6,true)]);
+  await page.clock.install({time:new Date('2026-10-26T12:00:00')});
+  await page.clock.pauseAt(new Date('2026-10-26T12:01:00'));
   await page.goto('/');
   const visual=page.locator('.homeMascot .characterVisual');
   await expect(visual).toHaveAttribute('data-reduced-motion','true');
-  const isStill=()=>visual.locator('.characterBody').evaluate(el=>{
-    const transform=getComputedStyle(el).transform;
-    return transform==='none'||new DOMMatrix(transform).isIdentity;
+  const bodyPose=()=>visual.locator('.characterBody').evaluate(el=>{
+    const {a,b,c,d,e,f}=new DOMMatrix(getComputedStyle(el).transform);
+    return [a,b,c,d,e,f];
   });
-  await expect.poll(isStill).toBe(true);
+  await page.clock.runFor(100);
+  const homePose=await bodyPose();
+  // Reduced motion keeps the chosen silhouette while stopping its animation.
+  expect(homePose).not.toEqual([1,0,0,1,0,0]);
+  await page.clock.runFor(1_000);
+  expect(await bodyPose()).toEqual(homePose);
   await page.getByRole('button',{name:'함께하기',exact:true}).click();
   await page.getByRole('button',{name:'함께 산책',exact:true}).click();
   await expect(visual).toHaveAttribute('data-motion','walk');
-  await expect.poll(isStill).toBe(true);
+  await page.clock.runFor(100);
+  expect(await bodyPose()).toEqual([1,0,0,1,0,0]);
+  await page.clock.runFor(1_000);
+  await expect(visual).toHaveAttribute('data-motion','walk');
+  expect(await bodyPose()).toEqual([1,0,0,1,0,0]);
+  await page.clock.runFor(1_200);
+  await expect(visual).toHaveAttribute('data-motion','nod');
+  // Motion applies the restored posture on the frame after React changes it.
+  await page.clock.runFor(100);
+  expect(await bodyPose()).toEqual(homePose);
+  await page.clock.runFor(1_000);
+  expect(await bodyPose()).toEqual(homePose);
 });
 
 test('Gomi rests awake with front paws extended and returns to the pose after talking', async ({page}) => {
