@@ -223,10 +223,12 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive 
     setProgress({ done: 0, total: remaining.length });
     let failures = 0;
     let toScan = remaining;
+    let precisionIds = new Set<number>();
     try {
       const signal=controller.current.signal;
       if (retryEmpty) {
         const retryIds = new Set(await retryEmptyFaceScans());
+        precisionIds = retryIds;
         toScan = photos.filter(item => retryIds.has(Number(item.id)) || !lookup.scanned.has(Number(item.id)));
         setIndex(await loadFaceIndex());
         setProgress({ done: 0, total: toScan.length });
@@ -241,8 +243,9 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive 
       let done = 0;
       for (const item of toScan) {
         if (stop.current) break;
-        if (alive.current) setStatus('사진에서 사람을 찾는 중');
-        try { await scanPhoto(item, controller.current.signal); await finishPersonJob(Number(item.id),false); }
+        const precision = precisionIds.has(Number(item.id));
+        if (alive.current) setStatus(precision ? '놓친 얼굴을 정밀하게 찾는 중' : '사진에서 사람을 찾는 중');
+        try { await scanPhoto(item, controller.current.signal, { precision }); await finishPersonJob(Number(item.id),false); }
         catch { if (stop.current) break; failures += 1; await finishPersonJob(Number(item.id),true); }
         done += 1;
         if (alive.current) setProgress({ done, total: toScan.length });

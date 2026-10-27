@@ -21,12 +21,12 @@ export const setFacesExcluded = (ids: number[], excluded: boolean) => invoke('se
 export { loadPersonEngine as loadFaceEngine, analyzePersonImage as detectPhotoFaces } from './engine/client';
 import { analyzePersonImage } from './engine/client';
 
-export async function scanPhoto(item: MediaItem, signal?: AbortSignal) {
+export async function scanPhoto(item: MediaItem, signal?: AbortSignal, options: import('./engine/types').FaceAnalysisOptions = {}) {
   const source = await invoke<{source_key:string;completed:boolean}>('get_person_scan_source', { mediaId:Number(item.id) });
-  if (source.completed) return;
-  const faces = await analyzePersonImage(convertFileSrc(normalizeLocalFilePath(item.filePath)), signal);
+  if (source.completed && !options.precision) return;
+  const faces = await analyzePersonImage(convertFileSrc(normalizeLocalFilePath(item.filePath)), signal, 'auto', undefined, options);
   signal?.throwIfAborted();
-  await invoke('save_face_scan', { mediaId: Number(item.id), faces, sourceKey: source.source_key });
+  await invoke(source.completed ? 'refresh_face_scan' : 'save_face_scan', { mediaId: Number(item.id), faces, sourceKey: source.source_key });
 }
 
 export async function enqueuePersonPhotos(items: MediaItem[]) {

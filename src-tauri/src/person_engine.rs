@@ -82,6 +82,30 @@ pub fn finish_person_job(app:AppHandle,media_id:i64,failed:bool)->Result<(),Stri
 
 #[derive(Serialize)]
 pub struct Candidate {pub person_id:i64,pub distance:f64,pub references:usize,#[serde(skip_serializing_if="Option::is_none")]pub model_version:Option<String>}
+
+// Input is most-recent first and already restricted to confirmed references
+// (or the single legacy seed). Balance views without promoting auto matches.
+pub(crate) fn select_references(rows:&[(i64,i64,Vec<f64>,String)],limit:usize)->Vec<(i64,Vec<f64>)>{
+    let mut photos=std::collections::HashSet::new();
+    let mut groups=std::collections::BTreeMap::<i64,std::collections::BTreeMap<&str,Vec<&Vec<f64>>>>::new();
+    for (person,media,vector,view) in rows {
+        if vector.len()!=128 || !vector.iter().all(|x|x.is_finite()) || !photos.insert((*person,*media)) {continue;}
+        let view=match view.as_str(){"front"=>"front","left"=>"left","right"=>"right",_=>"unknown"};
+        groups.entry(*person).or_default().entry(view).or_default().push(vector);
+    }
+    let mut result=Vec::new();
+    for (person,views) in groups {
+        let mut selected=0;
+        for round in 0..limit.min(32) {
+            for references in views.values() {
+                if selected>=limit.min(32) {break;}
+                if let Some(vector)=references.get(round) {result.push((person,(**vector).clone()));selected+=1;}
+            }
+            if selected>=limit.min(32) {break;}
+        }
+    }
+    result
+}
 // Two agreeing exemplars when there are >=3 confirmed references prevents one
 // mislabeled exemplar from determining a whole person's score. No probability.
 pub(crate) fn rank(query:&[f64],references:&[(i64,Vec<f64>)])->Vec<Candidate>{
@@ -113,6 +137,25 @@ pub(crate) fn rank_for_review(query:&[f64],references:&[(i64,Vec<f64>)],confirme
 #[cfg(test)]
 mod tests{
  use super::*;
+ #[test]fn confirmed_reference_selection_keeps_older_side_views_and_one_face_per_photo(){
+  let mut rows=vec![(1,1,vec![0.1;128],"left".into()),(1,2,vec![0.2;128],"right".into())];
+  for id in 3..=44 {rows.push((1,id,vec![0.3;128],"front".into()));}
+  rows.push((1,44,vec![0.4;128],"left".into()));
+  rows.reverse();
+  let selected=select_references(&rows,32);
+  assert_eq!(selected.len(),32);
+  assert!(selected.iter().any(|r|r.1==vec![0.1;128]));
+  assert!(selected.iter().any(|r|r.1==vec![0.2;128]));
+  assert_eq!(selected.iter().filter(|r|r.1==vec![0.4;128]).count(),1);
+  assert_eq!(selected.iter().filter(|r|r.1==vec![0.3;128]).count(),29);
+  assert!(select_references(&rows,0).is_empty());
+ }
+ #[test]fn reference_selection_keeps_limits_separate_for_each_person(){
+  let rows=vec![(1,1,vec![0.1;128],"front".into()),(1,2,vec![0.2;128],"left".into()),(2,1,vec![0.3;128],"front".into()),(2,2,vec![0.4;128],"unknown".into())];
+  let selected=select_references(&rows,1);
+  assert_eq!(selected.iter().map(|r|r.0).collect::<Vec<_>>(),vec![1,2]);
+  assert_eq!(rows.len(),4);
+ }
  #[test]fn outlier_and_bad_dimensions_do_not_control_matching(){
   let q=vec![0.1;128];let refs=vec![(1,vec![0.1;128]),(1,vec![0.5;128]),(1,vec![0.5;128]),(2,vec![0.11;128]),(3,vec![0.1;512])];
   let result=rank(&q,&refs);assert_eq!(result.len(),2);assert_eq!(result[0].person_id,2);assert!(rank(&[f64::NAN;128],&refs).is_empty());

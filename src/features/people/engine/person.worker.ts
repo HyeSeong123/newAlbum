@@ -1,5 +1,6 @@
 import { FaceApiAdapter, runtimeInfo } from './faceApiAdapter';
 import type { FaceBackend } from './types';
+import { analyzePreciseFaces, type FaceRegion } from './precision';
 const adapter = new FaceApiAdapter();
 let loaded: Promise<void> | undefined;
 let preference: FaceBackend | undefined;
@@ -7,20 +8,36 @@ let modelLoadMs = 0;
 let wasmFailed = false;
 globalThis.onmessage = async ({ data }: MessageEvent) => {
   const { id, modelBase, backend = 'auto', pixels, width, height } = data;
+  const source: ImageBitmap | undefined = data.source;
   const started = performance.now();
   const run = async (selected: FaceBackend) => {
     if (preference !== selected) { adapter.disposeModel(); loaded = undefined; preference = selected; }
     loaded ??= (async () => { const start = performance.now(); await adapter.loadModel(modelBase, selected); modelLoadMs = performance.now() - start; })();
     await loaded;
-    let faces;
+    let faces, precisionPasses = 0;
     if (pixels) {
       if (width <= 0 || height <= 0 || Math.max(width, height) > 1600 || pixels.byteLength !== width * height * 4) throw new Error('잘못된 사진 크기');
       const canvas = new OffscreenCanvas(width, height);
       canvas.getContext('2d')!.putImageData(new ImageData(new Uint8ClampedArray(pixels), width, height), 0, 0);
-      faces = await adapter.detectFaces(canvas);
-      canvas.width = canvas.height = 1;
+      try {
+        faces = await adapter.detectFaces(canvas);
+        if (source) {
+          if (!source.width || !source.height) throw new Error('원본 사진을 읽지 못했습니다.');
+          const detectRegion = async ([x, y, w, h]: FaceRegion) => {
+            const sourceWidth = w * source.width, sourceHeight = h * source.height;
+            const scale = Math.min(1, 1600 / Math.max(sourceWidth, sourceHeight));
+            const region = new OffscreenCanvas(Math.max(1, Math.round(sourceWidth * scale)), Math.max(1, Math.round(sourceHeight * scale)));
+            try {
+              region.getContext('2d')!.drawImage(source, x * source.width, y * source.height, sourceWidth, sourceHeight, 0, 0, region.width, region.height);
+              return await adapter.detectFaces(region);
+            } finally { region.width = region.height = 1; }
+          };
+          const precise = await analyzePreciseFaces(faces, detectRegion);
+          faces = precise.faces; precisionPasses = precise.passes;
+        }
+      } finally { canvas.width = canvas.height = 1; }
     }
-    return { id, faces, diagnostics: { ...runtimeInfo(), elapsedMs: performance.now() - started, modelLoadMs } };
+    return { id, faces, diagnostics: { ...runtimeInfo(), elapsedMs: performance.now() - started, modelLoadMs, precisionPasses } };
   };
   try {
     try { globalThis.postMessage(await run(backend === 'auto' && wasmFailed ? 'cpu' : backend)); }
@@ -33,5 +50,5 @@ globalThis.onmessage = async ({ data }: MessageEvent) => {
     adapter.disposeModel(); loaded = undefined;
     // Do not forward model/descriptor/input exceptions into logs or UI.
     globalThis.postMessage({ id, error: '얼굴 분석을 완료하지 못했습니다. 다시 시도해 주세요.' });
-  }
+  } finally { source?.close(); }
 };

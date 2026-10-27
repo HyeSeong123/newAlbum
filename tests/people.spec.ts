@@ -372,20 +372,52 @@ test('unnamed faces are visible and can be saved to an existing person without a
   await page.screenshot({ path: `preview-results/people-simple-name-${test.info().project.name}.png`, fullPage: false });
 });
 
-test('the main action retries a completed photo with no faces and keeps existing names', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Real inference exercised once; naming UI covers both sizes.');
-  test.setTimeout(120_000);
-  await page.route('**/missed-person.jpg', route => route.fulfill({ path: 'tests/fixtures/pet-dog.jpg', contentType: 'image/jpeg' }));
+test('precision retry survives cancellation and failure while keeping completed scans and existing names', async ({ page }) => {
+  test.setTimeout(240_000);
+  let attempts = 0, releaseFirst = () => {}, firstStarted = () => {};
+  const firstRequest = new Promise<void>(resolve => { firstStarted = resolve; });
+  const release = new Promise<void>(resolve => { releaseFirst = resolve; });
+  await page.route('**/missed-person.jpg', async route => {
+    const attempt = ++attempts;
+    if (attempt === 1) { firstStarted(); await release; await route.abort().catch(() => {}); }
+    else if (attempt === 2) await route.abort('failed');
+    else await route.fulfill({ path: 'tests/fixtures/pet-dog.jpg', contentType: 'image/jpeg' });
+  });
+  await page.route('**/new-person.jpg', route => route.fulfill({ path: 'tests/fixtures/pet-dog.jpg', contentType: 'image/jpeg' }));
   await page.addInitScript(() => {
+    // Isolate UI/IPC recovery from inference latency. Actual precision inference
+    // and ImageBitmap transfer are exercised in person-worker.spec.ts.
+    class FaceFixtureWorker extends EventTarget {
+      closed = false;
+      postMessage(data: { id: number; source?: ImageBitmap }) {
+        queueMicrotask(() => {
+          if (this.closed) return;
+          const precisionPasses = data.source ? 4 : 0;
+          data.source?.close();
+          this.dispatchEvent(new MessageEvent('message', { data: { id: data.id, faces: [], diagnostics: { backend: 'fixture', elapsedMs: 0, modelLoadMs: 0, tensors: 0, tensorBytes: 0, simd: false, precisionPasses } } }));
+        });
+      }
+      terminate() { this.closed = true; }
+    }
+    window.Worker = FaceFixtureWorker as unknown as typeof Worker;
+    const profiles: number[] = [];
+    window.addEventListener('gamjassak-person-diagnostics', (event: Event) => {
+      document.documentElement.dataset.retryPrecision = JSON.stringify((event as CustomEvent).detail);
+      if ((event as CustomEvent).detail.precisionPasses !== undefined) {
+        profiles.push((event as CustomEvent).detail.precisionPasses);
+        document.documentElement.dataset.scanProfiles = JSON.stringify(profiles);
+      }
+    });
     const state = { people: [{ id: 7, name: '가족' }], faces: [{ id: 11, media_id: 1, person_id: 7, thumbnail: '/favicon.svg', confirmed: true }], scanned: [1, 2] };
-    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: { convertFileSrc: () => '/missed-person.jpg', invoke: async (command: string, args: { mediaId: number; mediaIds: number[]; faces: unknown[] }) => {
-      if (command === 'list_media') return [1, 2].map(id => ({ id, file_path: `photo${id}.jpg`, file_type: 'image', taken_at: '2026-10-10', size_bytes: 1, rating: 0, comment: '', favorite: false, metadata_status: 'ready' }));
+    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: { convertFileSrc: (path: string) => path.includes('photo3') ? '/new-person.jpg' : '/missed-person.jpg', invoke: async (command: string, args: { mediaId: number; mediaIds: number[]; faces: unknown[] }) => {
+      if (command === 'list_media') return [1, 2, 3].map(id => ({ id, file_path: `photo${id}.jpg`, file_type: 'image', taken_at: '2026-10-10', size_bytes: 1, rating: 0, comment: '', favorite: false, metadata_status: 'ready' }));
       if (command === 'list_face_index') return structuredClone(state);
-      if (command === 'retry_empty_face_scans') { state.scanned = [1]; return [2]; }
+      if (command === 'retry_empty_face_scans') { return [2]; }
       if (command === 'audit_person_scans') return { items: [], nextCursor: 0, done: true };
-      if (command === 'get_person_scan_source') return { source_key: 'sha256:missed-fixture', completed: false, legacy: false };
+      if (command === 'get_person_scan_source') return { source_key: 'sha256:missed-fixture', completed: state.scanned.includes(args.mediaId), legacy: false };
       if (command === 'enqueue_person_jobs') document.documentElement.dataset.retryPhotos = JSON.stringify(args.mediaIds);
-      if (command === 'save_face_scan') { if (args.mediaId !== 2 || args.faces.length) throw new Error('Only the missed dog fixture should be scanned'); state.scanned.push(2); }
+      if (command === 'save_face_scan') { if (args.mediaId !== 3 || args.faces.length) throw new Error('Only the new photo may use a first scan'); state.scanned.push(3); }
+      if (command === 'refresh_face_scan') { if (args.mediaId !== 2 || args.faces.length) throw new Error('Only the missed dog fixture should be scanned'); return { detected: 0, learned: 0 }; }
       if (command === 'clear_face_index' || command === 'move_faces' || command === 'rename_face_person') throw new Error('Retry must retain existing people');
       return [];
     } } });
@@ -393,10 +425,35 @@ test('the main action retries a completed photo with no faces and keeps existing
   await page.goto('/');
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   const retry = page.getByRole('group', { name: '사진에서 인물 찾기', exact: true }).getByRole('button', { name: '못 찾은 사진 다시 찾기', exact: true });
+  const startRetry = async () => {
+    if (await retry.isVisible()) { await expect(retry).toBeEnabled(); await retry.click(); }
+    else {
+      await page.getByRole('button', { name: '얼굴 관리', exact: true }).click();
+      const action = page.locator('.actionMenuPanel').getByRole('button', { name: '못 찾은 사진 다시 찾기', exact: true });
+      await expect(action).toBeEnabled(); await action.click();
+    }
+  };
+  await page.screenshot({ path: `preview-results/people-precision-before-${test.info().project.name}.png` });
+  await startRetry();
+  await expect.poll(() => attempts, { timeout: 15_000, message: 'A precise retry must analyze the completed empty photo' }).toBe(1);
+  await firstRequest;
+  await page.locator('.faceProgress').getByRole('button', { name: '중단', exact: true }).click();
+  releaseFirst();
+  await expect(page.locator('.faceProgress')).toContainText('사람 찾기를 중단했습니다.');
+  await startRetry();
+  await expect(page.locator('.faceProgress')).toContainText('1장은 확인하지 못했습니다.');
   await expect(retry).toBeEnabled();
-  await retry.click();
+  await startRetry();
   await expect(page.locator('html')).toHaveAttribute('data-retry-photos', '[2]');
   await expect(page.locator('.faceProgress')).toContainText('사진 1장을 확인했습니다.', { timeout: 60_000 });
+  await expect(page.locator('html')).toHaveAttribute('data-retry-precision', /precisionPasses/);
+  const diagnostics = JSON.parse((await page.locator('html').getAttribute('data-retry-precision'))!);
+  expect(diagnostics.precisionPasses).toBeGreaterThanOrEqual(4);
+  expect(diagnostics.precisionPasses).toBeLessThanOrEqual(8);
+  const profiles = JSON.parse((await page.locator('html').getAttribute('data-scan-profiles'))!);
+  expect(profiles.slice(0, -1).every((passes: number) => passes === 0)).toBe(true);
+  expect(profiles[profiles.length - 1]).toBeGreaterThanOrEqual(4);
   await expect(page.getByRole('button', { name: '가족 1장', exact: true })).toBeVisible();
-  await expect(page.locator('.peopleSummary')).toContainText('2 / 2장');
+  await expect(page.locator('.peopleSummary')).toContainText('3 / 3장');
+  await page.screenshot({ path: `preview-results/people-precision-after-${test.info().project.name}.png` });
 });

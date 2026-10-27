@@ -43,6 +43,7 @@ test('person Worker preserves original descriptors, isolates runtimes and suppor
   expect(Math.max(...results.baselineDistances)).toBeLessThan(0.001);
   expect(Math.max(...results.backendDistances)).toBeLessThan(0.001);
   expect(results.stable).toBe(true);expect(results.abortWorked).toBe(true);expect(results.restarted).toBe(3);
+  expect(results.diagnostics.every(entry => entry.precisionPasses === 0)).toBe(true);
   expect(results.beats).toBeGreaterThan(30);expect(external).toEqual([]);
 
 });
@@ -65,4 +66,32 @@ test('person inference falls back to CPU when offline WASM is unavailable',async
   const faces=await analyzePersonImage('/face-input.jpg');disposePersonEngine();return {backend,count:faces.length};
  });
  expect(result).toEqual({backend:'cpu',count:3});
+});
+
+test('explicit precision transfers the original image and leaves ordinary inference unchanged', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Real inference once; retry/cancel controls are exercised at mobile size.');
+  test.setTimeout(240_000);
+  await page.route('**/precision-human.jpg', route => route.fulfill({ path: 'node_modules/@vladmandic/face-api/demo/sample1.jpg', contentType: 'image/jpeg' }));
+  await page.route('**/precision-dog.jpg', route => route.fulfill({ path: 'tests/fixtures/pet-dog.jpg', contentType: 'image/jpeg' }));
+  await page.goto('/');
+  const result = await page.evaluate(async () => {
+    const path = '/src/features/people/engine/client.ts';
+    const { analyzePersonImage, disposePersonEngine } = await import(/* @vite-ignore */path);
+    let passes = -1;
+    const diagnostics = (value: {precisionPasses: number}) => { passes = value.precisionPasses; };
+    const precise = await analyzePersonImage('/precision-human.jpg', undefined, 'wasm', diagnostics, { precision: true });
+    const precisionPasses = passes;
+    const dog = await analyzePersonImage('/precision-dog.jpg', undefined, 'wasm', undefined, { precision: true });
+    const standard = await analyzePersonImage('/precision-human.jpg', undefined, 'wasm', diagnostics);
+    disposePersonEngine();
+    return { precisionPasses, standardPasses: passes, standard: standard.length, dog: dog.length, count: precise.length,
+      safe: precise.every((face: {quality: string; descriptor: number[]; box: number[]}) => face.quality === 'review' && face.descriptor.length === 128 && face.descriptor.every(Number.isFinite) && face.box.every(Number.isFinite)) };
+  });
+  expect(result.count).toBeGreaterThanOrEqual(3);
+  expect(result.safe).toBe(true);
+  expect(result.precisionPasses).toBeGreaterThanOrEqual(4);
+  expect(result.precisionPasses).toBeLessThanOrEqual(8);
+  expect(result.dog).toBe(0);
+  expect(result.standard).toBe(3);
+  expect(result.standardPasses).toBe(0);
 });
