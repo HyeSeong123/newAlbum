@@ -18,8 +18,14 @@ export function comparePets(a: PetFeatures, b: PetFeatures): { score: number; ba
   }
   const appearance = Math.max(cosine(a.appearance, b.appearance), cosine(a.appearance, b.mirroredAppearance), cosine(a.mirroredAppearance, b.appearance));
   if (!appearance) return { score: 0, basis };
-  const face = Math.max(cosine(a.faceAppearance ?? [], b.faceAppearance ?? []), cosine(a.faceAppearance ?? [], b.mirroredFaceAppearance ?? []), cosine(a.mirroredFaceAppearance ?? [], b.faceAppearance ?? []));
-  if (a.faceAppearance?.length && b.faceAppearance?.length && a.faceAppearance.length === b.faceAppearance.length && a.faceAppearance.every(Number.isFinite) && b.faceAppearance.every(Number.isFinite) && a.view !== 'unknown' && b.view !== 'unknown') {
+  // Invalid or zero-valued face vectors must not outrank intact body evidence.
+  // Genuine but dissimilar face vectors (cosine 0) still remain face evidence.
+  const usableFaces = !!a.faceAppearance?.length && !!b.faceAppearance?.length &&
+    a.faceAppearance.length === b.faceAppearance.length &&
+    a.faceAppearance.every(Number.isFinite) && b.faceAppearance.every(Number.isFinite) &&
+    a.faceAppearance.some(value => value !== 0) && b.faceAppearance.some(value => value !== 0);
+  if (usableFaces && a.view !== 'unknown' && b.view !== 'unknown') {
+    const face = Math.max(cosine(a.faceAppearance!, b.faceAppearance!), cosine(a.faceAppearance!, b.mirroredFaceAppearance ?? []), cosine(a.mirroredFaceAppearance ?? [], b.faceAppearance!));
     const weight = a.view === 'front' && b.view === 'front' ? 0.65 : 0.45;
     return { score: weight * face + (0.85-weight) * appearance + 0.10 * color + 0.05 * shape, basis: 'face-appearance' };
   }
@@ -31,7 +37,7 @@ export function rankPets(query: PetQuery, references: PetReference[], limit = 3)
   const rejected = new Set(query.rejected_pet_ids ?? []);
   const priority = (basis:PetCandidate['basis']) => query.view==='rear' ? 0 : basis==='face-appearance' ? 0 : basis==='appearance' ? 1 : 2;
   references.forEach((reference,index) => {
-    if (rejected.has(reference.petId) || query.media_id!==undefined && reference.mediaId===query.media_id || query.id!==undefined && reference.detectionId===query.id) return;
+    if (reference.features.kind !== query.kind || rejected.has(reference.petId) || query.media_id!==undefined && reference.mediaId===query.media_id || query.id!==undefined && reference.detectionId===query.id) return;
     const comparison=comparePets(query,reference.features);
     if (comparison.score<=0) return;
     const rows=groups.get(reference.petId) ?? [];
