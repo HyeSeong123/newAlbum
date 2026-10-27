@@ -41,6 +41,23 @@ test('malformed vectors never produce NaN or identity candidates',()=>{
  assert.equal(cosine([NaN],[1]),0);assert.equal(cosine([],[]),0);assert.equal(cosine([0],[0]),0);assert.equal(cosine([1],[1,2]),0);
  assert.equal(recognizePet(feature({appearance:[],mirroredAppearance:[]}),[{petId:1,features:feature()}]).candidates.length,0);
 });
+test('unusable pet face embeddings fall back to body while valid mismatched faces remain decisive',()=>{
+ const query=feature({faceAppearance:[1,0],mirroredFaceAppearance:[1,0]});
+ for(const vector of [[0,0],[NaN,1],[Infinity,0],[1]]){
+  const invalid=feature({faceAppearance:vector,mirroredFaceAppearance:vector});
+  assert.deepEqual(comparePets(query,invalid),{score:1,basis:'appearance'});
+  assert.equal(rankPets(query,[{petId:1,features:invalid}])[0].basis,'appearance');
+ }
+ const distinct=feature({faceAppearance:[0,1],mirroredFaceAppearance:[0,1]});
+ assert.equal(comparePets(query,distinct).basis,'face-appearance');
+ assert.ok(comparePets(query,distinct).score<.5);
+ assert.equal(recognizePet(query,[{petId:1,features:distinct}]).autoPetId,null);
+});
+test('different species skip costly embeddings without changing candidate results',()=>{
+ const other={...feature({kind:'cat'}),get appearance(){throw Error('unrelated descriptor read');},get color(){throw Error('unrelated histogram read');}};
+ assert.deepEqual(comparePets(feature(),other),{score:0,basis:'appearance'});
+ assert.deepEqual(rankPets(feature(),[{petId:1,features:other}]),[]);
+});
 test('spatial color descriptors preserve color differences without pretrained face features',()=>{
  const red=new Uint8ClampedArray(8*8*4),blue=new Uint8ClampedArray(8*8*4);
  for(let i=0;i<red.length;i+=4){red[i]=255;red[i+3]=255;blue[i+2]=255;blue[i+3]=255;}

@@ -8,4 +8,7 @@ test('turned-face recall preserves original detections and excludes the measured
   assert.equal(retainFaceDetection({score:0.65,box:{width:30,height:35}}),true);
   assert.equal(retainFaceDetection({score:0.349,box:{width:150,height:150}}),false);
   assert.equal(retainFaceDetection({score:NaN,box:{width:150,height:150}}),false);
+  assert.equal(retainFaceDetection({score:0.99,box:{width:0,height:100}}),false);
+  assert.equal(retainFaceDetection({score:0.99,box:{width:Infinity,height:100}}),false);
+  assert.equal(retainFaceDetection({score:0.99,box:{width:7,height:100}}),false);
 });
