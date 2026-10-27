@@ -254,7 +254,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive 
       if (alive.current) {
         const next = await loadFaceIndex();
         setIndex(next);
-        setStatus(stop.current ? '사람 찾기를 중단했습니다. 확인한 사진은 그대로 남아 있습니다.' : failures ? `얼굴 찾기를 마쳤습니다. ${toScan.length}장 중 ${done - failures}장을 확인했습니다. ${failures}장은 확인하지 못했습니다. 새 사진에서 사람 찾기를 눌러 다시 시도할 수 있습니다.` : `사진 ${done}장을 확인했습니다. 인물 화면에서 찾은 얼굴을 확인하고 이름을 붙여 주세요.`);
+        setStatus(stop.current ? '사람 찾기를 중단했습니다. 확인한 사진은 그대로 남아 있습니다.' : failures ? `얼굴 찾기를 마쳤습니다. ${toScan.length}장 중 ${done - failures}장을 확인했습니다. ${failures}장은 확인하지 못했습니다. 확인하지 못한 사진은 다시 시도해 주세요.` : `사진 ${done}장을 확인했습니다. 인물 화면에서 찾은 얼굴을 확인하고 이름을 붙여 주세요.`);
       }
     } catch { if (alive.current && !stop.current) { const message = '사진에서 사람을 찾는 중 문제가 발생했습니다. 이미 확인한 사진과 원본은 그대로 남아 있습니다. 다시 시도해 주세요.'; setError(message); setAnalysisError(message); } }
     finally { if(stop.current) await controlPersonJobs(false).catch(()=>undefined); controller.current = null; locked.current = false; if (alive.current) { setRunning(false); if(stop.current) setStatus('사람 찾기를 중단했습니다. 확인한 사진은 그대로 남아 있습니다.'); } }
