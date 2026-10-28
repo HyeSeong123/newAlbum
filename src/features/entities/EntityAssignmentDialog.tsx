@@ -4,11 +4,11 @@ import type { Assignment } from './entityService';
 import { entityCounter } from './entityLabels';
 import './entities.css';
 
-export function EntityAssignmentDialog({ kind, entries, count, unit, onSave, onClose }: {
-  kind: 'person' | 'pet'; entries: { id: number; name: string }[]; count: number; unit: string;
+export function EntityAssignmentDialog({ kind, entries, count, unit, initialMode, onSave, onClose }: {
+  kind: 'person' | 'pet'; entries: { id: number; name: string }[]; count: number; unit: string; initialMode?: 'existing' | 'new';
   onSave: (assignment: Assignment) => Promise<void>; onClose: () => void;
 }) {
-  const [mode, setMode] = useState<'existing' | 'new'>(entries.length ? 'existing' : 'new');
+  const [mode, setMode] = useState<'existing' | 'new'>(initialMode ?? (entries.length ? 'existing' : 'new'));
   const [target, setTarget] = useState(''), [name, setName] = useState('');
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
   const lock = useRef(false);

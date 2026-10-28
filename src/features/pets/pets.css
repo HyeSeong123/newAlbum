@@ -153,3 +153,13 @@
   .petSearchFooter > .primaryControl { grid-column:1 / -1; }
   .petSearchScope select, .petSearchCard select { font-size:16px; }
 }
+
+/* Unknown pet assignment keeps the target and action together on phones. */
+.petUnknownAssign { display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:end; gap:8px; width:100%; }
+.petUnknownAssign label { display:grid; gap:6px; min-width:0; color:var(--text); font-size:14px; }
+.petUnknownAssign select { display:block; min-width:0; width:100%; min-height:44px; padding:8px 12px; border:1px solid var(--border); border-radius:var(--control-radius,6px); color:var(--text); background:var(--surface); font:inherit; }
+.petUnknownAssign > button { min-height:44px; white-space:normal; }
+@media (max-width:600px) { .petUnknownAssign { grid-template-columns:minmax(0,1fr); } .petUnknownAssign > button { width:100%; } }
+
+.petUnknownAssign .petUnknownFeedback { grid-column:1 / -1; margin:0; font-size:13px; line-height:1.6; overflow-wrap:anywhere; }
+.petUnknownAssign [role="alert"] { color:var(--danger); }

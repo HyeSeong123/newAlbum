@@ -111,11 +111,14 @@ test('pet analysis continues after leaving its selection screen and has an expli
   await prepare(page);
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('tab', { name: '반려동물', exact: true }).click();
-  await page.getByRole('button', { name: '사진에서 반려동물 감지', exact: true }).click();
-  const picker = page.getByRole('dialog', { name: '반려동물 감지할 사진 선택', exact: true });
-  await picker.getByRole('button', { name: '전체 선택', exact: true }).click();
-  await picker.getByRole('button', { name: '반려동물 감지', exact: true }).click();
+  // Registration-first flow: the sole photo search starts both the already
+  // enrolled reference and the rest of the library. Closing the dialog must
+  // not cancel an explicit background scan.
+  await page.getByRole('button', { name: '반려동물 사진 찾기', exact: true }).click();
+  const search = page.getByRole('dialog', { name: '반려동물 사진 찾기', exact: true });
+  await search.getByRole('button', { name: '사진 찾기 시작', exact: true }).click();
   await expect(page.getByRole('button', { name: '분석 중 · 진행상황 보기' })).toBeVisible();
+  await search.locator('footer').getByRole('button', { name: '닫기', exact: true }).click();
   await page.getByRole('button', { name: '감자싹 홈으로 이동' }).click();
   await page.getByRole('button', { name: '분석 중 · 진행상황 보기' }).click();
   const panel = page.getByRole('region', { name: '분석 진행상황', exact: true });
@@ -125,9 +128,13 @@ test('pet analysis continues after leaving its selection screen and has an expli
   await panel.getByRole('button', { name: '분석 중단', exact: true }).click();
   await expect.poll(() => page.evaluate(() => (window as any).lifecycle.jobs.filter((j: any) => j.state === 'paused').length)).toBeGreaterThan(0);
   await panel.getByRole('button', { name: '이어서 분석', exact: true }).click();
-  await expect.poll(() => page.evaluate(() => (window as any).lifecycle.jobs.filter((j: any) => j.state === 'done').length)).toBe(6);
-  await expect(panel).toContainText('6 / 6장');
+  // The search queue may reuse an existing reference scan. Verify that
+  // every distinct library photo completes rather than assuming a job count.
+  await expect.poll(() => page.evaluate(() => new Set((window as any).lifecycle.jobs
+    .filter((j: any) => j.state === 'done').map((j: any) => j.media_id)).size)).toBe(6);
   await expect(page.getByRole('button', { name: '분석 결과 · 진행상황 보기' })).toBeVisible();
+  const completed = await page.evaluate(() => (window as any).lifecycle.jobs.filter((j: any) => j.state === 'done').length);
+  await expect(panel).toContainText(`${completed} / ${completed}장`);
 });
 
 test('detail delete supports cancel, removes exactly the current item, and returns to the list', async ({ page }) => {
