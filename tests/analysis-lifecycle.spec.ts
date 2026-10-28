@@ -128,9 +128,13 @@ test('pet analysis continues after leaving its selection screen and has an expli
   await panel.getByRole('button', { name: '분석 중단', exact: true }).click();
   await expect.poll(() => page.evaluate(() => (window as any).lifecycle.jobs.filter((j: any) => j.state === 'paused').length)).toBeGreaterThan(0);
   await panel.getByRole('button', { name: '이어서 분석', exact: true }).click();
-  await expect.poll(() => page.evaluate(() => (window as any).lifecycle.jobs.filter((j: any) => j.state === 'done').length)).toBe(7);
-  await expect(panel).toContainText('7 / 7장');
+  // The search queue may reuse an existing reference scan. Verify that
+  // every distinct library photo completes rather than assuming a job count.
+  await expect.poll(() => page.evaluate(() => new Set((window as any).lifecycle.jobs
+    .filter((j: any) => j.state === 'done').map((j: any) => j.media_id)).size)).toBe(6);
   await expect(page.getByRole('button', { name: '분석 결과 · 진행상황 보기' })).toBeVisible();
+  const completed = await page.evaluate(() => (window as any).lifecycle.jobs.filter((j: any) => j.state === 'done').length);
+  await expect(panel).toContainText(`${completed} / ${completed}장`);
 });
 
 test('detail delete supports cancel, removes exactly the current item, and returns to the list', async ({ page }) => {
