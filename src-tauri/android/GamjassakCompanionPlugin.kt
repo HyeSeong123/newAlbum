@@ -50,7 +50,10 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
     @Volatile private var lastOutcome = "none"
     @Volatile private var lastError = ""
     @Volatile private var lastAt = 0L
-    init { appContext.registerComponentCallbacks(this) }
+    private val cleanupQueued = AtomicBoolean(false)
+    @Volatile private var cleanupFinished = false
+    @Volatile private var cleanupRetryAfter = 0L
+    init { appContext.registerComponentCallbacks(this); scheduleLegacyCleanup() }
     private val root get() = File(appContext.filesDir, DOWNLOAD.directory)
     private val model get() = File(root, DOWNLOAD.filename)
     private val prefs get() = appContext.getSharedPreferences(DOWNLOAD.directory, Context.MODE_PRIVATE)
@@ -79,10 +82,29 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
         val proof = appContext.getSharedPreferences(spec.directory, Context.MODE_PRIVATE)
         return file.isFile && spec.verified(file.length(), proof.getString("sha", "") ?: "", proof.getLong("mtime", -1), file.lastModified())
     }
-    private fun activeModel() = CompanionModelRegistry.select(installed(), installed(CompanionModelRegistry.LEGACY))
+    private fun activeModel() = if (installed()) DOWNLOAD else CompanionModelRegistry.select(false, installed(CompanionModelRegistry.LEGACY))
+    private fun retireLegacyModel() {
+        val verifiedMtime = prefs.getLong("mtime", -1)
+        if (cleanupFinished || !installed()) return
+        try {
+            CompanionModelRegistry.retireLegacyFiles(appContext.filesDir, true, verifiedMtime, Runnable { if (nativeLoaded) nativeRelease() })
+            cleanupFinished = true
+        } catch (_: Exception) {
+            // Housekeeping must not break a verified current model or repeatedly evict it.
+            cleanupRetryAfter = android.os.SystemClock.elapsedRealtime() + 60_000
+        }
+    }
+    private fun scheduleLegacyCleanup() {
+        if (cleanupFinished || working.get() || android.os.SystemClock.elapsedRealtime() < cleanupRetryAfter || !cleanupQueued.compareAndSet(false, true)) return
+        executor.execute {
+            try { if (!working.get()) retireLegacyModel() }
+            finally { cleanupQueued.set(false) }
+        }
+    }
     @Command fun modelStatus(invoke: Invoke) {
         val supported = supported()
         val active = activeModel()
+        if (active === DOWNLOAD) scheduleLegacyCleanup()
         val ready = active != null
         val shown = if (!supported) "unsupported" else if (phase == "error") "error" else if (!working.get() && ready) "ready" else phase
         val text = if (!supported) "AI 대화는 RAM 8GB 이상 Android 스마트폰에서 사용할 수 있어요." else if (shown == "ready") "인터넷 없이 대화할 준비가 됐어요." else notice
@@ -145,6 +167,8 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
                 check(downloaded == DOWNLOAD.bytes && sha == DOWNLOAD.sha256) { "AI 파일이 완전하지 않아요. 다시 다운로드해 주세요." }
                 check(partial.renameTo(model)) { "AI 파일을 저장하지 못했어요." }
                 check(prefs.edit().putString("sha", DOWNLOAD.sha256).putLong("mtime", model.lastModified()).commit()) { "AI 준비 상태를 저장하지 못했어요." }
+                cleanupFinished = false
+                retireLegacyModel()
                 phase = "ready"; notice = "대화할 준비가 됐어요."
             } catch (error: Exception) {
                 phase = if (cancelled.get()) "missing" else "error"
@@ -157,8 +181,7 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
         val args = invoke.parseArgs(CompanionGenerateArgs::class.java)
         val prompt = args.prompt
         if (closedSessions.contains(args.sessionId)) { invoke.reject("AI_CANCELLED: 홈을 떠나 대답을 멈췄어요."); return }
-        val selected = activeModel()
-        if (!supported() || selected == null) { invoke.reject("먼저 AI를 다운로드해 주세요."); return }
+        if (!supported() || activeModel() == null) { invoke.reject("먼저 AI를 다운로드해 주세요."); return }
         if (prompt.isBlank() || prompt.length > 12000) { invoke.reject("이야기가 너무 길어요. 조금 짧게 적어 주세요."); return }
         if (!working.compareAndSet(false, true)) { invoke.reject("진행 중인 작업이 끝난 뒤 다시 시도해 주세요."); return }
         cancelled.set(false); memoryPressure.set(false); phase = "generating"; notice = "친구가 생각하고 있어요."
@@ -170,6 +193,8 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
             var reply: String? = null
             var failure: String? = null
             try {
+                // A queued upgrade/cleanup may have retired legacy weights since invocation.
+                val selected = activeModel() ?: error("먼저 AI를 다운로드해 주세요.")
                 val info = ActivityManager.MemoryInfo()
                 (appContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(info)
                 check(selected.canGenerate(info.availMem, info.lowMemory, info.threshold)) { "AI_MEMORY: 메모리가 부족해 기본 반응을 보여 줬어요." }

@@ -91,7 +91,9 @@ export function Library({
   const displayGroups = dateGrouped ? Object.entries(groupByTakenDate(visibleItems)) : [[sortTitles[sort], visibleItems] as const];
   const rangeStart = visibleCollection.length ? startIndex + 1 : 0;
   const rangeEnd = Math.min(startIndex + GALLERY_PAGE_SIZE, visibleCollection.length);
-  const locationIds = items.filter(item => item.fileType !== "audio" && selectedIds.has(item.id)).map(item => item.id);
+  const locationIds = useMemo(() => selectedIds.size
+    ? items.filter(item => item.fileType !== "audio" && selectedIds.has(item.id)).map(item => item.id)
+    : [], [items, selectedIds]);
 
   useEffect(() => {
     setPage((current) => Math.min(current, pageCount));

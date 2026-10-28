@@ -1,5 +1,8 @@
 package com.oraedameun.album;
 
+import java.io.File;
+import java.io.IOException;
+
 /** Download proofs and compatibility for the legacy model and the explicit dialogue upgrade. */
 public final class CompanionModelRegistry {
     private CompanionModelRegistry() {}
@@ -12,6 +15,35 @@ public final class CompanionModelRegistry {
 
     public static Model select(boolean dialogueInstalled, boolean legacyInstalled) {
         return dialogueInstalled ? DIALOGUE : legacyInstalled ? LEGACY : null;
+    }
+
+    /** Caller supplies the installed SHA/size/mtime proof and serializes this with generation. */
+    public static long retireLegacyFiles(File appFiles, boolean currentVerified, long verifiedMtime, Runnable beforeDelete) throws IOException {
+        if (!currentVerified) return 0;
+        File root = appFiles.getCanonicalFile();
+        File current = new File(new File(root, DIALOGUE.directory), DIALOGUE.filename);
+        if (!plainFile(current) || current.length() != DIALOGUE.bytes || current.lastModified() != verifiedMtime) return 0;
+        File directory = new File(root, LEGACY.directory);
+        if (!directory.equals(directory.getCanonicalFile())) return 0;
+        File retired = new File(directory, LEGACY.filename);
+        File partial = new File(directory, "download.part");
+        boolean hasModel = plainFile(retired), hasPartial = plainFile(partial);
+        if (!hasModel && !hasPartial) return 0;
+        // Only weights can be mmap-backed. Removing a partial must not evict the warm model.
+        if (hasModel) beforeDelete.run();
+        if (!plainFile(current) || current.length() != DIALOGUE.bytes || current.lastModified() != verifiedMtime) return 0;
+        long removed = 0;
+        for (File file : new File[]{retired, partial}) {
+            if (!plainFile(file)) continue;
+            long bytes = file.length();
+            if (file.delete()) removed += bytes;
+            else if (file.exists()) throw new IOException("Could not retire the obsolete AI file");
+        }
+        return removed;
+    }
+
+    private static boolean plainFile(File file) throws IOException {
+        return file.isFile() && file.equals(file.getCanonicalFile());
     }
 
     public static final class Model {

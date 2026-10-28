@@ -8,3 +8,9 @@ test('Android model policy keeps legacy files usable and validates the optional 
  assert.equal(result.status,0,result.stderr||result.error?.message);
  assert.match(result.stdout,/21 companion model policy checks passed/);
 });
+test('verified current AI retires only obsolete weights and preserves offline fallback otherwise',()=>{
+ const at=path=>fileURLToPath(new URL(path,import.meta.url));
+ const result=spawnSync('java',[at('./fixtures/RunCompanionModelChecks.java'),at('../src-tauri/android/CompanionModelRegistry.java'),at('./fixtures/CompanionStorageChecks.java'),'CompanionStorageChecks'],{encoding:'utf8'});
+ assert.equal(result.status,0,result.stderr||result.error?.message);
+ assert.match(result.stdout,/companion storage checks passed/);
+});

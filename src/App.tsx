@@ -12,7 +12,7 @@ import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { searchMedia } from "./features/media/collectionModel";
 import { memoryGroups } from "./features/memories/memoriesModel";
 import { localDateKey } from "./features/calendar/calendarModel";
-import { PeopleWorkspace } from "./features/people/PeopleWorkspace";
+import { FeatureLoadBoundary } from "./components/FeatureLoadBoundary";
 import { SavedAlbumsView } from "./features/albums/AlbumsView";
 import { AlbumCreateModal } from "./features/albums/AlbumCreateModal";
 import type { CalendarRegistrationOptions } from "./features/calendar/calendarModel";
@@ -21,7 +21,7 @@ import { MediaImportProgress } from "./features/media/MediaImportProgress";
 import { useAndroidBack } from "./hooks/useAndroidBack";
 import { FirstRunGuide, FIRST_RUN_KEY } from "./components/FirstRunGuide";
 import { LocationSetupRibbon } from "./components/LocationSetupRibbon";
-import { ChangeEvent, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { ChangeEvent, lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { BookImage, History, House, Images, LoaderCircle, Menu, NotebookPen, Plus, Search, Settings, Sprout, Users, X } from "lucide-react";
 import { MEDIA_FILE_ACCEPT } from "./features/media/mediaService";
 import { filterJournalMonth, journalMonthTitle, resolveJournalMonth } from "./features/media/journalModel";
@@ -39,6 +39,8 @@ import { usePetAnalysis } from "./features/pets/usePetAnalysis";
 import { HelpProvider } from "./features/help/HelpProvider";
 
 type View = "Home" | "Library" | "Albums" | "Memories" | "People" | "Diary" | "Characters" | "Settings";
+
+const PeopleWorkspace = lazy(() => import("./features/people/PeopleWorkspace").then(module => ({ default: module.PeopleWorkspace })));
 
 const viewLabels: Record<View, string> = {
   Home: "홈",
@@ -89,7 +91,8 @@ export function App() {
   const [largeLayout, setLargeLayout] = useState(() => localStorage.getItem("warm-journal-large-layout") === "true");
   const [importOpen, setImportOpen] = useState(false);
   const { items, itemsById, albums: savedAlbums, importing, clearing, fileInput, folderInput } = library;
-  const characters = useCharacters(items.map(item => `${item.id}:${item.gpsRegionCode || ""}`).join("|"));
+  const characterMediaRevision = useMemo(() => items.map(item => `${item.id}:${item.gpsRegionCode || ""}`).join("|"), [items]);
+  const characters = useCharacters(characterMediaRevision);
   const mainCharacter = characters.snapshot.characters.find(character => character.isMain);
   const pendingCharacterEvent = characters.snapshot.events[0];
   const viewer = useMediaViewer(itemsById, library.recordView);
@@ -315,7 +318,13 @@ export function App() {
               onSectionChange={(section) => { setMemorySection(section); if (section === "map") setQuery(""); }}
               onAssignRegion={library.assignRegion} onLocationsAnalyzed={library.refreshLocations}
               onCreateAlbum={(records, title = "") => { setAlbumDraftItems(records); setAlbumDraftTitle(title); }} />}
-            {(activeView === "People" || personAnalysis?.running) && <div hidden={activeView !== 'People'}><PeopleWorkspace isActive={activeView === 'People'} onPersonAnalysisChange={setPersonAnalysis} reviewRequested={petReviewRequested} onReviewHandled={() => setPetReviewRequested(false)} analysis={petAnalysis} items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} activeTab={peopleTab} onTabChange={setPeopleTab} /></div>}
+            {(activeView === "People" || personAnalysis?.running) && <div hidden={activeView !== 'People'}>
+              <FeatureLoadBoundary label="사람과 반려동물">
+                <Suspense fallback={<p className="selectionNotice" role="status">사람과 반려동물을 불러오는 중입니다.</p>}>
+                  <PeopleWorkspace isActive={activeView === 'People'} onPersonAnalysisChange={setPersonAnalysis} reviewRequested={petReviewRequested} onReviewHandled={() => setPetReviewRequested(false)} analysis={petAnalysis} items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} activeTab={peopleTab} onTabChange={setPeopleTab} />
+                </Suspense>
+              </FeatureLoadBoundary>
+            </div>}
             {activeView === "Settings" && <SettingsPanel photos={items.filter(item=>item.fileType==="image")} itemCount={items.length} clearing={clearing} onClear={clearAllRegisteredMedia} />}
           </div>
         </section>
