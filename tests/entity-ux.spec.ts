@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { mkdir } from 'node:fs/promises';
 
 async function prepare(page:Page) {
   await page.route('**/entity-fixture.jpg',route=>route.fulfill({path:'tests/fixtures/pet-dog.jpg',contentType:'image/jpeg'}));
@@ -37,7 +38,7 @@ async function prepare(page:Page) {
       if(command==='rename_pet'){pets.find(row=>row.id===args.id).name=args.name;return args.id;}
       if(command==='set_pet_cover_photo'){pets.find(row=>row.id===args.petId).cover_media_id=args.mediaId;return args.petId;}
       if(command==='save_pet'){const id=args.id??Math.max(...pets.map(row=>row.id))+1;const row={id,name:args.name,media_ids:args.mediaIds,cover_media_id:args.coverMediaId};const at=pets.findIndex(pet=>pet.id===id);if(at<0)pets.push(row);else pets[at]=row;return id;}
-      if(command==='assign_pet_detections'){const id=args.target??Math.max(...pets.map(row=>row.id))+1;if(args.target===null)pets.push({id,name:args.name,media_ids:[],cover_media_id:null});const owner=pets.find(row=>row.id===id);for(let i=unknown.length-1;i>=0;i--)if(args.ids.includes(unknown[i].id)){owner.media_ids=[...new Set([...owner.media_ids,unknown[i].media_id])];unknown.splice(i,1);}return id;}
+      if(command==='assign_pet_detections'){if(localStorage.getItem('fail-pet-link'))throw new Error('사진 원본 확인 실패 - 연결 보류');const id=args.target??Math.max(...pets.map(row=>row.id))+1;if(args.target===null)pets.push({id,name:args.name,media_ids:[],cover_media_id:null});const owner=pets.find(row=>row.id===id);for(let i=unknown.length-1;i>=0;i--)if(args.ids.includes(unknown[i].id)){owner.media_ids=[...new Set([...owner.media_ids,unknown[i].media_id])];unknown.splice(i,1);}return id;}
       if(command==='edit_entity_photo_links'){
         if(args.kind==='person'){
           faces.filter(face=>face.person_id===args.source && args.ids.includes(face.media_id)).forEach(face=>face.person_id=args.target??3);
@@ -84,9 +85,49 @@ test('manual person photos support cover changes and selection cancel stays in d
 
 test('unknown pet objects and manual photos both accept existing and new names',async({page})=>{
   await prepare(page);await page.getByRole('tab',{name:'반려동물',exact:true}).click();await page.getByRole('button',{name:'미확인 반려동물',exact:true}).click();await page.locator('.petsView > .entityHeader').getByRole('button',{name:'선택',exact:true}).click();
-  await page.getByRole('button',{name:'반려동물 선택 31',exact:true}).click();await page.getByRole('button',{name:'이름 지정',exact:true}).click();let dialog=page.getByRole('dialog',{name:'이름 지정',exact:true});await dialog.getByLabel('반려동물 선택').selectOption('1');await dialog.getByRole('button',{name:'이름 지정',exact:true}).click();await expect(dialog).toBeHidden();
-  await page.getByRole('button',{name:'반려동물 선택 -4',exact:true}).click();await page.getByRole('button',{name:'이름 지정',exact:true}).click();dialog=page.getByRole('dialog',{name:'이름 지정',exact:true});await dialog.getByRole('button',{name:'새 반려동물',exact:true}).click();await dialog.getByLabel('새 반려동물 이름').fill('밤이');await dialog.getByRole('button',{name:'이름 지정',exact:true}).click();
+  await page.getByRole('button',{name:'반려동물 선택 31',exact:true}).click();
+  await page.getByLabel('연결할 기존 반려동물').selectOption('1');
+  await page.getByRole('button',{name:'선택한 반려동물 연결',exact:true}).click();
+  await expect(page.getByRole('button',{name:'반려동물 선택 31',exact:true})).toHaveCount(0);
+  await page.getByRole('button',{name:'반려동물 선택 -4',exact:true}).click();
+  await page.getByRole('button',{name:'새 반려동물 등록',exact:true}).click();
+  const dialog=page.getByRole('dialog',{name:'이름 지정',exact:true});
+  await expect(dialog.getByLabel('새 반려동물 이름')).toBeVisible();
+  await dialog.getByLabel('새 반려동물 이름').fill('밤이');
+  await dialog.getByRole('button',{name:'이름 지정',exact:true}).click();
   expect(await calls(page,'assign_pet_detections')).toEqual([{ids:[31],target:1,name:null},{ids:[-4],target:null,name:'밤이'}]);expect(await calls(page,'enqueue_pet_jobs')).toEqual([]);
+});
+
+test('mobile unknown pet connection failure keeps selection and retries without altering sibling links',async({page})=>{
+  await page.setViewportSize({width:393,height:851});
+  await prepare(page);
+  await page.getByRole('tab',{name:'반려동물',exact:true}).click();
+  await page.getByRole('button',{name:'미확인 반려동물',exact:true}).click();
+  const view=page.locator('.petsView');
+  await view.locator('.entityHeader').getByRole('button',{name:'선택',exact:true}).click();
+  await view.getByRole('button',{name:'반려동물 선택 31',exact:true}).click();
+  await view.getByLabel('연결할 기존 반려동물').selectOption('1');
+  await mkdir('preview-results',{recursive:true});
+  await page.screenshot({path:'preview-results/pet-review-unknown-connect-before.png'});
+  await page.evaluate(()=>localStorage.setItem('fail-pet-link','1'));
+  await view.getByRole('button',{name:'선택한 반려동물 연결',exact:true}).click();
+  await expect(view.getByRole('alert')).toContainText('사진 원본 확인 실패');
+  await expect(view.getByRole('button',{name:'반려동물 선택 31',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(view.getByLabel('연결할 기존 반려동물')).toHaveValue('1');
+  await page.evaluate(()=>localStorage.removeItem('fail-pet-link'));
+  await view.getByRole('button',{name:'선택한 반려동물 연결',exact:true}).click();
+  await expect(view.getByText(/에 1개 인식 결과를 연결했어요/)).toBeVisible();
+  await expect(view.getByRole('button',{name:'반려동물 선택 31',exact:true})).toHaveCount(0);
+  await view.locator('.entityHeader').getByRole('button',{name:'선택 취소',exact:true}).click();
+  await view.getByRole('button',{name:'반려동물 목록',exact:true}).click();
+  await expect(view.getByRole('button',{name:'보리 3장',exact:true})).toBeVisible();
+  await expect(view.getByRole('button',{name:'콩 1장',exact:true})).toBeVisible();
+  await page.screenshot({path:'preview-results/pet-review-unknown-connect-after.png'});
+  expect(await calls(page,'assign_pet_detections')).toEqual([
+    {ids:[31],target:1,name:null},{ids:[31],target:1,name:null}
+  ]);
+  expect(await calls(page,'delete_media')).toEqual([]);
+  expect(await calls(page,'enqueue_pet_jobs')).toEqual([]);
 });
 
 test('pet photo correction uses the same selection bar and keeps sibling pet membership',async({page})=>{
