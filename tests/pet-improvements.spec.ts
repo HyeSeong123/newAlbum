@@ -24,6 +24,7 @@ async function fixture(page:Page,empty=false){
    if(command==='media_thumbnail')return '/pet-improve.jpg';
    if(command==='list_albums')return [{id:1,title:'산책 사진',created_at:'2026-10-23',description:'',cover_color:'#eee',items:[media[3]]},{id:2,title:'기준 사진',created_at:'2026-10-23',description:'',cover_color:'#eee',items:[media[0]]}];
    if(command==='list_pets')return structuredClone(state.pets);
+   if(command==='save_pet'){const id=args.id??Math.max(0,...state.pets.map((p:any)=>p.id))+1;const row=state.pets.find((p:any)=>p.id===id);if(row)Object.assign(row,{name:args.name,media_ids:args.mediaIds,cover_media_id:args.coverMediaId});else state.pets.push({id,name:args.name,media_ids:args.mediaIds,cover_media_id:args.coverMediaId});persist();return id;}
    if(command==='list_pet_jobs')return {jobs:structuredClone(state.jobs),pending:state.jobs.filter((j:any)=>j.state==='pending').length,paused:state.jobs.filter((j:any)=>j.state==='paused').length,failed:0};
    if(command==='enqueue_pet_jobs'){for(const job of args.jobs)state.jobs.push({id:state.jobs.length+1,media_id:job.mediaId,pet_id:job.petId,view:job.view,state:'pending'});persist();return;}
    if(command==='finish_pet_job'){state.jobs=state.jobs.filter((j:any)=>j.id!==args.id);persist();return;}
@@ -46,23 +47,37 @@ async function fixture(page:Page,empty=false){
 async function pets(page:Page){await page.locator('.navList').getByRole('button',{name:'사람과 반려동물',exact:true}).click();await page.getByRole('tab',{name:'반려동물',exact:true}).click();}
 async function photo(page:Page){await page.locator('.navList').getByRole('button',{name:'사진 기록',exact:true}).click();await page.getByRole('button',{name:'모든 기록',exact:true}).click();await page.getByRole('button',{name:'photo1.jpg 상세보기',exact:true}).click();}
 
-test('first-time pet detection starts only after selected photos are submitted',async({page})=>{
+test('registration-led photo search only analyzes after user action and connects unknown pet',async({page})=>{
  await fixture(page,true);await pets(page);
+ const view=page.locator('.petsView');
+ await expect(view.getByRole('button',{name:'사진에서 반려동물 감지',exact:true})).toHaveCount(0);
  expect(await page.evaluate(()=>(window as any).__petImprove.workers)).toBe(0);
- await page.getByRole('button',{name:'사진에서 반려동물 감지',exact:true}).click();
- const dialog=page.getByRole('dialog',{name:'반려동물 감지할 사진 선택',exact:true});
- await expect(dialog.getByLabel('등록할 이름')).toHaveCount(0);
- await dialog.getByRole('button',{name:'사진 선택 photo1.jpg',exact:true}).click();await dialog.getByRole('button',{name:'사진 선택 photo2.jpg',exact:true}).click();
- await expect(dialog).toContainText('사진 2장 선택');
+ await view.getByRole('button',{name:'반려동물 추가',exact:true}).click();
+ const editor=page.getByRole('dialog',{name:'반려동물 추가',exact:true});
+ await editor.getByRole('textbox',{name:'이름',exact:true}).fill('우리 보리');
+ await editor.getByRole('button',{name:'사진 선택',exact:true}).first().click();
+ await editor.getByRole('button',{name:'저장',exact:true}).click();
+ await expect(editor).toBeHidden();
+ await expect(view.getByRole('heading',{name:'우리 보리',exact:true})).toBeVisible();
  expect(await page.evaluate(()=>(window as any).__petImprove.workers)).toBe(0);
- await dialog.getByRole('button',{name:'반려동물 감지',exact:true}).click();
- await expect(page.locator('.petsView h2')).toHaveText('미확인 반려동물');
- await expect.poll(()=>page.evaluate(()=>(window as any).__petImprove.workers)).toBe(2);
+ await view.getByRole('button',{name:'반려동물 목록',exact:true}).click();
+ await view.getByRole('button',{name:'반려동물 사진 찾기',exact:true}).click();
+ const search=page.getByRole('dialog',{name:'반려동물 사진 찾기',exact:true});
+ await search.getByLabel('반려동물 검색 범위').selectOption('1');
+ expect(await page.evaluate(()=>(window as any).__petImprove.workers)).toBe(0);
+ await search.getByRole('button',{name:'사진 찾기 시작',exact:true}).click();
+ await expect.poll(()=>page.evaluate(()=>(window as any).__petImprove.workers)).toBeGreaterThanOrEqual(2);
  await expect.poll(()=>page.evaluate(()=>(window as any).__petImprove.state.jobs.length)).toBe(0);
- await expect(page.locator('.petsView section[aria-label="미확인 반려동물"] .petGrid button')).toHaveCount(2);
- await page.locator('.petsView .entityHeader').getByRole('button',{name:'선택',exact:true}).click();await page.getByRole('button',{name:'현재 페이지 전체 선택',exact:true}).click();await page.getByRole('button',{name:'이름 지정',exact:true}).click();
- const assignment=page.getByRole('dialog',{name:'이름 지정',exact:true});await assignment.getByLabel('새 반려동물 이름',{exact:true}).fill('우리 보리');await assignment.getByRole('button',{name:'이름 지정',exact:true}).click();await expect(assignment).toBeHidden();
- expect(await page.evaluate(()=>(window as any).__petImprove.state.pets[0].media_ids)).toEqual([1,2]);
+ await search.locator('footer').getByRole('button',{name:'닫기',exact:true}).click();
+ await view.getByRole('button',{name:'미확인 반려동물',exact:true}).click();
+ await expect(view.locator('[aria-label="미확인 반려동물"] .petGrid button')).toHaveCount(1);
+ await view.locator('.entityHeader').getByRole('button',{name:'선택',exact:true}).click();
+ await view.getByRole('button',{name:'현재 페이지 전체 선택',exact:true}).click();
+ await view.getByLabel('연결할 기존 반려동물').selectOption('1');
+ await view.getByRole('button',{name:'선택한 반려동물 연결',exact:true}).click();
+ await expect(view.locator('[aria-label="미확인 반려동물"] .petGrid button')).toHaveCount(0);
+ expect(await page.evaluate(()=>(window as any).__petImprove.state.pets[0].media_ids)).toEqual([1,4]);
+ expect(await page.evaluate(()=>(window as any).__petImprove.calls.filter((c:any)=>c.command==='assign_pet_detections').length)).toBe(1);
 });
 
 test('manual body region adds only one animal and preserves existing confirmed links',async({page})=>{
@@ -93,7 +108,7 @@ test('capture current pet controls',async({page,isMobile})=>{
  const stage=process.env.APP_UX_STAGE??'after',dir=`preview-results/app-ux/${stage}`;await mkdir(dir,{recursive:true});await page.evaluate(()=>document.fonts.ready);
  await page.screenshot({path:`${dir}/20-pet-actions.png`});
  if(stage==='after'){
-  await page.getByRole('button',{name:'사진에서 반려동물 감지',exact:true}).click();await page.screenshot({path:`${dir}/21-pet-scan-picker.png`});await page.keyboard.press('Escape');
+  await page.getByRole('button',{name:'미확인 반려동물',exact:true}).click();await page.screenshot({path:`${dir}/21-pet-unknown-list.png`});await page.keyboard.press('Escape');
   await photo(page);await page.getByRole('button',{name:'반려동물 직접 추가',exact:true}).click();await page.screenshot({path:`${dir}/22-pet-manual-region.png`});
  }
 });
