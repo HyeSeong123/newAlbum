@@ -95,8 +95,8 @@ export function UnknownPets({ photos, pets, onSaved, selecting, onOpen }: {
   return <section aria-label="미확인 반려동물">
     {!selecting && <FunctionHelp title="미확인 반려동물"><p>인식한 동물만 선택해 연결합니다. 미확인 사진은 사진 연결로 이름을 지정할 수 있어요. 같은 사진의 다른 반려동물은 유지됩니다.</p></FunctionHelp>}
     {loading && <p role="status">미확인 반려동물 불러오는 중…</p>}
-    {error && <p role="alert">{error}</p>}
-    {notice && <p role="status">{notice}</p>}
+    {!selecting && error && <p role="alert">{error}</p>}
+    {!selecting && notice && <p role="status">{notice}</p>}
     {!loading && !rows.length && !error && <p>미확인 반려동물이 없습니다. 등록한 반려동물의 사진을 기준으로 ‘반려동물 사진 찾기’를 사용할 수 있어요.</p>}
     <div className="petGrid" {...drag}>{rows.map(row => {
       const item = photoById.get(row.media_id);
@@ -138,6 +138,8 @@ export function UnknownPets({ photos, pets, onSaved, selecting, onOpen }: {
             onClick={() => void connectSelected({ target: Number(target), name: null }).catch(() => undefined)}>선택한 반려동물 연결</button>
         </>}
         <button disabled={saving || loading || !selection.length} onClick={() => setAssigning(true)}>새 반려동물 등록</button>
+        {error && <p className="petUnknownFeedback" role="alert">{error}</p>}
+        {notice && <p className="petUnknownFeedback" role="status">{notice}</p>}
       </div>
     </EntitySelectionBar>}
     {assigning && <EntityAssignmentDialog kind="pet" entries={pets} initialMode="new" count={selection.length}
