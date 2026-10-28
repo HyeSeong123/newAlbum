@@ -30,6 +30,24 @@ export async function verifyInstalledPetImprovements({page,adb,appId,appDataRoot
  await expect(card.getByRole('button',{name:`${pet.name} 선택`,exact:true})).toHaveCount(0);
  await capture('pet-candidate-rejected');await card.getByRole('button',{name:'제외한 후보 다시 보기',exact:true}).click();
  await expect(card.getByRole('button',{name:`${pet.name} 선택`,exact:true})).toBeVisible();
+ // Exercise native compatibility: older callers can omit the optional kind.
+ const guarded=await page.evaluate(async({id,petId,features})=>{
+  const invoke=window.__TAURI_INTERNALS__.invoke;
+  await invoke('update_pet_features',{detectionId:id,petId:null,view:'unknown',excluded:false,features:{...features,kind:'cat'}});
+  try {await invoke('assign_pet_detections',{ids:[id],target:petId,name:null});return '';}
+  catch(error){return String(error);}
+ },{id,petId:pet.id,features:(await read()).detections[0]});
+ assert.match(guarded,/개와 고양이/);
+ assert.equal((await read()).detections[0].pet_id,null);
+ assert.equal((await read()).detections[0].kind,'cat');
+ await page.evaluate(async({id,petId})=>{
+  await window.__TAURI_INTERNALS__.invoke('assign_pet_detections',{ids:[id],target:petId,name:null,kind:'dog'});
+  window.dispatchEvent(new Event('gamjassak-pet-results'));
+ },{id,petId:pet.id});
+ const corrected=(await read()).detections[0];
+ assert.equal(corrected.id,id);assert.equal(corrected.kind,'dog');assert.equal(corrected.pet_id,pet.id);
+ assert.deepEqual(corrected.box,scan.detections[0].box);
+ await expect(card.getByLabel('인식된 반려동물',{exact:true})).toHaveValue(String(pet.id));
  await card.getByLabel('인식된 반려동물',{exact:true}).selectOption(String(pet.id));await card.getByRole('button',{name:'변경 저장',exact:true}).click();
  await expect.poll(async()=>(await read()).detections[0].pet_id).toBe(pet.id);
  scan=await page.evaluate(id=>window.__TAURI_INTERNALS__.invoke('get_pet_scan',{mediaId:id}),originalId);
@@ -38,5 +56,5 @@ export async function verifyInstalledPetImprovements({page,adb,appId,appDataRoot
  await page.getByRole('dialog',{name:'사진 상세',exact:true}).getByTitle('닫기',{exact:true}).click();
  await page.evaluate(id=>window.__TAURI_INTERNALS__.invoke('delete_registered_media',{ids:[id]}),item.id);
  await page.reload();await page.locator('.navList').getByRole('button',{name:'사람과 반려동물',exact:true}).click();await page.getByRole('tab',{name:'반려동물',exact:true}).click();await page.getByRole('button',{name:`${pet.name} ${pet.media_ids.length}장`,exact:true}).click();
- return {manualRegionUserSource:true,originalDetectionIdPreserved:true,originalPetLinkPreserved:true,candidateRejectedPersistently:true,candidateRestored:true,manualLinkConfirmed:true,independentAccuracyTrial:false,environment:'Android API 36 x86_64 emulator'};
+ return {manualRegionUserSource:true,originalDetectionIdPreserved:true,originalPetLinkPreserved:true,candidateRejectedPersistently:true,candidateRestored:true,manualLinkConfirmed:true,mixedSpeciesGuard:true,optionalKindBackwardCompatibility:true,explicitSpeciesAssignment:true,independentAccuracyTrial:false,environment:'Android API 36 x86_64 emulator'};
 }

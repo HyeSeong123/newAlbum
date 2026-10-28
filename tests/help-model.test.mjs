@@ -34,7 +34,7 @@ test('every character varies within one affinity tier while keeping the exact in
 
 test('help copy is stable for a step and avoids the preceding line', () => {
   const gomi=definitions.find(character=>character.type==='gomi');
-  for(const affection of [0,20,30,60,90])for(const stepId of ['save','delete','select','memory-map','detect-pets']){
+  for(const affection of [0,20,30,60,90])for(const stepId of ['save','delete','select','memory-map','refresh-pet']){
     const options={stepId,variation:3};
     const first=resolveHelpDialogue(gomi,affection,'기능 설명',options);
     assert.deepEqual(resolveHelpDialogue(gomi,affection,'기능 설명',options),first);

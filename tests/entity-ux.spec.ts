@@ -86,7 +86,7 @@ test('unknown pet objects and manual photos both accept existing and new names',
   await prepare(page);await page.getByRole('tab',{name:'반려동물',exact:true}).click();await page.getByRole('button',{name:'미확인 반려동물',exact:true}).click();await page.locator('.petsView > .entityHeader').getByRole('button',{name:'선택',exact:true}).click();
   await page.getByRole('button',{name:'반려동물 선택 31',exact:true}).click();await page.getByRole('button',{name:'이름 지정',exact:true}).click();let dialog=page.getByRole('dialog',{name:'이름 지정',exact:true});await dialog.getByLabel('반려동물 선택').selectOption('1');await dialog.getByRole('button',{name:'이름 지정',exact:true}).click();await expect(dialog).toBeHidden();
   await page.getByRole('button',{name:'반려동물 선택 -4',exact:true}).click();await page.getByRole('button',{name:'이름 지정',exact:true}).click();dialog=page.getByRole('dialog',{name:'이름 지정',exact:true});await dialog.getByRole('button',{name:'새 반려동물',exact:true}).click();await dialog.getByLabel('새 반려동물 이름').fill('밤이');await dialog.getByRole('button',{name:'이름 지정',exact:true}).click();
-  expect(await calls(page,'assign_pet_detections')).toEqual([{ids:[31],target:1,name:null},{ids:[-4],target:null,name:'밤이'}]);expect(await calls(page,'enqueue_pet_jobs')).toEqual([]);
+  expect(await calls(page,'assign_pet_detections')).toEqual([{ids:[31],target:1,name:null,kind:null},{ids:[-4],target:null,name:'밤이',kind:null}]);expect(await calls(page,'enqueue_pet_jobs')).toEqual([]);
 });
 
 test('pet photo correction uses the same selection bar and keeps sibling pet membership',async({page})=>{

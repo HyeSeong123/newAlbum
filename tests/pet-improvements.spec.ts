@@ -30,6 +30,7 @@ async function fixture(page:Page,empty=false){
    if(command==='control_pet_jobs'){for(const job of state.jobs)job.state=args.resume?'pending':'paused';persist();return;}
    if(command==='prepare_pet_input')return {path:'/pet-improve.jpg',sourceKey:`sha256:${String(args.id).padStart(64,'0')}`};
    if(command==='get_pet_scan')return state.scanned.includes(args.mediaId)?{media_id:args.mediaId,engine_version:'gamjassak-pets-v4-review',source_key:`sha256:${String(args.mediaId).padStart(64,'0')}`,detections:structuredClone(state.detections.filter((d:any)=>d.media_id===args.mediaId))}:null;
+   if(command==='save_pet'){const id=args.id??state.pets.length+1;state.pets.push({id,name:args.name,media_ids:args.mediaIds,cover_media_id:args.coverMediaId});persist();return id;}
    if(command==='save_pet_scan'){for(const f of args.features)state.detections.push({...f,id:100+state.detections.length,media_id:args.mediaId,pet_id:null,excluded:false});state.scanned.push(args.mediaId);persist();return {media_id:args.mediaId,engine_version:'gamjassak-pets-v4-review',source_key:args.sourceKey,detections:structuredClone(state.detections.filter((d:any)=>d.media_id===args.mediaId))};}
    if(command==='list_pet_detections')return structuredClone(state.detections.filter((d:any)=>(args.mediaId==null||d.media_id===args.mediaId)&&d.id>(args.afterId??0)&&(!args.references||d.pet_id!==null)).slice(0,args.limit??100));
    if(command==='list_unknown_pet_items')return state.detections.filter((d:any)=>d.pet_id===null&&!d.excluded).map((d:any)=>({id:d.id,media_id:d.media_id,box_:d.box}));
@@ -46,23 +47,24 @@ async function fixture(page:Page,empty=false){
 async function pets(page:Page){await page.locator('.navList').getByRole('button',{name:'사람과 반려동물',exact:true}).click();await page.getByRole('tab',{name:'반려동물',exact:true}).click();}
 async function photo(page:Page){await page.locator('.navList').getByRole('button',{name:'사진 기록',exact:true}).click();await page.getByRole('button',{name:'모든 기록',exact:true}).click();await page.getByRole('button',{name:'photo1.jpg 상세보기',exact:true}).click();}
 
-test('first-time pet detection starts only after selected photos are submitted',async({page})=>{
+test('first registration remains idle until its reference photos are explicitly refreshed',async({page})=>{
  await fixture(page,true);await pets(page);
  expect(await page.evaluate(()=>(window as any).__petImprove.workers)).toBe(0);
- await page.getByRole('button',{name:'사진에서 반려동물 감지',exact:true}).click();
- const dialog=page.getByRole('dialog',{name:'반려동물 감지할 사진 선택',exact:true});
- await expect(dialog.getByLabel('등록할 이름')).toHaveCount(0);
- await dialog.getByRole('button',{name:'사진 선택 photo1.jpg',exact:true}).click();await dialog.getByRole('button',{name:'사진 선택 photo2.jpg',exact:true}).click();
- await expect(dialog).toContainText('사진 2장 선택');
+ await expect(page.getByRole('button',{name:'인식 기준 갱신',exact:true})).toBeDisabled();
+ await page.getByRole('button',{name:'반려동물 추가',exact:true}).click();
+ const editor=page.getByRole('dialog',{name:'반려동물 추가',exact:true});
+ await editor.getByLabel('이름',{exact:true}).fill('우리 보리');
+ await editor.getByRole('button',{name:'사진 선택',exact:true}).nth(0).click();
+ await editor.getByRole('button',{name:'사진 선택',exact:true}).nth(1).click();
+ await editor.getByRole('button',{name:'저장',exact:true}).click();await expect(editor).toBeHidden();
  expect(await page.evaluate(()=>(window as any).__petImprove.workers)).toBe(0);
- await dialog.getByRole('button',{name:'반려동물 감지',exact:true}).click();
- await expect(page.locator('.petsView h2')).toHaveText('미확인 반려동물');
- await expect.poll(()=>page.evaluate(()=>(window as any).__petImprove.workers)).toBe(2);
+ await page.getByRole('button',{name:'반려동물 관리',exact:true}).click();
+ await page.getByRole('button',{name:'인식 기준 갱신',exact:true}).click();
  await expect.poll(()=>page.evaluate(()=>(window as any).__petImprove.state.jobs.length)).toBe(0);
- await expect(page.locator('.petsView section[aria-label="미확인 반려동물"] .petGrid button')).toHaveCount(2);
- await page.locator('.petsView .entityHeader').getByRole('button',{name:'선택',exact:true}).click();await page.getByRole('button',{name:'현재 페이지 전체 선택',exact:true}).click();await page.getByRole('button',{name:'이름 지정',exact:true}).click();
- const assignment=page.getByRole('dialog',{name:'이름 지정',exact:true});await assignment.getByLabel('새 반려동물 이름',{exact:true}).fill('우리 보리');await assignment.getByRole('button',{name:'이름 지정',exact:true}).click();await expect(assignment).toBeHidden();
+ await expect(page.locator('.petsView .petAnalysisNotice')).toContainText('다시 분석 완료');
  expect(await page.evaluate(()=>(window as any).__petImprove.state.pets[0].media_ids)).toEqual([1,2]);
+ expect(await page.evaluate(()=>(window as any).__petImprove.state.detections.map((d:any)=>d.pet_id))).toEqual([1,1]);
+ expect(await page.evaluate(()=>(window as any).__petImprove.calls.filter((c:any)=>c.command==='enqueue_pet_jobs').flatMap((c:any)=>c.args.jobs).map((j:any)=>({mediaId:j.mediaId,petId:j.petId,refresh:j.refresh})))).toEqual([{mediaId:1,petId:1,refresh:true},{mediaId:2,petId:1,refresh:true}]);
 });
 
 test('manual body region adds only one animal and preserves existing confirmed links',async({page})=>{
@@ -93,7 +95,7 @@ test('capture current pet controls',async({page,isMobile})=>{
  const stage=process.env.APP_UX_STAGE??'after',dir=`preview-results/app-ux/${stage}`;await mkdir(dir,{recursive:true});await page.evaluate(()=>document.fonts.ready);
  await page.screenshot({path:`${dir}/20-pet-actions.png`});
  if(stage==='after'){
-  await page.getByRole('button',{name:'사진에서 반려동물 감지',exact:true}).click();await page.screenshot({path:`${dir}/21-pet-scan-picker.png`});await page.keyboard.press('Escape');
+  await page.getByRole('button',{name:'미확인 반려동물',exact:true}).click();await page.screenshot({path:`${dir}/21-pet-unknown-results.png`});
   await photo(page);await page.getByRole('button',{name:'반려동물 직접 추가',exact:true}).click();await page.screenshot({path:`${dir}/22-pet-manual-region.png`});
  }
 });

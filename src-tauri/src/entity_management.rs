@@ -81,8 +81,13 @@ pub fn edit_entity_photo_links(app:AppHandle,kind:String,source:i64,ids:Vec<i64>
     if !["person","pet"].contains(&kind.as_str()){return Err("대상을 확인해 주세요.".into());}
     edit_links(&mut super::open_database(&app)?,&kind,source,ids,&action,target,name)
 }
+#[cfg(test)]
 fn assign_detections(conn:&mut Connection,ids:Vec<i64>,target:Option<i64>,name:Option<String>)->Result<i64,String>{
+    assign_detections_with_kind(conn,ids,target,name,None)
+}
+fn assign_detections_with_kind(conn:&mut Connection,ids:Vec<i64>,target:Option<i64>,name:Option<String>,kind:Option<&str>)->Result<i64,String>{
     valid_ids(&ids)?;
+    if kind.is_some_and(|value|!["dog","cat"].contains(&value)){return Err("강아지 또는 고양이를 선택해 주세요.".into());}
     let tx=conn.transaction().map_err(|e|e.to_string())?;
     let dest=destination(&tx,"pet",target,name)?;
     for id in ids {
@@ -93,6 +98,7 @@ fn assign_detections(conn:&mut Connection,ids:Vec<i64>,target:Option<i64>,name:O
             continue;
         }
         let media:i64=tx.query_row("SELECT media_id FROM pet_detection WHERE id=?1 AND pet_id IS NULL AND excluded=0",[id],|r|r.get(0)).map_err(|_|"선택한 반려동물의 분류가 변경되었습니다.".to_string())?;
+        if let Some(kind)=kind {super::pet_recognition::correct_unknown_kind(&tx,id,kind)?;}
         let mixed:bool=tx.query_row("SELECT EXISTS(SELECT 1 FROM pet_detection a JOIN pet_detection b ON b.id=?2 WHERE a.pet_id=?1 AND a.excluded=0 AND json_extract(a.features,'$.kind')<>json_extract(b.features,'$.kind'))",params![dest,id],|r|r.get(0)).map_err(|e|e.to_string())?;
         if mixed {return Err("개와 고양이를 같은 반려동물로 연결할 수 없습니다.".into());}
         tx.execute("UPDATE pet_detection SET pet_id=?1 WHERE id=?2",params![dest,id]).map_err(|e|e.to_string())?;
@@ -102,7 +108,7 @@ fn assign_detections(conn:&mut Connection,ids:Vec<i64>,target:Option<i64>,name:O
     tx.commit().map_err(|e|e.to_string())?;Ok(dest)
 }
 #[tauri::command]
-pub async fn assign_pet_detections(app:AppHandle,ids:Vec<i64>,target:Option<i64>,name:Option<String>)->Result<i64,String>{
+pub async fn assign_pet_detections(app:AppHandle,ids:Vec<i64>,target:Option<i64>,name:Option<String>,kind:Option<String>)->Result<i64,String>{
     tauri::async_runtime::spawn_blocking(move || {
         valid_ids(&ids)?;
         let mut conn=super::open_database(&app)?;
@@ -111,7 +117,7 @@ pub async fn assign_pet_detections(app:AppHandle,ids:Vec<i64>,target:Option<i64>
             let media:i64=conn.query_row("SELECT media_id FROM pet_detection WHERE id=?1",[id],|r|r.get(0)).map_err(|e|e.to_string())?;
             if verified.insert(media) {super::pet_recognition::verify_detection_source(&conn,*id)?;}
         }}
-        assign_detections(&mut conn,ids,target,name)
+        assign_detections_with_kind(&mut conn,ids,target,name,kind.as_deref())
     }).await.map_err(|e|e.to_string())?
 }
 #[derive(Serialize)]
@@ -168,6 +174,53 @@ pub fn remove_entity_registrations(app:AppHandle,kind:String,ids:Vec<i64>)->Resu
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn species_fixture(c:&Connection) {
+        let base=serde_json::json!({"kind":"cat","view":"unknown","viewSource":"unknown","box":[0.1,0.1,0.5,0.5],"detectionScore":0.9,"appearance":vec![0.0;1024],"mirroredAppearance":vec![0.0;1024],"color":vec![0.0;120],"shape":vec![0.0;10]});
+        c.execute("UPDATE pet_detection SET features=?1 WHERE id=3",[base.to_string()]).unwrap();
+        let mut dog=base;dog["kind"]=serde_json::json!("dog");
+        c.execute("UPDATE pet_detection SET features=?1 WHERE id IN (1,2)",[dog.to_string()]).unwrap();
+    }
+    #[test] fn explicit_species_correction_is_scoped_and_keeps_detector_provenance(){
+        let mut c=db();species_fixture(&c);
+        assign_detections_with_kind(&mut c,vec![3],Some(1),None,Some("dog")).unwrap();
+        let (owner,json):(i64,String)=c.query_row("SELECT pet_id,features FROM pet_detection WHERE id=3",[],|r|Ok((r.get(0)?,r.get(1)?))).unwrap();
+        let f:serde_json::Value=serde_json::from_str(&json).unwrap();
+        assert_eq!(owner,1);assert_eq!(f["kind"],"dog");assert_eq!(f["detectedKind"],"cat");
+        assert_eq!(f["box"],serde_json::json!([0.1,0.1,0.5,0.5]));
+        assert_eq!(c.query_row("SELECT pet_id FROM pet_detection WHERE id=2",[],|r|r.get::<_,i64>(0)).unwrap(),2);
+        assert_eq!(c.query_row("SELECT COUNT(*) FROM media",[],|r|r.get::<_,i64>(0)).unwrap(),2);
+    }
+    #[test] fn species_correction_and_new_name_roll_back_on_stale_or_incompatible_selection(){
+        let mut c=db();species_fixture(&c);
+        assert!(assign_detections_with_kind(&mut c,vec![3,999],None,Some("새 이름".into()),Some("dog")).is_err());
+        assert!(assign_detections_with_kind(&mut c,vec![3],Some(1),None,Some("cat")).is_err());
+        assert!(assign_detections_with_kind(&mut c,vec![3],Some(1),None,Some("bird")).is_err());
+        let (owner,json):(Option<i64>,String)=c.query_row("SELECT pet_id,features FROM pet_detection WHERE id=3",[],|r|Ok((r.get(0)?,r.get(1)?))).unwrap();
+        assert_eq!(owner,None);assert_eq!(serde_json::from_str::<serde_json::Value>(&json).unwrap()["kind"],"cat");
+        assert_eq!(c.query_row("SELECT COUNT(*) FROM pet",[],|r|r.get::<_,i64>(0)).unwrap(),2);
+        assert_eq!(c.query_row("SELECT COUNT(*) FROM pet_media",[],|r|r.get::<_,i64>(0)).unwrap(),2);
+    }
+    #[test] fn correcting_auto_cat_to_dog_discards_cat_only_face_but_retains_body_features(){
+        let mut c=db();species_fixture(&c);
+        let json:String=c.query_row("SELECT features FROM pet_detection WHERE id=3",[],|r|r.get(0)).unwrap();
+        let mut f:serde_json::Value=serde_json::from_str(&json).unwrap();
+        f["view"]=serde_json::json!("front");f["viewSource"]=serde_json::json!("cat-frontal-cascade");f["faceBox"]=serde_json::json!([0.2,0.2,0.1,0.1]);f["faceAppearance"]=serde_json::json!(vec![0.0;1024]);f["mirroredFaceAppearance"]=serde_json::json!(vec![0.0;1024]);
+        c.execute("UPDATE pet_detection SET features=?1 WHERE id=3",[f.to_string()]).unwrap();
+        assign_detections_with_kind(&mut c,vec![3],Some(1),None,Some("dog")).unwrap();
+        let json:String=c.query_row("SELECT features FROM pet_detection WHERE id=3",[],|r|r.get(0)).unwrap();
+        let f:serde_json::Value=serde_json::from_str(&json).unwrap();
+        assert_eq!(f["view"],"unknown");assert_eq!(f["viewSource"],"unknown");assert!(f.get("faceBox").is_none());
+        assert_eq!(f["faceAppearance"],serde_json::json!([]));assert_eq!(f["mirroredFaceAppearance"],serde_json::json!([]));
+        assert_eq!(f["appearance"].as_array().unwrap().len(),1024);assert_eq!(f["detectedKind"],"cat");
+    }
+    #[test] fn species_correction_projects_excluded_legacy_pose_metadata(){
+        let mut c=db();species_fixture(&c);
+        c.execute("UPDATE pet_detection SET features=json_set(features,'$.view','left','$.viewSource','quadpose-keypoints','$.automaticPose',json('{\"source\":\"quadpose\"}')) WHERE id=3",[]).unwrap();
+        assign_detections_with_kind(&mut c,vec![3],Some(1),None,Some("dog")).unwrap();
+        let json:String=c.query_row("SELECT features FROM pet_detection WHERE id=3",[],|r|r.get(0)).unwrap();
+        let f:serde_json::Value=serde_json::from_str(&json).unwrap();
+        assert_eq!(f["kind"],"dog");assert_eq!(f["detectedKind"],"cat");assert_eq!(f["view"],"unknown");assert_eq!(f["viewSource"],"unknown");assert!(f.get("automaticPose").is_none());
+    }
     fn db()->Connection {let mut c=Connection::open_in_memory().unwrap();crate::database::initialize(&mut c).unwrap();c.execute_batch("INSERT INTO media(id,file_path,file_type,size_bytes) VALUES(1,'a','image',1),(2,'b','image',1);INSERT INTO person(id,name) VALUES(1,'가족'),(2,'친구');INSERT INTO detected_face(id,media_id,person_id,descriptor,thumbnail,confirmed) VALUES(1,1,1,'[]','a',1),(2,1,2,'[]','b',1),(3,2,1,'[]','c',0);INSERT INTO pet(id,name) VALUES(1,'보리'),(2,'콩');INSERT INTO pet_media VALUES(1,1),(2,1);INSERT INTO pet_scan(media_id,engine_version,source_key) VALUES(1,'test','test');INSERT INTO pet_detection(id,media_id,object_index,features,pet_id) VALUES(1,1,0,'{}',1),(2,1,1,'{}',2),(3,1,2,'{}',NULL);").unwrap();c}
     #[test] fn manual_pet_photo_remains_assignable_as_unknown(){let mut c=db();c.execute("INSERT INTO pet_media VALUES(1,2)",[]).unwrap();edit_links(&mut c,"pet",1,vec![2],"unknown",None,None).unwrap();assert_eq!(c.query_row("SELECT media_id FROM unidentified_pet_photo",[],|r|r.get::<_,i64>(0)).unwrap(),2);let id=assign_detections(&mut c,vec![-2],None,Some("새 반려동물".into())).unwrap();assert_eq!(c.query_row("SELECT COUNT(*) FROM pet_media WHERE pet_id=?1 AND media_id=2",[id],|r|r.get::<_,i64>(0)).unwrap(),1);assert_eq!(c.query_row("SELECT COUNT(*) FROM unidentified_pet_photo",[],|r|r.get::<_,i64>(0)).unwrap(),0);}
     #[test] fn registration_removal_is_atomic_and_keeps_originals(){let mut c=db();assert!(remove_registrations(&mut c,"pet",vec![1,999]).is_err());assert_eq!(c.query_row("SELECT COUNT(*) FROM pet",[],|r|r.get::<_,i64>(0)).unwrap(),2);remove_registrations(&mut c,"person",vec![1]).unwrap();assert_eq!(c.query_row("SELECT name FROM person WHERE id=1",[],|r|r.get::<_,String>(0)).unwrap(),"");assert_eq!(c.query_row("SELECT confirmed FROM detected_face WHERE id=2",[],|r|r.get::<_,bool>(0)).unwrap(),true);assert_eq!(c.query_row("SELECT COUNT(*) FROM media",[],|r|r.get::<_,i64>(0)).unwrap(),2);}

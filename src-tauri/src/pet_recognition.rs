@@ -57,6 +57,22 @@ fn record_direction(conn:&Connection,id:i64,f:&Features)->Result<(),String>{
     let source=f.view_source.as_str();
     conn.execute("INSERT OR IGNORE INTO pet_direction_observation(detection_id,automatic_view,automatic_source,manual_view) VALUES(?1,?2,?3,?4)",params![id,automatic,source,if f.view_source=="user" {Some(f.view.as_str())} else {None}]).map_err(|e|e.to_string())?;Ok(())
 }
+pub(crate) fn correct_unknown_kind(conn:&Connection,id:i64,kind:&str)->Result<(),String>{
+    if !["dog","cat"].contains(&kind){return Err("강아지 또는 고양이를 선택해 주세요.".into());}
+    let json:String=conn.query_row("SELECT features FROM pet_detection WHERE id=?1 AND pet_id IS NULL AND excluded=0",[id],|r|r.get(0)).map_err(|_|"선택한 반려동물의 분류가 변경되었습니다.".to_string())?;
+    let features:Features=serde_json::from_str(&json).map_err(|e|e.to_string())?;
+    if features.kind==kind {return Ok(());}
+    let mut features=active_features(features);
+    if features.detected_kind.is_none() && features.detection_source.as_deref()!=Some("user") {features.detected_kind=Some(features.kind.clone());}
+    features.kind=kind.into();
+    // Cat-only automatic face evidence cannot describe a user-corrected dog.
+    if features.view_source=="cat-frontal-cascade" && kind=="dog" {
+        features.view="unknown".into();features.view_source="unknown".into();features.face_box=None;
+        features.face_appearance.clear();features.mirrored_face_appearance.clear();
+    }
+    validate(&features)?;
+    conn.execute("UPDATE pet_detection SET features=?1 WHERE id=?2",params![serde_json::to_string(&features).map_err(|e|e.to_string())?,id]).map_err(|e|e.to_string())?;Ok(())
+}
 // Excluded model observations remain in SQLite for recovery. They do not
 // supply orientation, keypoints or face identity evidence to active matching.
 fn active_features(mut f: Features) -> Features {

@@ -1,12 +1,13 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { EntityEditorDialog } from '../../components/EntityEditorDialog';
 import type { Assignment } from './entityService';
 import { entityCounter } from './entityLabels';
 import './entities.css';
 
-export function EntityAssignmentDialog({ kind, entries, count, unit, onSave, onClose }: {
+export function EntityAssignmentDialog({ kind, entries, count, unit, onSave, onClose, children }: {
   kind: 'person' | 'pet'; entries: { id: number; name: string }[]; count: number; unit: string;
   onSave: (assignment: Assignment) => Promise<void>; onClose: () => void;
+  children?: (busy: boolean) => ReactNode;
 }) {
   const [mode, setMode] = useState<'existing' | 'new'>(entries.length ? 'existing' : 'new');
   const [target, setTarget] = useState(''), [name, setName] = useState('');
@@ -31,6 +32,7 @@ export function EntityAssignmentDialog({ kind, entries, count, unit, onSave, onC
         <div className="entityEditModes" role="group" aria-label="이름 지정 방법"><button type="button" disabled={busy || !entries.length} aria-pressed={mode === 'existing'} onClick={() => setMode('existing')}>기존 {noun}</button><button type="button" disabled={busy} aria-pressed={mode === 'new'} onClick={() => setMode('new')}>새 {noun}</button></div>
         {mode === 'existing' ? <label className="entityEditField">{noun} 선택<select aria-label={`${noun} 선택`} value={target} disabled={busy} required onChange={event => setTarget(event.target.value)}><option value="">선택하세요</option>{entries.map(entry => <option key={entry.id} value={entry.id}>{entry.name}</option>)}</select></label> : <label className="entityEditField">새 {noun} 이름<input aria-label={`새 ${noun} 이름`} value={name} maxLength={80} disabled={busy} required onChange={event => setName(event.target.value)} /></label>}
         {mode === 'new' && duplicate && <p role="alert">같은 이름이 있습니다. ‘기존 {noun}’에서 선택해 주세요.</p>}
+        {children?.(busy)}
         {error && <p role="alert">{error}</p>}
       </div>
       <footer className="peopleActions entityEditFooter" data-help-dock><button type="button" disabled={busy} onClick={close}>취소</button><button data-help={kind === "pet" ? "save-pet-assignment" : undefined} type="submit" className="primaryControl" disabled={busy || !count || (mode === 'new' ? !name.trim() || duplicate : !target)}>{busy ? '저장 중…' : '이름 지정'}</button></footer>

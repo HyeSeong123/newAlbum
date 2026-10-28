@@ -33,7 +33,7 @@ async function prepare(page: Page, deferredGallery = false, waitingJob = false) 
         if (command === 'control_person_jobs') { if (args.resume) personStarted = true; else if (personStarted && scanned.size < 6) pausedDuringPersonWork = true; return; }
         if (command === 'get_person_scan_source') return { source_key: 'fixture', completed: scanned.has(args.mediaId) };
         if (command === 'save_face_scan') { scanned.add(args.mediaId); return; }
-        if (command === 'list_pets') return [{ id: 1, name: '보리', media_ids: [1], cover_media_id: 1 }];
+        if (command === 'list_pets') return [{ id: 1, name: '보리', media_ids: [1,2,3,4,5,6], cover_media_id: 1 }];
         if (command === 'enqueue_pet_jobs') { for (const job of args.jobs) jobs.push({ ...job, id: jobs.length + 1, media_id: job.mediaId, pet_id: job.petId, state: 'pending', error: '' }); return; }
         if (command === 'list_pet_jobs') { const rows = jobs.filter(j => j.state !== 'done'); return { jobs: structuredClone(rows), pending: rows.filter(j => j.state === 'pending').length, paused: rows.filter(j => j.state === 'paused').length, failed: rows.filter(j => j.state === 'failed').length }; }
         if (command === 'finish_pet_job') { const job = jobs.find(j => j.id === args.id); if (job) { job.state = args.error ? 'failed' : 'done'; job.error = args.error || ''; } return; }
@@ -111,10 +111,7 @@ test('pet analysis continues after leaving its selection screen and has an expli
   await prepare(page);
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await page.getByRole('tab', { name: '반려동물', exact: true }).click();
-  await page.getByRole('button', { name: '사진에서 반려동물 감지', exact: true }).click();
-  const picker = page.getByRole('dialog', { name: '반려동물 감지할 사진 선택', exact: true });
-  await picker.getByRole('button', { name: '전체 선택', exact: true }).click();
-  await picker.getByRole('button', { name: '반려동물 감지', exact: true }).click();
+  await page.getByRole('button', { name: '인식 기준 갱신', exact: true }).click();
   await expect(page.getByRole('button', { name: '분석 중 · 진행상황 보기' })).toBeVisible();
   await page.getByRole('button', { name: '감자싹 홈으로 이동' }).click();
   await page.getByRole('button', { name: '분석 중 · 진행상황 보기' }).click();

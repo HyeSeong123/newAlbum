@@ -1,4 +1,3 @@
-import { EntityPhotoPicker } from '../../components/EntityPhotoPicker';
 import { FunctionHelp } from '../../components/FunctionHelp';
 import { useBackAction } from '../../hooks/useBackAction';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
@@ -29,7 +28,6 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
   const [error, setError] = useState('');
   const [selecting,setSelecting]=useState(false), [chosen,setChosen]=useState<number[]>([]);
   const [assigning,setAssigning]=useState(false), [unknown,setUnknown]=useState(false);
-  const [scanPicking,setScanPicking]=useState(false);
   const [sort,setSort]=useState('name');
   useEffect(()=>{const close=()=>setSelecting(false);window.addEventListener('gamjassak-unknown-pet-selection-close',close);return()=>window.removeEventListener('gamjassak-unknown-pet-selection-close',close);},[]);
   const [editorMode,setEditorMode]=useState<'all'|'name'|'cover'|'photos'>('all');
@@ -51,7 +49,7 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
   const matchingPets = useMemo(() => pets.filter((entry) => entry.name.toLocaleLowerCase().includes(search)).sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'ko'):b.media_ids.length-a.media_ids.length), [pets, search, sort]);
   useEffect(() => { setPage(0); setListPage(0); listScroll.current=null;setActive(null); setSelecting(false); setChosen([]); }, [query]);
   useEffect(()=>{setSelecting(false);setChosen([]);},[active,unknown]);
-  useEffect(()=>{if(!isActive){setSelecting(false);setChosen([]);setAssigning(false);setEditing(null);setReviewing(false);setScanPicking(false);}},[isActive]);
+  useEffect(()=>{if(!isActive){setSelecting(false);setChosen([]);setAssigning(false);setEditing(null);setReviewing(false);}},[isActive]);
   useBackAction(isActive && (selecting || Boolean(pet) || unknown), () => {
     if (busy) return;
     if (selecting) {setSelecting(false);setChosen([]);}
@@ -129,13 +127,13 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
           { label: '반려동물 등록 삭제', icon: <Trash2 size={16} />, danger: true, onSelect: () => void remove() },
         ]} /></>}
         {!pet && !unknown && !selecting && <button className="primaryControl entityPrimary" aria-label="반려동물 추가" disabled={busy || loading || !desktop} onClick={() => {setEditorMode('all');setEditing({ id: 0, name: '', cover_media_id: null, media_ids: [] });}}><Plus size={18} /><span>반려동물 추가</span></button>}
-        {!pet && !unknown && !selecting && desktop && pets.length > 0 && <ActionMenu label="반려동물 관리" triggerText="더보기" icon={<MoreVertical size={20} />} disabled={busy || loading} actions={[{label:'인식 기준 갱신',icon:<RefreshCw size={16} />,disabled:!canRetrain || analysis.progress?.running,onSelect:retrain}]} />}
       </div>
     </div>
     {!desktop && <p role="status">반려동물 등록·인식은 감자싹 앱에서 사용할 수 있습니다.</p>}
-    {desktop && !selecting && <div className="entityQuickActions entityToolbar" role="group" aria-label={pet ? '반려동물 사진 관리' : '반려동물 찾기와 확인'}>{pet ? <><button disabled={busy} onClick={()=>editPet('photos')}><Plus size={18}/>사진 연결</button><button disabled={busy} onClick={()=>editPet('name')}><Pencil size={18}/>이름 변경</button><button disabled={busy || loading} onClick={()=>setReviewing(true)}><ScanSearch size={18}/>반려동물 사진 찾기</button></> : <>
-      <div className="entityActionGroup" role="group" aria-label="사진에서 반려동물 찾기"><button className="primaryControl" disabled={busy || loading || !photos.length || analysis.progress?.running} onClick={()=>setScanPicking(true)}><ScanSearch size={18}/>사진에서 반려동물 감지</button>{!unknown && pets.length > 0 && <button disabled={busy || loading} onClick={()=>setReviewing(true)}><ScanSearch size={18}/>반려동물 사진 찾기</button>}</div>
-      {!unknown && <div className="entityActionGroup" role="group" aria-label="반려동물 목록 관리"><button data-entity-list-key="unknown-pets" disabled={busy || loading} onClick={openUnknown}>미확인 반려동물</button><button disabled={busy || loading || !matchingPets.length} onClick={()=>{setSelecting(true);setChosen([]);}}><Check size={18}/>선택</button></div>}
+    {desktop && !selecting && !unknown && <div className={`entityQuickActions entityToolbar${pet ? '' : ' petListActions'}`} role="group" aria-label={pet ? '반려동물 사진 관리' : '반려동물 찾기와 확인'}>{pet ? <><button disabled={busy} onClick={()=>editPet('photos')}><Plus size={18}/>사진 연결</button><button disabled={busy} onClick={()=>editPet('name')}><Pencil size={18}/>이름 변경</button><button disabled={busy || loading} onClick={()=>setReviewing(true)}><ScanSearch size={18}/>반려동물 사진 찾기</button></> : <>
+      <button className="primaryControl" disabled={busy || loading || !canRetrain || analysis.progress?.running} onClick={retrain}><RefreshCw size={18}/>인식 기준 갱신</button>
+      <button disabled={busy || loading || !canRetrain} onClick={()=>setReviewing(true)}><ScanSearch size={18}/>반려동물 사진 찾기</button>
+      <button data-entity-list-key="unknown-pets" disabled={busy || loading} onClick={openUnknown}>미확인 반려동물</button><button disabled={busy || loading || !matchingPets.length} onClick={()=>{setSelecting(true);setChosen([]);}}><Check size={18}/>선택</button>
     </>}<FunctionHelp title="반려동물 사진 찾기"><p>연결한 사진과 비교해 비슷한 사진을 찾습니다. 결과를 확인한 뒤 같은 반려동물의 사진만 연결하세요.</p></FunctionHelp></div>}
     {!pet && !unknown && !selecting && <label className="entitySort">정렬<select aria-label="반려동물 정렬" value={sort} onChange={event=>setSort(event.target.value)}><option value="name">이름순</option><option value="photos">사진 많은 순</option></select></label>}
     {!reviewing && <PetAnalysisStatus analysis={analysis} onReview={openUnknown} />}
@@ -164,7 +162,6 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
     {assigning && pet && <EntityAssignmentDialog kind="pet" entries={pets.filter(entry=>entry.id!==pet.id)} count={chosen.length} unit="사진" onClose={()=>setAssigning(false)} onSave={async value=>{
       await editEntityPhotos('pet',pet.id,chosen,'move',value);setChosen([]);try{setPets(await loadPets());}catch{setError('저장은 완료했지만 목록을 갱신하지 못했습니다. 반려동물 메뉴를 다시 열어 주세요.');}window.dispatchEvent(new Event('gamjassak-pet-results'));
     }}/>}
-    {scanPicking&&<EntityPhotoPicker title="반려동물 감지할 사진 선택" photos={photos} selectOnly submitLabel="반려동물 감지" onClose={()=>setScanPicking(false)} onSave={async(_,ids)=>{analysis.start(photos.filter(item=>ids.includes(Number(item.id))));setUnknown(true);setActive(null);}}/>}
     {editing && <PetEditor pet={editing} mode={editorMode} photos={photos} onClose={() => setEditing(null)} onSaved={async (id) => { setPets(await loadPets()); setActive(id); setPage(0); }} />}
     {reviewing && <PetPhotoSearch pet={pet} pets={pets} photos={photos} analysis={analysis} onClose={() => setReviewing(false)} onSaved={async () => { setPets(await loadPets()); }} />}
 
@@ -209,7 +206,7 @@ function PetEditor({ pet, photos, mode='all', onClose, onSaved }: { mode?: 'all'
       <div className="entityEditBody"><fieldset disabled={busy || pendingRefresh !== null}>
         <div className="petFields">{(mode==='all' || mode==='name') && <label className="entityEditField">이름<input placeholder="반려동물 이름" required maxLength={80} value={name} onChange={(event) => setName(event.target.value)} /></label>}
         {(mode==='all' || mode==='cover') && <label className="entityEditField">대표 사진<select aria-label="대표 사진" value={actualCover ?? ''} disabled={!selected.length} onChange={(event) => setCover(Number(event.target.value))}>{!selected.length && <option value="">사진 없음</option>}{selected.map((id, i) => <option key={id} value={id}>{photos.find((photo) => Number(photo.id) === id)?.takenAt ?? '날짜 없음'} · {i + 1}</option>)}</select></label>}</div>
-        {mode!=='name' && <><div className="petPhotoSelectionHeading"><strong>{mode==='cover'?'대표로 사용할 사진':'연결할 사진'}</strong><span>{selected.length}장{mode==='cover'?'':' 선택'}</span></div><FunctionHelp title={mode==='cover'?'대표 사진 변경':'사진 연결'}><p>{mode==='cover'?'대표로 사용할 사진을 누르세요.':'사진을 눌러 연결하거나 해제하세요. 원본 사진은 유지됩니다.'}</p><p>저장하면 이름과 사진만 연결합니다. 분석하려면 저장 후 ‘반려동물 사진 찾기’를 눌러 주세요.</p></FunctionHelp>
+        {mode!=='name' && <><div className="petPhotoSelectionHeading"><strong>{mode==='cover'?'대표로 사용할 사진':'연결할 사진'}</strong><span>{selected.length}장{mode==='cover'?'':' 선택'}</span></div><FunctionHelp title={mode==='cover'?'대표 사진 변경':'사진 연결'}><p>{mode==='cover'?'대표로 사용할 사진을 누르세요.':'사진을 눌러 연결하거나 해제하세요. 원본 사진은 유지됩니다.'}</p><p>저장하면 이름과 사진만 연결합니다. 등록 사진을 인식하려면 저장 후 ‘인식 기준 갱신’을 눌러 주세요.</p></FunctionHelp>
         {mode!=='cover' && <div className="peopleActions"><button type="button" onClick={()=>setSelected(photos.map(photo=>Number(photo.id)))}>전체 선택</button><button type="button" disabled={!selected.length} onClick={()=>setSelected([])}>선택 해제</button></div>}
         <div className="petGrid selecting" {...drag}>{availablePhotos.slice(currentPage * 24, (currentPage + 1) * 24).map((item) => <button type="button" key={item.id} className="petPhoto" data-selection-id={item.id} aria-label={mode==='cover'?'대표 사진으로 설정':'사진 선택'} aria-pressed={mode==='cover'?actualCover===Number(item.id):selected.includes(Number(item.id))} onClick={() => mode==='cover'?setCover(Number(item.id)):toggle(item.id)}>
           <MediaVisual item={item} /><span className={`faceCheck ${(mode==='cover'?actualCover===Number(item.id):selected.includes(Number(item.id))) ? 'checked' : ''}`} aria-hidden="true">{(mode==='cover'?actualCover===Number(item.id):selected.includes(Number(item.id))) && <Check size={22} />}</span><span>{item.takenAt ?? '날짜 없음'}</span>
