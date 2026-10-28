@@ -127,7 +127,7 @@ export function HelpProvider({ context, children, request = 0, onActiveChange }:
   return <HelpContextValue.Provider value={{ start, active: Boolean(session) }}>
     {children}
     {createPortal(<div data-help-ui="trigger" className="helpTriggerHost" style={{ bottom: `max(${bottom}px, env(safe-area-inset-bottom))`, right: `max(${right}px, env(safe-area-inset-right))` }}>
-      {available && <button ref={trigger} id={triggerId} hidden={Boolean(session)} type="button" className="helpTrigger" aria-label="현재 화면 도움말" aria-haspopup="dialog" onPointerDown={event => event.stopPropagation()} onClick={start}><CircleHelp size={24} aria-hidden="true" /></button>}
+      {available && !context.blocked && <button ref={trigger} id={triggerId} hidden={Boolean(session)} type="button" className="helpTrigger" aria-label="현재 화면 도움말" aria-haspopup="dialog" onPointerDown={event => event.stopPropagation()} onClick={start}><CircleHelp size={24} aria-hidden="true" /></button>}
     </div>, fullscreenRoot ?? document.body)}
     {session && <HelpOverlay session={session} onClose={close} />}
   </HelpContextValue.Provider>;

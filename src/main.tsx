@@ -1,6 +1,12 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
+// Keep feature styles before the shared/mobile overrides when its UI loads lazily.
+import "./features/people/people.css";
+import "./components/entity-editor.css";
+import "./components/entity-photo-picker.css";
+import "./features/entities/entities.css";
+import "./features/pets/pets.css";
 import "./styles.css";
 import "./design-system.css";
 import "./features/albums/albums.css";

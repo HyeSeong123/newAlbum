@@ -11,6 +11,7 @@ test('Home defers people UI and navigation remains usable while it loads', async
   await page.route('**/src/features/people/PeopleWorkspace.tsx*', async route => { await held; await route.continue(); });
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: '사람과 반려동물을 불러오는 중' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '현재 화면 도움말', exact: true })).toHaveCount(0);
   await page.screenshot({ path: info.outputPath('people-loading.png') });
   await page.getByRole('button', { name: '감자싹 홈으로 이동' }).click();
   await expect(page.locator('.homeView')).toBeVisible();
@@ -18,6 +19,10 @@ test('Home defers people UI and navigation remains usable while it loads', async
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await expect(page.getByRole('tab', { name: '인물', exact: true })).toBeVisible();
   await expect(page.locator('.peopleWorkspace')).toBeVisible();
+  await page.getByRole('button', { name: '현재 화면 도움말', exact: true }).click();
+  const help = page.getByRole('dialog', { name: '버튼 도움말', exact: true });
+  await expect(help.getByRole('heading', { name: '인물', exact: true })).toBeVisible();
+  await help.getByRole('button', { name: '도움말 종료', exact: true }).click();
   await expect(page.locator('.analysisActivityTrigger')).toHaveCount(0);
   await page.getByRole('tab', { name: '반려동물', exact: true }).click();
   await expect(page.locator('.petsView')).toBeVisible();

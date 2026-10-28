@@ -87,6 +87,7 @@ export function App() {
   const library = useMediaLibrary();
   const petAnalysis = usePetAnalysis(library.items);
   const [personAnalysis, setPersonAnalysis] = useState<PersonAnalysisProgress | null>(null);
+  const [peopleReady, setPeopleReady] = useState(false);
   const diary = useDiary();
   const [largeLayout, setLargeLayout] = useState(() => localStorage.getItem("warm-journal-large-layout") === "true");
   const [importOpen, setImportOpen] = useState(false);
@@ -207,7 +208,7 @@ export function App() {
 
   return (
     <HelpCharacterContext.Provider value={mainCharacter}>
-    <HelpProvider context={{ screen: activeView, tab: peopleTab, selection: selectionMode, selectedCount, blocked: Boolean(library.importProgress || library.checkingGallery) }} request={helpRequest}>
+    <HelpProvider context={{ screen: activeView, tab: peopleTab, selection: selectionMode, selectedCount, blocked: Boolean(library.importProgress || library.checkingGallery || (activeView === "People" && !peopleReady)) }} request={helpRequest}>
     <main className={`app${largeLayout ? " largeLayout" : ""}`} style={{ "--app-header-height": `${navigationHeight}px` } as CSSProperties}>
       <header ref={navigationRef} className="sidebar" aria-label="주 메뉴">
         <button type="button" className="brand" aria-label="감자싹 홈으로 이동" title="홈으로 이동" onClick={() => navigate("Home")}>
@@ -321,7 +322,7 @@ export function App() {
             {(activeView === "People" || personAnalysis?.running) && <div hidden={activeView !== 'People'}>
               <FeatureLoadBoundary label="사람과 반려동물">
                 <Suspense fallback={<p className="selectionNotice" role="status">사람과 반려동물을 불러오는 중입니다.</p>}>
-                  <PeopleWorkspace isActive={activeView === 'People'} onPersonAnalysisChange={setPersonAnalysis} reviewRequested={petReviewRequested} onReviewHandled={() => setPetReviewRequested(false)} analysis={petAnalysis} items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} activeTab={peopleTab} onTabChange={setPeopleTab} />
+                  <PeopleWorkspace onReady={setPeopleReady} isActive={activeView === 'People'} onPersonAnalysisChange={setPersonAnalysis} reviewRequested={petReviewRequested} onReviewHandled={() => setPetReviewRequested(false)} analysis={petAnalysis} items={items} query={query} onOpen={openViewer} onCreateAlbum={setAlbumDraftItems} activeTab={peopleTab} onTabChange={setPeopleTab} />
                 </Suspense>
               </FeatureLoadBoundary>
             </div>}

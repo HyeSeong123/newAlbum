@@ -22,7 +22,7 @@
 ## Task 2: UI 로딩과 반복 계산
 
 - [x] Home에서 PeopleWorkspace를 요청하지 않는 검사와 지연/실패 후 탐색 검사를 먼저 실행한다. Expected: 기존 eager import에서 실패.
-- [x] PeopleWorkspace lazy/Suspense 및 작은 오류 경계. 기존 숨김·진행 중 유지 조건 보존.
+- [x] PeopleWorkspace lazy/Suspense 및 작은 오류 경계. 준비 전 도움말 차단, CSS 우선순위·좁은 화면 개수 한 줄 유지. 기존 숨김·진행 중 유지 조건 보존.
 - [x] App 사진 서명 `[items]`, Library 지역 대상 `[items, selectedIds]` 메모화, 빈 선택 즉시 빈 배열.
 - [x] PC/모바일 새 로딩·분석 수명·지역 수정 검사, 모바일 화면 확인. Expected: 변경 흐름 통과.
 - [x] 같은 Vite 빌드 조건으로 초기 JS 전후 바이트 비교. 모델/Worker 수치는 초기 UI 개선 수치와 구분한다.
