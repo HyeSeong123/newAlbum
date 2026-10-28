@@ -81,28 +81,25 @@ async function capture(page: Page, name: string) {
  await page.screenshot({path:`${dir}/${name}.png`});
 }
 
-test('pet detection completion leads to unknown animals and name assignment',async({page})=>{
- await fixture(page,true);await pets(page);
- await page.getByRole('button',{name:'사진에서 반려동물 감지',exact:true}).click();
- const picker=page.getByRole('dialog',{name:'반려동물 감지할 사진 선택',exact:true});
- await picker.getByRole('button',{name:'사진 선택 photo1.jpg',exact:true}).click();
- await picker.getByRole('button',{name:'반려동물 감지',exact:true}).click();
+test('explicit pet photo search leads to unknown animals and direct existing-pet connection',async({page})=>{
+ await fixture(page);await pets(page);
+ await expect(page.getByRole('button',{name:'사진에서 반려동물 감지',exact:true})).toHaveCount(0);
+ await page.getByRole('button',{name:'반려동물 사진 찾기',exact:true}).click();
+ const search=page.getByRole('dialog',{name:'반려동물 사진 찾기',exact:true});
+ await search.getByRole('button',{name:'사진 찾기 시작',exact:true}).click();
  await expect.poll(()=>page.evaluate(()=>(window as any).__petImprove.state.jobs.length)).toBe(0);
+ await search.locator('footer').getByRole('button',{name:'닫기',exact:true}).click();
  const status=page.locator('.petsView .petAnalysisNotice');
- await expect(status.getByRole('button',{name:before?'찾은 사진 연결':'찾은 반려동물 확인',exact:true})).toBeVisible();
- await status.getByRole('button',{name:before?'찾은 사진 연결':'찾은 반려동물 확인',exact:true}).click();
- if(before){await expect(page.getByRole('dialog',{name:'반려동물 사진 찾기',exact:true})).toBeVisible();await capture(page,'11-pet-detection-result');return;}
- await expect(page.getByRole('dialog',{name:'반려동물 사진 찾기',exact:true})).toHaveCount(0);
+ await expect(status.getByRole('button',{name:'찾은 반려동물 확인',exact:true})).toBeVisible();
+ await status.getByRole('button',{name:'찾은 반려동물 확인',exact:true}).click();
  await expect(page.locator('.petsView h2')).toHaveText('미확인 반려동물');
  await capture(page,'11-pet-detection-result');
  await page.locator('.petsView .entityHeader').getByRole('button',{name:'선택',exact:true}).click();
  await page.getByRole('button',{name:'현재 페이지 전체 선택',exact:true}).click();
- await page.getByRole('button',{name:'이름 지정',exact:true}).click();
- const assignment=page.getByRole('dialog',{name:'이름 지정',exact:true});
- await assignment.getByLabel('새 반려동물 이름',{exact:true}).fill('감자');
- await assignment.getByRole('button',{name:'이름 지정',exact:true}).click();
- await expect(assignment).toBeHidden();
- expect(await page.evaluate(()=>(window as any).__petImprove.state.pets.map((pet:any)=>({name:pet.name,ids:pet.media_ids})))).toEqual([{name:'감자',ids:[1]}]);
+ await page.getByLabel('연결할 기존 반려동물').selectOption('1');
+ await page.getByRole('button',{name:'선택한 반려동물 연결',exact:true}).click();
+ expect(await page.evaluate(()=>(window as any).__petImprove.state.pets[0].media_ids)).toEqual([1,2,4]);
+ expect(await page.evaluate(()=>(window as any).__petImprove.state.pets[1].media_ids)).toEqual([3]);
 });
 
 test('pet name saved before refresh failure reports committed result',async({page})=>{
