@@ -76,11 +76,12 @@ export function Library({
   const [endDate, setEndDate] = useState("");
   const [expandedDates, setExpandedDates] = useState<Set<string>>(() => new Set());
   const [dayNotes] = useState(loadDayNotes);
+  const activeCommentsOnly = !mobile && commentsOnly;
   const dragSelection = useRowSelection(selectionMode, onToggleSelection, (id) => selectedIds.has(id));
   const visibleCollection = useMemo(() => selectMediaCollection(items, {
-    mediaType, favoritesOnly, commentsOnly, minimumRating, sort, startDate, endDate,
-  }, commentCounts), [items, mediaType, favoritesOnly, commentsOnly, minimumRating, sort, startDate, endDate, commentCounts]);
-  const advancedFilterCount = Number(mediaType !== "all") + Number(favoritesOnly) + Number(commentsOnly) + Number(minimumRating > 0);
+    mediaType, favoritesOnly, commentsOnly: activeCommentsOnly, minimumRating, sort, startDate, endDate,
+  }, commentCounts), [items, mediaType, favoritesOnly, activeCommentsOnly, minimumRating, sort, startDate, endDate, commentCounts]);
+  const advancedFilterCount = Number(mediaType !== "all") + Number(favoritesOnly) + Number(activeCommentsOnly) + Number(minimumRating > 0);
   const activeFilterCount = advancedFilterCount + Number(Boolean(startDate || endDate));
   const pageCount = Math.max(1, Math.ceil(visibleCollection.length / GALLERY_PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -99,7 +100,7 @@ export function Library({
     setPage((current) => Math.min(current, pageCount));
   }, [pageCount]);
 
-  useEffect(() => { setPage(1); setExpandedDates(new Set()); }, [sort, mediaType, favoritesOnly, commentsOnly, minimumRating, startDate, endDate, scopeKey]);
+  useEffect(() => { setPage(1); setExpandedDates(new Set()); }, [sort, mediaType, favoritesOnly, activeCommentsOnly, minimumRating, startDate, endDate, scopeKey]);
 
   function clearFilters() {
     setMediaType("all"); setFavoritesOnly(false); setCommentsOnly(false); setMinimumRating(0);
@@ -127,14 +128,14 @@ export function Library({
         setStartDate(start); setEndDate(end); onDateSearch();
           }} />
           <label className="sortControl"><ArrowUpDown size={17} /><select aria-label="정렬 기준" value={sort} onChange={(event) => setSort(event.target.value as LibrarySort)}>
-            <option value="date-desc">촬영일 최신순</option><option value="date-asc">촬영일 오래된순</option><option value="registered-desc">등록일 최신순</option><option value="registered-asc">등록일 오래된순</option><option value="comments">댓글 많은순</option><option value="rating">별점 높은순</option>{!mobile && <option value="views">조회수 많은순</option>}<option value="name">이름순</option>
+            <option value="date-desc">촬영일 최신순</option><option value="date-asc">촬영일 오래된순</option><option value="registered-desc">등록일 최신순</option><option value="registered-asc">등록일 오래된순</option><option value="rating">별점 높은순</option>{!mobile && <option value="views">조회수 많은순</option>}<option value="name">이름순</option>
           </select></label>
         </div>
       {filtersOpen && <section id="libraryFilters" className="filterPanel" aria-label="사진 필터">
         <label>종류<select aria-label="미디어 종류" value={mediaType} onChange={(event) => setMediaType(event.target.value as LibraryMediaType)}><option value="all">전체</option><option value="image">사진</option><option value="video">영상</option><option value="audio">음원</option></select></label>
         <label>최소 별점<select aria-label="최소 별점" value={minimumRating} onChange={(event) => setMinimumRating(Number(event.target.value))}><option value="0">전체</option>{[1, 2, 3, 4, 5].map((score) => <option key={score} value={score}>{score}점 이상</option>)}</select></label>
         <label className="filterCheck"><input type="checkbox" checked={favoritesOnly} onChange={(event) => setFavoritesOnly(event.target.checked)} />즐겨찾기만</label>
-        <label className="filterCheck"><input type="checkbox" checked={commentsOnly} onChange={(event) => setCommentsOnly(event.target.checked)} />댓글 있는 사진만</label>
+        {!mobile && <label className="filterCheck"><input type="checkbox" checked={commentsOnly} onChange={(event) => setCommentsOnly(event.target.checked)} />댓글 있는 사진만</label>}
       </section>}
       </section>}
       <div className="libraryResultsBar"><strong aria-live="polite">검색 결과 {visibleCollection.length}개</strong><button className={selectionMode ? "selectionToggle activeAction" : "selectionToggle"} aria-pressed={selectionMode} onClick={() => { setBulkRegionOpen(false); onToggleSelectionMode(); }}><CheckSquare size={17} />{selectionMode ? "선택 취소" : "선택"}</button></div>
@@ -157,7 +158,7 @@ export function Library({
           const arrangedItems = dateGrouped ? arrangeJournalItems(datedItems) : datedItems;
           const expanded = !dateGrouped || selectionMode || expandedDates.has(date);
           const displayedItems = expanded ? arrangedItems : arrangedItems.slice(0, 3);
-          const note = dateGrouped ? dayNotes[date] || arrangedItems.find((item) => item.comment.trim())?.comment : undefined;
+          const note = dateGrouped ? dayNotes[date] || (!mobile ? arrangedItems.find((item) => item.comment.trim())?.comment : undefined) : undefined;
           return <section className="journalDay" key={date}>
           <header className="journalDayHeader"><h2>{dateGrouped ? formatJournalDate(date, scopeKey.startsWith("all:")) : date}</h2><span>{mediaSummary(datedItems)}</span></header>
           <div className={`journalMosaic count-${Math.min(displayedItems.length, 4)} ${(dayIndex > 0 || !dateGrouped) ? "compact" : ""}`}>{displayedItems.map((item, index) => (

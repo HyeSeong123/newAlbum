@@ -65,7 +65,7 @@ test("empty library flow works", async ({ page }) => {
 test("gallery sorting, combined filters and persistent view counts work", async ({ page, isMobile }) => {
   await page.addInitScript(() => {
     const media = [
-      { id: 1, file_path: 'C:/z-last.jpg', file_type: 'image', taken_at: '2026-09-14', width: 640, height: 480, duration: null, size_bytes: 1000, rating: 5, comment: '', favorite: true, view_count: 1, metadata_status: 'ready' },
+      { id: 1, file_path: 'C:/z-last.jpg', file_type: 'image', taken_at: '2026-09-14', width: 640, height: 480, duration: null, size_bytes: 1000, rating: 5, comment: '모바일에서 숨길 기존 댓글', favorite: true, view_count: 1, metadata_status: 'ready' },
       { id: 2, file_path: 'C:/a-first.mp4', file_type: 'video', taken_at: '2024-01-02', width: 640, height: 480, duration: 10, size_bytes: 2000, rating: 2, comment: '', favorite: false, view_count: 8, metadata_status: 'ready' },
       { id: 3, file_path: 'C:/middle.mp3', file_type: 'audio', taken_at: '2025-05-03', width: null, height: null, duration: 60, size_bytes: 3000, rating: 0, comment: '', favorite: false, view_count: 3, metadata_status: 'ready' },
     ];
@@ -93,10 +93,12 @@ test("gallery sorting, combined filters and persistent view counts work", async 
   await page.getByRole("button", { name: "모든 기록", exact: true }).click();
   const order = () => page.locator('.mediaTile').evaluateAll((tiles) => tiles.map((tile) => tile.getAttribute('data-media-id')));
   await expect.poll(order).toEqual(['1', '3', '2']);
+  await page.screenshot({ path: `preview-results/gallery-comments-${process.env.COMMENT_UI_STAGE ?? 'after'}-${test.info().project.name}.png`, fullPage: true });
+  await expect(page.getByLabel('정렬 기준').locator('option[value="comments"]')).toHaveCount(0);
+  if (isMobile) await expect(page.getByText('모바일에서 숨길 기존 댓글', { exact: true })).toHaveCount(0);
+  else await expect(page.getByText('모바일에서 숨길 기존 댓글', { exact: true })).toBeVisible();
   await page.getByLabel('정렬 기준').selectOption('name');
   await expect.poll(order).toEqual(['2', '3', '1']);
-  await page.getByLabel('정렬 기준').selectOption('comments');
-  await expect.poll(order).toEqual(['2', '1', '3']);
   await page.getByLabel('정렬 기준').selectOption('rating');
   await expect.poll(order).toEqual(['1', '2', '3']);
   if (!isMobile) {
@@ -105,9 +107,22 @@ test("gallery sorting, combined filters and persistent view counts work", async 
   } else await expect(page.getByLabel('정렬 기준').locator('option[value="views"]')).toHaveCount(0);
 
   await page.getByRole('button', { name: '필터', exact: true }).click();
+  if (!isMobile) {
+    await page.getByLabel('정렬 기준').selectOption('rating');
+    await page.getByLabel('댓글 있는 사진만').check();
+    await expect.poll(order).toEqual(['1', '2']);
+    await page.setViewportSize({ width: 393, height: 851 });
+    await expect(page.getByLabel('댓글 있는 사진만')).toHaveCount(0);
+    await expect.poll(order).toEqual(['1', '2', '3']);
+    await expect(page.getByRole('button', { name: '필터', exact: true })).toBeVisible();
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await expect(page.getByLabel('댓글 있는 사진만')).toBeChecked();
+    await expect.poll(order).toEqual(['1', '2']);
+    await page.getByLabel('댓글 있는 사진만').uncheck();
+  } else await expect(page.getByLabel('댓글 있는 사진만')).toHaveCount(0);
   await page.getByLabel('미디어 종류').selectOption('video');
   await expect.poll(order).toEqual(['2']);
-  await page.getByLabel('댓글 있는 사진만').check();
+  if (!isMobile) await page.getByLabel('댓글 있는 사진만').check();
   await expect.poll(order).toEqual(['2']);
   await page.screenshot({ path: `test-results/gallery-sort-filter-${test.info().project.name}.png`, fullPage: true });
   await page.getByLabel('즐겨찾기만').check();
@@ -119,6 +134,7 @@ test("gallery sorting, combined filters and persistent view counts work", async 
   if (!isMobile) await expect(page.getByText('2회', { exact: true })).toBeVisible();
   else await expect(page.getByText('조회 수', { exact: true })).toHaveCount(0);
   await expect(page.locator('html')).toHaveAttribute('data-viewed-id', '1');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('oraedameun.mediaComments') ?? '{}')['2'].map((comment: { content: string }) => comment.content))).toEqual(['첫 댓글', '둘째 댓글']);
   await page.screenshot({ path: `test-results/gallery-view-count-${test.info().project.name}.png`, fullPage: true });
 });
 
