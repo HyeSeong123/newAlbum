@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { findBundledWorkers } from './bundled-workers.mjs';
 
 // Production has no measurement menu. Exercise its bundled Workers directly,
 // one live Worker at a time; development browser tests cover the shared clients
@@ -9,11 +10,8 @@ export async function verifyInstalledRepetitionMeasurement(page, mediaId, inputP
     pet: await window.__TAURI_INTERNALS__.invoke('get_pet_scan', { mediaId }),
   }), id);
   const before = await snapshot(mediaId);
-  const runs = await page.evaluate(async path => {
-    const entry = document.querySelector('script[type="module"][src]');
-    const bundle = await (await fetch(entry.src)).text();
-    const names = ['person', 'pet'].map(domain => bundle.match(new RegExp(`${domain}\\.worker-[\\w-]+\\.js`))?.[0]);
-    if (names.some(name => !name)) throw new Error('Production Workers missing');
+  const workers = await page.evaluate(findBundledWorkers, { domains: ['person', 'pet'] });
+  const runs = await page.evaluate(async ({ path, names }) => {
     const bitmap = await createImageBitmap(await (await fetch(window.__TAURI_INTERNALS__.convertFileSrc(path, 'asset'))).blob());
     const inputs = [1600, 640].map(limit => {
       const scale = Math.min(1, limit / Math.max(bitmap.width, bitmap.height));
@@ -40,7 +38,7 @@ export async function verifyInstalledRepetitionMeasurement(page, mediaId, inputP
       }
     }
     return rows;
-  }, inputPath);
+  }, { path: inputPath, names: [workers.person, workers.pet] });
   assert.equal(runs.length, 100);
   assert.ok(runs.filter(row => row.domain === 'person').every(row => row.count === 0));
   assert.ok(runs.filter(row => row.domain === 'pet').every(row => row.count > 0));

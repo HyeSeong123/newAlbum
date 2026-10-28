@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
+import { findBundledWorkers } from './bundled-workers.mjs';
 // This fixture is supplied from the existing FaceAPI package, never user data.
 export async function verifyInstalledPersonRuntime(page,base64,mediaId){
- const result=await page.evaluate(async({encoded,mediaId})=>{
-  const entry=document.querySelector('script[type="module"][src]');
-  const bundle=await(await fetch(entry.src)).text();const name=bundle.match(/person\.worker-[\w-]+\.js/)?.[0];
-  if(!name)throw new Error('Production person Worker missing');
+ const workers=await page.evaluate(findBundledWorkers,{domains:['person']});
+ const result=await page.evaluate(async({encoded,mediaId,name})=>{
   const bitmap=await createImageBitmap(new Blob([Uint8Array.from(atob(encoded),c=>c.charCodeAt(0))],{type:'image/jpeg'}));
   const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));
   const canvas=document.createElement('canvas');canvas.width=Math.round(bitmap.width*scale);canvas.height=Math.round(bitmap.height*scale);const context=canvas.getContext('2d');context.drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close();
@@ -36,7 +35,7 @@ export async function verifyInstalledPersonRuntime(page,base64,mediaId){
    const evaluation=await native.invoke('person_evaluation_summary');await native.invoke('clear_person_evaluation');
    return {excluded512,faces:cpu.faces.length,valid:cpu.faces.every(f=>f.descriptor.length===128&&f.descriptor.every(Number.isFinite)),maxBackendDistance:Math.max(...drift),cpu:cpu.diagnostics,wasm:wasm.diagnostics,auto:warm.diagnostics,nativeSourceVerified:source.source_key.startsWith('sha256:'),completedCache:duplicate.completed,sourceAuditVerified:audit.items.some(item=>item.mediaId===mediaId&&item.state==='verified'),evaluationStored:evaluation.queries===1,environment,offline:true,identityAccuracyMeasured:false,devicePerformanceMeasured:false};
   }finally{worker.terminate();}
- },{encoded:base64,mediaId});
+ },{encoded:base64,mediaId,name:workers.person});
  assert.equal(result.excluded512,true);assert.equal(result.faces,3);assert.equal(result.valid,true);assert.ok(result.maxBackendDistance<.001);assert.equal(result.wasm.backend,'wasm');assert.equal(result.auto.backend,'wasm');assert.equal(result.nativeSourceVerified,true);assert.equal(result.completedCache,true);
  assert.equal(result.sourceAuditVerified,true);assert.equal(result.evaluationStored,true);assert.equal(result.environment.os,'android');assert.equal(result.environment.architecture,'x86_64');
  return result;
