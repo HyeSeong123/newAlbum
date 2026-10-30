@@ -37,3 +37,49 @@
 @media(max-width: 1000px) { .characterGrid { grid-template-columns: repeat(3,minmax(0,1fr)); } }
 @media(max-width: 760px) { .characterGrid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media(max-width: 520px) { .characterGrid { grid-template-columns: minmax(0,1fr); } }
+
+/* Brothers: keep the original portrait node; put small hand-drawn motion cues
+   around it instead of stretching the approved artwork. Home only. */
+.characterVisual[data-motion-style="brothers"] { isolation: isolate; }
+.characterVisual[data-motion-style="brothers"] .characterBody {
+  position: relative;
+  z-index: 1;
+  will-change: transform;
+}
+.brotherGround {
+  position: absolute;
+  z-index: 0;
+  bottom: 7%;
+  left: 27%;
+  width: 46%;
+  height: 9%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #7767514d 0%, #77675100 72%);
+  pointer-events: none;
+}
+.brotherFx {
+  position: absolute;
+  z-index: 2;
+  display: block;
+  width: 43px;
+  height: 43px;
+  color: #cfa363;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 1px #534b3320);
+}
+.brotherFx svg { display: block; width: 100%; height: 100%; }
+.brotherFx--brother-wink { color: #ac82b4; }
+.brotherFx--heart { color: #d7959a; }
+.brotherFx--sleep { color: #8993b2; }
+.brotherFx--curious { top: 6%; right: 7%; width: 34px; height: 34px; }
+.brotherFx--shine { top: 3%; right: 9%; }
+.brotherFx--steps { bottom: 13%; left: 7%; width: 57px; height: 57px; }
+.brotherFx--heart { top: 10%; right: 2%; width: 34px; height: 34px; }
+.brotherFx--stars { top: 5%; left: 6%; width: 47px; height: 47px; }
+.brotherFx--sleep { top: 13%; right: 4%; width: 39px; height: 39px; }
+@media (max-width: 520px) {
+  .homeMascot .brotherFx { max-width: 22%; max-height: 22%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brotherGround, .brotherFx { transition: none; }
+}

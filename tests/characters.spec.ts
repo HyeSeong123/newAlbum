@@ -63,13 +63,54 @@ test('other friends keep their drawing while five activities and quiet rest have
   await page.screenshot({path:testInfo.outputPath('friend-rest.png')});
   await page.locator('.homeMascot').click();
   await expect(visual).toHaveAttribute('data-motion','nod');
-  // The visible nod lasts 3.1 seconds; it must neither end early nor get stuck.
-  await page.clock.runFor(3_000);
+  // The visible brother nod lasts 3.5 seconds; it must neither end early nor get stuck.
+  await page.clock.runFor(3_400);
   await expect(visual).toHaveAttribute('data-motion','nod');
   await page.clock.runFor(200);
   await expect(visual).toHaveAttribute('data-motion','rest');
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
 });
+
+for (const [id, name] of [['potato','감자싹'],['sweet-potato','고구마싹']] as const) {
+  test(`${name} has four unique touches and five illustrated actions without replacing the portrait`, async ({page},testInfo) => {
+    await installSnapshot(page,[companion(id,6,true)]);
+    await page.goto('/');
+    const visual=page.locator('.homeMascot .characterVisual');
+    await expect(visual).toHaveAttribute('data-character',id);
+    await expect(visual).toHaveAttribute('data-motion-style','brothers');
+    await page.evaluate(()=>{(window as any).savedPortrait=document.querySelector('.homeMascot .characterPortrait image');});
+    const touchMotions=new Set<string>();
+    for(let touch=0;touch<4;touch++) {
+      await page.locator('.homeMascot').click();
+      const gesture=await visual.getAttribute('data-motion');
+      expect(gesture).toBeTruthy();
+      touchMotions.add(gesture!);
+    }
+    expect(touchMotions.size).toBe(4);
+    await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
+    await page.getByRole('button',{name:'함께하기',exact:true}).click();
+    for (const [label, motion, effect] of [
+      ['함께 산책','walk','steps'],['햇살 선물','treat','shine'],['쓰다듬기','pet','heart'],
+      ['함께 놀기','play','stars'],['함께 쉬기','rest','sleep'],
+    ] as const) {
+      await page.getByRole('button',{name:label,exact:true}).click();
+      await expect(visual).toHaveAttribute('data-motion',motion);
+      const activeEffect=visual.locator(`.brotherFx[data-brother-effect="${effect}"]`);
+      // Previous effects can overlap briefly during their exit transition.
+      await expect(activeEffect).toHaveCount(1);
+      await expect(activeEffect).toBeVisible();
+      expect(await page.evaluate(()=>(window as any).savedPortrait===document.querySelector('.homeMascot .characterPortrait image'))).toBe(true);
+    }
+    await expect(visual.locator('.brotherGround')).toHaveCount(1);
+    await expect(page.locator('.homeMascot .characterHeart')).toHaveCount(0);
+    await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
+    expect(await page.evaluate(()=>(window as any).sproutCommands.filter((c:any)=>c.command==='interact_character').length)).toBe(4);
+    if (testInfo.project.name === 'mobile') {
+      await page.screenshot({path:`preview-results/home-brothers-${id}-mobile.png`});
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+    }
+  });
+}
 
 test('returning Home rotates visible poses without changing affection', async ({page}) => {
   await installSnapshot(page,[companion('potato',6,true)]);
@@ -96,16 +137,16 @@ test('friend reactions pause in background and cleanly restart on another Home e
   const visual=page.locator('.homeMascot .characterVisual');
   await page.clock.fastForward(3_000);
   await page.locator('.homeMascot').click();
-  await expect(visual).toHaveAttribute('data-motion','sway');
+  await expect(visual).toHaveAttribute('data-motion','look-around');
   await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));});
   await expect(visual).toHaveAttribute('data-paused','true');
   await page.clock.fastForward(30_000);
-  await expect(visual).toHaveAttribute('data-motion','sway');
+  await expect(visual).toHaveAttribute('data-motion','look-around');
   await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});
   await expect(visual).toHaveAttribute('data-paused','false');
-  // Resuming starts the full 3.8-second sway again before restoring the Home pose.
-  await page.clock.runFor(3_700);
-  await expect(visual).toHaveAttribute('data-motion','sway');
+  // Resuming starts the full 4.6-second look-around again before restoring the Home pose.
+  await page.clock.runFor(4_500);
+  await expect(visual).toHaveAttribute('data-motion','look-around');
   await page.clock.runFor(200);
   await expect(visual).toHaveAttribute('data-motion','nod');
   await page.locator('.navList').getByRole('button',{name:'사진 기록',exact:true}).click();
@@ -136,11 +177,12 @@ test('other friends respect reduced motion from Home entry through explicit acti
   await page.getByRole('button',{name:'함께 산책',exact:true}).click();
   await expect(visual).toHaveAttribute('data-motion','walk');
   await page.clock.runFor(100);
-  expect(await bodyPose()).toEqual([1,0,0,1,0,0]);
+  const walkPose=await bodyPose();
+  expect(walkPose).not.toEqual(homePose);
   await page.clock.runFor(1_000);
   await expect(visual).toHaveAttribute('data-motion','walk');
-  expect(await bodyPose()).toEqual([1,0,0,1,0,0]);
-  await page.clock.runFor(1_200);
+  expect(await bodyPose()).toEqual(walkPose);
+  await page.clock.runFor(1_800);
   await expect(visual).toHaveAttribute('data-motion','nod');
   // Motion applies the restored posture on the frame after React changes it.
   await page.clock.runFor(100);

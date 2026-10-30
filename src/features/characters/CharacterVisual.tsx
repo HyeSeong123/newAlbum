@@ -5,6 +5,8 @@ import { GomiVisual } from "./GomiVisual";
 import { characterPortraits } from "./characterPortraits";
 import type { GomiMotion } from "./gomiBehavior";
 import { companionMotionAnimation, companionMotionStillFrame, type CompanionMotion } from "./companionBehavior";
+import { isBrotherSignature } from "./brothersMotion";
+import { BrothersEffects } from "./BrothersEffects";
 
 export type Expression = "idle" | "happy" | "sad" | "grow";
 type CharacterVisualProps = {
@@ -25,6 +27,8 @@ function BotanicalVisual({ definition, stage, expression = "idle", className = "
   const excited = expression === "happy" || expression === "grow";
   const activeMotion = companionMotion || (excited ? "bounce" : "idle");
   const playbackMotion = expression === "sad" && !companionMotion ? "rest" : activeMotion;
+  const brotherSignature = companionMotion && (definition.id === "potato" || definition.id === "sweet-potato") && isBrotherSignature(signature)
+    ? signature : undefined;
   const src = characterAsset(definition, currentStage, expression);
   const portrait = characterPortraits[definition.id];
   const clipId = useId();
@@ -38,7 +42,9 @@ function BotanicalVisual({ definition, stage, expression = "idle", className = "
     return () => controls.stop();
   }, [controls,reduced,playbackMotion,signature,currentStage,reactionKey,paused]);
   return <span className={`characterVisual characterVisual--${definition.type} characterMotion--${signature} ${className}`.trim()}
-    data-character={definition.type} data-stage={currentStage} data-expression={expression} data-motion={activeMotion} data-paused={paused} data-reduced-motion={Boolean(reduced)}>
+    data-character={definition.type} data-stage={currentStage} data-expression={expression} data-motion={activeMotion} data-paused={paused} data-reduced-motion={Boolean(reduced)}
+    data-motion-style={brotherSignature ? "brothers" : undefined}>
+    {brotherSignature && <BrothersEffects signature={brotherSignature} gesture={playbackMotion} reactionKey={reactionKey} paused={paused} reduced={Boolean(reduced)} />}
     <motion.span className="characterBody"
       initial={false} style={{ transformOrigin: "50% 84%" }}
       animate={controls}>
@@ -49,7 +55,7 @@ function BotanicalVisual({ definition, stage, expression = "idle", className = "
         <img className="characterIllustration" src={src} data-stage={currentStage} data-expression={expression}
           alt="" draggable={false} width={220} height={220} />}
     </motion.span>
-    <AnimatePresence>{excited && activeMotion !== "rest" && !reduced && !paused && <motion.span key={reactionKey} className="characterHeart" aria-hidden="true"
+    <AnimatePresence>{excited && activeMotion !== "rest" && !reduced && !paused && !brotherSignature && <motion.span key={reactionKey} className="characterHeart" aria-hidden="true"
       initial={{ opacity:0,y:6,scale:.6,rotate:-12 }} animate={{ opacity:[0,1,1,0],y:-28,scale:1,rotate:10 }}
       exit={{ opacity:0 }} transition={{ duration:1.1 }}>
       <svg viewBox="0 0 24 24"><path d="M12 21C7 17 2 13 2 8a5 5 0 0 1 10-2 5 5 0 0 1 10 2c0 5-5 9-10 13Z" fill="currentColor" /></svg>
