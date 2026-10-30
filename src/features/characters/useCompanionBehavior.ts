@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { companionHomeMotion, companionInteractionMotion, companionMotionAnimation, companionMotionForAction, type CompanionMotion } from "./companionBehavior";
 import type { CompanionAction } from "./companionActivities";
 
@@ -29,7 +29,8 @@ export function useCompanionBehavior(enabled: boolean, characterId?: string, sig
     document.addEventListener("visibilitychange",onVisibility);
     return () => document.removeEventListener("visibilitychange",onVisibility);
   }, [enabled]);
-  useEffect(() => {
+  // Schedule immediately after DOM commit so fast taps or a simulated clock cannot miss the return timer.
+  useLayoutEffect(() => {
     if (!enabled || !visible || state.owner !== characterId || state.motion === rest.current) return;
     const timer = window.setTimeout(() => setState(value => value.owner === state.owner && value.sequence === state.sequence
       ? { ...value,motion:rest.current } : value),

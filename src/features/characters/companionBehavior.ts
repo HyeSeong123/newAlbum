@@ -1,4 +1,5 @@
 import type { CompanionAction } from "./companionActivities";
+import { brotherMotionAnimation, isBrotherSignature } from "./brothersMotion";
 
 export type CompanionMotion = "idle" | "look-around" | "nod" | "stretch" | "sway" | "bounce" | CompanionAction;
 export type CompanionHomePose = Extract<CompanionMotion, "look-around" | "nod" | "stretch" | "sway">;
@@ -24,12 +25,19 @@ export function companionHomeMotion(signature: string, random = Math.random, pre
 }
 export function companionInteractionMotion(signature: string, interaction: number, resting = false): CompanionMotion {
   if (resting) return "nod";
+  // The brothers have four distinct touch responses rather than a repeated squash.
+  if (isBrotherSignature(signature)) {
+    const gestures: CompanionMotion[] = signature === "bashful-peek"
+      ? ["look-around", "bounce", "stretch", "sway"] : ["bounce", "sway", "stretch", "nod"];
+    return gestures[Math.max(0, interaction - 1) % gestures.length];
+  }
   const choices: CompanionMotion[] = reserved.has(signature) ? ["nod","sway","look-around"] : ["bounce","look-around","sway"];
   return choices[Math.max(0, interaction - 1) % choices.length];
 }
 export function companionMotionForAction(action: CompanionAction): CompanionMotion { return action; }
 type Frames = Record<"x" | "y" | "rotate" | "scaleX" | "scaleY", number | number[]>;
 export function companionMotionAnimation(motion: CompanionMotion, signature: string): { keyframes: Frames; duration: number; repeat: number } {
+  if (isBrotherSignature(signature)) return brotherMotionAnimation(motion, signature);
   const [hop, tilt] = strengths[signature] || [4,2];
   const lean = Math.max(9, Math.min(15, hop + 4));
   const turn = Math.max(7, Math.min(12, tilt * 1.4));
