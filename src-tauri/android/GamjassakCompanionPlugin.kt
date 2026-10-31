@@ -23,7 +23,7 @@ import java.util.Collections
 import org.json.JSONObject
 
 @InvokeArg
-class CompanionGenerateArgs { var prompt: String = ""; var sessionId: String = "" }
+class CompanionGenerateArgs { var prompt: String = ""; var sessionId: String = ""; var characterId: String = "" }
 @InvokeArg
 class CompanionSessionArgs { var sessionId: String = "" }
 
@@ -57,7 +57,7 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
     private val root get() = File(appContext.filesDir, DOWNLOAD.directory)
     private val model get() = File(root, DOWNLOAD.filename)
     private val prefs get() = appContext.getSharedPreferences(DOWNLOAD.directory, Context.MODE_PRIVATE)
-    private external fun nativeGenerate(path: String, prompt: String, requestId: Long): ByteArray
+    private external fun nativeGenerate(path: String, prompt: String, adapterPath: String, requestId: Long): ByteArray
     private external fun nativeCancel(requestId: Long)
     private external fun nativeRelease()
     private external fun nativeStats(): String
@@ -201,7 +201,11 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
                 if (!nativeLoaded) { System.loadLibrary("gamjassak_companion"); nativeLoaded = true }
                 check(!cancelled.get()) { "대답을 멈췄어요." }
                 val selectedFile = File(File(appContext.filesDir, selected.directory), selected.filename)
-                reply = nativeGenerate(selectedFile.absolutePath, selected.preparePrompt(prompt), request).toString(Charsets.UTF_8)
+                val adapterPath = if (GomiAdapter.applies(args.characterId, selected.sha256)) {
+                    GomiAdapter.install(appContext.filesDir) { appContext.assets.open(GomiAdapter.ASSET) }.absolutePath
+                } else ""
+                check(!cancelled.get()) { "대답을 멈췄어요." }
+                reply = nativeGenerate(selectedFile.absolutePath, selected.preparePrompt(prompt), adapterPath, request).toString(Charsets.UTF_8)
                 check(!cancelled.get()) { "대답을 멈췄어요." }
             } catch (error: Throwable) {
                 // JNI throws bounded, user-facing errors; never log the prompt or conversation.

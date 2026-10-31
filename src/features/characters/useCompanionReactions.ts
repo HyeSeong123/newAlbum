@@ -24,7 +24,7 @@ export function useCompanionReactions(characterId: string | undefined, onLine: (
         const id = sessionId.current;
         const stop = () => { void stopChatModel(id).catch(() => {}); };
         signal.addEventListener("abort", stop, { once: true });
-        try { return await generateChatReply(prompt, id); }
+        try { return await generateChatReply(prompt, id, context.definition.id); }
         finally { signal.removeEventListener("abort", stop); }
       }, signal);
     }, (reply, context) => {

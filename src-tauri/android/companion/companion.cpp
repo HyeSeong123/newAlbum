@@ -28,7 +28,7 @@ long rss_kib() {
     return resident * sysconf(_SC_PAGESIZE) / 1024;
 }
 struct Metrics {
-    bool resident = false, reused = false;
+    bool resident = false, reused = false, gomi_lora = false;
     int loads = 0, releases = 0;
     int64_t load = 0, context = 0, first = -1, total = 0, generation = 0;
     long before = 0, loaded = 0, peak = 0, released = 0;
@@ -103,11 +103,12 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeStats(JNIEnv *env, jobj
         ",\"firstTokenMs\":" + std::to_string(metrics.first) + ",\"totalMs\":" + std::to_string(metrics.total) +
         ",\"generationMs\":" + std::to_string(metrics.generation) + ",\"rssBeforeKiB\":" + std::to_string(metrics.before) +
         ",\"rssLoadedKiB\":" + std::to_string(metrics.loaded) + ",\"rssPeakKiB\":" + std::to_string(metrics.peak) +
-        ",\"rssAfterReleaseKiB\":" + std::to_string(metrics.released) + "}";
+        ",\"rssAfterReleaseKiB\":" + std::to_string(metrics.released) +
+        ",\"gomiLoraApplied\":" + (metrics.gomi_lora ? "true" : "false") + "}";
     return env->NewStringUTF(json.c_str());
 }
 extern "C" JNIEXPORT jbyteArray JNICALL
-Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, jobject, jstring path, jstring input, jlong request) {
+Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, jobject, jstring path, jstring input, jstring adapter_path, jlong request) {
     try {
         std::unique_lock<std::mutex> lock(inference_mutex, std::try_to_lock);
         if (!lock.owns_lock()) throw std::runtime_error("이전 대답을 마무리하고 있어요. 잠시 후 다시 시도해 주세요.");
@@ -119,8 +120,9 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, j
             std::lock_guard<std::mutex> guard(metrics_mutex);
             metrics.reused = session.resident(); metrics.load = metrics.context = metrics.total = metrics.generation = 0;
             metrics.first = -1; metrics.before = metrics.peak = rss_kib(); metrics.loaded = 0;
+            metrics.gomi_lora = false;
         }
-        const std::string file = utf8(env, path), prompt = utf8(env, input);
+        const std::string file = utf8(env, path), prompt = utf8(env, input), adapter_file = utf8(env, adapter_path);
         if (prompt.empty() || prompt.size() > 48000) throw std::runtime_error("이야기가 너무 길어요.");
         std::call_once(backend_once, [] { llama_backend_init(); });
         auto mp = llama_model_default_params(); mp.n_gpu_layers = 0;
@@ -154,8 +156,17 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, j
         cp.n_ctx = 2048; cp.n_batch = 256; cp.n_ubatch = 128;
         cp.n_threads = cp.n_threads_batch = std::max(1u, std::min(4u, std::thread::hardware_concurrency()));
         cp.abort_callback = abort_run; cp.abort_callback_data = &run;
+        // Adapter lifetime is one request. Context is destroyed first; cached base weights stay clean.
+        std::unique_ptr<llama_adapter_lora, decltype(&llama_adapter_lora_free)> adapter(
+            adapter_file.empty() ? nullptr : llama_adapter_lora_init(model, adapter_file.c_str()), llama_adapter_lora_free);
+        if (!adapter_file.empty() && !adapter) throw std::runtime_error("AI_ADAPTER: 고미 학습 파일을 불러오지 못했어요. 앱 업데이트를 확인해 주세요.");
         std::unique_ptr<llama_context, decltype(&llama_free)> ctx(llama_init_from_model(model, cp), llama_free);
         if (!ctx) throw std::runtime_error("대화 메모리가 부족해요. 다른 앱을 닫고 다시 시도해 주세요.");
+        if (adapter) {
+            if (llama_set_adapter_lora(ctx.get(), adapter.get(), 1.0f) != 0)
+                throw std::runtime_error("AI_ADAPTER: 고미 학습 내용을 적용하지 못했어요.");
+            std::lock_guard<std::mutex> guard(metrics_mutex); metrics.gomi_lora = true;
+        }
         { std::lock_guard<std::mutex> guard(metrics_mutex); metrics.context = now_ms() - generating; }
         stage("prompt");
         const auto *vocab = llama_model_get_vocab(model);

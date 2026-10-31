@@ -1,0 +1,16 @@
+{
+  "characterId": "gomi",
+  "file": "gomi-v4.gguf",
+  "bytes": 23612896,
+  "sha256": "d67da0699c53b34694e52199e42147ecee702f66e3df68594ad5a9d719909ee4",
+  "sourceAdapterSha256": "cc84af4fc1370eb9833d54430164f56904c33c841a6498503d5f12bc83683dc7",
+  "baseModel": "Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+  "baseModelSha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+  "engineCommit": "a7a98e0fffed794396b3fbad4dcdbbc184963645",
+  "architecture": "qwen3",
+  "tensorCount": 288,
+  "tensorType": "F32",
+  "loraAlpha": 16,
+  "scale": 1,
+  "qualityApproved": false
+}

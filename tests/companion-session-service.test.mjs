@@ -32,3 +32,15 @@ test('an unsuccessful stop does not poison the next Home reaction',async()=>{
  await assert.rejects(service.stopChatModel('home-two'),/bridge stopped/);
  assert.equal(await service.generateChatReply('쉬기','home-two'),'다시 만든 대사');
 });
+
+test('native generation receives the chosen character without altering older callers', async()=>{
+ const calls=[];
+ globalThis.sessionBridge=async(command,args)=>{calls.push({command,args});return '새 대사';};
+ await service.generateChatReply('고미 대사','gomi-session','gomi');
+ await service.generateChatReply('감자 대사','potato-session','potato');
+ await service.generateChatReply('이전 호출','legacy-session');
+ assert.equal(calls[0].args.characterId,'gomi');
+ assert.equal(calls[1].args.characterId,'potato');
+ assert.equal(calls[2].args.characterId,undefined);
+ assert.equal(calls[0].args.sessionId,'gomi-session');
+});

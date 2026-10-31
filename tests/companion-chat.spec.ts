@@ -5,7 +5,7 @@ async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:b
     Math.random=()=>settings.gomi?.55:.1;
     let downloading=false, interacted=false, calls=0, disturbances=0;
     const owned={id:settings.gomi?'gomi':'potato',customName:null,growthStage:6,affection:settings.affection||0,isMain:true};
-    const state=(window as any).touchProbe={prompts:[] as string[],stops:0,releases:0,error:settings.error};
+    const state=(window as any).touchProbe={prompts:[] as string[],characters:[] as string[],stops:0,releases:0,error:settings.error};
     (window as any).__TAURI_INTERNALS__={convertFileSrc:()=>'/favicon.png',invoke:async(command:string,args:any={})=>{
         if (command === 'check_android_location_setup') return { locationEnabled: true, photoLocationGranted: true };
       if(command==='sync_characters'||command==='interact_character'){
@@ -22,7 +22,7 @@ async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:b
       if(command==='stop_chat_model'){downloading=false;state.stops++;}
       if(command==='release_chat_model'){state.releases++;}
       if(command==='generate_chat_reply'){
-        state.prompts.push(args.prompt);const call=++calls;
+        state.prompts.push(args.prompt);state.characters.push(args.characterId);const call=++calls;
         if(settings.controlledGeneration)await new Promise(resolve=>{(state as any).finish=resolve;});
         if(settings.delay)await new Promise(resolve=>setTimeout(resolve,settings.delay));
         if(state.error)throw state.error;
@@ -58,6 +58,7 @@ test('repeated touches finish one slow AI reaction without restarting it',async(
   await expect(page.locator('#homeMessage')).toContainText('네 손길이 반가워');
   expect(await page.evaluate(()=>(window as any).touchProbe.stops)).toBe(0);
   expect(await page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
+  expect(await page.evaluate(()=>(window as any).touchProbe.characters)).toEqual(['potato']);
   await expect(page.getByText('친구가 생각 중',{exact:false})).toHaveCount(0);
 });
 
@@ -86,6 +87,7 @@ test('a completed old AI answer stays hidden while a changed sleeping relationsh
   await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
   const prompts=await page.evaluate(()=>(window as any).touchProbe.prompts);
   expect(prompts).toHaveLength(2);expect(prompts[1]).toContain('친밀도: 19');expect(prompts[1]).toContain('짜증');
+  expect(await page.evaluate(()=>(window as any).touchProbe.characters)).toEqual(['gomi','gomi']);
 });
 
 for(const echoFirst of [false,true])test(`${echoFirst?'copied':'long'} AI answer reaches the bubble as a fresh short line`,async({page})=>{

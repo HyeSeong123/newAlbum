@@ -8,6 +8,9 @@ on:
       - 'src/**'
       - 'public/**'
       - 'src-tauri/**'
+      - 'models/gomi-lora-v4/**'
+      - 'scripts/verify-gomi-apk.py'
+      - 'tests/gomi-apk-verification.test.py'
       - 'scripts/prepare-android.mjs'
       - 'scripts/android-signing.mjs'
       - 'scripts/android-signing-policy.json'
@@ -87,6 +90,7 @@ jobs:
           npm run version:check
           npm run test:unit
           node --test tests/android-prepare.test.mjs tests/android-signing.test.mjs tests/android-signing-setup.test.mjs
+          python3 tests/gomi-apk-verification.test.py
       - name: Initialize Android project and approved icon
         run: |
           npx tauri android init --ci --skip-targets-install
@@ -97,7 +101,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: src-tauri/gen/android/app/build/outputs/apk
-          key: android-debug-v1-${{ runner.os }}-${{ hashFiles('src/**', 'public/**', 'src-tauri/*.*', 'src-tauri/src/**', 'src-tauri/database/**', 'src-tauri/android/**', 'src-tauri/capabilities/**', 'src-tauri/permissions/**', 'package*.json', 'scripts/**', 'scripts/generate-character-assets.mjs', 'scripts/prepare-face-models.mjs', 'scripts/face-models.lock.json', 'scripts/prepare-pet-models.mjs', 'scripts/pet-model-lock.json', 'scripts/prepare-recognition-models.mjs', 'scripts/recognition-models.lock.json', 'vite.config.ts', 'index.html', 'rust-toolchain.toml') }}
+          key: android-debug-v1-${{ runner.os }}-${{ hashFiles('models/gomi-lora-v4/**', 'src/**', 'public/**', 'src-tauri/*.*', 'src-tauri/src/**', 'src-tauri/database/**', 'src-tauri/android/**', 'src-tauri/capabilities/**', 'src-tauri/permissions/**', 'package*.json', 'scripts/**', 'scripts/generate-character-assets.mjs', 'scripts/prepare-face-models.mjs', 'scripts/face-models.lock.json', 'scripts/prepare-pet-models.mjs', 'scripts/pet-model-lock.json', 'scripts/prepare-recognition-models.mjs', 'scripts/recognition-models.lock.json', 'vite.config.ts', 'index.html', 'rust-toolchain.toml') }}
       - name: Build installable preview APKs
         if: steps.preview-apks.outputs.cache-hit != 'true'
         run: npx tauri android build --debug --apk --ci --features custom-protocol --target aarch64 x86_64 --split-per-abi
@@ -111,6 +115,7 @@ jobs:
             "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 4 "$preview_apk"
             "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$RUNNER_TEMP/gamjassak-update.keystore" --ks-key-alias "$GAMJASSAK_ANDROID_KEY_ALIAS" --ks-pass env:GAMJASSAK_ANDROID_STORE_PASSWORD --key-pass env:GAMJASSAK_ANDROID_KEY_PASSWORD "$preview_apk"
             node scripts/android-signing.mjs verify-apk "$preview_apk"
+            python3 scripts/verify-gomi-apk.py "$preview_apk"
             "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 4 "$preview_apk"
           done < <(find src-tauri/gen/android/app/build/outputs/apk -name '*.apk' -print0)
       - name: Preserve successful APK build for emulator checks
@@ -145,11 +150,11 @@ jobs:
           task_version="$(node -p 'require("./package.json").version')"
           phone_apk="$(find src-tauri/gen/android/app/build/outputs/apk -name '*arm64*debug.apk' -print -quit)"
           test -n "$phone_apk"
-          cp "$phone_apk" "release-output/android/Gamjassak-${task_version}.apk"
+          cp "$phone_apk" "release-output/android/Gomgomi-${task_version}.apk"
           echo "APP_VERSION=$task_version" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@v4
         with:
-          name: Gamjassak-Android-${{ env.APP_VERSION }}
+          name: Gomgomi-Android-${{ env.APP_VERSION }}
           path: release-output/android/*.apk
           if-no-files-found: error
           retention-days: 30

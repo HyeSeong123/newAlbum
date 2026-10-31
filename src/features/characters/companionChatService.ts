@@ -23,7 +23,7 @@ export type ChatModelStatus = {
   supported: boolean; installed: boolean; downloaded: number; total: number; message: string;
   model?: "legacy" | "dialogue" | "missing"; upgradeAvailable?: boolean;
   lastOutcome?: "none" | "running" | "success" | "cancelled" | "error"; lastError?: string; lastAt?: number;
-  runtime?: { resident?: boolean; reused?: boolean; loadCount?: number; releaseCount?: number; stage?: string;
+  runtime?: { resident?: boolean; reused?: boolean; loadCount?: number; releaseCount?: number; stage?: string; gomiLoraApplied?: boolean;
     loadMs?: number; contextMs?: number; firstTokenMs?: number; totalMs?: number; generationMs?: number;
     rssBeforeKiB?: number; rssLoadedKiB?: number; rssPeakKiB?: number; rssAfterReleaseKiB?: number };
 };
@@ -34,7 +34,10 @@ let stopping: Promise<void> = Promise.resolve();
 const settled = () => Promise.all([releasing, stopping]);
 export const chatModelStatus = async (): Promise<ChatModelStatus> => { await settled(); return isTauriRuntime() ? invoke("chat_model_status") : unsupported; };
 export const downloadChatModel = (): Promise<void> => invoke("download_chat_model");
-export const generateChatReply = async (prompt: string, sessionId?: string): Promise<string> => { await settled(); return invoke("generate_chat_reply", { prompt, sessionId }); };
+export const generateChatReply = async (prompt: string, sessionId?: string, characterId?: string): Promise<string> => {
+  await settled();
+  return invoke("generate_chat_reply", { prompt, sessionId, ...(characterId ? { characterId } : {}) });
+};
 export function stopChatModel(sessionId?: string): Promise<void> {
   // A late session-scoped stop must never overtake the next character's generation.
   const pending = stopping.then(() => isTauriRuntime() ? invoke<void>("stop_chat_model", { sessionId }) : undefined);
