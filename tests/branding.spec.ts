@@ -5,10 +5,12 @@ test('approved spaced logo loads across views and narrow headers without losing 
     localStorage.setItem('warm-journal-diaries-v1', JSON.stringify([{ id: 'legacy-diary', date: '2026-10-01', title: '이름 변경 전 일기', body: '기존 기록을 그대로 읽습니다.', mood: '평온', weather: '맑음', photos: [] }]));
   });
   await page.goto('/');
-  await expect(page).toHaveTitle('감자싹');
+  await expect(page).toHaveTitle('곰고미');
   const brand = page.locator('.brand');
-  const logo = brand.getByRole('img', { name: '감자싹', exact: true });
-  await expect(brand.getByRole('img', { name: '감자싹', exact: true })).toHaveCount(1);
+  const logo = brand.getByRole('img', { name: '곰고미', exact: true });
+  await expect(brand.getByRole('img', { name: '곰고미', exact: true })).toHaveCount(1);
+  await expect(brand.locator('img')).toHaveAttribute('src', '/brand/gomgomi-logo.png');
+  await expect(brand.locator('.brandLogoLettering')).toHaveText('곰고미');
   await expect(logo).toBeVisible();
   await brand.locator('img').evaluateAll((images: HTMLImageElement[]) => Promise.all(images.map(image => image.decode())));
   expect(await brand.locator('img').evaluateAll((images: HTMLImageElement[]) => images.every(image => image.naturalWidth > 0))).toBe(true);
@@ -24,7 +26,7 @@ test('approved spaced logo loads across views and narrow headers without losing 
     await expect(page.locator('body')).not.toContainText('오래담은');
     if (name === '일기장') {
       await expect(page.locator('.diaryCard')).toContainText('이름 변경 전 일기');
-      await expect(page.locator('.diaryEyebrow')).toContainText('감자싹');
+      await expect(page.locator('.diaryEyebrow')).toContainText('곰고미');
     }
   }
   const sizes = test.info().project.name === 'mobile' ? [393, 320] : [1440, 1080];
@@ -40,6 +42,8 @@ test('approved spaced logo loads across views and narrow headers without losing 
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     await page.screenshot({ path: `test-results/branding-header-${width}.png` });
   }
+  await brand.click();
+  await expect(page.getByRole('region', { name: '곰고미 홈', exact: true })).toBeVisible();
 });
 
 test('new users meet Gomi and dismissing the guide survives a reload', async ({ page }) => {
@@ -50,7 +54,7 @@ test('new users meet Gomi and dismissing the guide survives a reload', async ({ 
     }
   });
   await page.goto('/');
-  const guide = page.getByRole('dialog', { name: '감자싹에 사진을 담아보세요' });
+  const guide = page.getByRole('dialog', { name: '곰고미에 사진을 담아보세요' });
   await expect(guide).toBeVisible();
   const introduction = guide.getByLabel('고미의 안내');
   const mascot = introduction.locator('[data-character="gomi"] img');

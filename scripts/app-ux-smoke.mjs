@@ -10,7 +10,7 @@ export async function verifyInstalledAppUx(page, mediaId, pet, back, captureNati
     await captureNative(name);
   }
   const petHeading=await page.locator('.petsView h2').innerText();
-  await page.getByRole('button',{name:'감자싹 홈으로 이동',exact:true}).click();
+  await page.getByRole('button',{name:'곰고미 홈으로 이동',exact:true}).click();
   await expect(page.locator('.homeShortcuts > button')).toHaveCount(4);
   const homePeople=page.getByRole('button',{name:'사람과 반려동물 열기',exact:true});
   await homePeople.scrollIntoViewIfNeeded();await capture('app-ux-home-people');await homePeople.click();

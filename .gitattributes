@@ -7,3 +7,9 @@
 /public/notices/dlib-models-CC0.txt text eol=lf
 /public/notices/pet-cat-face-license.txt text eol=lf
 /public/notices/pet-models-Apache-2.0.txt text eol=lf
+
+# Training proofs include hashes of the original bytes, including supplied CRLF text.
+/scripts/gomi-training/*.json -text
+/scripts/gomi-training/*.txt -text whitespace=cr-at-eol
+/models/gomi-lora-v4/** -text
+/models/gomi-lora-v4/data/*.txt whitespace=cr-at-eol

@@ -109,7 +109,7 @@ jobs:
             "$hash *$($_.Name)"
           } | Set-Content release-output/SHA256SUMS.txt -Encoding utf8
           @"
-          감자싹 $version
+          곰고미 $version
           처음 설치: Gamjassak_${version}_x64-setup.exe (WebView2 오프라인 설치 포함)
           기존 사용자: 앱을 종료한 뒤 Gamjassak_${version}_x64-update.exe 실행 (WebView2 설치된 PC용)
           기존 사진 등록 정보, 앨범, 일기, 메모 데이터는 유지됩니다.

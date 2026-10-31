@@ -8,7 +8,7 @@ test('first run explains the workflow, opens the existing file picker, and stays
     }
   });
   await page.goto('/');
-  const guide = page.getByRole('dialog', { name: '감자싹에 사진을 담아보세요' });
+  const guide = page.getByRole('dialog', { name: '곰고미에 사진을 담아보세요' });
   await expect(guide).toBeVisible();
   await expect(guide).toContainText('원본 사진과 영상 파일은 그대로');
   const chooser = page.waitForEvent('filechooser');
@@ -24,7 +24,7 @@ test('first run explains the workflow, opens the existing file picker, and stays
 test('first run can start Gomi tutorial and the tutorial can be reopened after dismissal', async ({page}) => {
   await page.addInitScript(() => localStorage.removeItem('geuruteogi.first-run-completed-v1'));
   await page.goto('/');
-  const firstRun = page.getByRole('dialog',{name:'감자싹에 사진을 담아보세요'});
+  const firstRun = page.getByRole('dialog',{name:'곰고미에 사진을 담아보세요'});
   await expect(firstRun).toContainText('…여기 봐.');
   await firstRun.getByRole('button',{name:'고미와 사용 방법 살펴보기'}).click();
   const guide = page.getByRole('dialog',{name:'버튼 도움말'});
@@ -44,15 +44,15 @@ test('later and existing diary data suppress the first run guide', async ({ page
     }
   });
   await page.goto('/');
-  await page.getByRole('dialog', { name: '감자싹에 사진을 담아보세요' }).getByRole('button', { name: '나중에 하기' }).click();
+  await page.getByRole('dialog', { name: '곰고미에 사진을 담아보세요' }).getByRole('button', { name: '나중에 하기' }).click();
   await page.reload();
-  await expect(page.getByRole('dialog', { name: '감자싹에 사진을 담아보세요' })).toBeHidden();
+  await expect(page.getByRole('dialog', { name: '곰고미에 사진을 담아보세요' })).toBeHidden();
   await page.evaluate(() => {
     localStorage.removeItem('geuruteogi.first-run-completed-v1');
     localStorage.setItem('warm-journal-diaries-v1', JSON.stringify([{ id: 1, date: '2026-09-28', title: '첫 일기', body: '', mood: '평온', weather: '맑음', album_id: null }]));
   });
   await page.reload();
-  await expect(page.getByRole('dialog', { name: '감자싹에 사진을 담아보세요' })).toBeHidden();
+  await expect(page.getByRole('dialog', { name: '곰고미에 사진을 담아보세요' })).toBeHidden();
   expect(await page.evaluate(() => localStorage.getItem('geuruteogi.first-run-completed-v1'))).toBe('true');
 });
 

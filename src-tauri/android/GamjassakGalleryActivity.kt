@@ -124,7 +124,7 @@ class GamjassakGalleryActivity : Activity() {
             text = value; textSize = size; setTextColor(ink)
         }
         val header = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(12)) }
-        header.addView(text("감자싹", 12f).apply { setTextColor(olive); setTypeface(typeface, Typeface.BOLD) })
+        header.addView(text("곰고미", 12f).apply { setTextColor(olive); setTypeface(typeface, Typeface.BOLD) })
         header.addView(text("사진·영상 선택", 22f).apply { setTypeface(typeface, Typeface.BOLD); setPadding(0, dp(6), 0, dp(6)) })
         header.addView(text("최근 수정 순 · 꾹 누른 뒤 드래그로 여러 장 선택", 12f).apply { setTextColor(muted) })
         message = text("갤러리를 불러오는 중", 13f).apply { setPadding(0, dp(10), 0, 0); setTextColor(muted) }

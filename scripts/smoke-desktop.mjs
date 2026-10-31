@@ -75,8 +75,8 @@ try {
     assert.equal(count, 1);
   }
   if (!process.argv.includes('--seed-legacy')) {
-  await expect(page).toHaveTitle('감자싹');
-  await expect(page.locator('.brand').getByRole('img', { name: '감자싹', exact: true })).toBeVisible();
+  await expect(page).toHaveTitle('곰고미');
+  await expect(page.locator('.brand').getByRole('img', { name: '곰고미', exact: true })).toBeVisible();
   assert.equal(await page.locator('.brand img').evaluateAll(images => images.every(image => image.complete && image.naturalWidth > 0)), true);
   await page.reload();
   await page.locator('.app').waitFor();

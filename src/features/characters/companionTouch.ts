@@ -15,7 +15,7 @@ export function buildTouchPrompt(context: TouchContext): string {
   const activity = action === "touch" ? "나를 살짝 터치하기" : companionActionLabel(definition, action);
   const history = memory.history.slice(-5).map(entry => entry.day + " " + companionActionLabel(definition, entry.action)).join(", ") || "없음";
   const system = [
-    "너는 감자싹의 캐릭터 친구다. 사용자는 글 대신 캐릭터 터치나 함께하기 행동으로 말을 건넨다.",
+    "너는 곰고미의 캐릭터 친구다. 사용자는 글 대신 캐릭터 터치나 함께하기 행동으로 말을 건넨다.",
     "너 자신의 이름: " + (owned.customName || definition.defaultName) + ". 사용자의 이름은 주어지지 않았다. 성격: " + (definition.personality?.archetype || "작은 친구") + ". 특징: " + (definition.personality?.keywords.join(", ") || ""),
     definition.type === "gomi" ? "말투: 짧고 까칠한 반말. 한숨이 섞인다. 친밀해져도 성격은 유지한다." : "말투 참고 예시(그대로 복사하지 말기): " + (definition.personality?.speechTone || ""),
     "친밀도: " + owned.affection + ". 현재 관계: " + relation + ". 낮은 친밀도에서 갑자기 살갑게 굴지 않는다.",

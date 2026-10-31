@@ -1,0 +1,45 @@
+{
+  "model": "Qwen/Qwen3-4B-Instruct-2507",
+  "source": "unsloth/Qwen3-4B-Instruct-2507-bnb-4bit",
+  "revision": "f12db89cd5156e090618dded9b4367f23f8f3b33",
+  "originalModelRevision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+  "trainingRows": 465,
+  "validationRows": 64,
+  "longestTokens": 610,
+  "versions": {
+    "torch": "2.7.1+cu126"
+  },
+  "dataHashes": {
+    "train.jsonl": "10d6436173069ff56bc1832312eb36d86659a61b6190dbf286325f1e5e240b22",
+    "validation.jsonl": "a88aedfb82382796ad37dcfb3589df5be8971b11ab4bc86262329c4458667797",
+    "manifest.json": "aac714593f04e954f3ad98342b52b19a7a1a34be2b0eab2b43468786872b89b3"
+  },
+  "baselineKind": "initial-adapter",
+  "beforeValidationLoss": 2.102170013260381,
+  "afterValidationLoss": 2.0874439540978345,
+  "epochValidation": [
+    {
+      "epoch": 1,
+      "loss": 2.0874439540978345,
+      "adapter": "epoch-1"
+    }
+  ],
+  "selectedEpoch": 1,
+  "changedTensors": 288,
+  "adapterReloaded": true,
+  "optimizerSteps": 117,
+  "peakAllocatedMiB": 3919,
+  "adapterSha256": "cc84af4fc1370eb9833d54430164f56904c33c841a6498503d5f12bc83683dc7",
+  "qualityApproved": false,
+  "deployedToApp": false,
+  "settings": {
+    "epochs": 1,
+    "accumulation": 4,
+    "max_length": 640,
+    "learning_rate": 0.0001,
+    "checkpoint_every": 6
+  },
+  "initialAdapterSha256": "b398332d5b5fcfb4dd3ec26bc0b54efa28283d96143f1b0a981bae469f406a93",
+  "datasetDirectory": "data",
+  "changedTensorsReference": "previous-v3-adapter"
+}

@@ -13,7 +13,7 @@ test('Home defers people UI and navigation remains usable while it loads', async
   await expect(page.getByRole('status').filter({ hasText: '사람과 반려동물을 불러오는 중' })).toBeVisible();
   await expect(page.getByRole('button', { name: '현재 화면 도움말', exact: true })).toHaveCount(0);
   await page.screenshot({ path: info.outputPath('people-loading.png') });
-  await page.getByRole('button', { name: '감자싹 홈으로 이동' }).click();
+  await page.getByRole('button', { name: '곰고미 홈으로 이동' }).click();
   await expect(page.locator('.homeView')).toBeVisible();
   release();
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
@@ -35,7 +35,7 @@ test('a failed people UI load leaves Home navigation and an explicit recovery ac
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('화면을 불러오지 못했어요');
   await expect(page.getByRole('button', { name: '앱 다시 불러오기', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '감자싹 홈으로 이동' }).click();
+  await page.getByRole('button', { name: '곰고미 홈으로 이동' }).click();
   await expect(page.locator('.homeView')).toBeVisible();
   await page.unroute('**/src/features/people/PeopleWorkspace.tsx*');
   await page.getByRole('button', { name: '사람과 반려동물', exact: true }).click();

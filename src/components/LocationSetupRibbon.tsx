@@ -88,7 +88,7 @@ export function LocationSetupRibbon() {
     setFeedback({ kind: "info", message: "휴대폰 설정 화면을 여는 중이에요." });
     try {
       await openAndroidLocationSettings(kind);
-      setFeedback({ kind: "info", message: "설정을 변경한 후 감자싹으로 돌아오면 상태를 다시 확인해요." });
+      setFeedback({ kind: "info", message: "설정을 변경한 후 곰고미로 돌아오면 상태를 다시 확인해요." });
     } catch (error) {
       console.warn("위치 설정 화면 열기 실패:", error);
       setExpanded(true);
@@ -96,7 +96,7 @@ export function LocationSetupRibbon() {
         kind: "error",
         message: kind === "device" ?
           "위치 설정을 열지 못했어요. 휴대폰 설정 앱에서 '위치'를 직접 열어 주세요." :
-          "앱 권한 설정을 열지 못했어요. 휴대폰 설정 → 애플리케이션 → 감자싹 새버전 → 권한에서 직접 확인해 주세요.",
+          "앱 권한 설정을 열지 못했어요. 휴대폰 설정 → 애플리케이션 → 곰고미 → 권한에서 직접 확인해 주세요.",
       });
     } finally {
       setOpening(null);
@@ -115,9 +115,9 @@ export function LocationSetupRibbon() {
     {expanded && <div id="locationSetupDetails" className="locationSetupDetails">
       <p>앞으로 촬영하는 사진에 위치를 기록하려면 휴대폰 위치 기능과 카메라의 위치 태그를 켜주세요. 가져온 사진에 위치가 없다면 지역을 직접 지정할 수도 있어요.</p>
       {(deviceOff || unknown) && <button type="button" disabled={Boolean(opening)} onClick={() => void open("device")}>휴대폰 위치 설정 열기</button>}
-      {(photoOff || unknown) && <button type="button" disabled={Boolean(opening)} onClick={() => void open("app")}>감자싹 앱 권한 설정 열기</button>}
+      {(photoOff || unknown) && <button type="button" disabled={Boolean(opening)} onClick={() => void open("app")}>곰고미 앱 권한 설정 열기</button>}
       {!cameraChecked && <div className="cameraSetupCheck">
-        <p>카메라 앱 → 설정 → 위치 태그(위치 저장)를 켜주세요. 다른 앱의 이 설정은 감자싹이 자동으로 확인할 수 없어요.</p>
+        <p>카메라 앱 → 설정 → 위치 태그(위치 저장)를 켜주세요. 다른 앱의 이 설정은 곰고미가 자동으로 확인할 수 없어요.</p>
         <button type="button" onClick={() => {
           try { localStorage.setItem(CAMERA_KEY, "true"); } catch { /* storage unavailable */ }
           setCameraChecked(true);

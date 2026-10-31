@@ -22,7 +22,7 @@ export function FirstRunGuide({ onImport, onLater, onGuide }: { onImport: () => 
         if (event.shiftKey && document.activeElement === firstButton.current) { event.preventDefault(); laterButton.current?.focus(); }
         else if (!event.shiftKey && document.activeElement === laterButton.current) { event.preventDefault(); firstButton.current?.focus(); }
       }}>
-      <h2 id="firstRunTitle">감자싹에 사진을 담아보세요</h2>
+      <h2 id="firstRunTitle">곰고미에 사진을 담아보세요</h2>
       <div id="firstRunDescription">
         <CharacterSpeech>
           <p>{dialogue.line} {dialogue.instruction}</p>

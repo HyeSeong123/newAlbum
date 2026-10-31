@@ -46,7 +46,7 @@ test('all help uses the selected character, including nested help and changed se
   await expect(help).toBeHidden();
   await expect(review).toBeVisible();
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: '감자싹 홈으로 이동' }).click();
+  await page.getByRole('button', { name: '곰고미 홈으로 이동' }).click();
   await page.getByRole('button', { name: '친구들 보기' }).click();
   await page.locator('.characterCard').filter({ has: page.getByRole('heading', { name: '고미', exact: true }) }).getByRole('button', { name: '대표로 설정' }).click();
   await page.getByRole('button', { name: '현재 화면 도움말' }).click();
@@ -58,7 +58,7 @@ test('first-run guidance uses the saved main character too', async ({ page }) =>
   await prepare(page);
   await page.evaluate(() => localStorage.removeItem('geuruteogi.first-run-completed-v1'));
   await page.reload();
-  const guide = page.getByRole('dialog', { name: '감자싹에 사진을 담아보세요', exact: true });
+  const guide = page.getByRole('dialog', { name: '곰고미에 사진을 담아보세요', exact: true });
   await expect(guide.locator('.characterHelpName')).toHaveText('우리 감자');
   await expect(guide.locator('.characterVisual')).toHaveAttribute('data-character', 'potato');
   await expect(guide.getByRole('button', { name: '우리 감자와 사용 방법 살펴보기' })).toBeVisible();

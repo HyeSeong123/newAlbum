@@ -308,7 +308,7 @@ export function PeopleView({ items, onOpen, onCreateAlbum, query = "", isActive 
         </>}
       </div>
     </div>
-    {!desktop && <p role="status">얼굴 찾기는 감자싹 앱에서 사용할 수 있습니다.</p>}
+    {!desktop && <p role="status">얼굴 찾기는 곰고미 앱에서 사용할 수 있습니다.</p>}
     {desktop && !selectionMode && !choosingCover && <div className="entityQuickActions entityToolbar" role="group" aria-label={person ? '인물 사진 관리' : '인물 찾기와 확인'}>
       {person ? <><button disabled={blocked} onClick={openManualPhotos}><ImagePlus size={18} />사진 연결</button><button disabled={blocked} onClick={() => { setName(person.name); setNameMode('new'); setEditingName(true); }}><Pencil size={18} />{person.name.trim() ? '이름 변경' : '이름 지정'}</button></> : <>
       <div className="entityActionGroup" role="group" aria-label="사진에서 인물 찾기">

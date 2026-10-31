@@ -1,0 +1,14 @@
+{
+  "verified": true,
+  "adapterSha256": "cc84af4fc1370eb9833d54430164f56904c33c841a6498503d5f12bc83683dc7",
+  "initialAdapterSha256": "b398332d5b5fcfb4dd3ec26bc0b54efa28283d96143f1b0a981bae469f406a93",
+  "additionalUserDialogues": 120,
+  "trainingRows": 465,
+  "validationRows": 64,
+  "optimizerSteps": 117,
+  "finiteTensors": 288,
+  "nonzeroBTensors": 144,
+  "probes": 40,
+  "qualityApproved": false,
+  "deployedToApp": false
+}

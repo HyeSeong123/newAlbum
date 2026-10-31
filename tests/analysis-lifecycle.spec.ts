@@ -77,7 +77,7 @@ test('startup stays quiet with a saved analysis queue until the user resumes it'
   await page.getByRole('tab', { name: '반려동물', exact: true }).click();
   await page.locator('.petAnalysisNotice').getByRole('button', { name: '이어서 분석', exact: true }).click();
   await expect(page.getByRole('button', { name: '분석 중 · 진행상황 보기' })).toBeVisible();
-  await page.getByRole('button', { name: '감자싹 홈으로 이동' }).click();
+  await page.getByRole('button', { name: '곰고미 홈으로 이동' }).click();
   await page.getByRole('button', { name: '분석 결과 · 진행상황 보기' }).click();
   const panel = page.getByRole('region', { name: '분석 진행상황', exact: true });
   await expect(panel).toContainText('1 / 1장');
@@ -95,7 +95,7 @@ test('person analysis survives screen changes and media updates; its progress pa
   await page.locator('.mediaTile').first().click();
   await page.getByRole('dialog', { name: '사진 상세' }).getByTitle('즐겨찾기', { exact: true }).click();
   await page.getByRole('dialog', { name: '사진 상세' }).getByTitle('닫기', { exact: true }).click();
-  await page.getByRole('button', { name: '감자싹 홈으로 이동' }).click();
+  await page.getByRole('button', { name: '곰고미 홈으로 이동' }).click();
   await expect.poll(() => page.evaluate(() => (window as any).lifecycle.scanned.size)).toBe(6);
   expect(await page.evaluate(() => (window as any).lifecycle.pausedDuringPersonWork)).toBe(false);
   await page.getByRole('button', { name: '분석 결과 · 진행상황 보기' }).click();
@@ -113,7 +113,7 @@ test('pet analysis continues after leaving its selection screen and has an expli
   await page.getByRole('tab', { name: '반려동물', exact: true }).click();
   await page.getByRole('button', { name: '인식 기준 갱신', exact: true }).click();
   await expect(page.getByRole('button', { name: '분석 중 · 진행상황 보기' })).toBeVisible();
-  await page.getByRole('button', { name: '감자싹 홈으로 이동' }).click();
+  await page.getByRole('button', { name: '곰고미 홈으로 이동' }).click();
   await page.getByRole('button', { name: '분석 중 · 진행상황 보기' }).click();
   const panel = page.getByRole('region', { name: '분석 진행상황', exact: true });
   await expect(panel.getByRole('button', { name: '분석 중단', exact: true })).toBeVisible();

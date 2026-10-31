@@ -129,7 +129,7 @@ export function PetsView({ items, onOpen, analysis, query = "", reviewRequested 
         {!pet && !unknown && !selecting && <button className="primaryControl entityPrimary" aria-label="반려동물 추가" disabled={busy || loading || !desktop} onClick={() => {setEditorMode('all');setEditing({ id: 0, name: '', cover_media_id: null, media_ids: [] });}}><Plus size={18} /><span>반려동물 추가</span></button>}
       </div>
     </div>
-    {!desktop && <p role="status">반려동물 등록·인식은 감자싹 앱에서 사용할 수 있습니다.</p>}
+    {!desktop && <p role="status">반려동물 등록·인식은 곰고미 앱에서 사용할 수 있습니다.</p>}
     {desktop && !selecting && !unknown && <div className={`entityQuickActions entityToolbar${pet ? '' : ' petListActions'}`} role="group" aria-label={pet ? '반려동물 사진 관리' : '반려동물 찾기와 확인'}>{pet ? <><button disabled={busy} onClick={()=>editPet('photos')}><Plus size={18}/>사진 연결</button><button disabled={busy} onClick={()=>editPet('name')}><Pencil size={18}/>이름 변경</button><button disabled={busy || loading} onClick={()=>setReviewing(true)}><ScanSearch size={18}/>반려동물 사진 찾기</button></> : <>
       <button className="primaryControl" disabled={busy || loading || !canRetrain || analysis.progress?.running} onClick={retrain}><RefreshCw size={18}/>인식 기준 갱신</button>
       <button disabled={busy || loading || !canRetrain} onClick={()=>setReviewing(true)}><ScanSearch size={18}/>반려동물 사진 찾기</button>

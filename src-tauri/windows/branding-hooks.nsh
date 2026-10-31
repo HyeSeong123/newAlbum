@@ -23,6 +23,14 @@
 !macroend
 
 !macro NSIS_HOOK_POSTINSTALL
+  !insertmacro REMOVE_LEGACY_SHORTCUT "$SMPROGRAMS\감자싹.lnk"
+  !insertmacro REMOVE_LEGACY_SHORTCUT "$SMPROGRAMS\$AppStartMenuFolder\감자싹.lnk"
+  !insertmacro IsShortcutTarget "$DESKTOP\감자싹.lnk" "$INSTDIR\${MAINBINARYNAME}.exe"
+  Pop $0
+  ${If} $0 = 1
+    Call CreateOrUpdateDesktopShortcut
+  ${EndIf}
+  !insertmacro REMOVE_LEGACY_SHORTCUT "$DESKTOP\감자싹.lnk"
   !insertmacro REMOVE_LEGACY_SHORTCUT "$SMPROGRAMS\그루터기.lnk"
   !insertmacro REMOVE_LEGACY_SHORTCUT "$SMPROGRAMS\$AppStartMenuFolder\그루터기.lnk"
   ; Preserve an existing desktop shortcut when upgrading interactively, too.

@@ -126,7 +126,7 @@ export function DiaryView({ entries, albums, query = "", onQueryChange, onSave, 
 
   return <div className="diaryView">
     <header className="diaryHeading">
-      <div className="diaryHeadingCopy"><span className="diaryEyebrow">감자싹 · 하루의 기록</span><h1>나의 일기장</h1></div>
+      <div className="diaryHeadingCopy"><span className="diaryEyebrow">곰고미 · 하루의 기록</span><h1>나의 일기장</h1></div>
       <div className="diaryHeadingActions">
         <button className="diaryPrimary" onClick={() => open(blank())} disabled={!!error}><Pencil size={16} />일기 쓰기</button>
       </div>

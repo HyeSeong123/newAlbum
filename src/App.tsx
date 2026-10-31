@@ -182,7 +182,7 @@ export function App() {
   }
 
   async function deleteSelectedItems() {
-    if (!selectedCount || !window.confirm(`선택한 ${selectedCount}개 항목을 감자싹에서 삭제할까요? 앨범·인물·반려동물의 연결도 함께 삭제합니다. 휴대폰의 원본 파일은 그대로 보관됩니다.`)) return;
+    if (!selectedCount || !window.confirm(`선택한 ${selectedCount}개 항목을 곰고미에서 삭제할까요? 앨범·인물·반려동물의 연결도 함께 삭제합니다. 휴대폰의 원본 파일은 그대로 보관됩니다.`)) return;
     const ids = new Set(selectedIds);
     if (await library.removeMedia(ids)) {
       selection.clear();
@@ -191,7 +191,7 @@ export function App() {
   }
 
   async function deleteCurrentItem() {
-    if (!selected || !window.confirm('이 사진을 감자싹에서 삭제할까요? 앨범·인물·반려동물의 연결도 함께 삭제합니다. 휴대폰의 원본 파일은 그대로 보관됩니다.')) return false;
+    if (!selected || !window.confirm('이 사진을 곰고미에서 삭제할까요? 앨범·인물·반려동물의 연결도 함께 삭제합니다. 휴대폰의 원본 파일은 그대로 보관됩니다.')) return false;
     const removed = await library.removeMedia(new Set([selected.id]));
     if (removed) { viewer.close(); selection.clear(); setSelectionNotice('사진을 삭제했습니다.'); }
     return removed;
@@ -211,7 +211,7 @@ export function App() {
     <HelpProvider context={{ screen: activeView, tab: peopleTab, selection: selectionMode, selectedCount, blocked: Boolean(library.importProgress || library.checkingGallery || (activeView === "People" && !peopleReady)) }} request={helpRequest}>
     <main className={`app${largeLayout ? " largeLayout" : ""}`} style={{ "--app-header-height": `${navigationHeight}px` } as CSSProperties}>
       <header ref={navigationRef} className="sidebar" aria-label="주 메뉴">
-        <button type="button" className="brand" aria-label="감자싹 홈으로 이동" title="홈으로 이동" onClick={() => navigate("Home")}>
+        <button type="button" className="brand" aria-label="곰고미 홈으로 이동" title="홈으로 이동" onClick={() => navigate("Home")}>
           <BrandLogo />
         </button>
 

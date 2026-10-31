@@ -1,0 +1,7 @@
+Gomi LoRA v4: locally fine-tuned adapter, not the original Qwen base weights.
+Base model: Qwen/Qwen3-4B-Instruct-2507 (Apache-2.0).
+Copyright notice from the upstream license: Copyright 2024 Alibaba Cloud.
+NF4 training distribution: unsloth/Qwen3-4B-Instruct-2507-bnb-4bit.
+Pinned NF4 revision: f12db89cd5156e090618dded9b4367f23f8f3b33.
+Modified in this project by local LoRA training on Gomi character dialogues.
+Training and quality limitations are documented in README.md and training.json.

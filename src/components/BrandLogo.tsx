@@ -1,11 +1,9 @@
-/** Display the approved artwork in two windows so its spacing stays consistent in pixels. */
+/** Smiling Gomi artwork and readable lettering share one accessible brand name. */
 export function BrandLogo() {
-  return <span className="brandLogo" role="img" aria-label="감자싹">
-    <span className="brandLogoCharacter" aria-hidden="true">
-      <img src="/brand/gamjassak-logo.png" alt="" width={2022} height={778} draggable={false} />
-    </span>
+  return <span className="brandLogo" role="img" aria-label="곰고미">
+    <img className="brandLogoCharacter" src="/brand/gomgomi-logo.png" alt="" width={1280} height={1280} draggable={false} />
     <span className="brandLogoLettering" aria-hidden="true">
-      <img src="/brand/gamjassak-logo.png" alt="" width={2022} height={778} draggable={false} />
+      곰고미
     </span>
   </span>;
 }

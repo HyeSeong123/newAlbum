@@ -245,7 +245,7 @@ test('book viewing, portraits, rename and main selection never interact; only Ho
   await orange.getByRole('button',{name:'대표로 설정'}).click();
   const interactions = () => page.evaluate(()=> (window as unknown as { sproutCommands:Array<{command:string;args:Record<string,unknown>}> }).sproutCommands.filter(c=>c.command === 'interact_character'));
   expect(await interactions()).toEqual([]);
-  await page.getByRole('button',{name:'감자싹 홈으로 이동'}).click();
+  await page.getByRole('button',{name:'곰고미 홈으로 이동'}).click();
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
   await page.getByRole('button',{name:'귤이에게 말 걸기'}).click();
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
@@ -253,7 +253,7 @@ test('book viewing, portraits, rename and main selection never interact; only Ho
   expect((await interactions())[0].args).toEqual({ id:'orange',source:'home' });
   await page.getByRole('button',{name:'친구들 보기'}).click();
   await cardFor(page,'귤이').locator('.characterCardArt').click();
-  await page.getByRole('button',{name:'감자싹 홈으로 이동'}).click();
+  await page.getByRole('button',{name:'곰고미 홈으로 이동'}).click();
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
   expect(await interactions()).toHaveLength(1);
 });
@@ -324,7 +324,7 @@ test('Gomi starts as an adult main; help and book never award affection and home
   await page.getByRole('button', {name:'친구들 보기'}).click();
   await expect(cardFor(page,'고미')).toBeVisible();
   await expect(cardFor(page,'고미').locator('.characterVisual')).toHaveAttribute('data-stage','6');
-  await page.getByRole('button', {name:'감자싹 홈으로 이동'}).click();
+  await page.getByRole('button', {name:'곰고미 홈으로 이동'}).click();
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
   await mascot.click();
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
@@ -384,7 +384,7 @@ test('help uses the selected main character instead of Gomi', async ({page}) => 
   await page.goto('/');
   await page.getByRole('button',{name:'친구들 보기'}).click();
   await cardFor(page,'감자싹').getByRole('button',{name:'대표로 설정'}).click();
-  await page.getByRole('button',{name:'감자싹 홈으로 이동'}).click();
+  await page.getByRole('button',{name:'곰고미 홈으로 이동'}).click();
   await expect(page.getByRole('button',{name:'감자싹에게 말 걸기'})).toBeVisible();
   await page.getByRole('button',{name:'현재 화면 도움말'}).click();
   await expect(page.getByRole('dialog',{name:'버튼 도움말'}).locator('.characterVisual')).toHaveAttribute('data-character','potato');
@@ -453,7 +453,7 @@ test('Gomi draws a new pose only on Home entry; visibility, help and data refres
   await page.clock.fastForward(600_000);
   await expect(visual).toHaveAttribute('data-motion','cynical');
   await page.getByRole('button',{name:'친구들 보기'}).click();
-  await page.getByRole('button',{name:'감자싹 홈으로 이동'}).click();
+  await page.getByRole('button',{name:'곰고미 홈으로 이동'}).click();
   await expect(visual).toHaveAttribute('data-motion','sleep-warm');
   await page.evaluate(()=>{
     Math.random=()=>.95;
@@ -472,7 +472,7 @@ test('Gomi draws a new pose only on Home entry; visibility, help and data refres
   await page.getByRole('button',{name:'도움말 종료'}).click();
   await expect(visual).toHaveAttribute('data-motion','sleep-warm');
   await page.getByRole('button',{name:'친구들 보기'}).click();
-  await page.getByRole('button',{name:'감자싹 홈으로 이동'}).click();
+  await page.getByRole('button',{name:'곰고미 홈으로 이동'}).click();
   await expect(visual).toHaveAttribute('data-motion','stretch');
   await page.clock.fastForward(2_400);
   await expect(visual).toHaveAttribute('data-motion','cynical');

@@ -54,11 +54,11 @@ if (-not $SeedLegacy) {
     if ($binary.Name -ne 'gamjassak.exe') { throw 'Visible application binary name was not updated.' }
     if (Test-Path (Join-Path $installDirectory 'oraedameun.exe')) { throw 'Legacy application executable was left behind.' }
     $entry = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\그루터기'
-    if ($entry.DisplayName -ne '감자싹') { throw 'Windows installed app display name was not updated.' }
+    if ($entry.DisplayName -ne '곰고미') { throw 'Windows installed app display name was not updated.' }
     if (Test-Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\감자싹') { throw 'Rename created a duplicate installed app.' }
     $shortcutIndex = 0
     foreach ($folder in @([Environment]::GetFolderPath('Desktop'), [Environment]::GetFolderPath('Programs'))) {
-        $shortcut = Join-Path $folder '감자싹.lnk'
+        $shortcut = Join-Path $folder '곰고미.lnk'
         if (-not (Test-Path $shortcut)) { throw "New branded shortcut missing: $shortcut" }
         Copy-Item -LiteralPath $shortcut -Destination (Join-Path $diagnostics "shortcut-$shortcutIndex.lnk")
         $shortcutIndex++
@@ -68,6 +68,7 @@ if (-not $SeedLegacy) {
             throw "Shortcut does not launch the new binary: $target; expected: $($binary.FullName)"
         }
         if (Test-Path (Join-Path $folder '그루터기.lnk')) { throw 'Legacy shortcut was left behind.' }
+        if (Test-Path (Join-Path $folder '감자싹.lnk')) { throw 'Previous branded shortcut was left behind.' }
     }
 }
 

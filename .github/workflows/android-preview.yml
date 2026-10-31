@@ -91,7 +91,7 @@ jobs:
         run: |
           npx tauri android init --ci --skip-targets-install
           npm run android:prepare
-          npx tauri icon public/brand/gamjassak-symbol.png
+          npx tauri icon public/brand/gomgomi-icon.json
       - name: Restore identical preview APKs
         id: preview-apks
         uses: actions/cache/restore@v4

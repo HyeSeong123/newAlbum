@@ -43,7 +43,7 @@ export async function verifyInstalledLocationSettings({ page, adb, appId, captur
     // No reload or synthetic event: the real Android resume must refresh the ribbon.
     await expect(ribbon).toContainText('사진 위치정보 접근을 확인해 주세요');
     await expect(ribbon.getByRole('button', { name: '휴대폰 위치 설정 열기', exact: true })).toHaveCount(0);
-    await ribbon.getByRole('button', { name: '감자싹 앱 권한 설정 열기', exact: true }).click();
+    await ribbon.getByRole('button', { name: '곰고미 앱 권한 설정 열기', exact: true }).click();
     await expect.poll(foreground, { timeout: 15_000 }).toMatch(/com\.android\.settings\//);
     const activities = await adb('shell', 'dumpsys', 'activity', 'activities');
     assert.ok(activities.includes('act=android.settings.APPLICATION_DETAILS_SETTINGS'), 'App button must open app details');

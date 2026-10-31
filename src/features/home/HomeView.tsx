@@ -165,7 +165,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     { label: "사람과 반려동물", description: "", count: "", icon: Users, onClick: onShowPeople },
   ];
 
-  return <section className="homeView" aria-label="감자싹 홈">
+  return <section className="homeView" aria-label="곰고미 홈">
     {aiSetupOpen && definition && mainCharacter && <CompanionAiSetup key={mainCharacter.id} definition={definition} owned={mainCharacter} onClose={() => setAiSetupOpen(false)} />}
     <div className="homeWelcome">
       <time className="homeDate" dateTime={today}>{dateLabel}</time>
@@ -173,7 +173,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
       <p className="homeIntroduction">소중한 순간도, 평범한 하루도 차곡차곡 담아두세요.</p>
       <div className="homeCompanion">
         <p id="homeMessage" className="homeSpeech" data-source={messageSource} role="status" aria-live="polite" aria-atomic="true">{isGomi && !gomi.ready ? "…" : spokenLine || lines[0]}</p>
-        <button className={`homeMascot${happy ? " happy" : ""}`} type="button" aria-label={`${definition ? characterName(definition, mainCharacter) : "감자싹"}에게 말 걸기`} onClick={talk}>
+        <button className={`homeMascot${happy ? " happy" : ""}`} type="button" aria-label={`${definition ? characterName(definition, mainCharacter) : "곰고미"}에게 말 걸기`} onClick={talk}>
           {definition && mainCharacter ? <CharacterVisual definition={definition} stage={mainCharacter.growthStage} expression={happy ? "happy" : "idle"}
             gomiMotion={isGomi ? gomi.motion : undefined} companionMotion={!isGomi ? companion.motion : undefined}
             paused={!isGomi && companion.paused} affection={mainCharacter.affection} reactionKey={isGomi ? gomi.sequence : companion.sequence} />

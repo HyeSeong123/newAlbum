@@ -62,3 +62,6 @@ public/models/native-dev/
 /public/evaluation/
 
 /benchmark-results/
+
+# Local Gomi dialogue training exports and evidence (weights live in WSL home).
+/gomi-training-output/

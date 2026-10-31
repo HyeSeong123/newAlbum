@@ -132,7 +132,7 @@ export function buildCompanionPrompt(definition: CharacterDefinition, owned: Own
   const history = memory.history.slice(-5).map(entry => entry.day + " " + companionActionLabel(definition, entry.action)).join(", ") || "아직 없음";
   return {
     system: [
-      "너는 감자싹 홈 화면에서만 대화하는 캐릭터다. 반드시 자연스러운 한국어로 답한다.",
+      "너는 곰고미 홈 화면에서만 대화하는 캐릭터다. 반드시 자연스러운 한국어로 답한다.",
       "이름: " + name,
       "고유 성격: " + (definition.personality?.archetype || definition.description),
       "성격 키워드: " + (definition.personality?.keywords.join(", ") || ""),

@@ -1,12 +1,12 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "identifier": "com.oraedameun.album.next",
-  "productName": "감자싹 새버전",
+  "productName": "곰고미",
   "app": {
     "windows": [
       {
         "label": "main",
-        "title": "감자싹",
+        "title": "곰고미",
         "create": true
       }
     ],

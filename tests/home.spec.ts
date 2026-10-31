@@ -34,7 +34,7 @@ test('startup, every logo link, the first menu item and reload all lead to Home'
       await page.getByRole('button', { name, exact: true }).filter({ visible: true }).click();
     } else await nav.getByRole('button', { name, exact: true }).click();
     await expect(home).toBeHidden();
-    await page.getByRole('button', { name: '감자싹 홈으로 이동', exact: true }).click();
+    await page.getByRole('button', { name: '곰고미 홈으로 이동', exact: true }).click();
     await expect(home).toBeVisible();
     await expect(nav.getByRole('button', { name: '홈', exact: true })).toHaveAttribute('aria-pressed', 'true');
   }
@@ -179,7 +179,7 @@ test('Android location ribbon opens device and app settings and keeps the Home u
   await expect(ribbon).toContainText('휴대폰 위치 기능이 꺼져 있어요');
   await ribbon.getByRole('button', { name: '설정 안내' }).click();
   await ribbon.getByRole('button', { name: '휴대폰 위치 설정 열기' }).click();
-  await ribbon.getByRole('button', { name: '감자싹 앱 권한 설정 열기' }).click();
+  await ribbon.getByRole('button', { name: '곰고미 앱 권한 설정 열기' }).click();
   expect(await page.evaluate(() => (window as any).setupCommands)).toEqual([{ kind: 'device' }, { kind: 'app' }]);
   await ribbon.getByRole('button', { name: '카메라 위치 태그 확인했어요' }).click();
   await expect(ribbon).toBeVisible();
@@ -253,7 +253,7 @@ test('location ribbon reports native settings failure and a subsequent successfu
   await expect(ribbon.getByRole('alert')).toContainText('자동으로 읽지 못했어요');
   await ribbon.getByRole('button', { name: '휴대폰 위치 설정 열기' }).click();
   await expect(ribbon.getByRole('alert')).toContainText('설정 앱에서');
-  await ribbon.getByRole('button', { name: '감자싹 앱 권한 설정 열기' }).click();
+  await ribbon.getByRole('button', { name: '곰고미 앱 권한 설정 열기' }).click();
   await expect(ribbon.getByRole('alert')).toContainText('애플리케이션');
   await page.evaluate(() => { (window as any).locationReadable = true; });
   await ribbon.getByRole('button', { name: '설정 다시 확인' }).click();

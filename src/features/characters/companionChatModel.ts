@@ -15,7 +15,7 @@ export function saveChatHistory(id: string, turns: ChatTurn[], storage: Pick<Sto
 }
 const plain = (text: string) => text.replace(/<\|[^>]*\|>/g, "").replace(/<\/?think>/gi, "");
 export function buildChatPrompt(persona: { name: string; personality: string; tone: string; affection: number; mood: string; activities: string[] }, history: ChatTurn[], message: string): string {
-  const system = ["너는 감자싹의 작은 캐릭터 친구다. 자연스러운 한국어 1~3문장으로 짧게 대화한다.",
+  const system = ["너는 곰고미의 작은 캐릭터 친구다. 자연스러운 한국어 1~3문장으로 짧게 대화한다.",
     "이름: " + persona.name, "성격: " + persona.personality, "말투: " + persona.tone,
     "친밀도: " + persona.affection, "기분: " + persona.mood, "최근 함께한 행동: " + persona.activities.slice(-5).join(", "),
     "친밀도가 낮으면 낯가림을 유지하고 높으면 다정하게 말하되 원래 성격을 유지한다.",

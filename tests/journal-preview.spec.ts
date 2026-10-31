@@ -195,7 +195,7 @@ test('unregistered photos disappear from albums and clearing leaves an empty alb
   await page.getByRole('button', { name: '선택', exact: true }).click();
   await page.locator('.mediaTile[data-media-id="1"]').click();
   page.once('dialog', async dialog => {
-    expect(dialog.message()).toContain('선택한 1개 항목을 감자싹에서 삭제할까요?');
+    expect(dialog.message()).toContain('선택한 1개 항목을 곰고미에서 삭제할까요?');
     expect(dialog.message()).toContain('앨범·인물·반려동물의 연결도 함께 삭제합니다.');
     expect(dialog.message()).toContain('휴대폰의 원본 파일은 그대로 보관됩니다.');
     await dialog.accept();

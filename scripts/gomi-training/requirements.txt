@@ -1,0 +1,6 @@
+# Install torch==2.7.1+cu126 separately from the official PyTorch wheel index.
+numpy==1.26.4
+transformers==4.51.3
+accelerate==1.7.0
+peft==0.15.2
+bitsandbytes==0.46.1

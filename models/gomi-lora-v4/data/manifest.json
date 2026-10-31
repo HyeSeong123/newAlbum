@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 4,
+  "character": "gomi",
+  "model": "Qwen/Qwen3-4B-Instruct-2507",
+  "source": "user-120-plus-v3-replay",
+  "personalData": false,
+  "usesPrivateAppRecords": false,
+  "additionalUserDialogueCount": 240,
+  "userDialogueSourceSha256": "711381514780611d03bab80d4d2e85edab63dca6d8c5d51b14c61eae9e3da340",
+  "heldOutPersonaEvaluationCount": 24,
+  "evaluationSourceSha256": "0367adcd8b4737ef51873a57fea46929cb8f0c9f5f35101d7226732e0ec4877b",
+  "personaReferencesSha256": "f508919a00d8445c9d8d1e46704223a944a6df7c0155c60ff0e329996e9b1b68",
+  "verbalReferenceCount": 9,
+  "nonverbalReferenceIds": [
+    "scolded"
+  ],
+  "qualityApproved": false,
+  "splitPolicy": "unchanged v3 rows; all additional120 train; separate16 agent-authored new phrasings in known topics; not independent user testing",
+  "examplesSha256": "802d59126b2130ad44fc1b1a580a1280532e732ffa3b396df5136a04616c8315",
+  "trainCount": 465,
+  "validationCount": 64,
+  "promptSourceSha256": "925f9d7020ec621cc9aacf6298acb097402550f49afd1b9cf091810207f41fbd",
+  "nativePromptSourceSha256": "6effb038fdb1bd8909e2fb7fb40bb731156d377bd3e2c175222ffb0fd6ceeb18",
+  "previousTrainingCount": 345,
+  "previousValidationCount": 48,
+  "newUserDialogueCount": 120,
+  "newUserDialogueSourceSha256": "29ce6302241145edbc421458591072d406454b8fbdd6be5176ffa5df132257dd",
+  "newEvaluationCount": 16,
+  "newEvaluationSourceSha256": "03a125a40b0a25aee7edca68d4738ca74c818d6876b1bd7209eff2f1d142bce2",
+  "trainSha256": "10d6436173069ff56bc1832312eb36d86659a61b6190dbf286325f1e5e240b22",
+  "validationSha256": "a88aedfb82382796ad37dcfb3589df5be8971b11ab4bc86262329c4458667797"
+}
