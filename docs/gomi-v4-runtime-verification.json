@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-01",
+  "platform": "Linux CPU under WSL; not Android device",
+  "engineCommit": "a7a98e0fffed794396b3fbad4dcdbbc184963645",
+  "baseModelBytes": 2497281120,
+  "baseModelSha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+  "adapterBytes": 23612896,
+  "adapterSha256": "d67da0699c53b34694e52199e42147ecee702f66e3df68594ad5a9d719909ee4",
+  "adapterTensorsLoaded": 288,
+  "scale": 1,
+  "parameters": {"gpuLayers": 0, "extraBuffers": false, "threads": 4, "context": 2048, "batch": 256, "microBatch": 128, "sampler": "greedy", "maxNewTokens": 48},
+  "samplerMatchesAndroid": false,
+  "harness": "scripts/gomi-training/runtime-smoke.cpp",
+  "passed": true,
+  "requests": ["base", "Gomi adapter", "base after adapter released"],
+  "adapterLogitsMaxDelta": 11.8049,
+  "restoredBaseLogitsMaxDelta": 0,
+  "restoredBaseReplyIdentical": true,
+  "baseReply": "아니야, 나 발 닦아주고 싶어? 귀찮아!",
+  "gomiReply": "발 닦는 건 네가 해. 나도 쉬고 싶어.",
+  "qualityApproved": false,
+  "limitations": ["This proves model compatibility and adapter isolation, not dialogue quality.", "Android JNI, installation, signing and physical-device memory/latency require separate checks."]
+}
