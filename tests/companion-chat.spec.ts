@@ -72,6 +72,7 @@ test('Gomi fast default responds within one second with no model invocation on a
   await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
   await expect(page.getByRole('button',{name:'즉시 반응 · 추천'})).toHaveAttribute('aria-pressed','true');
   await expect(page.getByRole('dialog')).toContainText('실시간 생성 대사는 아니에요');
+  await expect(page.locator('[data-gomi-training-status]')).toContainText('고미 학습 모델은 실행하지 않아요');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(393);
   await page.getByRole('dialog').screenshot({path:'preview-results/gomi-fast-mode-393.png'});
   await page.getByRole('button',{name:'AI 새 대사 생성 · 느림'}).click();

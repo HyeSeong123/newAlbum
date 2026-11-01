@@ -56,6 +56,7 @@ export function CompanionAiSetup({ definition, owned, onClose, onModeChange }: {
   const runtime = status?.runtime;
   const outcome = reaction?.message || "아직 AI 반응 결과가 없어요. 홈에서 친구를 터치해 주세요.";
   const gomiTrainingStatus = definition.id !== "gomi" || !ready ? undefined
+    : mode === "instant" ? "지금은 즉시 반응 모드예요. 고미 학습 모델은 실행하지 않아요."
     : status?.model !== "dialogue" ? "현재 1.7B에서는 고미 추가 학습이 적용되지 않아요. 4B 모델을 받아 주세요."
     : reaction?.phase === "complete" && reaction.source === "on-device" && runtime?.gomiLoraApplied
       ? "최근 고미의 AI 대사에 학습 모델 v4가 실제 적용됐어요."
