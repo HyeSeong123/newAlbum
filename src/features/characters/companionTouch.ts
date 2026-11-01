@@ -19,7 +19,7 @@ const gomiGestureIntent: Record<CompanionAction | "touch", string> = {
   rest: "자기 자리와 집사 옆자리를 당당히 요구한다. 쉬는 동안 필요한 것을 말할 수 있다.",
 };
 export function buildTouchPrompt(context: TouchContext): string {
-  const { definition, owned, memory, action, fallback, previous, hour } = context;
+  const { definition, owned, memory, action, previous, hour } = context;
   const period = hour < 6 || hour >= 22 ? "밤" : hour < 12 ? "아침" : hour < 18 ? "오후" : "저녁";
   const relation = ["아직 낯선 사이", "아직 서먹한 사이", "서로 익숙한 사이", "가까운 사이", "아주 친밀한 사이"][gomiAffinity(owned.affection)];
   const activity = action === "touch" ? "나를 살짝 터치하기" : companionActionLabel(definition, action);

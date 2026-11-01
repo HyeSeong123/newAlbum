@@ -104,6 +104,7 @@ test('missing model never substitutes canned speech and leaves a working setup a
   await installAi(page,{gomi:true,ready:false});await page.goto('/');
   await page.locator('.homeMascot').click();
   await expect(page.locator('#homeMessage')).toHaveAttribute('data-state','failed');
+  await expect(page.locator('#homeMessage')).toContainText('AI 모델이 설치되지 않았어요');
   await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
   await expect(page.getByRole('button',{name:'AI 준비하기',exact:true})).toBeVisible();

@@ -29,6 +29,8 @@ export function cleanCompanionGeneratedText(text: string): string {
 }
 export function companionExecutionError(cause: unknown): string {
   const message = typeof cause === "string" ? cause : cause instanceof Error ? cause.message : "";
+  if (/AI_NOT_INSTALLED/.test(message)) return "AI 모델이 설치되지 않았어요. AI 반응 설정에서 AI 준비하기를 눌러 주세요.";
+  if (/AI_UNSUPPORTED/.test(message)) return "이 기기에서는 AI 대사를 생성할 수 없어요. 지원되는 Android 스마트폰에서 이용해 주세요.";
   if (/AI_LOAD_TIMEOUT/.test(message)) return "AI 모델을 불러오는 시간이 길어 생성이 중단됐어요.";
   if (/AI_GENERATION_TIMEOUT/.test(message)) return "AI 대사 생성 시간이 길어 중단됐어요.";
   if (/AI_ENGINE|실행기/.test(message)) return "AI 실행기를 불러오지 못했어요. 앱 업데이트를 확인해 주세요.";
