@@ -6,9 +6,14 @@ import { CharacterVisual } from "./CharacterVisual";
 import { characterName, type CharacterDefinition, type OwnedCharacter } from "./models";
 import { chatModelStatus, downloadChatModel, lastChatReaction, stopChatModel, subscribeChatReaction, type ChatModelStatus } from "./companionChatService";
 import { companionExecutionError } from "./companionLlm";
+import { readCompanionResponseMode, saveCompanionResponseMode, type CompanionResponseMode } from "./companionResponseMode";
 import "./companion-chat.css";
 
-export function CompanionAiSetup({ definition, owned, onClose }: { definition: CharacterDefinition; owned: OwnedCharacter; onClose: () => void }) {
+export function CompanionAiSetup({ definition, owned, onClose, onModeChange }: {
+  definition: CharacterDefinition; owned: OwnedCharacter; onClose: () => void;
+  onModeChange?: (mode: CompanionResponseMode) => void;
+}) {
+  const [mode, setMode] = useState<CompanionResponseMode>(() => readCompanionResponseMode(owned.id));
   const [status, setStatus] = useState<ChatModelStatus>();
   const [error, setError] = useState("");
   const [statusError, setStatusError] = useState("");
@@ -40,6 +45,11 @@ export function CompanionAiSetup({ definition, owned, onClose }: { definition: C
     try { await stopChatModel(); }
     catch { if (active.current) setError("중단 상태를 확인하지 못했어요. 잠시 후 다시 확인해 주세요."); }
   }
+  function chooseMode(next: CompanionResponseMode) {
+    saveCompanionResponseMode(owned.id, next);
+    setMode(next);
+    onModeChange?.(next);
+  }
   const downloading = status?.phase === "downloading" || status?.phase === "verifying";
   const ready = status?.supported && status.installed;
   const reaction = useSyncExternalStore(subscribeChatReaction, () => lastChatReaction(owned.id));
@@ -65,7 +75,16 @@ export function CompanionAiSetup({ definition, owned, onClose }: { definition: C
       </header>
       <div className="companionChatSetup" role="status">
         <Sparkles size={28} aria-hidden="true" /><h3>{downloading ? "다양한 반응을 준비하고 있어요" : ready ? "AI 모델이 설치되어 있어요" : "친구의 마음을 담은 한마디"}</h3>
-        <p>캐릭터를 터치하면 기분·성격·친밀도와 함께한 행동에 맞춰 AI가 새로운 말을 만들어요.</p>
+        <fieldset className="companionResponseSwitch">
+          <legend>대사 응답 속도</legend>
+          <button type="button" aria-pressed={mode === "instant"} onClick={() => chooseMode("instant")}>즉시 반응 · 추천</button>
+          <button type="button" aria-pressed={mode === "generate"} onClick={() => chooseMode("generate")}>AI 새 대사 생성 · 느림</button>
+        </fieldset>
+        <p className="companionResponseDescription" data-response-mode={mode}>
+          {mode === "instant"
+            ? "버튼을 누르면 성격·기분·친밀도에 맞는 준비된 대사가 바로 나와요. AI 모델은 실행하지 않아 배터리와 메모리를 아껴요. 실시간 생성 대사는 아니에요."
+            : "설치한 모델로 매번 새 대사를 만들어요. 기본 대사는 바로 보이지만 AI 문장은 휴대폰에 따라 수십 초 이상 걸릴 수 있어요."}
+        </p>
         {ready && <div className="companionAiOutcome">
           <strong>AI 모델</strong><p>{status.model === "dialogue" ? "Qwen3 4B" : "Qwen3 1.7B"} · 설치됨</p>
           {gomiTrainingStatus && <><strong>고미 학습 모델</strong><p data-gomi-training-status>{gomiTrainingStatus}</p></>}
@@ -83,7 +102,7 @@ export function CompanionAiSetup({ definition, owned, onClose }: { definition: C
               <dt>모델 로딩 후</dt><dd>{memory(runtime.rssLoadedKiB)}</dd>
               <dt>생성 중 관측 최대</dt><dd>{memory(runtime.rssPeakKiB)}</dd>
               <dt>모델 해제 후</dt><dd>{memory(runtime.rssAfterReleaseKiB)}</dd>
-            </dl><p>앱에서 마지막으로 실행한 기록이에요. 첫 글자 시간은 모델 로딩 후부터 측정하며, 메모리는 앱 전체 사용량이에요.</p>
+            </dl><p>이전 AI 실행 기록이에요. '첫 글자까지'는 입력 문장 처리 시간을 포함하므로 모델 로딩이 0초여도 길어질 수 있어요. 메모리는 앱 전체 사용량이에요.</p>
           </details>}
         </div>}
         {canDownload && <><p>{ready ? "지금 받은 기본 AI도 사용할 수 있어요. 더 자연스러운 한국어 대화를 원하면 약 2.5GB를 추가로 받아 주세요. 다운로드는 직접 시작할 때만 진행해요." : "처음 한 번 약 2.5GB를 받아요. Wi-Fi에서 준비하면 좋아요. 준비 후에는 인터넷 없이 반응해요."}</p>

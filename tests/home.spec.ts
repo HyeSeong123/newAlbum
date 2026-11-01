@@ -136,7 +136,7 @@ test('Home companion actions expand, respond, remember locally and never award a
   await expect(actions.getByRole('button')).toHaveCount(5);
 
   await actions.getByRole('button', { name: '함께 산책' }).click();
-  await expect(speech).toContainText('나가기 싫어');
+  await expect(speech).toContainText('산책? 이제 나가는 거지?');
   await expect(page.locator('.homeActivityMood')).toHaveCount(0);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
   let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('gamjassak:companion:v1:gomi') || 'null'));

@@ -32,3 +32,11 @@
 .companionAiMetrics { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px 12px; font-size:.85rem; }
 .companionAiMetrics dt { min-width:0; }
 .companionAiMetrics dd { margin:0; text-align:right; }
+
+/* Android-first response mode: finger-sized choices, no extra animation. */
+.companionResponseSwitch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-items: stretch; width: 100%; margin: 0; padding: 0; border: 0; }
+.companionResponseSwitch legend { margin-bottom: 9px; font-size: 14px; font-weight: 650; text-align: left; }
+.companionResponseSwitch button { min-height: 48px; padding: 12px 9px; font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; background: var(--surface, #fffefa); color: var(--text); border: 1px solid var(--border); }
+.companionResponseSwitch button[aria-pressed="true"] { background: #e9eddf; color: #3d4e34; border: 2px solid #687c59; font-weight: 650; }
+.companionResponseDescription { width: 100%; text-align: left; color: var(--muted); }
+@media (max-width: 350px) { .companionResponseSwitch { grid-template-columns: minmax(0,1fr); } }

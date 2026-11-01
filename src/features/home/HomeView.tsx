@@ -4,6 +4,7 @@ import { CharacterVisual } from "../characters/CharacterVisual";
 import { CompanionAiSetup } from "../characters/CompanionAiSetup";
 import { useCompanionReactions } from "../characters/useCompanionReactions";
 import { chooseCompanionFallback, companionFallbackCandidates } from "../characters/companionFallback";
+import { readCompanionResponseMode } from "../characters/companionResponseMode";
 import { characterPortraits } from "../characters/characterPortraits";
 import { characterDefinitions, characterName, dialogueLines, nextDialogue, type OwnedCharacter, type CharacterInteractionSource } from "../characters/models";
 import { gomiSleepLine } from "../characters/gomiBehavior";
@@ -112,7 +113,9 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     const updated = await storedInteraction.current;
     if (request !== reactionRequest.current) return;
     if (source && !updated) { ai.cancel(); return; }
-    ai.react({ ...context, owned:updated?.id === context.owned.id ? { ...context.owned, affection:updated.affection } : context.owned });
+    if (readCompanionResponseMode(context.owned.id) === "generate") {
+      ai.react({ ...context, owned:updated?.id === context.owned.id ? { ...context.owned, affection:updated.affection } : context.owned });
+    } else ai.cancel();
   }
 
   function talk() {
@@ -166,7 +169,9 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   ];
 
   return <section className="homeView" aria-label="곰고미 홈">
-    {aiSetupOpen && definition && mainCharacter && <CompanionAiSetup key={mainCharacter.id} definition={definition} owned={mainCharacter} onClose={() => setAiSetupOpen(false)} />}
+    {aiSetupOpen && definition && mainCharacter && <CompanionAiSetup key={mainCharacter.id} definition={definition} owned={mainCharacter}
+      onModeChange={mode => { if (mode === "instant") ai.stopAndRelease(); }}
+      onClose={() => setAiSetupOpen(false)} />}
     <div className="homeWelcome">
       <time className="homeDate" dateTime={today}>{dateLabel}</time>
       <h2>작은 하루가 자라는 곳</h2>

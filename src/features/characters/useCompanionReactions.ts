@@ -47,5 +47,13 @@ export function useCompanionReactions(characterId: string | undefined, onLine: (
     waitForContext: () => queue.current?.hold(),
     react: (context: Omit<TouchContext, "previous" | "hour">) => { usedSession.current = true; markChatReaction(context.owned.id, "queued"); queue.current?.enqueue({ ...context, previous: recentTouchLines(context.owned.id), hour: new Date().getHours() }); },
     cancel: () => queue.current?.cancel(),
+    stopAndRelease: () => {
+      queue.current?.cancel();
+      if (usedSession.current) {
+        void releaseChatModel(sessionId.current);
+        usedSession.current = false;
+        sessionId.current = crypto.randomUUID();
+      }
+    },
   };
 }

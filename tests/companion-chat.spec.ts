@@ -1,8 +1,9 @@
 import {test,expect} from '@playwright/test';
 
-async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:boolean;affection?:number;statusDelay?:number;interactionDelay?:number;error?:string;longReply?:boolean;echoFirst?:boolean;legacy?:boolean;controlledGeneration?:boolean;actionReplies?:boolean;adapterObserved?:boolean}={}) {
+async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:boolean;affection?:number;statusDelay?:number;interactionDelay?:number;error?:string;longReply?:boolean;echoFirst?:boolean;legacy?:boolean;controlledGeneration?:boolean;actionReplies?:boolean;adapterObserved?:boolean;mode?:'instant'|'generate'}={}) {
   await page.addInitScript((settings:any)=>{
     Math.random=()=>settings.gomi?.55:.1;
+    if(settings.gomi) localStorage.setItem('gamjassak:companion-response-mode:v1:gomi',settings.mode||'generate');
     let downloading=false, interacted=false, calls=0, disturbances=0;
     const owned={id:settings.gomi?'gomi':'potato',customName:null,growthStage:6,affection:settings.affection||0,isMain:true};
     const state=(window as any).touchProbe={prompts:[] as string[],characters:[] as string[],stops:0,releases:0,error:settings.error};
@@ -48,6 +49,52 @@ test('an installed legacy AI stays available and its upgrade is explicit and can
   await expect(page.getByRole('button',{name:'더 자연스러운 AI 받기',exact:true})).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   await page.getByRole('dialog').screenshot({path:'preview-results/ai-optional-upgrade-320.png'});
+});
+
+test('Gomi fast default responds within one second with no model invocation on a phone width',async({page})=>{
+  await page.setViewportSize({width:393,height:852});
+  await installAi(page,{gomi:true,mode:'instant'});
+  await page.goto('/');
+  const elapsed=await page.evaluate(()=>new Promise<number>(resolve=>{
+    const bubble=document.querySelector('#homeMessage')!;
+    const before=bubble.textContent;
+    const started=performance.now();
+    const observer=new MutationObserver(()=>{
+      if(bubble.textContent!==before) { observer.disconnect(); resolve(performance.now()-started); }
+    });
+    observer.observe(bubble,{subtree:true,characterData:true,childList:true});
+    (document.querySelector('.homeMascot') as HTMLButtonElement).click();
+  }));
+  expect(elapsed).toBeLessThan(1000);
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','local-rules');
+  await page.waitForTimeout(850);
+  expect(await page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(0);
+  await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
+  await expect(page.getByRole('button',{name:'즉시 반응 · 추천'})).toHaveAttribute('aria-pressed','true');
+  await expect(page.getByRole('dialog')).toContainText('실시간 생성 대사는 아니에요');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(393);
+  await page.getByRole('dialog').screenshot({path:'preview-results/gomi-fast-mode-393.png'});
+  await page.getByRole('button',{name:'AI 새 대사 생성 · 느림'}).click();
+  await expect(page.getByRole('button',{name:'AI 새 대사 생성 · 느림'})).toHaveAttribute('aria-pressed','true');
+  expect(await page.evaluate(()=>localStorage.getItem('gamjassak:companion-response-mode:v1:gomi'))).toBe('generate');
+  await page.getByRole('button',{name:'친구 만나러 가기'}).click();
+  await page.locator('.homeMascot').click();
+  await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
+});
+
+test('switching from active 4B generation to immediate mode cancels costly work and retains the local line',async({page})=>{
+  await installAi(page,{gomi:true,mode:'generate',controlledGeneration:true});await page.goto('/');
+  await page.locator('.homeMascot').click();
+  await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
+  await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
+  await page.getByRole('button',{name:'즉시 반응 · 추천'}).click();
+  await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.releases)).toBeGreaterThan(0);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','local-rules');
+  await page.locator('.homeMascot').click();
+  await page.waitForTimeout(750);
+  expect(await page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
 });
 
 test('Gomi 1.7B is identified as untrained instead of claiming v4 was applied',async({page})=>{
@@ -214,7 +261,7 @@ test('all five actions send their current situation to AI and show the returned 
     await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
     await expect(page.locator('#homeMessage')).toHaveText(replies[index]);
     const prompt=await page.evaluate((i)=>(window as any).touchProbe.prompts[i],index);
-    expect(prompt).toContain(`'${name}' 행동`);
+    expect(prompt).toContain(`'${name}' 버튼을 눌렀다`);
     expect(prompt).toContain(index===4?'나른함':'짜증');
   }
 });
