@@ -53,7 +53,9 @@ test('other friends keep their drawing while five activities and quiet rest have
     await page.getByRole('button',{name:label,exact:true}).click();
     await expect(visual).toHaveAttribute('data-motion',motion);
     expect(await page.evaluate(()=>(window as any).originalFriendDrawing===document.querySelector('.homeMascot .characterPortrait image'))).toBe(true);
-    await expect(page.locator('.homeSpeech')).not.toContainText(/생각\s*중|로딩/);
+    // Since 0.9.49, ungenerated speech must not appear even when a friend moves.
+    await expect(page.locator('.homeSpeech')).toHaveCount(0);
+    await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','status');
   }
   await page.clock.fastForward(60_000);
   await expect(visual).toHaveAttribute('data-motion','rest');
@@ -525,15 +527,21 @@ for (const scenario of [
   await page.emulateMedia({reducedMotion:'reduce'});
   await installSnapshot(page,[{...companion('gomi',6,true),affection:scenario.score}]);
   await page.goto('/');
-  await expect(page.locator('.homeSpeech')).toHaveText(scenario.home);
+  // Opening lines were removed with AI-only speech. Keep the character's
+  // tier-specific pose, help and description assertions below.
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','status');
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
+  await expect(page.locator('#homeMessage')).not.toContainText(scenario.home);
   const mascot=page.getByRole('button',{name:'고미에게 말 걸기'});
   await expect(mascot.locator('.characterVisual')).toHaveAttribute('data-motion',scenario.motion);
   await mascot.locator('img').evaluate((image:HTMLImageElement)=>image.decode());
   await page.screenshot({path:`preview-results/gomi-affinity-${scenario.score}-${info.project.name}.png`});
   for(let touch=0;touch<3;touch++) {
-    const previous=await page.locator('.homeSpeech').innerText();
     await mascot.click();
-    await expect(page.locator('.homeSpeech')).not.toHaveText(previous);
+    // Offline browser tests have no installed model; a failed AI request
+    // must show a non-speech status, never a manufactured dialogue.
+    await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','status');
+    await expect(page.locator('.homeSpeech')).toHaveCount(0);
     if(scenario.score<60) await expect(mascot.locator('.characterVisual')).toHaveAttribute('data-motion','cynical');
   }
   await expect(page.locator('.homeCharacterMeta')).toContainText(`친밀도 ${scenario.score+1}`);
