@@ -82,9 +82,10 @@ try {
   await page.locator('.app').waitFor();
   await expect(page.getByRole('heading', { name: '홈', exact: true })).toBeVisible();
   const mascot = page.locator('.homeMascot');
-  const greeting = await page.locator('.homeSpeech').innerText();
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source', 'status');
   await mascot.click();
-  await expect(page.locator('.homeSpeech')).not.toHaveText(greeting);
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-state', /generating|failed/);
   await page.getByRole('button', { name:'내 앨범', exact:true }).click();
   await page.getByRole('button', { name:'제목 저장 확인 앨범 열기', exact:true }).click();
   const reader = page.getByRole('dialog', { name:'앨범 전체창' });

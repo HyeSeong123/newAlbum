@@ -197,7 +197,7 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
                 val selected = activeModel() ?: error("먼저 AI를 다운로드해 주세요.")
                 val info = ActivityManager.MemoryInfo()
                 (appContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(info)
-                check(selected.canGenerate(info.availMem, info.lowMemory, info.threshold)) { "AI_MEMORY: 메모리가 부족해 기본 반응을 보여 줬어요." }
+                check(selected.canGenerate(info.availMem, info.lowMemory, info.threshold)) { "AI_MEMORY: 메모리가 부족해 AI 대사를 생성하지 못했어요." }
                 if (!nativeLoaded) { System.loadLibrary("gamjassak_companion"); nativeLoaded = true }
                 check(!cancelled.get()) { "대답을 멈췄어요." }
                 val selectedFile = File(File(appContext.filesDir, selected.directory), selected.filename)
@@ -210,9 +210,9 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
             } catch (error: Throwable) {
                 // JNI throws bounded, user-facing errors; never log the prompt or conversation.
                 failure = when {
-                    memoryPressure.get() -> "AI_MEMORY: 메모리가 부족해 기본 반응을 보여 줬어요."
+                    memoryPressure.get() -> "AI_MEMORY: 메모리가 부족해 AI 대사를 생성하지 못했어요."
                     cancelled.get() -> "AI_CANCELLED: 대답을 멈췄어요."
-                    error is OutOfMemoryError -> "AI_MEMORY: 메모리가 부족해 기본 반응을 보여 줬어요."
+                    error is OutOfMemoryError -> "AI_MEMORY: 메모리가 부족해 AI 대사를 생성하지 못했어요."
                     error is UnsatisfiedLinkError -> "AI_ENGINE: AI 실행기를 불러오지 못했어요. 앱 업데이트를 확인해 주세요."
                     else -> error.message ?: "대답을 만들지 못했어요. 다시 시도해 주세요."
                 }

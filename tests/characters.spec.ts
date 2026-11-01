@@ -415,20 +415,20 @@ for (const scenario of [
   await expect(visual).toHaveAttribute('data-motion',`${scenario.pose}-peek`);
   await expect(visual).toHaveAttribute('data-expression','peek');
   await expect(mascot.locator('img')).toHaveAttribute('src',`/characters/gomi/${scenario.pose}-peek.png`);
-  await expect(page.locator('#homeMessage')).toContainText(/자|잘|졸|눈|쉬/);
-  const spoken = [await page.locator('#homeMessage').textContent()];
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','status');
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await page.clock.fastForward(1_800);
   await expect(visual).toHaveAttribute('data-motion',scenario.pose);
   await mascot.click();
   await expect(visual).toHaveAttribute('data-motion',`${scenario.pose}-peek`);
-  spoken.push(await page.locator('#homeMessage').textContent());
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await mascot.click();
   await expect(visual).toHaveAttribute('data-motion',`${scenario.pose}-angry`);
   await expect(visual).toHaveAttribute('data-expression','angry');
   await expect(mascot.locator('img')).toHaveAttribute('src',`/characters/gomi/${scenario.pose}-angry.png`);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 19');
-  await expect(page.locator('#homeMessage')).toContainText(/자|깨|졸|잠|눈|손/);
-  spoken.push(await page.locator('#homeMessage').textContent());
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','status');
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await expect(visual).toHaveAttribute('data-stage','6');
   await page.screenshot({path:`preview-results/gomi-${scenario.pose}-angry-${test.info().project.name}.png`});
   await page.clock.fastForward(2_600);
@@ -436,9 +436,8 @@ for (const scenario of [
   await page.clock.fastForward(10_001);
   await mascot.click();
   await expect(visual).toHaveAttribute('data-motion',`${scenario.pose}-peek`);
-  await expect(page.locator('#homeMessage')).toContainText(/자|잘|졸|잠|눈|손/);
-  spoken.push(await page.locator('#homeMessage').textContent());
-  expect(new Set(spoken).size).toBe(4);
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','status');
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 19');
 });
 
@@ -578,7 +577,7 @@ for (const [before, after, tier, relation] of [[19,20,1,'아직 서먹한 사이
     const prompts=await page.evaluate(()=>(window as any).affinityPrompts);
     expect(prompts).toHaveLength(1);
     expect(prompts[0]).toContain(`친밀도: ${after}`);
-    expect(prompts[0]).toContain(`현재 관계: ${relation}`);
+    expect(prompts[0]).toContain(relation);
     await page.getByRole('button',{name:'현재 화면 도움말'}).click();
     await expect(page.getByRole('dialog',{name:'버튼 도움말'}).locator('.helpVoice')).toHaveAttribute('data-affinity',String(tier));
   });

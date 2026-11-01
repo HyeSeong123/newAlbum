@@ -10,13 +10,20 @@
 .homeWelcome h2 { margin: 16px 0 10px; color: #514536; font-size: 24px; font-weight: 650; line-height: 1.5; }
 .homeIntroduction { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.8; word-break: keep-all; }
 .homeCompanion { display: grid; justify-items: center; margin-top: 26px; }
+.homeDialogueSlot {
+  display: grid;
+  place-items: center;
+  width: min(100%, 350px);
+  min-height: 106px;
+  margin: 0 0 18px;
+}
 .homeSpeech {
   position: relative;
   display: grid;
   place-items: center;
   width: min(100%, 350px);
   min-height: 88px;
-  margin: 0 0 18px;
+  margin: 0;
   padding: 18px 24px;
   border: 1px solid #dcdccd;
   border-radius: 18px;
@@ -26,8 +33,8 @@
   line-height: 1.8;
   word-break: keep-all;
 }
-/* Never show a flashing "thinking" message: identify only the origin of the
-   current line. A temporary fallback stays labelled as such until replaced. */
+/* Only verified AI text uses the speech balloon. A status/repair hint is not
+   presented as the character's words and does not trigger a flashing overlay. */
 .homeSpeech[data-gomi="true"]::before {
   position: absolute;
   top: 2px;
@@ -38,8 +45,22 @@
   line-height: 1.4;
   pointer-events: none;
 }
-.homeSpeech[data-gomi="true"][data-source="local-rules"]::before { content: "기본 대사"; }
 .homeSpeech[data-gomi="true"][data-source="on-device"]::before { content: "AI가 만든 말"; }
+.homeSpeechNotice {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 88px;
+  margin: 0;
+  padding: 18px 24px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
+  word-break: keep-all;
+}
+.homeSpeechNotice[data-state="failed"] {
+  color: #76513e;
+}
 .homeSpeech::after {
   content: "";
   position: absolute;

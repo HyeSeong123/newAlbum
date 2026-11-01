@@ -30,7 +30,7 @@ async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:b
         if(state.error)throw state.error;
         if(settings.actionReplies)return ['오늘은 걷는 얘기를 하자.','네가 건넨 마음은 기억할게.','조심스러운 손길이면 괜찮아.','규칙부터 같이 정해 보자.','이제 조금 조용해져도 좋겠네.'][call-1];
         if(settings.longReply)return '조용히 곁에 있어 줘. 조금 더 자고 싶어. '+ '따뜻하고 편안한 잠을 자고 싶은 아침이야. '.repeat(8);
-        if(settings.echoFirst&&call===1)return document.querySelector('#homeMessage')!.textContent;
+        if(settings.echoFirst&&call===1)return '<think>미완성';
         return settings.gomi?(call===1?'…조용히 해. 나 아직 졸려.':'…귀찮지만 네 옆에 있을게.'):call===1?'오늘은 네 손길이 반가워! 같이 놀아 볼까?':'오늘은 네 옆에서 느긋하게 쉬고 싶어.';
       }
       return [];
@@ -51,62 +51,65 @@ test('an installed legacy AI stays available and its upgrade is explicit and can
   await page.getByRole('dialog').screenshot({path:'preview-results/ai-optional-upgrade-320.png'});
 });
 
-test('Gomi explicit fast mode responds within one second with no model invocation on a phone width',async({page})=>{
+test('saved instant preference is ignored: Gomi only speaks actual AI lines on a phone',async({page})=>{
   await page.setViewportSize({width:393,height:852});
-  await installAi(page,{gomi:true,mode:'instant'});
+  await installAi(page,{gomi:true,mode:'instant',controlledGeneration:true});
   await page.goto('/');
-  const elapsed=await page.evaluate(()=>new Promise<number>(resolve=>{
-    const bubble=document.querySelector('#homeMessage')!;
-    const before=bubble.textContent;
-    const started=performance.now();
-    const observer=new MutationObserver(()=>{
-      if(bubble.textContent!==before) { observer.disconnect(); resolve(performance.now()-started); }
-    });
-    observer.observe(bubble,{subtree:true,characterData:true,childList:true});
-    (document.querySelector('.homeMascot') as HTMLButtonElement).click();
-  }));
-  expect(elapsed).toBeLessThan(1000);
-  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','local-rules');
-  await page.waitForTimeout(850);
-  expect(await page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(0);
+  const bubble=page.locator('#homeMessage');
+  await expect(bubble).toHaveAttribute('data-source','status');
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
+  await page.screenshot({path:'preview-results/gomi-ai-only-before-393.png'});
+  await page.locator('.homeMascot').click();
+  await expect(bubble).toHaveAttribute('data-state','generating');
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
+  await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
   await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
-  await expect(page.getByRole('button',{name:'즉시 반응 · 준비된 대사'})).toHaveAttribute('aria-pressed','true');
-  await expect(page.getByRole('dialog')).toContainText('실시간 생성 대사는 아니에요');
-  await expect(page.locator('[data-gomi-training-status]')).toContainText('고미 학습 모델은 실행하지 않아요');
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(393);
-  await page.getByRole('dialog').screenshot({path:'preview-results/gomi-fast-mode-393.png'});
-  await page.getByRole('button',{name:'AI 새 대사 생성'}).click();
-  await expect(page.getByRole('button',{name:'AI 새 대사 생성'})).toHaveAttribute('aria-pressed','true');
-  expect(await page.evaluate(()=>localStorage.getItem('gamjassak:companion-response-mode:v1:gomi'))).toBe('generate');
-  await page.getByRole('button',{name:'친구 만나러 가기'}).click();
+  await expect(page.getByRole('dialog')).not.toContainText('즉시 반응 · 준비된 대사');
+  await expect(page.getByRole('dialog')).toContainText('AI 모델이 새 대사를 생성해요');
+  await page.evaluate(()=>(window as any).touchProbe.finish());
+  await expect(bubble).toHaveAttribute('data-source','on-device');
+  await expect(bubble).toContainText('나 아직 졸려');
+  await page.keyboard.press('Escape');
+  await page.screenshot({path:'preview-results/gomi-ai-only-after-393.png'});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test('opening settings during AI generation does not enable canned lines',async({page})=>{
+  await installAi(page,{gomi:true,controlledGeneration:true});await page.goto('/');
   await page.locator('.homeMascot').click();
   await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
+  await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
+  await expect(page.getByRole('dialog')).not.toContainText('대사 응답 속도');
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
+  await page.evaluate(()=>(window as any).touchProbe.finish());
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
+  await page.keyboard.press('Escape');
   await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
 });
 
-test('switching from active 4B generation to immediate mode cancels costly work and retains the local line',async({page})=>{
-  await installAi(page,{gomi:true,mode:'generate',controlledGeneration:true});await page.goto('/');
-  await page.locator('.homeMascot').click();
-  await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
-  await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
-  await page.getByRole('button',{name:'즉시 반응 · 준비된 대사'}).click();
-  await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.releases)).toBeGreaterThan(0);
-  await page.keyboard.press('Escape');
-  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','local-rules');
-  await page.locator('.homeMascot').click();
-  await page.waitForTimeout(750);
-  expect(await page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
-});
-
-test('Gomi defaults to requesting real AI generation, even with an immediate interim bubble',async({page})=>{
+test('Gomi defaults to requesting real AI generation, with status rather than an interim bubble',async({page})=>{
   await installAi(page,{gomi:true});
   await page.goto('/');
   await page.locator('.homeMascot').click();
   await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
   await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
   await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
-  await expect(page.getByRole('button',{name:'AI 새 대사 생성',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(page.getByRole('dialog')).not.toContainText('준비된 대사');
+  await expect(page.getByRole('dialog')).toContainText('AI 모델이 새 대사를 생성해요');
   expect(await page.evaluate(()=>localStorage.getItem('gamjassak:companion-response-mode:v1:gomi'))).toBeNull();
+});
+
+test('missing model never substitutes canned speech and leaves a working setup action',async({page})=>{
+  await page.setViewportSize({width:320,height:700});
+  await installAi(page,{gomi:true,ready:false});await page.goto('/');
+  await page.locator('.homeMascot').click();
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-state','failed');
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
+  await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
+  await expect(page.getByRole('button',{name:'AI 준비하기',exact:true})).toBeVisible();
+  await expect(page.getByRole('dialog')).toContainText('AI 모델이 새 대사를 생성해요');
+  await page.keyboard.press('Escape');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
 
 test('Gomi 1.7B is identified as untrained instead of claiming v4 was applied',async({page})=>{
@@ -115,18 +118,18 @@ test('Gomi 1.7B is identified as untrained instead of claiming v4 was applied',a
   await expect(page.locator('[data-gomi-training-status]')).toContainText('1.7B에서는 고미 추가 학습이 적용되지 않아요');
 });
 
-test('Gomi shows basic versus trained AI source and the real adapter execution state on Android width',async({page})=>{
+test('Gomi displays only trained AI speech and reports adapter execution state on Android width',async({page})=>{
   await page.setViewportSize({width:393,height:852});
   await installAi(page,{gomi:true,adapterObserved:true,controlledGeneration:true});
   await page.goto('/');
   const bubble=page.locator('#homeMessage');
-  await expect(bubble).toHaveAttribute('data-gomi','true');
-  await expect(bubble).toHaveAttribute('data-source','local-rules');
-  expect(await bubble.evaluate(el=>getComputedStyle(el,'::before').content)).toContain('기본 대사');
+  await expect(bubble).toHaveAttribute('data-source','status');
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await page.screenshot({path:'preview-results/gomi-line-before-393.png'});
   await page.locator('.homeMascot').click();
   await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
-  await expect(bubble).toHaveAttribute('data-source','local-rules');
+  await expect(bubble).toHaveAttribute('data-state','generating');
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
   await expect(page.locator('[data-gomi-training-status]')).toContainText('실제 적용은 아직 확인되지 않았어요');
   await page.evaluate(()=>(window as any).touchProbe.finish());
@@ -158,7 +161,7 @@ test('same-state storage resumes an already completed AI answer without generati
   await page.locator('.homeMascot').dispatchEvent('click');
   await page.evaluate(()=>(window as any).touchProbe.finish());
   await page.waitForTimeout(150);
-  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','local-rules');
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-state','generating');
   await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
   await expect(page.locator('#homeMessage')).toContainText('네 손길이 반가워');
   expect(await page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
@@ -171,15 +174,15 @@ test('a completed old AI answer stays hidden while a changed sleeping relationsh
   await page.getByRole('button',{name:'함께하기',exact:true}).click();
   await page.getByRole('button',{name:'함께 산책',exact:true}).click();
   await page.waitForTimeout(950);
-  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','local-rules');
-  await expect(page.locator('#homeMessage')).not.toContainText('나 아직 졸려');
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-state','generating');
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
   const prompts=await page.evaluate(()=>(window as any).touchProbe.prompts);
   expect(prompts).toHaveLength(2);expect(prompts[1]).toContain('친밀도: 19');expect(prompts[1]).toContain('짜증');
   expect(await page.evaluate(()=>(window as any).touchProbe.characters)).toEqual(['gomi','gomi']);
 });
 
-for(const echoFirst of [false,true])test(`${echoFirst?'copied':'long'} AI answer reaches the bubble as a fresh short line`,async({page})=>{
+for(const echoFirst of [false,true])test(`${echoFirst?'invalid first':'long'} AI answer reaches the bubble as a fresh short line`,async({page})=>{
   await installAi(page,{echoFirst,longReply:!echoFirst});await page.goto('/');
   await page.getByRole('button',{name:'함께하기',exact:true}).click();
   await page.getByRole('button',{name:'함께 쉬기',exact:true}).click();
@@ -195,6 +198,8 @@ test('a failed AI run is explained in settings and a successful retry clears it'
   await expect(page.getByRole('dialog')).toContainText('AI 모델이 설치되어 있어요');
   await page.getByRole('dialog').screenshot({path:`preview-results/ai-execution-status-${process.env.RELIABILITY_BASELINE?'before':'after'}.png`});
   await expect(page.getByRole('dialog')).toContainText('메모리가 부족해');
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-state','failed');
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await page.keyboard.press('Escape');
   await page.evaluate(()=>(window as any).touchProbe.error=undefined);
   await page.locator('.homeMascot').click();
@@ -246,21 +251,21 @@ test('another character does not inherit an unattributed native failure as its o
   await expect(page.getByRole('dialog')).toContainText('AI 실행기를 불러오지 못했어요');
 });
 
-test('five sleeping fallback reactions stay distinct when the AI cannot allocate',async({page})=>{
+test('AI memory failure never displays canned sleeping responses or treats failure as speech',async({page})=>{
   await installAi(page,{gomi:true,error:'AI_MEMORY: 메모리가 부족해요.'});await page.goto('/');
-  const lines=[];
-  for(let i=0;i<5;i++){
+  const bubble=page.locator('#homeMessage');
+  for(let i=0;i<3;i++){
     await page.locator('.homeMascot').click();
-    lines.push(await page.locator('#homeMessage').textContent());
+    await expect(bubble).toHaveAttribute('data-state','failed');
+    await expect(bubble).toContainText('메모리가 부족해');
+    await expect(page.locator('.homeSpeech')).toHaveCount(0);
   }
-  expect(new Set(lines).size).toBe(5);
   await page.getByRole('button',{name:'함께하기',exact:true}).click();
-  const rest=[];
-  for(let i=0;i<6;i++){
-    await page.getByRole('button',{name:'함께 쉬기',exact:true}).click();
-    rest.push(await page.locator('#homeMessage').textContent());
+  for(const action of ['함께 산책','함께 쉬기']){
+    await page.getByRole('button',{name:action,exact:true}).click();
+    await expect(bubble).toHaveAttribute('data-state','failed');
+    await expect(page.locator('.homeSpeech')).toHaveCount(0);
   }
-  expect(new Set(rest).size).toBe(6);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
 });
 
@@ -314,7 +319,8 @@ for(const claimed of [false,true])test(`sleeping Home entry stays asleep with ${
   for(let entry=0;entry<2;entry++){
     await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-motion','sleep-curled');
     await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-motion',/^sleep-/);
-    await expect(page.locator('#homeMessage')).toHaveText('…쌔근.');
+    await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','status');
+    await expect(page.locator('.homeSpeech')).toHaveCount(0);
     if(!claimed)expect(await page.evaluate(()=>localStorage.getItem('gamjassak:gomi-greeting:gomi'))).toBeNull();
     if(entry===0){
       await page.locator('.navList').getByRole('button',{name:'사진 기록',exact:true}).click();
@@ -352,7 +358,7 @@ for (const gomi of [false, true]) test(`${gomi ? 'Gomi' : 'portrait'} touch and 
     await mascot.evaluate(element=>{
       const body=element.querySelector('.characterBody')!;
       const illustration=element.querySelector('.characterIllustration')!;
-      const gap=()=>element.getBoundingClientRect().top-document.querySelector('#homeMessage')!.getBoundingClientRect().bottom;
+      const gap=()=>element.getBoundingClientRect().top-document.querySelector('.homeDialogueSlot')!.getBoundingClientRect().bottom;
       const initialGap=gap();
       const probe=(window as any).continuity={running:true,artworkPreserved:true,opaque:true,stableGap:true};
       function sample(){
@@ -400,7 +406,7 @@ test('AI setup explains touch reactions without any typing UI and Back restores 
   await expect(page.getByRole('button',{name:'대화하기',exact:true})).toHaveCount(0);
   const open=page.getByRole('button',{name:'AI 반응 설정',exact:true});await open.click();
   const dialog=page.getByRole('dialog',{name:'AI 반응 설정',exact:true});
-  await expect(dialog).toContainText('캐릭터를 터치하면');
+  await expect(dialog).toContainText('친구를 터치하거나');
   await expect(dialog.locator('input,textarea')).toHaveCount(0);
   await expect(dialog).toContainText('RAM 8GB 이상 Android 스마트폰');
   await page.keyboard.press('Escape');await expect(dialog).toHaveCount(0);await expect(open).toBeFocused();
@@ -433,8 +439,8 @@ test('leaving Home during generation cancels it and never shows its old answer o
   await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.stops)).toBeGreaterThan(0);
   await page.waitForTimeout(1600);
   await page.locator('.navList').getByRole('button',{name:'홈',exact:true}).click();
-  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','local-rules');
-  await expect(page.locator('#homeMessage')).not.toContainText('네 손길이 반가워');
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','status');
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
 });
 
 test('sleeping Gomi uses sleepy touch context and keeps her resting motions',async({page})=>{

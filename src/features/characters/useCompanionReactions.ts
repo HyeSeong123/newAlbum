@@ -1,8 +1,11 @@
 import { useEffect, useRef } from "react";
 import { chatModelStatus, generateChatReply, lastChatReaction, markChatReaction, recordChatReaction, releaseChatModel, stopChatModel } from "./companionChatService";
 import { createTouchReactionQueue, generateTouchLine, recentTouchLines, rememberTouchLine, type TouchContext } from "./companionTouch";
+import type { CompanionGeneration } from "./companionLlm";
 
-export function useCompanionReactions(characterId: string | undefined, onLine: (line: string) => void) {
+// Publish the real inference outcome, not a substitute line. Home decides whether
+// to show AI speech or a separate non-character error/status message.
+export function useCompanionReactions(characterId: string | undefined, onResult: (result: CompanionGeneration) => void) {
   const callback = useRef(onLine); callback.current = onLine;
   const sessionId = useRef(crypto.randomUUID());
   const usedSession = useRef(false);
@@ -30,9 +33,8 @@ export function useCompanionReactions(characterId: string | undefined, onLine: (
     }, (reply, context) => {
       if (document.hidden) return;
       recordChatReaction(context.owned.id, reply);
-      if (reply.source !== "on-device") return;
-      rememberTouchLine(context.owned.id, reply.line);
-      callback.current(reply.line);
+      if (reply.source === "on-device") rememberTouchLine(context.owned.id, reply.line);
+      callback.current(reply);
     }, () => {});
     queue.current = current;
     const cancel = () => {

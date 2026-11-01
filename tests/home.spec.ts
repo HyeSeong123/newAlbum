@@ -1,22 +1,22 @@
 import { expect, test } from '@playwright/test';
 test.beforeEach(async ({page}) => { await page.addInitScript(()=>{Math.random=()=>.1;}); });
 
-test('Gomi greets once per local day across Home navigation and app reloads', async ({ page }) => {
+test('Home shows no prewritten greeting across navigation, reload or legacy greeting storage', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('gamjassak:gomi-greeting:gomi', '2026-01-01'));
   await page.goto('/');
   const speech = page.locator('#homeMessage');
-  await expect(speech).toHaveText('........누구....?');
-  await page.locator('.navList').getByRole('button', { name: '사진 기록', exact: true }).click();
-  await page.locator('.navList').getByRole('button', { name: '홈', exact: true }).click();
-  await expect(speech).not.toHaveText('........누구....?');
+  await expect(speech).toHaveAttribute('data-source', 'status');
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
+  await expect(speech).toContainText('AI가 새로운 대사를 만들어요');
+  for (const command of ['사진 기록', '홈']) {
+    await page.locator('.navList').getByRole('button', { name: command, exact: true }).click();
+  }
+  await expect(speech).toHaveAttribute('data-source', 'status');
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await page.reload();
-  await expect(speech).not.toHaveText('........누구....?');
-  await page.evaluate(() => {
-    for (const key of Object.keys(localStorage)) {
-      if (key.startsWith('gamjassak:gomi-greeting:')) localStorage.setItem(key,'2026-01-01');
-    }
-  });
-  await page.reload();
-  await expect(speech).toHaveText('........누구....?');
+  await expect(speech).toHaveAttribute('data-source', 'status');
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem('gamjassak:gomi-greeting:gomi'))).toBe('2026-01-01');
 });
 
 test('startup, every logo link, the first menu item and reload all lead to Home', async ({ page }) => {
@@ -46,30 +46,22 @@ test('startup, every logo link, the first menu item and reload all lead to Home'
   await expect(home).toBeVisible();
 });
 
-test('the mascot chooses different messages and supports Enter and Space without network requests', async ({ page }) => {
-  await page.addInitScript(() => { Math.random = () => .1; });
+test('Home touch, Enter and Space never invent a line when the AI is unavailable', async ({ page }) => {
   await page.goto('/');
   const mascot = page.getByRole('button', { name: '고미에게 말 걸기', exact: true });
-  const speech = page.getByRole('status');
+  const speech = page.locator('#homeMessage');
   await mascot.locator('img').evaluate((image: HTMLImageElement) => image.decode());
   await expect(speech).toHaveAttribute('aria-live', 'polite');
+  await expect(speech).toHaveAttribute('data-source', 'status');
   const requests: string[] = [];
   page.on('request', request => requests.push(request.url()));
-  await page.evaluate(() => { Math.random = () => 0; });
-  const initial = await speech.innerText();
-  await mascot.click();
-  await expect(speech).not.toHaveText(initial);
-  const second = await speech.innerText();
-  await mascot.press('Enter');
-  await expect(speech).not.toHaveText(second);
-  const third = await speech.innerText();
-  await page.evaluate(() => { Math.random = () => 0.999999; });
-  await mascot.press('Space');
-  await expect(speech).not.toHaveText(third);
-  await expect(speech).not.toHaveText('');
-  const last = await speech.innerText();
-  await mascot.click();
-  await expect(speech).not.toHaveText(last);
+  for (const trigger of ['click', 'Enter', 'Space', 'click']) {
+    if (trigger === 'click') await mascot.click();
+    else await mascot.press(trigger);
+    await expect(speech).toHaveAttribute('data-state', 'failed');
+    await expect(speech).toContainText('AI 대사');
+    await expect(page.locator('.homeSpeech')).toHaveCount(0);
+  }
   expect(requests.filter(url => !url.startsWith('http://127.0.0.1:5173/'))).toEqual([]);
 });
 
@@ -136,7 +128,8 @@ test('Home companion actions expand, respond, remember locally and never award a
   await expect(actions.getByRole('button')).toHaveCount(5);
 
   await actions.getByRole('button', { name: '함께 산책' }).click();
-  await expect(speech).toContainText('산책? 이제 나가는 거지?');
+  await expect(speech).toHaveAttribute('data-state', 'failed');
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await expect(page.locator('.homeActivityMood')).toHaveCount(0);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
   let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('gamjassak:companion:v1:gomi') || 'null'));
@@ -144,7 +137,8 @@ test('Home companion actions expand, respond, remember locally and never award a
   expect(saved?.mood).toBe('curious');
 
   await actions.getByRole('button', { name: '간식 주기' }).click();
-  await expect(speech).toContainText('뭐야');
+  await expect(speech).toHaveAttribute('data-state', 'failed');
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await expect(page.locator('.homeActivityMood')).toHaveCount(0);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem('gamjassak:companion:v1:gomi') || 'null'));

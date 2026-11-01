@@ -267,7 +267,7 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, j
         return bytes;
     } catch (const std::bad_alloc &) {
         std::lock_guard<std::mutex> lock(inference_mutex); release_model(); stage("memory");
-        if (!env->ExceptionCheck()) env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), "AI_MEMORY: 메모리가 부족해 기본 반응을 보여 줬어요.");
+        if (!env->ExceptionCheck()) env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), "AI_MEMORY: 메모리가 부족해 AI 대사를 생성하지 못했어요.");
         return nullptr;
     } catch (const std::exception &error) {
         // A cancelled/partial decode must never poison the next request's KV.

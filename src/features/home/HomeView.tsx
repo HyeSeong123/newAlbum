@@ -4,13 +4,10 @@ import { CharacterVisual } from "../characters/CharacterVisual";
 import { CompanionAiSetup } from "../characters/CompanionAiSetup";
 import { useCompanionReactions } from "../characters/useCompanionReactions";
 import { chooseCompanionFallback, companionFallbackCandidates } from "../characters/companionFallback";
-import { readCompanionResponseMode } from "../characters/companionResponseMode";
 import { characterPortraits } from "../characters/characterPortraits";
 import { characterDefinitions, characterName, dialogueLines, nextDialogue, type OwnedCharacter, type CharacterInteractionSource } from "../characters/models";
-import { gomiSleepLine } from "../characters/gomiBehavior";
 import { useGomiBehavior } from "../characters/useGomiBehavior";
 import { useCompanionBehavior } from "../characters/useCompanionBehavior";
-import { claimGomiGreeting } from "../characters/gomiGreeting";
 import { COMPANION_ACTIONS, companionActionLabel, performCompanionActivity, readCompanionMemory, saveCompanionMemory, type CompanionAction } from "../characters/companionActivities";
 import "../characters/characters.css";
 import "./home.css";
@@ -53,14 +50,32 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   const [happy, setHappy] = useState(false);
   const [activitiesOpen, setActivitiesOpen] = useState(false);
   const [aiSetupOpen, setAiSetupOpen] = useState(false);
-  const [messageSource, setMessageSource] = useState("local-rules");
-  const ai = useCompanionReactions(mainCharacter?.id, line => { setSpokenLine(line); setMessageSource("on-device"); });
+  const [aiStatus, setAiStatus] = useState<"idle" | "generating" | "failed">("idle");
+  const [aiFailure, setAiFailure] = useState("");
+  const ai = useCompanionReactions(mainCharacter?.id, result => {
+    // Never speak an authored fallback as though the model said it.
+    if (result.source === "on-device" && result.line.trim()) {
+      setSpokenLine(result.line.trim());
+      setAiStatus("idle");
+      setAiFailure("");
+    } else {
+      setSpokenLine(undefined);
+      setAiStatus("failed");
+      setAiFailure(result.message || "AI가 새 대사를 만들지 못했어요. 다시 터치해 주세요.");
+    }
+  });
   const lastLine = useRef(0);
   const timer = useRef<number | undefined>(undefined);
   const reactionRequest = useRef(0);
   const storedInteraction = useRef<Promise<OwnedCharacter | undefined>>(Promise.resolve(undefined));
   useEffect(() => {
-    const invalidate = () => { if (document.hidden) ++reactionRequest.current; };
+    const invalidate = () => {
+      if (document.hidden) {
+        ++reactionRequest.current;
+        setSpokenLine(undefined);
+        setAiStatus("idle");
+      }
+    };
     document.addEventListener("visibilitychange", invalidate);
     return () => document.removeEventListener("visibilitychange", invalidate);
   }, []);
@@ -71,7 +86,9 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     storedInteraction.current = Promise.resolve(undefined);
     setActivitiesOpen(false);
     setAiSetupOpen(false);
-    setMessageSource("local-rules");
+    setSpokenLine(undefined);
+    setAiStatus("idle");
+    setAiFailure("");
     return () => { ++reactionRequest.current; };
   }, [mainCharacter?.id]);
   const isGomi = definition?.type === "gomi";
@@ -87,21 +104,9 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     if (dialogueEntry.current === entry) return;
     dialogueEntry.current = entry;
     lastLine.current=0;
-    setSpokenLine(isGomi && gomi.sleeping ? (gomi.irritated ? gomiSleepLine(3,mainCharacter?.affection || 0) : "…쌔근.") : undefined);
+    setSpokenLine(undefined);
+    setAiStatus("idle");
   }, [mainCharacter?.id,mainCharacter?.growthStage,gomi.ready]);
-  const greetingEntry = useRef("");
-  const greetingAffection = useRef(0);
-  greetingAffection.current = mainCharacter?.affection || 0;
-  useEffect(() => {
-    if (!isGomi || !gomi.ready || gomi.sleeping || !mainCharacter?.id) return;
-    const entry = `${mainCharacter.id}:${today}`;
-    if (greetingEntry.current === entry) return;
-    greetingEntry.current = entry;
-    let storage: Storage | undefined;
-    try { storage = window.localStorage; } catch { /* Session fallback handles disabled storage. */ }
-    const greeting = claimGomiGreeting(today, mainCharacter.id, greetingAffection.current, storage);
-    if (greeting) setSpokenLine(greeting);
-  }, [isGomi, gomi.ready, gomi.sleeping, mainCharacter?.id, today]);
   useEffect(() => () => window.clearTimeout(timer.current), []);
   const dateLabel = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long" })
     .format(new Date(`${today}T12:00:00`));
@@ -112,14 +117,17 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     if (source) storedInteraction.current = onInteract(context.owned.id, source);
     const updated = await storedInteraction.current;
     if (request !== reactionRequest.current) return;
-    if (source && !updated) { ai.cancel(); return; }
-    if (readCompanionResponseMode(context.owned.id) === "generate") {
-      ai.react({ ...context, owned:updated?.id === context.owned.id ? { ...context.owned, affection:updated.affection } : context.owned });
-    } else ai.cancel();
+    if (source && !updated) {
+      ai.cancel();
+      setAiStatus("failed");
+      setAiFailure("친밀도를 저장하지 못해 AI 반응을 진행할 수 없어요. 다시 시도해 주세요.");
+      return;
+    }
+    ai.react({ ...context, owned:updated?.id === context.owned.id ? { ...context.owned, affection:updated.affection } : context.owned });
   }
 
   function talk() {
-    if (isGomi && !gomi.ready) return;
+    if (!definition || !mainCharacter || (isGomi && !gomi.ready)) return;
     // Draw from every other message, so even rapid clicks never repeat the last line.
     const next = nextDialogue(lines,lastLine.current);
     lastLine.current=next;
@@ -130,8 +138,9 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
       gomi:Boolean(isGomi), affection:mainCharacter.affection, action:"touch", sleeping:reaction?.sleeping, disturbed:reaction?.disturbed,
       basis:restLine || lines[next], touchLines:lines,
     })) : lines[next];
-    setSpokenLine(fallback);
-    setMessageSource("local-rules");
+    setSpokenLine(undefined);
+    setAiStatus("generating");
+    setAiFailure("");
     if (definition && mainCharacter) {
       const memory = readCompanionMemory(mainCharacter.id);
       const source = reaction?.sleeping ? (reaction.disturbed ? "sleep" : undefined) : "home";
@@ -151,8 +160,9 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     saveCompanionMemory(mainCharacter.id, result.memory);
     const fallback = chooseCompanionFallback(mainCharacter.id, companionFallbackCandidates({ gomi:Boolean(isGomi), affection:mainCharacter.affection,
       action, sleeping, disturbed:sleeping && action !== "rest", basis:result.line }));
-    setSpokenLine(fallback);
-    setMessageSource("local-rules");
+    setSpokenLine(undefined);
+    setAiStatus("generating");
+    setAiFailure("");
     void reactWithStoredRelationship({ definition, appearance, owned: mainCharacter, memory: result.memory, action, fallback }, sleeping && action !== "rest" ? "sleep" : undefined);
     if (isGomi) gomi.activity(action);
     else { companion.activity(action); setHappy(action !== "rest"); }
@@ -170,14 +180,24 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
 
   return <section className="homeView" aria-label="곰고미 홈">
     {aiSetupOpen && definition && mainCharacter && <CompanionAiSetup key={mainCharacter.id} definition={definition} owned={mainCharacter}
-      onModeChange={mode => { if (mode === "instant") ai.stopAndRelease(); }}
       onClose={() => setAiSetupOpen(false)} />}
     <div className="homeWelcome">
       <time className="homeDate" dateTime={today}>{dateLabel}</time>
       <h2>작은 하루가 자라는 곳</h2>
       <p className="homeIntroduction">소중한 순간도, 평범한 하루도 차곡차곡 담아두세요.</p>
       <div className="homeCompanion">
-        <p id="homeMessage" className="homeSpeech" data-source={messageSource} data-gomi={isGomi ? "true" : undefined} role="status" aria-live="polite" aria-atomic="true">{isGomi && !gomi.ready ? "…" : spokenLine || lines[0]}</p>
+        <div className="homeDialogueSlot">
+          {spokenLine
+            ? <p id="homeMessage" className="homeSpeech" data-source="on-device" data-gomi={isGomi ? "true" : undefined}
+                role="status" aria-live="polite" aria-atomic="true">{spokenLine}</p>
+            : <p id="homeMessage" className="homeSpeechNotice" data-source="status" data-state={aiStatus}
+                role="status" aria-live="polite" aria-atomic="true">
+                {aiStatus === "generating" ? "AI가 대사를 생성하고 있어요." :
+                  aiStatus === "failed" ? aiFailure :
+                  isGomi && !gomi.ready ? "친구를 준비하고 있어요." :
+                  definition ? "친구를 터치하면 AI가 새로운 대사를 만들어요." : "친구를 선택하면 AI와 대화할 수 있어요."}
+              </p>}
+        </div>
         <button className={`homeMascot${happy ? " happy" : ""}`} type="button" aria-label={`${definition ? characterName(definition, mainCharacter) : "곰고미"}에게 말 걸기`} onClick={talk}>
           {definition && mainCharacter ? <CharacterVisual definition={definition} stage={mainCharacter.growthStage} expression={happy ? "happy" : "idle"}
             gomiMotion={isGomi ? gomi.motion : undefined} companionMotion={!isGomi ? companion.motion : undefined}

@@ -6,14 +6,11 @@ import { CharacterVisual } from "./CharacterVisual";
 import { characterName, type CharacterDefinition, type OwnedCharacter } from "./models";
 import { chatModelStatus, downloadChatModel, lastChatReaction, stopChatModel, subscribeChatReaction, type ChatModelStatus } from "./companionChatService";
 import { companionExecutionError } from "./companionLlm";
-import { readCompanionResponseMode, saveCompanionResponseMode, type CompanionResponseMode } from "./companionResponseMode";
 import "./companion-chat.css";
 
-export function CompanionAiSetup({ definition, owned, onClose, onModeChange }: {
+export function CompanionAiSetup({ definition, owned, onClose }: {
   definition: CharacterDefinition; owned: OwnedCharacter; onClose: () => void;
-  onModeChange?: (mode: CompanionResponseMode) => void;
 }) {
-  const [mode, setMode] = useState<CompanionResponseMode>(() => readCompanionResponseMode(owned.id));
   const [status, setStatus] = useState<ChatModelStatus>();
   const [error, setError] = useState("");
   const [statusError, setStatusError] = useState("");
@@ -45,23 +42,17 @@ export function CompanionAiSetup({ definition, owned, onClose, onModeChange }: {
     try { await stopChatModel(); }
     catch { if (active.current) setError("중단 상태를 확인하지 못했어요. 잠시 후 다시 확인해 주세요."); }
   }
-  function chooseMode(next: CompanionResponseMode) {
-    saveCompanionResponseMode(owned.id, next);
-    setMode(next);
-    onModeChange?.(next);
-  }
   const downloading = status?.phase === "downloading" || status?.phase === "verifying";
   const ready = status?.supported && status.installed;
   const reaction = useSyncExternalStore(subscribeChatReaction, () => lastChatReaction(owned.id));
   const runtime = status?.runtime;
   const outcome = reaction?.message || "아직 AI 반응 결과가 없어요. 홈에서 친구를 터치해 주세요.";
   const gomiTrainingStatus = definition.id !== "gomi" || !ready ? undefined
-    : mode === "instant" ? "지금은 준비된 대사 모드예요. 고미 학습 모델은 실행하지 않아요."
     : status?.model !== "dialogue" ? "현재 1.7B에서는 고미 추가 학습이 적용되지 않아요. 4B 모델을 받아 주세요."
     : reaction?.phase === "complete" && reaction.source === "on-device" && runtime?.gomiLoraApplied
       ? "최근 고미의 AI 대사에 학습 모델 v4가 실제 적용됐어요."
       : reaction?.phase === "complete" && reaction.source !== "on-device"
-        ? "최근에는 AI 대신 기본 대사가 표시됐어요. 아래 최근 반응을 확인해 주세요."
+        ? "최근 AI 대사 생성에 실패했어요. 준비된 대사로 대체하지 않았어요."
         : "4B는 준비됐지만 고미 학습 모델의 실제 적용은 아직 확인되지 않았어요. 홈에서 고미를 터치한 뒤 확인해 주세요.";
   const nativeOutcome = status?.lastOutcome === "error" ? companionExecutionError(status.lastError) : status?.lastOutcome === "running" ? "대사를 생성하고 있어요." : status?.lastOutcome === "success" ? "생성이 끝났어요. 친구별 말풍선 반영 결과는 최근 AI 반응에서 확인해 주세요." : status?.lastOutcome === "cancelled" ? "실행을 중단했어요." : "아직 실행 기록이 없어요.";
   const seconds = (value: number | undefined) => value == null || value < 0 ? "측정 전" : (value / 1000).toFixed(1) + "초";
@@ -76,16 +67,7 @@ export function CompanionAiSetup({ definition, owned, onClose, onModeChange }: {
       </header>
       <div className="companionChatSetup" role="status">
         <Sparkles size={28} aria-hidden="true" /><h3>{downloading ? "다양한 반응을 준비하고 있어요" : ready ? "AI 모델이 설치되어 있어요" : "친구의 마음을 담은 한마디"}</h3>
-        <fieldset className="companionResponseSwitch">
-          <legend>대사 응답 속도</legend>
-          <button type="button" aria-pressed={mode === "instant"} onClick={() => chooseMode("instant")}>즉시 반응 · 준비된 대사</button>
-          <button type="button" aria-pressed={mode === "generate"} onClick={() => chooseMode("generate")}>AI 새 대사 생성</button>
-        </fieldset>
-        <p className="companionResponseDescription" data-response-mode={mode}>
-          {mode === "instant"
-            ? "버튼을 누르면 성격·기분·친밀도에 맞는 준비된 대사가 바로 나와요. AI 모델은 실행하지 않아 배터리와 메모리를 아껴요. 실시간 생성 대사는 아니에요."
-            : "캐릭터를 터치하면 설치한 모델로 매번 새 대사를 만들어요. 입력 재사용으로 속도를 줄이지만 휴대폰에 따라 수초에서 수십 초 이상 걸릴 수 있어요."}
-        </p>
+        <p className="companionResponseDescription">친구를 터치하거나 함께하기 버튼을 누르면 AI 모델이 새 대사를 생성해요. 생성 중이거나 실패하면 정해진 대사를 대신 말하지 않아요. 기기에 따라 답변에 시간이 걸릴 수 있어요.</p>
         {ready && <div className="companionAiOutcome">
           <strong>AI 모델</strong><p>{status.model === "dialogue" ? "Qwen3 4B" : "Qwen3 1.7B"} · 설치됨</p>
           {gomiTrainingStatus && <><strong>고미 학습 모델</strong><p data-gomi-training-status>{gomiTrainingStatus}</p></>}
@@ -111,7 +93,7 @@ export function CompanionAiSetup({ definition, owned, onClose, onModeChange }: {
             </dl><p>이전 AI 실행 기록이에요. '첫 글자까지'는 입력 문장 처리 시간을 포함하므로 모델 로딩이 0초여도 길어질 수 있어요. 메모리는 앱 전체 사용량이에요.</p>
           </details>}
         </div>}
-        {canDownload && <><p>{ready ? "지금 받은 기본 AI도 사용할 수 있어요. 더 자연스러운 한국어 대화를 원하면 약 2.5GB를 추가로 받아 주세요. 다운로드는 직접 시작할 때만 진행해요." : "처음 한 번 약 2.5GB를 받아요. Wi-Fi에서 준비하면 좋아요. 준비 후에는 인터넷 없이 반응해요."}</p>
+        {canDownload && <><p>{ready ? "설치된 1.7B AI도 사용할 수 있어요. 고미의 추가 학습 결과를 사용하려면 약 2.5GB의 4B 모델을 받아 주세요. 다운로드는 직접 시작할 때만 진행해요." : "처음 한 번 약 2.5GB를 받아요. Wi-Fi에서 준비하면 좋아요. 준비 후에는 인터넷 없이 반응해요."}</p>
           <button type="button" className="primary" disabled={starting} onClick={() => void download()}><Download size={18} />{ready ? "더 자연스러운 AI 받기" : "AI 준비하기"}</button></>}
         {!ready && <p>{status?.message || "준비 상태를 확인하고 있어요."}</p>}
         {downloading && <><progress max={Math.max(1, status.total)} value={status.downloaded} aria-label="AI 다운로드 진행률" /><span>{status.phase === "verifying" ? "파일 확인 중" : Math.floor(status.downloaded / Math.max(1, status.total) * 100) + "%"}</span>

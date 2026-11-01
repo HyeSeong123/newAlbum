@@ -14,7 +14,7 @@ export function markChatReaction(id: string, phase: "queued" | "running" | "canc
 export function recordChatReaction(id: string, reply: CompanionGeneration) {
   // Only an outcome is retained here, never the prompt, generated text or personal records.
   const message = reply.source === "on-device" ? "최근 터치에서 AI가 새로운 대사를 만들었어요." : reply.message ||
-    (reply.failure === "repeated" ? "AI가 앞선 말을 반복해 기본 반응을 보여 줬어요. 다시 터치해 주세요." : "AI가 대사를 완성하지 못해 기본 반응을 보여 줬어요. 다시 터치해 주세요.");
+    (reply.failure === "repeated" ? "AI가 앞선 말을 반복했어요. 새 대사를 다시 요청해 주세요." : "AI 대사 생성에 실패했어요. 친구를 다시 터치해 주세요.");
   reactionResults.set(id, { source: reply.source, message, phase:"complete" }); changed();
 }
 export const lastChatReaction = (id: string) => reactionResults.get(id);
