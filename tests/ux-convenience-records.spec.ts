@@ -61,6 +61,8 @@ test('fixed help leaves album menu and diary save controls fully reachable at 32
   await capture(page, info, '14-diary-save-help-clearance');
   await dialog.getByRole('button', { name: '일기 저장', exact: true }).click();
   await expect(dialog).toHaveCount(0);
+  // Saving selects today's month; the fixed October fixture may be in another month.
+  await page.getByRole('button', { name: '전체 일기', exact: true }).click();
   await page.locator('.diaryOpen').filter({ hasText: '가을 산책' }).click();
   await page.getByRole('dialog', { name: '일기 상세', exact: true }).getByRole('button', { name: '일기 수정', exact: true }).click();
   const existing = page.getByRole('dialog', { name: '일기 수정', exact: true });
