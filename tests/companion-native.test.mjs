@@ -24,4 +24,11 @@ test('GPU path only runs with a detected ARM64 Vulkan device and CPU fallback is
   assert.match(kotlin,/nativeRelease\(\) \/\/ free GPU buffers\/context before CPU/);
   assert.match(kotlin,/availableAgain.availMem, true/);
   assert.match(kotlin,/\.put\("gpuFallback", lastGpuFallback\)/);
+  assert.match(cmake,/target_include_directories\(ggml-vulkan SYSTEM PRIVATE/);
+  assert.match(cmake,/vulkan-sdk-headers/);
+  assert.match(cmake,/vk_video/);
+  assert.match(cmake,/uint32_t N = 16/);
+  assert.match(cmake,/uint32_t N = 2/);
+  assert.match(cmake,/compiles\.front\(\)\.get\(\)/);
+  assert.match(cmake,/ggml-vulkan-shaders\.cpp/);
 });
