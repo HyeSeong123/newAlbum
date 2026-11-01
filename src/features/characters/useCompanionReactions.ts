@@ -6,7 +6,7 @@ import type { CompanionGeneration } from "./companionLlm";
 // Publish the real inference outcome, not a substitute line. Home decides whether
 // to show AI speech or a separate non-character error/status message.
 export function useCompanionReactions(characterId: string | undefined, onResult: (result: CompanionGeneration) => void) {
-  const callback = useRef(onLine); callback.current = onLine;
+  const callback = useRef(onResult); callback.current = onResult;
   const sessionId = useRef(crypto.randomUUID());
   const usedSession = useRef(false);
   const queue = useRef<ReturnType<typeof createTouchReactionQueue> | undefined>(undefined);
