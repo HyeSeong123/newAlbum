@@ -99,8 +99,9 @@ fn assign_detections_with_kind(conn:&mut Connection,ids:Vec<i64>,target:Option<i
         }
         let media:i64=tx.query_row("SELECT media_id FROM pet_detection WHERE id=?1 AND pet_id IS NULL AND excluded=0",[id],|r|r.get(0)).map_err(|_|"선택한 반려동물의 분류가 변경되었습니다.".to_string())?;
         if let Some(kind)=kind {super::pet_recognition::correct_unknown_kind(&tx,id,kind)?;}
-        let mixed:bool=tx.query_row("SELECT EXISTS(SELECT 1 FROM pet_detection a JOIN pet_detection b ON b.id=?2 WHERE a.pet_id=?1 AND a.excluded=0 AND json_extract(a.features,'$.kind')<>json_extract(b.features,'$.kind'))",params![dest,id],|r|r.get(0)).map_err(|e|e.to_string())?;
-        if mixed {return Err("개와 고양이를 같은 반려동물로 연결할 수 없습니다.".into());}
+        // A manual identity choice takes priority over detector kind, including
+        // older misclassifications on the destination. Kind edits stay scoped
+        // to the selected detections; other results and source media are kept.
         tx.execute("UPDATE pet_detection SET pet_id=?1 WHERE id=?2",params![dest,id]).map_err(|e|e.to_string())?;
         let inserted=tx.execute("INSERT OR IGNORE INTO pet_media(pet_id,media_id) VALUES(?1,?2)",params![dest,media]).map_err(|e|e.to_string())?;
         if inserted>0 {tx.execute("INSERT OR IGNORE INTO pet_recognition_link(pet_id,media_id) VALUES(?1,?2)",params![dest,media]).map_err(|e|e.to_string())?;}
@@ -190,10 +191,10 @@ mod tests {
         assert_eq!(c.query_row("SELECT pet_id FROM pet_detection WHERE id=2",[],|r|r.get::<_,i64>(0)).unwrap(),2);
         assert_eq!(c.query_row("SELECT COUNT(*) FROM media",[],|r|r.get::<_,i64>(0)).unwrap(),2);
     }
-    #[test] fn species_correction_and_new_name_roll_back_on_stale_or_incompatible_selection(){
+    #[test] fn species_correction_and_new_name_roll_back_on_stale_or_invalid_selection(){
         let mut c=db();species_fixture(&c);
         assert!(assign_detections_with_kind(&mut c,vec![3,999],None,Some("새 이름".into()),Some("dog")).is_err());
-        assert!(assign_detections_with_kind(&mut c,vec![3],Some(1),None,Some("cat")).is_err());
+        assert!(assign_detections_with_kind(&mut c,vec![3,999],Some(1),None,Some("dog")).is_err());
         assert!(assign_detections_with_kind(&mut c,vec![3],Some(1),None,Some("bird")).is_err());
         let (owner,json):(Option<i64>,String)=c.query_row("SELECT pet_id,features FROM pet_detection WHERE id=3",[],|r|Ok((r.get(0)?,r.get(1)?))).unwrap();
         assert_eq!(owner,None);assert_eq!(serde_json::from_str::<serde_json::Value>(&json).unwrap()["kind"],"cat");
@@ -224,7 +225,48 @@ mod tests {
     fn db()->Connection {let mut c=Connection::open_in_memory().unwrap();crate::database::initialize(&mut c).unwrap();c.execute_batch("INSERT INTO media(id,file_path,file_type,size_bytes) VALUES(1,'a','image',1),(2,'b','image',1);INSERT INTO person(id,name) VALUES(1,'가족'),(2,'친구');INSERT INTO detected_face(id,media_id,person_id,descriptor,thumbnail,confirmed) VALUES(1,1,1,'[]','a',1),(2,1,2,'[]','b',1),(3,2,1,'[]','c',0);INSERT INTO pet(id,name) VALUES(1,'보리'),(2,'콩');INSERT INTO pet_media VALUES(1,1),(2,1);INSERT INTO pet_scan(media_id,engine_version,source_key) VALUES(1,'test','test');INSERT INTO pet_detection(id,media_id,object_index,features,pet_id) VALUES(1,1,0,'{}',1),(2,1,1,'{}',2),(3,1,2,'{}',NULL);").unwrap();c}
     #[test] fn manual_pet_photo_remains_assignable_as_unknown(){let mut c=db();c.execute("INSERT INTO pet_media VALUES(1,2)",[]).unwrap();edit_links(&mut c,"pet",1,vec![2],"unknown",None,None).unwrap();assert_eq!(c.query_row("SELECT media_id FROM unidentified_pet_photo",[],|r|r.get::<_,i64>(0)).unwrap(),2);let id=assign_detections(&mut c,vec![-2],None,Some("새 반려동물".into())).unwrap();assert_eq!(c.query_row("SELECT COUNT(*) FROM pet_media WHERE pet_id=?1 AND media_id=2",[id],|r|r.get::<_,i64>(0)).unwrap(),1);assert_eq!(c.query_row("SELECT COUNT(*) FROM unidentified_pet_photo",[],|r|r.get::<_,i64>(0)).unwrap(),0);}
     #[test] fn registration_removal_is_atomic_and_keeps_originals(){let mut c=db();assert!(remove_registrations(&mut c,"pet",vec![1,999]).is_err());assert_eq!(c.query_row("SELECT COUNT(*) FROM pet",[],|r|r.get::<_,i64>(0)).unwrap(),2);remove_registrations(&mut c,"person",vec![1]).unwrap();assert_eq!(c.query_row("SELECT name FROM person WHERE id=1",[],|r|r.get::<_,String>(0)).unwrap(),"");assert_eq!(c.query_row("SELECT confirmed FROM detected_face WHERE id=2",[],|r|r.get::<_,bool>(0)).unwrap(),true);assert_eq!(c.query_row("SELECT COUNT(*) FROM media",[],|r|r.get::<_,i64>(0)).unwrap(),2);}
-    #[test] fn incompatible_pet_kinds_cannot_be_combined(){let mut c=db();c.execute("UPDATE pet_detection SET features='{\"kind\":\"cat\"}' WHERE id=3",[]).unwrap();c.execute("UPDATE pet_detection SET features='{\"kind\":\"dog\"}' WHERE id=1",[]).unwrap();assert!(assign_detections(&mut c,vec![3],Some(1),None).is_err());assert_eq!(c.query_row("SELECT pet_id FROM pet_detection WHERE id=3",[],|r|r.get::<_,Option<i64>>(0)).unwrap(),None);}
+    #[test] fn manual_assignment_overrides_detector_kind_in_both_directions(){
+        for (detected,target_kind) in [("cat","dog"),("dog","cat")] {
+            let mut c=db();species_fixture(&c);
+            c.execute("UPDATE pet_detection SET features=json_set(features,'$.kind',?1) WHERE id=3",[detected]).unwrap();
+            c.execute("UPDATE pet_detection SET features=json_set(features,'$.kind',?1) WHERE id=1",[target_kind]).unwrap();
+            let before:String=c.query_row("SELECT features FROM pet_detection WHERE id=3",[],|r|r.get(0)).unwrap();
+            assert_eq!(assign_detections(&mut c,vec![3],Some(1),None).unwrap(),1);
+            assert_eq!(c.query_row("SELECT pet_id FROM pet_detection WHERE id=3",[],|r|r.get::<_,i64>(0)).unwrap(),1);
+            assert_eq!(c.query_row("SELECT features FROM pet_detection WHERE id=3",[],|r|r.get::<_,String>(0)).unwrap(),before);
+            assert_eq!(c.query_row("SELECT pet_id FROM pet_detection WHERE id=2",[],|r|r.get::<_,i64>(0)).unwrap(),2);
+            assert_eq!(c.query_row("SELECT COUNT(*) FROM pet_media WHERE media_id=1",[],|r|r.get::<_,i64>(0)).unwrap(),2);
+            assert_eq!(c.query_row("SELECT COUNT(*) FROM media",[],|r|r.get::<_,i64>(0)).unwrap(),2);
+        }
+    }
+    #[test] fn mixed_detection_batch_can_name_new_or_existing_pet(){
+        for target in [None,Some(1)] {
+            let mut c=db();species_fixture(&c);
+            c.execute("INSERT INTO pet_detection(id,media_id,object_index,features) SELECT 4,1,3,features FROM pet_detection WHERE id=1",[]).unwrap();
+            let dest=assign_detections(&mut c,vec![3,4],target,target.is_none().then(||"새 친구".into())).unwrap();
+            assert_eq!(c.query_row("SELECT COUNT(*) FROM pet_detection WHERE id IN (3,4) AND pet_id=?1",[dest],|r|r.get::<_,i64>(0)).unwrap(),2);
+            assert_eq!(c.query_row("SELECT json_extract(features,'$.kind') FROM pet_detection WHERE id=3",[],|r|r.get::<_,String>(0)).unwrap(),"cat");
+            assert_eq!(c.query_row("SELECT json_extract(features,'$.kind') FROM pet_detection WHERE id=4",[],|r|r.get::<_,String>(0)).unwrap(),"dog");
+            assert_eq!(c.query_row("SELECT COUNT(*) FROM pet_media WHERE pet_id=?1 AND media_id=1",[dest],|r|r.get::<_,i64>(0)).unwrap(),1);
+            assert_eq!(c.query_row("SELECT pet_id FROM pet_detection WHERE id=2",[],|r|r.get::<_,i64>(0)).unwrap(),2);
+            assert_eq!(c.query_row("SELECT COUNT(*) FROM media",[],|r|r.get::<_,i64>(0)).unwrap(),2);
+        }
+    }
+    #[test] fn explicit_kind_choice_overrides_conflicting_destination_history(){
+        for kind in ["dog","cat"] {
+            let mut c=db();species_fixture(&c);
+            let history=if kind=="dog" {"cat"} else {"dog"};
+            c.execute("UPDATE pet_detection SET features=json_set(features,'$.kind',?1) WHERE id=1",[history]).unwrap();
+            assign_detections_with_kind(&mut c,vec![3],Some(1),None,Some(kind)).unwrap();
+            let (owner,json):(i64,String)=c.query_row("SELECT pet_id,features FROM pet_detection WHERE id=3",[],|r|Ok((r.get(0)?,r.get(1)?))).unwrap();
+            let features:serde_json::Value=serde_json::from_str(&json).unwrap();
+            assert_eq!(owner,1);assert_eq!(features["kind"],kind);
+            if kind=="dog" {assert_eq!(features["detectedKind"],"cat");}
+            else {assert_eq!(features["detectedKind"],serde_json::Value::Null);}
+            assert_eq!(c.query_row("SELECT json_extract(features,'$.kind') FROM pet_detection WHERE id=1",[],|r|r.get::<_,String>(0)).unwrap(),history);
+            assert_eq!(c.query_row("SELECT pet_id FROM pet_detection WHERE id=2",[],|r|r.get::<_,i64>(0)).unwrap(),2);
+        }
+    }
     #[test] fn named_face_batch_is_atomic_and_preserves_other_face(){let mut c=db();assert!(assign_faces(&mut c,vec![1,999],None,Some("새 이름".into())).is_err());assert_eq!(c.query_row("SELECT COUNT(*) FROM person",[],|r|r.get::<_,i64>(0)).unwrap(),2);let id=assign_faces(&mut c,vec![1,3],None,Some("새 이름".into())).unwrap();assert_eq!(c.query_row("SELECT person_id FROM detected_face WHERE id=2",[],|r|r.get::<_,i64>(0)).unwrap(),2);assert_eq!(c.query_row("SELECT COUNT(*) FROM detected_face WHERE person_id=?1",[id],|r|r.get::<_,i64>(0)).unwrap(),2);}
     #[test] fn photo_edits_only_change_source_entity_and_rollback(){let mut c=db();assert!(edit_links(&mut c,"pet",1,vec![1,999],"move",Some(2),None).is_err());assert_eq!(c.query_row("SELECT COUNT(*) FROM pet_media WHERE pet_id=1",[],|r|r.get::<_,i64>(0)).unwrap(),1);edit_links(&mut c,"person",1,vec![1],"unknown",None,None).unwrap();assert_eq!(c.query_row("SELECT person_id FROM detected_face WHERE id=2",[],|r|r.get::<_,i64>(0)).unwrap(),2);edit_links(&mut c,"pet",1,vec![1],"unknown",None,None).unwrap();assert_eq!(c.query_row("SELECT pet_id FROM pet_detection WHERE id=2",[],|r|r.get::<_,i64>(0)).unwrap(),2);assert_eq!(c.query_row("SELECT COUNT(*) FROM media",[],|r|r.get::<_,i64>(0)).unwrap(),2);}
     #[test] fn unknown_pet_assignment_preserves_siblings_and_rejects_stale_selection(){let mut c=db();assert!(assign_detections(&mut c,vec![3,999],None,Some("새 반려동물".into())).is_err());assert_eq!(c.query_row("SELECT COUNT(*) FROM pet",[],|r|r.get::<_,i64>(0)).unwrap(),2);let id=assign_detections(&mut c,vec![3],None,Some("새 반려동물".into())).unwrap();assert_eq!(c.query_row("SELECT pet_id FROM pet_detection WHERE id=2",[],|r|r.get::<_,i64>(0)).unwrap(),2);assert_eq!(c.query_row("SELECT pet_id FROM pet_detection WHERE id=3",[],|r|r.get::<_,i64>(0)).unwrap(),id);}

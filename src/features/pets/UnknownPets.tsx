@@ -56,7 +56,7 @@ export function UnknownPets({ photos, pets, onSaved, selecting, onOpen }: { sele
       window.dispatchEvent(new Event('gamjassak-pet-results'));
     }}>{busy=>selection.some(id=>id>0) && <>
       <label className="entityEditField">인식된 종류 바로잡기<select aria-label="인식된 종류 바로잡기" data-help="pet-assignment-kind" disabled={busy} value={kindCorrection} onChange={event=>setKindCorrection(event.target.value as PetKind | '')}><option value="">감지된 종류 유지</option><option value="dog">강아지로 수정</option><option value="cat">고양이로 수정</option></select></label>
-      <p className="entitySelectionHint">잘못 분류된 경우 선택한 인식 결과의 종류만 수정합니다. 강아지와 고양이는 따로 선택해 주세요. 기존 등록의 종류가 잘못됐다면 해당 사진의 ‘인식 결과 확인·수정’에서 바꿀 수 있습니다.</p>
+      <p className="entitySelectionHint">인식된 종류와 관계없이 선택한 반려동물로 연결합니다. 종류를 바로잡으면 선택한 인식 결과에만 적용됩니다.</p>
     </>}</EntityAssignmentDialog>}
   </section>;
 }

@@ -3,9 +3,9 @@ import { expect, test, type Page } from '@playwright/test';
 async function prepare(page: Page) {
   await page.route('**/pet-controls.jpg', route => route.fulfill({ path: 'tests/fixtures/pet-dog.jpg', contentType: 'image/jpeg' }));
   await page.addInitScript(() => {
-    const pets = [{ id: 1, name: '써니', media_ids: [1], cover_media_id: 1 }];
+    const pets: { id: number; name: string; media_ids: number[]; cover_media_id: number | null }[] = [{ id: 1, name: '써니', media_ids: [1], cover_media_id: 1 }];
     const calls: { command: string; args: any }[] = [];
-    const detections = [{ id: 2, media_id: 2, kind: 'cat', pet_id: null }, { id: 3, media_id: 3, kind: 'dog', pet_id: null }];
+    const detections = [{ id: 2, media_id: 2, kind: 'cat', pet_id: null as number | null }, { id: 3, media_id: 3, kind: 'dog', pet_id: null as number | null }];
     Object.assign(window, { petControls: { calls } });
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       convertFileSrc: () => '/pet-controls.jpg',
@@ -19,8 +19,16 @@ async function prepare(page: Page) {
         if (command === 'list_pet_jobs') return { jobs: [], pending: 0, paused: 0, failed: 0 };
         if (command === 'list_unknown_pet_items') return detections.filter(row => row.pet_id === null).map(row => ({ ...row, box_: [.1, .1, .8, .8] }));
         if (command === 'assign_pet_detections') {
-          if (!args.kind) throw '개와 고양이를 같은 반려동물로 연결할 수 없습니다.';
-          return 1;
+          if (localStorage.getItem('pet-assignment-fail')) throw '저장 실패';
+          const target = args.target ?? 2;
+          if (!args.target) pets.push({ id: target, name: args.name, media_ids: [], cover_media_id: null });
+          const pet = pets.find(row => row.id === target)!;
+          for (const row of detections.filter(row => args.ids.includes(row.id))) {
+            row.pet_id = target;
+            if (args.kind) row.kind = args.kind;
+            if (!pet.media_ids.includes(row.media_id)) pet.media_ids.push(row.media_id);
+          }
+          return target;
         }
         return [];
       },
@@ -64,23 +72,50 @@ test('registered-reference actions replace independent detection and align on mo
   await expect.poll(() => page.evaluate(() => (window as any).petControls.calls.filter((call: any) => call.command === 'enqueue_pet_jobs').map((call: any) => call.args))).toEqual([{ jobs: [{ mediaId: 1, petId: 1, view: 'unknown', refresh: true }] }]);
 });
 
-test('mixed-kind naming keeps selection and requires an explicit species correction', async ({ page }) => {
+async function openMixedSelection(page: Page) {
   await prepare(page);
   await page.getByRole('button', { name: '미확인 반려동물', exact: true }).click();
   await page.locator('.petsView .entityHeader').getByRole('button', { name: '선택', exact: true }).click();
   await page.getByRole('button', { name: '현재 페이지 전체 선택', exact: true }).click();
   await page.getByRole('button', { name: '이름 지정', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: '이름 지정', exact: true });
+  return page.getByRole('dialog', { name: '이름 지정', exact: true });
+}
+
+for (const mode of ['existing', 'new'] as const) {
+  for (const kind of ['', 'dog', 'cat']) {
+    test(`mixed detections can be named: ${mode}, kind=${kind || 'unchanged'}`, async ({ page }) => {
+      const dialog = await openMixedSelection(page);
+      if (mode === 'existing') await dialog.getByLabel('반려동물 선택', { exact: true }).selectOption('1');
+      else {
+        await dialog.getByRole('button', { name: '새 반려동물', exact: true }).click();
+        await dialog.getByLabel('새 반려동물 이름', { exact: true }).fill('새 친구');
+      }
+      await dialog.getByLabel('인식된 종류 바로잡기', { exact: true }).selectOption(kind);
+      if (mode === 'existing' && kind === 'dog') await page.screenshot({ path: `preview-results/pet-review-manual-assignment-dialog-${test.info().project.name}.png` });
+      await dialog.getByRole('button', { name: '이름 지정', exact: true }).click();
+      await expect(dialog).toBeHidden();
+      await expect(page.getByText('미확인 반려동물이 없습니다.', { exact: false })).toBeVisible();
+      const args = await page.evaluate(() => (window as any).petControls.calls.filter((call: any) => call.command === 'assign_pet_detections').map((call: any) => call.args));
+      expect(args).toEqual([{ ids: [2, 3], target: mode === 'existing' ? 1 : null, name: mode === 'new' ? '새 친구' : null, kind: kind || null }]);
+      if (mode === 'existing' && kind === 'dog') await page.screenshot({ path: `preview-results/pet-review-manual-assignment-saved-${test.info().project.name}.png` });
+    });
+  }
+}
+
+test('failed manual assignment retains the target, kind and selection for retry', async ({ page }) => {
+  const dialog = await openMixedSelection(page);
   await dialog.getByLabel('반려동물 선택', { exact: true }).selectOption('1');
+  await dialog.getByLabel('인식된 종류 바로잡기', { exact: true }).selectOption('dog');
+  await page.evaluate(() => localStorage.setItem('pet-assignment-fail', '1'));
   await dialog.getByRole('button', { name: '이름 지정', exact: true }).click();
-  await expect(dialog.getByRole('alert')).toContainText('개와 고양이');
+  await expect(dialog.getByRole('alert')).toContainText('저장 실패');
   await expect(dialog.getByLabel('반려동물 선택', { exact: true })).toHaveValue('1');
-  const kind = dialog.getByLabel('인식된 종류 바로잡기', { exact: true });
-  await expect(kind).toHaveValue('');
-  await kind.selectOption('dog');
-  await page.screenshot({ path: `preview-results/pet-kind-recovery-${test.info().project.name}.png` });
+  await expect(dialog.getByLabel('인식된 종류 바로잡기', { exact: true })).toHaveValue('dog');
+  await page.screenshot({ path: `preview-results/pet-review-manual-assignment-retry-${test.info().project.name}.png` });
+  await page.evaluate(() => localStorage.removeItem('pet-assignment-fail'));
   await dialog.getByRole('button', { name: '이름 지정', exact: true }).click();
   await expect(dialog).toBeHidden();
+  await expect(page.getByText('미확인 반려동물이 없습니다.', { exact: false })).toBeVisible();
   const args = await page.evaluate(() => (window as any).petControls.calls.filter((call: any) => call.command === 'assign_pet_detections').map((call: any) => call.args));
-  expect(args).toEqual([{ ids: [2, 3], target: 1, name: null, kind: null }, { ids: [2, 3], target: 1, name: null, kind: 'dog' }]);
+  expect(args).toEqual([{ ids: [2, 3], target: 1, name: null, kind: 'dog' }, { ids: [2, 3], target: 1, name: null, kind: 'dog' }]);
 });
