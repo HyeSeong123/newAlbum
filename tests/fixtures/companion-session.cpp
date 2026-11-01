@@ -1,4 +1,5 @@
 #include "model_session.h"
+#include "gpu_policy.h"
 #include <cassert>
 #include <memory>
 #include <stdexcept>
@@ -42,6 +43,13 @@ int main() {
     assert(reusablePromptPrefix(std::vector<int>{1,2,3,4}, std::vector<int>{1,2}) == 1);
     assert(reusablePromptPrefix(std::vector<int>{1,2,3}, std::vector<int>{7,2,3}) == 0);
     assert(reusablePromptPrefix(std::vector<int>{1}, std::vector<int>{}) == 0);
+    // GPU is optional: no Vulkan or low memory always keeps safe CPU.
+    assert(companionGpuLayers(false, true, 4 * 1024LL * 1024 * 1024, false) == 0);
+    assert(companionGpuLayers(true, false, 4 * 1024LL * 1024 * 1024, false) == 0);
+    assert(companionGpuLayers(true, true, 1024LL * 1024 * 1024, false) == 0);
+    assert(companionGpuLayers(true, true, 1536LL * 1024 * 1024, false) == 4);
+    assert(companionGpuLayers(true, true, 2048LL * 1024 * 1024, false) == 8);
+    assert(companionGpuLayers(true, true, 4096LL * 1024 * 1024, true) == 0);
     session.release();
     assert(freed == 4);
 }

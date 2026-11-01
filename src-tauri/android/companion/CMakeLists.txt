@@ -17,6 +17,27 @@ set(GGML_NATIVE OFF CACHE BOOL "" FORCE)
 set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
 set(GGML_LLAMAFILE OFF CACHE BOOL "" FORCE)
 set(GGML_BACKEND_DL OFF CACHE BOOL "" FORCE)
+# Vulkan is built only for ARM64 phones. The x86_64 Android emulator and
+# desktop C++ fixtures stay CPU-only. Do not link host libvulkan.so into an APK.
+option(GAMJASSAK_ENABLE_VULKAN "Enable ARM64 Android Vulkan offload" ON)
+set(GGML_VULKAN OFF CACHE BOOL "" FORCE)
+if(ANDROID AND ANDROID_ABI STREQUAL "arm64-v8a" AND GAMJASSAK_ENABLE_VULKAN)
+    # llama.cpp's shader compiler runs on the Linux host, while the Vulkan
+    # loader is a library provided by the Android NDK / Android OS.
+    find_program(GAMJASSAK_GLSLC glslc NO_CMAKE_FIND_ROOT_PATH)
+    find_path(GAMJASSAK_VULKAN_HEADERS vulkan/vulkan.hpp NO_CMAKE_FIND_ROOT_PATH)
+    find_library(GAMJASSAK_ANDROID_VULKAN_LIBRARY vulkan)
+    if(NOT GAMJASSAK_GLSLC OR NOT GAMJASSAK_VULKAN_HEADERS OR NOT GAMJASSAK_ANDROID_VULKAN_LIBRARY)
+        message(FATAL_ERROR "Android Vulkan requires host glslc/Vulkan C++ headers and Android NDK libvulkan. Install glslc, libvulkan-dev, spirv-headers on the builder.")
+    endif()
+    set(Vulkan_GLSLC_EXECUTABLE "${GAMJASSAK_GLSLC}" CACHE FILEPATH "" FORCE)
+    set(Vulkan_INCLUDE_DIR "${GAMJASSAK_VULKAN_HEADERS}" CACHE PATH "" FORCE)
+    set(Vulkan_LIBRARY "${GAMJASSAK_ANDROID_VULKAN_LIBRARY}" CACHE FILEPATH "" FORCE)
+    set(GGML_VULKAN ON CACHE BOOL "" FORCE)
+    message(STATUS "Gamjassak Android GPU: Vulkan enabled (with CPU fallback)")
+else()
+    message(STATUS "Gamjassak GPU: CPU-only target")
+endif()
 include(FetchContent)
 # Fixed source commit. Override FETCHCONTENT_SOURCE_DIR_LLAMA_CPP only for local verification.
 FetchContent_Declare(llama_cpp
@@ -25,6 +46,9 @@ FetchContent_Declare(llama_cpp
 FetchContent_MakeAvailable(llama_cpp)
 add_library(gamjassak_companion SHARED companion.cpp)
 target_link_libraries(gamjassak_companion PRIVATE llama)
+if(GGML_VULKAN)
+    target_compile_definitions(gamjassak_companion PRIVATE GAMJASSAK_VULKAN_ENABLED=1)
+endif()
 if(ANDROID)
     target_link_options(gamjassak_companion PRIVATE "-Wl,-z,max-page-size=16384")
 else()

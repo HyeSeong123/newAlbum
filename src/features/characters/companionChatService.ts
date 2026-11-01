@@ -24,6 +24,7 @@ export type ChatModelStatus = {
   model?: "legacy" | "dialogue" | "missing"; upgradeAvailable?: boolean;
   lastOutcome?: "none" | "running" | "success" | "cancelled" | "error"; lastError?: string; lastAt?: number;
   runtime?: { resident?: boolean; reused?: boolean; loadCount?: number; releaseCount?: number; stage?: string; gomiLoraApplied?: boolean;
+    gpuAvailable?: boolean; gpuAttempted?: boolean; gpuUsed?: boolean; gpuLayers?: number; gpuFallback?: boolean;
     loadMs?: number; contextMs?: number; promptMs?: number; promptTokens?: number; cachedPromptTokens?: number; contextReused?: boolean;
     firstTokenMs?: number; totalMs?: number; generationMs?: number;
     rssBeforeKiB?: number; rssLoadedKiB?: number; rssPeakKiB?: number; rssAfterReleaseKiB?: number };

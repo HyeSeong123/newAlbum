@@ -42,6 +42,10 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
     private val memoryPressure = AtomicBoolean(false)
     private val generation = AtomicLong(0)
     @Volatile private var nativeLoaded = false
+    // Disable further GPU attempts for this process after a failed GPU run,
+    // avoiding repeated driver faults and expensive initialization retries.
+    @Volatile private var gpuDisabledForSession = false
+    @Volatile private var lastGpuFallback = false
     @Volatile private var phase = "missing"
     @Volatile private var downloaded = 0L
     @Volatile private var notice = "처음 한 번 AI를 준비하면 인터넷 없이 대화할 수 있어요."
@@ -57,12 +61,15 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
     private val root get() = File(appContext.filesDir, DOWNLOAD.directory)
     private val model get() = File(root, DOWNLOAD.filename)
     private val prefs get() = appContext.getSharedPreferences(DOWNLOAD.directory, Context.MODE_PRIVATE)
-    private external fun nativeGenerate(path: String, prompt: String, adapterPath: String, requestId: Long): ByteArray
+    private external fun nativeGenerate(path: String, prompt: String, adapterPath: String,
+                                        requestId: Long, availableMemoryBytes: Long, cpuOnly: Boolean): ByteArray
     private external fun nativeCancel(requestId: Long)
     private external fun nativeRelease()
     private external fun nativeStats(): String
 
-    private fun stats(): JSONObject = if (nativeLoaded) JSONObject(nativeStats()) else JSONObject().put("resident", false).put("loadCount", 0).put("stage", "idle")
+    private fun stats(): JSONObject = (if (nativeLoaded) JSONObject(nativeStats())
+        else JSONObject().put("resident", false).put("loadCount", 0).put("stage", "idle"))
+        .put("gpuFallback", lastGpuFallback)
     private fun cancelGeneration() { cancelled.set(true); if (nativeLoaded) nativeCancel(generation.get()) }
     private fun releaseForPressure(memory: Boolean = false) {
         if (memory) memoryPressure.set(true)
@@ -184,7 +191,8 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
         if (!supported() || activeModel() == null) { invoke.reject("먼저 AI를 다운로드해 주세요."); return }
         if (prompt.isBlank() || prompt.length > 12000) { invoke.reject("이야기가 너무 길어요. 조금 짧게 적어 주세요."); return }
         if (!working.compareAndSet(false, true)) { invoke.reject("진행 중인 작업이 끝난 뒤 다시 시도해 주세요."); return }
-        cancelled.set(false); memoryPressure.set(false); phase = "generating"; notice = "친구가 생각하고 있어요."
+        cancelled.set(false); memoryPressure.set(false); lastGpuFallback = false
+        phase = "generating"; notice = "친구가 생각하고 있어요."
         activeSession = args.sessionId
         lastOutcome = "running"; lastError = ""; lastAt = System.currentTimeMillis()
         val request = NEXT_REQUEST.incrementAndGet()
@@ -205,7 +213,29 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
                     GomiAdapter.install(appContext.filesDir) { appContext.assets.open(GomiAdapter.ASSET) }.absolutePath
                 } else ""
                 check(!cancelled.get()) { "대답을 멈췄어요." }
-                reply = nativeGenerate(selectedFile.absolutePath, selected.preparePrompt(prompt), adapterPath, request).toString(Charsets.UTF_8)
+                val preparedPrompt = selected.preparePrompt(prompt)
+                try {
+                    reply = nativeGenerate(selectedFile.absolutePath, preparedPrompt, adapterPath, request,
+                        info.availMem, gpuDisabledForSession).toString(Charsets.UTF_8)
+                } catch (gpuFailure: Throwable) {
+                    // Retry only if native actually attempted GPU. On devices
+                    // without Vulkan the first run is already CPU-only.
+                    val attemptedGpu = nativeLoaded && try { JSONObject(nativeStats()).optBoolean("gpuAttempted", false) }
+                        catch (_: Throwable) { false }
+                    if (!attemptedGpu || cancelled.get() || memoryPressure.get() ||
+                        gpuFailure is UnsatisfiedLinkError) throw gpuFailure
+                    gpuDisabledForSession = true
+                    lastGpuFallback = true
+                    nativeRelease() // free GPU buffers/context before CPU allocates weights
+                    val availableAgain = ActivityManager.MemoryInfo()
+                    (appContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(availableAgain)
+                    check(selected.canGenerate(availableAgain.availMem, availableAgain.lowMemory, availableAgain.threshold)) {
+                        "AI_MEMORY: GPU 오류 후 CPU로 전환할 메모리가 부족해요."
+                    }
+                    check(!cancelled.get()) { "대답을 멈췄어요." }
+                    reply = nativeGenerate(selectedFile.absolutePath, preparedPrompt, adapterPath, request,
+                        availableAgain.availMem, true).toString(Charsets.UTF_8)
+                }
                 check(!cancelled.get()) { "대답을 멈췄어요." }
             } catch (error: Throwable) {
                 // JNI throws bounded, user-facing errors; never log the prompt or conversation.

@@ -1,6 +1,7 @@
 #include <jni.h>
 #include "llama.h"
 #include "model_session.h"
+#include "gpu_policy.h"
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -18,6 +19,20 @@ std::atomic<int64_t> cancelled_through{0};
 std::mutex inference_mutex;
 std::once_flag backend_once;
 CompanionModelSession<llama_model> session(llama_model_free);
+int resident_gpu_layers = 0;
+
+// A registered Vulkan device is required; compiling Vulkan alone does not
+// imply that an Android driver supports it. No GPU probing on emulator/desktop.
+bool hasVulkanComputeDevice() {
+#ifdef GAMJASSAK_VULKAN_ENABLED
+    for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
+        auto *dev = ggml_backend_dev_get(i);
+        auto type = ggml_backend_dev_type(dev);
+        if (type == GGML_BACKEND_DEVICE_TYPE_GPU || type == GGML_BACKEND_DEVICE_TYPE_IGPU) return true;
+    }
+#endif
+    return false;
+}
 // Keep the context/KV of the last verified request until Home/model release.
 // Both the LoRA context and KV prefix are confined to the JNI inference mutex.
 struct CachedContext {
@@ -39,7 +54,8 @@ long rss_kib() {
 }
 struct Metrics {
     bool resident = false, reused = false, gomi_lora = false, context_reused = false;
-    int loads = 0, releases = 0, prompt_tokens = 0, cached_tokens = 0;
+    bool gpu_available = false, gpu_attempted = false, gpu_used = false;
+    int loads = 0, releases = 0, prompt_tokens = 0, cached_tokens = 0, gpu_layers = 0;
     int64_t load = 0, context = 0, prompt = 0, first = -1, total = 0, generation = 0;
     long before = 0, loaded = 0, peak = 0, released = 0;
     std::string stage = "idle";
@@ -66,6 +82,7 @@ void release_model() {
     const bool resident = session.resident();
     cached.clear(); // context must die before the model and its mmap-backed weights
     session.release();
+    resident_gpu_layers = 0;
     std::lock_guard<std::mutex> lock(metrics_mutex);
     metrics.resident = false;
     if (resident) ++metrics.releases;
@@ -118,11 +135,16 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeStats(JNIEnv *env, jobj
         ",\"generationMs\":" + std::to_string(metrics.generation) + ",\"rssBeforeKiB\":" + std::to_string(metrics.before) +
         ",\"rssLoadedKiB\":" + std::to_string(metrics.loaded) + ",\"rssPeakKiB\":" + std::to_string(metrics.peak) +
         ",\"rssAfterReleaseKiB\":" + std::to_string(metrics.released) +
+        ",\"gpuAvailable\":" + (metrics.gpu_available ? "true" : "false") +
+        ",\"gpuAttempted\":" + (metrics.gpu_attempted ? "true" : "false") +
+        ",\"gpuUsed\":" + (metrics.gpu_used ? "true" : "false") +
+        ",\"gpuLayers\":" + std::to_string(metrics.gpu_layers) +
         ",\"gomiLoraApplied\":" + (metrics.gomi_lora ? "true" : "false") + "}";
     return env->NewStringUTF(json.c_str());
 }
 extern "C" JNIEXPORT jbyteArray JNICALL
-Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, jobject, jstring path, jstring input, jstring adapter_path, jlong request) {
+Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, jobject, jstring path, jstring input, jstring adapter_path,
+                                                                     jlong request, jlong available_memory_bytes, jboolean force_cpu) {
     bool context_touched = false;
     try {
         std::unique_lock<std::mutex> lock(inference_mutex, std::try_to_lock);
@@ -136,18 +158,34 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, j
             metrics.reused = session.resident(); metrics.load = metrics.context = metrics.total = metrics.generation = metrics.prompt = 0;
             metrics.first = -1; metrics.before = metrics.peak = rss_kib(); metrics.loaded = 0;
             metrics.gomi_lora = metrics.context_reused = false;
+            metrics.gpu_available = metrics.gpu_attempted = metrics.gpu_used = false; metrics.gpu_layers = 0;
             metrics.prompt_tokens = metrics.cached_tokens = 0;
         }
         const std::string file = utf8(env, path), prompt = utf8(env, input), adapter_file = utf8(env, adapter_path);
         if (prompt.empty() || prompt.size() > 48000) throw std::runtime_error("이야기가 너무 길어요.");
         std::call_once(backend_once, [] { llama_backend_init(); });
-        auto mp = llama_model_default_params(); mp.n_gpu_layers = 0;
+        const bool gpu_available = hasVulkanComputeDevice();
+#ifdef GAMJASSAK_VULKAN_ENABLED
+        constexpr bool vulkan_compiled = true;
+#else
+        constexpr bool vulkan_compiled = false;
+#endif
+        const int requested_gpu_layers = companionGpuLayers(vulkan_compiled, gpu_available,
+            std::max<jlong>(available_memory_bytes, 0), force_cpu == JNI_TRUE);
+        {
+            std::lock_guard<std::mutex> guard(metrics_mutex);
+            metrics.gpu_available = gpu_available;
+            metrics.gpu_attempted = requested_gpu_layers > 0;
+            metrics.gpu_layers = requested_gpu_layers;
+        }
+        auto mp = llama_model_default_params(); mp.n_gpu_layers = requested_gpu_layers;
         // CPU repacking can duplicate ~1.6GiB of this 4B model. Keep mmap-backed weights
         // instead of a second resident copy on an 8GB phone.
         mp.use_extra_bufts = false;
         mp.progress_callback = load_progress; mp.progress_callback_user_data = &run;
         // A context is tied to both exact weight and LoRA paths. Invalidate it
         // before model switch; never retain Gomi's adapter for another friend.
+        if (session.resident() && resident_gpu_layers != requested_gpu_layers) release_model();
         if (cached.model_file != file || cached.adapter_file != adapter_file) cached.clear();
         stage("loading");
         bool loaded = false;
@@ -166,7 +204,9 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, j
             metrics.resident = true; metrics.reused = !loaded;
             metrics.load = loaded ? now_ms() - started : 0; if (loaded) ++metrics.loads;
             metrics.loaded = rss_kib(); metrics.peak = std::max(metrics.peak, metrics.loaded);
+            metrics.gpu_used = requested_gpu_layers > 0;
         }
+        if (loaded) resident_gpu_layers = requested_gpu_layers;
         if (abort_run(&run)) throw std::runtime_error(abort_message(run));
         // Loading has its own budget. Only context/prompt/decoding consume this one.
         run.loading = false; const auto generating = now_ms(); timing.generation = generating; run.deadline.beginGeneration(generating);

@@ -77,6 +77,11 @@ export function CompanionAiSetup({ definition, owned, onClose }: {
             <dl className="companionAiMetrics">
               <dt>홈에서 모델 유지</dt><dd>{runtime.resident ? "유지 중" : "해제됨"}</dd>
               <dt>최근 실행</dt><dd>{runtime.stage === "idle" ? "실행 전" : runtime.reused ? "모델 재사용" : "모델 로딩 요청"}</dd>
+              {runtime.gpuUsed != null && <><dt>최근 AI 연산 장치</dt>
+                <dd data-companion-gpu-backend>{runtime.gpuFallback
+                  ? "CPU · GPU 오류로 자동 전환"
+                  : runtime.gpuUsed ? `GPU · Vulkan (${runtime.gpuLayers || 0}개 레이어 요청)`
+                  : runtime.gpuAvailable ? "CPU · 메모리 보호 또는 안전 모드" : "CPU · GPU 미지원"}</dd></>}
               <dt>모델 로딩</dt><dd>{seconds(runtime.loadMs)}</dd>
               <dt>대화 메모리 준비</dt><dd>{seconds(runtime.contextMs)}</dd>
               {runtime.contextReused != null && <><dt>대화 메모리 재사용</dt><dd>{runtime.contextReused ? "재사용" : "새로 준비"}</dd></>}

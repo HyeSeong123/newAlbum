@@ -25,5 +25,14 @@ test('Android preview builds optimize inference kernels even when the APK varian
   const commands=JSON.parse(readFileSync(join(dir,'build','compile_commands.json'),'utf8'));
   assert.ok(commands.length>=2);
   for(const row of commands)assert.match(row.command,/(?:^|\s)-O[23](?:\s|$)/,row.file);
+  const cache=readFileSync(join(dir,'build','CMakeCache.txt'),'utf8');
+  assert.match(cache,/GGML_VULKAN:BOOL=OFF/, 'non-ARM64 Android fixture must not link Vulkan');
+  assert.match(cache,/GAMJASSAK_ENABLE_VULKAN:BOOL=ON/, 'ARM64 Vulkan stays opt-out');
+  // The same ARM64 build can explicitly disable Vulkan for rollback.
+  const cpu=spawnSync('cmake',['-S','src-tauri/android/companion','-B',join(dir,'arm64-cpu'),
+    '-DANDROID=ON','-DANDROID_ABI=arm64-v8a','-DGAMJASSAK_ENABLE_VULKAN=OFF',
+    `-DFETCHCONTENT_SOURCE_DIR_LLAMA_CPP=${vendor}`],{encoding:'utf8'});
+  assert.equal(cpu.status,0,cpu.stderr);
+  assert.match(readFileSync(join(dir,'arm64-cpu','CMakeCache.txt'),'utf8'),/GGML_VULKAN:BOOL=OFF/);
  }finally{rmSync(dir,{recursive:true,force:true});}
 });

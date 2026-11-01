@@ -85,7 +85,7 @@ export function configureCompanionGradle(text) {
   if (text.includes('// gamjassak companion JNI')) return text;
   if (!text.includes('android {')) throw new Error('Android Gradle 설정을 확인해 주세요.');
   return text.replace('android {', `android {
-    // gamjassak companion JNI: pinned llama.cpp, CPU only; base downloaded, Gomi adapter bundled.
+    // gamjassak companion JNI: pinned llama.cpp, ARM64 Vulkan with automatic CPU fallback; base downloaded, Gomi adapter bundled.
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/companion/CMakeLists.txt")

@@ -1,6 +1,6 @@
 import {test,expect} from '@playwright/test';
 
-async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:boolean;affection?:number;statusDelay?:number;interactionDelay?:number;error?:string;longReply?:boolean;echoFirst?:boolean;legacy?:boolean;controlledGeneration?:boolean;actionReplies?:boolean;adapterObserved?:boolean;mode?:'instant'|'generate'}={}) {
+async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:boolean;affection?:number;statusDelay?:number;interactionDelay?:number;error?:string;longReply?:boolean;echoFirst?:boolean;legacy?:boolean;controlledGeneration?:boolean;actionReplies?:boolean;adapterObserved?:boolean;mode?:'instant'|'generate';gpuRuntime?:{gpuAvailable:boolean;gpuUsed:boolean;gpuLayers:number;gpuFallback:boolean}}={}) {
   await page.addInitScript((settings:any)=>{
     Math.random=()=>settings.gomi?.55:.1;
     if(settings.gomi && settings.mode) localStorage.setItem('gamjassak:companion-response-mode:v1:gomi',settings.mode);
@@ -18,7 +18,9 @@ async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:b
       if(command==='chat_model_status'){
         if(settings.statusDelay)await new Promise(resolve=>setTimeout(resolve,settings.statusDelay));
         return {phase:downloading?'downloading':settings.ready===false?'missing':'ready',installed:settings.ready!==false,supported:true,total:100,downloaded:downloading?42:0,message:'AI를 한 번 준비해 주세요.',model:settings.legacy?'legacy':'dialogue',upgradeAvailable:Boolean(settings.legacy),
-          ...(settings.adapterObserved ? {runtime:{gomiLoraApplied:Boolean(settings.gomi&&!settings.legacy&&calls>0&&!state.error),stage:calls?'complete':'idle'},lastOutcome:calls?(state.error?'error':'success'):'none'} : {})};
+          ...(settings.gpuRuntime ? {runtime:{...settings.gpuRuntime,stage:calls?'complete':'idle',
+            gomiLoraApplied:Boolean(settings.gomi&&!settings.legacy&&calls>0&&!state.error)},lastOutcome:calls?(state.error?'error':'success'):'none'} :
+            settings.adapterObserved ? {runtime:{gomiLoraApplied:Boolean(settings.gomi&&!settings.legacy&&calls>0&&!state.error),stage:calls?'complete':'idle'},lastOutcome:calls?(state.error?'error':'success'):'none'} : {})};
       }
       if(command==='download_chat_model')downloading=true;
       if(command==='stop_chat_model'){downloading=false;state.stops++;}
@@ -37,6 +39,31 @@ async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:b
     }};
   },options);
 }
+
+test('Android AI settings distinguish Vulkan offload from safe CPU fallback without changing the dialogue flow',async({page})=>{
+  await page.setViewportSize({width:393,height:852});
+  await installAi(page,{gomi:true,gpuRuntime:{gpuAvailable:true,gpuUsed:true,gpuLayers:8,gpuFallback:false}});
+  await page.goto('/');
+  await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
+  await page.getByText('앱의 최근 실행 기록 보기').click();
+  await expect(page.locator('[data-companion-gpu-backend]')).toContainText('GPU · Vulkan (8개 레이어 요청)');
+  await expect(page.getByRole('dialog')).toContainText('친구를 터치하거나 함께하기 버튼');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.getByRole('dialog').screenshot({path:'preview-results/gomi-vulkan-393.png'});
+  await page.getByRole('button',{name:'친구 만나러 가기',exact:true}).click();
+  await page.locator('.homeMascot').click();
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
+});
+
+test('Android AI settings explain a failed GPU attempt as CPU fallback',async({page})=>{
+  await page.setViewportSize({width:320,height:700});
+  await installAi(page,{gomi:true,gpuRuntime:{gpuAvailable:true,gpuUsed:false,gpuLayers:0,gpuFallback:true}});
+  await page.goto('/');
+  await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
+  await page.getByText('앱의 최근 실행 기록 보기').click();
+  await expect(page.locator('[data-companion-gpu-backend]')).toHaveText('CPU · GPU 오류로 자동 전환');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
 
 test('an installed legacy AI stays available and its upgrade is explicit and cancellable',async({page})=>{
   await page.setViewportSize({width:320,height:700});await installAi(page,{legacy:true});await page.goto('/');
