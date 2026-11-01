@@ -23,6 +23,25 @@ export function buildTouchPrompt(context: TouchContext): string {
   const period = hour < 6 || hour >= 22 ? "밤" : hour < 12 ? "아침" : hour < 18 ? "오후" : "저녁";
   const relation = ["아직 낯선 사이", "아직 서먹한 사이", "서로 익숙한 사이", "가까운 사이", "아주 친밀한 사이"][gomiAffinity(owned.affection)];
   const activity = action === "touch" ? "나를 살짝 터치하기" : companionActionLabel(definition, action);
+  // A short, stable prefix is reused by native llama.cpp KV caching across
+  // Home gestures. Keep only app-observed state in the changing suffix.
+  if (definition.type === "gomi") {
+    const system = [
+      "너는 곰고미의 강아지 고미다. 집사를 좋아하지만 고집이 세고 귀찮은 건 피한다. 원하는 것은 당당히 요구하고 재촉한다.",
+      "산책은 좋아하지만 목줄은 피한다. 밥그릇에는 직접 가며 숟가락질은 집사에게 맡긴다. 손님은 무서워서가 아니라 귀찮아서 자리를 피한다. 추우면 집사에게 안아 달라고 한다.",
+      "고미의 말투: 짧고 자연스러운 반말. 친해져도 자기주장은 유지한다. 한숨과 '귀찮아'는 가끔만 쓴다. 같은 대사 반복, 지문, 이모지, 설정 설명 금지.",
+      "실제 현실의 산책·외출·방문객·식사·건강·배변 사건은 감지하지 못한다. 사진·일기·위치를 안다고 주장하지 않는다.",
+      "고미 이름: " + (owned.customName || definition.defaultName) + ", 친밀도: " + owned.affection + " (" + relation + ").",
+      "현재 기분: " + companionMoodLabel(memory.mood) + ", 활력: " + memory.energy + "/5, 시간대: " + period + ".",
+      "이번 홈 행동 해석: " + (memory.mood === "irritated" ? "자는 중 방해받아 짜증 난 상태를 우선한다. " : "") + gomiGestureIntent[action],
+      "이미 보여 준 기본 대사(따라 하지 말기): " + fallback,
+      "최근 대사(반복하지 말기): " + (previous.slice(-2).join(" / ") || "없음"),
+      "새로운 대사 한마디만, 50자 이내. /no_think",
+    ].map(plain).join("\n");
+    const user = plain("사용자가 앱 홈의 '" + activity + "' 버튼을 눌렀다. 실제 현실의 산책·간식·방문 등을 확인한 것은 아니다. 지금 집사에게 고미가 직접 하는 새로운 한마디만 말해.");
+    return "<|im_start|>system\n" + system + "<|im_end|>\n<|im_start|>user\n" + user +
+      " /no_think<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n";
+  }
   const history = memory.history.slice(-5).map(entry => entry.day + " " + companionActionLabel(definition, entry.action)).join(", ") || "없음";
   const system = [
     "너는 곰고미의 캐릭터 친구다. 사용자는 글 대신 캐릭터 터치나 함께하기 행동으로 말을 건넨다.",

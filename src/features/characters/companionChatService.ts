@@ -24,7 +24,8 @@ export type ChatModelStatus = {
   model?: "legacy" | "dialogue" | "missing"; upgradeAvailable?: boolean;
   lastOutcome?: "none" | "running" | "success" | "cancelled" | "error"; lastError?: string; lastAt?: number;
   runtime?: { resident?: boolean; reused?: boolean; loadCount?: number; releaseCount?: number; stage?: string; gomiLoraApplied?: boolean;
-    loadMs?: number; contextMs?: number; firstTokenMs?: number; totalMs?: number; generationMs?: number;
+    loadMs?: number; contextMs?: number; promptMs?: number; promptTokens?: number; cachedPromptTokens?: number; contextReused?: boolean;
+    firstTokenMs?: number; totalMs?: number; generationMs?: number;
     rssBeforeKiB?: number; rssLoadedKiB?: number; rssPeakKiB?: number; rssAfterReleaseKiB?: number };
 };
 const unsupported: ChatModelStatus = { phase: "unsupported", supported: false, installed: false, downloaded: 0, total: 0,

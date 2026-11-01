@@ -1,5 +1,8 @@
 #pragma once
 #include <cstdint>
+#include <cstddef>
+#include <algorithm>
+#include <vector>
 #include <memory>
 #include <string>
 
@@ -28,3 +31,15 @@ public:
     void beginGeneration(int64_t now) { deadline_ = now + 120000; }
     bool expired(int64_t now) const { return now >= deadline_; }
 };
+
+// A cached llama context keeps positions [0, n) of the previous prompt.
+// Always reevaluate the new prompt's final token to restore valid sampling logits.
+// This helper is independent of llama.cpp and tested using the native C++ fixture.
+template <class Token>
+int reusablePromptPrefix(const std::vector<Token> &before, const std::vector<Token> &after) {
+    if (after.empty()) return 0;
+    const std::size_t limit = std::min(before.size(), after.size() - 1);
+    std::size_t keep = 0;
+    while (keep < limit && before[keep] == after[keep]) ++keep;
+    return static_cast<int>(keep);
+}

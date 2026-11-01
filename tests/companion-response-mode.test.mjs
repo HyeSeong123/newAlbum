@@ -6,9 +6,9 @@ const content=readFileSync(new URL('../src/features/characters/companionResponse
 const code=ts.transpileModule(content,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
 const m=await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
 
-test('Gomi begins in immediate mode; existing other characters preserve live AI mode',()=>{
+test('Gomi defaults to real AI generation; explicit instant choice remains available',()=>{
   const store={getItem:()=>null,setItem:()=>{}};
-  assert.equal(m.readCompanionResponseMode('gomi',store),'instant');
+  assert.equal(m.readCompanionResponseMode('gomi',store),'generate');
   assert.equal(m.readCompanionResponseMode('potato',store),'generate');
   assert.equal(m.readCompanionResponseMode('sweet-potato',store),'generate');
 });

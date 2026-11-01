@@ -56,7 +56,7 @@ export function CompanionAiSetup({ definition, owned, onClose, onModeChange }: {
   const runtime = status?.runtime;
   const outcome = reaction?.message || "아직 AI 반응 결과가 없어요. 홈에서 친구를 터치해 주세요.";
   const gomiTrainingStatus = definition.id !== "gomi" || !ready ? undefined
-    : mode === "instant" ? "지금은 즉시 반응 모드예요. 고미 학습 모델은 실행하지 않아요."
+    : mode === "instant" ? "지금은 준비된 대사 모드예요. 고미 학습 모델은 실행하지 않아요."
     : status?.model !== "dialogue" ? "현재 1.7B에서는 고미 추가 학습이 적용되지 않아요. 4B 모델을 받아 주세요."
     : reaction?.phase === "complete" && reaction.source === "on-device" && runtime?.gomiLoraApplied
       ? "최근 고미의 AI 대사에 학습 모델 v4가 실제 적용됐어요."
@@ -78,13 +78,13 @@ export function CompanionAiSetup({ definition, owned, onClose, onModeChange }: {
         <Sparkles size={28} aria-hidden="true" /><h3>{downloading ? "다양한 반응을 준비하고 있어요" : ready ? "AI 모델이 설치되어 있어요" : "친구의 마음을 담은 한마디"}</h3>
         <fieldset className="companionResponseSwitch">
           <legend>대사 응답 속도</legend>
-          <button type="button" aria-pressed={mode === "instant"} onClick={() => chooseMode("instant")}>즉시 반응 · 추천</button>
-          <button type="button" aria-pressed={mode === "generate"} onClick={() => chooseMode("generate")}>AI 새 대사 생성 · 느림</button>
+          <button type="button" aria-pressed={mode === "instant"} onClick={() => chooseMode("instant")}>즉시 반응 · 준비된 대사</button>
+          <button type="button" aria-pressed={mode === "generate"} onClick={() => chooseMode("generate")}>AI 새 대사 생성</button>
         </fieldset>
         <p className="companionResponseDescription" data-response-mode={mode}>
           {mode === "instant"
             ? "버튼을 누르면 성격·기분·친밀도에 맞는 준비된 대사가 바로 나와요. AI 모델은 실행하지 않아 배터리와 메모리를 아껴요. 실시간 생성 대사는 아니에요."
-            : "설치한 모델로 매번 새 대사를 만들어요. 기본 대사는 바로 보이지만 AI 문장은 휴대폰에 따라 수십 초 이상 걸릴 수 있어요."}
+            : "캐릭터를 터치하면 설치한 모델로 매번 새 대사를 만들어요. 입력 재사용으로 속도를 줄이지만 휴대폰에 따라 수초에서 수십 초 이상 걸릴 수 있어요."}
         </p>
         {ready && <div className="companionAiOutcome">
           <strong>AI 모델</strong><p>{status.model === "dialogue" ? "Qwen3 4B" : "Qwen3 1.7B"} · 설치됨</p>
@@ -97,6 +97,11 @@ export function CompanionAiSetup({ definition, owned, onClose, onModeChange }: {
               <dt>최근 실행</dt><dd>{runtime.stage === "idle" ? "실행 전" : runtime.reused ? "모델 재사용" : "모델 로딩 요청"}</dd>
               <dt>모델 로딩</dt><dd>{seconds(runtime.loadMs)}</dd>
               <dt>대화 메모리 준비</dt><dd>{seconds(runtime.contextMs)}</dd>
+              {runtime.contextReused != null && <><dt>대화 메모리 재사용</dt><dd>{runtime.contextReused ? "재사용" : "새로 준비"}</dd></>}
+              {runtime.promptTokens != null && <><dt>이번 입력 토큰</dt><dd>{runtime.promptTokens}개</dd></>}
+              {runtime.cachedPromptTokens != null && <><dt>재사용한 입력 토큰</dt><dd>{runtime.cachedPromptTokens}개</dd></>}
+              {runtime.promptMs != null && <><dt>입력 처리 시간</dt><dd>{seconds(runtime.promptMs)}</dd></>}
+
               <dt>첫 글자까지</dt><dd>{seconds(runtime.firstTokenMs)}</dd>
               <dt>전체 반응</dt><dd>{seconds(runtime.totalMs)}</dd>
               <dt>앱 메모리 · 로딩 전</dt><dd>{memory(runtime.rssBeforeKiB)}</dd>

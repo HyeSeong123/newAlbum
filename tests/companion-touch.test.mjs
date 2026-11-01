@@ -38,6 +38,16 @@ if(existsSync(path)){
   const disturbed=mod.buildTouchPrompt({...awake,memory:{...awake.memory,mood:'irritated'},action:'walk'});
   assert.ok(disturbed.includes('자는 중 방해받아 짜증 난 상태를 우선한다'));
  });
+ test('Gomi native prompt has a bounded size and a reusable stable personality prefix',()=>{
+  const base=mod.buildTouchPrompt(context);
+  const another=mod.buildTouchPrompt({...context,action:'walk',memory:{...context.memory,mood:'curious'},hour:17});
+  assert.ok(base.length<1500, `gomi prompt has ${base.length} chars`);
+  assert.ok(another.length<1500, `gomi walk prompt has ${another.length} chars`);
+  const prefix=line=>line.slice(0,line.indexOf('고미 이름: '));
+  assert.ok(prefix(base).length>150);
+  assert.equal(prefix(base),prefix(another));
+  assert.ok(another.includes('산책을 좋아해서 집사를 재촉'));
+ });
  test('mood changes the prompt and repeated or unfinished output uses an immediate safe reaction',async()=>{
   assert.notEqual(mod.buildTouchPrompt(context),mod.buildTouchPrompt({...context,memory:{...context.memory,mood:'delighted'}}));
   assert.equal((await mod.generateTouchLine(context,async()=>'<think>secret')).source,'local-rules');

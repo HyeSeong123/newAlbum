@@ -18,6 +18,16 @@ std::atomic<int64_t> cancelled_through{0};
 std::mutex inference_mutex;
 std::once_flag backend_once;
 CompanionModelSession<llama_model> session(llama_model_free);
+// Keep the context/KV of the last verified request until Home/model release.
+// Both the LoRA context and KV prefix are confined to the JNI inference mutex.
+struct CachedContext {
+    std::unique_ptr<llama_adapter_lora, decltype(&llama_adapter_lora_free)> adapter{nullptr, llama_adapter_lora_free};
+    std::unique_ptr<llama_context, decltype(&llama_free)> ctx{nullptr, llama_free};
+    std::string model_file, adapter_file;
+    std::vector<llama_token> prompt_tokens;
+    void clear() { ctx.reset(); adapter.reset(); model_file.clear(); adapter_file.clear(); prompt_tokens.clear(); }
+};
+CachedContext cached;
 int64_t now_ms() { return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count(); }
 long rss_kib() {
     long pages = 0, resident = 0;
@@ -28,9 +38,9 @@ long rss_kib() {
     return resident * sysconf(_SC_PAGESIZE) / 1024;
 }
 struct Metrics {
-    bool resident = false, reused = false, gomi_lora = false;
-    int loads = 0, releases = 0;
-    int64_t load = 0, context = 0, first = -1, total = 0, generation = 0;
+    bool resident = false, reused = false, gomi_lora = false, context_reused = false;
+    int loads = 0, releases = 0, prompt_tokens = 0, cached_tokens = 0;
+    int64_t load = 0, context = 0, prompt = 0, first = -1, total = 0, generation = 0;
     long before = 0, loaded = 0, peak = 0, released = 0;
     std::string stage = "idle";
 };
@@ -54,6 +64,7 @@ void stage(const char *value) {
 }
 void release_model() {
     const bool resident = session.resident();
+    cached.clear(); // context must die before the model and its mmap-backed weights
     session.release();
     std::lock_guard<std::mutex> lock(metrics_mutex);
     metrics.resident = false;
@@ -100,6 +111,9 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeStats(JNIEnv *env, jobj
         ",\"reused\":" + (metrics.reused ? "true" : "false") + ",\"loadCount\":" + std::to_string(metrics.loads) +
         ",\"releaseCount\":" + std::to_string(metrics.releases) + ",\"stage\":\"" + metrics.stage + "\"" +
         ",\"loadMs\":" + std::to_string(metrics.load) + ",\"contextMs\":" + std::to_string(metrics.context) +
+        ",\"promptMs\":" + std::to_string(metrics.prompt) +
+        ",\"promptTokens\":" + std::to_string(metrics.prompt_tokens) + ",\"cachedPromptTokens\":" + std::to_string(metrics.cached_tokens) +
+        ",\"contextReused\":" + (metrics.context_reused ? "true" : "false") +
         ",\"firstTokenMs\":" + std::to_string(metrics.first) + ",\"totalMs\":" + std::to_string(metrics.total) +
         ",\"generationMs\":" + std::to_string(metrics.generation) + ",\"rssBeforeKiB\":" + std::to_string(metrics.before) +
         ",\"rssLoadedKiB\":" + std::to_string(metrics.loaded) + ",\"rssPeakKiB\":" + std::to_string(metrics.peak) +
@@ -109,6 +123,7 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeStats(JNIEnv *env, jobj
 }
 extern "C" JNIEXPORT jbyteArray JNICALL
 Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, jobject, jstring path, jstring input, jstring adapter_path, jlong request) {
+    bool context_touched = false;
     try {
         std::unique_lock<std::mutex> lock(inference_mutex, std::try_to_lock);
         if (!lock.owns_lock()) throw std::runtime_error("이전 대답을 마무리하고 있어요. 잠시 후 다시 시도해 주세요.");
@@ -118,9 +133,10 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, j
         if (abort_run(&run)) throw std::runtime_error(abort_message(run));
         {
             std::lock_guard<std::mutex> guard(metrics_mutex);
-            metrics.reused = session.resident(); metrics.load = metrics.context = metrics.total = metrics.generation = 0;
+            metrics.reused = session.resident(); metrics.load = metrics.context = metrics.total = metrics.generation = metrics.prompt = 0;
             metrics.first = -1; metrics.before = metrics.peak = rss_kib(); metrics.loaded = 0;
-            metrics.gomi_lora = false;
+            metrics.gomi_lora = metrics.context_reused = false;
+            metrics.prompt_tokens = metrics.cached_tokens = 0;
         }
         const std::string file = utf8(env, path), prompt = utf8(env, input), adapter_file = utf8(env, adapter_path);
         if (prompt.empty() || prompt.size() > 48000) throw std::runtime_error("이야기가 너무 길어요.");
@@ -130,6 +146,9 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, j
         // instead of a second resident copy on an 8GB phone.
         mp.use_extra_bufts = false;
         mp.progress_callback = load_progress; mp.progress_callback_user_data = &run;
+        // A context is tied to both exact weight and LoRA paths. Invalidate it
+        // before model switch; never retain Gomi's adapter for another friend.
+        if (cached.model_file != file || cached.adapter_file != adapter_file) cached.clear();
         stage("loading");
         bool loaded = false;
         auto *model = session.acquire(file, [&] {
@@ -156,19 +175,31 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, j
         cp.n_ctx = 2048; cp.n_batch = 256; cp.n_ubatch = 128;
         cp.n_threads = cp.n_threads_batch = std::max(1u, std::min(4u, std::thread::hardware_concurrency()));
         cp.abort_callback = abort_run; cp.abort_callback_data = &run;
-        // Adapter lifetime is one request. Context is destroyed first; cached base weights stay clean.
-        std::unique_ptr<llama_adapter_lora, decltype(&llama_adapter_lora_free)> adapter(
-            adapter_file.empty() ? nullptr : llama_adapter_lora_init(model, adapter_file.c_str()), llama_adapter_lora_free);
-        if (!adapter_file.empty() && !adapter) throw std::runtime_error("AI_ADAPTER: 고미 학습 파일을 불러오지 못했어요. 앱 업데이트를 확인해 주세요.");
-        std::unique_ptr<llama_context, decltype(&llama_free)> ctx(llama_init_from_model(model, cp), llama_free);
-        if (!ctx) throw std::runtime_error("대화 메모리가 부족해요. 다른 앱을 닫고 다시 시도해 주세요.");
-        if (adapter) {
-            if (llama_set_adapter_lora(ctx.get(), adapter.get(), 1.0f) != 0)
+        const bool context_reused = bool(cached.ctx);
+        if (!context_reused) {
+            cached.adapter.reset(adapter_file.empty() ? nullptr : llama_adapter_lora_init(model, adapter_file.c_str()));
+            if (!adapter_file.empty() && !cached.adapter)
+                throw std::runtime_error("AI_ADAPTER: 고미 학습 파일을 불러오지 못했어요. 앱 업데이트를 확인해 주세요.");
+            cached.ctx.reset(llama_init_from_model(model, cp));
+            if (!cached.ctx) throw std::runtime_error("대화 메모리가 부족해요. 다른 앱을 닫고 다시 시도해 주세요.");
+            if (cached.adapter && llama_set_adapter_lora(cached.ctx.get(), cached.adapter.get(), 1.0f) != 0)
                 throw std::runtime_error("AI_ADAPTER: 고미 학습 내용을 적용하지 못했어요.");
-            std::lock_guard<std::mutex> guard(metrics_mutex); metrics.gomi_lora = true;
+            cached.model_file = file;
+            cached.adapter_file = adapter_file;
+        } else {
+            // The prior request's Run was a stack object, so refresh its pointer.
+            llama_set_abort_callback(cached.ctx.get(), abort_run, &run);
         }
-        { std::lock_guard<std::mutex> guard(metrics_mutex); metrics.context = now_ms() - generating; }
+        context_touched = true;
+        llama_context *ctx = cached.ctx.get();
+        {
+            std::lock_guard<std::mutex> guard(metrics_mutex);
+            metrics.context_reused = context_reused;
+            metrics.gomi_lora = bool(cached.adapter);
+            metrics.context = now_ms() - generating;
+        }
         stage("prompt");
+        const auto prefill_started = now_ms();
         const auto *vocab = llama_model_get_vocab(model);
         int count = llama_tokenize(vocab, prompt.data(), prompt.size(), nullptr, 0, true, true);
         if (count == 0 || count == INT32_MIN) throw std::runtime_error("이야기를 읽지 못했어요.");
@@ -176,13 +207,29 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, j
         if (count > 2048 - 256) throw std::runtime_error("이야기가 길어졌어요. 조금 짧게 적어 주세요.");
         std::vector<llama_token> tokens(count);
         if (llama_tokenize(vocab, prompt.data(), prompt.size(), tokens.data(), count, true, true) < 0) throw std::runtime_error("이야기를 읽지 못했어요.");
-        for (int offset = 0; offset < count; offset += 256) {
+        // Keep an identical prefix but recompute the last token for fresh logits.
+        int reused_tokens = context_reused ? reusablePromptPrefix(cached.prompt_tokens, tokens) : 0;
+        auto mem = llama_get_memory(ctx);
+        if (reused_tokens > 0) {
+            if (!llama_memory_seq_rm(mem, 0, reused_tokens, -1)) {
+                llama_memory_clear(mem, false);
+                reused_tokens = 0;
+            }
+        } else llama_memory_clear(mem, false);
+        for (int offset = reused_tokens; offset < count; offset += 256) {
             if (abort_run(&run)) throw std::runtime_error(abort_message(run));
             auto batch = llama_batch_get_one(tokens.data() + offset, std::min(256, count - offset));
-            if (llama_decode(ctx.get(), batch) != 0) {
+            if (llama_decode(ctx, batch) != 0) {
                 if (abort_run(&run)) throw std::runtime_error(abort_message(run));
                 throw std::runtime_error("이야기를 준비하지 못했어요. 다시 시도해 주세요.");
             }
+        }
+        cached.prompt_tokens = tokens;
+        {
+            std::lock_guard<std::mutex> guard(metrics_mutex);
+            metrics.prompt = now_ms() - prefill_started;
+            metrics.prompt_tokens = count;
+            metrics.cached_tokens = reused_tokens;
         }
         std::unique_ptr<llama_sampler, decltype(&llama_sampler_free)> sampler(llama_sampler_chain_init(llama_sampler_chain_default_params()), llama_sampler_free);
         llama_sampler_chain_add(sampler.get(), llama_sampler_init_top_k(20));
@@ -191,9 +238,9 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, j
         llama_sampler_chain_add(sampler.get(), llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
         std::string output;
         stage("generating");
-        for (int i = 0; i < 192; ++i) {
+        for (int i = 0; i < 128; ++i) {
             if (abort_run(&run)) throw std::runtime_error(abort_message(run));
-            auto token = llama_sampler_sample(sampler.get(), ctx.get(), -1);
+            auto token = llama_sampler_sample(sampler.get(), ctx, -1);
             if (llama_vocab_is_eog(vocab, token)) break;
             if (i == 0) { std::lock_guard<std::mutex> guard(metrics_mutex); metrics.first = now_ms() - generating; }
             char piece[512];
@@ -204,7 +251,7 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, j
                 if (length > 0) output.append(larger.data(), length);
             } else output.append(piece, length);
             auto batch = llama_batch_get_one(&token, 1);
-            if (llama_decode(ctx.get(), batch) != 0) {
+            if (llama_decode(ctx, batch) != 0) {
                 if (abort_run(&run)) throw std::runtime_error(abort_message(run));
                 throw std::runtime_error("대답을 마무리하지 못했어요. 다시 시도해 주세요.");
             }
@@ -214,7 +261,7 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, j
             std::lock_guard<std::mutex> guard(metrics_mutex);
             metrics.total = now_ms() - started; metrics.generation = now_ms() - generating; metrics.stage = "complete";
         }
-        // Context/KV/sampler are released per request. The model remains until Home release.
+        // Sampler is request-local; context and KV are reused only while Home remains active.
         auto bytes = env->NewByteArray(output.size());
         if (bytes) env->SetByteArrayRegion(bytes, 0, output.size(), reinterpret_cast<const jbyte *>(output.data()));
         return bytes;
@@ -223,6 +270,11 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, j
         if (!env->ExceptionCheck()) env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), "AI_MEMORY: 메모리가 부족해 기본 반응을 보여 줬어요.");
         return nullptr;
     } catch (const std::exception &error) {
+        // A cancelled/partial decode must never poison the next request's KV.
+        if (context_touched) {
+            std::lock_guard<std::mutex> lock(inference_mutex);
+            cached.clear();
+        }
         stage("error");
         if (!env->ExceptionCheck()) env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), error.what());
         return nullptr;

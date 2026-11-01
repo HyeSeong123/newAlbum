@@ -36,6 +36,12 @@ int main() {
     budget.beginGeneration(150000);
     assert(!budget.expired(269999));
     assert(budget.expired(270000));
+    // Changing an input suffix preserves only identical token positions.
+    assert(reusablePromptPrefix(std::vector<int>{1,2,3,4}, std::vector<int>{1,2,3,5}) == 3);
+    assert(reusablePromptPrefix(std::vector<int>{1,2,3,4}, std::vector<int>{1,2,3,4}) == 3);
+    assert(reusablePromptPrefix(std::vector<int>{1,2,3,4}, std::vector<int>{1,2}) == 1);
+    assert(reusablePromptPrefix(std::vector<int>{1,2,3}, std::vector<int>{7,2,3}) == 0);
+    assert(reusablePromptPrefix(std::vector<int>{1}, std::vector<int>{}) == 0);
     session.release();
     assert(freed == 4);
 }
