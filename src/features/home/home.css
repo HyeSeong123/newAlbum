@@ -26,6 +26,20 @@
   line-height: 1.8;
   word-break: keep-all;
 }
+/* Never show a flashing "thinking" message: identify only the origin of the
+   current line. A temporary fallback stays labelled as such until replaced. */
+.homeSpeech[data-gomi="true"]::before {
+  position: absolute;
+  top: 2px;
+  right: 12px;
+  color: #817b6d;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.4;
+  pointer-events: none;
+}
+.homeSpeech[data-gomi="true"][data-source="local-rules"]::before { content: "기본 대사"; }
+.homeSpeech[data-gomi="true"][data-source="on-device"]::before { content: "AI가 만든 말"; }
 .homeSpeech::after {
   content: "";
   position: absolute;

@@ -172,7 +172,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
       <h2>작은 하루가 자라는 곳</h2>
       <p className="homeIntroduction">소중한 순간도, 평범한 하루도 차곡차곡 담아두세요.</p>
       <div className="homeCompanion">
-        <p id="homeMessage" className="homeSpeech" data-source={messageSource} role="status" aria-live="polite" aria-atomic="true">{isGomi && !gomi.ready ? "…" : spokenLine || lines[0]}</p>
+        <p id="homeMessage" className="homeSpeech" data-source={messageSource} data-gomi={isGomi ? "true" : undefined} role="status" aria-live="polite" aria-atomic="true">{isGomi && !gomi.ready ? "…" : spokenLine || lines[0]}</p>
         <button className={`homeMascot${happy ? " happy" : ""}`} type="button" aria-label={`${definition ? characterName(definition, mainCharacter) : "곰고미"}에게 말 걸기`} onClick={talk}>
           {definition && mainCharacter ? <CharacterVisual definition={definition} stage={mainCharacter.growthStage} expression={happy ? "happy" : "idle"}
             gomiMotion={isGomi ? gomi.motion : undefined} companionMotion={!isGomi ? companion.motion : undefined}

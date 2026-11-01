@@ -46,6 +46,18 @@ test("Gomi stays guarded at low affection and affectionate at high affection", (
   }
 });
 
+test("Gomi wants to go outside at every affection tier and stays bossy after repeated walks", () => {
+  const gomi = definitions[0];
+  for (const affection of [0, 20, 30, 60, 90]) {
+    const start = performCompanionActivity(gomi, emptyCompanionMemory(), "walk", affection, "2026-11-01");
+    assert.doesNotMatch(start.line, /나가기 싫어|한 바퀴만|산책.*귀찮|걷기.*귀찮/);
+    assert.match(start.line, /산책|나가|준비|기다리|갈 거|길 고/);
+    const repeated = performCompanionActivity(gomi, start.memory, "walk", affection, "2026-11-01");
+    assert.match(repeated.line, /나가|목줄|준비/);
+    assert.equal(repeated.memory.history.length, 2);
+  }
+});
+
 test("sleeping Gomi stays sleepy or irritated instead of accepting awake activities", () => {
   const gomi = definitions[0];
   for (const action of ["walk", "treat", "pet", "play"]) {

@@ -45,6 +45,13 @@ export function CompanionAiSetup({ definition, owned, onClose }: { definition: C
   const reaction = useSyncExternalStore(subscribeChatReaction, () => lastChatReaction(owned.id));
   const runtime = status?.runtime;
   const outcome = reaction?.message || "아직 AI 반응 결과가 없어요. 홈에서 친구를 터치해 주세요.";
+  const gomiTrainingStatus = definition.id !== "gomi" || !ready ? undefined
+    : status?.model !== "dialogue" ? "현재 1.7B에서는 고미 추가 학습이 적용되지 않아요. 4B 모델을 받아 주세요."
+    : reaction?.phase === "complete" && reaction.source === "on-device" && runtime?.gomiLoraApplied
+      ? "최근 고미의 AI 대사에 학습 모델 v4가 실제 적용됐어요."
+      : reaction?.phase === "complete" && reaction.source !== "on-device"
+        ? "최근에는 AI 대신 기본 대사가 표시됐어요. 아래 최근 반응을 확인해 주세요."
+        : "4B는 준비됐지만 고미 학습 모델의 실제 적용은 아직 확인되지 않았어요. 홈에서 고미를 터치한 뒤 확인해 주세요.";
   const nativeOutcome = status?.lastOutcome === "error" ? companionExecutionError(status.lastError) : status?.lastOutcome === "running" ? "대사를 생성하고 있어요." : status?.lastOutcome === "success" ? "생성이 끝났어요. 친구별 말풍선 반영 결과는 최근 AI 반응에서 확인해 주세요." : status?.lastOutcome === "cancelled" ? "실행을 중단했어요." : "아직 실행 기록이 없어요.";
   const seconds = (value: number | undefined) => value == null || value < 0 ? "측정 전" : (value / 1000).toFixed(1) + "초";
   const memory = (value: number | undefined) => value ? Math.round(value / 1024) + "MB" : "측정 전";
@@ -61,6 +68,7 @@ export function CompanionAiSetup({ definition, owned, onClose }: { definition: C
         <p>캐릭터를 터치하면 기분·성격·친밀도와 함께한 행동에 맞춰 AI가 새로운 말을 만들어요.</p>
         {ready && <div className="companionAiOutcome">
           <strong>AI 모델</strong><p>{status.model === "dialogue" ? "Qwen3 4B" : "Qwen3 1.7B"} · 설치됨</p>
+          {gomiTrainingStatus && <><strong>고미 학습 모델</strong><p data-gomi-training-status>{gomiTrainingStatus}</p></>}
           <strong>최근 AI 반응</strong><p role={reaction?.phase === "complete" && reaction.source !== "on-device" ? "alert" : "status"}>{outcome}</p>
           {runtime && <details><summary>앱의 최근 실행 기록 보기</summary>
             <p>{nativeOutcome}</p>

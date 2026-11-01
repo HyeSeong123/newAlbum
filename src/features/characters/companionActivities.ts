@@ -69,7 +69,7 @@ export function companionActionLabel(definition: CharacterDefinition, action: Co
 // The five lines for each character correspond to walk, treat, pet, play and rest.
 // This makes every character recognizable even without the optional language model.
 const personaLines: Record<string, readonly [string, string, string, string, string]> = {
-  gomi: ["산책? …귀찮은데, 바람은 괜찮네.", "간식이네. …일단 먹어는 줄게.", "손은 살살. …허락한 적은 없지만.", "놀자고? 딱 한 번만이야.", "드디어 쉬는 거야? 조용히 있어."],
+  gomi: ["산책 갈 거야? 난 벌써 가고 싶은데.", "간식이네. …내가 고를래.", "손은 살살. …허락한 적은 없지만.", "놀자고? 뭘 할 건데?", "이제 쉬자. 자리 좀 내줘."],
   potato: ["앗! 같이 나가? 작은 풍경도 찾아보자!", "햇살이 따끈해! 나 조금 자랄 것 같아.", "헤헤, 간지러워! 잎이 흔들리잖아.", "우리 숨은 그림 찾기 할까?", "조금만 쉬었다가 또 이야기하자!"],
   "sweet-potato": ["형이 앞장설게! 길은 잘 모르지만.", "햇살 좋다! 우리 동생도 불러야겠네.", "간지럽네. 형도 이런 건 좀 쑥스러워.", "형이 질 리 없지! 다시 해 볼래?", "오늘은 형 옆에 기대도 돼."],
   apple: ["좋아, 길을 정하고 차분하게 다녀오자.", "빛이 충분하네. 오늘 관리는 합격.", "조심해. 잎이 구겨지면 곤란하니까.", "규칙은 간단해. 끝까지 집중하기.", "휴식도 계획의 일부야. 잘했어."],
@@ -88,11 +88,18 @@ const personaLines: Record<string, readonly [string, string, string, string, str
   peach: ["딱히 기다린 건 아니지만… 같이 가자.", "나만 주는 햇살이야? …고맙네.", "흥! 갑자기 왜 이래… 싫진 않아.", "너랑 노는 게 제일… 아니, 그냥 좋아.", "이렇게 옆에 있는 것도 꽤 괜찮네."],
 };
 const gomiByAffinity: Record<CompanionAction, readonly [string, string, string, string, string]> = {
-  walk: ["…나가기 싫어.", "뭐. 나들이?", "휴. 한 바퀴만이야.", "바람은 괜찮네. 네 옆이면.", "…너랑이면 조금 더 걸어도 돼."],
+  walk: ["산책? 이제 나가는 거지?", "집사, 준비 다 됐어? 나 기다리잖아.", "갈 거면 빨리 준비해. 나 먼저 기다릴게.", "나가자. 목줄은 천천히 채우고.", "같이 나갈 거지? 오늘은 내가 길 고를래."],
   treat: ["…뭐야.", "간식? 놓고 가.", "이건 괜찮네. 한 번만 더 줘.", "내 취향 기억했어? …고마워.", "네가 준 거라 더 좋아. 비밀이야."],
   pet: ["…손 치워.", "왜 만져.", "살살 해. 알겠지?", "손길은 익숙해졌어. 조금만 더.", "…이제 손 치우면 섭섭할지도."],
   play: ["…혼자 놀아.", "딱 한 번.", "휴. 내가 이길 거야.", "놀아 주는 건 아니고, 나도 심심했어.", "오늘은 너랑 좀 더 놀아도 돼."],
   rest: ["……", "휴. 쉬자.", "조용히 있으면 좋아.", "옆에 있어도 돼. 떠들진 말고.", "여긴 네 자리야. 같이 쉬자."],
+};
+const gomiAfterLines: Record<CompanionAction, readonly string[]> = {
+  walk: ["나가자고 했으면 오래 기다리게 하지 마.", "목줄 채우기만 지나면 내가 앞장설게.", "난 벌써 준비할 마음 먹었거든."],
+  treat: ["다음에는 내가 먹기 편한 쪽으로 줘.", "내 취향은 기억하고 있는 거지?", "기다리게만 하지 마."],
+  pet: ["내가 고개 돌리면 잠깐 멈춰.", "지금은 조금 더 괜찮을지도.", "네 손이 싫은 건 아니야."],
+  play: ["다음 놀이는 내가 정할래.", "한 번 더 할지는 내가 결정해.", "오늘은 조금 재미있네."],
+  rest: ["자리 좀 더 내줘.", "옆에 있는 건 괜찮아.", "움직일 거면 미리 말해."],
 };
 const afterLines: Record<CompanionAction, readonly string[]> = {
   walk: ["바람이 조금 다르게 느껴지네.", "다음에는 다른 길도 상상해 보자.", "이 시간은 기억해 둘게."],
@@ -123,7 +130,8 @@ export function performCompanionActivity(definition: CharacterDefinition, previo
   const basis = definition.type === "gomi" ? gomiByAffinity[action][tier] :
     (personaLines[definition.type] || personaLines.potato)[COMPANION_ACTIONS.indexOf(action)];
   // Repeated actions vary their closing, but never silently change affection or growth.
-  const suffix = before === 0 ? "" : " " + afterLines[action][(before - 1) % afterLines[action].length];
+  const endings = definition.type === "gomi" ? gomiAfterLines[action] : afterLines[action];
+  const suffix = before === 0 ? "" : " " + endings[(before - 1) % endings.length];
   return { line: basis + suffix, memory };
 }
 export function buildCompanionPrompt(definition: CharacterDefinition, owned: OwnedCharacter,

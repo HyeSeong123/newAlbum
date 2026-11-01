@@ -25,6 +25,17 @@ if(existsSync(file)){
    if(sleeping&&action!=='rest')assert.ok(lines.every(line=>!line.includes('산책하자')&&!line.includes('놀자')),id);
   }
  });
+ test('Gomi fallback agrees with wanting walks while other characters and sleep stay unchanged',()=>{
+  for (const affection of [0,20,30,60,90]) {
+    const lines=m.companionFallbackCandidates({gomi:true,affection,action:'walk',basis:'산책 가자.'});
+    assert.ok(lines.length >= 7);
+    assert.ok(lines.every(line=>!/산책은 짧게|걷자고.*잠깐만|귀찮.*걷|덜 귀찮아|한 바퀴만/.test(line)),affection);
+    const taps=m.companionFallbackCandidates({gomi:true,affection,action:'touch',basis:'어, 불렀어?',touchLines:['기존 대사']});
+    assert.ok(taps.some(line=>line.includes('내가 부르면 바로 올 거지')||line.includes('같이 쉬자')));
+  }
+  const other=m.companionFallbackCandidates({gomi:false,affection:0,action:'walk',basis:'산책을 가자.'});
+  assert.equal(other[1],'오늘은 천천히 걷는 기분으로 있어 볼까?');
+ });
  test('corrupt or unavailable optional storage never blocks immediate reactions',()=>{
   const store={getItem:()=>'{bad',setItem:()=>{throw Error('quota');}};
   assert.equal(m.chooseCompanionFallback('broken',['잘 왔어.','반가워.'],store),'잘 왔어.');

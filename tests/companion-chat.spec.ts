@@ -1,6 +1,6 @@
 import {test,expect} from '@playwright/test';
 
-async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:boolean;affection?:number;statusDelay?:number;interactionDelay?:number;error?:string;longReply?:boolean;echoFirst?:boolean;legacy?:boolean;controlledGeneration?:boolean;actionReplies?:boolean}={}) {
+async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:boolean;affection?:number;statusDelay?:number;interactionDelay?:number;error?:string;longReply?:boolean;echoFirst?:boolean;legacy?:boolean;controlledGeneration?:boolean;actionReplies?:boolean;adapterObserved?:boolean}={}) {
   await page.addInitScript((settings:any)=>{
     Math.random=()=>settings.gomi?.55:.1;
     let downloading=false, interacted=false, calls=0, disturbances=0;
@@ -16,7 +16,8 @@ async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:b
       }
       if(command==='chat_model_status'){
         if(settings.statusDelay)await new Promise(resolve=>setTimeout(resolve,settings.statusDelay));
-        return {phase:downloading?'downloading':settings.ready===false?'missing':'ready',installed:settings.ready!==false,supported:true,total:100,downloaded:downloading?42:0,message:'AI를 한 번 준비해 주세요.',model:settings.legacy?'legacy':'dialogue',upgradeAvailable:Boolean(settings.legacy)};
+        return {phase:downloading?'downloading':settings.ready===false?'missing':'ready',installed:settings.ready!==false,supported:true,total:100,downloaded:downloading?42:0,message:'AI를 한 번 준비해 주세요.',model:settings.legacy?'legacy':'dialogue',upgradeAvailable:Boolean(settings.legacy),
+          ...(settings.adapterObserved ? {runtime:{gomiLoraApplied:Boolean(settings.gomi&&!settings.legacy&&calls>0&&!state.error),stage:calls?'complete':'idle'},lastOutcome:calls?(state.error?'error':'success'):'none'} : {})};
       }
       if(command==='download_chat_model')downloading=true;
       if(command==='stop_chat_model'){downloading=false;state.stops++;}
@@ -47,6 +48,35 @@ test('an installed legacy AI stays available and its upgrade is explicit and can
   await expect(page.getByRole('button',{name:'더 자연스러운 AI 받기',exact:true})).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   await page.getByRole('dialog').screenshot({path:'preview-results/ai-optional-upgrade-320.png'});
+});
+
+test('Gomi 1.7B is identified as untrained instead of claiming v4 was applied',async({page})=>{
+  await installAi(page,{gomi:true,legacy:true});await page.goto('/');
+  await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
+  await expect(page.locator('[data-gomi-training-status]')).toContainText('1.7B에서는 고미 추가 학습이 적용되지 않아요');
+});
+
+test('Gomi shows basic versus trained AI source and the real adapter execution state on Android width',async({page})=>{
+  await page.setViewportSize({width:393,height:852});
+  await installAi(page,{gomi:true,adapterObserved:true,controlledGeneration:true});
+  await page.goto('/');
+  const bubble=page.locator('#homeMessage');
+  await expect(bubble).toHaveAttribute('data-gomi','true');
+  await expect(bubble).toHaveAttribute('data-source','local-rules');
+  expect(await bubble.evaluate(el=>getComputedStyle(el,'::before').content)).toContain('기본 대사');
+  await page.screenshot({path:'preview-results/gomi-line-before-393.png'});
+  await page.locator('.homeMascot').click();
+  await expect.poll(()=>page.evaluate(()=>(window as any).touchProbe.prompts.length)).toBe(1);
+  await expect(bubble).toHaveAttribute('data-source','local-rules');
+  await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
+  await expect(page.locator('[data-gomi-training-status]')).toContainText('실제 적용은 아직 확인되지 않았어요');
+  await page.evaluate(()=>(window as any).touchProbe.finish());
+  await expect(bubble).toHaveAttribute('data-source','on-device');
+  await expect(page.locator('[data-gomi-training-status]')).toContainText('실제 적용됐어요');
+  await page.keyboard.press('Escape');
+  expect(await bubble.evaluate(el=>getComputedStyle(el,'::before').content)).toContain('AI가 만든 말');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({path:'preview-results/gomi-line-after-393.png'});
 });
 
 test('repeated touches finish one slow AI reaction without restarting it',async({page})=>{

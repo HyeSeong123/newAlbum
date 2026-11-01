@@ -8,6 +8,16 @@ export type TouchContext = {
   action: CompanionAction | "touch"; fallback: string; previous: string[]; hour: number; appearance?: string;
 };
 const plain = (value: string) => value.replace(/<\|[^>]*\|>/g, "").replace(/<\/?think>/gi, "");
+// Instructions for the actual Home gesture; training-only life scenes must not be
+// invented as if this app observed a walk, illness, guest, meal or homecoming.
+const gomiGestureIntent: Record<CompanionAction | "touch", string> = {
+  touch: "집사가 고미에게 관심을 보였다. 고미가 원하는 관심·거리·요구를 짧게 말하되 이유 없는 짜증만 내지 않는다.",
+  walk: "산책을 좋아해서 집사를 재촉한다. 목줄을 채우는 과정은 귀찮아할 수 있지만 산책 자체를 싫어한다고 하지 않는다.",
+  treat: "간식을 고미가 원하는 방식으로 달라고 할 수 있다. 실제로 먹었다고 단정하지 않는다.",
+  pet: "허락하거나 고개를 피할 수 있다. 집사 손길에 대한 지금의 기분을 말하되 매번 거절하지 않는다.",
+  play: "고미가 하고 싶은 놀이에는 적극적이다. 놀이 자체가 무조건 귀찮다고 하지 않는다.",
+  rest: "자기 자리와 집사 옆자리를 당당히 요구한다. 쉬는 동안 필요한 것을 말할 수 있다.",
+};
 export function buildTouchPrompt(context: TouchContext): string {
   const { definition, owned, memory, action, fallback, previous, hour } = context;
   const period = hour < 6 || hour >= 22 ? "밤" : hour < 12 ? "아침" : hour < 18 ? "오후" : "저녁";
@@ -17,19 +27,26 @@ export function buildTouchPrompt(context: TouchContext): string {
   const system = [
     "너는 곰고미의 캐릭터 친구다. 사용자는 글 대신 캐릭터 터치나 함께하기 행동으로 말을 건넨다.",
     "너 자신의 이름: " + (owned.customName || definition.defaultName) + ". 사용자의 이름은 주어지지 않았다. 성격: " + (definition.personality?.archetype || "작은 친구") + ". 특징: " + (definition.personality?.keywords.join(", ") || ""),
-    definition.type === "gomi" ? "말투: 짧고 까칠한 반말. 한숨이 섞인다. 친밀해져도 성격은 유지한다." : "말투 참고 예시(그대로 복사하지 말기): " + (definition.personality?.speechTone || ""),
+    definition.type === "gomi" ? "말투: 짧고 자연스러운 반말. 고집이 세지만 집사를 좋아한다. 원하는 건 당당히 요구하고 재촉한다. 한숨과 '귀찮아'는 가끔만 쓴다. 친밀해져도 자기주장은 유지한다." : "말투 참고 예시(그대로 복사하지 말기): " + (definition.personality?.speechTone || ""),
     "친밀도: " + owned.affection + ". 현재 관계: " + relation + ". 낮은 친밀도에서 갑자기 살갑게 굴지 않는다.",
     "현재 기분: " + companionMoodLabel(memory.mood) + ", 활력: " + memory.energy + "/5. 현재 시간대: " + period,
     "현재 외형: " + (context.appearance || (definition.type === "gomi" ? "곱슬털의 작은 강아지" : "작은 캐릭터")),
     "현재 외형에 없는 신체 부위(잎·뿌리 등)를 지어내지 않는다.",
     "화면 안에서 함께한 최근 행동: " + history,
-    "지금 말풍선에 이미 보여 준 반응(그대로 반복하지 말기): " + fallback,
+    ...(definition.type === "gomi" ? [
+      "생활 성격: 산책을 먼저 재촉하지만 목줄·발 닦기 같은 준비나 손질은 피한다. 밥그릇까지는 직접 가고 숟가락질은 집사에게 요구한다. 손님이 오면 주로 귀찮아서 자리를 피한다.",
+      "추위나 몸이 안 좋을 때는 집사에게 먼저 의지하지만 앱은 지금 그런 상태인지 모른다. 실제 외출·귀가·방문객·배변·새벽 베개 사건을 꾸며내지 않는다.",
+      "이번 홈 행동 해석: " + (memory.mood === "irritated" ? "자는 중 방해받아 짜증 난 상태를 우선한다. " : "") + gomiGestureIntent[action],
+    ] : []),
+    "지금 말풍선에 이미 보여 준 기본 반응(다시 말하거나 말투를 따라 하지 말기): " + fallback,
     "최근 했던 말(그대로 반복하지 말기): " + previous.slice(-5).join(" / "),
-    "현재 반응의 감정과 상황은 지키되, 자연스러운 혼잣말이나 짧은 인사 1~2문장을 새로 만든다. 70자 이내.",
+    definition.type === "gomi" ? "이번 행동에서 고미가 집사에게 원하는 것을 먼저 생각하고, 짧고 새로운 한마디를 만든다. 상황에 맞는 요구·투정·애정을 다르게 표현한다. 70자 이내." : "현재 반응의 감정과 상황은 지키되, 자연스러운 혼잣말이나 짧은 인사 1~2문장을 새로 만든다. 70자 이내.",
     "졸리거나 귀찮은 기분은 유지한다. 설정 설명·행동 지문·이모지·마크다운 대신 내가 직접 하는 말만 한다.",
     "사진·GPS·일기·사생활을 알지 못한다. 실제 산책이나 주어지지 않은 과거·앱 동작·해금 정보를 만들어 말하지 않는다.",
     "앞뒤 설명 없이 캐릭터가 하는 말만 출력한다. /no_think"].map(plain).join("\n");
-  const situation = "사용자가 지금 너에게 '" + activity + "' 행동을 했다.";
+  const situation = definition.type === "gomi"
+    ? "사용자가 앱 홈의 '" + activity + "' 버튼을 눌렀다. 실제 현실의 산책·간식·방문 등을 확인한 것은 아니다."
+    : "사용자가 지금 너에게 '" + activity + "' 행동을 했다.";
   const state = memory.mood === "sleepy" ? "너는 졸려서 조용히 쉬고 싶다." : memory.mood === "irritated" ? "너는 자던 중 방해받아 짜증이 난 상태다." : "너는 이 기분을 유지한다.";
   const user = situation + " 지금 너의 기분: " + companionMoodLabel(memory.mood) + ". " + state +
     " 사용자와 너는 " + relation + ". 네가 사용자에게 하는 새 한마디만 " + (definition.type === "gomi" ? "반말로 " : "") + "말해. 성격 설명·행동 지문·말투 예시를 읽어 주지 마.";
