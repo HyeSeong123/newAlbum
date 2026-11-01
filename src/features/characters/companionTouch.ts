@@ -34,7 +34,6 @@ export function buildTouchPrompt(context: TouchContext): string {
       "고미 이름: " + (owned.customName || definition.defaultName) + ", 친밀도: " + owned.affection + " (" + relation + ").",
       "현재 기분: " + companionMoodLabel(memory.mood) + ", 활력: " + memory.energy + "/5, 시간대: " + period + ".",
       "이번 홈 행동 해석: " + (memory.mood === "irritated" ? "자는 중 방해받아 짜증 난 상태를 우선한다. " : "") + gomiGestureIntent[action],
-      "이미 보여 준 기본 대사(따라 하지 말기): " + fallback,
       "최근 대사(반복하지 말기): " + (previous.slice(-2).join(" / ") || "없음"),
       "새로운 대사 한마디만, 50자 이내. /no_think",
     ].map(plain).join("\n");
@@ -57,7 +56,6 @@ export function buildTouchPrompt(context: TouchContext): string {
       "추위나 몸이 안 좋을 때는 집사에게 먼저 의지하지만 앱은 지금 그런 상태인지 모른다. 실제 외출·귀가·방문객·배변·새벽 베개 사건을 꾸며내지 않는다.",
       "이번 홈 행동 해석: " + (memory.mood === "irritated" ? "자는 중 방해받아 짜증 난 상태를 우선한다. " : "") + gomiGestureIntent[action],
     ] : []),
-    "지금 말풍선에 이미 보여 준 기본 반응(다시 말하거나 말투를 따라 하지 말기): " + fallback,
     "최근 했던 말(그대로 반복하지 말기): " + previous.slice(-5).join(" / "),
     definition.type === "gomi" ? "이번 행동에서 고미가 집사에게 원하는 것을 먼저 생각하고, 짧고 새로운 한마디를 만든다. 상황에 맞는 요구·투정·애정을 다르게 표현한다. 70자 이내." : "현재 반응의 감정과 상황은 지키되, 자연스러운 혼잣말이나 짧은 인사 1~2문장을 새로 만든다. 70자 이내.",
     "졸리거나 귀찮은 기분은 유지한다. 설정 설명·행동 지문·이모지·마크다운 대신 내가 직접 하는 말만 한다.",
