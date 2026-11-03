@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, readFile, rm, symlink } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -87,4 +87,14 @@ test('the CLI prints useful status and returns a failing exit code for unsupport
   const invalid = spawnSync(process.execPath, [cli, 'train'], { encoding: 'utf8' });
   assert.equal(invalid.status, 1);
   assert.match(invalid.stderr, /status|check|export/);
+});
+
+test('rejects nested symlink output before creating any source directories', async t => {
+  const f = await fixture(t);
+  await symlink(f.data, path.join(f.dir, 'gomgomi-training-output'), 'dir');
+  await assert.rejects(
+    exportCorpus(f.dir, path.join(f.dir, 'gomgomi-training-output', 'new-parent', 'unsafe')),
+    /output directory/i,
+  );
+  await assert.rejects(stat(path.join(f.data, 'new-parent')), { code: 'ENOENT' });
 });
