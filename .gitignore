@@ -65,3 +65,6 @@ public/models/native-dev/
 
 # Local Gomi dialogue training exports and evidence (weights live in WSL home).
 /gomi-training-output/
+
+# Local multi-character dialogue training exports, weights and checkpoints.
+/gomgomi-training-output/

@@ -1,0 +1,45 @@
+name: Gomgomi training validation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/gomgomi-training-foundation, final]
+    paths:
+      - 'scripts/gomgomi-training/**'
+      - 'tests/gomgomi-training-*.test.mjs'
+      - 'models/gomi-lora-v4/data/**'
+      - 'src/features/characters/data/characterDefinitions.json'
+      - '.github/workflows/gomgomi-training-validation.yml'
+  pull_request:
+    branches: [final]
+    paths:
+      - 'scripts/gomgomi-training/**'
+      - 'tests/gomgomi-training-*.test.mjs'
+      - 'models/gomi-lora-v4/data/**'
+      - 'src/features/characters/data/characterDefinitions.json'
+      - '.github/workflows/gomgomi-training-validation.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gomgomi-training-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  data-foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Test data validation and file preservation
+        run: node --test tests/gomgomi-training-core.test.mjs tests/gomgomi-training-io.test.mjs
+      - name: Check the frozen corpus and print project status
+        run: |
+          node scripts/gomgomi-training/cli.mjs check
+          node scripts/gomgomi-training/cli.mjs status

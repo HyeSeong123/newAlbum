@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "name": "곰고미",
+  "targetCharacterCount": 18,
+  "architecture": "one-shared-base-model-with-character-conditioned-training",
+  "baselineDirectory": "models/gomi-lora-v4/data",
+  "plannedTrainingHardware": {
+    "gpu": "RTX 5070",
+    "vramGB": 12,
+    "ramGB": 32,
+    "verified": false
+  },
+  "androidTargets": {
+    "minimumRamGB": 8,
+    "completedReplyMs": 1000,
+    "verified": false
+  },
+  "phase": "data-foundation",
+  "selectedNewBaseModel": null
+}
