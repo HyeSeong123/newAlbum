@@ -14,6 +14,20 @@ const within = (parent, child) => {
 const splitRows = bytes => bytes.toString('utf8').split(/\r?\n/u).filter(line => line.trim()).map(JSON.parse);
 const serialize = value => JSON.stringify(value, null, 2) + '\n';
 
+// Resolve nonexistent destinations through their nearest existing ancestor without creating anything.
+async function projectedRealpath(target) {
+  let current = target;
+  const missing = [];
+  for (;;) {
+    try { return path.join(await realpath(current), ...missing); }
+    catch (error) {
+      if (error.code !== 'ENOENT' || path.dirname(current) === current) throw error;
+      missing.unshift(path.basename(current));
+      current = path.dirname(current);
+    }
+  }
+}
+
 export async function readBaseline(root = defaultRoot) {
   root = path.resolve(root);
   const project = await json(path.join(root, 'scripts/gomgomi-training/project.json'));
@@ -51,12 +65,12 @@ export async function exportCorpus(root = defaultRoot, destination) {
   if (within(realRoot, dest) && (!within(allowed, dest) || dest === allowed)) {
     throw new Error('output directory inside repository must be a new child of gomgomi-training-output');
   }
-  await mkdir(path.dirname(dest), { recursive: true });
-  // Check the actual parent too, so a symlink cannot redirect an allowed output into source folders.
-  const actual = path.join(await realpath(path.dirname(dest)), path.basename(dest));
+  // Validate before creating parents; an output symlink must never create even empty source directories.
+  const actual = await projectedRealpath(dest);
   if (within(realRoot, actual) && (!within(allowed, actual) || actual === allowed)) {
     throw new Error('output directory resolves to a source folder');
   }
+  await mkdir(path.dirname(dest), { recursive: true });
   await mkdir(dest); // Exclusive: existing folders and symlinks are never reused.
   const output = {};
   for (const split of ['train', 'validation']) {
