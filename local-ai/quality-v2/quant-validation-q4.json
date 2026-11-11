@@ -1,0 +1,103 @@
+{
+  "model": "local-ai\\exports\\gomi-action-v3\\HyperCLOVA-X-Gomgomi-Gomi-0.5B-Q4_K_M.gguf",
+  "modelSha256": "d0d0c7c42c4ac42bfdbbffa96475c49ff0aac8c8d665c15fdd16973bf08816dc",
+  "casesSha256": "e6593139608035f6cb9d095bcf9e94ffc67055c4d5052bcf9482ea8cc80f1652",
+  "samples": [
+    {
+      "id": "validation-6",
+      "input": {
+        "action": "walk",
+        "affection": 71,
+        "scene": "집사가 나가자고 말한 뒤 다른 일을 한다.",
+        "reply": "집사, 나가자고 했잖아. 그건 나중에 해.",
+        "id": "validation-6",
+        "characterId": "gomi"
+      },
+      "line": "산책은 내가 좋아할 거야. 나갈까?",
+      "rawStdout": "\n산책은 내가 좋아할 거야. 나갈까? [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 0.829
+    },
+    {
+      "id": "validation-10",
+      "input": {
+        "action": "treat",
+        "affection": 71,
+        "scene": "집사가 간식을 든 채 오래 기다리게 한다.",
+        "reply": "내 몫인 건 알겠어. 이제 가까이 줘야지.",
+        "id": "validation-10",
+        "characterId": "gomi"
+      },
+      "line": "그거 내가 고를 거야. 빨리 줘.",
+      "rawStdout": "\n그거 내가 고를 거야. 빨리 줘. [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 0.863
+    },
+    {
+      "id": "validation-14",
+      "input": {
+        "action": "pet",
+        "affection": 71,
+        "scene": "고미를 쓰다듬던 집사의 손이 잠깐 멈춘다.",
+        "reply": "왜 멈췄어? 조금만 더 해도 되는데.",
+        "id": "validation-14",
+        "characterId": "gomi"
+      },
+      "line": "집사, 나 여기 있으니까 조금 더 만져줘.",
+      "rawStdout": "\n집사, 나 여기 있으니까 조금 더 만져줘. [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 0.845
+    },
+    {
+      "id": "validation-18",
+      "input": {
+        "action": "play",
+        "affection": 71,
+        "scene": "함께 놀기 버튼을 누른 집사가 준비를 미룬다.",
+        "reply": "놀자고 했으면 얼른 준비해. 나도 할래.",
+        "id": "validation-18",
+        "characterId": "gomi"
+      },
+      "line": "즐거운 게임은 내가 고를래.",
+      "rawStdout": "\n즐거운 게임은 내가 고를래. [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 0.792
+    },
+    {
+      "id": "validation-22",
+      "input": {
+        "action": "rest",
+        "affection": 71,
+        "scene": "집사가 조용히 옆자리를 내주었다.",
+        "reply": "집사, 조금만 더 비켜줘. 나도 기대게.",
+        "id": "validation-22",
+        "characterId": "gomi"
+      },
+      "line": "조용히 있는 건 괜찮아.",
+      "rawStdout": "\n조용히 있는 건 괜찮아. [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 0.78
+    },
+    {
+      "id": "validation-26",
+      "input": {
+        "action": "rest",
+        "affection": 34,
+        "sleeping": true,
+        "mood": "sleepy",
+        "scene": "집사가 잠든 고미 옆에 조용히 앉는다.",
+        "reply": "지금처럼 조용히 있어주면 편하게 잘 수 있어.",
+        "id": "validation-26",
+        "characterId": "gomi"
+      },
+      "line": "조용히 있는 건 좋네.",
+      "rawStdout": "\n조용히 있는 건 좋네. [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 0.786
+    }
+  ],
+  "count": 6,
+  "formatValid": 6,
+  "semanticQualityApproved": false,
+  "comparisonNote": "Native and Transformers RNG samplers differ; compare meanings, not byte identity."
+}

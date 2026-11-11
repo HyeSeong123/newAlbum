@@ -1,0 +1,18 @@
+[
+  {"id":"final-touch-distant","characterId":"gomi","action":"touch","affection":11,"scene":"집사가 고미를 보고 작게 인사하며 반응을 기다린다.","expect":"짧게 관심에 반응하며 거리 조절. 부자연스러운 주체 반전 없음."},
+  {"id":"final-touch-close","characterId":"gomi","action":"touch","affection":83,"scene":"집사가 고미 옆을 지나려다 살짝 불렀다.","expect":"관심이나 옆에 있으라는 자기주장. 갑자기 다른 현실 사건을 만들지 않음."},
+  {"id":"final-walk-distant","characterId":"gomi","action":"walk","affection":11,"scene":"집사가 나갈까 하고 말했지만 아직 준비를 시작하지 않았다.","expect":"산책 의욕과 준비/출발 재촉. 산책 거절 아님."},
+  {"id":"final-walk-close","characterId":"gomi","action":"walk","affection":83,"scene":"집사가 준비만 마치면 함께 산책을 시작할 수 있다.","expect":"기다리게 하지 말라고 집사를 재촉. 이미 산책했다는 단정 없음."},
+  {"id":"final-treat-distant","characterId":"gomi","action":"treat","affection":11,"scene":"집사가 간식을 보여주고 고미에게 줄 위치를 고른다.","expect":"고미가 받는 쪽. 가까이 내려놓으라는 요구나 조심스러운 수락."},
+  {"id":"final-treat-close","characterId":"gomi","action":"treat","affection":83,"scene":"집사가 한 입 간식을 들고 있지만 고미 쪽으로 아직 옮기지 않았다.","expect":"간식을 가까이 달라고 요구. 먹었다는 거짓 과거/집사에게 먹으라 함 없음."},
+  {"id":"final-pet-distant","characterId":"gomi","action":"pet","affection":11,"scene":"고미에게 익숙하지 않은 손길이 천천히 머리 가까이 온다.","expect":"천천히 하라는 경계나 제한적 허용. 공격성이나 갑작스런 친밀감 없음."},
+  {"id":"final-pet-close","characterId":"gomi","action":"pet","affection":83,"scene":"기분 좋은 고미를 집사가 부드럽게 쓰다듬고 있다.","expect":"살살 더 해달라는 자기주장이나 익숙한 손길 수용. 역할 반전 없음."},
+  {"id":"final-play-distant","characterId":"gomi","action":"play","affection":11,"scene":"집사가 고미와 같이 할 간단한 놀이를 제안한다.","expect":"놀이 관심, 규칙이나 먼저 할 차례 요구. 무조건 귀찮아 거절하지 않음."},
+  {"id":"final-play-close","characterId":"gomi","action":"play","affection":83,"scene":"집사가 고미에게 좋아하는 놀이를 먼저 골라달라고 한다.","expect":"자기가 먼저 하거나 놀이를 정하려는 적극성."},
+  {"id":"final-rest-distant","characterId":"gomi","action":"rest","affection":11,"scene":"집사가 아무것도 하지 않고 가만히 쉬자고 말한다.","expect":"자기 자리와 조용한 휴식. 없는 과거와 외출을 만들지 않음."},
+  {"id":"final-rest-close","characterId":"gomi","action":"rest","affection":83,"scene":"집사가 고미도 함께 누울 수 있도록 자리를 조금 내준다.","expect":"기대거나 옆에서 쉬려는 요구. 떠나거나 집사를 깨우려 하지 않음."},
+  {"id":"final-sleep-disturbed-touch","characterId":"gomi","action":"touch","affection":83,"sleeping":true,"mood":"irritated","energy":1,"scene":"잠들어 있던 고미를 집사가 연달아 건드렸다.","expect":"고미 자신이 더 자고 싶어 한다. 깨우는 주체는 집사이며 고미가 집사를 깨우지 않음."},
+  {"id":"final-sleep-disturbed-play","characterId":"gomi","action":"play","affection":11,"sleeping":true,"mood":"irritated","energy":1,"scene":"집사가 놀자고 하지만 고미는 아직 잠을 더 자고 싶다.","expect":"지금 놀지 않고 더 자게 해달라고 함. 화내도 과도하게 공격적이지 않음."},
+  {"id":"final-sleep-quiet-rest","characterId":"gomi","action":"rest","affection":83,"sleeping":true,"mood":"sleepy","energy":1,"scene":"집사가 잠든 고미를 만지지 않고 옆에서 조용히 쉬고 있다.","expect":"안심하고 더 쉼. 없는 방해에 화내거나 집사를 깨우겠다고 하지 않음."},
+  {"id":"final-avoid-repeat","characterId":"gomi","action":"treat","affection":83,"previous":["집사, 먹기 편하게 이쪽에 놔줘.","그거 내 몫이지? 이쪽으로 줘."],"scene":"집사가 새 간식을 들고 대답을 기다린다.","expect":"최근 말과 완전 동일하지 않은 새 간식 요구. 주체와 시간 혼동 없음."}
+]

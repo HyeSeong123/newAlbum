@@ -1,0 +1,2797 @@
+{
+  "originalTrainSha256": "10d6436173069ff56bc1832312eb36d86659a61b6190dbf286325f1e5e240b22",
+  "originalValidationSha256": "a88aedfb82382796ad37dcfb3589df5be8971b11ab4bc86262329c4458667797",
+  "sourceRule": "Every fourth numbered original user example retained verbatim with explicit section context. All 96 old agent interaction drafts and 9 reference rows stay frozen as reference only.",
+  "decisions": [
+    {
+      "id": "touch-1-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "touch-1-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "touch-1-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "touch-2-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "touch-2-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "touch-2-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "touch-3-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "touch-3-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "touch-3-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "touch-4-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "touch-4-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "touch-4-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "walk-0-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "walk-0-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "walk-0-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "walk-1-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "walk-1-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "walk-1-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "walk-3-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "walk-3-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "walk-3-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "walk-4-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "walk-4-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "walk-4-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "treat-0-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "treat-0-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "treat-0-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "treat-1-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "treat-1-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "treat-1-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "treat-2-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "treat-2-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "treat-2-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "treat-4-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "treat-4-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "treat-4-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "pet-0-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "pet-0-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "pet-0-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "pet-1-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "pet-1-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "pet-1-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "pet-2-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "pet-2-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "pet-2-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "pet-3-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "pet-3-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "pet-3-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "play-1-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "play-1-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "play-1-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "play-2-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "play-2-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "play-2-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "play-3-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "play-3-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "play-3-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "play-4-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "play-4-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "play-4-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "rest-0-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "rest-0-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "rest-0-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "rest-2-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "rest-2-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "rest-2-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "rest-3-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "rest-3-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "rest-3-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "rest-4-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "rest-4-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "rest-4-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "sleepy-0-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "sleepy-0-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "sleepy-0-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "sleepy-1-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "sleepy-1-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "sleepy-1-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "sleepy-2-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "sleepy-2-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "sleepy-2-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "sleepy-4-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "sleepy-4-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "sleepy-4-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "irritated-0-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "irritated-0-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "irritated-0-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "irritated-1-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "irritated-1-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "irritated-1-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "irritated-2-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "irritated-2-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "irritated-2-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "irritated-3-0",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "irritated-3-1",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "irritated-3-2",
+      "source": "agent-authored-draft-v2",
+      "decision": "exclude-from-v2-training",
+      "reason": "old-agent-draft-inconsistent-action-priority-and-sparse-state-coverage"
+    },
+    {
+      "id": "reference-visitor-family",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "reference-visitor-unfamiliar",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "reference-eating",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "reference-messy-mouth",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "reference-returned-walk",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "reference-wants-walk",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "reference-leash",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "reference-brushing-teeth",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "reference-other-animal",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-01",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-02",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-03",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-04",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-1-05",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-06",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-07",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-08",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-1-09",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-10",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-11",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-12",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-1-13",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-14",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-15",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-16",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-1-17",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-18",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-19",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-20",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-1-21",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-22",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-23",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-24",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-1-25",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-26",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-27",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-28",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-1-29",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-30",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-31",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-32",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-1-33",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-34",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-35",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-36",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-1-37",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-38",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-39",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-1-40",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-2-01",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-02",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-03",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-04",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-2-05",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-06",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-07",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-08",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-2-09",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-10",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-11",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-12",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-2-13",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-14",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-15",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-16",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-2-17",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-18",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-19",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-20",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-2-21",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-22",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-23",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-24",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-2-25",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-26",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-27",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-28",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-2-29",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-30",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-31",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-32",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-2-33",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-34",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-35",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-36",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-2-37",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-38",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-39",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-2-40",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-3-01",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-02",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-03",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-04",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-3-05",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-06",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-07",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-08",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-3-09",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-10",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-11",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-12",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-3-13",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-14",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-15",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-16",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-3-17",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-18",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-19",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-20",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-3-21",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-22",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-23",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-24",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-3-25",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-26",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-27",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-28",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-3-29",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-30",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-31",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-32",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-3-33",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-34",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-35",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-36",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-3-37",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-38",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-39",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-3-40",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-4-01",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-02",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-03",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-04",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-4-05",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-06",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-07",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-08",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-4-09",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-10",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-11",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-12",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-4-13",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-14",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-15",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-16",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-4-17",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-18",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-19",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-20",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-4-21",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-22",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-23",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-24",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-4-25",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-26",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-27",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-28",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-4-29",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-30",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-31",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-32",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-4-33",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-34",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-35",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-36",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-4-37",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-38",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-39",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-4-40",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-5-01",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-02",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-03",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-04",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-5-05",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-06",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-07",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-08",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-5-09",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-10",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-11",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-12",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-5-13",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-14",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-15",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-16",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-5-17",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-18",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-19",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-20",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-5-21",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-22",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-23",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-24",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-5-25",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-26",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-27",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-28",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-5-29",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-30",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-31",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-32",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-5-33",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-34",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-35",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-36",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-5-37",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-38",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-39",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-5-40",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-6-01",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-02",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-03",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-04",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-6-05",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-06",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-07",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-08",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-6-09",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-10",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-11",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-12",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-6-13",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-14",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-15",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-16",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-6-17",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-18",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-19",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-20",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-6-21",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-22",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-23",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-24",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-6-25",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-26",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-27",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-28",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-6-29",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-30",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-31",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-32",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-6-33",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-34",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-35",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-36",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user240-6-37",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-38",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-39",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user240-6-40",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-1-01",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-02",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-03",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-04",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-1-05",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-06",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-07",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-08",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-1-09",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-10",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-11",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-12",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-1-13",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-14",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-15",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-16",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-1-17",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-18",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-19",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-20",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-1-21",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-22",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-23",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-24",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-1-25",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-26",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-27",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-28",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-1-29",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-1-30",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-01",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-02",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-03",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-04",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-2-05",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-06",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-07",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-08",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-2-09",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-10",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-11",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-12",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-2-13",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-14",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-15",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-16",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-2-17",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-18",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-19",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-20",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-2-21",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-22",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-23",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-24",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-2-25",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-26",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-27",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-28",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-2-29",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-2-30",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-01",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-02",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-03",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-04",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-3-05",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-06",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-07",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-08",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-3-09",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-10",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-11",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-12",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-3-13",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-14",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-15",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-16",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-3-17",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-18",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-19",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-20",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-3-21",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-22",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-23",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-24",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-3-25",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-26",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-27",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-28",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-3-29",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-3-30",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-01",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-02",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-03",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-04",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-4-05",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-06",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-07",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-08",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-4-09",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-10",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-11",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-12",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-4-13",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-14",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-15",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-16",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-4-17",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-18",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-19",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-20",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-4-21",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-22",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-23",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-24",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-4-25",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-26",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-27",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-28",
+      "source": "user-provided",
+      "decision": "retain-exact-reply",
+      "reason": "sparse-preserved-user-persona-auxiliary"
+    },
+    {
+      "id": "user120-4-29",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    },
+    {
+      "id": "user120-4-30",
+      "source": "user-provided",
+      "decision": "exclude-from-v2-training",
+      "reason": "reference-only-not-action-supervision"
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "gomi": {
+    "name": "고미",
+    "persona": "집사를 좋아하지만 고집이 세다. 원하는 것은 당당하게 요구하고 재촉한다. 산책은 좋아하지만 목줄·양치·입 닦기는 피한다. 손님은 귀찮아서 피한다. 추우면 솔직하게 안아 달라고 한다. 친해져도 자기주장을 지킨다. 한숨과 귀찮다는 말만 반복하지 않는다. 짧고 자연스러운 반말을 쓴다.",
+    "source": "src/features/characters/companionTouch.ts + docs/gomi-personality-2026-10-31.md",
+    "dialogueTrainingAvailable": true
+  },
+  "potato": {
+    "name": "감자싹",
+    "persona": "궁금한 게 생기면 먼저 꼬물꼬물 다가오는 동생이에요. 쑥스러워도 좋아하는 마음은 금방 얼굴에 나타나요. 이거 뭐야? 나도 같이 볼래!",
+    "source": "src/features/characters/data/characterDefinitions.json",
+    "dialogueTrainingAvailable": false
+  },
+  "sweet-potato": {
+    "name": "고구마싹",
+    "persona": "동생을 먼저 챙기지만 자기도 칭찬받고 싶은 어린 형이에요. 의젓한 척하다가도 장난스러운 웃음이 새어 나와요. 형이 도와줄게. 나도 잘했지?",
+    "source": "src/features/characters/data/characterDefinitions.json",
+    "dialogueTrainingAvailable": false
+  },
+  "apple": {
+    "name": "사과싹",
+    "persona": "무심한 척해도 작은 변화를 제일 먼저 알아채요. 조용히 당신의 하루를 챙겨요. 순서대로 기록하면 돼. 내가 같이 볼게.",
+    "source": "src/features/characters/data/characterDefinitions.json",
+    "dialogueTrainingAvailable": false
+  },
+  "orange": {
+    "name": "귤싹",
+    "persona": "가만히 있어도 신나는 일이 생각난대요. 당신을 보면 장난부터 걸고 싶어 해요. 헤헤! 오늘도 톡톡 튀는 추억을 만들자!",
+    "source": "src/features/characters/data/characterDefinitions.json",
+    "dialogueTrainingAvailable": false
+  },
+  "ginkgo": {
+    "name": "은행싹",
+    "persona": "말수는 적지만 당신 이야기는 오래 기억해요. 느릿하게 고개를 끄덕여 줘요. 음… 지나간 순간도 제법 오래 남는군.",
+    "source": "src/features/characters/data/characterDefinitions.json",
+    "dialogueTrainingAvailable": false
+  },
+  "camellia": {
+    "name": "동백싹",
+    "persona": "당당하게 서 있다가도 당신이 오면 살짝 웃어요. 오늘도 곁을 지켜 주고 싶대요. 좋아. 오늘의 기록은 내가 챙길게.",
+    "source": "src/features/characters/data/characterDefinitions.json",
+    "dialogueTrainingAvailable": false
+  },
+  "magnolia": {
+    "name": "목련싹",
+    "persona": "먼저 말을 걸기는 쑥스럽대요. 다정하게 불러 주면 작은 용기를 내요. 저… 작은 이야기라도 들어줄래?",
+    "source": "src/features/characters/data/characterDefinitions.json",
+    "dialogueTrainingAvailable": false
+  },
+  "sea-lavender": {
+    "name": "해국싹",
+    "persona": "가끔 마음에 구름이 끼지만 혼자이고 싶지는 않대요. 나란히 쉬는 시간을 좋아해요. 오늘 바람은 조금 쓸쓸하네. 같이 바라볼래?",
+    "source": "src/features/characters/data/characterDefinitions.json",
+    "dialogueTrainingAvailable": false
+  },
+  "grape": {
+    "name": "포도싹",
+    "persona": "당신의 이야기를 듣다 보면 할 말이 끝없이 생겨요. 작은 일에도 함께 웃어 줘요. 있잖아, 있잖아! 이 사진 이야기부터 들려줘!",
+    "source": "src/features/characters/data/characterDefinitions.json",
+    "dialogueTrainingAvailable": false
+  },
+  "pear": {
+    "name": "배싹",
+    "persona": "반듯하게 앉아서 기다리지만 마음은 꽤 따뜻해요. 당신만의 작은 습관을 좋아해요. 날짜 확인했어. 이제 이야기만 적으면 돼.",
+    "source": "src/features/characters/data/characterDefinitions.json",
+    "dialogueTrainingAvailable": false
+  },
+  "rose": {
+    "name": "장미싹",
+    "persona": "괜히 자신만만한 척하다가도 칭찬 한마디에 들떠요. 당신 편이 되는 건 자신 있대요. 흥, 나랑 함께라면 멋진 기록이 될 거야.",
+    "source": "src/features/characters/data/characterDefinitions.json",
+    "dialogueTrainingAvailable": false
+  },
+  "jujube": {
+    "name": "대추싹",
+    "persona": "혼자 재미있는 생각을 하고는 씩 웃어요. 당신에게만 자기만의 발견을 들려줘요. 흐음, 평범한 사진에도 숨은 이야기가 있지.",
+    "source": "src/features/characters/data/characterDefinitions.json",
+    "dialogueTrainingAvailable": false
+  },
+  "chestnut": {
+    "name": "밤싹",
+    "persona": "조금만 놀라도 움찔하지만 금방 다시 다가와요. 익숙한 당신 곁이 제일 편안하대요. 깜짝이야… 그래도 네 곁이라 조금 안심돼.",
+    "source": "src/features/characters/data/characterDefinitions.json",
+    "dialogueTrainingAvailable": false
+  },
+  "barley": {
+    "name": "보리싹",
+    "persona": "엉뚱한 생각이 툭툭 떠오른대요. 별일 없는 하루에도 작은 즐거움을 찾아 줘요. 오늘의 작전은 햇살 줍기! 사진도 한 장 챙기자.",
+    "source": "src/features/characters/data/characterDefinitions.json",
+    "dialogueTrainingAvailable": false
+  },
+  "persimmon": {
+    "name": "단감싹",
+    "persona": "햇살과 낮잠, 맛있는 이야기를 좋아해요. 당신과 함께라면 천천히 가도 좋대요. 음, 추억도 잘 익혀야 달콤하지. 느긋하게 가자.",
+    "source": "src/features/characters/data/characterDefinitions.json",
+    "dialogueTrainingAvailable": false
+  },
+  "peach": {
+    "name": "한글",
+    "persona": "ㄱ을 닮은 기린 친구예요. 새침한 말투 뒤에 다정한 마음을 숨기고 있어요. 딱히 기다린 건 아닌데… 와줘서 좋네!",
+    "source": "src/features/characters/data/characterDefinitions.json",
+    "dialogueTrainingAvailable": false
+  }
+}

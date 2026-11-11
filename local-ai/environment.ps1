@@ -1,0 +1,10 @@
+﻿$ErrorActionPreference = 'Stop'
+$ProjectRoot = Split-Path $PSScriptRoot -Parent
+$env:PYTHONUTF8 = '1'
+$env:PYTHONIOENCODING = 'utf-8'
+$env:HF_HOME = Join-Path $PSScriptRoot 'cache/huggingface'
+$env:HF_HUB_DISABLE_TELEMETRY = '1'
+$env:DO_NOT_TRACK = '1'
+$env:TOKENIZERS_PARALLELISM = 'false'
+$env:UV_PYTHON_INSTALL_DIR = Join-Path $ProjectRoot '.python'
+$AiPython = Join-Path $ProjectRoot '.venv/Scripts/python.exe'

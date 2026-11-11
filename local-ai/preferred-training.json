@@ -1,0 +1,7 @@
+{
+  "corpus": "data/gomi-actions-v2",
+  "character": "gomi",
+  "epochs": 4,
+  "learningRate": 0.0001,
+  "notes": "Fresh character adapter using curated data. Explicit --initial-adapter performs additional training; --resume only restores an interrupted identical run."
+}

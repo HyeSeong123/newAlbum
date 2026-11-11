@@ -1,0 +1,23 @@
+{
+  "generatedApk": false,
+  "appModelChanged": false,
+  "newSigningKeyCreated": false,
+  "prepareAttempt": {
+    "command": "node scripts/prepare-android.mjs",
+    "exitCode": 1,
+    "log": "Android 프로젝트가 없습니다. 먼저 Android Studio·SDK·NDK·Rust를 준비하고 npm run android:init을 실행해 주세요."
+  },
+  "packageScriptAttempt": {
+    "command": "npm run android:apk",
+    "exitCode": 1,
+    "log": "npm was not recognized in the current PowerShell PATH. The package script starts with the separately attempted prepare-android.mjs."
+  },
+  "missingPrerequisites": [
+    "generated Android project",
+    "Android SDK/NDK",
+    "Rust",
+    "npm in current shell PATH"
+  ],
+  "existingSigningKey": "Repository Actions Secrets; not extracted or replaced",
+  "nextStep": "Install/configure Android toolchain, initialize Android project and validate compact model integration before building a signed APK."
+}

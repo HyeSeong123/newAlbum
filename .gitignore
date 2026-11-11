@@ -65,3 +65,15 @@ public/models/native-dev/
 
 # Local Gomi dialogue training exports and evidence (weights live in WSL home).
 /gomi-training-output/
+
+# PC-only AI toolchain and experiments (never bundle these into the app).
+/.python/
+/.venv/
+/.tools/
+/local-ai/cache/
+/local-ai/runs/
+/local-ai/environment.json
+/local-ai/requirements.lock.txt
+/local-ai/base-model.json
+/local-ai/base-model-*.json
+/local-ai/exports/

@@ -1,0 +1,64 @@
+{
+  "tests": {
+    "run": 31,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": true
+  },
+  "compiled": [
+    "build_corpus_v2.py",
+    "check.py",
+    "core.py",
+    "evaluate_actions.py",
+    "evaluate_gguf.py",
+    "export_app.py",
+    "modeling.py",
+    "prepare.py",
+    "react.py",
+    "train.py",
+    "verify.py"
+  ],
+  "checks": {
+    "pipCheck": {
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "Checked 31 packages in 2ms\nAll installed packages are compatible"
+    },
+    "diffCheck": {
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "corpusCheck": {
+      "exitCode": 0,
+      "stdout": "{'train': 408, 'validation': 28, 'characters': 17, 'actions': 7}",
+      "stderr": ""
+    },
+    "launcherCheck": {
+      "exitCode": 0,
+      "stdout": "{'train': 408, 'validation': 28, 'characters': 17, 'actions': 7}",
+      "stderr": ""
+    },
+    "originalHashesPreserved": true,
+    "selectedModelSha256Matches": true
+  },
+  "appRuntimeChanged": false,
+  "androidDeviceTested": false,
+  "offlineInference": {
+    "exitCode": 0,
+    "network": "socket connect/connect_ex/create_connection blocked throughout loading and generation",
+    "source": "local-generation",
+    "characterId": "gomi",
+    "action": "rest",
+    "line": "집사, 내가 먼저 옆자리 차지해.",
+    "formatValid": true,
+    "qualityApproved": false,
+    "generationSeconds": 2.314
+  },
+  "finalScenarioLeakageCheck": {
+    "inputPromptOverlapWithTrainOrValidation": [],
+    "hfExactCorpusReplyMatches": [],
+    "nativeQ4ExactCorpusReplyMatches": []
+  }
+}

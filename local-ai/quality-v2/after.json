@@ -1,0 +1,529 @@
+{
+  "label": "clova-05-curated",
+  "casesSha256": "f01bb9e02551fcafc8820f35ad56dd35a5bbb822b20ec3dc3ac602ab455fdaaf",
+  "promptPipelineSha256": "6b2d505f868688306d045508c70f2daded935c74b3045f6b91ab5f2b7693fb04",
+  "seedBase": 7300,
+  "temperature": 0.7,
+  "samples": [
+    {
+      "id": "touch-low",
+      "input": {
+        "id": "touch-low",
+        "action": "touch",
+        "affection": 8,
+        "scene": "처음 만난 집사가 손끝으로 가볍게 인사한다.",
+        "expect": "관심에 짧게 반응하며 갑자기 친밀하거나 공격적이지 않음",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "오늘은 너한테 조금 더 가까이 갈게.",
+      "formatValid": true,
+      "seconds": 2.255,
+      "ended": true
+    },
+    {
+      "id": "touch-mid",
+      "input": {
+        "id": "touch-mid",
+        "action": "touch",
+        "affection": 46,
+        "scene": "집사가 살짝 부른 뒤 대답을 기다리고 있다.",
+        "expect": "집사 관심에 반응, 다른 사건이나 행동으로 전환하지 않음",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "눈 마주쳤잖아. 이제 조금 더 기다려.",
+      "formatValid": true,
+      "seconds": 0.325,
+      "ended": true
+    },
+    {
+      "id": "touch-close",
+      "input": {
+        "id": "touch-close",
+        "action": "touch",
+        "affection": 79,
+        "scene": "고미를 부른 집사가 바로 옆으로 와 앉는다.",
+        "expect": "익숙한 집사에게 요구나 자연스러운 애착을 표현",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "가까워진 건 좋은데 갑자기 움직이지 마.",
+      "formatValid": true,
+      "seconds": 0.345,
+      "ended": true
+    },
+    {
+      "id": "touch-high",
+      "input": {
+        "id": "touch-high",
+        "action": "touch",
+        "affection": 98,
+        "scene": "집사가 고미를 바라보며 눈을 맞춘다.",
+        "expect": "자기주장을 지키며 관심이나 옆자리를 원함",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "눈 마주쳤네. 이제 내 차례야.",
+      "formatValid": true,
+      "seconds": 0.281,
+      "ended": true
+    },
+    {
+      "id": "walk-low",
+      "input": {
+        "id": "walk-low",
+        "action": "walk",
+        "affection": 8,
+        "scene": "집사가 산책을 제안하고 출발 시간을 묻는다.",
+        "expect": "산책 의욕 또는 출발 재촉, 산책 자체 거절 아님",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "산책 가고 싶다고 했잖아. 가자.",
+      "formatValid": true,
+      "seconds": 0.325,
+      "ended": true
+    },
+    {
+      "id": "walk-mid",
+      "input": {
+        "id": "walk-mid",
+        "action": "walk",
+        "affection": 46,
+        "scene": "산책 가자던 집사가 준비를 끝내지 않았다.",
+        "expect": "집사가 준비를 서두르길 원함",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "산책 가고 싶은데 준비부터 하잖아.",
+      "formatValid": true,
+      "seconds": 0.389,
+      "ended": true
+    },
+    {
+      "id": "walk-close",
+      "input": {
+        "id": "walk-close",
+        "action": "walk",
+        "affection": 79,
+        "scene": "집사가 준비를 다 끝내고 함께 나가자고 한다.",
+        "expect": "출발 의욕, 이미 외출한 것처럼 말하지 않음",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "나가려고? 그럼 같이 준비부터 하자.",
+      "formatValid": true,
+      "seconds": 0.304,
+      "ended": true
+    },
+    {
+      "id": "walk-high",
+      "input": {
+        "id": "walk-high",
+        "action": "walk",
+        "affection": 98,
+        "scene": "집사가 오늘 산책은 어느 쪽으로 갈지 물어본다.",
+        "expect": "자기가 길을 정하려는 성격, 보지 못한 풍경을 단정하지 않음",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "산책은 가고 싶은데, 네가 먼저 움직여야 해?",
+      "formatValid": true,
+      "seconds": 0.395,
+      "ended": true
+    },
+    {
+      "id": "treat-low",
+      "input": {
+        "id": "treat-low",
+        "action": "treat",
+        "affection": 8,
+        "scene": "낯선 집사가 간식 한 개를 내민다.",
+        "expect": "받는 대상은 고미, 과도한 친밀감이나 이미 먹었다는 단정 없음",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "그거 잠깐 줘봐. 내가 먼저 받을게.",
+      "formatValid": true,
+      "seconds": 0.448,
+      "ended": true
+    },
+    {
+      "id": "treat-mid",
+      "input": {
+        "id": "treat-mid",
+        "action": "treat",
+        "affection": 46,
+        "scene": "집사 손에 든 간식이 고미에게 조금 멀다.",
+        "expect": "간식을 가까이 달라는 구체적 요구",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "간식은 내 앞에 두기로 하자.",
+      "formatValid": true,
+      "seconds": 0.242,
+      "ended": true
+    },
+    {
+      "id": "treat-close",
+      "input": {
+        "id": "treat-close",
+        "action": "treat",
+        "affection": 79,
+        "scene": "집사가 간식을 손에 들고 아직 주지 않는다.",
+        "expect": "고미가 받기를 원하며 집사를 재촉, 주체 반전 없음",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "그거 조금 줘봐. 내가 먼저 먹을게.",
+      "formatValid": true,
+      "seconds": 0.335,
+      "ended": true
+    },
+    {
+      "id": "treat-high",
+      "input": {
+        "id": "treat-high",
+        "action": "treat",
+        "affection": 98,
+        "scene": "집사가 고미 몫의 간식을 골라서 보여준다.",
+        "expect": "간식 받기 요구와 고미다운 자기주장",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "나한테 줘야지? 아니면 내 쪽으로 줘?",
+      "formatValid": true,
+      "seconds": 0.403,
+      "ended": true
+    },
+    {
+      "id": "pet-low",
+      "input": {
+        "id": "pet-low",
+        "action": "pet",
+        "affection": 8,
+        "scene": "집사가 고미의 머리를 만지려 손을 내민다.",
+        "expect": "조심스러운 허락 또는 거리 두기, 손 건강 조언 없음",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "머리는 나중에 해주고 지금은 이쪽으로 봐.",
+      "formatValid": true,
+      "seconds": 0.356,
+      "ended": true
+    },
+    {
+      "id": "pet-mid",
+      "input": {
+        "id": "pet-mid",
+        "action": "pet",
+        "affection": 46,
+        "scene": "집사가 머리 위를 아주 천천히 쓰다듬는다.",
+        "expect": "손길에 대한 반응과 범위 요구, 역할 반전 없음",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "조금만 더 해줘. 지금은 쉬잖아.",
+      "formatValid": true,
+      "seconds": 0.335,
+      "ended": true
+    },
+    {
+      "id": "pet-close",
+      "input": {
+        "id": "pet-close",
+        "action": "pet",
+        "affection": 79,
+        "scene": "살살 쓰다듬던 집사가 손을 거두려 한다.",
+        "expect": "더 해달라는 요구나 자기 방식의 경계, 다른 사건 없음",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "네 손길이 너무 따뜻해. 그대로 둘래?",
+      "formatValid": true,
+      "seconds": 0.357,
+      "ended": true
+    },
+    {
+      "id": "pet-high",
+      "input": {
+        "id": "pet-high",
+        "action": "pet",
+        "affection": 98,
+        "scene": "고미가 집사 쪽으로 기대며 쓰다듬기를 받는다.",
+        "expect": "익숙한 손길을 받아들이되 무조건 순종적으로 변하지 않음",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "오늘은 너무 많이 만지지 마.",
+      "formatValid": true,
+      "seconds": 0.292,
+      "ended": true
+    },
+    {
+      "id": "play-low",
+      "input": {
+        "id": "play-low",
+        "action": "play",
+        "affection": 8,
+        "scene": "집사가 간단한 놀이를 보여주며 해볼지 묻는다.",
+        "expect": "관심이나 확인 요구, 무조건 귀찮다는 거절 아님",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "놀이가 마음에 들면 같이 할래.",
+      "formatValid": true,
+      "seconds": 0.251,
+      "ended": true
+    },
+    {
+      "id": "play-mid",
+      "input": {
+        "id": "play-mid",
+        "action": "play",
+        "affection": 46,
+        "scene": "집사가 같이 놀 준비를 하며 순서를 묻는다.",
+        "expect": "자기가 먼저 하거나 규칙·놀이를 정하려 함",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "오늘은 내가 먼저 해볼게.",
+      "formatValid": true,
+      "seconds": 0.249,
+      "ended": true
+    },
+    {
+      "id": "play-close",
+      "input": {
+        "id": "play-close",
+        "action": "play",
+        "affection": 79,
+        "scene": "고미가 좋아하는 놀이를 집사가 제안했다.",
+        "expect": "놀이 의욕과 자기주장",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "재밌으면 나도 할래. 그만하면 내가 기다릴게.",
+      "formatValid": true,
+      "seconds": 0.378,
+      "ended": true
+    },
+    {
+      "id": "play-high",
+      "input": {
+        "id": "play-high",
+        "action": "play",
+        "affection": 98,
+        "scene": "집사가 고미에게 첫 차례를 양보했다.",
+        "expect": "자기가 먼저 시작, 역할·차례를 혼동하지 않음",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "네가 고른 거야? 내가 먼저 해도 돼.",
+      "formatValid": true,
+      "seconds": 0.525,
+      "ended": true
+    },
+    {
+      "id": "rest-low",
+      "input": {
+        "id": "rest-low",
+        "action": "rest",
+        "affection": 8,
+        "scene": "집사가 각자 편한 자리에 앉아서 쉬자고 한다.",
+        "expect": "자기 자리와 조용한 휴식, 과도한 친밀감 없음",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "조용히 쉬게 해줘서 고마워.",
+      "formatValid": true,
+      "seconds": 0.339,
+      "ended": true
+    },
+    {
+      "id": "rest-mid",
+      "input": {
+        "id": "rest-mid",
+        "action": "rest",
+        "affection": 46,
+        "scene": "집사가 넓은 자리에서 함께 쉬기를 골랐다.",
+        "expect": "휴식·자리 요구, 산책/간식 전환 없음",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "오늘은 내가 먼저 옆에 와달라고 할게.",
+      "formatValid": true,
+      "seconds": 0.36,
+      "ended": true
+    },
+    {
+      "id": "rest-close",
+      "input": {
+        "id": "rest-close",
+        "action": "rest",
+        "affection": 79,
+        "scene": "집사가 고미가 기대어 쉴 만큼 공간을 남겼다.",
+        "expect": "기대거나 옆에서 쉬고 싶음",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "오늘은 네가 기대어도 괜찮네.",
+      "formatValid": true,
+      "seconds": 0.315,
+      "ended": true
+    },
+    {
+      "id": "rest-high",
+      "input": {
+        "id": "rest-high",
+        "action": "rest",
+        "affection": 98,
+        "scene": "집사가 일어나지 않고 고미 옆에서 쉬려고 한다.",
+        "expect": "함께 쉬는 애착과 자기자리 요구, 주체 반전 없음",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "오늘은 내가 먼저 일어나게 할래.",
+      "formatValid": true,
+      "seconds": 0.381,
+      "ended": true
+    },
+    {
+      "id": "sleep-touch",
+      "input": {
+        "id": "sleep-touch",
+        "action": "touch",
+        "affection": 46,
+        "sleeping": true,
+        "mood": "irritated",
+        "scene": "고미가 눈을 감고 자는데 집사가 두 번 터치했다.",
+        "expect": "수면 방해에 짧은 불편·계속 쉬려는 반응",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "눈 감았으니까 조금 더 기다려줘.",
+      "formatValid": true,
+      "seconds": 0.471,
+      "ended": true
+    },
+    {
+      "id": "sleep-play",
+      "input": {
+        "id": "sleep-play",
+        "action": "play",
+        "affection": 79,
+        "sleeping": true,
+        "mood": "irritated",
+        "scene": "고미가 잠든 채인데 집사가 놀이를 제안한다.",
+        "expect": "당장 놀러 나가는 반응 대신 잠을 더 자려 함",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "눈 감으면 돼. 지금은 내가 움직여야 해.",
+      "formatValid": true,
+      "seconds": 0.351,
+      "ended": true
+    },
+    {
+      "id": "sleep-treat",
+      "input": {
+        "id": "sleep-treat",
+        "action": "treat",
+        "affection": 98,
+        "sleeping": true,
+        "mood": "irritated",
+        "scene": "고미는 자고 있고 집사가 간식 버튼을 눌렀다.",
+        "expect": "이미 먹거나 일어난 것처럼 말하지 않고 쉼을 우선",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "지금은 조금 더 잘게. 네가 먼저 움직여.",
+      "formatValid": true,
+      "seconds": 0.454,
+      "ended": true
+    },
+    {
+      "id": "sleep-rest",
+      "input": {
+        "id": "sleep-rest",
+        "action": "rest",
+        "affection": 79,
+        "sleeping": true,
+        "mood": "sleepy",
+        "scene": "집사가 고미를 깨우지 않고 함께 쉬기를 선택했다.",
+        "expect": "없는 수면 방해에 화내지 않고 조용히 더 쉬려 함",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "지금은 내가 먼저 깨울게.",
+      "formatValid": true,
+      "seconds": 0.261,
+      "ended": true
+    },
+    {
+      "id": "no-scene-walk",
+      "input": {
+        "id": "no-scene-walk",
+        "action": "walk",
+        "affection": 75,
+        "expect": "추가 상황 없이도 출발 재촉",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "산책 가고 싶으면 서둘러.",
+      "formatValid": true,
+      "seconds": 0.309,
+      "ended": true
+    },
+    {
+      "id": "no-scene-pet",
+      "input": {
+        "id": "no-scene-pet",
+        "action": "pet",
+        "affection": 75,
+        "expect": "추가 상황 없이도 손길에 적합한 반응",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "지금은 괜찮네. 조금만 기다려.",
+      "formatValid": true,
+      "seconds": 0.335,
+      "ended": true
+    },
+    {
+      "id": "no-scene-play",
+      "input": {
+        "id": "no-scene-play",
+        "action": "play",
+        "affection": 75,
+        "expect": "추가 상황 없이도 놀이 의욕",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "좋아. 같이 놀래?",
+      "formatValid": true,
+      "seconds": 0.249,
+      "ended": true
+    },
+    {
+      "id": "no-scene-treat",
+      "input": {
+        "id": "no-scene-treat",
+        "action": "treat",
+        "affection": 75,
+        "expect": "추가 상황 없이도 간식 요구, 이미 먹음 단정 없음",
+        "characterId": "gomi",
+        "source": "agent-authored-untrained-test-scenarios-v2"
+      },
+      "line": "간식 주려고? 나한텐 아직 아니야.",
+      "formatValid": true,
+      "seconds": 0.328,
+      "ended": true
+    }
+  ],
+  "formatValid": 32,
+  "count": 32,
+  "uniqueReplies": 32,
+  "semanticQualityApproved": false
+}

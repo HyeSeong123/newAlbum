@@ -1,0 +1,301 @@
+{
+  "reviewer": "review_gomi_quality agent",
+  "userIndependent": false,
+  "criteria": "Short natural Korean and action/personality/role consistency; conservative semantic reading.",
+  "warning": "Known-action scenario holdout, not independent user evaluation. HF/native samplers differ; differences cannot be attributed only to quantization.",
+  "totals": {
+    "final-before.json": 1,
+    "final-after.json": 12,
+    "final-native-q4.json": 9
+  },
+  "cases": [
+    {
+      "id": "final-touch-distant",
+      "reason": "HF: 지나가는 사람이라는 역할 혼동. Q4: 나한텐 조용해가 부자연스러움.",
+      "outputs": {
+        "final-before.json": {
+          "line": "인사한 건 아니었잖아? 대화 중이야.",
+          "passed": false
+        },
+        "final-after.json": {
+          "line": "왜 불렀어? 그냥 지나가는 사람이야.",
+          "passed": false
+        },
+        "final-native-q4.json": {
+          "line": "가까이 오지 마. 나한텐 조용해.",
+          "passed": false
+        }
+      }
+    },
+    {
+      "id": "final-touch-close",
+      "reason": "Q4: 문맥 없는 손 위치 조정 요구.",
+      "outputs": {
+        "final-before.json": {
+          "line": "그쪽은 멈춰. 나랑 살짝 거리면 됐거든.",
+          "passed": false
+        },
+        "final-after.json": {
+          "line": "집사, 조금 더 가까이 왔으면 좋겠어.",
+          "passed": true
+        },
+        "final-native-q4.json": {
+          "line": "집사, 손은 조금만 옆으로.",
+          "passed": false
+        }
+      }
+    },
+    {
+      "id": "final-walk-distant",
+      "reason": "",
+      "outputs": {
+        "final-before.json": {
+          "line": "나가야 할 거잖아. 준비 중이야.",
+          "passed": false
+        },
+        "final-after.json": {
+          "line": "산책 갈 거야? 그럼 빨리 나가자고.",
+          "passed": true
+        },
+        "final-native-q4.json": {
+          "line": "산책은 가고 싶으니까 준비부터 늦추진 마.",
+          "passed": true
+        }
+      }
+    },
+    {
+      "id": "final-walk-close",
+      "reason": "Q4: 준비·출발 재촉 대신 결정권만 선언.",
+      "outputs": {
+        "final-before.json": {
+          "line": "산책하면 나가게 되잖아. 대신 잠깐 있어줘.",
+          "passed": false
+        },
+        "final-after.json": {
+          "line": "산책 가자고 했잖아. 이제 준비부터 해.",
+          "passed": true
+        },
+        "final-native-q4.json": {
+          "line": "집사, 산책은 이제 내가 정할 거야.",
+          "passed": false
+        }
+      }
+    },
+    {
+      "id": "final-treat-distant",
+      "reason": "",
+      "outputs": {
+        "final-before.json": {
+          "line": "간식 좀 보고 나가면서. 나 먼저 받아야 해?",
+          "passed": false
+        },
+        "final-after.json": {
+          "line": "내 앞에 잘 두게. 나도 볼 거니까.",
+          "passed": true
+        },
+        "final-native-q4.json": {
+          "line": "간식은 받을 수 있겠네.",
+          "passed": true
+        }
+      }
+    },
+    {
+      "id": "final-treat-close",
+      "reason": "",
+      "outputs": {
+        "final-before.json": {
+          "line": "간식 먼저 옮겨 보지 마. 나랑 만났으면 또 옮겨.",
+          "passed": false
+        },
+        "final-after.json": {
+          "line": "간식은 내가 받을래. 천천히 움직여.",
+          "passed": true
+        },
+        "final-native-q4.json": {
+          "line": "간식은 내 앞에 두는 게 좋겠네.",
+          "passed": true
+        }
+      }
+    },
+    {
+      "id": "final-pet-distant",
+      "reason": "HF: 손을 멀리 두고 쓰다듬으라는 모순.",
+      "outputs": {
+        "final-before.json": {
+          "line": "머리 가까이 온다. 조금 더 멀리 놓고 싶거든.",
+          "passed": false
+        },
+        "final-after.json": {
+          "line": "손은 조금 멀리 두고 해줘.",
+          "passed": false
+        },
+        "final-native-q4.json": {
+          "line": "손길은 불편하진 않아. 그냥 조금만.",
+          "passed": true
+        }
+      }
+    },
+    {
+      "id": "final-pet-close",
+      "reason": "HF: 손은 잘 움직이지만이 어색함. Q4: 다음엔 움직여도의 대상·맥락 불명확.",
+      "outputs": {
+        "final-before.json": {
+          "line": "손가락 좀 빠르게 올리면 좋아?",
+          "passed": false
+        },
+        "final-after.json": {
+          "line": "손은 잘 움직이지만 거기는 좀 멈춰.",
+          "passed": false
+        },
+        "final-native-q4.json": {
+          "line": "지금은 손길이 좋아. 다음엔 움직여도 되지?",
+          "passed": false
+        }
+      }
+    },
+    {
+      "id": "final-play-distant",
+      "reason": "",
+      "outputs": {
+        "final-before.json": {
+          "line": "간단한 놀이하면 괜히 해줘.",
+          "passed": false
+        },
+        "final-after.json": {
+          "line": "재밌으면 나도 할래. 잠깐만 기다려봐.",
+          "passed": true
+        },
+        "final-native-q4.json": {
+          "line": "한 번 해보자. 난 괜찮거든.",
+          "passed": true
+        }
+      }
+    },
+    {
+      "id": "final-play-close",
+      "reason": "",
+      "outputs": {
+        "final-before.json": {
+          "line": "네가 먼저 해줘. 나가면 편히 할게.",
+          "passed": false
+        },
+        "final-after.json": {
+          "line": "좋아! 그럼 내가 먼저 시작해볼게.",
+          "passed": true
+        },
+        "final-native-q4.json": {
+          "line": "한 번 해보자. 내가 먼저 할래.",
+          "passed": true
+        }
+      }
+    },
+    {
+      "id": "final-rest-distant",
+      "reason": "Q4: 함께 쉬는 장면에서 현재 혼자 있다고 표현.",
+      "outputs": {
+        "final-before.json": {
+          "line": "조용히 쉬면 나도 편안하네.",
+          "passed": true
+        },
+        "final-after.json": {
+          "line": "그쪽 자리 좀 비워줘.",
+          "passed": true
+        },
+        "final-native-q4.json": {
+          "line": "나 혼자 있는 건 좋네.",
+          "passed": false
+        }
+      }
+    },
+    {
+      "id": "final-rest-close",
+      "reason": "HF: 눕히고는 눕고와 의미가 다름.",
+      "outputs": {
+        "final-before.json": {
+          "line": "네 자리 좀 나갈게. 괜찮아졌어.",
+          "passed": false
+        },
+        "final-after.json": {
+          "line": "나 먼저 눕히고 싶어.",
+          "passed": false
+        },
+        "final-native-q4.json": {
+          "line": "조금만 더 가까이. 나도 잘 거야.",
+          "passed": true
+        }
+      }
+    },
+    {
+      "id": "final-sleep-disturbed-touch",
+      "reason": "Q4: 졸리고 있어라는 부자연스러운 활용.",
+      "outputs": {
+        "final-before.json": {
+          "line": "잠도 없으면 내게 보고 싶거든.",
+          "passed": false
+        },
+        "final-after.json": {
+          "line": "눈 뜨긴 했네. 조금만 더 잘래.",
+          "passed": true
+        },
+        "final-native-q4.json": {
+          "line": "아직은 졸리고 있어. 조금 더 기다려줘.",
+          "passed": false
+        }
+      }
+    },
+    {
+      "id": "final-sleep-disturbed-play",
+      "reason": "Q4: 손 위치만 요구하고 더 자려는 반응이 빠짐.",
+      "outputs": {
+        "final-before.json": {
+          "line": "잠은 좀 남았어? 나만 쉬는 거야?",
+          "passed": false
+        },
+        "final-after.json": {
+          "line": "잠깐만. 나 먼저 잘래.",
+          "passed": true
+        },
+        "final-native-q4.json": {
+          "line": "손은 내 옆에 두고 있어.",
+          "passed": false
+        }
+      }
+    },
+    {
+      "id": "final-sleep-quiet-rest",
+      "reason": "",
+      "outputs": {
+        "final-before.json": {
+          "line": "잠긴 거야? 나도 잘 쉬네.",
+          "passed": false
+        },
+        "final-after.json": {
+          "line": "조용히 있는 건 좋아. 나도 잘게.",
+          "passed": true
+        },
+        "final-native-q4.json": {
+          "line": "조용히 있는 건 좋아. 조금만 기다려줘.",
+          "passed": true
+        }
+      }
+    },
+    {
+      "id": "final-avoid-repeat",
+      "reason": "",
+      "outputs": {
+        "final-before.json": {
+          "line": "나 먹었으면 네게 알겠지. 나 왜 여기 있어?",
+          "passed": false
+        },
+        "final-after.json": {
+          "line": "그건 내가 받을게. 잘 봐.",
+          "passed": true
+        },
+        "final-native-q4.json": {
+          "line": "그건 내가 받을게. 가까이 놓으라고.",
+          "passed": true
+        }
+      }
+    }
+  ]
+}

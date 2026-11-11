@@ -1,0 +1,18 @@
+{
+  "trainRows": 408,
+  "validationRows": 28,
+  "testRows": 32,
+  "sources": {
+    "agent-authored-action-draft-v2-based-on-user-persona": 320,
+    "user-provided": 88
+  },
+  "userApproved": false,
+  "qualityApproved": false,
+  "interpretation": "Known-action scenario holdout, not unseen-topic or independent user evaluation.",
+  "files": {
+    "source-audit.json": "431e5d5cfddcb5590e7115a6db43685fee9e50f3dba5ca481f62be09b0ce0415",
+    "test.json": "f01bb9e02551fcafc8820f35ad56dd35a5bbb822b20ec3dc3ac602ab455fdaaf",
+    "train.jsonl": "5d4494b7aab3e31f2741ce9587239548e1cdc5f7cccb5f022226814913696f41",
+    "validation.jsonl": "e9b0fc6dbb209bcb9f308282b4b0a25375e2caff80b93d46dd4b939003031834"
+  }
+}

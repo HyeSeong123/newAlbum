@@ -1,0 +1,10 @@
+{
+  "model": "naver-hyperclovax/HyperCLOVAX-SEED-Text-Instruct-0.5B",
+  "revision": "3da5046fb0195d14f2497de198136987d35fd644",
+  "derivedModelName": "HyperCLOVA X Gomgomi Gomi 0.5B",
+  "architecture": "llama",
+  "license": "HyperCLOVA X SEED Model License Agreement",
+  "source": "https://huggingface.co/naver-hyperclovax/HyperCLOVAX-SEED-Text-Instruct-0.5B",
+  "scope": "local research and action-response prototype; not approved for app distribution",
+  "reason": "Korean-specialized 0.57B model produced better Korean grammar than the tested generic 0.5B/0.6B candidates while keeping standalone Q4 below 400 MB."
+}
