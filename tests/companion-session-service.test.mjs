@@ -1,59 +1,50 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {mkdtemp,readFile,writeFile,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {pathToFileURL} from 'node:url';
 import ts from 'typescript';
-const code=readFileSync(new URL('../src/features/characters/companionChatService.ts',import.meta.url),'utf8')
- .replace('import { invoke } from "@tauri-apps/api/core";', 'const invoke = (command, args) => globalThis.sessionBridge(command, args);')
- .replace('import { isTauriRuntime } from "../../services/tauriMediaService";', 'const isTauriRuntime = () => true;');
-const output=ts.transpileModule(code,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
-const service=await import('data:text/javascript;base64,'+Buffer.from(output).toString('base64'));
+import {modelUrl} from '../scripts/ts-module-loader.mjs';
+
 const tick=()=>new Promise(resolve=>setTimeout(resolve,0));
-test('a delayed old stop must settle before another character generates in the shared Home session',async()=>{
- let finishFirst,finishStop;const entered=[];
- globalThis.sessionBridge=async(command,args)=>{
-  if(command==='generate_chat_reply'){
-   entered.push(args.prompt);
-   if(args.prompt==='고미 터치')await new Promise(resolve=>{finishFirst=resolve;});
-   return args.prompt+'의 새 대사';
-  }
-  if(command==='stop_chat_model')await new Promise(resolve=>{finishStop=resolve;});
- };
- const first=service.generateChatReply('고미 터치','home-one');await tick();
- const stopping=service.stopChatModel('home-one');await tick();
- finishFirst();await first;
- const second=service.generateChatReply('감자 터치','home-one');await tick();
- assert.deepEqual(entered,['고미 터치'],'a new request cannot overtake an older stop IPC');
- finishStop();await stopping;
- assert.equal(await second,'감자 터치의 새 대사');
- assert.deepEqual(entered,['고미 터치','감자 터치']);
-});
-test('an unsuccessful stop does not poison the next Home reaction',async()=>{
- globalThis.sessionBridge=async command=>{if(command==='stop_chat_model')throw Error('bridge stopped');return '다시 만든 대사';};
- await assert.rejects(service.stopChatModel('home-two'),/bridge stopped/);
- assert.equal(await service.generateChatReply('쉬기','home-two'),'다시 만든 대사');
-});
-
-test('native generation receives the chosen character without altering older callers', async()=>{
- const calls=[];
- globalThis.sessionBridge=async(command,args)=>{calls.push({command,args});return '새 대사';};
- await service.generateChatReply('고미 대사','gomi-session','gomi');
- await service.generateChatReply('감자 대사','potato-session','potato');
- await service.generateChatReply('이전 호출','legacy-session');
- assert.equal(calls[0].args.characterId,'gomi');
- assert.equal(calls[1].args.characterId,'potato');
- assert.equal(calls[2].args.characterId,undefined);
- assert.equal(calls[0].args.sessionId,'gomi-session');
+class TransportWorker {
+ static instances=[];
+ constructor(){this.messages=[];TransportWorker.instances.push(this);queueMicrotask(()=>this.onmessage?.({data:{type:'ready',loadMs:1,bytes:220000}}));}
+ postMessage(message){this.messages.push(message);}
+ reply(id,line){this.onmessage?.({data:{id,type:'reply',line,generationMs:1}});}
+ terminate(){this.terminated=true;}
+}
+test('cancelled work cannot publish into the next own-AI request; tiny weights are reused',async()=>{
+ const temporary=await mkdtemp(join(tmpdir(),'gomgomi-own-client-'));
+ const previous=globalThis.Worker;globalThis.Worker=TransportWorker;
+ try{
+  const source=await readFile(new URL('../src/features/characters/ownAi/client.ts',import.meta.url),'utf8');
+  const output=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
+  const file=join(temporary,'client.mjs');await writeFile(file,output);
+  const client=await import(pathToFileURL(file).href);
+  await client.warmOwnAi();await client.warmOwnAi();
+  assert.equal(TransportWorker.instances.length,1);
+  const worker=TransportWorker.instances[0],input={characterId:'gomi',action:'touch',affection:80,mood:'calm',energy:3};
+  const control=new AbortController();
+  const first=client.generateOwnReaction(input,control.signal);const cancelled=assert.rejects(first,/AI_CANCELLED/);
+  await tick();const oldId=worker.messages.at(-1).id;control.abort();await cancelled;
+  const second=client.generateOwnReaction({...input,characterId:'potato'});await tick();
+  const newId=worker.messages.at(-1).id;assert.notEqual(oldId,newId);
+  worker.reply(oldId,'이 결과는 취소됐어.');worker.reply(newId,'나도 같이 있어줄게.');
+  assert.equal(await second,'나도 같이 있어줄게.');
+  assert.equal(client.ownAiStatus().lastOutcome,'success');
+  assert.equal(client.ownAiStatus().runtime.ownModelApplied,true);
+  const stopped=client.generateOwnReaction(input);const stopRejection=assert.rejects(stopped,/AI_CANCELLED/);
+  await tick();client.stopOwnAi();await stopRejection;
+  assert.equal(client.ownAiStatus().lastOutcome,'cancelled');
+ }finally{globalThis.Worker=previous;await rm(temporary,{recursive:true,force:true});}
 });
 
-test('compact Gomi routing requires an explicit Home action scope for status and generation',async()=>{
- const calls=[];
- globalThis.sessionBridge=async(command,args)=>{calls.push({command,args});return command==='chat_model_status'?{phase:'ready'}:'새 대사';};
- await service.chatModelStatus('gomi','home-actions');
- await service.generateChatReply('고미 행동','home-session','gomi','home-actions');
- await service.generateChatReply('일반 대화','chat-session','gomi');
- await service.chatModelStatus();
- assert.deepEqual(calls[0].args,{characterId:'gomi',usage:'home-actions'});
- assert.equal(calls[1].args.usage,'home-actions');
- assert.equal(calls[2].args.usage,undefined,'free conversation keeps shared model');
- assert.equal(calls[3].args?.usage,undefined,'old status calls retain shared model');
+test('legacy external model generation/download are disabled and Home exposes the own model',async()=>{
+ const service=await import(await modelUrl(new URL('../src/features/characters/companionChatService.ts',import.meta.url)));
+ await assert.rejects(service.generateChatReply('이전 모델 호출'),/AI_ACTIONS_ONLY/);
+ await assert.rejects(service.downloadChatModel(),/AI_EXTERNAL_MODELS_DISABLED/);
+ assert.equal((await service.chatModelStatus('gomi','home-actions')).model,'own-character-v1');
+ assert.equal((await service.chatModelStatus()).supported,false);
 });

@@ -1,4 +1,16 @@
-# 곰고미 고미 행동 반응 학습
+# 곰고미 전용 AI 프로그램
+
+2026-11-15부터 기본 학습·실행 경로는 [새로 구현한 전용 AI](own/README.md)다. 모델 구조·순전파·역전파·가중치 갱신·앱 추론 코드를 직접 작성하고 가중치를 무작위 초기화부터 학습한다. 학습·실행 중 외부 모델 API를 호출하거나 기존 사전학습 가중치·어댑터를 가져오지 않는다. `곰고미-AI-실행.cmd`의2번은 자체 학습,3번은 자체 반응 시험이다.
+
+학습 문장에는 사용자 원문과 출처를 표시한 AI 개발 도우미의 초안이 포함된다. 자세한 출처와 한계는 새 프로그램 안내에 기록했다.
+
+## 이전 실험 보관
+
+아래 내용은 현재 학습 메뉴와 Android 빌드에 사용하지 않는 이전 구성의 기록이다.
+
+<details><summary>이전 외부 모델 검토 기록 펼치기</summary>
+
+### 이전 고미 행동 반응 학습
 
 **Powered by HyperCLOVA X**
 
@@ -21,3 +33,4 @@ PC 도구와 모델 캐시는 앱에 넣지 않습니다. 준비 단계에서만
 선택 모델은 HyperCLOVA X SEED Model License Agreement를 따릅니다. 필수 LICENSE·NOTICE·변경 및 파생 조건을 보존해야 합니다. 공개 배포 시 이용 제한과 추가 상업 조건을 별도 확인해야 합니다. [원본 모델](https://huggingface.co/naver-hyperclovax/HyperCLOVAX-SEED-Text-Instruct-0.5B)
 
 이전 구성·실험은 README-initial-setup.md와 개선결과-2026-11-12.md에 보존했습니다.
+</details>

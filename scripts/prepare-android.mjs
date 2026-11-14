@@ -3,6 +3,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
+import {prepareOwnAi} from './prepare-own-character-ai.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 
@@ -69,27 +70,20 @@ export async function prepareAndroid(projectRoot = root, requireSigning = false)
     catch { throw new Error('Play 업로드용 서명 설정이 없습니다. docs/android.md에 따라 keystore.properties를 준비해 주세요.'); }
   }
   const configured = configureCompanionGradle(configureGradle(text));
-  const adapterRoot = resolve(projectRoot, 'models/gomi-lora-v4');
-  const adapterInfo = JSON.parse(await readFile(resolve(adapterRoot, 'runtime.json'), 'utf8'));
-  const adapter = await readFile(resolve(adapterRoot, 'gomi-v4.gguf'));
-  if (adapterInfo.file !== 'gomi-v4.gguf' || adapterInfo.characterId !== 'gomi' ||
-      adapter.length !== adapterInfo.bytes || createHash('sha256').update(adapter).digest('hex') !== adapterInfo.sha256) {
-    throw new Error('고미 학습 파일 무결성 검증에 실패했습니다. 원본 모델 파일을 확인해 주세요.');
-  }
+  await prepareOwnAi(projectRoot);
   const assets = resolve(android, 'app/src/main/assets/companion');
   await mkdir(assets, {recursive: true});
-  await writeFile(resolve(assets, 'gomi-v4.gguf'), adapter);
-  for (const file of ['LICENSE', 'NOTICE']) await copyFile(resolve(adapterRoot, file), resolve(assets, file));
-  await prepareGomiActionModel(projectRoot, assets);
+  // Fixed APK-owned names only: user photos, databases and downloads are untouched.
+  for (const name of ['gomi-v4.gguf','LICENSE','NOTICE','gomi-action-v3.gguf','gomi-action-v3.json',
+    'gomi-action-v3-LICENSE','gomi-action-v3-NOTICE','gomi-action-v3-DERIVED-MODEL-TERMS.txt'])
+    await rm(resolve(assets,name),{force:true});
   const destination = resolve(android, 'app/src/main/java/com/oraedameun/album/GamjassakMediaPlugin.kt');
   await mkdir(dirname(destination), { recursive: true });
   await copyFile(resolve(projectRoot, 'src-tauri/android/GamjassakMediaPlugin.kt'), destination);
   await copyFile(resolve(projectRoot, 'src-tauri/android/GamjassakGalleryActivity.kt'), resolve(dirname(destination), 'GamjassakGalleryActivity.kt'));
-  await copyFile(resolve(projectRoot, 'src-tauri/android/GamjassakCompanionPlugin.kt'), resolve(dirname(destination), 'GamjassakCompanionPlugin.kt'));
-  await copyFile(resolve(projectRoot, 'src-tauri/android/CompanionModelRegistry.java'), resolve(dirname(destination), 'CompanionModelRegistry.java'));
-  await copyFile(resolve(projectRoot, 'src-tauri/android/GomiAdapter.java'), resolve(dirname(destination), 'GomiAdapter.java'));
-  await copyFile(resolve(projectRoot, 'src-tauri/android/GomiActionModel.java'), resolve(dirname(destination), 'GomiActionModel.java'));
-  await cp(resolve(projectRoot, 'src-tauri/android/companion'), resolve(android, 'app/src/main/cpp/companion'), { recursive: true });
+  await copyFile(resolve(projectRoot, 'src-tauri/android/GamjassakOwnCompanionPlugin.kt'), resolve(dirname(destination), 'GamjassakCompanionPlugin.kt'));
+  for (const name of ['CompanionModelRegistry.java','GomiAdapter.java','GomiActionModel.java'])
+    await rm(resolve(dirname(destination),name),{force:true});
   for (const variant of ['main', 'debug']) {
     const config = resolve(android, `app/src/${variant}/res/xml/gamjassak_network_security.xml`);
     await mkdir(dirname(config), { recursive: true });
@@ -117,16 +111,16 @@ export async function prepareAndroid(projectRoot = root, requireSigning = false)
 }
 
 export function configureCompanionGradle(text) {
-  if (text.includes('// gamjassak companion JNI')) return text;
   if (!text.includes('android {')) throw new Error('Android Gradle 설정을 확인해 주세요.');
-  return text.replace('android {', `android {
-    // gamjassak companion JNI: pinned llama.cpp, ARM64 Vulkan with automatic CPU fallback; base downloaded, Gomi adapter bundled.
-    externalNativeBuild {
-        cmake {
-            path = file("src/main/cpp/companion/CMakeLists.txt")
-            version = "3.22.1"
-        }
-    }`);
+  const marker=text.indexOf('// gamjassak companion JNI');
+  if(marker<0)return text;
+  const start=text.lastIndexOf('\n',marker)+1;
+  const block=text.indexOf('externalNativeBuild',marker),brace=text.indexOf('{',block);
+  if(block<0||brace<0)throw new Error('이전 AI 엔진 Gradle 설정을 제거하지 못했습니다.');
+  let depth=1,end=brace+1;
+  for(;end<text.length&&depth;end++){if(text[end]==='{')depth++;else if(text[end]==='}')depth--;}
+  if(depth)throw new Error('이전 AI 엔진 Gradle 설정이 닫히지 않았습니다.');
+  return text.slice(0,start)+text.slice(end).replace(/^\r?\n/,'');
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

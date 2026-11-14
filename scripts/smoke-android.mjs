@@ -419,7 +419,7 @@ try {
   assert.equal(gomiState.characters.find(character => character.id === 'gomi').affection, 0);
   const companionBefore = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('chat_model_status'));
   assert.equal(typeof companionBefore.runtime.resident, 'boolean');
-  assert.equal(companionBefore.runtime.resident, false, 'Home must not eagerly load a model');
+  assert.equal(companionBefore.runtime.resident, false, 'The old native character engine must remain absent');
   await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('release_chat_model', {sessionId:'android-install-smoke'}));
   const companionAfter = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('chat_model_status'));
   assert.equal(companionAfter.runtime.resident, false);
@@ -853,7 +853,7 @@ try {
   console.log('Android installation, system-bar bounds (three-button and gesture), import controls, bound album, real folder picker/content URI copying, byte progress, warm resume, SQLite/calendar persistence and back navigation: OK');
   } else {
     await page.screenshot({ path:join(output, 'gomi-action-home.png') });
-    console.log('Signed APK installation and bundled Gomi offline native inference: OK. Full unrelated UI regression was not requested.');
+    console.log('Signed APK installation and own-character offline UI reactions under 1 second: OK. Full unrelated UI regression was not requested.');
   }
 } catch (error) {
   console.error(error);

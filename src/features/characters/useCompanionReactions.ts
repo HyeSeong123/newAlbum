@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
-import { chatModelStatus, generateChatReply, lastChatReaction, markChatReaction, recordChatReaction, releaseChatModel, stopChatModel } from "./companionChatService";
-import { createTouchReactionQueue, generateTouchLine, recentTouchLines, rememberTouchLine, type TouchContext } from "./companionTouch";
+import { lastChatReaction, markChatReaction, recordChatReaction, releaseChatModel } from "./companionChatService";
+import { createTouchReactionQueue, recentTouchLines, rememberTouchLine, type TouchContext } from "./companionTouch";
 import type { CompanionGeneration } from "./companionLlm";
+import {companionExecutionError} from "./companionLlm";
+import {generateOwnReaction, warmOwnAi} from "./ownAi/client";
 
 // Publish the real inference outcome, not a substitute line. Home decides whether
 // to show AI speech or a separate non-character error/status message.
@@ -11,6 +13,7 @@ export function useCompanionReactions(characterId: string | undefined, onResult:
   const usedSession = useRef(false);
   const queue = useRef<ReturnType<typeof createTouchReactionQueue> | undefined>(undefined);
   useEffect(() => {
+    void warmOwnAi().catch(() => {});
     sessionId.current = crypto.randomUUID();
     const visibility = () => { if (document.hidden) { if (usedSession.current) void releaseChatModel(sessionId.current); usedSession.current = false; sessionId.current = crypto.randomUUID(); } };
     document.addEventListener("visibilitychange", visibility);
@@ -18,25 +21,22 @@ export function useCompanionReactions(characterId: string | undefined, onResult:
   }, []);
   useEffect(() => {
     const current = createTouchReactionQueue(async (context, signal) => {
-      return generateTouchLine(context, async (prompt) => {
-        const status = await chatModelStatus(context.definition.id, "home-actions");
+      try {
         if (signal.aborted || document.hidden) throw new Error("AI_CANCELLED");
-        if (!status.supported) throw new Error("AI_UNSUPPORTED");
-        if (!status.installed) throw new Error(status.bundled ? "AI_GOMI_MODEL_MISSING" : "AI_NOT_INSTALLED");
-        if (status.phase !== "ready" && status.phase !== "error") throw new Error("진행 중인 작업이 끝난 뒤 다시 시도해 주세요.");
         markChatReaction(context.owned.id, "running");
-        const id = sessionId.current;
-        const stop = () => { void stopChatModel(id).catch(() => {}); };
-        signal.addEventListener("abort", stop, { once: true });
-        try { return await generateChatReply(prompt, id, context.definition.id, "home-actions"); }
-        finally { signal.removeEventListener("abort", stop); }
-      }, signal);
+        const line = await generateOwnReaction({characterId:context.definition.id, action:context.action,
+          affection:context.owned.affection,mood:context.memory.mood,energy:context.memory.energy,
+          sleeping:Boolean(context.sleeping),previous:context.previous},signal);
+        return {source:"on-device",line} as CompanionGeneration;
+      } catch (cause) {
+        return {source:"local-rules",line:"",failure:"execution",message:companionExecutionError(cause)} as CompanionGeneration;
+      }
     }, (reply, context) => {
       if (document.hidden) return;
       recordChatReaction(context.owned.id, reply);
       if (reply.source === "on-device") rememberTouchLine(context.owned.id, reply.line);
       callback.current(reply);
-    }, () => {});
+    }, () => {}, 20);
     queue.current = current;
     const cancel = () => {
       current.cancel();

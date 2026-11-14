@@ -1,0 +1,665 @@
+{
+  "scope": "Installed browser library dependency notices; not native-library/model/data legal clearance",
+  "packages": [
+    {
+      "name": "@fontsource/noto-serif-kr",
+      "version": "5.2.7",
+      "license": "OFL-1.1",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "@tauri-apps/api",
+      "version": "2.12.1",
+      "license": "Apache-2.0 OR MIT",
+      "noticeFiles": [
+        "LICENSE-APACHE-2.0",
+        "LICENSE-MIT",
+        "LICENSE.spdx"
+      ]
+    },
+    {
+      "name": "@tauri-apps/plugin-dialog",
+      "version": "2.7.3",
+      "license": "MIT OR Apache-2.0",
+      "noticeFiles": [
+        "LICENSE.spdx"
+      ]
+    },
+    {
+      "name": "@tensorflow-models/coco-ssd",
+      "version": "2.2.3",
+      "license": "Apache-2.0",
+      "noticeFiles": [
+        "Declared Apache-2.0 terms; complete license text"
+      ]
+    },
+    {
+      "name": "@tensorflow/tfjs",
+      "version": "4.22.0",
+      "license": "Apache-2.0",
+      "noticeFiles": [
+        "Declared Apache-2.0 terms; complete license text"
+      ]
+    },
+    {
+      "name": "@tensorflow/tfjs-backend-cpu",
+      "version": "4.22.0",
+      "license": "Apache-2.0",
+      "noticeFiles": [
+        "Declared Apache-2.0 terms; complete license text"
+      ]
+    },
+    {
+      "name": "@tensorflow/tfjs-backend-wasm",
+      "version": "4.22.0",
+      "license": "Apache-2.0",
+      "noticeFiles": [
+        "Declared Apache-2.0 terms; complete license text"
+      ]
+    },
+    {
+      "name": "@tensorflow/tfjs-backend-webgl",
+      "version": "4.22.0",
+      "license": "Apache-2.0",
+      "noticeFiles": [
+        "Declared Apache-2.0 terms; complete license text"
+      ]
+    },
+    {
+      "name": "@tensorflow/tfjs-converter",
+      "version": "4.22.0",
+      "license": "Apache-2.0",
+      "noticeFiles": [
+        "Declared Apache-2.0 terms; complete license text"
+      ]
+    },
+    {
+      "name": "@tensorflow/tfjs-core",
+      "version": "4.22.0",
+      "license": "Apache-2.0",
+      "noticeFiles": [
+        "Declared Apache-2.0 terms; complete license text"
+      ]
+    },
+    {
+      "name": "@tensorflow/tfjs-data",
+      "version": "4.22.0",
+      "license": "Apache-2.0",
+      "noticeFiles": [
+        "Declared Apache-2.0 terms; complete license text"
+      ]
+    },
+    {
+      "name": "@tensorflow/tfjs-layers",
+      "version": "4.22.0",
+      "license": "Apache-2.0 AND MIT",
+      "noticeFiles": [
+        "tfjs-v4.22.0/tfjs-layers/LICENSE",
+        "Apache-2.0 complete terms"
+      ]
+    },
+    {
+      "name": "@types/emscripten",
+      "version": "0.0.34",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "@types/long",
+      "version": "4.0.2",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "@types/node",
+      "version": "22.20.1",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "@types/node-fetch",
+      "version": "2.6.13",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "@types/offscreencanvas",
+      "version": "2019.3.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "@types/offscreencanvas",
+      "version": "2019.7.3",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "@types/seedrandom",
+      "version": "2.4.34",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "@vladmandic/face-api",
+      "version": "1.7.15",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "@webgpu/types",
+      "version": "0.1.38",
+      "license": "BSD-3-Clause",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "ansi-regex",
+      "version": "5.0.1",
+      "license": "MIT",
+      "noticeFiles": [
+        "license"
+      ]
+    },
+    {
+      "name": "ansi-styles",
+      "version": "4.3.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "license"
+      ]
+    },
+    {
+      "name": "argparse",
+      "version": "1.0.10",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "asynckit",
+      "version": "0.4.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "call-bind-apply-helpers",
+      "version": "1.0.2",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "chalk",
+      "version": "4.1.2",
+      "license": "MIT",
+      "noticeFiles": [
+        "license"
+      ]
+    },
+    {
+      "name": "cliui",
+      "version": "7.0.4",
+      "license": "ISC",
+      "noticeFiles": [
+        "LICENSE.txt"
+      ]
+    },
+    {
+      "name": "color-convert",
+      "version": "2.0.1",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "color-name",
+      "version": "1.1.4",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "combined-stream",
+      "version": "1.0.8",
+      "license": "MIT",
+      "noticeFiles": [
+        "License"
+      ]
+    },
+    {
+      "name": "core-js",
+      "version": "3.29.1",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "delayed-stream",
+      "version": "1.0.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "License"
+      ]
+    },
+    {
+      "name": "dunder-proto",
+      "version": "1.0.1",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "emoji-regex",
+      "version": "8.0.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE-MIT.txt"
+      ]
+    },
+    {
+      "name": "es-define-property",
+      "version": "1.0.1",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "es-errors",
+      "version": "1.3.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "es-object-atoms",
+      "version": "1.1.2",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "es-set-tostringtag",
+      "version": "2.1.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "escalade",
+      "version": "3.2.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "license"
+      ]
+    },
+    {
+      "name": "form-data",
+      "version": "4.0.6",
+      "license": "MIT",
+      "noticeFiles": [
+        "License"
+      ]
+    },
+    {
+      "name": "framer-motion",
+      "version": "14.0.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE.md"
+      ]
+    },
+    {
+      "name": "function-bind",
+      "version": "1.1.2",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "get-caller-file",
+      "version": "2.0.5",
+      "license": "ISC",
+      "noticeFiles": [
+        "LICENSE.md"
+      ]
+    },
+    {
+      "name": "get-intrinsic",
+      "version": "1.3.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "get-proto",
+      "version": "1.0.1",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "gopd",
+      "version": "1.2.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "has-flag",
+      "version": "4.0.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "license"
+      ]
+    },
+    {
+      "name": "has-symbols",
+      "version": "1.1.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "has-tostringtag",
+      "version": "1.0.2",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "hasown",
+      "version": "2.0.4",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "is-fullwidth-code-point",
+      "version": "3.0.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "license"
+      ]
+    },
+    {
+      "name": "long",
+      "version": "4.0.0",
+      "license": "Apache-2.0",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "lucide-react",
+      "version": "0.468.0",
+      "license": "ISC",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "math-intrinsics",
+      "version": "1.1.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "mime-db",
+      "version": "1.52.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "mime-types",
+      "version": "2.1.35",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "motion",
+      "version": "14.0.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE.md"
+      ]
+    },
+    {
+      "name": "motion-dom",
+      "version": "14.0.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE.md"
+      ]
+    },
+    {
+      "name": "motion-utils",
+      "version": "14.0.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE.md"
+      ]
+    },
+    {
+      "name": "node-fetch",
+      "version": "2.6.13",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE.md"
+      ]
+    },
+    {
+      "name": "react",
+      "version": "19.2.8",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "react-dom",
+      "version": "19.2.8",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "regenerator-runtime",
+      "version": "0.13.11",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "require-directory",
+      "version": "2.1.1",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "safe-buffer",
+      "version": "5.2.1",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "scheduler",
+      "version": "0.27.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "seedrandom",
+      "version": "3.0.5",
+      "license": "MIT",
+      "noticeFiles": [
+        "README.md license section from installed package"
+      ]
+    },
+    {
+      "name": "sprintf-js",
+      "version": "1.0.3",
+      "license": "BSD-3-Clause",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "string_decoder",
+      "version": "1.3.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "string-width",
+      "version": "4.2.3",
+      "license": "MIT",
+      "noticeFiles": [
+        "license"
+      ]
+    },
+    {
+      "name": "strip-ansi",
+      "version": "6.0.1",
+      "license": "MIT",
+      "noticeFiles": [
+        "license"
+      ]
+    },
+    {
+      "name": "supports-color",
+      "version": "7.2.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "license"
+      ]
+    },
+    {
+      "name": "tr46",
+      "version": "0.0.3",
+      "license": "MIT",
+      "noticeFiles": [
+        "Upstream tr46 MIT license; package declares MIT"
+      ]
+    },
+    {
+      "name": "tslib",
+      "version": "2.8.1",
+      "license": "0BSD",
+      "noticeFiles": [
+        "LICENSE.txt"
+      ]
+    },
+    {
+      "name": "undici-types",
+      "version": "6.21.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "webidl-conversions",
+      "version": "3.0.1",
+      "license": "BSD-2-Clause",
+      "noticeFiles": [
+        "LICENSE.md"
+      ]
+    },
+    {
+      "name": "whatwg-url",
+      "version": "5.0.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE.txt"
+      ]
+    },
+    {
+      "name": "wrap-ansi",
+      "version": "7.0.0",
+      "license": "MIT",
+      "noticeFiles": [
+        "license"
+      ]
+    },
+    {
+      "name": "y18n",
+      "version": "5.0.8",
+      "license": "ISC",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "yargs",
+      "version": "16.2.2",
+      "license": "MIT",
+      "noticeFiles": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "yargs-parser",
+      "version": "20.2.9",
+      "license": "ISC",
+      "noticeFiles": [
+        "LICENSE.txt"
+      ]
+    }
+  ],
+  "missingNoticeTexts": []
+}

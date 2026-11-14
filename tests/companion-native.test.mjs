@@ -3,11 +3,12 @@ import test from 'node:test';
 import {readFileSync} from 'node:fs';
 import { configureCompanionGradle } from '../scripts/prepare-android.mjs';
 const template='android {\n    compileSdk = 36\n    defaultConfig { targetSdk = 36 }\n}';
-test('Android preparation wires the real JNI build exactly once',()=>{
+test('Android preparation removes the external character AI engine and stays idempotent',()=>{
   assert.equal(typeof configureCompanionGradle,'function');
   const result=configureCompanionGradle(template);
-  assert.match(result,/externalNativeBuild/);
-  assert.match(result,/src\/main\/cpp\/companion\/CMakeLists.txt/);
+  assert.doesNotMatch(result,/externalNativeBuild|companion\/CMakeLists.txt/);
+  const previous=template.replace('android {','android {\n // gamjassak companion JNI: previous engine\n externalNativeBuild { cmake { path = file("src/main/cpp/companion/CMakeLists.txt") } }');
+  assert.doesNotMatch(configureCompanionGradle(previous),/externalNativeBuild|companion\/CMakeLists.txt/);
   assert.equal(configureCompanionGradle(result),result);
 });
 

@@ -62,10 +62,10 @@ test('preparation installs the bridge, excludes backups, and requires signing on
   const root = await mkdtemp(join(tmpdir(), 'gamjassak-android-'));
   try {
     await mkdir(join(root, 'src-tauri/android'), { recursive:true });
-    for (const file of ['GamjassakMediaPlugin.kt', 'GamjassakGalleryActivity.kt', 'GamjassakCompanionPlugin.kt', 'CompanionModelRegistry.java', 'GomiAdapter.java', 'GomiActionModel.java']) await copyFile(`src-tauri/android/${file}`, join(root, `src-tauri/android/${file}`));
+    for (const file of ['GamjassakMediaPlugin.kt', 'GamjassakGalleryActivity.kt', 'GamjassakOwnCompanionPlugin.kt']) await copyFile(`src-tauri/android/${file}`, join(root, `src-tauri/android/${file}`));
     const { cp } = await import('node:fs/promises');
-    await cp('models/gomi-lora-v4', join(root, 'models/gomi-lora-v4'), {recursive:true});
-    await cp('src-tauri/android/companion', join(root, 'src-tauri/android/companion'), {recursive:true});
+    await mkdir(join(root,'src/features/characters/ownAi'),{recursive:true});
+    await copyFile('src/features/characters/ownAi/model.json',join(root,'src/features/characters/ownAi/model.json'));
     for (const variant of ['main', 'debug']) await copyFile(`src-tauri/android/network-security-${variant}.xml`, join(root, `src-tauri/android/network-security-${variant}.xml`));
     await mkdir(join(root, 'src-tauri/gen/android/app/src/main'), { recursive:true });
     await writeFile(join(root, 'src-tauri/gen/android/app/build.gradle.kts'), template);
@@ -87,18 +87,16 @@ test('preparation installs the bridge, excludes backups, and requires signing on
     assert.match(network, /<domain>127.0.0.1<\/domain>/);
     assert.match(await readFile(join(root, 'src-tauri/gen/android/app/src/debug/res/xml/gamjassak_network_security.xml'), 'utf8'), /base-config cleartextTrafficPermitted="true"/);
     assert.match(await readFile(join(root, 'src-tauri/gen/android/app/src/main/java/com/oraedameun/album/GamjassakMediaPlugin.kt'), 'utf8'), /class GamjassakMediaPlugin/);
-    assert.match(await readFile(join(root, 'src-tauri/gen/android/app/src/main/java/com/oraedameun/album/GamjassakCompanionPlugin.kt'), 'utf8'), /nativeGenerate/);
-    assert.deepEqual(await readFile(join(root, 'src-tauri/gen/android/app/src/main/java/com/oraedameun/album/CompanionModelRegistry.java')), await readFile('src-tauri/android/CompanionModelRegistry.java'));
-    assert.deepEqual(await readFile(join(root, 'src-tauri/gen/android/app/src/main/java/com/oraedameun/album/GomiAdapter.java')), await readFile('src-tauri/android/GomiAdapter.java'));
-    for (const file of ['gomi-v4.gguf', 'LICENSE', 'NOTICE']) {
-      assert.deepEqual(await readFile(join(root, `src-tauri/gen/android/app/src/main/assets/companion/${file}`)), await readFile(`models/gomi-lora-v4/${file}`));
-    }
-    assert.match(await readFile(join(root, 'src-tauri/gen/android/app/src/main/cpp/companion/CMakeLists.txt'), 'utf8'), /4d78e6aa4a9124b58dff994416525294fbab2990fe905a640d4cbd26bf563a31/);
+    const bridge=await readFile(join(root,'src-tauri/gen/android/app/src/main/java/com/oraedameun/album/GamjassakCompanionPlugin.kt'),'utf8');
+    assert.match(bridge,/AI_EXTERNAL_MODELS_DISABLED/);assert.doesNotMatch(bridge,/nativeGenerate|System.loadLibrary|HttpURLConnection/);
+    const {readdir}=await import('node:fs/promises');
+    assert.deepEqual(await readdir(join(root,'src-tauri/gen/android/app/src/main/assets/companion')),[]);
+    assert.deepEqual(await readFile(join(root,'public/character-ai/model.json')),await readFile('src/features/characters/ownAi/model.json'));
+    assert.doesNotMatch(await readFile(join(root,'src-tauri/gen/android/app/build.gradle.kts'),'utf8'),/companion\/CMakeLists|externalNativeBuild/);
     await assert.rejects(prepareAndroid(root, true), /서명 설정이 없습니다/);
     await writeFile(join(root, 'src-tauri/gen/android/keystore.properties'), 'storeFile=private-upload-key.jks');
     await prepareAndroid(root, true);
-    const adapter = join(root, 'models/gomi-lora-v4/gomi-v4.gguf');
-    await writeFile(adapter, 'corrupt');
-    await assert.rejects(prepareAndroid(root), /고미 학습 파일.*검증/);
+    await writeFile(join(root,'src/features/characters/ownAi/model.json'),'{}');
+    await assert.rejects(prepareAndroid(root),/자체 AI 모델/);
   } finally { await rm(root, { recursive:true, force:true }); }
 });

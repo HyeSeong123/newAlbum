@@ -16,6 +16,10 @@
 
 # Local training evidence hashes cover the exact exported bytes on every platform.
 /local-ai/** -text whitespace=cr-at-eol
+/src/features/characters/ownAi/model.json -text
+/public/notices/browser-libraries.txt text eol=lf -whitespace
+/public/notices/tr46-MIT.txt text eol=lf -whitespace
+/public/notices/tfjs-layers-LICENSE.txt text eol=lf -whitespace
 /docs/gomi-personality-2026-10-31.md -text whitespace=cr-at-eol
 /models/gomi-action-v3/** -text whitespace=cr-at-eol
 # Reproduce the vendor licence verbatim, including its original trailing spaces.

@@ -1,5 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
-import { isTauriRuntime } from "../../services/tauriMediaService";
+import {ownAiStatus, stopOwnAi} from "./ownAi/client";
 import type { CompanionGeneration } from "./companionLlm";
 type ChatReactionStatus = { source: CompanionGeneration["source"]; message: string; phase: "queued" | "running" | "complete" | "cancelled" };
 const reactionResults = new Map<string, ChatReactionStatus>();
@@ -21,36 +20,26 @@ export const lastChatReaction = (id: string) => reactionResults.get(id);
 export type ChatModelStatus = {
   phase: "unsupported" | "missing" | "downloading" | "verifying" | "ready" | "generating" | "error";
   supported: boolean; installed: boolean; downloaded: number; total: number; message: string;
-  model?: "legacy" | "dialogue" | "gomi-action-v3" | "missing"; upgradeAvailable?: boolean; bundled?: boolean;
+  model?: "legacy" | "dialogue" | "gomi-action-v3" | "own-character-v1" | "missing"; upgradeAvailable?: boolean; bundled?: boolean;
   lastOutcome?: "none" | "running" | "success" | "cancelled" | "error"; lastError?: string; lastAt?: number;
-  runtime?: { resident?: boolean; reused?: boolean; loadCount?: number; releaseCount?: number; stage?: string; gomiLoraApplied?: boolean; gomiActionApplied?: boolean;
+  runtime?: { resident?: boolean; reused?: boolean; loadCount?: number; releaseCount?: number; stage?: string; gomiLoraApplied?: boolean; gomiActionApplied?: boolean; ownModelApplied?: boolean;
     gpuAvailable?: boolean; gpuAttempted?: boolean; gpuUsed?: boolean; gpuLayers?: number; gpuFallback?: boolean;
     loadMs?: number; contextMs?: number; promptMs?: number; promptTokens?: number; cachedPromptTokens?: number; contextReused?: boolean;
     firstTokenMs?: number; totalMs?: number; generationMs?: number;
     rssBeforeKiB?: number; rssLoadedKiB?: number; rssPeakKiB?: number; rssAfterReleaseKiB?: number };
 };
 const unsupported: ChatModelStatus = { phase: "unsupported", supported: false, installed: false, downloaded: 0, total: 0,
-  message: "AI 반응은 RAM 8GB 이상 Android 스마트폰에서 사용할 수 있어요." };
-let releasing: Promise<void> = Promise.resolve();
-let stopping: Promise<void> = Promise.resolve();
-const settled = () => Promise.all([releasing, stopping]);
+  message: "곰고미 AI는 홈의 행동 반응에서 사용할 수 있어요." };
 export const chatModelStatus = async (characterId?: string, usage?: "home-actions"): Promise<ChatModelStatus> => {
-  await settled();
-  return isTauriRuntime() ? invoke("chat_model_status", { ...(characterId ? { characterId } : {}), ...(usage ? { usage } : {}) })
-    : characterId === "gomi" && usage === "home-actions" ? { ...unsupported, message:"고미 AI 반응은 Android 스마트폰에서 사용할 수 있어요." } : unsupported;
+  return characterId && usage === "home-actions" ? ownAiStatus() as ChatModelStatus : unsupported;
 };
-export const downloadChatModel = (): Promise<void> => invoke("download_chat_model");
-export const generateChatReply = async (prompt: string, sessionId?: string, characterId?: string, usage?: "home-actions"): Promise<string> => {
-  await settled();
-  return invoke("generate_chat_reply", { prompt, sessionId, ...(characterId ? { characterId } : {}), ...(usage ? { usage } : {}) });
+export const downloadChatModel = (): Promise<void> => Promise.reject(new Error("AI_EXTERNAL_MODELS_DISABLED"));
+export const generateChatReply = async (_prompt: string, _sessionId?: string, _characterId?: string, _usage?: "home-actions"): Promise<string> => {
+  throw new Error("AI_ACTIONS_ONLY");
 };
-export function stopChatModel(sessionId?: string): Promise<void> {
-  // A late session-scoped stop must never overtake the next character's generation.
-  const pending = stopping.then(() => isTauriRuntime() ? invoke<void>("stop_chat_model", { sessionId }) : undefined);
-  stopping = pending.catch(() => {});
-  return pending;
+export function stopChatModel(_sessionId?: string): Promise<void> {
+  stopOwnAi();return Promise.resolve();
 }
-export function releaseChatModel(sessionId: string): Promise<void> {
-  releasing = releasing.catch(() => {}).then(() => isTauriRuntime() ? invoke<void>("release_chat_model", { sessionId }) : undefined).catch(() => {});
-  return releasing;
+export function releaseChatModel(_sessionId: string): Promise<void> {
+  stopOwnAi();return Promise.resolve();
 }

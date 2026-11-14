@@ -62,7 +62,7 @@ jobs:
     # Draft release assets require repository push access even for this download.
     # This short-lived job token stages the model; no token is packaged in the APK.
     permissions:
-      contents: write
+      contents: read
     env:
       RUSTUP_TOOLCHAIN: stable
       # Keep the inspectable preview, but ship optimized Rust without debug symbols.
@@ -101,12 +101,6 @@ jobs:
         with:
           workspaces: src-tauri
           cache-on-failure: true
-      - name: Install Vulkan shader tools for ARM64 GPU inference
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y --no-install-recommends glslc libvulkan-dev spirv-headers
-          command -v glslc
-          test -f /usr/include/vulkan/vulkan.hpp
       - name: Install and validate frontend
         run: |
           npm ci
@@ -116,10 +110,8 @@ jobs:
           python3 tests/gomi-apk-verification.test.py
           python3 -m unittest discover -s tests -p test_gomi_selection_v3.py
           python3 -m unittest discover -s tests -p test_gomi_corpus_v3.py
-      - name: Stage verified compact Gomi weights
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: node scripts/prepare-gomi-action-model.mjs
+      - name: Stage first-party character AI
+        run: node scripts/prepare-own-character-ai.mjs
       - name: Initialize Android project and approved icon
         run: |
           npx tauri android init --ci --skip-targets-install
@@ -130,7 +122,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: src-tauri/gen/android/app/build/outputs/apk
-          key: android-compact-v3-${{ runner.os }}-${{ hashFiles('models/gomi-lora-v4/**', 'models/gomi-action-v3/**', 'local-ai/*.json', 'src/**', 'public/**', 'src-tauri/*.*', 'src-tauri/src/**', 'src-tauri/database/**', 'src-tauri/android/**', 'src-tauri/capabilities/**', 'src-tauri/permissions/**', 'package*.json', 'scripts/prepare-*.mjs', 'scripts/*models*.json', 'scripts/android-*.mjs', 'scripts/android-*.json', 'vite.config.ts', 'index.html', 'rust-toolchain.toml', '!**/__pycache__/**', '!**/*.pyc') }}
+          key: android-own-ai-v1-${{ runner.os }}-${{ hashFiles('src/**', 'public/**', 'src-tauri/*.*', 'src-tauri/src/**', 'src-tauri/database/**', 'src-tauri/android/**', 'src-tauri/capabilities/**', 'src-tauri/permissions/**', 'package*.json', 'scripts/prepare-*.mjs', 'scripts/*models*.json', 'scripts/android-*.mjs', 'scripts/android-*.json', 'vite.config.ts', 'index.html', 'rust-toolchain.toml', '!**/__pycache__/**', '!**/*.pyc') }}
       - name: Build installable preview APKs
         if: steps.preview-apks.outputs.cache-hit != 'true'
         run: npx tauri android build --debug --apk --ci --features custom-protocol --target aarch64 x86_64 --split-per-abi
@@ -145,8 +137,7 @@ jobs:
             "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 4 "$preview_apk"
             "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$RUNNER_TEMP/gamjassak-update.keystore" --ks-key-alias "$GAMJASSAK_ANDROID_KEY_ALIAS" --ks-pass env:GAMJASSAK_ANDROID_STORE_PASSWORD --key-pass env:GAMJASSAK_ANDROID_KEY_PASSWORD "$preview_apk"
             node scripts/android-signing.mjs verify-apk "$preview_apk"
-            python3 scripts/verify-gomi-apk.py "$preview_apk"
-            python3 scripts/verify-gomi-action-apk.py "$preview_apk"
+            python3 scripts/verify-own-character-apk.py "$preview_apk"
             "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 4 "$preview_apk"
           done < <(find src-tauri/gen/android/app/build/outputs/apk -name '*.apk' -print0)
       - name: Preserve successful APK build for emulator checks

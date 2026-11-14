@@ -11,8 +11,8 @@ try {
         & $Uv venv .venv --python 3.12 --managed-python
         if ($LASTEXITCODE -ne 0) { throw 'Environment creation failed.' }
     }
-    & $Uv pip install --python $AiPython -r (Join-Path $PSScriptRoot 'requirements.txt')
+    & $Uv pip install --python $AiPython -r (Join-Path $PSScriptRoot 'own\requirements.txt')
     if ($LASTEXITCODE -ne 0) { throw 'Package installation failed.' }
-    & $AiPython (Join-Path $PSScriptRoot 'verify.py')
-    if ($LASTEXITCODE -ne 0) { throw 'GPU verification failed.' }
+    & $AiPython -c "import numpy; print('Own neural learning + NumPy', numpy.__version__)"
+    if ($LASTEXITCODE -ne 0) { throw 'Numerical tool verification failed.' }
 } finally { Pop-Location }
