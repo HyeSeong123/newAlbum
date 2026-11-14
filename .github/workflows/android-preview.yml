@@ -170,7 +170,7 @@ jobs:
           emulator-build: '15507667'
           # Isolate the SwiftShader renderer exits with Mesa's software backend.
           # Keep kernel output when the guest exits before ADB can collect logs.
-          emulator-options: -no-window -gpu lavapipe -memory 4096 -no-snapshot -noaudio -no-boot-anim -show-kernel
+          emulator-options: -no-window -gpu lavapipe -cores 4 -memory 4096 -no-snapshot -noaudio -no-boot-anim -show-kernel
           disable-animations: true
           script: node scripts/smoke-android.mjs
       - name: Prepare phone APK download
@@ -182,6 +182,7 @@ jobs:
           phone_apk="$(find src-tauri/gen/android/app/build/outputs/apk -name '*arm64*debug.apk' -print -quit)"
           test -n "$phone_apk"
           cp "$phone_apk" "release-output/android/Gomgomi-${task_version}.apk"
+          sha256sum "release-output/android/Gomgomi-${task_version}.apk"
           echo "APP_VERSION=$task_version" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@v4
         if: always() && steps.phone-apk.outcome == 'success'
