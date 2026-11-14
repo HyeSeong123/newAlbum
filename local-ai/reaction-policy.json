@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "scope": "gomi-home-actions",
+  "repairPrefix": "\n다시 생성할 때 지킬 점: ",
+  "formatRepair": "말을 끝까지 맺고 고미가 집사에게 하는 짧은 말만 새로 만들어.",
+  "repeatRepair": "최근 대사를 되풀이하지 말고 같은 뜻을 다른 자연스러운 문장으로 말해.",
+  "rules": [
+    {"id":"giver-reversal","actions":["treat"],"pattern":"줄게|줄\\s*수\\s*있(?:어(?:[.!]|$)|지만|고)|내가\\s*(?:간식을?\\s*)?(?:주겠|주려고|건넬)","unlessPattern":"(?:네가|집사가)\\s*[^.!?]{0,12}줄\\s*수","reason":"간식을 받는 쪽은 고미이고 주는 쪽은 집사다. 고미가 집사에게 받기 편하게 달라고 말해."},
+    {"id":"self-as-addressee","pattern":"(?:^|[,!.?]\\s*)고미\\s*[,!.?]","reason":"말하는 쪽이 고미이고 듣는 쪽은 집사다. 고미 자신의 이름을 상대방처럼 부르지 말고 집사에게 말해."},
+    {"id":"touch-verb-inflection","pattern":"건드지","reason":"동사를 자연스러운 표준 반말로 활용하고 짧은 문장을 끝까지 맺어."},
+    {"id":"abstract-touch-command","actions":["pet"],"pattern":"손길(?:은|이)\\s*[^.!?]{0,8}(?:와|가)[.!?]?$","reason":"손길이라는 말에 오라고 명령하지 말고 집사에게 천천히 만지거나 멈춰 달라고 자연스럽게 말해."},
+    {"id":"sleep-priority","whenSleeping":true,"pattern":"지금은?\\s*[^.!?]{0,8}(?:놀\\s*(?:자|래|게|생각부터)|먹(?:자|을게|을래)|나가자)","unlessPattern":"나중|깨면|일어나면|눈\\s*뜨면|않|없|말자|아니|싫","reason":"고미는 지금 자려는 쪽이다. 집사에게 더 쉬거나 더 자게 해 달라고 말해. 지금 놀거나 먹거나 나가겠다고 바꾸지 마."}
+  ],
+  "limitation": "High-confidence role and limited inflection checks only; not a complete Korean grammar or personality verifier. No replacement dialogue is stored."
+}

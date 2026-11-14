@@ -38,6 +38,7 @@ def finite_state(value, low, high):
 
 
 def messages_for(row, characters, actions):
+    contract = read_json(HERE / 'prompt-contract.json')
     character = characters.get(row.get('characterId'))
     action = actions.get(row.get('action'))
     if not character or not action:
@@ -53,40 +54,45 @@ def messages_for(row, characters, actions):
     previous = row.get('previous', [])
     if not isinstance(previous, list) or not all(isinstance(item, str) for item in previous):
         raise ValueError('previous must be a list of replies')
-    system = (
-        f"너는 곰고미의 {character['name']}다. {character['persona']}\n"
-        '사용자의 행동에 직접 하는 자연스러운 한국어 반말 한마디, 1~2문장, 50자 이내로 반응한다. '
-        '성격과 자기주장을 유지한다. 지문·이모지·역할 설명·생각 과정은 쓰지 않는다. '
-        '앱 행동은 가상 교감이다. 현실 사건을 감지하거나 사진·일기·GPS를 읽었다고 주장하지 않는다. '
-        '명시된 장면만 참고하고, 주어지지 않은 과거·사건·신체 부위는 만들지 않는다.'
-    )
-    relation = '아주 친밀한 집사' if affection >= 90 else '가까운 집사' if affection >= 60 else '익숙해지는 사이' if affection >= 30 else '아직 서먹한 사이' if affection >= 20 else '아직 낯선 사이'
-    mood_label = {'calm': '차분함', 'curious': '호기심', 'delighted': '기쁨', 'playful': '신남', 'sleepy': '졸림', 'irritated': '짜증'}[mood]
+    system = contract['system'].format(name=character['name'], persona=character['persona'])
+    relation = next(label for threshold,label in contract['relations'] if affection >= threshold)
+    mood_label = contract['moods'][mood]
     description = action.get('characterDescriptions', {}).get(row['characterId'], action['description'])
-    user = (f"행동: {row['action']} / {action['label']}. {description}\n"
-            f"관계: {relation}, 친밀도 {affection}/100. 기분: {mood_label}. 활력: {energy}/5. "
-            + ('수면 중.' if row.get('sleeping') else '깨어 있음.'))
+    user = contract['state'].format(action=row['action'], label=action['label'], description=description,
+        relation=relation, affection=affection, mood=mood_label, energy=energy,
+        sleep=contract['asleep'] if row.get('sleeping') else contract['awake'])
     if row.get('sleeping') and mood == 'irritated':
-        user += ' 잠을 방해받은 기분을 유지한다.'
+        user += contract['disturbedNote']
     intent = action.get('characterIntents', {}).get(row['characterId'])
     goals = action.get('characterGoals', {}).get(row['characterId'], {})
     band = 'close' if affection >= 60 else 'familiar' if affection >= 30 else 'distant'
     intent = goals.get(mood, goals.get(band, goals.get('default',intent)))
     if row.get('sleeping'):
-        intent = (f"잠을 자는 쪽은 너({character['name']})이고 집사는 상대방이다. 너는 집사에게 더 자게 해달라고 요구한다. "
-                  '집사를 재우거나 깨우겠다고 하지 않는다. 놀거나 먹으러 가지 않는다.'
-                  if mood=='irritated' else
-                  (f"잠을 자는 쪽은 너({character['name']})다. 집사는 깨우지 않고 곁에서 쉬고 있다. 너는 편안하게 더 자려 한다. 집사를 깨우거나 없는 방해에 화내지 않는다."
-                   if row['action']=='rest' else
-                   f"잠을 자는 쪽은 너({character['name']})다. 너는 집사에게 더 자게 해달라고 요구한다. 명시된 장면만 참고하고 집사를 깨우겠다고 하지 않는다."))
+        sleep_kind = 'irritated' if mood == 'irritated' else 'rest' if row['action'] == 'rest' else 'other'
+        intent = contract['sleepGoals'][sleep_kind].format(name=character['name'])
     if intent:
-        user += '\n반응 방향: ' + intent
+        user += contract['directionPrefix'] + intent
     if scene:
-        user += '\n제공된 장면: ' + scene
+        user += contract['scenePrefix'] + scene
     if previous:
-        user += '\n반복하지 않을 최근 말: ' + ' / '.join(previous[-3:])
-    user += '\n내가 지금 하는 새로운 짧은 말만.'
+        user += contract['previousPrefix'] + ' / '.join(previous[-3:])
+    if row.get('repair'):
+        user += read_json(HERE/'reaction-policy.json')['repairPrefix'] + str(row['repair'])
+    user += contract['closing']
     return [{'role': 'system', 'content': system}, {'role': 'user', 'content': user}]
+
+
+def reaction_issue(row, line):
+    if row.get('characterId') != 'gomi':
+        return None
+    for rule in read_json(HERE/'reaction-policy.json')['rules']:
+        if rule.get('actions') and row.get('action') not in rule['actions']:
+            continue
+        if rule.get('whenSleeping') and not row.get('sleeping'):
+            continue
+        if re.search(rule['pattern'],line) and not (rule.get('unlessPattern') and re.search(rule['unlessPattern'],line)):
+            return {'id':rule['id'],'reason':rule['reason']}
+    return None
 
 
 def convert_legacy(row):
@@ -121,6 +127,12 @@ def training_evidence(previous_changed, current_changed):
     if not names:
         raise RuntimeError('No adapter weights changed')
     return names
+
+
+def select_adapter(epoch_validation, starting_adapter=None):
+    """Keep a verified starting adapter when continued training does not improve it."""
+    candidates = ([starting_adapter] if starting_adapter is not None else []) + list(epoch_validation)
+    return select_epoch(candidates)
 
 
 def check_rows(train, validation, characters, actions):

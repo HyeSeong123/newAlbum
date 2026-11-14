@@ -17,10 +17,10 @@ async function installAi(page:any, options:{ready?:boolean;delay?:number;gomi?:b
       }
       if(command==='chat_model_status'){
         if(settings.statusDelay)await new Promise(resolve=>setTimeout(resolve,settings.statusDelay));
-        return {phase:downloading?'downloading':settings.ready===false?'missing':'ready',installed:settings.ready!==false,supported:true,total:100,downloaded:downloading?42:0,message:'AI를 한 번 준비해 주세요.',model:settings.legacy?'legacy':'dialogue',upgradeAvailable:Boolean(settings.legacy),
+        return {phase:downloading?'downloading':settings.ready===false?'missing':'ready',installed:settings.ready!==false,supported:true,total:100,downloaded:downloading?42:0,message:settings.gomi?'고미 AI 파일이 포함되지 않았어요. 앱 업데이트를 확인해 주세요.':'AI를 한 번 준비해 주세요.',model:settings.gomi?'gomi-action-v3':settings.legacy?'legacy':'dialogue',bundled:Boolean(settings.gomi),upgradeAvailable:!settings.gomi&&Boolean(settings.legacy),
           ...(settings.gpuRuntime ? {runtime:{...settings.gpuRuntime,stage:calls?'complete':'idle',
-            gomiLoraApplied:Boolean(settings.gomi&&!settings.legacy&&calls>0&&!state.error)},lastOutcome:calls?(state.error?'error':'success'):'none'} :
-            settings.adapterObserved ? {runtime:{gomiLoraApplied:Boolean(settings.gomi&&!settings.legacy&&calls>0&&!state.error),stage:calls?'complete':'idle'},lastOutcome:calls?(state.error?'error':'success'):'none'} : {})};
+            gomiActionApplied:Boolean(settings.gomi&&calls>0&&!state.error)},lastOutcome:calls?(state.error?'error':'success'):'none'} :
+            settings.adapterObserved ? {runtime:{gomiActionApplied:Boolean(settings.gomi&&calls>0&&!state.error),stage:calls?'complete':'idle'},lastOutcome:calls?(state.error?'error':'success'):'none'} : {})};
       }
       if(command==='download_chat_model')downloading=true;
       if(command==='stop_chat_model'){downloading=false;state.stops++;}
@@ -131,19 +131,25 @@ test('missing model never substitutes canned speech and leaves a working setup a
   await installAi(page,{gomi:true,ready:false});await page.goto('/');
   await page.locator('.homeMascot').click();
   await expect(page.locator('#homeMessage')).toHaveAttribute('data-state','failed');
-  await expect(page.locator('#homeMessage')).toContainText('AI 모델이 설치되지 않았어요');
+  await expect(page.locator('#homeMessage')).toContainText('앱 업데이트를 확인해 주세요');
   await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
-  await expect(page.getByRole('button',{name:'AI 준비하기',exact:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:'AI 준비하기',exact:true})).toHaveCount(0);
+  await expect(page.getByRole('dialog')).toContainText('앱 업데이트를 확인해 주세요');
   await expect(page.getByRole('dialog')).toContainText('AI 모델이 새 대사를 생성해요');
   await page.keyboard.press('Escape');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
 
-test('Gomi 1.7B is identified as untrained instead of claiming v4 was applied',async({page})=>{
+test('Gomi uses its bundled compact model even when a shared legacy model exists',async({page})=>{
+  await page.setViewportSize({width:320,height:700});
   await installAi(page,{gomi:true,legacy:true});await page.goto('/');
   await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
-  await expect(page.locator('[data-gomi-training-status]')).toContainText('1.7B에서는 고미 추가 학습이 적용되지 않아요');
+  await expect(page.getByRole('dialog')).toContainText('고미 전용 경량 AI · 앱에 포함됨');
+  await expect(page.getByRole('dialog')).toContainText('Powered by HyperCLOVA X');
+  await expect(page.getByRole('button',{name:'더 자연스러운 AI 받기',exact:true})).toHaveCount(0);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.getByRole('dialog').screenshot({path:'preview-results/gomi-bundled-settings-320.png'});
 });
 
 test('Gomi displays only trained AI speech and reports adapter execution state on Android width',async({page})=>{
@@ -159,10 +165,10 @@ test('Gomi displays only trained AI speech and reports adapter execution state o
   await expect(bubble).toHaveAttribute('data-state','generating');
   await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
-  await expect(page.locator('[data-gomi-training-status]')).toContainText('실제 적용은 아직 확인되지 않았어요');
+  await expect(page.locator('[data-gomi-training-status]')).toContainText('앱에 포함된 고미 전용 모델');
   await page.evaluate(()=>(window as any).touchProbe.finish());
   await expect(bubble).toHaveAttribute('data-source','on-device');
-  await expect(page.locator('[data-gomi-training-status]')).toContainText('실제 적용됐어요');
+  await expect(page.locator('[data-gomi-training-status]')).toContainText('전용 학습 모델이 적용됐어요');
   await page.keyboard.press('Escape');
   expect(await bubble.evaluate(el=>getComputedStyle(el,'::before').content)).toContain('AI가 만든 말');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -206,7 +212,7 @@ test('a completed old AI answer stays hidden while a changed sleeping relationsh
   await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
   const prompts=await page.evaluate(()=>(window as any).touchProbe.prompts);
-  expect(prompts).toHaveLength(2);expect(prompts[1]).toContain('친밀도: 19');expect(prompts[1]).toContain('짜증');
+  expect(prompts).toHaveLength(2);expect(prompts[1]).toContain('친밀도 19/100');expect(prompts[1]).toContain('짜증');
   expect(await page.evaluate(()=>(window as any).touchProbe.characters)).toEqual(['gomi','gomi']);
 });
 
@@ -306,8 +312,9 @@ test('all five actions send their current situation to AI and show the returned 
     await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
     await expect(page.locator('#homeMessage')).toHaveText(replies[index]);
     const prompt=await page.evaluate((i)=>(window as any).touchProbe.prompts[i],index);
-    expect(prompt).toContain(`'${name}' 버튼을 눌렀다`);
-    expect(prompt).toContain(index===4?'나른함':'짜증');
+    expect(prompt).toContain(`행동: ${['walk','treat','pet','play','rest'][index]} /`);
+    expect(prompt).toContain('수면 중.');
+    expect(prompt).toContain(index===4?'졸림':'짜증');
   }
 });
 
@@ -477,7 +484,7 @@ test('sleeping Gomi uses sleepy touch context and keeps her resting motions',asy
   await mascot.click();await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
   await expect(page.locator('#homeMessage')).toContainText('나 아직 졸려');
   const prompt=await page.evaluate(()=>(window as any).touchProbe.prompts[0]);
-  expect(prompt).toContain('나른함');expect(prompt).toContain('친밀도: 0');
+  expect(prompt).toContain('졸림');expect(prompt).toContain('친밀도 0/100');
   await expect(mascot.locator('.characterVisual')).toHaveAttribute('data-motion',/^sleep-/);
 });
 

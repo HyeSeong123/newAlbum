@@ -44,3 +44,16 @@ test('native generation receives the chosen character without altering older cal
  assert.equal(calls[2].args.characterId,undefined);
  assert.equal(calls[0].args.sessionId,'gomi-session');
 });
+
+test('compact Gomi routing requires an explicit Home action scope for status and generation',async()=>{
+ const calls=[];
+ globalThis.sessionBridge=async(command,args)=>{calls.push({command,args});return command==='chat_model_status'?{phase:'ready'}:'새 대사';};
+ await service.chatModelStatus('gomi','home-actions');
+ await service.generateChatReply('고미 행동','home-session','gomi','home-actions');
+ await service.generateChatReply('일반 대화','chat-session','gomi');
+ await service.chatModelStatus();
+ assert.deepEqual(calls[0].args,{characterId:'gomi',usage:'home-actions'});
+ assert.equal(calls[1].args.usage,'home-actions');
+ assert.equal(calls[2].args.usage,undefined,'free conversation keeps shared model');
+ assert.equal(calls[3].args?.usage,undefined,'old status calls retain shared model');
+});

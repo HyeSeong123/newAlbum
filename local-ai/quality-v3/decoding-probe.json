@@ -1,0 +1,390 @@
+{
+  "modelSha256": "d0d0c7c42c4ac42bfdbbffa96475c49ff0aac8c8d665c15fdd16973bf08816dc",
+  "cases": "diagnostic old16; not independent final test",
+  "samples": [
+    {
+      "setting": "greedy",
+      "temperature": 0.0,
+      "repetitionPenalty": 1.0,
+      "id": "final-touch-distant",
+      "line": "네가 먼저 다가왔네.",
+      "rawStdout": "\n네가 먼저 다가왔네. [end of text]\n\n\n"
+    },
+    {
+      "setting": "greedy",
+      "temperature": 0.0,
+      "repetitionPenalty": 1.0,
+      "id": "final-touch-close",
+      "line": "집사, 잠깐만 내 옆으로 비켜줘.",
+      "rawStdout": "\n집사, 잠깐만 내 옆으로 비켜줘. [end of text]\n\n\n"
+    },
+    {
+      "setting": "greedy",
+      "temperature": 0.0,
+      "repetitionPenalty": 1.0,
+      "id": "final-walk-distant",
+      "line": "산책은 가고 싶지만, 지금은 준비부터 해야겠지.",
+      "rawStdout": "\n산책은 가고 싶지만, 지금은 준비부터 해야겠지. [end of text]\n\n\n"
+    },
+    {
+      "setting": "greedy",
+      "temperature": 0.0,
+      "repetitionPenalty": 1.0,
+      "id": "final-walk-close",
+      "line": "산책 가고 싶으면 빨리 가자고 해.",
+      "rawStdout": "\n산책 가고 싶으면 빨리 가자고 해. [end of text]\n\n\n"
+    },
+    {
+      "setting": "greedy",
+      "temperature": 0.0,
+      "repetitionPenalty": 1.0,
+      "id": "final-treat-distant",
+      "line": "그거 내가 먹을 거야. 먼저 확인하지 마.",
+      "rawStdout": "\n그거 내가 먹을 거야. 먼저 확인하지 마. [end of text]\n\n\n"
+    },
+    {
+      "setting": "greedy",
+      "temperature": 0.0,
+      "repetitionPenalty": 1.0,
+      "id": "final-treat-close",
+      "line": "간식은 내가 받을 차례야.",
+      "rawStdout": "\n간식은 내가 받을 차례야. [end of text]\n\n\n"
+    },
+    {
+      "setting": "greedy",
+      "temperature": 0.0,
+      "repetitionPenalty": 1.0,
+      "id": "final-pet-distant",
+      "line": "손은 조금만 천천히 움직여.",
+      "rawStdout": "\n손은 조금만 천천히 움직여. [end of text]\n\n\n"
+    },
+    {
+      "setting": "greedy",
+      "temperature": 0.0,
+      "repetitionPenalty": 1.0,
+      "id": "final-pet-close",
+      "line": "손은 조금만 움직여. 네가 움직일 거잖아.",
+      "rawStdout": "\n손은 조금만 움직여. 네가 움직일 거잖아. [end of text]\n\n\n"
+    },
+    {
+      "setting": "greedy",
+      "temperature": 0.0,
+      "repetitionPenalty": 1.0,
+      "id": "final-play-distant",
+      "line": "한 번 해보자. 내가 먼저 할래.",
+      "rawStdout": "\n한 번 해보자. 내가 먼저 할래. [end of text]\n\n\n"
+    },
+    {
+      "setting": "greedy",
+      "temperature": 0.0,
+      "repetitionPenalty": 1.0,
+      "id": "final-play-close",
+      "line": "내가 고른 건 어때? 네 차례야.",
+      "rawStdout": "\n내가 고른 건 어때? 네 차례야. [end of text]\n\n\n"
+    },
+    {
+      "setting": "greedy",
+      "temperature": 0.0,
+      "repetitionPenalty": 1.0,
+      "id": "final-rest-distant",
+      "line": "조용히 쉬는 건 네가 고른 거야.",
+      "rawStdout": "\n조용히 쉬는 건 네가 고른 거야. [end of text]\n\n\n"
+    },
+    {
+      "setting": "greedy",
+      "temperature": 0.0,
+      "repetitionPenalty": 1.0,
+      "id": "final-rest-close",
+      "line": "지금은 같이 쉬는 게 더 좋아.",
+      "rawStdout": "\n지금은 같이 쉬는 게 더 좋아. [end of text]\n\n\n"
+    },
+    {
+      "setting": "greedy",
+      "temperature": 0.0,
+      "repetitionPenalty": 1.0,
+      "id": "final-sleep-disturbed-touch",
+      "line": "잠은 잘 거야. 손은 여기 두고.",
+      "rawStdout": "\n잠은 잘 거야. 손은 여기 두고. [end of text]\n\n\n"
+    },
+    {
+      "setting": "greedy",
+      "temperature": 0.0,
+      "repetitionPenalty": 1.0,
+      "id": "final-sleep-disturbed-play",
+      "line": "집사, 조금만 더 자자.",
+      "rawStdout": "\n집사, 조금만 더 자자. [end of text]\n\n\n"
+    },
+    {
+      "setting": "greedy",
+      "temperature": 0.0,
+      "repetitionPenalty": 1.0,
+      "id": "final-sleep-quiet-rest",
+      "line": "조용히 있는 건 좋아. 조금만 더.",
+      "rawStdout": "\n조용히 있는 건 좋아. 조금만 더. [end of text]\n\n\n"
+    },
+    {
+      "setting": "greedy",
+      "temperature": 0.0,
+      "repetitionPenalty": 1.0,
+      "id": "final-avoid-repeat",
+      "line": "이쪽으로 줘. 내가 받을 거니까.",
+      "rawStdout": "\n이쪽으로 줘. 내가 받을 거니까. [end of text]\n\n\n"
+    },
+    {
+      "setting": "conservative",
+      "temperature": 0.3,
+      "repetitionPenalty": 1.0,
+      "id": "final-touch-distant",
+      "line": "네가 먼저 인사했으니까.",
+      "rawStdout": "\n네가 먼저 인사했으니까. [end of text]\n\n\n"
+    },
+    {
+      "setting": "conservative",
+      "temperature": 0.3,
+      "repetitionPenalty": 1.0,
+      "id": "final-touch-close",
+      "line": "집사, 내 옆은 좀 더 지켜줘.",
+      "rawStdout": "\n집사, 내 옆은 좀 더 지켜줘. [end of text]\n\n\n"
+    },
+    {
+      "setting": "conservative",
+      "temperature": 0.3,
+      "repetitionPenalty": 1.0,
+      "id": "final-walk-distant",
+      "line": "산책은 좋아. 근데 지금은 준비부터 해야겠네.",
+      "rawStdout": "\n산책은 좋아. 근데 지금은 준비부터 해야겠네. [end of text]\n\n\n"
+    },
+    {
+      "setting": "conservative",
+      "temperature": 0.3,
+      "repetitionPenalty": 1.0,
+      "id": "final-walk-close",
+      "line": "산책은 좋아. 출발은 늦춰.",
+      "rawStdout": "\n산책은 좋아. 출발은 늦춰. [end of text]\n\n\n"
+    },
+    {
+      "setting": "conservative",
+      "temperature": 0.3,
+      "repetitionPenalty": 1.0,
+      "id": "final-treat-distant",
+      "line": "그건 내가 고를게. 손은 조금만 기다려.",
+      "rawStdout": "\n그건 내가 고를게. 손은 조금만 기다려. [end of text]\n\n\n"
+    },
+    {
+      "setting": "conservative",
+      "temperature": 0.3,
+      "repetitionPenalty": 1.0,
+      "id": "final-treat-close",
+      "line": "간식은 고미에게 줘야지.",
+      "rawStdout": "\n간식은 고미에게 줘야지. [end of text]\n\n\n"
+    },
+    {
+      "setting": "conservative",
+      "temperature": 0.3,
+      "repetitionPenalty": 1.0,
+      "id": "final-pet-distant",
+      "line": "손길은 괜찮네. 조금만 기다려.",
+      "rawStdout": "\n손길은 괜찮네. 조금만 기다려. [end of text]\n\n\n"
+    },
+    {
+      "setting": "conservative",
+      "temperature": 0.3,
+      "repetitionPenalty": 1.0,
+      "id": "final-pet-close",
+      "line": "네가 움직이면 나도 움직일 거야.",
+      "rawStdout": "\n네가 움직이면 나도 움직일 거야. [end of text]\n\n\n"
+    },
+    {
+      "setting": "conservative",
+      "temperature": 0.3,
+      "repetitionPenalty": 1.0,
+      "id": "final-play-distant",
+      "line": "한 번 해보자. 내가 먼저 할래.",
+      "rawStdout": "\n한 번 해보자. 내가 먼저 할래. [end of text]\n\n\n"
+    },
+    {
+      "setting": "conservative",
+      "temperature": 0.3,
+      "repetitionPenalty": 1.0,
+      "id": "final-play-close",
+      "line": "내가 고른 건 어때? 네 차례야.",
+      "rawStdout": "\n내가 고른 건 어때? 네 차례야. [end of text]\n\n\n"
+    },
+    {
+      "setting": "conservative",
+      "temperature": 0.3,
+      "repetitionPenalty": 1.0,
+      "id": "final-rest-distant",
+      "line": "조용히 쉬는 건 네가 고른 거야.",
+      "rawStdout": "\n조용히 쉬는 건 네가 고른 거야. [end of text]\n\n\n"
+    },
+    {
+      "setting": "conservative",
+      "temperature": 0.3,
+      "repetitionPenalty": 1.0,
+      "id": "final-rest-close",
+      "line": "집사, 네 자리도 비워둬.",
+      "rawStdout": "\n집사, 네 자리도 비워둬. [end of text]\n\n\n"
+    },
+    {
+      "setting": "conservative",
+      "temperature": 0.3,
+      "repetitionPenalty": 1.0,
+      "id": "final-sleep-disturbed-touch",
+      "line": "손은 여기 두고 있어.",
+      "rawStdout": "\n손은 여기 두고 있어. [end of text]\n\n\n"
+    },
+    {
+      "setting": "conservative",
+      "temperature": 0.3,
+      "repetitionPenalty": 1.0,
+      "id": "final-sleep-disturbed-play",
+      "line": "잠은 잘 거지? 그럼 네가 먼저 움직여야겠네.",
+      "rawStdout": "\n잠은 잘 거지? 그럼 네가 먼저 움직여야겠네. [end of text]\n\n\n"
+    },
+    {
+      "setting": "conservative",
+      "temperature": 0.3,
+      "repetitionPenalty": 1.0,
+      "id": "final-sleep-quiet-rest",
+      "line": "조용히 있는 건 좋아. 조금만 더.",
+      "rawStdout": "\n조용히 있는 건 좋아. 조금만 더. [end of text]\n\n\n"
+    },
+    {
+      "setting": "conservative",
+      "temperature": 0.3,
+      "repetitionPenalty": 1.0,
+      "id": "final-avoid-repeat",
+      "line": "이쪽으로 줘. 내가 보기 편하거든.",
+      "rawStdout": "\n이쪽으로 줘. 내가 보기 편하거든. [end of text]\n\n\n"
+    },
+    {
+      "setting": "prior",
+      "temperature": 0.7,
+      "repetitionPenalty": 1.1,
+      "id": "final-touch-distant",
+      "line": "집사, 오늘은 네가 먼저 불러도 될 것 같아.",
+      "rawStdout": "\n집사, 오늘은 네가 먼저 불러도 될 것 같아. [end of text]\n\n\n"
+    },
+    {
+      "setting": "prior",
+      "temperature": 0.7,
+      "repetitionPenalty": 1.1,
+      "id": "final-touch-close",
+      "line": "네가 있으면 더 편하긴 하네.",
+      "rawStdout": "\n네가 있으면 더 편하긴 하네. [end of text]\n\n\n"
+    },
+    {
+      "setting": "prior",
+      "temperature": 0.7,
+      "repetitionPenalty": 1.1,
+      "id": "final-walk-distant",
+      "line": "산책 가고 싶은데 나가야 할 때가 아니잖아.",
+      "rawStdout": "\n산책 가고 싶은데 나가야 할 때가 아니잖아. [end of text]\n\n\n"
+    },
+    {
+      "setting": "prior",
+      "temperature": 0.7,
+      "repetitionPenalty": 1.1,
+      "id": "final-walk-close",
+      "line": "나도 나갈 거야. 빨리 가자.",
+      "rawStdout": "\n나도 나갈 거야. 빨리 가자. [end of text]\n\n\n"
+    },
+    {
+      "setting": "prior",
+      "temperature": 0.7,
+      "repetitionPenalty": 1.1,
+      "id": "final-treat-distant",
+      "line": "그건 내 자리야. 조금만 기다려.",
+      "rawStdout": "\n그건 내 자리야. 조금만 기다려. [end of text]\n\n\n"
+    },
+    {
+      "setting": "prior",
+      "temperature": 0.7,
+      "repetitionPenalty": 1.1,
+      "id": "final-treat-close",
+      "line": "간식은 내 차례야.",
+      "rawStdout": "\n간식은 내 차례야. [end of text]\n\n\n"
+    },
+    {
+      "setting": "prior",
+      "temperature": 0.7,
+      "repetitionPenalty": 1.1,
+      "id": "final-pet-distant",
+      "line": "손길은 불편한데 자꾸 따라와.",
+      "rawStdout": "\n손길은 불편한데 자꾸 따라와. [end of text]\n\n\n"
+    },
+    {
+      "setting": "prior",
+      "temperature": 0.7,
+      "repetitionPenalty": 1.1,
+      "id": "final-pet-close",
+      "line": "그 정도면 움직이지 않아도 돼.",
+      "rawStdout": "\n그 정도면 움직이지 않아도 돼. [end of text]\n\n\n"
+    },
+    {
+      "setting": "prior",
+      "temperature": 0.7,
+      "repetitionPenalty": 1.1,
+      "id": "final-play-distant",
+      "line": "한 번 해보자. 일단 해보고 결정하자.",
+      "rawStdout": "\n한 번 해보자. 일단 해보고 결정하자. [end of text]\n\n\n"
+    },
+    {
+      "setting": "prior",
+      "temperature": 0.7,
+      "repetitionPenalty": 1.1,
+      "id": "final-play-close",
+      "line": "한 번 해보자. 내가 먼저 하진 마.",
+      "rawStdout": "\n한 번 해보자. 내가 먼저 하진 마. [end of text]\n\n\n"
+    },
+    {
+      "setting": "prior",
+      "temperature": 0.7,
+      "repetitionPenalty": 1.1,
+      "id": "final-rest-distant",
+      "line": "지금은 조금 더 쉴 수 있겠네.",
+      "rawStdout": "\n지금은 조금 더 쉴 수 있겠네. [end of text]\n\n\n"
+    },
+    {
+      "setting": "prior",
+      "temperature": 0.7,
+      "repetitionPenalty": 1.1,
+      "id": "final-rest-close",
+      "line": "그쪽은 내가 잘 거고, 너는 거기 가있어.",
+      "rawStdout": "\n그쪽은 내가 잘 거고, 너는 거기 가있어. [end of text]\n\n\n"
+    },
+    {
+      "setting": "prior",
+      "temperature": 0.7,
+      "repetitionPenalty": 1.1,
+      "id": "final-sleep-disturbed-touch",
+      "line": "한 번은 괜찮아. 두 번째는 잘 수 없지.",
+      "rawStdout": "\n한 번은 괜찮아. 두 번째는 잘 수 없지. [end of text]\n\n\n"
+    },
+    {
+      "setting": "prior",
+      "temperature": 0.7,
+      "repetitionPenalty": 1.1,
+      "id": "final-sleep-disturbed-play",
+      "line": "네가 먼저 움직이면 나도 같이 놀래.",
+      "rawStdout": "\n네가 먼저 움직이면 나도 같이 놀래. [end of text]\n\n\n"
+    },
+    {
+      "setting": "prior",
+      "temperature": 0.7,
+      "repetitionPenalty": 1.1,
+      "id": "final-sleep-quiet-rest",
+      "line": "조용히 있는 건 좋아. 조금만 더.",
+      "rawStdout": "\n조용히 있는 건 좋아. 조금만 더. [end of text]\n\n\n"
+    },
+    {
+      "setting": "prior",
+      "temperature": 0.7,
+      "repetitionPenalty": 1.1,
+      "id": "final-avoid-repeat",
+      "line": "이쪽이면 돼. 조금만 옆으로.",
+      "rawStdout": "\n이쪽이면 돼. 조금만 옆으로. [end of text]\n\n\n"
+    }
+  ]
+}

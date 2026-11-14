@@ -19,16 +19,16 @@ export function useCompanionReactions(characterId: string | undefined, onResult:
   useEffect(() => {
     const current = createTouchReactionQueue(async (context, signal) => {
       return generateTouchLine(context, async (prompt) => {
-        const status = await chatModelStatus();
+        const status = await chatModelStatus(context.definition.id, "home-actions");
         if (signal.aborted || document.hidden) throw new Error("AI_CANCELLED");
         if (!status.supported) throw new Error("AI_UNSUPPORTED");
-        if (!status.installed) throw new Error("AI_NOT_INSTALLED");
+        if (!status.installed) throw new Error(status.bundled ? "AI_GOMI_MODEL_MISSING" : "AI_NOT_INSTALLED");
         if (status.phase !== "ready" && status.phase !== "error") throw new Error("진행 중인 작업이 끝난 뒤 다시 시도해 주세요.");
         markChatReaction(context.owned.id, "running");
         const id = sessionId.current;
         const stop = () => { void stopChatModel(id).catch(() => {}); };
         signal.addEventListener("abort", stop, { once: true });
-        try { return await generateChatReply(prompt, id, context.definition.id); }
+        try { return await generateChatReply(prompt, id, context.definition.id, "home-actions"); }
         finally { signal.removeEventListener("abort", stop); }
       }, signal);
     }, (reply, context) => {

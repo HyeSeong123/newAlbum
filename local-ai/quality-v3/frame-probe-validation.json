@@ -1,0 +1,65 @@
+{
+  "experimentalInputOnly": true,
+  "samples": [
+    {
+      "id": "v3-validation-awake-0",
+      "action": "touch",
+      "line": "지금은 내 쪽을 봐줘. 잠깐만 기다려."
+    },
+    {
+      "id": "v3-validation-awake-2",
+      "action": "touch",
+      "line": "나도 보고 있어. 잠깐만…."
+    },
+    {
+      "id": "v3-validation-awake-4",
+      "action": "walk",
+      "line": "준비 끝내고 나가자. 오늘은 산책이야."
+    },
+    {
+      "id": "v3-validation-awake-6",
+      "action": "walk",
+      "line": "오늘은 산책 준비부터 해."
+    },
+    {
+      "id": "v3-validation-awake-8",
+      "action": "treat",
+      "line": "간식 줄 건데, 내 앞에 놔줘."
+    },
+    {
+      "id": "v3-validation-awake-10",
+      "action": "treat",
+      "line": "간식 줄 때 내 앞에 놓아줘."
+    },
+    {
+      "id": "v3-validation-awake-12",
+      "action": "pet",
+      "line": "살살 좀 멈춰줘."
+    },
+    {
+      "id": "v3-validation-awake-14",
+      "action": "pet",
+      "line": "살살 만져도 돼. 잠깐 멈춰줘."
+    },
+    {
+      "id": "v3-validation-awake-16",
+      "action": "play",
+      "line": "나도 같이 놀래. 먼저 시작해."
+    },
+    {
+      "id": "v3-validation-awake-18",
+      "action": "play",
+      "line": "먼저 놀자. 나도 기대돼."
+    },
+    {
+      "id": "v3-validation-awake-20",
+      "action": "rest",
+      "line": "조용히 쉬고 싶어. 내 자리도 남겨 줘."
+    },
+    {
+      "id": "v3-validation-awake-22",
+      "action": "rest",
+      "line": "조용히 쉬고 싶어. 내 자리도 남겨줘."
+    }
+  ]
+}

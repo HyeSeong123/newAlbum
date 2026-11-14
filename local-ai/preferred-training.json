@@ -1,5 +1,5 @@
 {
-  "corpus": "data/gomi-actions-v2",
+  "corpus": "data/gomi-actions-v3",
   "character": "gomi",
   "epochs": 4,
   "learningRate": 0.0001,

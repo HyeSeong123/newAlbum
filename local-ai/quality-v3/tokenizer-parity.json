@@ -1,0 +1,411 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "id": "home-parity-0",
+      "tokens": 339,
+      "nativeTokens": 339,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-1",
+      "tokens": 340,
+      "nativeTokens": 340,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-2",
+      "tokens": 334,
+      "nativeTokens": 334,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-3",
+      "tokens": 338,
+      "nativeTokens": 338,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-4",
+      "tokens": 340,
+      "nativeTokens": 340,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-5",
+      "tokens": 371,
+      "nativeTokens": 371,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-6",
+      "tokens": 352,
+      "nativeTokens": 352,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-7",
+      "tokens": 359,
+      "nativeTokens": 359,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-8",
+      "tokens": 360,
+      "nativeTokens": 360,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-9",
+      "tokens": 358,
+      "nativeTokens": 358,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-10",
+      "tokens": 358,
+      "nativeTokens": 358,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-11",
+      "tokens": 360,
+      "nativeTokens": 360,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-12",
+      "tokens": 380,
+      "nativeTokens": 380,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-13",
+      "tokens": 361,
+      "nativeTokens": 361,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-14",
+      "tokens": 360,
+      "nativeTokens": 360,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-15",
+      "tokens": 361,
+      "nativeTokens": 361,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-16",
+      "tokens": 359,
+      "nativeTokens": 359,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-17",
+      "tokens": 359,
+      "nativeTokens": 359,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-18",
+      "tokens": 361,
+      "nativeTokens": 361,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-19",
+      "tokens": 381,
+      "nativeTokens": 381,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-20",
+      "tokens": 362,
+      "nativeTokens": 362,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-21",
+      "tokens": 347,
+      "nativeTokens": 347,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-22",
+      "tokens": 348,
+      "nativeTokens": 348,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-23",
+      "tokens": 347,
+      "nativeTokens": 347,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-24",
+      "tokens": 378,
+      "nativeTokens": 378,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-25",
+      "tokens": 380,
+      "nativeTokens": 380,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-26",
+      "tokens": 381,
+      "nativeTokens": 381,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-27",
+      "tokens": 362,
+      "nativeTokens": 362,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-28",
+      "tokens": 349,
+      "nativeTokens": 349,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-29",
+      "tokens": 350,
+      "nativeTokens": 350,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-30",
+      "tokens": 348,
+      "nativeTokens": 348,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-31",
+      "tokens": 348,
+      "nativeTokens": 348,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-32",
+      "tokens": 350,
+      "nativeTokens": 350,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-33",
+      "tokens": 372,
+      "nativeTokens": 372,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-34",
+      "tokens": 353,
+      "nativeTokens": 353,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-35",
+      "tokens": 336,
+      "nativeTokens": 336,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-36",
+      "tokens": 337,
+      "nativeTokens": 337,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-37",
+      "tokens": 332,
+      "nativeTokens": 332,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-38",
+      "tokens": 350,
+      "nativeTokens": 350,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-39",
+      "tokens": 352,
+      "nativeTokens": 352,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-40",
+      "tokens": 372,
+      "nativeTokens": 372,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-41",
+      "tokens": 360,
+      "nativeTokens": 360,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "home-parity-42",
+      "tokens": 371,
+      "nativeTokens": 371,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "v3-h01",
+      "tokens": 359,
+      "nativeTokens": 359,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "v3-h02",
+      "tokens": 357,
+      "nativeTokens": 357,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "v3-h03",
+      "tokens": 359,
+      "nativeTokens": 359,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "v3-h04",
+      "tokens": 363,
+      "nativeTokens": 363,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "v3-h05",
+      "tokens": 421,
+      "nativeTokens": 421,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "v3-h06",
+      "tokens": 365,
+      "nativeTokens": 365,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "v3-h07",
+      "tokens": 390,
+      "nativeTokens": 390,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "v3-h08",
+      "tokens": 405,
+      "nativeTokens": 405,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "v3-h09",
+      "tokens": 362,
+      "nativeTokens": 362,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "v3-h10",
+      "tokens": 363,
+      "nativeTokens": 363,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "v3-h11",
+      "tokens": 371,
+      "nativeTokens": 371,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "v3-h12",
+      "tokens": 410,
+      "nativeTokens": 410,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "v3-h13",
+      "tokens": 357,
+      "nativeTokens": 357,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "v3-h14",
+      "tokens": 337,
+      "nativeTokens": 337,
+      "passed": true,
+      "firstMismatch": null
+    },
+    {
+      "id": "v3-h15",
+      "tokens": 421,
+      "nativeTokens": 421,
+      "passed": true,
+      "firstMismatch": null
+    }
+  ]
+}

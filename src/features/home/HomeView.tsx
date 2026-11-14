@@ -144,7 +144,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     if (definition && mainCharacter) {
       const memory = readCompanionMemory(mainCharacter.id);
       const source = reaction?.sleeping ? (reaction.disturbed ? "sleep" : undefined) : "home";
-      void reactWithStoredRelationship({ definition, appearance, owned: mainCharacter, memory: reaction?.sleeping ? { ...memory, mood:reaction.disturbed ? "irritated" : "sleepy", energy:Math.min(1,memory.energy) } : memory, action:"touch", fallback }, source);
+      void reactWithStoredRelationship({ definition, appearance, owned: mainCharacter, memory: reaction?.sleeping ? { ...memory, mood:reaction.disturbed ? "irritated" : "sleepy", energy:Math.min(1,memory.energy) } : memory, action:"touch", fallback, sleeping:Boolean(reaction?.sleeping) }, source);
     }
     setHappy(!isGomi && !restLine && !companion.resting);
     window.clearTimeout(timer.current);
@@ -163,7 +163,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     setSpokenLine(undefined);
     setAiStatus("generating");
     setAiFailure("");
-    void reactWithStoredRelationship({ definition, appearance, owned: mainCharacter, memory: result.memory, action, fallback }, sleeping && action !== "rest" ? "sleep" : undefined);
+    void reactWithStoredRelationship({ definition, appearance, owned: mainCharacter, memory: result.memory, action, fallback, sleeping }, sleeping && action !== "rest" ? "sleep" : undefined);
     if (isGomi) gomi.activity(action);
     else { companion.activity(action); setHappy(action !== "rest"); }
     window.clearTimeout(timer.current);

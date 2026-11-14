@@ -13,3 +13,10 @@
 /scripts/gomi-training/*.txt -text whitespace=cr-at-eol
 /models/gomi-lora-v4/** -text
 /models/gomi-lora-v4/data/*.txt whitespace=cr-at-eol
+
+# Local training evidence hashes cover the exact exported bytes on every platform.
+/local-ai/** -text whitespace=cr-at-eol
+/docs/gomi-personality-2026-10-31.md -text whitespace=cr-at-eol
+/models/gomi-action-v3/** -text whitespace=cr-at-eol
+# Reproduce the vendor licence verbatim, including its original trailing spaces.
+/models/gomi-action-v3/LICENSE -whitespace

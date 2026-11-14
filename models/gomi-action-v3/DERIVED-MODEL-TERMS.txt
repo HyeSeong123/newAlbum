@@ -1,0 +1,4 @@
+Powered by HyperCLOVA X
+Model name: HyperCLOVA X Gomgomi Gomi 0.5B
+These model weights have been modified by Gomi action-response LoRA fine-tuning, merging and quantization.
+Use and redistribution are subject to the attached HyperCLOVA X SEED Model License Agreement, including Section 2.3 Prohibited Use Policy. That policy is an enforceable condition of use and redistribution of these derivative files. Downstream recipients must receive the Agreement, these restrictions, modification notice and required attribution. Additional commercial terms in Section 4 also apply.

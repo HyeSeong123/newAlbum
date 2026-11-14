@@ -144,7 +144,7 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeStats(JNIEnv *env, jobj
 }
 extern "C" JNIEXPORT jbyteArray JNICALL
 Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, jobject, jstring path, jstring input, jstring adapter_path,
-                                                                     jlong request, jlong available_memory_bytes, jboolean force_cpu) {
+                                                                     jlong request, jlong available_memory_bytes, jboolean force_cpu, jboolean gomi_action) {
     bool context_touched = false;
     try {
         std::unique_lock<std::mutex> lock(inference_mutex, std::try_to_lock);
@@ -162,6 +162,7 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, j
             metrics.prompt_tokens = metrics.cached_tokens = 0;
         }
         const std::string file = utf8(env, path), prompt = utf8(env, input), adapter_file = utf8(env, adapter_path);
+        const bool compact_action = gomi_action == JNI_TRUE;
         if (prompt.empty() || prompt.size() > 48000) throw std::runtime_error("이야기가 너무 길어요.");
         std::call_once(backend_once, [] { llama_backend_init(); });
         const bool gpu_available = hasVulkanComputeDevice();
@@ -241,12 +242,13 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, j
         stage("prompt");
         const auto prefill_started = now_ms();
         const auto *vocab = llama_model_get_vocab(model);
-        int count = llama_tokenize(vocab, prompt.data(), prompt.size(), nullptr, 0, true, true);
+        // Clova's frozen Home template already serializes all role tokens and has no BOS.
+        int count = llama_tokenize(vocab, prompt.data(), prompt.size(), nullptr, 0, !compact_action, true);
         if (count == 0 || count == INT32_MIN) throw std::runtime_error("이야기를 읽지 못했어요.");
         if (count < 0) count = -count;
         if (count > 2048 - 256) throw std::runtime_error("이야기가 길어졌어요. 조금 짧게 적어 주세요.");
         std::vector<llama_token> tokens(count);
-        if (llama_tokenize(vocab, prompt.data(), prompt.size(), tokens.data(), count, true, true) < 0) throw std::runtime_error("이야기를 읽지 못했어요.");
+        if (llama_tokenize(vocab, prompt.data(), prompt.size(), tokens.data(), count, !compact_action, true) < 0) throw std::runtime_error("이야기를 읽지 못했어요.");
         // Keep an identical prefix but recompute the last token for fresh logits.
         int reused_tokens = context_reused ? reusablePromptPrefix(cached.prompt_tokens, tokens) : 0;
         auto mem = llama_get_memory(ctx);
@@ -272,13 +274,14 @@ Java_com_oraedameun_album_GamjassakCompanionPlugin_nativeGenerate(JNIEnv *env, j
             metrics.cached_tokens = reused_tokens;
         }
         std::unique_ptr<llama_sampler, decltype(&llama_sampler_free)> sampler(llama_sampler_chain_init(llama_sampler_chain_default_params()), llama_sampler_free);
-        llama_sampler_chain_add(sampler.get(), llama_sampler_init_top_k(20));
-        llama_sampler_chain_add(sampler.get(), llama_sampler_init_top_p(0.8f, 1));
-        llama_sampler_chain_add(sampler.get(), llama_sampler_init_temp(0.7f));
+        // Only the APK-owned Home model uses its validated conservative profile.
+        llama_sampler_chain_add(sampler.get(), llama_sampler_init_top_k(compact_action ? 40 : 20));
+        llama_sampler_chain_add(sampler.get(), llama_sampler_init_top_p(compact_action ? 0.9f : 0.8f, 1));
+        llama_sampler_chain_add(sampler.get(), llama_sampler_init_temp(compact_action ? 0.4f : 0.7f));
         llama_sampler_chain_add(sampler.get(), llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
         std::string output;
         stage("generating");
-        for (int i = 0; i < 128; ++i) {
+        for (int i = 0; i < (compact_action ? 64 : 128); ++i) {
             if (abort_run(&run)) throw std::runtime_error(abort_message(run));
             auto token = llama_sampler_sample(sampler.get(), ctx, -1);
             if (llama_vocab_is_eog(vocab, token)) break;

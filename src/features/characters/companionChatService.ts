@@ -21,9 +21,9 @@ export const lastChatReaction = (id: string) => reactionResults.get(id);
 export type ChatModelStatus = {
   phase: "unsupported" | "missing" | "downloading" | "verifying" | "ready" | "generating" | "error";
   supported: boolean; installed: boolean; downloaded: number; total: number; message: string;
-  model?: "legacy" | "dialogue" | "missing"; upgradeAvailable?: boolean;
+  model?: "legacy" | "dialogue" | "gomi-action-v3" | "missing"; upgradeAvailable?: boolean; bundled?: boolean;
   lastOutcome?: "none" | "running" | "success" | "cancelled" | "error"; lastError?: string; lastAt?: number;
-  runtime?: { resident?: boolean; reused?: boolean; loadCount?: number; releaseCount?: number; stage?: string; gomiLoraApplied?: boolean;
+  runtime?: { resident?: boolean; reused?: boolean; loadCount?: number; releaseCount?: number; stage?: string; gomiLoraApplied?: boolean; gomiActionApplied?: boolean;
     gpuAvailable?: boolean; gpuAttempted?: boolean; gpuUsed?: boolean; gpuLayers?: number; gpuFallback?: boolean;
     loadMs?: number; contextMs?: number; promptMs?: number; promptTokens?: number; cachedPromptTokens?: number; contextReused?: boolean;
     firstTokenMs?: number; totalMs?: number; generationMs?: number;
@@ -34,11 +34,15 @@ const unsupported: ChatModelStatus = { phase: "unsupported", supported: false, i
 let releasing: Promise<void> = Promise.resolve();
 let stopping: Promise<void> = Promise.resolve();
 const settled = () => Promise.all([releasing, stopping]);
-export const chatModelStatus = async (): Promise<ChatModelStatus> => { await settled(); return isTauriRuntime() ? invoke("chat_model_status") : unsupported; };
-export const downloadChatModel = (): Promise<void> => invoke("download_chat_model");
-export const generateChatReply = async (prompt: string, sessionId?: string, characterId?: string): Promise<string> => {
+export const chatModelStatus = async (characterId?: string, usage?: "home-actions"): Promise<ChatModelStatus> => {
   await settled();
-  return invoke("generate_chat_reply", { prompt, sessionId, ...(characterId ? { characterId } : {}) });
+  return isTauriRuntime() ? invoke("chat_model_status", { ...(characterId ? { characterId } : {}), ...(usage ? { usage } : {}) })
+    : characterId === "gomi" && usage === "home-actions" ? { ...unsupported, message:"고미 AI 반응은 Android 스마트폰에서 사용할 수 있어요." } : unsupported;
+};
+export const downloadChatModel = (): Promise<void> => invoke("download_chat_model");
+export const generateChatReply = async (prompt: string, sessionId?: string, characterId?: string, usage?: "home-actions"): Promise<string> => {
+  await settled();
+  return invoke("generate_chat_reply", { prompt, sessionId, ...(characterId ? { characterId } : {}), ...(usage ? { usage } : {}) });
 };
 export function stopChatModel(sessionId?: string): Promise<void> {
   // A late session-scoped stop must never overtake the next character's generation.

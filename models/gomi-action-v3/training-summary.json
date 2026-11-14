@@ -1,0 +1,20 @@
+{
+  "model": "naver-hyperclovax/HyperCLOVAX-SEED-Text-Instruct-0.5B",
+  "revision": "3da5046fb0195d14f2497de198136987d35fd644",
+  "sourceCommit": "5db8387dccb9f1a88d2a615e761d1f39a171fa5e",
+  "dataSha256": "cce40b69b345dafa9d9053a6e1c20d16bc2ab1554af18750575f9056de614e19",
+  "pipelineSha256": {
+    "core.py": "baf10ac871199bf58039243d9735f501ba37b3cced4f7ed8d6f8f5197b8c218e",
+    "modeling.py": "e20bd8c434a967fe1c0c61f156135ba04aacd4c8ac6cd3135a23cb31be5c20b8",
+    "train.py": "8861debd7776fa33a7fd665c9f9840938b323b8b282bf4684090efd1db63ff4b",
+    "prompt-contract.json": "b3c9f7d20524bbfb27a23b2cd74176d1287cb30c7178ff8a8723069a523a149e"
+  },
+  "trainRows": 547,
+  "validationRows": 36,
+  "optimizerSteps": 548,
+  "beforeValidationLoss": 4.270944682394321,
+  "afterValidationLoss": 1.8170731112175462,
+  "selectedEpoch": 3,
+  "adapterSha256": "62d65554aac27271ded7a51a2968cfb0effb0f32dd6fd5e0241c6e4c1c431bc5",
+  "adapterReloaded": true
+}

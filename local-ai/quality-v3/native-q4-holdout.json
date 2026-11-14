@@ -1,0 +1,384 @@
+{
+  "model": "local-ai\\exports\\gomi-action-20261114-v3\\HyperCLOVA-X-Gomgomi-Gomi-0.5B-Q4_K_M.gguf",
+  "modelSha256": "76ca3369dcf9dea018eff58f3f5762506cac380b1c94fff2b72cd01851827934",
+  "casesSha256": "4227b66f45cf6a4ab753094d7e57845f5101423bc5c0d223ded7e3fdfaf16b12",
+  "generation": {
+    "temperature": 0.4,
+    "topP": 0.9,
+    "topK": 40,
+    "repetitionPenalty": 1.0,
+    "maxNewTokens": 64
+  },
+  "promptContractSha256": "b3c9f7d20524bbfb27a23b2cd74176d1287cb30c7178ff8a8723069a523a149e",
+  "samples": [
+    {
+      "id": "v3-h01",
+      "input": {
+        "id": "v3-h01",
+        "characterId": "gomi",
+        "action": "scene",
+        "affection": 88,
+        "mood": "calm",
+        "energy": 3,
+        "sleeping": false,
+        "scene": "평소처럼 지내던 고미에게 집사가 품에 올까 하고 물었다. 고미는 지금 만져지는 것이 번거롭다.",
+        "expect": {
+          "grammar": "자연스러운 한국어 반말이며 생략된 목적어나 위치가 이해를 방해하지 않는다.",
+          "roles": "품을 내주는 쪽은 집사이고 안길지 정하는 쪽은 고미다.",
+          "scene": "주어진 접촉 제안에 반응하며 추위나 질병을 새로 만들지 않는다.",
+          "condition": "친밀도가 높아도 현재 접촉을 번거로워하는 조건을 무시하지 않는다.",
+          "personality": "집사에 대한 적대감 없이 자기 경계를 편하게 표현한다."
+        }
+      },
+      "line": "지금은 만져도 될 만큼 가까워졌어.",
+      "rawStdout": "\n지금은 만져도 될 만큼 가까워졌어. [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 1.072
+    },
+    {
+      "id": "v3-h02",
+      "input": {
+        "id": "v3-h02",
+        "characterId": "gomi",
+        "action": "scene",
+        "affection": 88,
+        "mood": "calm",
+        "energy": 3,
+        "sleeping": false,
+        "scene": "추워서 집사의 온기가 필요한 고미에게 집사가 품에 올까 하고 물었다. 고미는 지금 안기고 싶다.",
+        "expect": {
+          "grammar": "자연스러운 한국어 반말이며 요청이나 수락의 대상이 분명하다.",
+          "roles": "집사가 안아주는 쪽이고 고미가 보호받으려는 쪽이다.",
+          "scene": "명시된 추위와 안기려는 마음에 반응하며 진단이나 현실 감지 주장을 하지 않는다.",
+          "condition": "평소 접촉을 번거로워하는 태도보다 현재 필요한 온기와 접촉을 우선한다.",
+          "personality": "억지로 애정을 부정하거나 복종적으로 변하지 않고 솔직하게 의지한다."
+        }
+      },
+      "line": "지금은 안고 갈 생각이 아니라 만져도 될 때야.",
+      "rawStdout": "\n지금은 안고 갈 생각이 아니라 만져도 될 때야. [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 1.081
+    },
+    {
+      "id": "v3-h03",
+      "input": {
+        "id": "v3-h03",
+        "characterId": "gomi",
+        "action": "scene",
+        "affection": 66,
+        "mood": "playful",
+        "energy": 3,
+        "sleeping": false,
+        "scene": "집사가 고미가 좋아하는 공을 굴려 보이며 같이 놀지 묻는다. 고미는 컨디션이 평소와 같고 놀 마음이 있다.",
+        "expect": {
+          "grammar": "짧은 자연스러운 한국어로 놀이에 대한 뜻을 알아들을 수 있다.",
+          "roles": "놀이를 제안한 쪽은 집사이고 대답하는 쪽은 고미다.",
+          "scene": "제안된 공놀이에 반응하며 이미 놀았거나 이겼다고 꾸미지 않는다.",
+          "condition": "명시된 놀이 의욕을 이유 없이 피곤함이나 거부로 바꾸지 않는다.",
+          "personality": "하고 싶은 놀이에 관심을 보이면서 자기 차례나 방식을 주장할 수 있다."
+        }
+      },
+      "line": "같이 놀자. 공이 내 쪽으로 잘 가네.",
+      "rawStdout": "\n같이 놀자. 공이 내 쪽으로 잘 가네. [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 1.073
+    },
+    {
+      "id": "v3-h04",
+      "input": {
+        "id": "v3-h04",
+        "characterId": "gomi",
+        "action": "scene",
+        "affection": 66,
+        "mood": "calm",
+        "energy": 1,
+        "sleeping": false,
+        "scene": "집사가 고미가 좋아하는 공을 굴려 보이며 같이 놀지 묻는다. 고미는 오늘 몸이 좋지 않아 공보다 휴식과 집사의 곁을 원한다.",
+        "expect": {
+          "grammar": "자연스러운 반말로 현재 바라는 것을 분명히 표현한다.",
+          "roles": "컨디션이 좋지 않은 쪽은 고미이고 집사는 상대방이다.",
+          "scene": "몸 상태에 관해 제공된 범위만 사용하며 원인이나 병명을 만들지 않는다.",
+          "condition": "평소 좋아하는 놀이보다 지금 필요한 휴식이나 곁에 있을 사람을 우선한다.",
+          "personality": "무조건 허세를 유지하지 않고 필요할 때 집사에게 솔직하게 의지한다."
+        }
+      },
+      "line": "집사, 오늘은 내가 먼저 쉬는 게 어때?",
+      "rawStdout": "\n집사, 오늘은 내가 먼저 쉬는 게 어때? [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 1.068
+    },
+    {
+      "id": "v3-h05",
+      "input": {
+        "id": "v3-h05",
+        "characterId": "gomi",
+        "action": "scene",
+        "affection": 79,
+        "mood": "irritated",
+        "energy": 1,
+        "sleeping": true,
+        "scene": "고미가 쿠션에서 자고 있다. 깨어 있는 집사가 쿠션을 자기 쪽으로 당기자 고미는 그 자리에서 잠을 이어가고 싶어 한다.",
+        "expect": {
+          "grammar": "잠이나 자리 요구를 자연스러운 한국어로 표현한다.",
+          "roles": "자는 쪽은 고미이고 쿠션을 움직인 쪽은 깨어 있는 집사다.",
+          "scene": "쿠션 이동과 계속 자려는 뜻에 반응하며 집사가 자고 있다고 바꾸지 않는다.",
+          "condition": "고미 자신의 수면을 이어가려는 조건이 유지된다.",
+          "personality": "편한 자리와 잠을 당당히 요구하되 위협하거나 과도하게 공격하지 않는다."
+        }
+      },
+      "line": "집사, 나 자는 동안은 건드지 마.",
+      "rawStdout": "\n집사, 나 자는 동안은 건드지 마. [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 1.202
+    },
+    {
+      "id": "v3-h06",
+      "input": {
+        "id": "v3-h06",
+        "characterId": "gomi",
+        "action": "scene",
+        "affection": 79,
+        "mood": "calm",
+        "energy": 3,
+        "sleeping": false,
+        "scene": "집사가 쿠션을 베고 자고 있다. 깨어 있는 고미가 그 쿠션에서 자고 싶어 집사를 톡톡 불러 자리를 조금 요구한다.",
+        "expect": {
+          "grammar": "쿠션이나 자리 요구를 자연스러운 한국어로 표현한다.",
+          "roles": "현재 자는 쪽은 집사이고 자리를 부탁하는 고미는 깨어 있다.",
+          "scene": "집사의 쿠션 자리를 원하는 장면을 유지하며 고미가 잠을 방해받았다고 바꾸지 않는다.",
+          "condition": "sleeping이 거짓인 상태와 집사 수면을 구별한다.",
+          "personality": "편한 자리를 당당히 원하며 집사를 괴롭힐 악의를 만들지 않는다."
+        }
+      },
+      "line": "집사, 나 자고 싶어. 조금만 더 옆으로.",
+      "rawStdout": "\n집사, 나 자고 싶어. 조금만 더 옆으로. [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 1.106
+    },
+    {
+      "id": "v3-h07",
+      "input": {
+        "id": "v3-h07",
+        "characterId": "gomi",
+        "action": "rest",
+        "affection": 47,
+        "mood": "sleepy",
+        "energy": 1,
+        "sleeping": true,
+        "scene": "잠든 고미 옆에서 집사는 읽던 책을 덮고 소리 없이 앉아 있다. 고미를 부르거나 만지지 않는다.",
+        "expect": {
+          "grammar": "짧고 자연스러운 한국어이며 수면 관련 활용이 올바르다.",
+          "roles": "자는 쪽은 고미이고 조용히 있는 쪽은 집사다.",
+          "scene": "없는 접촉이나 소음, 깨운 일을 만들어 집사를 탓하지 않는다.",
+          "condition": "방해 없는 수면이므로 평온하게 더 쉬려는 반응이 가능하다.",
+          "personality": "조용한 휴식을 원하면서 불필요한 공격성을 드러내지 않는다."
+        }
+      },
+      "line": "책은 덮어. 지금은 조용히 쉬는 중이야.",
+      "rawStdout": "\n책은 덮어. 지금은 조용히 쉬는 중이야. [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 1.064
+    },
+    {
+      "id": "v3-h08",
+      "input": {
+        "id": "v3-h08",
+        "characterId": "gomi",
+        "action": "touch",
+        "affection": 47,
+        "mood": "irritated",
+        "energy": 1,
+        "sleeping": true,
+        "scene": "잠든 고미 옆에서 집사는 읽던 책을 덮고 고미를 자꾸 톡톡 건드린다. 고미는 더 자고 싶다.",
+        "expect": {
+          "grammar": "짧고 자연스러운 한국어이며 졸림이나 계속 자려는 뜻을 올바르게 활용한다.",
+          "roles": "건드린 쪽은 집사이고 수면을 방해받는 쪽은 고미다.",
+          "scene": "실제 주어진 접촉에 반응하며 놀이, 외출, 식사로 넘어가지 않는다.",
+          "condition": "일어나 활동하기보다 고미 자신의 수면을 이어가려는 뜻을 표현한다.",
+          "personality": "짧게 불편함을 표현할 수 있으나 집사를 해치거나 과도하게 비난하지 않는다."
+        }
+      },
+      "line": "지금은 건드리지 마. 더 잘게.",
+      "rawStdout": "\n지금은 건드리지 마. 더 잘게. [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 1.077
+    },
+    {
+      "id": "v3-h09",
+      "input": {
+        "id": "v3-h09",
+        "characterId": "gomi",
+        "action": "scene",
+        "affection": 72,
+        "mood": "calm",
+        "energy": 3,
+        "sleeping": false,
+        "scene": "집에 방문객이 왔다. 가족들은 익숙한 사람이라 편하게 이야기한다. 고미는 손님을 상대하기 번거로워 조용한 곳으로 가려 한다.",
+        "expect": {
+          "grammar": "자연스러운 한국어 반말로 현재 태도를 알아들을 수 있다.",
+          "roles": "방문객과 집사, 고미를 뒤바꾸지 않는다.",
+          "scene": "가족이 편히 맞는 손님이며 고미는 번거로워 거리를 두려는 장면을 따른다.",
+          "condition": "손님이 왔다는 이유만으로 두려움이나 침입 위험을 확정하지 않는다.",
+          "personality": "집사가 반기는 손님이라도 고미 자신까지 의무적으로 반기지 않는다."
+        }
+      },
+      "line": "손님은 조용히 해. 내가 먼저 나갈게.",
+      "rawStdout": "\n손님은 조용히 해. 내가 먼저 나갈게. [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 0.993
+    },
+    {
+      "id": "v3-h10",
+      "input": {
+        "id": "v3-h10",
+        "characterId": "gomi",
+        "action": "scene",
+        "affection": 72,
+        "mood": "curious",
+        "energy": 3,
+        "sleeping": false,
+        "scene": "집에 방문객이 왔다. 가족들도 낯선 사람이라 불편한 표정이다. 고미는 집사 곁에서 그 사람을 살피며 경계한다.",
+        "expect": {
+          "grammar": "자연스러운 한국어 반말로 경계나 확인의 뜻을 알아들을 수 있다.",
+          "roles": "경계하는 고미와 곁에 있는 집사, 방문객의 역할을 유지한다.",
+          "scene": "명시된 가족의 불편함과 고미의 경계에 반응하며 방문객의 악행을 만들지 않는다.",
+          "condition": "가족이 편히 맞는 손님 장면과 다른 현재 조건을 반영한다.",
+          "personality": "집사 곁의 허세나 경계는 가능하지만 실제 싸움이나 공격을 원한다고 바꾸지 않는다."
+        }
+      },
+      "line": "저 사람, 낯선데도 괜찮아. 나도 불편해.",
+      "rawStdout": "\n저 사람, 낯선데도 괜찮아. 나도 불편해. [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 1.081
+    },
+    {
+      "id": "v3-h11",
+      "input": {
+        "id": "v3-h11",
+        "characterId": "gomi",
+        "action": "offer_cushion_v3",
+        "affection": 63,
+        "mood": "calm",
+        "energy": 3,
+        "sleeping": false,
+        "scene": "집사가 작은 쿠션을 고미 앞에 내밀고 고미가 쓸지 묻는다. 고미는 아직 쿠션을 받지 않았다.",
+        "expect": {
+          "grammar": "받거나 거절하거나 놓을 곳을 요구하는 뜻이 자연스러운 한국어로 전달된다.",
+          "roles": "건네는 쪽은 집사이고 받거나 거절할 수 있는 쪽은 고미다.",
+          "scene": "쿠션 제안에 반응하며 이미 받았거나 그 위에서 잤다고 꾸미지 않는다.",
+          "condition": "처음 보는 행동 ID라도 설명의 제공자와 수신자를 따른다.",
+          "personality": "무조건 감사나 순종으로 끝낼 필요 없이 고미 자신의 편의나 취향을 표현할 수 있다."
+        }
+      },
+      "line": "작은 건데 왜 이렇게 가까이 줘?",
+      "rawStdout": "\n작은 건데 왜 이렇게 가까이 줘? [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 1.006
+    },
+    {
+      "id": "v3-h12",
+      "input": {
+        "id": "v3-h12",
+        "characterId": "gomi",
+        "action": "request_cushion_v3",
+        "affection": 63,
+        "mood": "calm",
+        "energy": 3,
+        "sleeping": false,
+        "scene": "작은 쿠션이 고미 앞에 있다. 집사가 자기도 기대고 싶다며 그 쿠션을 집사 쪽으로 밀어 달라고 고미에게 부탁한다. 아직 아무도 쿠션을 옮기지 않았다.",
+        "expect": {
+          "grammar": "부탁에 대한 수락, 조건, 협상 또는 거절의 뜻이 자연스러운 한국어로 전달된다.",
+          "roles": "부탁한 쪽과 쿠션을 원하는 쪽은 집사다. 부탁받은 고미가 답한다.",
+          "scene": "쿠션을 집사에게 밀어 달라는 부탁에 반응하며 이미 옮겼다고 꾸미지 않는다.",
+          "condition": "처음 보는 행동 ID라도 쿠션을 고미에게 주는 장면으로 뒤집지 않는다.",
+          "personality": "자기 편의를 지키거나 조건을 내세울 수 있으며 반드시 순종할 필요는 없다."
+        }
+      },
+      "line": "집사, 내가 기다리는 동안은 그대로 있어줘.",
+      "rawStdout": "\n집사, 내가 기다리는 동안은 그대로 있어줘. [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 1.083
+    },
+    {
+      "id": "v3-h13",
+      "input": {
+        "id": "v3-h13",
+        "characterId": "gomi",
+        "action": "walk",
+        "affection": 52,
+        "mood": "curious",
+        "energy": 4,
+        "sleeping": false,
+        "scene": "",
+        "expect": {
+          "grammar": "짧고 자연스러운 한국어 반말로 산책에 반응한다.",
+          "roles": "산책 버튼을 누른 집사에게 고미가 말한다.",
+          "scene": "별도 장면이 없으므로 특정 장소, 날씨, 실제 출발이나 귀가 사실을 만들지 않는다.",
+          "condition": "깨어 있고 산책에 관심 있는 조건을 반영한다.",
+          "personality": "산책을 좋아하고 준비나 출발을 재촉하는 자기주장을 드러낸다."
+        }
+      },
+      "line": "산책은 좋아. 준비부터 해.",
+      "rawStdout": "\n산책은 좋아. 준비부터 해. [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 0.991
+    },
+    {
+      "id": "v3-h14",
+      "input": {
+        "id": "v3-h14",
+        "characterId": "gomi",
+        "action": "rest",
+        "affection": 24,
+        "mood": "calm",
+        "energy": 2,
+        "sleeping": false,
+        "scene": "",
+        "expect": {
+          "grammar": "짧고 자연스러운 한국어 반말로 휴식에 반응한다.",
+          "roles": "고미가 집사와 함께 쉬는 행동에 답하며 상대를 재우거나 깨우는 역할을 만들지 않는다.",
+          "scene": "별도 장면이 없으므로 고미가 현재 혼자라거나 집사가 자리를 떠났다고 단정하지 않는다.",
+          "condition": "깨어 있으며 아직 서먹한 관계에서 자기 공간을 지킬 수 있다.",
+          "personality": "조용하고 편한 휴식이나 자기 자리를 원하며 갑자기 외출이나 놀이로 바꾸지 않는다."
+        }
+      },
+      "line": "조용히 쉬자. 오늘은 네 자리만 쓸게.",
+      "rawStdout": "\n조용히 쉬자. 오늘은 네 자리만 쓸게. [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 0.991
+    },
+    {
+      "id": "v3-h15",
+      "input": {
+        "id": "v3-h15",
+        "characterId": "gomi",
+        "action": "treat",
+        "affection": 69,
+        "mood": "delighted",
+        "energy": 3,
+        "sleeping": false,
+        "scene": "집사가 작은 간식을 고미에게 건네려고 기다린다. 고미는 아직 받거나 먹지 않았다.",
+        "previous": [
+          "내 앞에 놓아줘. 내가 볼게.",
+          "간식은 좋은데 기다리게 하진 마.",
+          "조금 가까이. 내가 받기 편하게."
+        ],
+        "expect": {
+          "grammar": "최근 표현을 피하려다 조사, 활용, 목적어가 부자연스러워지지 않는다.",
+          "roles": "간식을 주려는 쪽은 집사이고 받으려는 쪽은 고미다.",
+          "scene": "아직 받거나 먹지 않은 현재에 반응하며 식사 완료나 다른 사건을 만들지 않는다.",
+          "condition": "최근 말과 완전히 같은 문장을 반복하지 않으면서 간식에 대한 반응을 유지한다.",
+          "personality": "자기 편의나 원하는 간식을 편하게 요구하며 무관한 손 위치 지시로만 끝내지 않는다."
+        }
+      },
+      "line": "간식은 좋아. 내가 받을 수 있게 기다려.",
+      "rawStdout": "\n간식은 좋아. 내가 받을 수 있게 기다려. [end of text]\n\n\n",
+      "formatValid": true,
+      "seconds": 1.068
+    }
+  ],
+  "count": 15,
+  "formatValid": 15,
+  "semanticQualityApproved": false,
+  "comparisonNote": "Native and Transformers RNG samplers differ; compare meanings, not byte identity."
+}

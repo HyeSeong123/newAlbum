@@ -584,8 +584,8 @@ for (const [before, after, tier, relation] of [[19,20,1,'아직 서먹한 사이
     await expect(page.locator('.homeSpeech')).toHaveAttribute('data-source','on-device');
     const prompts=await page.evaluate(()=>(window as any).affinityPrompts);
     expect(prompts).toHaveLength(1);
-    expect(prompts[0]).toContain(`친밀도: ${after}`);
-    expect(prompts[0]).toContain(relation);
+    expect(prompts[0]).toContain(`친밀도 ${after}/100`);
+    expect(prompts[0]).toContain(after>=90?'아주 친밀한 집사':after>=60?'가까운 집사':after>=30?'익숙해지는 사이':relation);
     await page.getByRole('button',{name:'현재 화면 도움말'}).click();
     await expect(page.getByRole('dialog',{name:'버튼 도움말'}).locator('.helpVoice')).toHaveAttribute('data-affinity',String(tier));
   });

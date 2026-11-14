@@ -77,3 +77,6 @@ public/models/native-dev/
 /local-ai/base-model.json
 /local-ai/base-model-*.json
 /local-ai/exports/
+
+# Compact model weights are staged for builds, not stored in Git history.
+/models/gomi-action-v3/*.gguf

@@ -1,0 +1,43 @@
+{
+  "reviewer": "review_gomi_quality agent",
+  "userIndependent": false,
+  "phase": "raw generation before bounded role-check regeneration",
+  "rawSemanticQualityApproved": false,
+  "scores": {
+    "hf-holdout.json": {
+      "pass": 11,
+      "failIds": [
+        "v3-h04",
+        "v3-h09",
+        "v3-h13",
+        "v3-h15"
+      ]
+    },
+    "native-q4-holdout.json": {
+      "pass": 7,
+      "failIds": [
+        "v3-h01",
+        "v3-h02",
+        "v3-h03",
+        "v3-h05",
+        "v3-h07",
+        "v3-h09",
+        "v3-h10",
+        "v3-h12"
+      ]
+    },
+    "native-q4-diagnostic16.json": {
+      "pass": 9,
+      "failIds": [
+        "final-walk-distant",
+        "final-treat-close",
+        "final-pet-distant",
+        "final-play-close",
+        "final-rest-distant",
+        "final-sleep-disturbed-touch",
+        "final-sleep-disturbed-play"
+      ]
+    }
+  },
+  "interpretation": "The15-case suite is a development diagnostic after observing its results. Different samplers prevent quantization-only conclusions."
+}

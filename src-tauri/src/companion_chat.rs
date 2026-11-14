@@ -15,12 +15,19 @@ fn call(app: &AppHandle, command: &str, args: serde_json::Value) -> Result<serde
     app.state::<CompanionBridge>().0.run_mobile_plugin(command, args).map_err(|e| e.to_string())
 }
 #[tauri::command]
-pub async fn chat_model_status(app: AppHandle) -> Result<serde_json::Value, String> {
+pub async fn chat_model_status(app: AppHandle, character_id: Option<String>, usage: Option<String>) -> Result<serde_json::Value, String> {
+    if character_id.as_ref().is_some_and(|id| id.len() > 64) || usage.as_deref().is_some_and(|value| value != "home-actions") {
+        return Err("AI 사용 범위를 확인해 주세요.".into());
+    }
     #[cfg(target_os = "android")]
-    { tauri::async_runtime::spawn_blocking(move || call(&app, "modelStatus", serde_json::json!({}))).await.map_err(|e| e.to_string())? }
+    { tauri::async_runtime::spawn_blocking(move || call(&app, "modelStatus", serde_json::json!({"characterId":character_id.unwrap_or_default(),"usage":usage.unwrap_or_default()}))).await.map_err(|e| e.to_string())? }
     #[cfg(not(target_os = "android"))]
-    { let _ = app; Ok(serde_json::json!({"phase":"unsupported","supported":false,"installed":false,"downloaded":0,"total":0,
-        "message":"AI 대화는 RAM 8GB 이상 Android 스마트폰에서 사용할 수 있어요."})) }
+    {
+        let compact = character_id.as_deref() == Some("gomi") && usage.as_deref() == Some("home-actions");
+        let _ = app;
+        Ok(serde_json::json!({"phase":"unsupported","supported":false,"installed":false,"downloaded":0,"total":0,
+            "message":if compact {"고미 AI 반응은 Android 스마트폰에서 사용할 수 있어요."} else {"AI 대화는 RAM 8GB 이상 Android 스마트폰에서 사용할 수 있어요."}}))
+    }
 }
 #[tauri::command]
 pub async fn download_chat_model(app: AppHandle) -> Result<(), String> {
@@ -30,16 +37,17 @@ pub async fn download_chat_model(app: AppHandle) -> Result<(), String> {
     { let _ = app; Err("Android 스마트폰에서 준비해 주세요.".into()) }
 }
 #[tauri::command]
-pub async fn generate_chat_reply(app: AppHandle, prompt: String, session_id: Option<String>, character_id: Option<String>) -> Result<String, String> {
+pub async fn generate_chat_reply(app: AppHandle, prompt: String, session_id: Option<String>, character_id: Option<String>, usage: Option<String>) -> Result<String, String> {
     if prompt.trim().is_empty() || prompt.chars().count() > 12000 { return Err("이야기를 12000자 이내로 적어 주세요.".into()); }
     if character_id.as_ref().is_some_and(|id| id.len() > 64) { return Err("캐릭터를 확인해 주세요.".into()); }
+    if usage.as_deref().is_some_and(|value| value != "home-actions") { return Err("AI 사용 범위를 확인해 주세요.".into()); }
     #[cfg(target_os = "android")]
     { tauri::async_runtime::spawn_blocking(move || {
-        let value = call(&app, "generate", serde_json::json!({"prompt":prompt,"sessionId":session_id.unwrap_or_default(),"characterId":character_id.unwrap_or_default()}))?;
+        let value = call(&app, "generate", serde_json::json!({"prompt":prompt,"sessionId":session_id.unwrap_or_default(),"characterId":character_id.unwrap_or_default(),"usage":usage.unwrap_or_default()}))?;
         value.get("text").and_then(|x| x.as_str()).map(str::to_owned).ok_or_else(|| "답변을 받지 못했어요.".into())
     }).await.map_err(|e| e.to_string())? }
     #[cfg(not(target_os = "android"))]
-    { let _ = (app, session_id, character_id); Err("Android 스마트폰에서 대화해 주세요.".into()) }
+    { let _ = (app, session_id, character_id, usage); Err("Android 스마트폰에서 대화해 주세요.".into()) }
 }
 #[tauri::command]
 pub async fn stop_chat_model(app: AppHandle, session_id: Option<String>) -> Result<(), String> {

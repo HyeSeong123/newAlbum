@@ -1,0 +1,6 @@
+HyperCLOVA X SEED Model is licensed under the HyperCLOVA X SEED Model License Agreement, Copyright © NAVER Corp. All Rights Reserved.
+Powered by HyperCLOVA X
+Gomgomi Gomi action-response experimental fine-tune. Base: naver-hyperclovax/HyperCLOVAX-SEED-Text-Instruct-0.5B
+Base revision: 3da5046fb0195d14f2497de198136987d35fd644
+LoRA merged before quantization. No external inference API.
+Character dialogue quality and Android deployment require separate verification.

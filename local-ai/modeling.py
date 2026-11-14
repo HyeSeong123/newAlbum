@@ -10,7 +10,7 @@ os.environ.setdefault('TOKENIZERS_PARALLELISM', 'false')
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import LoraConfig, PeftModel, get_peft_model
-from core import HERE, read_json, messages_for, valid_reply
+from core import HERE, read_json, messages_for, valid_reply, reaction_issue
 
 
 def local_base():
@@ -67,20 +67,26 @@ def generate(model, tokenizer, row, characters, actions, attempts=3):
     model.eval()
     previous = list(row.get('previous', []))
     rejected = []
+    repair = ''
+    reasons = []
     for _ in range(attempts):
-        messages = messages_for({**row, 'previous': previous}, characters, actions)
+        messages = messages_for({**row, 'previous': previous, 'repair':repair}, characters, actions)
         text = tokenizer.apply_chat_template(messages, tokenize=False,
             add_generation_prompt=True, enable_thinking=False)
         inputs = tokenizer(text, return_tensors='pt', add_special_tokens=False).to('cuda')
         if inputs.input_ids.shape[-1] > 1024:
             raise ValueError('Action context exceeds 1024 tokens')
         with torch.inference_mode():
-            ids = model.generate(**inputs, max_new_tokens=80, do_sample=True, temperature=0.7,
-                top_p=0.8, top_k=20, repetition_penalty=1.1, use_cache=True,
+            profile = read_json(HERE/'prompt-contract.json')['generation']
+            ids = model.generate(**inputs, max_new_tokens=profile['maxNewTokens'], do_sample=True, temperature=profile['temperature'],
+                top_p=profile['topP'], top_k=profile['topK'], repetition_penalty=profile['repetitionPenalty'], use_cache=True,
                 eos_token_id=generation_eos(tokenizer),pad_token_id=tokenizer.eos_token_id)
         line = tokenizer.decode(ids[0, inputs.input_ids.shape[-1]:], skip_special_tokens=True).strip()
-        if valid_reply(line, previous):
-            return {'valid': True, 'line': line, 'rejected': rejected, 'source': 'local-generation'}
+        issue = reaction_issue(row,line)
+        if valid_reply(line, previous) and not issue:
+            return {'valid': True, 'line': line, 'rejected': rejected, 'rejectedReasons':reasons, 'source': 'local-generation'}
         rejected.append(line)
+        repair = issue['reason'] if issue else read_json(HERE/'reaction-policy.json')['formatRepair']
+        reasons.append(issue['id'] if issue else 'format-or-repeat')
         previous.append(line)
-    return {'valid': False, 'line': None, 'rejected': rejected, 'source': 'local-generation'}
+    return {'valid': False, 'line': None, 'rejected': rejected, 'rejectedReasons':reasons, 'source': 'local-generation'}

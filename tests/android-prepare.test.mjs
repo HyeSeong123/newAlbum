@@ -62,7 +62,7 @@ test('preparation installs the bridge, excludes backups, and requires signing on
   const root = await mkdtemp(join(tmpdir(), 'gamjassak-android-'));
   try {
     await mkdir(join(root, 'src-tauri/android'), { recursive:true });
-    for (const file of ['GamjassakMediaPlugin.kt', 'GamjassakGalleryActivity.kt', 'GamjassakCompanionPlugin.kt', 'CompanionModelRegistry.java', 'GomiAdapter.java']) await copyFile(`src-tauri/android/${file}`, join(root, `src-tauri/android/${file}`));
+    for (const file of ['GamjassakMediaPlugin.kt', 'GamjassakGalleryActivity.kt', 'GamjassakCompanionPlugin.kt', 'CompanionModelRegistry.java', 'GomiAdapter.java', 'GomiActionModel.java']) await copyFile(`src-tauri/android/${file}`, join(root, `src-tauri/android/${file}`));
     const { cp } = await import('node:fs/promises');
     await cp('models/gomi-lora-v4', join(root, 'models/gomi-lora-v4'), {recursive:true});
     await cp('src-tauri/android/companion', join(root, 'src-tauri/android/companion'), {recursive:true});

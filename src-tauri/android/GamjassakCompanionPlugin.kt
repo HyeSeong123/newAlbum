@@ -23,7 +23,9 @@ import java.util.Collections
 import org.json.JSONObject
 
 @InvokeArg
-class CompanionGenerateArgs { var prompt: String = ""; var sessionId: String = ""; var characterId: String = "" }
+class CompanionGenerateArgs { var prompt: String = ""; var sessionId: String = ""; var characterId: String = ""; var usage: String = "" }
+@InvokeArg
+class CompanionModelArgs { var characterId: String = ""; var usage: String = "" }
 @InvokeArg
 class CompanionSessionArgs { var sessionId: String = "" }
 
@@ -54,6 +56,7 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
     @Volatile private var lastOutcome = "none"
     @Volatile private var lastError = ""
     @Volatile private var lastAt = 0L
+    @Volatile private var lastModelId = ""
     private val cleanupQueued = AtomicBoolean(false)
     @Volatile private var cleanupFinished = false
     @Volatile private var cleanupRetryAfter = 0L
@@ -62,7 +65,7 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
     private val model get() = File(root, DOWNLOAD.filename)
     private val prefs get() = appContext.getSharedPreferences(DOWNLOAD.directory, Context.MODE_PRIVATE)
     private external fun nativeGenerate(path: String, prompt: String, adapterPath: String,
-                                        requestId: Long, availableMemoryBytes: Long, cpuOnly: Boolean): ByteArray
+                                        requestId: Long, availableMemoryBytes: Long, cpuOnly: Boolean, gomiAction: Boolean): ByteArray
     private external fun nativeCancel(requestId: Long)
     private external fun nativeRelease()
     private external fun nativeStats(): String
@@ -70,6 +73,7 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
     private fun stats(): JSONObject = (if (nativeLoaded) JSONObject(nativeStats())
         else JSONObject().put("resident", false).put("loadCount", 0).put("stage", "idle"))
         .put("gpuFallback", lastGpuFallback)
+        .put("gomiActionApplied", lastModelId == "gomi-action-v3" && lastOutcome == "success")
     private fun cancelGeneration() { cancelled.set(true); if (nativeLoaded) nativeCancel(generation.get()) }
     private fun releaseForPressure(memory: Boolean = false) {
         if (memory) memoryPressure.set(true)
@@ -77,13 +81,20 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
         executor.execute { if (nativeLoaded) nativeRelease() }
     }
 
-    private fun supported(): Boolean {
+    private fun supported(compact: Boolean = false): Boolean {
         val info = ActivityManager.MemoryInfo()
         (appContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(info)
         // Android reserves some advertised RAM for the system; 8GB phones report about 7.x GiB.
         val phone = (appContext.resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK) < Configuration.SCREENLAYOUT_SIZE_LARGE
-        return phone && android.os.Build.SUPPORTED_ABIS.contains("arm64-v8a") && info.totalMem >= 7L * 1024 * 1024 * 1024
+        val minimum = if (compact) 2L else 7L
+        val abis = android.os.Build.SUPPORTED_ABIS
+        val supportedAbi = abis.contains("arm64-v8a") || (compact && abis.contains("x86_64"))
+        return phone && supportedAbi && info.totalMem >= minimum * 1024 * 1024 * 1024
     }
+    private fun bundledGomi(): GomiActionModel.Spec? = try {
+        val data = appContext.assets.open(GomiActionModel.MANIFEST).bufferedReader().use { JSONObject(it.readText()) }
+        GomiActionModel.Spec(data.getString("characterId"), data.getString("usage"), data.getString("file"), data.getLong("bytes"), data.getString("sha256"))
+    } catch (_: Exception) { null }
     private fun installed(spec: CompanionModelRegistry.Model = DOWNLOAD): Boolean {
         val file = File(File(appContext.filesDir, spec.directory), spec.filename)
         val proof = appContext.getSharedPreferences(spec.directory, Context.MODE_PRIVATE)
@@ -109,6 +120,20 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
         }
     }
     @Command fun modelStatus(invoke: Invoke) {
+        val args = invoke.parseArgs(CompanionModelArgs::class.java)
+        if (GomiActionModel.applies(args.characterId, args.usage)) {
+            val supported = supported(true)
+            val spec = bundledGomi()
+            val shown = if (!supported) "unsupported" else if (spec == null) "missing" else if (working.get()) phase else "ready"
+            val text = if (!supported) "고미 AI 반응은 RAM 2GB 이상 ARM64·x86_64 Android 스마트폰에서 사용할 수 있어요."
+                else if (spec == null) "고미 AI 파일이 포함되지 않았어요. 앱 업데이트를 확인해 주세요."
+                else "고미 AI가 앱에 포함되어 있어요. 다운로드 없이 반응해요."
+            invoke.resolve(JSObject().put("phase", shown).put("supported", supported).put("installed", spec != null)
+                .put("downloaded", 0).put("total", spec?.bytes ?: 0).put("message", text)
+                .put("model", "gomi-action-v3").put("bundled", true).put("upgradeAvailable", false)
+                .put("runtime", stats()).put("lastOutcome", lastOutcome).put("lastError", lastError).put("lastAt", lastAt))
+            return
+        }
         val supported = supported()
         val active = activeModel()
         if (active === DOWNLOAD) scheduleLegacyCleanup()
@@ -187,8 +212,13 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
     @Command fun generate(invoke: Invoke) {
         val args = invoke.parseArgs(CompanionGenerateArgs::class.java)
         val prompt = args.prompt
+        val compact = GomiActionModel.applies(args.characterId, args.usage)
+        val compactSpec = if (compact) bundledGomi() else null
         if (closedSessions.contains(args.sessionId)) { invoke.reject("AI_CANCELLED: 홈을 떠나 대답을 멈췄어요."); return }
-        if (!supported() || activeModel() == null) { invoke.reject("먼저 AI를 다운로드해 주세요."); return }
+        if (compact) {
+            if (!supported(true)) { invoke.reject("AI_UNSUPPORTED: 고미 AI를 지원하는 Android 스마트폰에서 사용해 주세요."); return }
+            if (compactSpec == null) { invoke.reject("AI_MODEL: 고미 AI 파일을 확인하지 못했어요. 앱 업데이트를 확인해 주세요."); return }
+        } else if (!supported() || activeModel() == null) { invoke.reject("먼저 AI를 다운로드해 주세요."); return }
         if (prompt.isBlank() || prompt.length > 12000) { invoke.reject("이야기가 너무 길어요. 조금 짧게 적어 주세요."); return }
         if (!working.compareAndSet(false, true)) { invoke.reject("진행 중인 작업이 끝난 뒤 다시 시도해 주세요."); return }
         cancelled.set(false); memoryPressure.set(false); lastGpuFallback = false
@@ -202,21 +232,25 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
             var failure: String? = null
             try {
                 // A queued upgrade/cleanup may have retired legacy weights since invocation.
-                val selected = activeModel() ?: error("먼저 AI를 다운로드해 주세요.")
+                val selected = if (compact) null else (activeModel() ?: error("먼저 AI를 다운로드해 주세요."))
                 val info = ActivityManager.MemoryInfo()
                 (appContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(info)
-                check(selected.canGenerate(info.availMem, info.lowMemory, info.threshold)) { "AI_MEMORY: 메모리가 부족해 AI 대사를 생성하지 못했어요." }
+                fun canGenerate(memory: ActivityManager.MemoryInfo) = if (compact) compactSpec!!.canGenerate(memory.availMem, memory.lowMemory, memory.threshold)
+                    else selected!!.canGenerate(memory.availMem, memory.lowMemory, memory.threshold)
+                check(canGenerate(info)) { "AI_MEMORY: 메모리가 부족해 AI 대사를 생성하지 못했어요." }
                 if (!nativeLoaded) { System.loadLibrary("gamjassak_companion"); nativeLoaded = true }
                 check(!cancelled.get()) { "대답을 멈췄어요." }
-                val selectedFile = File(File(appContext.filesDir, selected.directory), selected.filename)
-                val adapterPath = if (GomiAdapter.applies(args.characterId, selected.sha256)) {
+                val selectedFile = if (compact) GomiActionModel.install(appContext.filesDir, compactSpec!!) { appContext.assets.open(GomiActionModel.ASSET) }
+                    else File(File(appContext.filesDir, selected!!.directory), selected.filename)
+                val adapterPath = if (!compact && GomiAdapter.applies(args.characterId, selected!!.sha256)) {
                     GomiAdapter.install(appContext.filesDir) { appContext.assets.open(GomiAdapter.ASSET) }.absolutePath
                 } else ""
                 check(!cancelled.get()) { "대답을 멈췄어요." }
-                val preparedPrompt = selected.preparePrompt(prompt)
+                val preparedPrompt = if (compact) prompt else selected!!.preparePrompt(prompt)
+                lastModelId = if (compact) "gomi-action-v3" else selected!!.id
                 try {
                     reply = nativeGenerate(selectedFile.absolutePath, preparedPrompt, adapterPath, request,
-                        info.availMem, gpuDisabledForSession).toString(Charsets.UTF_8)
+                        info.availMem, gpuDisabledForSession, compact).toString(Charsets.UTF_8)
                 } catch (gpuFailure: Throwable) {
                     // Retry only if native actually attempted GPU. On devices
                     // without Vulkan the first run is already CPU-only.
@@ -229,12 +263,12 @@ class GamjassakCompanionPlugin(activity: Activity) : Plugin(activity), Component
                     nativeRelease() // free GPU buffers/context before CPU allocates weights
                     val availableAgain = ActivityManager.MemoryInfo()
                     (appContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(availableAgain)
-                    check(selected.canGenerate(availableAgain.availMem, availableAgain.lowMemory, availableAgain.threshold)) {
+                    check(canGenerate(availableAgain)) {
                         "AI_MEMORY: GPU 오류 후 CPU로 전환할 메모리가 부족해요."
                     }
                     check(!cancelled.get()) { "대답을 멈췄어요." }
                     reply = nativeGenerate(selectedFile.absolutePath, preparedPrompt, adapterPath, request,
-                        availableAgain.availMem, true).toString(Charsets.UTF_8)
+                        availableAgain.availMem, true, compact).toString(Charsets.UTF_8)
                 }
                 check(!cancelled.get()) { "대답을 멈췄어요." }
             } catch (error: Throwable) {

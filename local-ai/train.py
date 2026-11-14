@@ -8,7 +8,7 @@ import random
 import sys
 import time
 
-from core import HERE, ROOT, load_corpus, read_json, write_json, sha256, training_evidence, select_epoch
+from core import HERE, ROOT, load_corpus, read_json, write_json, sha256, training_evidence, select_adapter
 from modeling import torch, load_model, local_base, encode, generate
 sys.path.insert(0, str(ROOT / 'scripts/gomi-training'))
 from training_data import response_loss
@@ -45,7 +45,7 @@ def main():
             raise ValueError('Initial adapter hash differs from its completed run')
     identity = {'model': lock['model'], 'revision': lock['revision'], 'settings': settings,
                 'dataSha256': hashlib.sha256(json.dumps([train, validation, characters, actions], sort_keys=True, ensure_ascii=False).encode()).hexdigest(),
-                'pipelineSha256': {name: sha256(HERE / name) for name in ['core.py', 'modeling.py', 'train.py']}}
+                'pipelineSha256': {name: sha256(HERE / name) for name in ['core.py', 'modeling.py', 'train.py', 'prompt-contract.json']}}
     identity['initialAdapter'] = initial_adapter
     if args.resume:
         identity['initialAdapter'] = read_json(args.resume/'identity.json').get('initialAdapter')
@@ -64,8 +64,10 @@ def main():
         output.mkdir(parents=True, exist_ok=False)
         report = {**identity, 'phase': 'preparing', 'qualityApproved': False, 'deployedToApp': False,
                   'trainedCharacterIds': [args.character], 'trainRows': len(train), 'validationRows': len(validation),
-                  'lossHistory': [], 'externalApiUsed': False, 'sourceCommit': 'c8b5e10528ac761e39708d1bc32a03f4d63f576b'}
-        for name, value in [('train', train), ('validation', validation), ('characters', characters), ('actions', actions)]:
+                  'lossHistory': [], 'externalApiUsed': False,
+                  'sourceCommit': __import__('subprocess').check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()}
+        for name, value in [('train', train), ('validation', validation), ('characters', characters), ('actions', actions),
+                            ('prompt-contract', read_json(HERE/'prompt-contract.json'))]:
             write_json(output / (name + '.json'), value)
         write_json(output / 'identity.json', identity)
     report_path = output / 'report.json'
@@ -134,6 +136,13 @@ def main():
 
         if not args.resume:
             report['beforeValidationLoss'] = evaluate()
+            if initial_adapter:
+                starting_path = initial_adapter['path']
+            else:
+                starting_path = str(output / ('epoch-0-'+str(time.time_ns())))
+                model.save_pretrained(starting_path, safe_serialization=True, save_embedding_layers=False)
+            report['startingAdapterCandidate'] = {'epoch':0,'step':0,
+                'loss':report['beforeValidationLoss'],'adapter':starting_path}
         report.update(phase='training', plannedOptimizerSteps=len(batches), gpu=torch.cuda.get_device_name(0))
         write_json(report_path, report)
         print(json.dumps({'output': str(output), 'phase': 'training', 'steps': len(batches), 'longestTokens': report['longestTokens']}, ensure_ascii=False), flush=True)
@@ -171,8 +180,9 @@ def main():
         report['changedTensorNames'] = training_evidence(previous_changed,
             [name for name, old, p in zip(param_names, initial, params) if not torch.equal(old, p.detach().cpu())])
         report['changedTensors'] = len(report['changedTensorNames'])
-        selected = select_epoch(report['epochValidation'])
+        selected = select_adapter(report['epochValidation'], report.get('startingAdapterCandidate'))
         report['selectedEpoch'] = selected['epoch']
+        report['selectedTrainingImproved'] = selected['loss'] < report['beforeValidationLoss']
         # Select only using validation, never the held-out generation test.
         del optimizer
         base = model.unload()

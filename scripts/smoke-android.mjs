@@ -6,6 +6,7 @@ import { verifyInstalledManualPhotos } from './manual-photo-smoke.mjs';
 import { verifyInstalledRepetitionMeasurement } from './person-repetition-smoke.mjs';
 import { verifyInstalledLocationSettings } from './location-settings-smoke.mjs';
 import { verifyInstalledFriendMotions } from './friend-motions-smoke.mjs';
+import { verifyInstalledGomiAction } from './gomi-action-smoke.mjs';
 import { expect } from '@playwright/test';
 import { _android as android } from 'playwright';
 import assert from 'node:assert/strict';
@@ -379,6 +380,8 @@ try {
   await startApp();
   let connection = await connect(); context = connection.context;
   let page = connection.page;
+  await verifyInstalledGomiAction(page, output);
+  if (process.env.GOMGOMI_FOCUSED_AI_SMOKE !== '1') {
   await page.evaluate(() => localStorage.setItem('geuruteogi.first-run-completed-v1', 'true'));
   await page.reload();
   await expect(page.getByRole('heading', { name:'홈', exact:true })).toBeVisible();
@@ -848,6 +851,10 @@ try {
   await loadedAlbumPreviews(page.getByRole('dialog', { name:'앨범 전체창', exact:true }));
   await captureScreen('system-bars-book-after-restart');
   console.log('Android installation, system-bar bounds (three-button and gesture), import controls, bound album, real folder picker/content URI copying, byte progress, warm resume, SQLite/calendar persistence and back navigation: OK');
+  } else {
+    await page.screenshot({ path:join(output, 'gomi-action-home.png') });
+    console.log('Signed APK installation and bundled Gomi offline native inference: OK. Full unrelated UI regression was not requested.');
+  }
 } catch (error) {
   console.error(error);
   await writeFile(join(output, 'failure.txt'), String(error.stack ?? error));

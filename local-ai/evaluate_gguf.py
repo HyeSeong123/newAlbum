@@ -25,6 +25,10 @@ def main():
     chars,actions=registries()
     tok=AutoTokenizer.from_pretrained(local_base()['localPath'],local_files_only=True)
     cases=read_json(args.cases)
+    if isinstance(cases,dict):
+        actions={**actions,**cases.get('actions',{})}
+        cases=cases['cases']
+    profile=read_json(HERE/'prompt-contract.json')['generation']
     if args.limit:
         cases=cases[:args.limit]
     rows=[]
@@ -35,8 +39,9 @@ def main():
             path=Path(folder)/'prompt.txt'
             write_native_prompt(path,prompt)
             start=time.perf_counter()
-            result=subprocess.run([str(binary),'-m',str(args.model),'-f',str(path),'-n','80','-c','1024','-t','6','-tb','6',
-                '--temp','0.7','--top-p','0.8','--top-k','20','--min-p','0','--repeat-penalty','1.1','--seed',str(7300+index),
+            result=subprocess.run([str(binary),'-m',str(args.model),'-f',str(path),'-n',str(profile['maxNewTokens']),'-c','1024','-t','6','-tb','6',
+                '--temp',str(profile['temperature']),'--top-p',str(profile['topP']),'--top-k',str(profile['topK']),
+                '--min-p','0','--repeat-penalty',str(profile['repetitionPenalty']),'--seed',str(7300+index),
                 '--no-display-prompt','--no-warmup','--no-conversation'],capture_output=True,encoding='utf-8',errors='replace',
                 timeout=90,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
             if result.returncode:
@@ -48,6 +53,7 @@ def main():
                 'seconds':round(time.perf_counter()-start,3)})
             print(row['id']+' | '+line,flush=True)
     write_json(args.output,dict(model=str(args.model),modelSha256=sha256(args.model),casesSha256=sha256(args.cases),
+        generation=profile,promptContractSha256=sha256(HERE/'prompt-contract.json'),
         samples=rows,count=len(rows),formatValid=sum(r['formatValid'] for r in rows),
         semanticQualityApproved=False,comparisonNote='Native and Transformers RNG samplers differ; compare meanings, not byte identity.'))
 

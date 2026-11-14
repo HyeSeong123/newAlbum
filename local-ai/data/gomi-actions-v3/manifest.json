@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 3,
+  "trainRows": 547,
+  "validationRows": 36,
+  "primaryDraftRows": 300,
+  "originalRows": 247,
+  "userApproved": false,
+  "qualityApproved": false,
+  "trained": false,
+  "sources": {
+    "agent-authored-action-state-rewrite-v3": 300,
+    "user-provided": 247
+  },
+  "actionCounts": {
+    "touch": 60,
+    "walk": 40,
+    "treat": 40,
+    "pet": 60,
+    "play": 40,
+    "rest": 60,
+    "scene": 247
+  },
+  "sleepCounts": {
+    "awake-or-original-scene": 487,
+    "none": 20,
+    "voice": 20,
+    "physical-touch": 20
+  },
+  "interpretation": "Known-action and state validation with separate scenes/groups/replies. No final test copied or read. Originals are persona anchors, not independent evaluation.",
+  "builderSha256": "7c9ca2c2213fdf22e3398986eb231461ed7413695600dcebc5db3d4803c5a690",
+  "files": {
+    "source-audit.json": "d0600180970479982f6dd81f8fc8b8a18fb62442ae1131b890ba06a58cc28edc",
+    "train.jsonl": "53bfc613f88fa13bc064686496d27210378a473d244251c0818952af8b7d2418",
+    "validation.jsonl": "2723fc6d5302d5b3f940a40888c647a7d649cff506bf353d2c6e00960a39a668"
+  }
+}

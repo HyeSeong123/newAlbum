@@ -1,0 +1,185 @@
+{
+  "scope": "validation only; same weights/prompts/seeds",
+  "samples": [
+    {
+      "mode": "prior",
+      "id": "v3-validation-awake-0",
+      "line": "잠깐만. 지금은 나부터 볼게."
+    },
+    {
+      "mode": "prior",
+      "id": "v3-validation-awake-1",
+      "line": "응, 기다려. 지금은 내가 볼게."
+    },
+    {
+      "mode": "prior",
+      "id": "v3-validation-awake-2",
+      "line": "집사, 오늘은 내 쪽을 봐줘."
+    },
+    {
+      "mode": "prior",
+      "id": "v3-validation-awake-3",
+      "line": "조금만 가까이 있어줘. 내가 볼 수 있게."
+    },
+    {
+      "mode": "prior",
+      "id": "v3-validation-awake-4",
+      "line": "산책은 좋아. 하지만 빨리 끝낼 순 없겠어."
+    },
+    {
+      "mode": "prior",
+      "id": "v3-validation-awake-5",
+      "line": "산책은 좋아. 얼른 준비해줘."
+    },
+    {
+      "mode": "prior",
+      "id": "v3-validation-awake-6",
+      "line": "산책은 좋지만 지금은 준비부터 시작해야겠어."
+    },
+    {
+      "mode": "prior",
+      "id": "v3-validation-awake-7",
+      "line": "산책은 좋아. 준비 끝날 때까지 기다릴게."
+    },
+    {
+      "mode": "prior",
+      "id": "v3-validation-awake-8",
+      "line": "간식은 줄게. 내 앞에 놓아줘."
+    },
+    {
+      "mode": "prior",
+      "id": "v3-validation-awake-9",
+      "line": "간식은 내 앞에 놓아줘."
+    },
+    {
+      "mode": "prior",
+      "id": "v3-validation-awake-10",
+      "line": "간식은 괜찮아. 내가 받을 수 있게 줘."
+    },
+    {
+      "mode": "prior",
+      "id": "v3-validation-awake-11",
+      "line": "간식 줄 거야? 내 앞에 놓아줘."
+    },
+    {
+      "mode": "hf-order",
+      "id": "v3-validation-awake-0",
+      "line": "지금은 관심 표시야. 잠깐 기다려."
+    },
+    {
+      "mode": "hf-order",
+      "id": "v3-validation-awake-1",
+      "line": "응, 기다려. 지금은 네가 먼저야."
+    },
+    {
+      "mode": "hf-order",
+      "id": "v3-validation-awake-2",
+      "line": "집사, 오늘은 내 쪽을 봐줘."
+    },
+    {
+      "mode": "hf-order",
+      "id": "v3-validation-awake-3",
+      "line": "내 쪽은 조금만 봐줘. 지금은 괜찮아."
+    },
+    {
+      "mode": "hf-order",
+      "id": "v3-validation-awake-4",
+      "line": "산책은 좋아. 빨리 준비해."
+    },
+    {
+      "mode": "hf-order",
+      "id": "v3-validation-awake-5",
+      "line": "산책은 좋아. 오늘은 준비부터 할게."
+    },
+    {
+      "mode": "hf-order",
+      "id": "v3-validation-awake-6",
+      "line": "산책은 나중에 할게. 오늘은 준비부터 할게."
+    },
+    {
+      "mode": "hf-order",
+      "id": "v3-validation-awake-7",
+      "line": "산책은 좋아. 준비 끝날 때까지 기다릴게."
+    },
+    {
+      "mode": "hf-order",
+      "id": "v3-validation-awake-8",
+      "line": "간식은 줄게. 조금만 가까이 줘."
+    },
+    {
+      "mode": "hf-order",
+      "id": "v3-validation-awake-9",
+      "line": "간식은 내 앞에 놓아줘."
+    },
+    {
+      "mode": "hf-order",
+      "id": "v3-validation-awake-10",
+      "line": "간식은 내 몫부터 줘. 기다려."
+    },
+    {
+      "mode": "hf-order",
+      "id": "v3-validation-awake-11",
+      "line": "간식 줄 거야? 내 앞에 놓아줘."
+    },
+    {
+      "mode": "greedy",
+      "id": "v3-validation-awake-0",
+      "line": "나도 네 관심 알아차렸어. 잠깐 기다려."
+    },
+    {
+      "mode": "greedy",
+      "id": "v3-validation-awake-1",
+      "line": "나한테는 천천히 관심 줄래."
+    },
+    {
+      "mode": "greedy",
+      "id": "v3-validation-awake-2",
+      "line": "네가 내 쪽을 보면 나도 조금은 볼 수 있어."
+    },
+    {
+      "mode": "greedy",
+      "id": "v3-validation-awake-3",
+      "line": "오늘은 내 쪽을 봐줘."
+    },
+    {
+      "mode": "greedy",
+      "id": "v3-validation-awake-4",
+      "line": "산책은 좋아. 준비부터 해."
+    },
+    {
+      "mode": "greedy",
+      "id": "v3-validation-awake-5",
+      "line": "산책은 좋아. 준비 끝날 때까지 기다릴게."
+    },
+    {
+      "mode": "greedy",
+      "id": "v3-validation-awake-6",
+      "line": "산책은 좋아. 준비부터 해."
+    },
+    {
+      "mode": "greedy",
+      "id": "v3-validation-awake-7",
+      "line": "준비 끝났으면 빨리 가자."
+    },
+    {
+      "mode": "greedy",
+      "id": "v3-validation-awake-8",
+      "line": "간식은 줄게. 네가 건네면 받을게."
+    },
+    {
+      "mode": "greedy",
+      "id": "v3-validation-awake-9",
+      "line": "간식은 내 앞에 놓아줘."
+    },
+    {
+      "mode": "greedy",
+      "id": "v3-validation-awake-10",
+      "line": "간식은 줄게. 하지만 조금만 줘."
+    },
+    {
+      "mode": "greedy",
+      "id": "v3-validation-awake-11",
+      "line": "간식 줄 거야? 내 앞에 놓아줘."
+    }
+  ]
+}

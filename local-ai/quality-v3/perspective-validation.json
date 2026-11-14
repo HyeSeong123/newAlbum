@@ -1,0 +1,125 @@
+{
+  "scope": "validation only; action-label perspective probe",
+  "samples": [
+    {
+      "temperature": 0.4,
+      "id": "v3-validation-awake-0",
+      "line": "지금은 관심 표하지 마. 조용히 지켜보자."
+    },
+    {
+      "temperature": 0.4,
+      "id": "v3-validation-awake-1",
+      "line": "응, 기다려. 나도 네 쪽으로 갈게."
+    },
+    {
+      "temperature": 0.4,
+      "id": "v3-validation-awake-2",
+      "line": "그쪽은 괜찮아. 내가 옆에 있을게."
+    },
+    {
+      "temperature": 0.4,
+      "id": "v3-validation-awake-3",
+      "line": "난 네 관심을 받고 싶어. 천천히 기다릴게."
+    },
+    {
+      "temperature": 0.4,
+      "id": "v3-validation-awake-4",
+      "line": "산책은 좋아. 준비부터 해."
+    },
+    {
+      "temperature": 0.4,
+      "id": "v3-validation-awake-5",
+      "line": "산책은 좋아. 하지만 빨리 끝내야겠어."
+    },
+    {
+      "temperature": 0.4,
+      "id": "v3-validation-awake-6",
+      "line": "집사, 아직 준비 안 됐어? 빨리 말해."
+    },
+    {
+      "temperature": 0.4,
+      "id": "v3-validation-awake-7",
+      "line": "집사, 산책은 준비부터가 문제야."
+    },
+    {
+      "temperature": 0.4,
+      "id": "v3-validation-awake-8",
+      "line": "간식은 줄 수 있어. 천천히 건네줘."
+    },
+    {
+      "temperature": 0.4,
+      "id": "v3-validation-awake-9",
+      "line": "간식은 내 앞에 놓아줘."
+    },
+    {
+      "temperature": 0.4,
+      "id": "v3-validation-awake-10",
+      "line": "간식은 내 몫부터 줘. 기다려."
+    },
+    {
+      "temperature": 0.4,
+      "id": "v3-validation-awake-11",
+      "line": "간식은 줄 수 있어. 조금만 가까이 줘."
+    },
+    {
+      "temperature": 0.0,
+      "id": "v3-validation-awake-0",
+      "line": "나도 관심 있어. 잠깐 기다려."
+    },
+    {
+      "temperature": 0.0,
+      "id": "v3-validation-awake-1",
+      "line": "나한테는 천천히 보여줘."
+    },
+    {
+      "temperature": 0.0,
+      "id": "v3-validation-awake-2",
+      "line": "네가 먼저야. 나도 같이 있을게."
+    },
+    {
+      "temperature": 0.0,
+      "id": "v3-validation-awake-3",
+      "line": "나한테는 천천히 와. 지금은 네가 좋아."
+    },
+    {
+      "temperature": 0.0,
+      "id": "v3-validation-awake-4",
+      "line": "산책은 좋아. 준비부터 해."
+    },
+    {
+      "temperature": 0.0,
+      "id": "v3-validation-awake-5",
+      "line": "산책은 좋아. 준비 끝날 때까지 기다릴게."
+    },
+    {
+      "temperature": 0.0,
+      "id": "v3-validation-awake-6",
+      "line": "집사, 출발은 서둘러야 해."
+    },
+    {
+      "temperature": 0.0,
+      "id": "v3-validation-awake-7",
+      "line": "준비 끝났으면 빨리 가자."
+    },
+    {
+      "temperature": 0.0,
+      "id": "v3-validation-awake-8",
+      "line": "간식은 줄 수 있어. 천천히 건네줘."
+    },
+    {
+      "temperature": 0.0,
+      "id": "v3-validation-awake-9",
+      "line": "간식은 내 앞에 놓아줘."
+    },
+    {
+      "temperature": 0.0,
+      "id": "v3-validation-awake-10",
+      "line": "간식은 줄 수 있어. 조금만 가까이 줘."
+    },
+    {
+      "temperature": 0.0,
+      "id": "v3-validation-awake-11",
+      "line": "간식은 줄 수 있어. 천천히 줘."
+    }
+  ]
+}

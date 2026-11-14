@@ -1,0 +1,13 @@
+{
+  "phase": "second-stage-action-focus",
+  "trainRows": 330,
+  "validationRows": 36,
+  "rule": "All300 corrected action/state drafts plus all30 verbatim cold/illness originals; no targets changed. Other247-source references remain preserved in v3.",
+  "sourceManifestSha256": "97a4f465c31f91566b45e890f38863987fa692de32457ab76ad44b373691a457",
+  "builderSha256": "9077457ca315683b8cb8819ec14b4a1828bc45eddf272d6d52e20e8eaccabecf",
+  "files": {
+    "train.jsonl": "85688a04f5ab9616f38678e40bb8f27df4e6b9a8f78c6d6d495fc50101abd24e",
+    "validation.jsonl": "f18fe66bf383e1b72e69a32cb62f2f08d0c023df1bb862f6ffc3c357db7a5cea"
+  },
+  "qualityApproved": false
+}

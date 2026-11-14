@@ -1,0 +1,11 @@
+{
+  "characterId": "gomi",
+  "usage": "home-actions",
+  "file": "gomi-action-v3.gguf",
+  "bytes": 368181952,
+  "sha256": "76ca3369dcf9dea018eff58f3f5762506cac380b1c94fff2b72cd01851827934",
+  "modelName": "HyperCLOVA X Gomgomi Gomi 0.5B",
+  "license": "HyperCLOVA X SEED Model License Agreement",
+  "qualityApproved": false,
+  "promptVersion": 3
+}

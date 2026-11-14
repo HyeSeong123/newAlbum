@@ -1,9 +1,42 @@
-import { copyFile, cp, mkdir, readFile, writeFile, access } from 'node:fs/promises';
+import { copyFile, cp, mkdir, readFile, writeFile, access, rm } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
+import { createReadStream } from 'node:fs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
+
+export async function prepareGomiActionModel(projectRoot, assets) {
+  const modelRoot = resolve(projectRoot, 'models/gomi-action-v3');
+  let raw;
+  try { raw = await readFile(resolve(modelRoot, 'runtime.json'), 'utf8'); }
+  catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    // A reused generated project must not silently ship a previous optional model.
+    for (const file of ['gomi-action-v3.gguf', 'gomi-action-v3.json', 'gomi-action-v3-LICENSE', 'gomi-action-v3-NOTICE', 'gomi-action-v3-DERIVED-MODEL-TERMS.txt'])
+      await rm(resolve(assets, file), {force:true});
+    return false;
+  }
+  const spec = JSON.parse(raw);
+  if (spec.characterId !== 'gomi' || spec.usage !== 'home-actions' || spec.file !== 'gomi-action-v3.gguf' ||
+      !Number.isSafeInteger(spec.bytes) || spec.bytes < 4 || spec.bytes > 1024 ** 3 || !/^[0-9a-f]{64}$/.test(spec.sha256)) {
+    throw new Error('고미 행동 모델 정책을 확인하지 못했습니다.');
+  }
+  const sha = createHash('sha256'); let bytes = 0;
+  for await (const block of createReadStream(resolve(modelRoot, spec.file))) { bytes += block.length; sha.update(block); }
+  if (bytes !== spec.bytes || sha.digest('hex') !== spec.sha256) throw new Error('고미 행동 모델 무결성 검증에 실패했습니다.');
+  const license = await readFile(resolve(modelRoot, 'LICENSE'));
+  const notice = await readFile(resolve(modelRoot, 'NOTICE'));
+  if (!notice.toString('utf8').includes('Powered by HyperCLOVA X')) throw new Error('고미 행동 모델 필수 고지문이 없습니다.');
+  await mkdir(assets, {recursive:true});
+  await copyFile(resolve(modelRoot, spec.file), resolve(assets, spec.file));
+  await writeFile(resolve(assets, 'gomi-action-v3-LICENSE'), license);
+  await writeFile(resolve(assets, 'gomi-action-v3-NOTICE'), notice);
+  try { await copyFile(resolve(modelRoot,'DERIVED-MODEL-TERMS.txt'),resolve(assets,'gomi-action-v3-DERIVED-MODEL-TERMS.txt')); }
+  catch (error) { if(error.code !== 'ENOENT') throw error; }
+  await writeFile(resolve(assets, 'gomi-action-v3.json'), raw);
+  return true;
+}
 
 export function configureGradle(text) {
   if (!/compileSdk\s*=\s*36/.test(text) || !/targetSdk\s*=\s*36/.test(text)) {
@@ -47,6 +80,7 @@ export async function prepareAndroid(projectRoot = root, requireSigning = false)
   await mkdir(assets, {recursive: true});
   await writeFile(resolve(assets, 'gomi-v4.gguf'), adapter);
   for (const file of ['LICENSE', 'NOTICE']) await copyFile(resolve(adapterRoot, file), resolve(assets, file));
+  await prepareGomiActionModel(projectRoot, assets);
   const destination = resolve(android, 'app/src/main/java/com/oraedameun/album/GamjassakMediaPlugin.kt');
   await mkdir(dirname(destination), { recursive: true });
   await copyFile(resolve(projectRoot, 'src-tauri/android/GamjassakMediaPlugin.kt'), destination);
@@ -54,6 +88,7 @@ export async function prepareAndroid(projectRoot = root, requireSigning = false)
   await copyFile(resolve(projectRoot, 'src-tauri/android/GamjassakCompanionPlugin.kt'), resolve(dirname(destination), 'GamjassakCompanionPlugin.kt'));
   await copyFile(resolve(projectRoot, 'src-tauri/android/CompanionModelRegistry.java'), resolve(dirname(destination), 'CompanionModelRegistry.java'));
   await copyFile(resolve(projectRoot, 'src-tauri/android/GomiAdapter.java'), resolve(dirname(destination), 'GomiAdapter.java'));
+  await copyFile(resolve(projectRoot, 'src-tauri/android/GomiActionModel.java'), resolve(dirname(destination), 'GomiActionModel.java'));
   await cp(resolve(projectRoot, 'src-tauri/android/companion'), resolve(android, 'app/src/main/cpp/companion'), { recursive: true });
   for (const variant of ['main', 'debug']) {
     const config = resolve(android, `app/src/${variant}/res/xml/gamjassak_network_security.xml`);
