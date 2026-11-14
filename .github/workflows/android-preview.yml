@@ -65,6 +65,10 @@ jobs:
       contents: write
     env:
       RUSTUP_TOOLCHAIN: stable
+      # Keep the inspectable preview, but ship optimized Rust without debug symbols.
+      CARGO_PROFILE_DEV_OPT_LEVEL: s
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_DEV_STRIP: symbols
       NDK_VERSION: '28.2.13676358'
       GAMJASSAK_ANDROID_CERTIFICATE_SHA256: ${{ vars.GAMJASSAK_ANDROID_CERTIFICATE_SHA256 }}
     steps:
@@ -126,7 +130,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: src-tauri/gen/android/app/build/outputs/apk
-          key: android-debug-v2-${{ runner.os }}-${{ hashFiles('models/gomi-lora-v4/**', 'models/gomi-action-v3/**', 'local-ai/*.json', 'src/**', 'public/**', 'src-tauri/*.*', 'src-tauri/src/**', 'src-tauri/database/**', 'src-tauri/android/**', 'src-tauri/capabilities/**', 'src-tauri/permissions/**', 'package*.json', 'scripts/**', 'vite.config.ts', 'index.html', 'rust-toolchain.toml') }}
+          key: android-compact-v3-${{ runner.os }}-${{ hashFiles('models/gomi-lora-v4/**', 'models/gomi-action-v3/**', 'local-ai/*.json', 'src/**', 'public/**', 'src-tauri/*.*', 'src-tauri/src/**', 'src-tauri/database/**', 'src-tauri/android/**', 'src-tauri/capabilities/**', 'src-tauri/permissions/**', 'package*.json', 'scripts/prepare-*.mjs', 'scripts/*models*.json', 'scripts/android-*.mjs', 'scripts/android-*.json', 'vite.config.ts', 'index.html', 'rust-toolchain.toml', '!**/__pycache__/**', '!**/*.pyc') }}
       - name: Build installable preview APKs
         if: steps.preview-apks.outputs.cache-hit != 'true'
         run: npx tauri android build --debug --apk --ci --features custom-protocol --target aarch64 x86_64 --split-per-abi
