@@ -59,6 +59,10 @@ jobs:
   apk:
     runs-on: ubuntu-latest
     timeout-minutes: 75
+    # Draft release assets require repository push access even for this download.
+    # This short-lived job token stages the model; no token is packaged in the APK.
+    permissions:
+      contents: write
     env:
       RUSTUP_TOOLCHAIN: stable
       NDK_VERSION: '28.2.13676358'

@@ -41,7 +41,7 @@ export async function stageGomiModel(root,spec,source,{token,fetchImpl=fetch}={}
       }
       break;
     }
-    if(!response?.ok||!response.body)throw Error('Model download failed; check GitHub artifact access');
+    if(!response?.ok||!response.body)throw Error(`Model download failed (HTTP ${response?.status ?? 'redirect limit'}); check GitHub draft artifact access`);
     let bytes=0;
     const hash=createHash('sha256');
     const proof=new Transform({transform(chunk,encoding,callback){
