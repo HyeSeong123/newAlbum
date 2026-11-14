@@ -39,14 +39,20 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def features(row):
+def features(row, clause=0):
     affection = row.get('affection', 45)
     tier = 'close' if affection >= 60 else 'familiar' if affection >= 30 else 'distant'
     sleeping = bool(row.get('sleeping'))
     state = 'asleep-quiet' if sleeping and row['action'] == 'rest' else 'asleep-disturbed' if sleeping else 'awake'
     return ['character:'+row['characterId'], 'action:'+row['action'], 'tier:'+tier,
             'state:'+state, 'condition:'+row.get('condition', 'normal'),
-            'mood:'+row.get('mood','calm'), 'energy:'+('low' if row.get('energy',3)<=1 else 'normal')]
+            'mood:'+row.get('mood','calm'), 'energy:'+('low' if row.get('energy',3)<=1 else 'normal'),
+            'clause:'+str(clause)]
+
+
+def clauses(row):
+    text=re.sub(r'([.!?])\1+',r'\1',row['reply'].strip())
+    return [part.strip() for part in re.findall(r'[^.!?]+(?:[.!?]+|$)',text) if part.strip()][:2]
 
 
 def corpus(extra=None):
@@ -129,22 +135,27 @@ def quantized(tensor):
 def train(args):
     rng = random.Random(args.seed)
     rows = corpus(args.extra)
-    vocab = ['<bos>','<eos>','<pad>','<unk>'] + sorted({t for r in rows for t in TOKEN.findall(r['reply'])})
-    feature_names = sorted({f for r in rows for f in features(r)})
+    vocab = ['<bos>','<eos>','<pad>','<unk>','<next>'] + sorted({t for r in rows for part in clauses(r) for t in TOKEN.findall(part)})
+    feature_names = sorted({f for r in rows for index,_ in enumerate(clauses(r)) for f in features(r,index)})
     tok = {t:i for i,t in enumerate(vocab)}
     next_tokens=[set() for _ in vocab]
     for row in rows:
-        words=[0]+[tok[token] for token in TOKEN.findall(row['reply'])]+[1]
-        for before,after in zip(words,words[1:]):next_tokens[before].add(after)
+        parts=clauses(row)
+        for index,part in enumerate(parts):
+            end=4 if index+1<len(parts) else 1
+            words=[0]+[tok[token] for token in TOKEN.findall(part)]+[end]
+            for before,after in zip(words,words[1:]):next_tokens[before].add(after)
     fmap = {f:i for i,f in enumerate(feature_names)}
     xs, fs, ys = [], [], []
     rng.shuffle(rows)
     for r in rows:
-        words = TOKEN.findall(r['reply'])
-        history = [0]*4
-        for word in words+['<eos>']:
-            xs.append(history[:]);fs.append([fmap[f] for f in features(r)]);ys.append(tok[word])
-            history = (history+[tok[word]])[-4:]
+        parts=clauses(r)
+        for index,part in enumerate(parts):
+            history=[0]*4
+            end='<next>' if index+1<len(parts) else '<eos>'
+            for word in TOKEN.findall(part)+[end]:
+                xs.append(history[:]);fs.append([fmap[f] for f in features(r,index)]);ys.append(tok[word])
+                history=(history+[tok[word]])[-4:]
     device = 'cpu-numpy-matrix-arithmetic'
     x=np.asarray(xs,dtype=np.int32);f=np.asarray(fs,dtype=np.int32);y=np.asarray(ys,dtype=np.int32)
     model=OwnWordNet(len(vocab),len(fmap),seed=args.seed)
@@ -164,14 +175,14 @@ def train(args):
         if epoch == 0 or (epoch+1)%25 == 0 or epoch+1 == args.epochs:
             print(json.dumps({'epoch':epoch+1,'loss':round(loss_value,5),'seconds':round(time.perf_counter()-started,1)}),flush=True)
     artifact = {
-        'format':'gomgomi-own-wordnet-v1', 'context':4, 'embedding':24, 'hidden':112,
+        'format':'gomgomi-own-wordnet-v2', 'context':4, 'embedding':24, 'hidden':112,
         'vocab':vocab, 'features':feature_names,
         'nextTokens':[sorted(values) for values in next_tokens],
         'characters':sorted({r['characterId'] for r in rows}),
         'actions':sorted({r['action'] for r in rows}),
         'weights':{name:quantized(value) for name,value in model.params.items()},
         'provenance':{'initialization':'random','pretrainedParents':[],'teacherModel':None,
-            'architecture':'own conditional feed-forward word neural network',
+            'architecture':'own conditional word neural network with learned clause-boundary control and within-clause word history',
             'trainingTool':'first-party forward/backprop/AdamW; NumPy matrix arithmetic on PC only',
             'dataAuthorshipCounts':dict(Counter(r.get('authorship','unknown') for r in rows)),
             'syntheticDraftAuthor':'AI coding assistant in this session; not human-approved. No teacher-model API is called by the trainer.',

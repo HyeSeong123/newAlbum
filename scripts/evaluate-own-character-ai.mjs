@@ -11,7 +11,7 @@ const fixtures=[];
 for(const action of model.actions)for(const affection of [5,45,85])fixtures.push({characterId:'gomi',action,affection,mood:'calm',energy:3,sleeping:false});
 for(const action of ['touch','rest','treat'])for(const mood of ['sleepy','irritated'])fixtures.push({characterId:'gomi',action,affection:80,mood,energy:0,sleeping:true});
 for(const condition of ['cold','unwell'])fixtures.push({characterId:'gomi',action:'touch',affection:80,mood:'calm',energy:1,sleeping:false,condition});
-for(const characterId of ['potato','sweet-potato','jujube'])fixtures.push({characterId,action:'touch',affection:80,mood:'calm',energy:3,sleeping:false});
+for(const characterId of ['potato','sweet-potato','jujube'])for(const action of ['touch','treat'])fixtures.push({characterId,action,affection:80,mood:action==='treat'?'delighted':'calm',energy:3,sleeping:false});
 const records=fixtures.map((input,index)=>{
  const started=performance.now();try{const line=generateOwnLine(model,input,20261115+index*31);
   return {input,line,elapsedMs:performance.now()-started,exactTrainingLine:trainedLines.has(normalize(line))};

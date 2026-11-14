@@ -16,7 +16,7 @@
 
 # Local training evidence hashes cover the exact exported bytes on every platform.
 /local-ai/** -text whitespace=cr-at-eol
-/src/features/characters/ownAi/model.json -text
+/src/features/characters/ownAi/model.json -text whitespace=cr-at-eol
 /public/notices/browser-libraries.txt text eol=lf -whitespace
 /public/notices/tr46-MIT.txt text eol=lf -whitespace
 /public/notices/tfjs-layers-LICENSE.txt text eol=lf -whitespace

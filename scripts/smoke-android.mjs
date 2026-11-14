@@ -382,6 +382,7 @@ try {
   let page = connection.page;
   await verifyInstalledGomiAction(page, output);
   if (process.env.GOMGOMI_FOCUSED_AI_SMOKE !== '1') {
+  const affectionBeforeGuide = await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('sync_characters')).characters.find(character => character.id === 'gomi').affection);
   await page.evaluate(() => localStorage.setItem('geuruteogi.first-run-completed-v1', 'true'));
   await page.reload();
   await expect(page.getByRole('heading', { name:'홈', exact:true })).toBeVisible();
@@ -416,7 +417,7 @@ try {
   await captureScreen('gomi-varied-help');
   await gomiGuide.getByRole('button', { name:'도움말 종료', exact:true }).click();
   const gomiState = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('sync_characters'));
-  assert.equal(gomiState.characters.find(character => character.id === 'gomi').affection, 0);
+  assert.equal(gomiState.characters.find(character => character.id === 'gomi').affection, affectionBeforeGuide);
   const companionBefore = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('chat_model_status'));
   assert.equal(typeof companionBefore.runtime.resident, 'boolean');
   assert.equal(companionBefore.runtime.resident, false, 'The old native character engine must remain absent');

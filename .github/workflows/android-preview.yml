@@ -108,6 +108,7 @@ jobs:
           npm run test:unit
           node --test tests/android-prepare.test.mjs tests/android-signing.test.mjs tests/android-signing-setup.test.mjs
           python3 tests/gomi-apk-verification.test.py
+          python3 tests/own-character-apk.test.py
           python3 -m unittest discover -s tests -p test_gomi_selection_v3.py
           python3 -m unittest discover -s tests -p test_gomi_corpus_v3.py
       - name: Stage first-party character AI

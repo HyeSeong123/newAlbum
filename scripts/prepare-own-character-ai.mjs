@@ -16,7 +16,7 @@ PC 수학 계산 도구와 학습 코드는 APK에 포함되지 않습니다.
 export async function prepareOwnAi(root) {
   const raw=await readFile(resolve(root,'src/features/characters/ownAi/model.json'));
   const model=JSON.parse(raw);
-  if(raw.length>2_000_000||model.format!=='gomgomi-own-wordnet-v1'||model.provenance?.initialization!=='random'||
+  if(raw.length>2_000_000||model.format!=='gomgomi-own-wordnet-v2'||model.provenance?.initialization!=='random'||
      model.provenance?.pretrainedParents?.length!==0||model.provenance?.teacherModel!==null||!model.weights||'replies' in model)
     throw new Error('자체 AI 모델의 형식과 계보를 확인하지 못했습니다.');
   const directory=resolve(root,'public/character-ai');await mkdir(directory,{recursive:true});
