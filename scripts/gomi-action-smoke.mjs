@@ -118,6 +118,16 @@ export async function verifyInstalledGomiAction(page,output='test-results/androi
    await reset(energy);
    const affectionBefore=await page.evaluate(async()=>(await window.__TAURI_INTERNALS__.invoke('sync_characters')).characters.find(row=>row.id==='gomi').affection);
    await page.getByRole('button',{name:'함께하기',exact:true}).click();
+   await page.evaluate(()=>{
+    window.__ownMotionTrace=[];
+    const capture=()=>{
+     const motion=document.querySelector('.homeMascot [data-motion]')?.getAttribute('data-motion');
+     if(motion&&motion!==window.__ownMotionTrace.at(-1)?.motion)window.__ownMotionTrace.push({motion,at:performance.now()});
+    };
+    const observer=new MutationObserver(capture);
+    observer.observe(document.querySelector('.homeMascot'),{attributes:true,subtree:true,childList:true,attributeFilter:['data-motion']});
+    window.__stopOwnMotionTrace=()=>observer.disconnect();capture();
+   });
    const record={...await pressAndPaint(page,'[data-help="companion-treat"]'),scenario:energy?'sleepy-snack':'exhausted-snack'};
    records.push(record);assert.equal(record.request.input.energy,energy);assert.equal(record.request.input.sleeping,true);assert.equal(record.request.input.action,'treat');
    const firstMotion=await page.locator('.homeMascot [data-motion]').getAttribute('data-motion');
@@ -126,14 +136,18 @@ export async function verifyInstalledGomiAction(page,output='test-results/androi
     affection:(await window.__TAURI_INTERNALS__.invoke('sync_characters')).characters.find(row=>row.id==='gomi').affection}));
    assert.equal(snapshot.memory.energy,energy,'Offering food must not pre-emptively energize a sleeper');
    assert.equal(snapshot.memory.mood,energy?'curious':'sleepy');assert.equal(snapshot.affection,affectionBefore,'Offering food must not incur a sleep-disturbance penalty');
-   const motionSequence=[firstMotion];
    if(output){await mkdir(output,{recursive:true});await page.screenshot({path:join(output,energy?'gomi-food-sleepy.png':'gomi-food-exhausted.png')});}
    if(energy){
-    await page.waitForSelector('.homeMascot [data-motion="rest-front"]',{timeout:3000});motionSequence.push('rest-front');
-    await page.waitForFunction(()=>['cynical','idle'].includes(document.querySelector('.homeMascot [data-motion]')?.getAttribute('data-motion')),undefined,{timeout:2000});
-    motionSequence.push(await page.locator('.homeMascot [data-motion]').getAttribute('data-motion'));
+    // Observe from before the click: taking a screenshot can outlast the
+    // one-second dazed pose, so polling only afterwards can miss a real phase.
+    await page.waitForFunction(()=>window.__ownMotionTrace.some(row=>row.motion==='rest-front')&&
+     ['cynical','idle'].includes(window.__ownMotionTrace.at(-1)?.motion),undefined,{timeout:5000});
    }
-   foodBehaviour.push({energy,line:record.line,elapsedMs:record.elapsedMs,motionSequence,memory:snapshot.memory,affectionBefore,affectionAfter:snapshot.affection});
+   const motionTrace=await page.evaluate(()=>{window.__stopOwnMotionTrace();return window.__ownMotionTrace;});
+   const motionSequence=motionTrace.map(row=>row.motion).slice(energy?1:0);
+   if(energy){assert.deepEqual(motionSequence.slice(0,2),['sleep-curled-peek','rest-front']);assert.ok(['idle','cynical'].includes(motionSequence.at(-1)));}
+   else assert.deepEqual(motionSequence,['sleep-curled']);
+   foodBehaviour.push({energy,line:record.line,elapsedMs:record.elapsedMs,motionSequence,motionTrace,memory:snapshot.memory,affectionBefore,affectionAfter:snapshot.affection});
   }
   const timings=assertOwnTimings(records);
   const expectedModel=await readFile(new URL('../src/features/characters/ownAi/model.json',import.meta.url));
@@ -160,7 +174,8 @@ export async function verifyInstalledGomiAction(page,output='test-results/androi
  }catch(error){
   if(output){
    await mkdir(output,{recursive:true});const requests=await page.evaluate(()=>window.__ownAiRequests||[]).catch(()=>[]);
-   await writeFile(join(output,'gomi-action-failure.json'),JSON.stringify({records,foodBehaviour,requests,error:String(error),syntheticInput:true},null,2)+'\n');
+   const motionTrace=await page.evaluate(()=>window.__ownMotionTrace||[]).catch(()=>[]);
+   await writeFile(join(output,'gomi-action-failure.json'),JSON.stringify({records,foodBehaviour,requests,motionTrace,error:String(error),syntheticInput:true},null,2)+'\n');
   }
   throw error;
  }finally{
