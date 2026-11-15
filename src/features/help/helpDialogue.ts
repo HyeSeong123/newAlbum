@@ -4,8 +4,6 @@ import type { CharacterDefinition } from '../characters/models';
 // Each voice keeps its established archetype; the functional instruction is immutable.
 const voices: Record<string, readonly string[]> = {
   gomi: ['…여기 봐.', '용건은 이거지?', '휴. 순서대로 봐. 두 번 설명하긴 귀찮으니까.', '헷갈리면 여기부터 같이 보자.', '너니까 끝까지 봐주는 거야. 옆에 있어.'],
-  potato: ['어… 여기부터 살펴보자.', '이거구나? 같이 볼래?', '앗, 나도 궁금했어! 같이 알아보자.', '이건 내가 옆에서 알려줄게. 조금 머쓱하지만!', '우리 이제 익숙하지? 헤헤, 내가 꼭 챙겨줄게!'],
-  'sweet-potato': ['필요한 건 차근차근 알려줄게.', '괜찮아, 형이 같이 볼게.', '내가 먼저 살펴봤지. 형이 도와줄게!', '막히면 나한테 와. 같이 하면 되지!', '너랑 하니까 형도 신나네. 오늘도 같이 해보자!'],
   apple: ['순서대로 확인하면 돼.', '필요한 부분부터 보자.', '잘 보고 있네. 다음도 순서대로.', '헷갈리지 않게 내가 짚어줄게.', '네가 편하게 할 수 있게, 내가 옆에서 확인할게.'],
   orange: ['여기부터 알려줄게.', '톡! 여기 한번 봐.', '헤헤, 이거 알면 편해!', '우리 같이 톡톡 정리해 볼까?', '헤헤! 너랑 하니까 이런 설명도 신나잖아!'],
   ginkgo: ['음… 이쪽을 봐.', '천천히 살펴봐도 돼.', '음… 방법을 알면 덜 헤매겠지.', '네 속도에 맞춰서 같이 보자.', '네가 머무는 순간은 나도 오래 보고 싶군. 같이 해.'],
@@ -30,20 +28,6 @@ const alternatives: Record<string, readonly (readonly string[])[]> = {
     ['또 찾기 귀찮잖아. 이번에 봐둬.', '가만있어. 순서는 짚어줄 테니까.'],
     ['잠깐. 이건 내가 짚어줄게.', '혼자 한참 찾았어? 이쪽이야.'],
     ['급할 거 없어. 네 속도로 해.', '조금 헷갈려도 괜찮아. 난 여기 있으니까.'],
-  ],
-  potato: [
-    ['어… 어디부터 볼까?', '나도 가까이서 봐도 돼?'],
-    ['앗, 찾았다! 여기를 봐.', '궁금했던 게 이거야?'],
-    ['헤헤, 하나씩 알아가니까 좋다.', '내가 아는 방법이야. 같이 볼래?'],
-    ['옆에서 기다릴게. 천천히 해!', '같이 보니까 덜 헷갈리지?'],
-    ['네가 물어봐 주면 나도 신나!', '우리 같이 하면 할 수 있어. 헤헤.'],
-  ],
-  'sweet-potato': [
-    ['어렵게 생각할 것 없어.', '먼저 이 부분만 보자.'],
-    ['형이 옆에서 짚어줄게.', '괜찮아, 서두르지 말고.'],
-    ['좋아, 하나씩 해보자!', '형이 봐줄 테니 편하게 해.'],
-    ['막히는 곳은 같이 풀면 되지.', '어때, 이쪽부터 해볼까?'],
-    ['네가 찾는 건 형도 같이 찾을게.', '오늘도 함께하니까 든든하네!'],
   ],
   apple: [
     ['한 번에 하나씩 확인하자.', '먼저 표시된 곳을 봐.'],
@@ -169,9 +153,11 @@ function gomiTopic(id: string) {
 export function resolveHelpDialogue(definition: CharacterDefinition, affection: number, instruction: string,
   options: { stepId?: string; variation?: number; previousLine?: string } = {}) {
   const tier = gomiAffinity(affection);
-  const base = voices[definition.type]?.[tier] ?? definition.personality?.speechTone ?? '차근차근 살펴볼게요.';
+  const configured = definition.personality?.helpVoices?.[tier];
+  const current = configured?.length ? configured : undefined;
+  const base = current?.[0] ?? voices[definition.type]?.[tier] ?? definition.personality?.speechTone ?? '차근차근 살펴볼게요.';
   const topic = definition.type === 'gomi' ? gomiTopic(options.stepId ?? '') : undefined;
-  const pool = [...new Set([base, ...(alternatives[definition.type]?.[tier] ?? []), ...(topic ? [gomiTopics[topic][tier]] : [])])];
+  const pool = [...new Set([base, ...(current?.slice(1) ?? alternatives[definition.type]?.[tier] ?? []), ...(topic ? [gomiTopics[topic][tier]] : [])])];
   let hash = 0;
   for(const letter of options.stepId ?? '')hash=(hash*31+letter.charCodeAt(0))>>>0;
   const variation=Number.isFinite(options.variation)?Math.max(0,Math.floor(options.variation!)):0;

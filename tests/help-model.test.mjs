@@ -42,6 +42,21 @@ test('help copy is stable for a step and avoids the preceding line', () => {
   }
 });
 
+test('brother help uses the current persona configuration instead of retired hard-coded voices', () => {
+  for (const id of ['potato','sweet-potato']) {
+    const def=definitions.find(item=>item.id===id);
+    const custom={...def,personality:{...def.personality,helpVoices:[
+      ['초면 A','초면 B','초면 C'], ['서먹 A','서먹 B','서먹 C'], ['익숙 A','익숙 B','익숙 C'],
+      ['가까운 A','가까운 B','가까운 C'], ['친밀 A','친밀 B','친밀 C'],
+    ]}};
+    const instruction='선택한 사진을 저장해요. 원본은 유지돼요.';
+    const lines=affection=>[0,1,2].map(variation=>resolveHelpDialogue(custom,affection,instruction,{variation}));
+    assert.deepEqual(lines(0).map(result=>result.line),['초면 A','초면 B','초면 C']);
+    assert.deepEqual(lines(90).map(result=>result.line),['친밀 A','친밀 B','친밀 C']);
+    assert.ok(lines(60).every(result=>result.instruction===instruction && result.tier===3));
+  }
+});
+
 test('guide fits small, landscape and offset viewports without covering the target', () => {
   for (const viewport of [{ x: 0, y: 0, width: 320, height: 568 }, { x: 0, y: 0, width: 640, height: 360 }, { x: 0, y: 100, width: 393, height: 420 }, { x: 0, y: 0, width: 1440, height: 1000 }]) {
     for (const y of [viewport.y + 12, viewport.y + viewport.height / 2, viewport.y + viewport.height - 62]) {

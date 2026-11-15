@@ -38,8 +38,9 @@
 @media(max-width: 760px) { .characterGrid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media(max-width: 520px) { .characterGrid { grid-template-columns: minmax(0,1fr); } }
 
-/* Brothers: keep the original portrait node; put small hand-drawn motion cues
-   around it instead of stretching the approved artwork. Home only. */
+/* The new pencil atlas changes poses inside one stable image node. Small cues
+   and body movement remain visual-only and never write relationship records. */
+.brotherPencilArt { overflow: hidden; }
 .characterVisual[data-motion-style="brothers"] { isolation: isolate; }
 .characterVisual[data-motion-style="brothers"] .characterBody {
   position: relative;

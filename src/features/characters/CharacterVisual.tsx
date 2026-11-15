@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useAnimationControls, useReducedMotion } from "motion/react";
-import { useEffect, useId } from "react";
+import { useEffect, useId, useState } from "react";
 import { characterAsset, type CharacterDefinition } from "./models";
 import { GomiVisual } from "./GomiVisual";
 import { characterPortraits } from "./characterPortraits";
@@ -7,6 +7,8 @@ import type { GomiMotion } from "./gomiBehavior";
 import { companionMotionAnimation, companionMotionStillFrame, type CompanionMotion } from "./companionBehavior";
 import { isBrotherSignature } from "./brothersMotion";
 import { BrothersEffects } from "./BrothersEffects";
+import { BrothersVisual } from "./BrothersVisual";
+import { isBrotherArtId } from "./brothersArt";
 
 export type Expression = "idle" | "happy" | "sad" | "grow";
 type CharacterVisualProps = {
@@ -20,7 +22,20 @@ export function CharacterVisual(props: CharacterVisualProps) {
   return <BotanicalVisual {...props} />;
 }
 function BotanicalVisual({ definition, stage, expression = "idle", className = "", reactionKey = 0, companionMotion, paused = false }: CharacterVisualProps) {
-  const reduced = useReducedMotion();
+  const initialReduced = useReducedMotion();
+  const brother = isBrotherArtId(definition.id);
+  const [brotherReduced, setBrotherReduced] = useState(Boolean(initialReduced));
+  // The installed Motion hook snapshots this preference at mount. The new
+  // illustrated frame loops also need to stop when the OS setting changes live.
+  useEffect(() => {
+    if (!brother) return;
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setBrotherReduced(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, [brother]);
+  const reduced = brother ? brotherReduced : initialReduced;
   const controls = useAnimationControls();
   const currentStage = definition.fixedGrowthStage || Math.max(1, Math.min(definition.maxStage, stage));
   const signature = definition.personality?.signatureAnimation || "soft-bounce";
@@ -48,7 +63,9 @@ function BotanicalVisual({ definition, stage, expression = "idle", className = "
     <motion.span className="characterBody"
       initial={false} style={{ transformOrigin: "50% 84%" }}
       animate={controls}>
-      {portrait && crop ? <svg className="characterIllustration characterPortrait" viewBox={portrait.viewBox} data-portrait={portrait.subject}
+      {isBrotherArtId(definition.id) ? <BrothersVisual id={definition.id} stage={currentStage} motion={playbackMotion}
+        expression={expression} reactionKey={reactionKey} paused={paused} reduced={Boolean(reduced)} /> :
+      portrait && crop ? <svg className="characterIllustration characterPortrait" viewBox={portrait.viewBox} data-portrait={portrait.subject}
         data-stage={currentStage} data-expression={expression} aria-hidden="true" width={220} height={220} overflow="hidden">
         <defs><clipPath id={clipId}>{portrait.clip ? <polygon points={portrait.clip} /> : <rect x={crop[0]} y={crop[1]} width={crop[2]} height={crop[3]} />}</clipPath></defs>
         <image href={portrait.src} width={portrait.width} height={portrait.height} clipPath={`url(#${clipId})`} /></svg> :

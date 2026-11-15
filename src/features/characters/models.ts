@@ -12,6 +12,8 @@ export type CharacterPersonality = {
   emotionalRole: string;
   visualTraits: string[];
   growthVisualTraits: string[];
+  behaviorRules?: string[];
+  helpVoices?: readonly (readonly string[])[];
 };
 
 export type CharacterDefinition = {

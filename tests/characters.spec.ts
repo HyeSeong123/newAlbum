@@ -8,6 +8,9 @@ test.beforeEach(async ({page}) => { await page.addInitScript(()=>{Math.random=()
 type Companion = { id:string; customName:string|null; growthStage:number; regionPhotoCount:number; growthPhotoCount:number; affection:number; isMain:boolean; unlockedAt:string; createdAt:string; updatedAt:string };
 const companion = (id:string,stage=1,isMain=false):Companion => ({ id,customName:null,growthStage:stage,regionPhotoCount:0,growthPhotoCount:0,affection:0,isMain,unlockedAt:'2026-10-03',createdAt:'2026-10-03',updatedAt:'2026-10-03' });
 async function installSnapshot(page:Page,initial:Companion[],event?:{ id:number; characterId:string; kind:string; stage:number }) {
+  // These persistence/visual fixtures exercise unavailable-AI status, not live
+  // random inference. AI success tests provide their own Worker boundary below.
+  await page.route('**/character-ai/manifest.json',route=>route.fulfill({status:503,contentType:'application/json',body:'{}'}));
   if (!initial.some(c => c.id === 'gomi')) initial = [...initial, companion('gomi', 6)];
   await page.addInitScript(({ initial,event }) => {
     let characters = initial;
@@ -113,6 +116,51 @@ for (const [id, name] of [['potato','감자싹'],['sweet-potato','고구마싹']
     }
   });
 }
+
+for (const id of ['potato','sweet-potato']) {
+  test(`${id} changes illustrated frames, pauses in background and keeps still poses with reduced motion`,async({page})=>{
+    await installSnapshot(page,[companion(id,6,true)]);
+    await page.clock.install({time:new Date('2026-11-15T12:00:00')});
+    await page.clock.pauseAt(new Date('2026-11-15T12:01:00'));
+    await page.goto('/');
+    const art=page.locator('.homeMascot [data-art="pencil-v2"]');
+    await expect(art).toHaveAttribute('data-art-ready','true');
+    await page.getByRole('button',{name:'함께하기',exact:true}).click();
+    await page.getByRole('button',{name:'함께 산책',exact:true}).click();
+    await expect(art).toHaveAttribute('data-frame','8');
+    await page.clock.runFor(420);
+    await expect(art).toHaveAttribute('data-frame','9');
+    await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));});
+    const frozen=await art.getAttribute('data-frame');
+    await page.clock.runFor(5_000);
+    await expect(art).toHaveAttribute('data-frame',frozen!);
+    await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});
+    await page.emulateMedia({reducedMotion:'reduce'});
+    await expect(art).toHaveAttribute('data-frame','8');
+    await page.clock.runFor(500);
+    await expect(art).toHaveAttribute('data-frame','8');
+    await page.getByRole('button',{name:'함께 쉬기',exact:true}).click();
+    await expect(art).toHaveAttribute('data-pose','sleep');
+    await page.clock.runFor(1_000);
+    await expect(art).toHaveAttribute('data-pose','sleep');
+    await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
+    expect(await page.evaluate(()=>(window as any).sproutCommands.filter((c:any)=>c.command==='interact_character'))).toEqual([]);
+  });
+}
+
+test('unavailable new artwork leaves the preserved original portrait visible',async({page})=>{
+  await page.route('**/characters/brothers-v2/potato-atlas.png',route=>route.abort());
+  await installSnapshot(page,[companion('potato',6,true)]);
+  await page.goto('/');
+  const art=page.locator('.homeMascot [data-art="pencil-v2"]');
+  await expect(art).toHaveAttribute('data-art-ready','false');
+  await expect(art.locator('image')).toHaveAttribute('href','/characters/portraits/potato-source.png');
+  await expect(art).toBeVisible();
+  await page.getByRole('button',{name:'함께하기',exact:true}).click();
+  await page.getByRole('button',{name:'함께 쉬기',exact:true}).click();
+  await expect(art.locator('image')).toHaveAttribute('href','/characters/portraits/potato-source.png');
+  await expect(art).toBeVisible();
+});
 
 test('returning Home rotates visible poses without changing affection', async ({page}) => {
   await installSnapshot(page,[companion('potato',6,true)]);
@@ -221,7 +269,7 @@ test('the starter potato has a visible portrait and the book reveals no discover
   await page.getByRole('button',{name:'친구들 보기'}).click();
   const book=page.locator('.characterBook');
   const potato=cardFor(page,'감자싹');
-  await expect(potato.locator('.characterPortrait image')).toHaveAttribute('href','/characters/portraits/potato-source.png');
+  await expect(potato.locator('.characterPortrait image')).toHaveAttribute('href','/characters/brothers-v2/potato-atlas.png');
   await expect(potato.locator('[data-portrait="감자"]')).toBeVisible();
   const box=(await potato.locator('.characterVisual').boundingBox())!;
   expect(box.width).toBeGreaterThan(160);
@@ -282,7 +330,11 @@ test('each of the six current forms loads without showing any future form',async
     for(const def of definitions) {
       const art=cardFor(page,def.defaultName);
       const portrait=characterPortraits[def.id];
-      if(portrait){
+      if(def.id==='potato'||def.id==='sweet-potato'){
+        await expect(art.locator('.characterPortrait image')).toHaveAttribute('href','/characters/brothers-v2/'+def.id+'-atlas.png');
+        await expect(art.locator('.characterPortrait')).toHaveAttribute('viewBox','0 0 362 362');
+        await expect(art.locator('.characterPortrait')).toBeVisible();
+      }else if(portrait){
         await expect(art.locator('.characterPortrait image')).toHaveAttribute('href',portrait.src);
         await expect(art.locator('.characterPortrait')).toHaveAttribute('viewBox',portrait.viewBox);
         await expect(art.locator('.characterPortrait')).toBeVisible();
@@ -302,11 +354,11 @@ test('redesigned completed potato uses its new picture and reduced motion still 
   await installSnapshot(page,[companion('potato',6,true),companion('sweet-potato')]);
   await page.goto('/');
   const mascot=page.getByRole('button',{name:'감자싹에게 말 걸기'});
-  await expect(mascot.locator('.characterPortrait image')).toHaveAttribute('href','/characters/portraits/potato-source.png');
+  await expect(mascot.locator('.characterPortrait image')).toHaveAttribute('href','/characters/brothers-v2/potato-atlas.png');
   await expect(mascot.locator('.characterVisual')).toHaveAttribute('data-reduced-motion','true');
   await mascot.click();
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
-  await expect(mascot.locator('.characterPortrait image')).toHaveAttribute('href','/characters/portraits/potato-source.png');
+  await expect(mascot.locator('.characterPortrait image')).toHaveAttribute('href','/characters/brothers-v2/potato-atlas.png');
   await expect(mascot.locator('.characterHeart')).toHaveCount(0);
   await expect(mascot.locator('.characterVisual')).toHaveAttribute('data-expression','idle',{timeout:2500});
 });
@@ -566,26 +618,35 @@ for (const scenario of [
   await expect(cardFor(page,'고미').locator('.characterVisual')).toHaveAttribute('data-motion',scenario.motion);
 });
 
-for (const [before, after, tier, relation] of [[19,20,1,'아직 서먹한 사이'],[29,30,2,'서로 익숙한 사이'],[59,60,3,'가까운 사이'],[89,90,4,'아주 친밀한 사이']] as const) {
+for (const [before, after, tier] of [[19,20,1],[29,30,2],[59,60,3],[89,90,4]] as const) {
   test(`Gomi uses the saved relationship for AI and help when affection crosses ${after}`, async ({page}) => {
     await installSnapshot(page,[{...companion('gomi',6,true),affection:before}]);
     await page.addInitScript(()=>{
-      const native=(window as any).__TAURI_INTERNALS__, original=native.invoke;
-      (window as any).affinityPrompts=[];
-      native.invoke=async(command:string,args:Record<string,unknown>={})=>{
-        if(command==='chat_model_status')return {phase:'ready',supported:true,installed:true,model:'dialogue',downloaded:0,total:2497281120,message:'설치됨'};
-        if(command==='generate_chat_reply'){(window as any).affinityPrompts.push(args.prompt);return '들었어. 지금은 조금 조용히 있고 싶네.';}
-        return original(command,args);
+      // The current backend is the bundled own-AI Worker. Observe the actual
+      // request boundary rather than the retired native chat command.
+      const NativeWorker=window.Worker;
+      (window as any).affinityInputs=[];
+      (window as any).Worker=class extends EventTarget {
+        onmessage?: (event:{data:any})=>void;
+        constructor(url:string|URL,options?:WorkerOptions){
+          super();
+          if(!String(url).includes('/ownAi/worker'))return new NativeWorker(url,options) as any;
+          queueMicrotask(()=>this.onmessage?.({data:{type:'ready',bytes:1,loadMs:0}}));
+        }
+        postMessage(message:any){
+          (window as any).affinityInputs.push(message.input);
+          queueMicrotask(()=>this.onmessage?.({data:{id:message.id,type:'reply',line:'들었어. 지금은 조금 조용히 있고 싶네.',generationMs:1}}));
+        }
+        terminate(){}
       };
     });
     await page.goto('/');
     await page.getByRole('button',{name:'고미에게 말 걸기'}).click();
     await expect(page.locator('.homeCharacterMeta')).toContainText(`친밀도 ${after}`);
     await expect(page.locator('.homeSpeech')).toHaveAttribute('data-source','on-device');
-    const prompts=await page.evaluate(()=>(window as any).affinityPrompts);
-    expect(prompts).toHaveLength(1);
-    expect(prompts[0]).toContain(`친밀도 ${after}/100`);
-    expect(prompts[0]).toContain(after>=90?'아주 친밀한 집사':after>=60?'가까운 집사':after>=30?'익숙해지는 사이':relation);
+    const inputs=await page.evaluate(()=>(window as any).affinityInputs);
+    expect(inputs).toHaveLength(1);
+    expect(inputs[0]).toMatchObject({characterId:'gomi',action:'touch',affection:after});
     await page.getByRole('button',{name:'현재 화면 도움말'}).click();
     await expect(page.getByRole('dialog',{name:'버튼 도움말'}).locator('.helpVoice')).toHaveAttribute('data-affinity',String(tier));
   });

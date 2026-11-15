@@ -106,3 +106,12 @@ test('brother home silhouettes persist and reduced motion has a meaningful stati
     for(const frame of frames) assert.ok(frame.x !== 0 || frame.y !== 0 || frame.rotate !== 0);
   }
 });
+
+test('the deadpan older brother uses smaller turns than the energetic younger brother', () => {
+  const magnitude = value => Math.max(...(Array.isArray(value) ? value : [value]).map(Math.abs));
+  for (const action of ['bounce','walk','treat','pet','play']) {
+    const younger=brotherMotionAnimation(action,'bashful-peek');
+    const older=brotherMotionAnimation(action,'brother-wink');
+    assert.ok(magnitude(older.keyframes.rotate)<magnitude(younger.keyframes.rotate),action);
+  }
+});
