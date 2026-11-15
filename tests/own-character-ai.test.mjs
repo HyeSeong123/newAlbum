@@ -42,17 +42,26 @@ test('generation supports cancellation before any work',()=>{
  const ai=engine.loadOwnModel(model);
  assert.throws(()=>engine.generateOwnLine(ai,input,1,()=>true),/AI_CANCELLED/);
 });
-test('sleeping Gomi keeps producing distinct reactions at low affection after repeated touches',()=>{
+test('normal unbonded Gomi has no spoken scene to accidentally infer',()=>{
+ const ai=engine.loadOwnModel(model);
+ for(const affection of [0,19,20,29,30,59])for(const action of model.actions)for(const sleeping of [false,true]){
+  const state={...input,affection,action,sleeping,energy:1};
+  assert.equal(ai.scenes.has(engine.ownSceneKey(state)),false);
+  assert.throws(()=>engine.generateOwnLine(ai,state,5),/AI_SCENE_UNTRAINED/);
+ }
+});
+
+test('sleeping bonded Gomi keeps producing distinct reactions after repeated touches',()=>{
  const ai=engine.loadOwnModel(model);
  const previous=['조금 더 잘래. 더 잘래.','자는 동안은 조용히 말해줘.','나 졸리단 말이야. 더 잘래.',
   '조금만 조용히 해줘. 더 잘래.','조금만 더 자게 해줘.','왜 불러? 더 잘래.',
   '나 졸리단 말이야. 나 좀 더 자게 해줘.','조금만 조용히 해줘. 지금은 조용히 해.','나 졸리단 말이야. 조금 더 잘래.'];
- const line=engine.generateOwnLine(ai,{...input,action:'touch',affection:0,mood:'sleepy',energy:1,sleeping:true,previous},20261448);
- assert.ok(!previous.includes(line));assert.match(line,/잘|자게|자고|졸|조용|깨우|쉬|안 일어날/);
+ const line=engine.generateOwnLine(ai,{...input,action:'touch',affection:60,mood:'sleepy',energy:1,sleeping:true,previous},20261448);
+ assert.ok(!previous.includes(line));assert.match(line,/잘|자게|자고|졸|조용|깨우|쉬|안 일어날|깨어나면/);
  for(const mood of ['sleepy','irritated']){
   const recent=[];
   for(let index=0;index<16;index++){
-   const reply=engine.generateOwnLine(ai,{...input,action:'touch',affection:0,mood,energy:1,sleeping:true,previous:recent},20261115+index*37);
+   const reply=engine.generateOwnLine(ai,{...input,action:'touch',affection:60,mood,energy:1,sleeping:true,previous:recent},20261115+index*37);
    assert.ok(!recent.includes(reply));assert.ok(Array.from(reply).length<=50);
    recent.push(reply);if(recent.length>12)recent.shift();
   }
@@ -60,8 +69,8 @@ test('sleeping Gomi keeps producing distinct reactions at low affection after re
 });
 test('petting keeps one coherent stance instead of stopping and inviting touch together',()=>{
  const ai=engine.loadOwnModel(model);
- const reply=engine.generateOwnLine(ai,{...input,action:'pet',affection:45},20261146);
- assert.match(reply,/쓰다듬|손|만지|살살|멈춰|거기|그만|어색/);
+ const reply=engine.generateOwnLine(ai,{...input,action:'pet',affection:75},20261146);
+ assert.match(reply,/쓰다듬|손|만지|살살|멈춰|거기|그만|어색|천천히|기대|옆|가만히/);
  assert.doesNotMatch(reply,/(?:그만|치워|멈춰)[^.!?]*[.!?].*(?:더 쓰다듬어|만져줘|조금만 더)/);
 });
 test('the reported sleep/food/play hybrid is impossible under the learned scene support',()=>{
@@ -79,7 +88,7 @@ test('learned scene connections constrain syntax without a whole-reply lookup ta
 });
 test('sleepy food approach and exhausted continued sleep differ at every personality boundary',()=>{
  const ai=engine.loadOwnModel(model);
- for(const action of ['treat','meal'])for(const affection of [0,19,20,29,30,59,60,89,90,100]){
+ for(const action of ['treat','meal'])for(const affection of [60,89,90,100]){
   const recent=[];
   for(let index=0;index<16;index++){
    const state={...input,action,affection,sleeping:true,energy:1,mood:'sleepy',previous:recent};

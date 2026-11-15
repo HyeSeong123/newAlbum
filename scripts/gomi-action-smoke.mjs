@@ -53,7 +53,7 @@ async function installProbe(page){
  });
 }
 export async function pressAndPaint(page,selector){
- if(await page.locator('#homeMessage').getAttribute('data-source')==='nonverbal')await page.locator('.homeMascot').scrollIntoViewIfNeeded();
+ if(await page.locator('#homeMessage').getAttribute('data-source')==='nonverbal')await page.locator('.homeMascot').evaluate(node=>node.scrollIntoView({block:'center',behavior:'instant'}));
  else await page.locator('#homeMessage').scrollIntoViewIfNeeded();
  const record=await page.evaluate(selector=>new Promise((resolve,reject)=>{
   const before=document.querySelector('#homeMessage')?.textContent,started=performance.now();let finished=false;
@@ -71,7 +71,11 @@ export async function pressAndPaint(page,selector){
    if(finished)return;
    const node=document.querySelector('#homeMessage');
    const responseId=node?.getAttribute('data-response-id');
-   if(node?.getAttribute('data-source')==='nonverbal'&&node.getAttribute('data-state')==='quiet'&&/^\d+$/.test(responseId||'')&&Number(responseId)>Number(previousResponseId||0)&&visible(document.querySelector('.homeMascot'))){
+   if(node?.getAttribute('data-source')==='nonverbal'&&node.getAttribute('data-state')==='quiet'&&/^\d+$/.test(responseId||'')&&Number(responseId)>Number(previousResponseId||0)){
+    const mascot=document.querySelector('.homeMascot');
+    // The activity panel can reflow after the click. Center the completed
+    // reaction clear of the fixed Android header before checking its paint.
+    if(!visible(mascot)){mascot?.scrollIntoView({block:'center',behavior:'instant'});requestAnimationFrame(check);return;}
     requestAnimationFrame(()=>{
      if(finished)return;
      const quiet=document.querySelector('#homeMessage');
@@ -210,7 +214,12 @@ export async function verifyInstalledGomiAction(page,output='test-results/androi
   if(output){
    await mkdir(output,{recursive:true});const requests=await page.evaluate(()=>window.__ownAiRequests||[]).catch(()=>[]);
    const motionTrace=await page.evaluate(()=>window.__ownMotionTrace||[]).catch(()=>[]);
-   await writeFile(join(output,'gomi-action-failure.json'),JSON.stringify({records,foodBehaviour,requests,motionTrace,error:String(error),syntheticInput:true},null,2)+'\n');
+   const response=await page.evaluate(()=>{
+    const node=document.querySelector('#homeMessage'),mascot=document.querySelector('.homeMascot'),box=mascot?.getBoundingClientRect();
+    return {source:node?.getAttribute('data-source'),state:node?.getAttribute('data-state'),responseId:node?.getAttribute('data-response-id'),
+     viewport:{width:innerWidth,height:innerHeight},mascot:box?.toJSON(),topHit:box?document.elementFromPoint(box.left+box.width/2,box.top+2)?.tagName:null};
+   }).catch(()=>null);
+   await writeFile(join(output,'gomi-action-failure.json'),JSON.stringify({records,foodBehaviour,requests,motionTrace,response,error:String(error),syntheticInput:true},null,2)+'\n');
   }
   throw error;
  }finally{

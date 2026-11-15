@@ -43,6 +43,15 @@ class OwnLearningChecks(unittest.TestCase):
         self.assertLess(after,before/2)
 
 class OwnTrainingContextChecks(unittest.TestCase):
+    def test_quiet_normal_gomi_rows_are_not_positive_spoken_targets(self):
+        low={'id':'quiet','characterId':'gomi','action':'touch','affection':59,'condition':'normal','reply':'왜 불러.'}
+        close={**low,'id':'close','affection':60}
+        cold={**low,'id':'cold','condition':'cold'}
+        plant={**low,'id':'plant','characterId':'potato'}
+        spoken,quiet=training.spoken_rows([low,close,cold,plant])
+        self.assertEqual([row['id'] for row in spoken],['close','cold','plant'])
+        self.assertEqual([row['id'] for row in quiet],['quiet'])
+
     def test_sleepy_and_exhausted_food_have_distinct_learnable_features(self):
         row={'characterId':'gomi','action':'treat','affection':75,'sleeping':True,'energy':1}
         self.assertIn('energy:low',training.features(row))

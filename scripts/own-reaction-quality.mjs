@@ -19,7 +19,7 @@ export function reactionIssues(input,line){
    if(!/먹|간식|밥|갈게|가고|가서|줘|놓아|기다려/.test(line))issues.push('missing-food-approach');
    if(/계속 잘|너무.*피곤|나중에 먹|더 잘래|먹으러 못/.test(line))issues.push('sleepy-treated-as-exhausted');
   }else{
-   if(!/잘|자고|자게|잠|졸|피곤|나중|이따|일어나면|깨면|깬 다음|못 일어나|조금 뒤|옆에 놔둬|밥은 놔둬|간식은 놔둬/.test(line))issues.push('missing-continued-sleep');
+   if(!/잘|자고|자게|자도|잠|졸|피곤|나중|이따|일어나면|깨면|깬 다음|못 일어나|조금 뒤|옆에 놔둬|밥은 놔둬|간식은 놔둬/.test(line))issues.push('missing-continued-sleep');
    if(/먹으러 갈게|지금 먹을래|일어날게|먹자/.test(line))issues.push('exhausted-wakes-to-eat');
   }
  }else if(input.sleeping){

@@ -2,8 +2,9 @@ import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {modelUrl} from './ts-module-loader.mjs';
 import {reactionIssues} from './own-reaction-quality.mjs';
+import {ownReplyMode} from './own-reply-policy.mjs';
 const base=new URL('../',import.meta.url);
-const {loadOwnModel,generateOwnLine,supportsOwnLine}=await import(await modelUrl(new URL('src/features/characters/ownAi/engine.ts',base)));
+const {loadOwnModel,generateOwnLine,supportsOwnLine,ownSceneKey}=await import(await modelUrl(new URL('src/features/characters/ownAi/engine.ts',base)));
 const raw=await readFile(new URL('src/features/characters/ownAi/model.json',base)),metadata=JSON.parse(raw),model=loadOwnModel(metadata);
 const corpusBytes=await readFile(new URL('local-ai/own/corpus.json',base));
 if(createHash('sha256').update(corpusBytes).digest('hex')!==metadata.provenance.sourceCorpusSha256)throw new Error('Training source digest mismatch');
@@ -18,19 +19,23 @@ for(const [index,input] of fixtures.entries()){
  const previous=[];
  for(let repetition=0;repetition<12;repetition++){
   const started=performance.now(),state={...input,previous:[...previous]},seed=20261115+index*7919+repetition*37;
+  if(ownReplyMode(input)==='nonverbal'){
+   records.push({input,seed,line:'',source:'nonverbal',inferenceRequested:false,elapsedMs:0,
+    issues:model.scenes.has(ownSceneKey(input))?['quiet-scene-has-spoken-training-targets']:[]});continue;
+  }
   try{
    const line=generateOwnLine(model,state,seed),issues=reactionIssues(input,line);
    if(!supportsOwnLine(model,input,line))issues.push('unsupported-learned-scene');
    if(previous.slice(-3).includes(line))issues.push('immediate-repeat');
-   records.push({input,seed,line,issues,reusedOlderLine:previous.includes(line),elapsedMs:performance.now()-started,exactTrainingLine:trainedLines.has(normalize(line))});
+   records.push({input,seed,line,source:'on-device',issues,reusedOlderLine:previous.includes(line),elapsedMs:performance.now()-started,exactTrainingLine:trainedLines.has(normalize(line))});
    previous.push(line);if(previous.length>12)previous.shift();
   }catch(error){records.push({input,seed,error:String(error),issues:['generation-error'],elapsedMs:performance.now()-started});}
  }
 }
-const successful=records.filter(row=>!row.error),times=successful.map(row=>row.elapsedMs).sort((a,b)=>a-b);
+const successful=records.filter(row=>!row.error&&row.source==='on-device'),quiet=records.filter(row=>row.source==='nonverbal'),times=successful.map(row=>row.elapsedMs).sort((a,b)=>a-b);
 const report={modelBytes:raw.length,modelSha256:createHash('sha256').update(raw).digest('hex'),provenance:metadata.provenance,
  assessment:'Developer synthetic scene/fatigue repetitions and semantic checks; not independent human approval or physical Galaxy26 timing',records,
- summary:{scenes:fixtures.length,cases:records.length,successes:successful.length,errors:records.filter(row=>row.error).length,
+ summary:{scenes:fixtures.length,cases:records.length,successes:successful.length+quiet.length,spokenCases:successful.length,quietCases:quiet.length,errors:records.filter(row=>row.error).length,
   semanticFailures:records.filter(row=>row.issues.length).length,novelCombinations:successful.filter(row=>!row.exactTrainingLine).length,
   p50EngineMs:times[Math.floor((times.length-1)*0.5)],p95EngineMs:times[Math.ceil((times.length-1)*0.95)],maxEngineMs:times.at(-1)}};
 await mkdir(new URL('test-results/',base),{recursive:true});await writeFile(new URL('test-results/own-character-ai.json',base),JSON.stringify(report,null,2)+'\n');

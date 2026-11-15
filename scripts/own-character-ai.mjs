@@ -3,6 +3,7 @@ import {createInterface} from 'node:readline/promises';
 import {stdin,stdout} from 'node:process';
 import {modelUrl} from './ts-module-loader.mjs';
 import {parseOwnCommand} from './own-character-input.mjs';
+import {ownReplyMode} from './own-reply-policy.mjs';
 
 const {loadOwnModel,generateOwnLine}=await import(await modelUrl(new URL('../src/features/characters/ownAi/engine.ts',import.meta.url)));
 const rawBytes=await readFile(new URL('../src/features/characters/ownAi/model.json',import.meta.url));
@@ -17,7 +18,8 @@ if(process.argv.includes('--info')){
  const once=process.argv.indexOf('--once');
  if(once>=0){
    const input=parseOwnCommand(process.argv[once+1],characterId),started=performance.now();
-   console.log(JSON.stringify({input,line:generateOwnLine(model,input),elapsedMs:performance.now()-started}));
+   const source=ownReplyMode(input);
+   console.log(JSON.stringify({input,source,line:source==='nonverbal'?'':generateOwnLine(model,input),inferenceRequested:source!=='nonverbal',elapsedMs:performance.now()-started}));
  }else{
  const cli=createInterface({input:stdin,output:stdout});
  const previous=[];
@@ -29,7 +31,9 @@ if(process.argv.includes('--info')){
    const text=(await cli.question('행동> ')).trim();if(text==='exit'||text==='0')break;if(!text)continue;
    const started=performance.now();
    try{
-     const line=generateOwnLine(model,parseOwnCommand(text,characterId,previous));
+     const input=parseOwnCommand(text,characterId,previous);
+     if(ownReplyMode(input)==='nonverbal'){console.log('고미는 대꾸하지 않고 조용히 눈길을 돌립니다.');continue;}
+     const line=generateOwnLine(model,input);
      console.log(`${line}  (${(performance.now()-started).toFixed(1)}ms)`);previous.push(line);if(previous.length>12)previous.shift();
    }catch(error){console.error(String(error));}
  }}finally{cli.close();}

@@ -72,8 +72,8 @@ def words(row):
     return TOKEN.findall(text)
 
 
-def natural_gomi_rows():
-    drafts=read(HERE/'gomi-natural-drafts.json')
+def natural_gomi_rows(filename='gomi-natural-drafts.json',authorship='agent-authored-natural-v3'):
+    drafts=read(HERE/filename)
     rows=[]
     for item in drafts['scenarios']:
         for name,affection in GOMI_TIERS:
@@ -86,11 +86,26 @@ def natural_gomi_rows():
                     row={'id':f'natural-{len(rows)}','characterId':'gomi','action':item['action'],
                          'affection':affection,'energy':value,'sleeping':item['sleeping'],
                          'condition':item.get('condition','normal'),'meaning':item['meaning'],
-                         'reply':reply,'authorship':'agent-authored-natural-v3',
-                         'source':'local-ai/own/gomi-natural-drafts.json'}
+                         'reply':reply,'authorship':authorship,
+                         'source':'local-ai/own/'+filename}
                     row['mood']='sleepy' if item['sleeping'] else {'walk':'curious','treat':'delighted','meal':'delighted','play':'playful','rest':'sleepy'}.get(item['action'],'calm')
                     rows.append(row)
-    return rows
+    repeats=drafts.get('repeat',1)
+    if not isinstance(repeats,int) or not 1<=repeats<=4:raise ValueError('Draft weight must be 1–4')
+    return [{**row,'id':f'{Path(filename).stem}-{index}-{repeat}'} for repeat in range(repeats) for index,row in enumerate(rows)]
+
+
+def spoken_rows(rows):
+    """Silence is an action policy, never a hostile or blank spoken target.
+
+    Preserve the user's explicit cold/unwell comfort exceptions and all other
+    characters. The original source rows remain unchanged on disk.
+    """
+    spoken,quiet=[],[]
+    for row in rows:
+        silent=row['characterId']=='gomi' and row.get('affection',45)<60 and row.get('condition','normal')=='normal'
+        (quiet if silent else spoken).append(row)
+    return spoken,quiet
 
 
 def corpus(extra=None):
@@ -103,6 +118,7 @@ def corpus(extra=None):
         else:
             excluded.append({'id':row['id'], 'reason':'previous home drafts replaced by coherent scene/intent drafts' if row['action'] in ACTIONS else 'free-form scene lacks an unambiguous structured action; original preserved'})
     rows.extend(natural_gomi_rows())
+    rows.extend(natural_gomi_rows('gomi-bonded-refinement.json','agent-authored-bonded-refinement-v1'))
     drafts = read(HERE/'action-drafts.json')
     characters = read(ROOT/'local-ai/characters.json')
     rng = random.Random(20261115)
@@ -156,12 +172,15 @@ def corpus(extra=None):
             rows.append({'affection':45,'mood':'calm','energy':3,'sleeping':False,'condition':'normal',
                          'meaning':'user-added',**row,'authorship':'user-added-own-training'})
         extra_sources[str(extra)]={'sha256':sha(extra)}
+    rows,quiet=spoken_rows(rows)
+    excluded.extend({'id':row['id'],'reason':'latest user policy: normal Gomi below 60 is nonverbal; not a spoken learning target'} for row in quiet)
     # Original replies remain byte-preserved in the source. This model only
     # learns spoken words; annotations, role prompts and old model output are absent.
     dump(HERE/'corpus.json', {'rows':rows, 'excluded':excluded,
          'sources':{'gomiActionsV3':{'path':str(source.relative_to(ROOT)), 'sha256':sha(source)},
                     'newDrafts':{'path':'local-ai/own/action-drafts.json','sha256':sha(HERE/'action-drafts.json')},
                     'naturalGomiDrafts':{'path':'local-ai/own/gomi-natural-drafts.json','sha256':sha(HERE/'gomi-natural-drafts.json')},
+                    'bondedRefinement':{'path':'local-ai/own/gomi-bonded-refinement.json','sha256':sha(HERE/'gomi-bonded-refinement.json')},
                     'extraTraining':extra_sources},
          'pretrainedParents':[], 'teacherModel':None,
          'dataAuthorship':'User-original verbatim rows and explicitly labeled AI coding-assistant drafts; not all human-authored or human-approved.'})
@@ -243,6 +262,7 @@ def train(args):
             'sourceCorpusSha256':sha(HERE/'corpus.json'),'trainerSha256':sha(Path(__file__)),
             'learningAlgorithmSha256':sha(HERE/'neural.py'),
             'seed':args.seed,'epochs':args.epochs,'rows':len(rows),'wordExamples':len(y),
+            'speechPolicy':'normal Gomi below affection 60 is nonverbal before inference; cold/unwell source exceptions preserved',
             'parameters':sum(p.size for p in model.params.values()),'trainingSeconds':round(time.perf_counter()-started,3),
             'trainingLoss':loss_value, 'commercialLegalClearance':False},
     }

@@ -7,6 +7,8 @@ test('semantic gate catches the reported sleep/food/play hybrid and preserves na
  assert.ok(reactionIssues(state,'나 졸리단 말이야. 조금만 더 같이 해볼까?').includes('food-play-hybrid'));
  assert.ok(reactionIssues({...state,energy:0},'지금 먹으러 갈게.').includes('exhausted-wakes-to-eat'));
  assert.deepEqual(reactionIssues({...state,energy:0},'간식은 깬 다음에 먹을게.'),[]);
+ assert.deepEqual(reactionIssues({...state,energy:0},'집사, 나 조금 더 자도 되지?'),[]);
+ assert.ok(reactionIssues({...state,energy:0},'조금 더 자도 돼? 지금 먹으러 갈게.').includes('exhausted-wakes-to-eat'));
  assert.deepEqual(reactionIssues({...state,action:'meal',energy:0},'밥은 옆에 놔둬.'),[]);
  assert.deepEqual(reactionIssues({...state,action:'pet',sleeping:false},'천천히 해.'),[]);
 });
