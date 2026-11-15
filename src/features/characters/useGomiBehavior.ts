@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { GOMI_SLEEP_TOUCH_WINDOW_MS, gomiHomeMotion, gomiInteractionMotion, gomiMotionDuration, gomiSleepLine, gomiSleepReaction, isGomiAngry, isGomiSleeping, type GomiMotion } from "./gomiBehavior";
+import { GOMI_SLEEP_TOUCH_WINDOW_MS, gomiHomeMotion, gomiInteractionMotion, gomiMotionDuration, gomiSleepLine, gomiSleepReaction, gomiFoodSequence, isGomiAngry, isGomiSleeping, type GomiMotion } from "./gomiBehavior";
 import type { CompanionAction } from "./companionActivities";
 
 // Sleep poses stay local; Home persists only explicit relationship interactions.
@@ -13,9 +13,11 @@ export function useGomiBehavior(enabled: boolean, affection: number, today: stri
   entryDate.current = today;
   const interactions = useRef(0);
   const sleepTouches = useRef({ count:0, lastAt:0 });
+  const foodSequence=useRef<GomiMotion[]>([]);
   useEffect(() => {
     interactions.current = 0;
     sleepTouches.current = { count:0, lastAt:0 };
+    foodSequence.current=[];
     const initial = enabled ? gomiHomeMotion(entryDate.current) : "idle";
     rest.current = initial === "stretch" ? "idle" : initial;
     setMotion(initial);
@@ -28,10 +30,11 @@ export function useGomiBehavior(enabled: boolean, affection: number, today: stri
   }, []);
   useEffect(() => {
     if (!enabled || !visible || motion === rest.current) return;
-    const timer = window.setTimeout(() => setMotion(rest.current), gomiMotionDuration(motion));
+    const timer = window.setTimeout(() => setMotion(foodSequence.current.shift()||rest.current), gomiMotionDuration(motion));
     return () => window.clearTimeout(timer);
   }, [enabled, visible, motion, sequence]);
   function react(): { line?:string; sleeping:boolean; disturbed:boolean } {
+    foodSequence.current=[];
     if (isGomiSleeping(rest.current)) {
       const now = Date.now();
       const touches = now - sleepTouches.current.lastAt <= GOMI_SLEEP_TOUCH_WINDOW_MS ? sleepTouches.current.count + 1 : 1;
@@ -44,9 +47,18 @@ export function useGomiBehavior(enabled: boolean, affection: number, today: stri
     setSequence(value => value + 1);
     return { sleeping:false, disturbed:false };
   }
-  function activity(action: CompanionAction) {
+  function activity(action: CompanionAction,energy=3) {
     if (!enabled) return { sleeping:false, disturbed:false };
+    foodSequence.current=[];
     if (isGomiSleeping(rest.current)) {
+      if(action==="treat"){
+        const steps=gomiFoodSequence(rest.current,energy);
+        rest.current=steps.at(-1)!;
+        foodSequence.current=steps.slice(1,-1);
+        sleepTouches.current={count:0,lastAt:0};
+        setMotion(steps[0]!);setSequence(value=>value+1);
+        return {sleeping:energy<=0,disturbed:false};
+      }
       const disturbed = action !== "rest";
       sleepTouches.current = { count:disturbed ? 3 : 0, lastAt:Date.now() };
       setMotion(disturbed ? gomiSleepReaction(rest.current,3) : rest.current);

@@ -20,7 +20,7 @@ export const lastChatReaction = (id: string) => reactionResults.get(id);
 export type ChatModelStatus = {
   phase: "unsupported" | "missing" | "downloading" | "verifying" | "ready" | "generating" | "error";
   supported: boolean; installed: boolean; downloaded: number; total: number; message: string;
-  model?: "legacy" | "dialogue" | "gomi-action-v3" | "own-character-v1" | "missing"; upgradeAvailable?: boolean; bundled?: boolean;
+  model?: "legacy" | "dialogue" | "gomi-action-v3" | "own-character-v3" | "missing"; upgradeAvailable?: boolean; bundled?: boolean;
   lastOutcome?: "none" | "running" | "success" | "cancelled" | "error"; lastError?: string; lastAt?: number;
   runtime?: { resident?: boolean; reused?: boolean; loadCount?: number; releaseCount?: number; stage?: string; gomiLoraApplied?: boolean; gomiActionApplied?: boolean; ownModelApplied?: boolean;
     gpuAvailable?: boolean; gpuAttempted?: boolean; gpuUsed?: boolean; gpuLayers?: number; gpuFallback?: boolean;

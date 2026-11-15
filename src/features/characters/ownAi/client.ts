@@ -61,7 +61,7 @@ export function stopOwnAi() {
 }
 export function ownAiStatus() {
   return {phase:metrics.stage==="error"?"error":"ready",supported:typeof Worker!=="undefined",installed:metrics.stage!=="error",downloaded:0,
-    total:metrics.bytes,message:"곰고미 전용 AI가 앱에 포함되어 있어요. 인터넷 없이 새 한마디를 만들어요.",model:"own-character-v1",bundled:true,upgradeAvailable:false,
+    total:metrics.bytes,message:"곰고미 전용 AI가 앱에 포함되어 있어요. 인터넷 없이 새 한마디를 만들어요.",model:"own-character-v3",bundled:true,upgradeAvailable:false,
     lastOutcome:metrics.lastOutcome,lastError:metrics.lastError,lastAt:metrics.lastAt,
     runtime:{resident:Boolean(worker),loadCount:metrics.loadCount,stage:metrics.stage,loadMs:metrics.loadMs,totalMs:metrics.totalMs,
       generationMs:metrics.generationMs,ownModelApplied:metrics.lastOutcome==="success"}};

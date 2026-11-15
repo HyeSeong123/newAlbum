@@ -1,205 +1,167 @@
-// Gomgomi-owned neural inference. No external model, tokenizer or AI engine.
+// First-party word neural inference. Learned scene/intent support is a word
+// transition constraint, never a list of complete replies to select from.
 export type OwnInput = {
-  characterId: string; action: string; affection: number; mood?: string; energy?: number;
-  sleeping?: boolean; condition?: "normal" | "cold" | "unwell"; previous?: string[];
+  characterId:string;action:string;affection:number;mood?:string;energy?:number;
+  sleeping?:boolean;condition?:"normal"|"cold"|"unwell";previous?:string[];
 };
-type Matrix = { rows: number; cols: number; values: Float32Array };
-type Packed = { shape: number[]; values: string; scales: string };
-export type OwnModel = {
-  vocab: string[]; features: Map<string, number>; characters: string[]; actions: string[];
-  embedding: number; hidden: number; weights: Record<string, Matrix>;
-  nextTokens: Array<Set<number>>;
+type Matrix={rows:number;cols:number;values:Float32Array};
+type Packed={shape:number[];values:string;scales:string};
+export type OwnModel={
+  vocab:string[];tokenIds:Map<string,number>;features:Map<string,number>;characters:string[];actions:string[];
+  weights:Record<string,Matrix>;grammars:Array<Map<number,Set<number>>>;scenes:Map<string,number[]>;
 };
-const invalid = () => new Error("AI_OWN_MODEL_INVALID");
-function unpack(item: Packed | undefined, shape: number[]): Matrix {
-  if (!item || JSON.stringify(item.shape) !== JSON.stringify(shape) || typeof item.values !== "string" || typeof item.scales !== "string") throw invalid();
-  const raw = Uint8Array.from(atob(item.values), x => x.charCodeAt(0));
-  const scales = Uint8Array.from(atob(item.scales), x => x.charCodeAt(0));
-  const rows = shape[0], cols = shape.length > 1 ? shape[1] : 1;
-  if (raw.length !== rows * cols || scales.length !== rows * 4) throw invalid();
-  const view = new DataView(scales.buffer), signed = new Int8Array(raw.buffer), values = new Float32Array(raw.length);
-  for (let r = 0; r < rows; r++) {
-    const scale = view.getFloat32(r * 4, true);
-    if (!Number.isFinite(scale) || scale <= 0 || scale > 100) throw invalid();
-    for (let c = 0; c < cols; c++) values[r * cols + c] = signed[r * cols + c] * scale;
+const invalid=()=>new Error("AI_OWN_MODEL_INVALID");
+function unpack(item:Packed|undefined,shape:number[]):Matrix{
+  if(!item||JSON.stringify(item.shape)!==JSON.stringify(shape)||typeof item.values!=="string"||typeof item.scales!=="string")throw invalid();
+  const raw=Uint8Array.from(atob(item.values),x=>x.charCodeAt(0)),scales=Uint8Array.from(atob(item.scales),x=>x.charCodeAt(0));
+  const rows=shape[0],cols=shape.length>1?shape[1]:1;
+  if(raw.length!==rows*cols||scales.length!==rows*4)throw invalid();
+  const view=new DataView(scales.buffer),signed=new Int8Array(raw.buffer),values=new Float32Array(raw.length);
+  for(let r=0;r<rows;r++){
+    const scale=view.getFloat32(r*4,true);if(!Number.isFinite(scale)||scale<=0||scale>100)throw invalid();
+    for(let c=0;c<cols;c++)values[r*cols+c]=signed[r*cols+c]*scale;
   }
-  return { rows, cols, values };
+  return {rows,cols,values};
 }
-export function loadOwnModel(raw: unknown): OwnModel {
-  const m = raw as { format?: string; context?: number; embedding?: number; hidden?: number;
-    vocab?: string[]; features?: string[]; characters?: string[]; actions?: string[]; nextTokens?: number[][];
-    weights?: Record<string, Packed>; provenance?: { initialization?: string; pretrainedParents?: string[]; teacherModel?: string | null } };
-  if (!m || m.format !== "gomgomi-own-wordnet-v2" || m.context !== 4 || m.embedding !== 24 || m.hidden !== 112 ||
-      !Array.isArray(m.vocab) || m.vocab.length < 10 || m.vocab.length > 5000 || m.vocab.slice(0,4).join() !== "<bos>,<eos>,<pad>,<unk>" ||
-      new Set(m.vocab).size !== m.vocab.length || !Array.isArray(m.features) || !Array.isArray(m.characters) || !Array.isArray(m.actions) ||
-      m.vocab[4]!=="<next>" ||
-      m.provenance?.initialization !== "random" || m.provenance.pretrainedParents?.length !== 0 || m.provenance.teacherModel !== null) throw invalid();
-  const v = m.vocab.length, f = m.features.length, weights: Record<string, Matrix> = {};
-  if(!Array.isArray(m.nextTokens)||m.nextTokens.length!==v||m.nextTokens.some(row=>!Array.isArray(row)||row.some(id=>!Number.isInteger(id)||id<1||id>=v)))throw invalid();
-  const shapes: Record<string, number[]> = { "tokens.weight":[v,24], "features.weight":[f,24], "feature_bias.weight":[f,v],
-    "hidden.weight":[112,120], "hidden.bias":[112], "output.weight":[v,112], "output.bias":[v] };
-  for (const [key,shape] of Object.entries(shapes)) weights[key] = unpack(m.weights?.[key],shape);
-  return { vocab:m.vocab, features:new Map(m.features.map((name,i) => [name,i])), characters:m.characters, actions:m.actions,
-    embedding:24, hidden:112, weights, nextTokens:m.nextTokens.map(row=>new Set(row)) };
-}
-export function ownFeatureNames(input: OwnInput, clause=0): string[] {
-  const tier = input.affection >= 60 ? "close" : input.affection >= 30 ? "familiar" : "distant";
-  const state = input.sleeping ? input.action === "rest" ? "asleep-quiet" : "asleep-disturbed" : "awake";
-  return ["character:"+input.characterId, "action:"+input.action, "tier:"+tier, "state:"+state,
-    "condition:"+(input.condition || "normal"), "mood:"+(input.mood || "calm"), "energy:"+((input.energy ?? 3) <= 1 ? "low" : "normal"), "clause:"+clause];
-}
-function conditioned(model: OwnModel, input: OwnInput, clause=0) {
-  if (!model.characters.includes(input.characterId)) throw new Error("AI_CHARACTER_UNTRAINED");
-  if (!model.actions.includes(input.action)) throw new Error("AI_ACTION_UNTRAINED");
-  if (!Number.isFinite(input.affection) || input.affection < 0 || input.affection > 100) throw new Error("AI_STATE_INVALID");
-  const ids = ownFeatureNames(input,clause).map(name => {
-    const id = model.features.get(name);
-    if (id == null) throw new Error("AI_STATE_UNTRAINED:"+name);
-    return id;
+export function loadOwnModel(raw:unknown):OwnModel{
+  const m=raw as {format?:string;context?:number;embedding?:number;hidden?:number;supportOrder?:number;
+    vocab?:string[];features?:string[];characters?:string[];actions?:string[];grammars?:Array<Array<[number,number,number[]]>>;
+    scenes?:Record<string,number[]>;weights?:Record<string,Packed>;
+    provenance?:{initialization?:string;pretrainedParents?:string[];teacherModel?:string|null}};
+  if(!m||m.format!=="gomgomi-own-wordnet-v3"||m.context!==4||m.embedding!==24||m.hidden!==112||m.supportOrder!==2||
+    !Array.isArray(m.vocab)||m.vocab.length<10||m.vocab.length>5000||m.vocab.slice(0,4).join()!=="<bos>,<eos>,<pad>,<unk>"||
+    new Set(m.vocab).size!==m.vocab.length||!Array.isArray(m.features)||new Set(m.features).size!==m.features.length||
+    !Array.isArray(m.characters)||!Array.isArray(m.actions)||!Array.isArray(m.grammars)||!m.grammars.length||m.grammars.length>10000||
+    !m.scenes||typeof m.scenes!=="object"||m.provenance?.initialization!=="random"||
+    m.provenance.pretrainedParents?.length!==0||m.provenance.teacherModel!==null)throw invalid();
+  const v=m.vocab.length,f=m.features.length,weights:Record<string,Matrix>={};
+  const shapes:Record<string,number[]>={"tokens.weight":[v,24],"features.weight":[f,24],"feature_bias.weight":[f,v],
+    "hidden.weight":[112,120],"hidden.bias":[112],"output.weight":[v,112],"output.bias":[v]};
+  for(const [key,shape] of Object.entries(shapes))weights[key]=unpack(m.weights?.[key],shape);
+  const grammars=m.grammars.map(table=>{
+    if(!Array.isArray(table)||!table.length)throw invalid();
+    const result=new Map<number,Set<number>>();
+    for(const row of table){
+      if(!Array.isArray(row)||row.length!==3)throw invalid();
+      const [a,b,next]=row;
+      if(!Number.isInteger(a)||a<0||a>=v||!Number.isInteger(b)||b<0||b>=v||!Array.isArray(next)||!next.length||
+        next.some(id=>!Number.isInteger(id)||id<1||id>=v||id===2||id===3)||result.has(a*v+b))throw invalid();
+      result.set(a*v+b,new Set(next));
+    }
+    return result;
   });
-  const emb = new Float32Array(24), bias = new Float32Array(model.vocab.length);
-  for (const id of ids) {
-    const e = model.weights["features.weight"].values, b = model.weights["feature_bias.weight"].values;
-    for (let j = 0; j < emb.length; j++) emb[j] += e[id * 24 + j] / ids.length;
-    for (let j = 0; j < bias.length; j++) bias[j] += b[id * bias.length + j] / ids.length;
+  const scenes=new Map<string,number[]>();
+  for(const [key,ids] of Object.entries(m.scenes)){
+    if(key.split("|").length!==6||!Array.isArray(ids)||!ids.length||ids.some(id=>!Number.isInteger(id)||id<0||id>=grammars.length))throw invalid();
+    scenes.set(key,ids);
   }
-  const hiddenBase = new Float32Array(112), hw = model.weights["hidden.weight"].values, hb = model.weights["hidden.bias"].values;
-  for (let h = 0; h < 112; h++) {
-    let value = hb[h];
-    for (let j = 0; j < 24; j++) value += emb[j] * hw[h * 120 + 96 + j];
-    hiddenBase[h] = value;
-  }
-  return { bias, hiddenBase };
+  if(!scenes.size||scenes.size>10000)throw invalid();
+  return {vocab:m.vocab,tokenIds:new Map(m.vocab.map((word,id)=>[word,id])),features:new Map(m.features.map((name,id)=>[name,id])),
+    characters:m.characters,actions:m.actions,weights,grammars,scenes};
 }
-function logits(model: OwnModel, history: number[], state: ReturnType<typeof conditioned>) {
-  const hidden = new Float32Array(112), embed = model.weights["tokens.weight"].values;
-  const hw = model.weights["hidden.weight"].values, ow = model.weights["output.weight"].values, ob = model.weights["output.bias"].values;
-  for (let h = 0; h < 112; h++) {
-    let value = state.hiddenBase[h];
-    for (let p = 0; p < 4; p++) for (let j = 0; j < 24; j++) value += embed[history[p] * 24 + j] * hw[h * 120 + p * 24 + j];
-    hidden[h] = Math.tanh(value);
-  }
-  const output = new Float32Array(model.vocab.length);
-  for (let word = 0; word < output.length; word++) {
-    let value = ob[word] + state.bias[word];
-    for (let h = 0; h < 112; h++) value += hidden[h] * ow[word * 112 + h];
-    output[word] = value;
-  }
-  return output;
+function tier(input:OwnInput):string{
+  const a=input.affection;
+  if(input.characterId==="gomi")return a>=90?"bonded":a>=60?"close":a>=30?"familiar":a>=20?"reserved":"distant";
+  return a>=60?"close":a>=30?"familiar":"distant";
 }
-const punctuation = /^[.!?…]$/;
-const normalized = (text: string) => text.normalize("NFKC").replace(/[\p{P}\p{S}\s]/gu, "");
-function prohibited(input: OwnInput, token: string): boolean {
-  if (/[<>{}]|(?:집사|사용자)에게|고미는|건드지/.test(token)) return true;
-  if(input.characterId==="gomi"&&(!input.condition||input.condition==="normal")&&/걱정|추워|춥|아파|아프|아픈/.test(token))return true;
-  if (input.sleeping) {
-    if(!["touch","pet"].includes(input.action)&&/쓰다듬|만지|손길|손대/.test(token))return true;
-    if(input.action==="rest"&&/깨워|깨우|자꾸/.test(token))return true;
-    if(input.mood!=="irritated"&&/자꾸/.test(token))return true;
-    return /산책|간식|먹을|먹자|놀자|출발|나가자|깨워줄/.test(token);
+function energy(input:OwnInput):string{
+  const value=input.energy??3;
+  return value<=0?"exhausted":input.sleeping||value<=1?"low":"normal";
+}
+export function ownSceneKey(input:OwnInput):string{
+  return [input.characterId,input.action,tier(input),input.sleeping?"asleep":"awake",input.condition||"normal",energy(input)].join("|");
+}
+export function ownFeatureNames(input:OwnInput):string[]{
+  const state=input.sleeping?"asleep":"awake",condition=input.condition||"normal",fatigue=energy(input);
+  return ["character:"+input.characterId,"action:"+input.action,"tier:"+tier(input),"state:"+state,"condition:"+condition,
+    "mood:"+(input.mood||"calm"),"energy:"+fatigue,"scenario:"+input.action+"/"+state+"/"+condition+"/"+fatigue];
+}
+function conditioned(model:OwnModel,input:OwnInput){
+  if(!model.characters.includes(input.characterId))throw new Error("AI_CHARACTER_UNTRAINED");
+  if(!model.actions.includes(input.action))throw new Error("AI_ACTION_UNTRAINED");
+  if(!Number.isFinite(input.affection)||input.affection<0||input.affection>100||
+    !Number.isInteger(input.energy??3)||(input.energy??3)<0||(input.energy??3)>5)throw new Error("AI_STATE_INVALID");
+  const ids=ownFeatureNames(input).map(name=>{const id=model.features.get(name);if(id==null)throw new Error("AI_STATE_UNTRAINED:"+name);return id;});
+  const emb=new Float32Array(24),bias=new Float32Array(model.vocab.length);
+  for(const id of ids){
+    const e=model.weights["features.weight"].values,b=model.weights["feature_bias.weight"].values;
+    for(let j=0;j<24;j++)emb[j]+=e[id*24+j]/ids.length;
+    for(let j=0;j<bias.length;j++)bias[j]+=b[id*bias.length+j]/ids.length;
   }
-  if(input.characterId==="gomi"&&input.action==="pet"&&input.affection<30&&/좋아|괜찮|더.*쓰다듬/.test(token))return true;
-  if (input.condition === "cold" || input.condition === "unwell") return /안아줄|안아줄게|안아줄까|내가.*안아/.test(token);
-  if(input.action==="treat"){
-    if(input.characterId==="gomi"&&/햇살|햇빛/.test(token))return true;
-    if(input.characterId!=="gomi"&&/간식|먹을|먹어|한입|한 입|내몫|내 몫/.test(token))return true;
+  const hiddenBase=new Float32Array(112),hw=model.weights["hidden.weight"].values,hb=model.weights["hidden.bias"].values;
+  for(let h=0;h<112;h++){let value=hb[h];for(let j=0;j<24;j++)value+=emb[j]*hw[h*120+96+j];hiddenBase[h]=value;}
+  return {bias,hiddenBase};
+}
+function scores(model:OwnModel,history:number[],state:ReturnType<typeof conditioned>,allowed:Set<number>){
+  const hidden=new Float32Array(112),embed=model.weights["tokens.weight"].values,hw=model.weights["hidden.weight"].values;
+  const ow=model.weights["output.weight"].values,ob=model.weights["output.bias"].values;
+  for(let h=0;h<112;h++){
+    let value=state.hiddenBase[h];
+    for(let p=0;p<4;p++)for(let j=0;j<24;j++)value+=embed[history[p]*24+j]*hw[h*120+p*24+j];
+    hidden[h]=Math.tanh(value);
   }
-  const foreign: Record<string, RegExp> = {
-    touch:/산책|간식|먹을|먹자|출발|나가자/,
-    walk:/간식|먹을|먹자|쓰다듬|잘게|자게|놀자/,
-    treat:/산책|쓰다듬|잘게|자게|놀자|출발|나가자|줄게|줄까|주겠/,
-    pet:/산책|간식|먹을|먹자|출발|나가자|놀자/,
-    play:/간식|먹을|먹자|쓰다듬|잘게|자게|산책/,
-    rest:/산책|간식|먹을|먹자|출발|나가자|놀자|신났/,
-  };
-  return Boolean(foreign[input.action]?.test(token));
+  return [...allowed].map(id=>{
+    let score=ob[id]+state.bias[id];for(let h=0;h<112;h++)score+=hidden[h]*ow[id*112+h];return {id,score};
+  }).sort((a,b)=>b.score-a.score);
 }
-function stopsPetting(input:OwnInput,line:string):boolean {
-  return input.action==="pet"&&/쓰다듬지|만지지|손.*치워|그만|멈춰|거기까지만/.test(line);
+const tokens=(line:string)=>line.match(/[^\s.!?…]+|[.!?…]/gu)||[];
+const normalized=(line:string)=>line.normalize("NFKC").replace(/[\p{P}\p{S}\s]/gu,"");
+const render=(words:string[])=>words.join(" ").replace(/\s+([.!?…])/g,"$1").trim();
+export function supportsOwnLine(model:OwnModel,input:OwnInput,line:string):boolean{
+  let groups=model.scenes.get(ownSceneKey(input))||[],a=0,b=0;
+  for(const token of [...tokens(line),"<eos>"]){
+    const next=model.tokenIds.get(token);if(next==null)return false;
+    groups=groups.filter(id=>model.grammars[id].get(a*model.vocab.length+b)?.has(next));
+    if(!groups.length)return false;a=b;b=next;
+  }
+  return true;
 }
-function contradicts(input:OwnInput,line:string):boolean {
-  const boundary=line.search(/[.!?]/);
-  if(boundary<0)return false;
-  const first=line.slice(0,boundary+1),second=line.slice(boundary+1);
-  // A clear request to stop is already a complete short reaction. Keep its
-  // boundary unambiguous instead of adding a potentially permissive clause.
-  if(stopsPetting(input,first)&&second.trim())return true;
-  return /내 옆|네 옆|곁에 있어/.test(first)&&/떨어져|멀리|혼자.*있/.test(second);
-}
-function acceptable(input: OwnInput, line: string): boolean {
-  if (!/[가-힣]/.test(line) || Array.from(line).length < 4 || Array.from(line).length > 50) return false;
-  const flat = normalized(line);
-  if ((input.previous || []).some(previous => normalized(previous) === flat)) return false;
-  if(contradicts(input,line))return false;
+function acceptable(input:OwnInput,line:string,repeatWindow=12):boolean{
+  if(!/[가-힣]/.test(line)||Array.from(line).length<4||Array.from(line).length>50||/[<>{}]|고미는|건드지/.test(line))return false;
+  if((input.previous||[]).slice(-repeatWindow).some(previous=>normalized(previous)===normalized(line)))return false;
   const sentences=line.match(/[^.!?]+[.!?]+|[^.!?]+$/gu)||[];
-  if(sentences.length>1){
-    const first=sentences[0]!,second=sentences.slice(1).join(" ");
-    const firstFlat=normalized(first),secondFlat=normalized(second);
-    if(firstFlat===secondFlat||firstFlat.endsWith(secondFlat)||secondFlat.endsWith(firstFlat))return false;
-    const tail=(text:string)=>text.replace(/[.!?…]/g,"").trim().split(/\s+/).slice(-2).join(" ");
-    if(tail(first).includes(" ")&&tail(first)===tail(second))return false;
+  if(sentences.length>2)return false;
+  if(sentences.length===2){
+    const a=normalized(sentences[0]!),b=normalized(sentences[1]!);
+    if(a===b||a.endsWith(b)||b.endsWith(a))return false;
   }
-  if (input.condition === "cold" || input.condition === "unwell") return /안아줘|안고/.test(line);
-  if (input.sleeping) return /잘|자게|자고|졸|조용|깨우|쉬/.test(line);
-  const cues: Record<string, RegExp> = { walk:/산책|걸|나가|나갈|밖|먼저|빨리|기다|문 앞/,
-    treat:/간식|먹|놓아|하나|내 몫|더 줘|먼저 줘|나 줘|빨리 줘|받을/,
-    pet:/쓰다듬|손|만지|살살|누르|거기|그만|세게|멈춰|어색/,
-    play:/놀|놀이|먼저|차례|시작|같이|한 번/,
-    rest:/쉬|조용|옆|자리|편|기대|서두|있어|있을/ };
-  if(input.action==="treat"&&input.characterId!=="gomi")return /햇살|햇빛|빛|따뜻|포근|선물/.test(line)&&!/간식|먹을|먹어/.test(line);
-  return !cues[input.action] || cues[input.action].test(line);
+  return true;
 }
-export function generateOwnLine(model: OwnModel, input: OwnInput, seed = Date.now(), cancelled = () => false): string {
-  if (cancelled()) throw new Error("AI_CANCELLED");
-  const states = [conditioned(model,input,0),conditioned(model,input,1)], started = performance.now();
-  let randomState = (seed | 0) || 1;
-  const random = () => { randomState ^= randomState << 13; randomState ^= randomState >>> 17; randomState ^= randomState << 5; return (randomState >>> 0) / 4294967296; };
-  const render=(words:string[])=>words.join(" ").replace(/\s+([.!?…])/g,"$1").trim();
-  const finish=(words:string[])=>{
-    let line=render(words);if(!/[.!?…]$/.test(line))line+=".";
-    return acceptable(input,line)?line:undefined;
-  };
-  let evaluated=0;
-  // Sample each continuation once. When a complete line repeats a recent
-  // reply or fails a state check, backtrack to an untried learned word edge
-  // instead of restarting and repeatedly drawing the same rejected sentence.
-  function decode(history:number[],words:string[],clause:number,step:number):string|undefined {
-      if (cancelled()) throw new Error("AI_CANCELLED");
-      if (performance.now()-started > 700) throw new Error("AI_OWN_TIMEOUT");
-      if(step>=22||evaluated>=256)return undefined;
-      evaluated++;
-      const scores = logits(model,history,states[clause]), candidates: Array<{id:number; score:number}> = [];
-      for (let id = 1; id < scores.length; id++) {
-        if(!model.nextTokens[history[3]].has(id))continue;
-        const token = model.vocab[id];
-        if(id===4&&(clause!==0||!words.length||!punctuation.test(words.at(-1)!)||stopsPetting(input,render(words))))continue;
-        if (id === 2 || id === 3 || (id === 1 && words.length < 2) || (punctuation.test(token) && (!words.length || punctuation.test(words.at(-1)!))) ||
-            (id > 4 && prohibited(input,token)) || (id>4 && !punctuation.test(token) && words.slice(-2).includes(token))) continue;
-        const score = scores[id];
-        let position = candidates.findIndex(item => score > item.score);
-        if (position < 0) position = candidates.length;
-        if (position < 8) { candidates.splice(position,0,{id,score}); if (candidates.length > 8) candidates.pop(); }
-      }
+export function generateOwnLine(model:OwnModel,input:OwnInput,seed=Date.now(),cancelled=()=>false):string{
+  if(cancelled())throw new Error("AI_CANCELLED");
+  const state=conditioned(model,input),initialGroups=model.scenes.get(ownSceneKey(input));
+  if(!initialGroups)throw new Error("AI_SCENE_UNTRAINED");
+  const started=performance.now();let randomState=(seed|0)||1,evaluated=0,repeatWindow=12;
+  const random=()=>{randomState^=randomState<<13;randomState^=randomState>>>17;randomState^=randomState<<5;return(randomState>>>0)/4294967296;};
+  function decode(history:number[],words:string[],groups:number[],step:number):string|undefined{
+    if(cancelled())throw new Error("AI_CANCELLED");
+    if(performance.now()-started>700)throw new Error("AI_OWN_TIMEOUT");
+    if(step>=24||evaluated>=256)return undefined;evaluated++;
+    const edge=history[2]*model.vocab.length+history[3],allowed=new Set<number>();
+    for(const id of groups)for(const next of model.grammars[id].get(edge)||[])allowed.add(next);
+    const count=words.filter(word=>/^[.!?]$/.test(word)).length;
+    const candidates=scores(model,history,state,allowed).filter(({id})=>
+      id===1?words.length>=2:count<2&&!/[<>{}]|고미는|건드지/.test(model.vocab[id]));
+    // Keep every supported candidate: a top-k cutoff could hide all fresh
+    // continuations after the recent-reply filter rejects common completions.
     while(candidates.length&&evaluated<256){
-      const temperature = evaluated < 96 ? 0.68 : 0.82;
-      const weights = candidates.map(item => Math.exp((item.score-candidates[0].score)/temperature));
-      let draw = random() * weights.reduce((sum,value) => sum+value,0), selected = 0;
-      for (let i = 0; i < candidates.length; i++) { draw -= weights[i]; if (draw <= 0) { selected=i; break; } }
+      const weights=candidates.map(item=>Math.exp((item.score-candidates[0].score)/0.7));
+      let draw=random()*weights.reduce((sum,value)=>sum+value,0),selected=candidates.length-1;
+      for(let i=0;i<candidates.length;i++){draw-=weights[i];if(draw<=0){selected=i;break;}}
       const chosen=candidates.splice(selected,1)[0].id;
-      let line:string|undefined;
-      if(chosen===1)line=finish(words);
-      else if(chosen===4)line=decode([0,0,0,0],words,1,step+1);
-      else{
-        const next=[...words,model.vocab[chosen]],current=render(next);
-        if(Array.from(current).length>50||contradicts(input,current))continue;
-        if(next.filter(word=>/^[.!?]$/.test(word)).length>=2||(current.length>=44&&/[.!?…]$/.test(current)))line=finish(next);
-        else line=decode([...history.slice(1),chosen],next,clause,step+1);
-      }
-      if(line)return line;
+      if(chosen===1){const line=render(words);if(acceptable(input,line,repeatWindow)&&supportsOwnLine(model,input,line))return line;continue;}
+      const next=[...words,model.vocab[chosen]];if(Array.from(render(next)).length>50)continue;
+      const remaining=groups.filter(id=>model.grammars[id].get(edge)?.has(chosen));
+      const line=decode([...history.slice(1),chosen],next,remaining,step+1);if(line)return line;
     }
     return undefined;
   }
-  const line=decode([0,0,0,0],[],0,0);
-  if(line)return line;
+  let line=decode([0,0,0,0],[],initialGroups,0);if(line)return line;
+  // A newly taught scene may have fewer than twelve valid ways to say it.
+  // Re-generate from the same learned scene while retaining the latest three
+  // exclusions. Never substitute another scene or a cached/authored reply.
+  if((input.previous?.length||0)>3){
+    repeatWindow=3;evaluated=0;line=decode([0,0,0,0],[],initialGroups,0);if(line)return line;
+  }
   throw new Error("AI_OWN_NO_VALID_LINE");
 }

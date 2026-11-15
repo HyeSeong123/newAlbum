@@ -65,6 +65,9 @@ export function companionActionLabel(definition: CharacterDefinition, action: Co
   };
   return labels[action];
 }
+export function companionDisturbsSleep(action:CompanionAction,sleeping:boolean){
+  return sleeping&&action!=="rest"&&action!=="treat";
+}
 
 // The five lines for each character correspond to walk, treat, pet, play and rest.
 // This makes every character recognizable even without the optional language model.
@@ -122,6 +125,13 @@ export function performCompanionActivity(definition: CharacterDefinition, previo
   };
   const tier = gomiAffinity(affection);
   if (definition.type === "gomi" && state.sleeping) {
+    if(action==="treat"){
+      // An offer is not a completed meal. Preserve the pre-offer fatigue so a
+      // sleeping exhausted Gomi does not gain energy before choosing to eat.
+      memory.energy=previous.energy;
+      memory.mood=previous.energy<=0?"sleepy":"curious";
+      return {line:previous.energy<=0?"너무 졸려. 간식은 이따 줘.":"간식이야? 눈 좀 뜨고 갈게.",memory};
+    }
     memory.mood = action === "rest" ? "sleepy" : "irritated";
     const restLines = ["……쌔근.","조용히… 잘게.","쉬게 둬서 고마워.","네 옆이라… 편하네.","조금 더 같이 쉬자."];
     const annoyedLines = ["휴… 자는데 건들지 마.","자잖아. 나중에 해.","지금은 졸려. 조금만 기다려.","지금은 더 자고 싶어… 옆에만 있어 줘.","너라도 지금 깨우면 서운해… 조금만 더 잘게."];

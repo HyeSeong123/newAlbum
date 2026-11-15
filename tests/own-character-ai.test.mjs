@@ -48,7 +48,7 @@ test('sleeping Gomi keeps producing distinct reactions at low affection after re
   '조금만 조용히 해줘. 더 잘래.','조금만 더 자게 해줘.','왜 불러? 더 잘래.',
   '나 졸리단 말이야. 나 좀 더 자게 해줘.','조금만 조용히 해줘. 지금은 조용히 해.','나 졸리단 말이야. 조금 더 잘래.'];
  const line=engine.generateOwnLine(ai,{...input,action:'touch',affection:0,mood:'sleepy',energy:1,sleeping:true,previous},20261448);
- assert.ok(!previous.includes(line));assert.match(line,/잘|자게|자고|졸|조용|깨우|쉬/);
+ assert.ok(!previous.includes(line));assert.match(line,/잘|자게|자고|졸|조용|깨우|쉬|안 일어날/);
  for(const mood of ['sleepy','irritated']){
   const recent=[];
   for(let index=0;index<16;index++){
@@ -58,30 +58,62 @@ test('sleeping Gomi keeps producing distinct reactions at low affection after re
   }
  }
 });
-test('petting can decline touch without exhausting contradictory second clauses',()=>{
+test('petting keeps one coherent stance instead of stopping and inviting touch together',()=>{
  const ai=engine.loadOwnModel(model);
  const reply=engine.generateOwnLine(ai,{...input,action:'pet',affection:45},20261146);
  assert.match(reply,/쓰다듬|손|만지|살살|멈춰|거기|그만|어색/);
- assert.doesNotMatch(reply,/멈춰[^.!?]*[.!?]\s*\S/);
+ assert.doesNotMatch(reply,/(?:그만|치워|멈춰)[^.!?]*[.!?].*(?:더 쓰다듬어|만져줘|조금만 더)/);
 });
-test('learned word connections constrain syntax without a whole-reply lookup table',()=>{
- const ai=engine.loadOwnModel(model),ids=new Map(ai.vocab.map((word,index)=>[word,index]));
+test('the reported sleep/food/play hybrid is impossible under the learned scene support',()=>{
+ const ai=engine.loadOwnModel(model);
+ const state={...input,sleeping:true,mood:'sleepy',energy:1};
+ assert.equal(engine.supportsOwnLine(ai,state,'나 졸리단 말이야. 조금만 더 같이 해볼까?'),false);
+ assert.notDeepEqual(engine.ownFeatureNames(state),engine.ownFeatureNames({...state,energy:0}));
+ assert.ok(engine.ownFeatureNames({...state,energy:0}).includes('energy:exhausted'));
+});
+test('learned scene connections constrain syntax without a whole-reply lookup table',()=>{
+ const ai=engine.loadOwnModel(model);
  const reply=engine.generateOwnLine(ai,{...input,sleeping:true,mood:'sleepy',energy:0},20261828);
- const words=reply.match(/[^\s.!?…]+|[.!?…]/gu)||[];
- for(let i=1;i<words.length;i++){
-  // A period may be added after a model-generated EOS; all spoken word edges
-  // must otherwise be supported by the training data.
-  if(i===words.length-1&&words[i]==='.')continue;
-  if(/^[.!?…]$/.test(words[i-1])){assert.ok(ai.nextTokens[0].has(ids.get(words[i])));continue;}
-  assert.ok(ai.nextTokens[ids.get(words[i-1])].has(ids.get(words[i])),`${words[i-1]} -> ${words[i]}`);
- }
+ assert.equal(engine.supportsOwnLine(ai,{...input,sleeping:true,mood:'sleepy',energy:0},reply),true);
  assert.doesNotMatch(reply,/쓰다듬|손길|만지|걱정|추워|아파/);
+});
+test('sleepy food approach and exhausted continued sleep differ at every personality boundary',()=>{
+ const ai=engine.loadOwnModel(model);
+ for(const action of ['treat','meal'])for(const affection of [0,19,20,29,30,59,60,89,90,100]){
+  const recent=[];
+  for(let index=0;index<16;index++){
+   const state={...input,action,affection,sleeping:true,energy:1,mood:'sleepy',previous:recent};
+   const line=engine.generateOwnLine(ai,state,8811+index*31);
+   assert.doesNotMatch(line,/놀자|해볼까|차례|시작|산책|햇살|더 자게|계속 잘|나중에 먹|깨면 먹/);
+   assert.match(line,/먹|간식|밥|갈게|가고|가서|줘|놓아|기다려/);
+   assert.ok(!recent.includes(line));recent.push(line);if(recent.length>12)recent.shift();
+   const tired=engine.generateOwnLine(ai,{...state,energy:0,previous:[]},8811+index*31);
+   assert.match(tired,/잘|자고|자게|잠|졸|피곤|나중|이따|일어나면|깨면|깬 다음|못 일어나|조금 뒤/);
+   assert.doesNotMatch(tired,/먹으러 갈게|지금 먹을래|일어날게|먹자|같이 해볼까|놀자/);
+   assert.notEqual(tired,line);
+  }
+ }
 });
 test('the neural generator can compose utterances absent from the training corpus',()=>{
  const corpus=JSON.parse(readFileSync(new URL('../local-ai/own/corpus.json',import.meta.url),'utf8'));
  const normal=text=>text.replace(/[\p{P}\p{S}\s]/gu,'');
  const original=new Set(corpus.rows.map(row=>normal(row.reply))),ai=engine.loadOwnModel(model);
- const outputs=Array.from({length:40},(_,index)=>engine.generateOwnLine(ai,{...input,action:'touch'},20261115+index*37));
+ const outputs=[];
+ for(const action of ['touch','treat','meal','walk','rest']){
+  const previous=[];
+  for(let index=0;index<40;index++){
+   const line=engine.generateOwnLine(ai,{...input,action,previous},20261115+index*37);
+   outputs.push(line);previous.push(line);if(previous.length>12)previous.shift();
+  }
+ }
  assert.ok(new Set(outputs).size>=5);
  assert.ok(outputs.some(line=>!original.has(normal(line))),'Fresh word generation must allow new full utterance combinations');
+});
+test('a finite learned scene still generates after its larger recent window is exhausted',()=>{
+ const ai=engine.loadOwnModel(model),previous=[];
+ for(let index=0;index<24;index++){
+  const line=engine.generateOwnLine(ai,{...input,characterId:'potato',action:'touch',previous},771+index*37);
+  assert.ok(!previous.slice(-3).includes(line));assert.equal(engine.supportsOwnLine(ai,{...input,characterId:'potato',action:'touch'},line),true);
+  previous.push(line);if(previous.length>12)previous.shift();
+ }
 });

@@ -24,6 +24,7 @@ HERE = Path(__file__).resolve().parent
 TOKEN = re.compile(r"[^\s.!?…]+|[.!?…]")
 MOODS = ['calm', 'curious', 'delighted', 'playful', 'sleepy', 'irritated']
 ACTIONS = ['touch', 'walk', 'treat', 'pet', 'play', 'rest']
+GOMI_TIERS = [('distant',10),('reserved',25),('familiar',45),('close',75),('bonded',95)]
 
 
 def read(path):
@@ -32,27 +33,64 @@ def read(path):
 
 def dump(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, separators=(',', ':'))+'\n', encoding='utf-8')
+    temporary=path.with_name(path.name+'.tmp')
+    temporary.write_text(json.dumps(value, ensure_ascii=False, separators=(',', ':'))+'\n', encoding='utf-8')
+    temporary.replace(path)
 
 
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def features(row, clause=0):
+def tier(row):
     affection = row.get('affection', 45)
-    tier = 'close' if affection >= 60 else 'familiar' if affection >= 30 else 'distant'
-    sleeping = bool(row.get('sleeping'))
-    state = 'asleep-quiet' if sleeping and row['action'] == 'rest' else 'asleep-disturbed' if sleeping else 'awake'
-    return ['character:'+row['characterId'], 'action:'+row['action'], 'tier:'+tier,
-            'state:'+state, 'condition:'+row.get('condition', 'normal'),
-            'mood:'+row.get('mood','calm'), 'energy:'+('low' if row.get('energy',3)<=1 else 'normal'),
-            'clause:'+str(clause)]
+    if row['characterId']=='gomi':
+        return 'bonded' if affection>=90 else 'close' if affection>=60 else 'familiar' if affection>=30 else 'reserved' if affection>=20 else 'distant'
+    return 'close' if affection>=60 else 'familiar' if affection>=30 else 'distant'
 
 
-def clauses(row):
+def energy(row):
+    value=row.get('energy',3)
+    return 'exhausted' if value<=0 else 'low' if row.get('sleeping') or value<=1 else 'normal'
+
+
+def scene(row):
+    return '|'.join([row['characterId'],row['action'],tier(row),'asleep' if row.get('sleeping') else 'awake',row.get('condition','normal'),energy(row)])
+
+
+def features(row):
+    state='asleep' if row.get('sleeping') else 'awake'
+    condition=row.get('condition','normal')
+    return ['character:'+row['characterId'], 'action:'+row['action'], 'tier:'+tier(row),
+            'state:'+state, 'condition:'+condition,
+            'mood:'+row.get('mood','calm'), 'energy:'+energy(row),
+            'scenario:'+row['action']+'/'+state+'/'+condition+'/'+energy(row)]
+
+
+def words(row):
     text=re.sub(r'([.!?])\1+',r'\1',row['reply'].strip())
-    return [part.strip() for part in re.findall(r'[^.!?]+(?:[.!?]+|$)',text) if part.strip()][:2]
+    return TOKEN.findall(text)
+
+
+def natural_gomi_rows():
+    drafts=read(HERE/'gomi-natural-drafts.json')
+    rows=[]
+    for item in drafts['scenarios']:
+        for name,affection in GOMI_TIERS:
+            if name not in item.get('tiers',[name]):continue
+            replies=item.get('byTier',{}).get(name,item.get('default',[]))
+            for value in item['energies']:
+                for index,reply in enumerate(replies):
+                    if not 4<=len(reply)<=50 or len(re.findall(r'[.!?]',reply))>2:
+                        raise ValueError('Natural training draft must be a coherent 4–50 character, at most two sentence utterance: '+reply)
+                    row={'id':f'natural-{len(rows)}','characterId':'gomi','action':item['action'],
+                         'affection':affection,'energy':value,'sleeping':item['sleeping'],
+                         'condition':item.get('condition','normal'),'meaning':item['meaning'],
+                         'reply':reply,'authorship':'agent-authored-natural-v3',
+                         'source':'local-ai/own/gomi-natural-drafts.json'}
+                    row['mood']='sleepy' if item['sleeping'] else {'walk':'curious','treat':'delighted','meal':'delighted','play':'playful','rest':'sleepy'}.get(item['action'],'calm')
+                    rows.append(row)
+    return rows
 
 
 def corpus(extra=None):
@@ -60,21 +98,20 @@ def corpus(extra=None):
     original = [json.loads(line) for line in source.read_text(encoding='utf-8-sig').splitlines()]
     rows, excluded = [], []
     for row in original:
-        if row['action'] in ACTIONS:
-            rows.append({**row, 'condition':'normal'})
-        elif row.get('condition') in ('cold', 'unwell'):
-            rows.append({**row, 'action':'touch', 'condition':row['condition']})
+        if row.get('authorship')=='user-original-verbatim' and row.get('condition') in ('cold', 'unwell'):
+            rows.append({**row, 'action':'touch','meaning':'ask-for-warmth' if row['condition']=='cold' else 'ask-for-comfort'})
         else:
-            excluded.append({'id':row['id'], 'reason':'free-form scene lacks an unambiguous structured action; preserved in original corpus'})
+            excluded.append({'id':row['id'], 'reason':'previous home drafts replaced by coherent scene/intent drafts' if row['action'] in ACTIONS else 'free-form scene lacks an unambiguous structured action; original preserved'})
+    rows.extend(natural_gomi_rows())
     drafts = read(HERE/'action-drafts.json')
     characters = read(ROOT/'local-ai/characters.json')
     rng = random.Random(20261115)
     for cid in characters:
+        if cid=='gomi':continue
         profile = drafts['profiles'].get(cid, drafts['profiles']['default'])
         for action in ACTIONS:
             for tier, affection in [('distant',10), ('familiar',45), ('close',80)]:
-                parts = drafts['gomi'][action][tier] if cid == 'gomi' else {
-                    'starts':profile['starts'], 'ends':drafts['others'][action]}
+                parts = {'starts':profile['starts'], 'ends':drafts['others'][action]}
                 for pi, opening in enumerate(parts['starts']):
                     for ei, ending in enumerate(parts['ends']):
                         # Leave composition gaps: never train on every possible
@@ -84,43 +121,75 @@ def corpus(extra=None):
                         reply = (opening+' '+ending).strip()
                         if len(reply)>50:
                             continue
-                        rows.append({'id':f'own-draft-{len(rows)}', 'characterId':cid, 'action':action,
-                                     'affection':affection, 'energy':3, 'sleeping':False, 'mood':rng.choice(MOODS[:4]),
-                                     'condition':'normal', 'reply':reply, 'authorship':'agent-authored-own-v1',
-                                     'source':'local-ai/own/action-drafts.json'})
+                        for value in (0,1,3):
+                            rows.append({'id':f'own-draft-{len(rows)}', 'characterId':cid, 'action':action,
+                                         'affection':affection, 'energy':value, 'sleeping':False, 'mood':rng.choice(MOODS[:4]),
+                                         'condition':'normal', 'reply':reply,'meaning':'plant-'+action, 'authorship':'agent-authored-own-v1',
+                                         'source':'local-ai/own/action-drafts.json'})
         for action in ACTIONS:
             parts = drafts['sleepQuiet'] if action == 'rest' else drafts['sleepDisturbed']
             for start in parts['starts']:
                 for end in parts['ends']:
-                    rows.append({'id':f'own-sleep-{len(rows)}', 'characterId':cid, 'action':action,
-                                 'affection':rng.choice([10,45,80]), 'energy':0, 'sleeping':True,
-                                 'condition':'normal', 'mood':'sleepy' if action=='rest' else 'irritated',
-                                 'reply':start+' '+end, 'authorship':'agent-authored-own-v1'})
-    for condition in ('cold','unwell'):
-        for start in drafts[condition]['starts']:
-            for end in drafts[condition]['ends']:
-                for affection in (10,45,80):
-                    rows.append({'id':f'own-condition-{len(rows)}','characterId':'gomi','action':'touch',
-                                 'affection':affection,'energy':1,'sleeping':False,'condition':condition,
-                                 'reply':start+' '+end,'authorship':'agent-authored-own-v1'})
+                    for affection in (10,45,80):
+                        for value in (0,1):
+                            rows.append({'id':f'own-sleep-{len(rows)}', 'characterId':cid, 'action':action,
+                                         'affection':affection, 'energy':value, 'sleeping':True,
+                                         'condition':'normal', 'mood':'sleepy' if action=='rest' else 'irritated',
+                                         'reply':start+' '+end,'meaning':'quiet-sleep' if action=='rest' else 'keep-sleeping', 'authorship':'agent-authored-own-v1'})
     extra_sources = {}
-    if extra:
+    extra_paths=[HERE/'user-examples.jsonl']
+    if extra and extra.resolve()!=extra_paths[0].resolve():extra_paths.append(extra)
+    for extra in extra_paths:
+        if not extra.exists():continue
         for line in extra.read_text(encoding='utf-8-sig').splitlines():
+            if not line.strip():continue
             row=json.loads(line)
-            if row.get('characterId') not in characters or not re.fullmatch(r'[a-z][a-z0-9-]{0,47}',row.get('action','')) or not isinstance(row.get('reply'),str) or not 4<=len(row['reply'])<=50:
+            if (row.get('characterId') not in characters or not re.fullmatch(r'[a-z][a-z0-9-]{0,47}',row.get('action',''))
+                or not isinstance(row.get('reply'),str) or not 4<=len(row['reply'])<=50
+                or row.get('mood','calm') not in MOODS or row.get('condition','normal') not in ('normal','cold','unwell')
+                or not isinstance(row.get('sleeping',False),bool)
+                or not isinstance(row.get('energy',3),int) or not 0<=row.get('energy',3)<=5
+                or not isinstance(row.get('affection',45),(int,float)) or not 0<=row.get('affection',45)<=100
+                or not re.fullmatch(r'[a-z][a-z0-9-]{0,63}',row.get('meaning','user-added'))
+                or len(re.findall(r'[.!?]',row['reply']))>2 or re.search(r'[<>{}\[\]]',row['reply'])):
                 raise ValueError('Extra training row needs a registered character, action ID and a 4–50 character reply')
             rows.append({'affection':45,'mood':'calm','energy':3,'sleeping':False,'condition':'normal',
-                         'authorship':'user-added-own-training',**row})
+                         'meaning':'user-added',**row,'authorship':'user-added-own-training'})
         extra_sources[str(extra)]={'sha256':sha(extra)}
     # Original replies remain byte-preserved in the source. This model only
     # learns spoken words; annotations, role prompts and old model output are absent.
     dump(HERE/'corpus.json', {'rows':rows, 'excluded':excluded,
          'sources':{'gomiActionsV3':{'path':str(source.relative_to(ROOT)), 'sha256':sha(source)},
                     'newDrafts':{'path':'local-ai/own/action-drafts.json','sha256':sha(HERE/'action-drafts.json')},
+                    'naturalGomiDrafts':{'path':'local-ai/own/gomi-natural-drafts.json','sha256':sha(HERE/'gomi-natural-drafts.json')},
                     'extraTraining':extra_sources},
          'pretrainedParents':[], 'teacherModel':None,
          'dataAuthorship':'User-original verbatim rows and explicitly labeled AI coding-assistant drafts; not all human-authored or human-approved.'})
     return rows
+
+
+def training_examples(rows,tok,fmap):
+    xs,fs,ys=[],[],[]
+    for row in rows:
+        history=[0]*4
+        for target in [tok[word] for word in words(row)]+[1]:
+            xs.append(history[:]);fs.append([fmap[name] for name in features(row)]);ys.append(target)
+            history=(history+[target])[-4:]
+    return np.asarray(xs,np.int32),np.asarray(fs,np.int32),np.asarray(ys,np.int32)
+
+
+def learned_support(rows,tok):
+    grouped={}
+    for row in rows:
+        table=grouped.setdefault((scene(row),row.get('meaning','action')), {})
+        sequence=[0,0]+[tok[word] for word in words(row)]+[1]
+        for a,b,c in zip(sequence,sequence[1:],sequence[2:]):table.setdefault((a,b),set()).add(c)
+    grammars=[];intern={};scenes={}
+    for (key,_),table in sorted(grouped.items()):
+        packed=tuple((a,b,tuple(sorted(values))) for (a,b),values in sorted(table.items()))
+        if packed not in intern:intern[packed]=len(grammars);grammars.append(packed)
+        scenes.setdefault(key,[]).append(intern[packed])
+    return grammars,{key:sorted(set(values)) for key,values in scenes.items()}
 
 
 def quantized(tensor):
@@ -135,29 +204,14 @@ def quantized(tensor):
 def train(args):
     rng = random.Random(args.seed)
     rows = corpus(args.extra)
-    vocab = ['<bos>','<eos>','<pad>','<unk>','<next>'] + sorted({t for r in rows for part in clauses(r) for t in TOKEN.findall(part)})
-    feature_names = sorted({f for r in rows for index,_ in enumerate(clauses(r)) for f in features(r,index)})
+    vocab = ['<bos>','<eos>','<pad>','<unk>'] + sorted({t for r in rows for t in words(r)})
+    feature_names = sorted({f for r in rows for f in features(r)}|{'mood:'+m for m in MOODS})
     tok = {t:i for i,t in enumerate(vocab)}
-    next_tokens=[set() for _ in vocab]
-    for row in rows:
-        parts=clauses(row)
-        for index,part in enumerate(parts):
-            end=4 if index+1<len(parts) else 1
-            words=[0]+[tok[token] for token in TOKEN.findall(part)]+[end]
-            for before,after in zip(words,words[1:]):next_tokens[before].add(after)
+    grammars,scenes=learned_support(rows,tok)
     fmap = {f:i for i,f in enumerate(feature_names)}
-    xs, fs, ys = [], [], []
     rng.shuffle(rows)
-    for r in rows:
-        parts=clauses(r)
-        for index,part in enumerate(parts):
-            history=[0]*4
-            end='<next>' if index+1<len(parts) else '<eos>'
-            for word in TOKEN.findall(part)+[end]:
-                xs.append(history[:]);fs.append([fmap[f] for f in features(r,index)]);ys.append(tok[word])
-                history=(history+[tok[word]])[-4:]
     device = 'cpu-numpy-matrix-arithmetic'
-    x=np.asarray(xs,dtype=np.int32);f=np.asarray(fs,dtype=np.int32);y=np.asarray(ys,dtype=np.int32)
+    x,f,y=training_examples(rows,tok,fmap)
     model=OwnWordNet(len(vocab),len(fmap),seed=args.seed)
     order_rng=np.random.default_rng(args.seed)
     started = time.perf_counter()
@@ -175,14 +229,14 @@ def train(args):
         if epoch == 0 or (epoch+1)%25 == 0 or epoch+1 == args.epochs:
             print(json.dumps({'epoch':epoch+1,'loss':round(loss_value,5),'seconds':round(time.perf_counter()-started,1)}),flush=True)
     artifact = {
-        'format':'gomgomi-own-wordnet-v2', 'context':4, 'embedding':24, 'hidden':112,
+        'format':'gomgomi-own-wordnet-v3', 'context':4, 'embedding':24, 'hidden':112,
         'vocab':vocab, 'features':feature_names,
-        'nextTokens':[sorted(values) for values in next_tokens],
+        'supportOrder':2,'grammars':grammars,'scenes':scenes,
         'characters':sorted({r['characterId'] for r in rows}),
         'actions':sorted({r['action'] for r in rows}),
         'weights':{name:quantized(value) for name,value in model.params.items()},
         'provenance':{'initialization':'random','pretrainedParents':[],'teacherModel':None,
-            'architecture':'own conditional word neural network with learned clause-boundary control and within-clause word history',
+            'architecture':'own conditional word neural network; full utterance history; learned scene/intent trigram support; three fatigue levels',
             'trainingTool':'first-party forward/backprop/AdamW; NumPy matrix arithmetic on PC only',
             'dataAuthorshipCounts':dict(Counter(r.get('authorship','unknown') for r in rows)),
             'syntheticDraftAuthor':'AI coding assistant in this session; not human-approved. No teacher-model API is called by the trainer.',
@@ -193,6 +247,8 @@ def train(args):
             'trainingLoss':loss_value, 'commercialLegalClearance':False},
     }
     destination = ROOT/'src/features/characters/ownAi/model.json'
+    if len(json.dumps(artifact,ensure_ascii=False,separators=(',',':')).encode('utf-8'))>2_000_000:
+        raise ValueError('Own model and learned support exceed the two-megabyte mobile budget')
     dump(destination,artifact)
     np.savez(HERE/'checkpoint.npz',**model.params)
     dump(HERE/'training-result.json',{'model':str(destination.relative_to(ROOT)),'bytes':destination.stat().st_size,
@@ -207,4 +263,6 @@ if __name__ == '__main__':
     parser.add_argument('--lr',type=float,default=0.006)
     parser.add_argument('--seed',type=int,default=20261115)
     parser.add_argument('--extra',type=Path,help='Optional user-authored JSONL with new actions/character examples')
-    train(parser.parse_args())
+    args=parser.parse_args()
+    if args.epochs<1 or not 0<args.lr<1:parser.error('epochs must be positive and learning rate must be between zero and one')
+    train(args)

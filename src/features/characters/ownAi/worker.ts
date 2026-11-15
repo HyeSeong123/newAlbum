@@ -2,11 +2,11 @@ import {generateOwnLine, loadOwnModel, type OwnInput} from "./engine";
 
 // This URL is an APK/Vite-owned asset, never a remote model service.
 const loadStarted = performance.now();
-const loaded = fetch(new URL("/character-ai/manifest.json", self.location.origin)).then(async manifestResponse => {
+const loaded = fetch(new URL("/character-ai/manifest.json", self.location.origin),{cache:"no-store"}).then(async manifestResponse => {
   if (!manifestResponse.ok) throw new Error("AI_OWN_MODEL_MISSING");
   const manifest=await manifestResponse.json();
-  if (manifest.file!=="model.json"||manifest.bytes>2_000_000||!/^[0-9a-f]{64}$/.test(manifest.sha256)) throw new Error("AI_OWN_MODEL_INVALID");
-  const response=await fetch(new URL("/character-ai/model.json",self.location.origin));
+  if (manifest.id!=="own-character-v3"||manifest.file!=="model.json"||manifest.bytes>2_000_000||!/^[0-9a-f]{64}$/.test(manifest.sha256)) throw new Error("AI_OWN_MODEL_INVALID");
+  const response=await fetch(new URL("/character-ai/model.json",self.location.origin),{cache:"no-store"});
   if (!response.ok) throw new Error("AI_OWN_MODEL_MISSING");
   const bytes = await response.text();
   if (bytes.length > 2_000_000) throw new Error("AI_OWN_MODEL_INVALID");

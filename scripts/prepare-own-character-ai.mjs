@@ -16,11 +16,12 @@ PC 수학 계산 도구와 학습 코드는 APK에 포함되지 않습니다.
 export async function prepareOwnAi(root) {
   const raw=await readFile(resolve(root,'src/features/characters/ownAi/model.json'));
   const model=JSON.parse(raw);
-  if(raw.length>2_000_000||model.format!=='gomgomi-own-wordnet-v2'||model.provenance?.initialization!=='random'||
-     model.provenance?.pretrainedParents?.length!==0||model.provenance?.teacherModel!==null||!model.weights||'replies' in model)
+  if(raw.length>2_000_000||model.format!=='gomgomi-own-wordnet-v3'||model.provenance?.initialization!=='random'||
+     model.provenance?.pretrainedParents?.length!==0||model.provenance?.teacherModel!==null||!model.weights||
+     model.supportOrder!==2||!Array.isArray(model.grammars)||!model.scenes||'replies' in model)
     throw new Error('자체 AI 모델의 형식과 계보를 확인하지 못했습니다.');
   const directory=resolve(root,'public/character-ai');await mkdir(directory,{recursive:true});
-  const manifest={id:'own-character-v1',file:'model.json',bytes:raw.length,sha256:createHash('sha256').update(raw).digest('hex'),
+  const manifest={id:'own-character-v3',file:'model.json',bytes:raw.length,sha256:createHash('sha256').update(raw).digest('hex'),
     initialization:'random',pretrainedParents:[],teacherModel:null,characters:model.characters,actions:model.actions};
   await writeFile(resolve(directory,'model.json'),raw);
   await writeFile(resolve(directory,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');

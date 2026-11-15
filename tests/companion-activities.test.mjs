@@ -9,7 +9,7 @@ const affinityUrl = asUrl(readFileSync(new URL("../src/features/characters/gomiA
 const activitySource = readFileSync(new URL("../src/features/characters/companionActivities.ts", import.meta.url), "utf8")
   .replace('from "./gomiAffinity"', "from " + JSON.stringify(affinityUrl));
 const activityUrl = asUrl(activitySource);
-const { COMPANION_ACTIONS, companionActionLabel, emptyCompanionMemory, performCompanionActivity, readCompanionMemory,
+const { COMPANION_ACTIONS, companionActionLabel, companionDisturbsSleep, emptyCompanionMemory, performCompanionActivity, readCompanionMemory,
   saveCompanionMemory, buildCompanionPrompt } = await import(activityUrl);
 const llmSource = readFileSync(new URL("../src/features/characters/companionLlm.ts", import.meta.url), "utf8")
   .replace('from "./companionActivities"', "from " + JSON.stringify(activityUrl));
@@ -60,7 +60,7 @@ test("Gomi wants to go outside at every affection tier and stays bossy after rep
 
 test("sleeping Gomi stays sleepy or irritated instead of accepting awake activities", () => {
   const gomi = definitions[0];
-  for (const action of ["walk", "treat", "pet", "play"]) {
+  for (const action of ["walk", "pet", "play"]) {
     const reply = performCompanionActivity(gomi, emptyCompanionMemory(), action, 20, "2026-10-25", { sleeping:true });
     assert.equal(reply.memory.mood, "irritated", action);
     assert.equal(reply.memory.history.at(-1).action, action);
@@ -68,6 +68,16 @@ test("sleeping Gomi stays sleepy or irritated instead of accepting awake activit
   }
   const rest = performCompanionActivity(gomi, emptyCompanionMemory(), "rest", 20, "2026-10-25", { sleeping:true });
   assert.equal(rest.memory.mood, "sleepy");
+});
+test("offering food wakes drowsy Gomi gently but does not feed or energize an exhausted sleeper",()=>{
+ const gomi=definitions[0];
+ const drowsy=performCompanionActivity(gomi,{...emptyCompanionMemory(),energy:1},'treat',75,'2026-11-15',{sleeping:true});
+ assert.equal(drowsy.memory.mood,'curious');assert.equal(drowsy.memory.energy,1);
+ const tired=performCompanionActivity(gomi,{...emptyCompanionMemory(),energy:0},'treat',75,'2026-11-15',{sleeping:true});
+ assert.equal(tired.memory.mood,'sleepy');assert.equal(tired.memory.energy,0);
+ assert.equal(companionDisturbsSleep('treat',true),false);
+ assert.equal(companionDisturbsSleep('pet',true),true);
+ assert.equal(companionDisturbsSleep('rest',true),false);
 });
 
 test("actions vary when repeated and only change their own bounded memory", () => {

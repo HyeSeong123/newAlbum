@@ -9,7 +9,14 @@ const greetingSource = ts.transpileModule(readFileSync(new URL('../src/features/
 const { claimGomiGreeting } = await import(`data:text/javascript;base64,${Buffer.from(greetingSource).toString('base64')}`);
 const source = readFileSync(new URL('../src/features/characters/gomiBehavior.ts', import.meta.url), 'utf8');
 const { outputText } = ts.transpileModule(source.replace('"./gomiAffinity"', JSON.stringify(affinityUrl)), { compilerOptions:{ target:ts.ScriptTarget.ES2022, module:ts.ModuleKind.ESNext } });
-const { allowedGomiMotion, gomiInteractionMotion, gomiHomeMotion, gomiSeason, gomiSleepReaction, gomiMotionFrames, gomiMotionDuration, GOMI_BOND_AFFECTION, GOMI_LICK_AFFECTION, gomiSleepLine } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
+const { allowedGomiMotion, gomiInteractionMotion, gomiHomeMotion, gomiSeason, gomiSleepReaction, gomiFoodSequence, gomiMotionFrames, gomiMotionDuration, GOMI_BOND_AFFECTION, GOMI_LICK_AFFECTION, gomiSleepLine } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
+
+test('food opens sleepy eyes, pauses dazed, then wakes; exhaustion stays asleep',()=>{
+ for(const rest of ['sleep-curled','sleep-stretched','sleep-cool','sleep-warm']){
+  assert.deepEqual(gomiFoodSequence(rest,1),[`${rest}-peek`,'rest-front','idle']);
+  assert.deepEqual(gomiFoodSequence(rest,0),[rest]);
+ }
+});
 
 test('Gomi stays cynical until 60, offers a paw at 60 and only licks from 90', () => {
   assert.equal(GOMI_BOND_AFFECTION, 60); assert.equal(GOMI_LICK_AFFECTION, 90);

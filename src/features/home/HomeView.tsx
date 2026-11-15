@@ -8,7 +8,7 @@ import { characterPortraits } from "../characters/characterPortraits";
 import { characterDefinitions, characterName, dialogueLines, nextDialogue, type OwnedCharacter, type CharacterInteractionSource } from "../characters/models";
 import { useGomiBehavior } from "../characters/useGomiBehavior";
 import { useCompanionBehavior } from "../characters/useCompanionBehavior";
-import { COMPANION_ACTIONS, companionActionLabel, performCompanionActivity, readCompanionMemory, saveCompanionMemory, type CompanionAction } from "../characters/companionActivities";
+import { COMPANION_ACTIONS, companionActionLabel, companionDisturbsSleep, performCompanionActivity, readCompanionMemory, saveCompanionMemory, type CompanionAction } from "../characters/companionActivities";
 import "../characters/characters.css";
 import "./home.css";
 
@@ -156,15 +156,17 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   function chooseActivity(action: CompanionAction) {
     if (!definition || !mainCharacter || (isGomi && !gomi.ready)) return;
     const sleeping = isGomi && gomi.sleeping;
-    const result = performCompanionActivity(definition, readCompanionMemory(mainCharacter.id), action, mainCharacter.affection, today, { sleeping });
+    const previous=readCompanionMemory(mainCharacter.id);
+    const result = performCompanionActivity(definition, previous, action, mainCharacter.affection, today, { sleeping });
+    const disturbed=companionDisturbsSleep(action,sleeping);
     saveCompanionMemory(mainCharacter.id, result.memory);
     const fallback = chooseCompanionFallback(mainCharacter.id, companionFallbackCandidates({ gomi:Boolean(isGomi), affection:mainCharacter.affection,
-      action, sleeping, disturbed:sleeping && action !== "rest", basis:result.line }));
+      action, sleeping, disturbed, basis:result.line }));
     setSpokenLine(undefined);
     setAiStatus("generating");
     setAiFailure("");
-    void reactWithStoredRelationship({ definition, appearance, owned: mainCharacter, memory: result.memory, action, fallback, sleeping }, sleeping && action !== "rest" ? "sleep" : undefined);
-    if (isGomi) gomi.activity(action);
+    void reactWithStoredRelationship({ definition, appearance, owned: mainCharacter, memory: {...result.memory,energy:previous.energy}, action, fallback, sleeping }, disturbed ? "sleep" : undefined);
+    if (isGomi) gomi.activity(action,previous.energy);
     else { companion.activity(action); setHappy(action !== "rest"); }
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setHappy(false), 1000);

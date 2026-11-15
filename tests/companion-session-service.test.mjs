@@ -45,6 +45,6 @@ test('legacy external model generation/download are disabled and Home exposes th
  const service=await import(await modelUrl(new URL('../src/features/characters/companionChatService.ts',import.meta.url)));
  await assert.rejects(service.generateChatReply('이전 모델 호출'),/AI_ACTIONS_ONLY/);
  await assert.rejects(service.downloadChatModel(),/AI_EXTERNAL_MODELS_DISABLED/);
- assert.equal((await service.chatModelStatus('gomi','home-actions')).model,'own-character-v1');
+ assert.equal((await service.chatModelStatus('gomi','home-actions')).model,'own-character-v3');
  assert.equal((await service.chatModelStatus()).supported,false);
 });

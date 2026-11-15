@@ -61,6 +61,9 @@ export function gomiHomeMotion(today: string, random = Math.random): GomiMotion 
 export function gomiSleepReaction(rest: GomiSleepMotion, touches: number): GomiMotion {
   return `${rest}-${touches >= GOMI_ANGRY_TOUCHES ? "angry" : "peek"}`;
 }
+export function gomiFoodSequence(rest:GomiSleepMotion,energy:number):GomiMotion[]{
+  return energy<=0?[rest]:[`${rest}-peek`,"rest-front","idle"];
+}
 export function gomiSleepLine(touches: number, affection = 0) {
   return gomiSleepingLine(touches, affection);
 }
