@@ -398,8 +398,8 @@ try {
   await expect(gomiGuide.locator('.helpVoice')).toHaveAttribute('data-affinity','0');
   await expect(gomiGuide.locator('.helpVoice')).not.toBeEmpty();
   await expect(gomiGuide.locator('#helpInstruction')).toContainText('친밀도는 친구마다 하루 한 번');
-  await expect(gomiGuide.locator('.characterVisual')).toHaveAttribute('data-expression', 'cynical');
-  await expect.poll(() => gomiGuide.locator('img').evaluate(el => el.complete && el.naturalWidth === 1254)).toBe(true);
+  await expect(gomiGuide.locator('.characterVisual')).toHaveAttribute('data-expression', 'avoid');
+  await expect.poll(() => gomiGuide.locator('img').evaluate(el => el.complete && el.naturalWidth > 0)).toBe(true);
   const targetBounds = await page.locator('[data-help-highlighted]').boundingBox();
   const guideBounds = await gomiGuide.locator('.helpGuideCard').boundingBox();
   assert.ok(targetBounds && guideBounds);
@@ -425,7 +425,7 @@ try {
   const companionAfter = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('chat_model_status'));
   assert.equal(companionAfter.runtime.resident, false);
   console.log('Installed Android companion status/release bridge resolves without eager inference: OK');
-  console.log('Gomi cynical art, cold low-affection help and no guide affection award: OK');
+  console.log('Gomi gaze-aversion art, neutral low-affection help and no guide affection award: OK');
   console.log('Installed Android app launched and rendered its native home.');
   const locationSettings = await verifyInstalledLocationSettings({page, adb, appId, captureScreen, tapNative});
   await writeFile(join(output, 'location-settings.json'), JSON.stringify(locationSettings, null, 2));
@@ -854,7 +854,7 @@ try {
   console.log('Android installation, system-bar bounds (three-button and gesture), import controls, bound album, real folder picker/content URI copying, byte progress, warm resume, SQLite/calendar persistence and back navigation: OK');
   } else {
     await page.screenshot({ path:join(output, 'gomi-action-home.png') });
-    console.log('Signed APK installation and own-character offline UI reactions under 1 second: OK. Full unrelated UI regression was not requested.');
+    console.log('Signed APK installation and offline interaction outcomes under 1 second: quiet below 60, generated speech when bonded. Full unrelated UI regression was not requested.');
   }
 } catch (error) {
   console.error(error);

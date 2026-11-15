@@ -11,7 +11,7 @@
     "defaultUnlocked": true,
     "defaultMain": true,
     "fixedGrowthStage": 6,
-    "description": "모든 게 귀찮은 고미예요. 낯선 사람은 못 들은 척하고, 설명을 시키면 한숨부터 쉬어요. 가까워져도 까칠한 말투는 쉽게 바뀌지 않아요.",
+    "description": "낯선 사람에게는 대꾸 대신 눈길을 돌리고 자기 시간을 보내는 고미예요. 친해지면 자기 취향을 드러내고 가끔 먼저 다가와요.",
     "maxStage": 6,
     "growthConditions": {
       "stage1": 0,
@@ -36,15 +36,15 @@
       }
     ],
     "personality": {
-      "archetype": "시니컬하고 귀찮음 많은 안내 친구",
+      "archetype": "무심하고 자기 취향이 뚜렷한 안내 친구",
       "keywords": [
-        "귀찮음",
-        "시니컬함",
-        "낯가림",
-        "한숨",
-        "익숙한 상대만 챙김"
+        "무심함",
+        "시선 회피",
+        "무언 반응",
+        "고집",
+        "익숙한 상대에게 애착"
       ],
-      "speechTone": "휴. 이런 것도 말해야 해? 용건만 짧게.",
+      "speechTone": "낯선 상대에게는 말없이 눈길을 피한다. 친해져도 자기 취향과 고집은 남는다.",
       "mood": "poised",
       "signatureAnimation": "poised-ear-tilt",
       "emotionalRole": "tutorial-guide",

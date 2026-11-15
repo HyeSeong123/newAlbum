@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { GOMI_SLEEP_TOUCH_WINDOW_MS, gomiHomeMotion, gomiInteractionMotion, gomiMotionDuration, gomiSleepLine, gomiSleepReaction, gomiFoodSequence, isGomiAngry, isGomiSleeping, type GomiMotion } from "./gomiBehavior";
 import type { CompanionAction } from "./companionActivities";
+import { gomiCanSpeak } from "./gomiBehavior";
 
 // Sleep poses stay local; Home persists only explicit relationship interactions.
 export function useGomiBehavior(enabled: boolean, affection: number, today: string, characterId?: string) {
@@ -70,5 +71,10 @@ export function useGomiBehavior(enabled: boolean, affection: number, today: stri
     setSequence(value => value + 1);
     return { sleeping:false, disturbed:false };
   }
-  return { motion, sequence, react, activity, ready:!enabled || settledCharacter === characterId, sleeping:enabled && isGomiSleeping(rest.current), irritated:enabled && isGomiAngry(motion) };
+  // Keep the entry pose underneath the gaze aversion. Crossing the bond
+  // threshold reveals that pose without rerolling or disturbing a sleeper.
+  const avoiding = enabled && !gomiCanSpeak(affection) && !isGomiSleeping(rest.current)
+    && (motion === rest.current || motion === "stretch");
+  const displayedMotion = avoiding ? "avoid" : gomiCanSpeak(affection) && motion === "avoid" ? rest.current : motion;
+  return { motion:displayedMotion, sequence, react, activity, ready:!enabled || settledCharacter === characterId, sleeping:enabled && isGomiSleeping(rest.current), irritated:enabled && isGomiAngry(motion) };
 }

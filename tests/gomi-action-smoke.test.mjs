@@ -10,7 +10,17 @@ test('semantic gate catches the reported sleep/food/play hybrid and preserves na
  assert.deepEqual(reactionIssues({...state,action:'meal',energy:0},'밥은 옆에 놔둬.'),[]);
  assert.deepEqual(reactionIssues({...state,action:'pet',sleeping:false},'천천히 해.'),[]);
 });
-import {assertOwnTimings,assertOwnAssets} from '../scripts/gomi-action-smoke.mjs';
+import {assertOwnTimings,assertOwnAssets,assertQuietReactions} from '../scripts/gomi-action-smoke.mjs';
+
+test('quiet outcomes require no spoken line, low saved affection and no inference request',()=>{
+ const quiet={source:'nonverbal',line:'',elapsedMs:140,affection:20,inferenceRequested:false,responseId:'2',previousResponseId:'1'};
+ assert.equal(assertQuietReactions([quiet]).samples,1);
+ assert.throws(()=>assertQuietReactions([{...quiet,source:'local-rules'}]));
+ assert.throws(()=>assertQuietReactions([{...quiet,line:'귀찮아.'}]));
+ assert.throws(()=>assertQuietReactions([{...quiet,affection:60}]));
+ assert.throws(()=>assertQuietReactions([{...quiet,inferenceRequested:true}]));
+ assert.throws(()=>assertQuietReactions([{...quiet,responseId:'1'}]));
+});
 
 test('full-response performance gate rejects late output and fast fallback/error',()=>{
  const reply={source:'on-device',line:'집사, 내 옆에 있어.',elapsedMs:200};

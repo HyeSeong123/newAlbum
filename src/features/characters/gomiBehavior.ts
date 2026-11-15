@@ -7,9 +7,10 @@ export const GOMI_SLEEP_TOUCH_WINDOW_MS = 10_000;
 export const GOMI_ANGRY_TOUCHES = 3;
 
 export type GomiSleepMotion = "sleep-curled" | "sleep-stretched" | "sleep-cool" | "sleep-warm";
-export type GomiMotion = "idle" | "cynical" | "rest-front" | "happy" | "sad" | "angry" | "grow" | GomiSleepMotion | `${GomiSleepMotion}-peek` | `${GomiSleepMotion}-angry` | "stretch" | "paw-wave" | "lick";
+export type GomiMotion = "idle" | "avoid" | "cynical" | "rest-front" | "happy" | "sad" | "angry" | "grow" | GomiSleepMotion | `${GomiSleepMotion}-peek` | `${GomiSleepMotion}-angry` | "stretch" | "paw-wave" | "lick";
 export const gomiMotionFrames: Record<GomiMotion, string[]> = {
   idle: ["/characters/gomi/idle.png"],
+  avoid: ["/characters/gomi/avoid.png"],
   cynical: ["/characters/gomi/cynical.png"],
   "rest-front": ["/characters/gomi/rest-front.png"],
   happy: ["/characters/gomi/happy.png"],
@@ -68,17 +69,22 @@ export function gomiSleepLine(touches: number, affection = 0) {
   return gomiSleepingLine(touches, affection);
 }
 export function allowedGomiMotion(motion: GomiMotion, affection: number): GomiMotion {
+  if (!gomiCanSpeak(affection) && ["idle", "cynical", "happy", "grow", "paw-wave", "lick"].includes(motion)) return "avoid";
   if (motion === "lick" && affection < GOMI_LICK_AFFECTION) return "cynical";
   if (["idle", "happy", "grow", "paw-wave"].includes(motion) && affection < GOMI_BOND_AFFECTION) return "cynical";
   return motion;
 }
+// Silence is an intentional choice, decided before starting any AI inference.
+export function gomiCanSpeak(affection: number): boolean {
+  return Number.isFinite(affection) && affection >= GOMI_BOND_AFFECTION;
+}
 export function gomiInteractionMotion(affection: number, interaction: number): GomiMotion {
-  if (affection < GOMI_BOND_AFFECTION) return "cynical";
+  if (affection < GOMI_BOND_AFFECTION) return "avoid";
   const cycle: GomiMotion[] = affection < GOMI_LICK_AFFECTION
     ? ["cynical", "happy", "paw-wave"] : ["paw-wave", "lick", "happy", "cynical"];
   return cycle[Math.max(0, interaction - 1) % cycle.length];
 }
 export function gomiMotionDuration(motion: GomiMotion) {
-  return motion === "cynical" ? 1_800 : motion === "stretch" ? GOMI_STRETCH_MS : isGomiAngry(motion) ? 2_600 : motion.endsWith("-peek") ? 1_800
+  return motion === "cynical" || motion === "avoid" ? 1_800 : motion === "stretch" ? GOMI_STRETCH_MS : isGomiAngry(motion) ? 2_600 : motion.endsWith("-peek") ? 1_800
     : motion === "paw-wave" ? 2_200 : motion === "lick" ? 1_800 : 1_000;
 }

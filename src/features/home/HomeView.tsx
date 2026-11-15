@@ -7,6 +7,7 @@ import { chooseCompanionFallback, companionFallbackCandidates } from "../charact
 import { characterPortraits } from "../characters/characterPortraits";
 import { characterDefinitions, characterName, dialogueLines, nextDialogue, type OwnedCharacter, type CharacterInteractionSource } from "../characters/models";
 import { useGomiBehavior } from "../characters/useGomiBehavior";
+import { gomiCanSpeak } from "../characters/gomiBehavior";
 import { useCompanionBehavior } from "../characters/useCompanionBehavior";
 import { COMPANION_ACTIONS, companionActionLabel, companionDisturbsSleep, performCompanionActivity, readCompanionMemory, saveCompanionMemory, type CompanionAction } from "../characters/companionActivities";
 import "../characters/characters.css";
@@ -50,7 +51,8 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   const [happy, setHappy] = useState(false);
   const [activitiesOpen, setActivitiesOpen] = useState(false);
   const [aiSetupOpen, setAiSetupOpen] = useState(false);
-  const [aiStatus, setAiStatus] = useState<"idle" | "generating" | "failed">("idle");
+  const [aiStatus, setAiStatus] = useState<"idle" | "quiet" | "generating" | "failed">("idle");
+  const [quietResponseId, setQuietResponseId] = useState(0);
   const [aiFailure, setAiFailure] = useState("");
   const ai = useCompanionReactions(mainCharacter?.id, result => {
     // Never speak an authored fallback as though the model said it.
@@ -97,6 +99,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     storedInteraction.current = Promise.resolve(undefined);
     setActivitiesOpen(false);
     setAiSetupOpen(false);
+    setQuietResponseId(0);
     setSpokenLine(undefined);
     setAiStatus("idle");
     setAiFailure("");
@@ -131,10 +134,22 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     if (source && !updated) {
       ai.cancel();
       setAiStatus("failed");
-      setAiFailure("친밀도를 저장하지 못해 AI 반응을 진행할 수 없어요. 다시 시도해 주세요.");
+      setAiFailure("친밀도를 저장하지 못했어요. 다시 시도해 주세요.");
       return;
     }
-    ai.react({ ...context, owned:updated?.id === context.owned.id ? { ...context.owned, affection:updated.affection } : context.owned });
+    const owned = updated?.id === context.owned.id ? { ...context.owned, affection:updated.affection } : context.owned;
+    if (context.definition.type === "gomi" && !gomiCanSpeak(owned.affection)) {
+      ai.cancel();
+      setSpokenLine(undefined);
+      setAiFailure("");
+      // Quiet responses have no changing text. Identify completion only after
+      // relationship storage succeeds, so an old quiet state is never a reply.
+      setQuietResponseId(request);
+      setAiStatus("quiet");
+      return;
+    }
+    setAiStatus("generating");
+    ai.react({ ...context, owned });
   }
 
   function talk() {
@@ -145,12 +160,12 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     const reaction = isGomi ? gomi.react() : undefined;
     if (!isGomi) companion.react();
     const restLine = reaction?.line;
-    const fallback = mainCharacter ? chooseCompanionFallback(mainCharacter.id, companionFallbackCandidates({
+    const fallback = isGomi && !gomiCanSpeak(mainCharacter.affection) ? "" : mainCharacter ? chooseCompanionFallback(mainCharacter.id, companionFallbackCandidates({
       gomi:Boolean(isGomi), affection:mainCharacter.affection, action:"touch", sleeping:reaction?.sleeping, disturbed:reaction?.disturbed,
       basis:restLine || lines[next], touchLines:lines,
     })) : lines[next];
     setSpokenLine(undefined);
-    setAiStatus("generating");
+    setAiStatus(isGomi && !gomiCanSpeak(mainCharacter.affection) ? "idle" : "generating");
     setAiFailure("");
     if (definition && mainCharacter) {
       const memory = readCompanionMemory(mainCharacter.id);
@@ -171,10 +186,10 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     const result = performCompanionActivity(definition, previous, action, mainCharacter.affection, today, { sleeping });
     const disturbed=companionDisturbsSleep(action,sleeping);
     saveCompanionMemory(mainCharacter.id, result.memory);
-    const fallback = chooseCompanionFallback(mainCharacter.id, companionFallbackCandidates({ gomi:Boolean(isGomi), affection:mainCharacter.affection,
+    const fallback = isGomi && !gomiCanSpeak(mainCharacter.affection) ? "" : chooseCompanionFallback(mainCharacter.id, companionFallbackCandidates({ gomi:Boolean(isGomi), affection:mainCharacter.affection,
       action, sleeping, disturbed, basis:result.line }));
     setSpokenLine(undefined);
-    setAiStatus("generating");
+    setAiStatus(isGomi && !gomiCanSpeak(mainCharacter.affection) ? "idle" : "generating");
     setAiFailure("");
     void reactWithStoredRelationship({ definition, appearance, owned: mainCharacter, memory: {...result.memory,energy:previous.energy}, action, fallback, sleeping }, disturbed ? "sleep" : undefined);
     if (isGomi) gomi.activity(action,previous.energy);
@@ -203,6 +218,10 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
           {spokenLine
             ? <p id="homeMessage" className="homeSpeech" data-source="on-device" data-gomi={isGomi ? "true" : undefined}
                 role="status" aria-live="polite" aria-atomic="true">{spokenLine}</p>
+            : aiStatus === "quiet" || (isGomi && !gomiCanSpeak(mainCharacter?.affection || 0) && aiStatus === "idle")
+              ? <p id="homeMessage" className="homeQuiet" data-source="nonverbal" data-state={aiStatus} data-response-id={quietResponseId} role="status" aria-live="polite">
+                  <span>{gomi.sleeping ? "고미가 말없이 쉬고 있어요." : "고미가 눈길을 돌리고 있어요."}</span>
+                </p>
             : <p id="homeMessage" className="homeSpeechNotice" data-source="status" data-state={aiStatus}
                 role="status" aria-live="polite" aria-atomic="true">
                 {aiStatus === "generating" ? "AI가 대사를 생성하고 있어요." :

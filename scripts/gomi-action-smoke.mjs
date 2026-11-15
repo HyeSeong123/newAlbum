@@ -24,6 +24,16 @@ export function assertOwnTimings(records,targetMs=1000){
  const sorted=records.map(row=>row.elapsedMs).sort((a,b)=>a-b);
  return {samples:records.length,p50Ms:sorted[Math.floor((sorted.length-1)*0.5)],p95Ms:sorted[Math.ceil((sorted.length-1)*0.95)],maxMs:sorted.at(-1)};
 }
+export function assertQuietReactions(records,targetMs=1000){
+ for(const record of records){
+  assert.equal(record.source,'nonverbal');assert.equal(record.line,'');
+  assert.equal(record.inferenceRequested,false,'A quiet choice must not call inference');
+  assert.ok(/^\d+$/.test(record.responseId||'')&&Number(record.responseId)>Number(record.previousResponseId||0),'A quiet outcome must complete a new interaction');
+  assert.ok(Number.isFinite(record.affection)&&record.affection>=0&&record.affection<60);
+  assert.ok(record.elapsedMs>0&&record.elapsedMs<targetMs);
+ }
+ return {samples:records.length,maxMs:records.length?Math.max(...records.map(row=>row.elapsedMs)):null};
+}
 async function installProbe(page){
  await page.evaluate(()=>{
   const original=window.__TAURI_INTERNALS__.invoke.bind(window.__TAURI_INTERNALS__);
@@ -42,12 +52,16 @@ async function installProbe(page){
   };
  });
 }
-async function pressAndPaint(page,selector){
- await page.locator('#homeMessage').scrollIntoViewIfNeeded();
+export async function pressAndPaint(page,selector){
+ if(await page.locator('#homeMessage').getAttribute('data-source')==='nonverbal')await page.locator('.homeMascot').scrollIntoViewIfNeeded();
+ else await page.locator('#homeMessage').scrollIntoViewIfNeeded();
  const record=await page.evaluate(selector=>new Promise((resolve,reject)=>{
   const before=document.querySelector('#homeMessage')?.textContent,started=performance.now();let finished=false;
+  const previousResponseId=document.querySelector('#homeMessage')?.getAttribute('data-response-id')??null;
+  const requestStart=window.__ownAiRequests.length;
   const dispose=()=>{finished=true;clearTimeout(timer);};
   const visible=node=>{
+   if(!node)return false;
    const box=node.getBoundingClientRect(),x=box.left+box.width/2;
    return box.top>=0&&box.bottom<=innerHeight&&[box.top+2,box.top+box.height/2,box.bottom-2].every(y=>{
     const hit=document.elementFromPoint(x,y);return hit!=null&&node.contains(hit);
@@ -56,6 +70,18 @@ async function pressAndPaint(page,selector){
   const check=()=>{
    if(finished)return;
    const node=document.querySelector('#homeMessage');
+   const responseId=node?.getAttribute('data-response-id');
+   if(node?.getAttribute('data-source')==='nonverbal'&&node.getAttribute('data-state')==='quiet'&&/^\d+$/.test(responseId||'')&&Number(responseId)>Number(previousResponseId||0)&&visible(document.querySelector('.homeMascot'))){
+    requestAnimationFrame(()=>{
+     if(finished)return;
+     const quiet=document.querySelector('#homeMessage');
+     if(quiet?.getAttribute('data-source')==='nonverbal'&&quiet.getAttribute('data-state')==='quiet'&&quiet.getAttribute('data-response-id')===responseId&&visible(document.querySelector('.homeMascot'))){
+      const inferenceRequested=window.__ownAiRequests.length!==requestStart;
+      const elapsedMs=performance.now()-started;dispose();resolve({source:'nonverbal',line:'',elapsedMs,inferenceRequested,responseId,previousResponseId});
+     }else requestAnimationFrame(check);
+    });
+    return;
+   }
    if(node?.getAttribute('data-source')==='on-device'&&node.textContent!==before&&visible(node)){
     const candidate=node.textContent;
     requestAnimationFrame(()=>{
@@ -67,13 +93,18 @@ async function pressAndPaint(page,selector){
     });
    }else requestAnimationFrame(check);
   };
-  const timer=setTimeout(()=>{dispose();reject(new Error('No complete own-AI response within 1 second: '+document.querySelector('#homeMessage')?.textContent));},1000);
+  const timer=setTimeout(()=>{dispose();reject(new Error('No complete interaction outcome within 1 second: '+document.querySelector('#homeMessage')?.textContent));},1000);
   const button=document.querySelector(selector);if(!button){dispose();reject(new Error('Missing action: '+selector));return;}button.click();
   requestAnimationFrame(check);
  }),selector);
- record.request=await page.evaluate(()=>window.__ownAiRequests.at(-1));
- assert.ok(record.request,'Actual Home action must reach the own neural Worker');
- assert.deepEqual(reactionIssues(record.request.input,record.line),[]);
+ if(record.source==='nonverbal'){
+  record.affection=await page.evaluate(async()=>(await window.__TAURI_INTERNALS__.invoke('sync_characters')).characters.find(row=>row.id==='gomi').affection);
+  assertQuietReactions([record]);
+ }else{
+  record.request=await page.evaluate(()=>window.__ownAiRequests.at(-1));
+  assert.ok(record.request,'A spoken Home action must reach the own neural Worker');
+  assert.deepEqual(reactionIssues(record.request.input,record.line),[]);
+ }
  assert.deepEqual(await page.evaluate(()=>window.__ownAiForbiddenCalls),[]);
  return record;
 }
@@ -129,7 +160,8 @@ export async function verifyInstalledGomiAction(page,output='test-results/androi
     window.__stopOwnMotionTrace=()=>observer.disconnect();capture();
    });
    const record={...await pressAndPaint(page,'[data-help="companion-treat"]'),scenario:energy?'sleepy-snack':'exhausted-snack'};
-   records.push(record);assert.equal(record.request.input.energy,energy);assert.equal(record.request.input.sleeping,true);assert.equal(record.request.input.action,'treat');
+   records.push(record);
+   if(record.source==='on-device'){assert.equal(record.request.input.energy,energy);assert.equal(record.request.input.sleeping,true);assert.equal(record.request.input.action,'treat');}
    const firstMotion=await page.locator('.homeMascot [data-motion]').getAttribute('data-motion');
    assert.equal(firstMotion,energy?'sleep-curled-peek':'sleep-curled');
    const snapshot=await page.evaluate(async()=>({memory:JSON.parse(localStorage.getItem('gamjassak:companion:v1:gomi')),
@@ -141,15 +173,18 @@ export async function verifyInstalledGomiAction(page,output='test-results/androi
     // Observe from before the click: taking a screenshot can outlast the
     // one-second dazed pose, so polling only afterwards can miss a real phase.
     await page.waitForFunction(()=>window.__ownMotionTrace.some(row=>row.motion==='rest-front')&&
-     ['cynical','idle'].includes(window.__ownMotionTrace.at(-1)?.motion),undefined,{timeout:5000});
+     ['avoid','cynical','idle'].includes(window.__ownMotionTrace.at(-1)?.motion),undefined,{timeout:5000});
    }
    const motionTrace=await page.evaluate(()=>{window.__stopOwnMotionTrace();return window.__ownMotionTrace;});
    const motionSequence=motionTrace.map(row=>row.motion).slice(energy?1:0);
-   if(energy){assert.deepEqual(motionSequence.slice(0,2),['sleep-curled-peek','rest-front']);assert.ok(['idle','cynical'].includes(motionSequence.at(-1)));}
+   if(energy){assert.deepEqual(motionSequence.slice(0,2),['sleep-curled-peek','rest-front']);assert.ok(['avoid','idle','cynical'].includes(motionSequence.at(-1)));}
    else assert.deepEqual(motionSequence,['sleep-curled']);
-   foodBehaviour.push({energy,line:record.line,elapsedMs:record.elapsedMs,motionSequence,motionTrace,memory:snapshot.memory,affectionBefore,affectionAfter:snapshot.affection});
+   foodBehaviour.push({energy,source:record.source,line:record.line,elapsedMs:record.elapsedMs,motionSequence,motionTrace,memory:snapshot.memory,affectionBefore,affectionAfter:snapshot.affection});
   }
-  const timings=assertOwnTimings(records);
+  assert.equal(records.length,10,'All eight touches and two snack actions must complete');
+  const spoken=records.filter(row=>row.source==='on-device');
+  const timings=spoken.length?assertOwnTimings(spoken):null;
+  const quietTimings=assertQuietReactions(records.filter(row=>row.source==='nonverbal'));
   const expectedModel=await readFile(new URL('../src/features/characters/ownAi/model.json',import.meta.url));
   const expectedNotice=await readFile(new URL('../public/notices/companion-ai-NOTICE.txt',import.meta.url));
   const proof=await page.evaluate(async()=>{
@@ -165,10 +200,10 @@ export async function verifyInstalledGomiAction(page,output='test-results/androi
   await setup.getByRole('heading',{name:'곰고미 전용 AI가 준비됐어요',exact:true}).waitFor();assert.doesNotMatch(await setup.innerText(),/HyperCLOVA|Qwen|2\.5GB|Powered by/);
   if(output)await page.screenshot({path:join(output,'gomi-own-ai-setup.png')});
   await setup.getByRole('button',{name:'AI 반응 설정 닫기',exact:true}).click();
-  const evidence={model:proof.manifest.id,modelBytes:proof.modelBytes,modelSha256:proof.modelSha256,assetProof:proof,records,timings,foodBehaviour,
+  const evidence={model:proof.manifest.id,modelBytes:proof.modelBytes,modelSha256:proof.modelSha256,assetProof:proof,records,timings,quietTimings,foodBehaviour,
    airplaneModeEnabled:offline,wifiAndDataDisabled:offline,externalCharacterAiCalls:[],syntheticInput:true,phonePerformanceMeasured:false,
    offlinePageReload:offline,firstInteractionAfterReloadMs:records[0].elapsedMs,homePrewarmingEnabled:true,
-   scope:'Installed x86_64 emulator, eight sleep touches and two real snack buttons; complete text after a render opportunity. Not Galaxy26 hardware. Meal is PC-tested; no meal button exists.'};
+   scope:'Installed x86_64 emulator, eight sleep touches and two real snack buttons. Below 60: quiet outcomes with no inference. Bonded: complete generated speech after a render opportunity; speech timings are null if no speech is expected. Not Galaxy26 hardware. Meal is PC-tested; no meal button exists.'};
   if(output){await mkdir(output,{recursive:true});await writeFile(join(output,'gomi-action-smoke.json'),JSON.stringify(evidence,null,2)+'\n');}
   return evidence;
  }catch(error){

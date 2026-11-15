@@ -61,6 +61,15 @@
 .homeSpeechNotice[data-state="failed"] {
   color: #76513e;
 }
+.homeQuiet { margin: 0; }
+.homeQuiet span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .homeSpeech::after {
   content: "";
   position: absolute;

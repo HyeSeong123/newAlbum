@@ -95,7 +95,7 @@ if(existsSync(path)){
  });
  test('the real model copying its speech-style example is regenerated, not published as new',async()=>{
   let calls=0;
-  const reply=await mod.generateTouchLine(context,async()=>++calls===1?'휴. 이런 것도 말해야 해? 용건만 짧게.':'지금은 졸리니까 조금 더 기다려.');
+  const reply=await mod.generateTouchLine(context,async()=>++calls===1?context.definition.personality.speechTone:'지금은 졸리니까 조금 더 기다려.');
   assert.equal(calls,2);assert.deepEqual(reply,{source:'on-device',line:'지금은 졸리니까 조금 더 기다려.'});
  });
  test('the real model repeating one complete sentence from its previous answer retries',async()=>{

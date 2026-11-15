@@ -11,6 +11,14 @@ const source = readFileSync(new URL('../src/features/characters/gomiBehavior.ts'
 const { outputText } = ts.transpileModule(source.replace('"./gomiAffinity"', JSON.stringify(affinityUrl)), { compilerOptions:{ target:ts.ScriptTarget.ES2022, module:ts.ModuleKind.ESNext } });
 const { allowedGomiMotion, gomiInteractionMotion, gomiHomeMotion, gomiSeason, gomiSleepReaction, gomiFoodSequence, gomiMotionFrames, gomiMotionDuration, GOMI_BOND_AFFECTION, GOMI_LICK_AFFECTION, gomiSleepLine } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
 
+test('unbonded Gomi quietly looks away rather than giving a hostile front-facing response', () => {
+  for(const affection of [0,19,20,29,30,59]){
+    assert.equal(gomiInteractionMotion(affection,1),'avoid');
+    assert.equal(allowedGomiMotion('idle',affection),'avoid');
+    assert.equal(allowedGomiMotion('cynical',affection),'avoid');
+  }
+});
+
 test('food opens sleepy eyes, pauses dazed, then wakes; exhaustion stays asleep',()=>{
  for(const rest of ['sleep-curled','sleep-stretched','sleep-cool','sleep-warm']){
   assert.deepEqual(gomiFoodSequence(rest,1),[`${rest}-peek`,'rest-front','idle']);
@@ -18,11 +26,11 @@ test('food opens sleepy eyes, pauses dazed, then wakes; exhaustion stays asleep'
  }
 });
 
-test('Gomi stays cynical until 60, offers a paw at 60 and only licks from 90', () => {
+test('Gomi quietly avoids until 60, offers a paw at 60 and only licks from 90', () => {
   assert.equal(GOMI_BOND_AFFECTION, 60); assert.equal(GOMI_LICK_AFFECTION, 90);
   for (const affection of [0,19,20,29,30,59]) {
-    for (let click=1; click<=50; click++) assert.equal(gomiInteractionMotion(affection,click), 'cynical');
-    for (const motion of ['idle','happy','paw-wave','lick']) assert.equal(allowedGomiMotion(motion,affection),'cynical');
+    for (let click=1; click<=50; click++) assert.equal(gomiInteractionMotion(affection,click), 'avoid');
+    for (const motion of ['idle','happy','paw-wave','lick']) assert.equal(allowedGomiMotion(motion,affection),'avoid');
   }
   for (const affection of [60,89]) {
     assert.deepEqual([1,2,3].map(n=>gomiInteractionMotion(affection,n)), ['cynical','happy','paw-wave']);
@@ -76,7 +84,7 @@ test('Gomi has varied everyday and event dialogue at every current personality b
 });
 test('sleeping has two different poses and all expressions and motion frames are transparent local PNGs', () => {
   const assets = new Set(Object.values(gomiMotionFrames).flat());
-  assert.equal(assets.size, 22);
+  assert.equal(assets.size, 23);
   for (const path of assets) {
     const png = readFileSync(new URL(`../public${path}`,import.meta.url));
     assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a');

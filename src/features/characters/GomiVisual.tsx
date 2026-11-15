@@ -28,7 +28,8 @@ export function GomiVisual({ motion = "idle", affection = 0, className = "", rea
     return () => { active = false; window.clearInterval(timer); };
   }, [frames, action, reduced, reactionKey]);
   useEffect(() => {
-    void controls.start(reduced ? { y:0, rotate:0, scaleX:1, scaleY:1 } : sleeping
+    const pose = reduced ? { y:0, rotate:0, scaleX:1, scaleY:1 } : action === "avoid"
+      ? { x:reactionKey ? (reactionKey % 2 ? 14 : -14) : 0, y:0, rotate:reactionKey ? (reactionKey % 2 ? -1 : 1) : 0, scaleX:1, scaleY:1 } : sleeping
       ? { y:[0,-.5,0], rotate:0, scaleX:[1,1.012,1], scaleY:[1,1.025,1] }
       : action === "cynical" ? { y:0, rotate:0, scaleX:1, scaleY:1 }
       : action === "rest-front" ? { y:0, rotate:0, scaleX:1, scaleY:[1,1.006,1] }
@@ -38,13 +39,15 @@ export function GomiVisual({ motion = "idle", affection = 0, className = "", rea
       : action === "paw-wave" ? { y:[0,-1,0], rotate:[-.6,.6,-.6], scaleX:1, scaleY:1 }
       : action === "lick" ? { y:0, rotate:[0,-2,0], scaleX:1, scaleY:1 }
       : action === "happy" || action === "grow" ? { y:[0,-3,0], rotate:[0,-2,0], scaleX:1, scaleY:1 }
-      : { y:[0,-1,0], rotate:[0,.4,0], scaleX:1, scaleY:1 },
-    reduced ? { duration:0 } : action === "cynical" || angry || sleepReaction ? { duration:angry ? .35 : .2, repeat:0, ease:"easeInOut" }
+      : { y:[0,-1,0], rotate:[0,.4,0], scaleX:1, scaleY:1 };
+    void controls.start({ x:0, ...pose },
+    reduced ? { duration:0 } : action === "avoid" ? { duration:.45, repeat:0, ease:"easeOut" }
+      : action === "cynical" || angry || sleepReaction ? { duration:angry ? .35 : .2, repeat:0, ease:"easeInOut" }
       : action === "stretch" ? { duration:2.4, ease:"easeInOut" }
       : { duration:sleeping ? 3.8 : action === "paw-wave" ? .36 : action === "lick" ? .46 : 4.6, repeat:Infinity, ease:"easeInOut" });
     return () => controls.stop();
   }, [controls, reduced, action, sleeping, angry, sleepReaction, reactionKey]);
-  const expression = action === "cynical" || action === "rest-front" ? "cynical" : angry ? "angry" : action.endsWith("-peek") ? "peek" : action === "idle" || sleeping || action === "stretch" ? "idle" : action === "sad" ? "sad" : "happy";
+  const expression = action === "avoid" ? "avoid" : action === "cynical" || action === "rest-front" ? "cynical" : angry ? "angry" : action.endsWith("-peek") ? "peek" : action === "idle" || sleeping || action === "stretch" ? "idle" : action === "sad" ? "sad" : "happy";
   return <span className={`characterVisual characterVisual--gomi characterMotion--poised-ear-tilt ${className}`.trim()}
     data-character="gomi" data-stage="6" data-expression={expression} data-motion={action} data-frame={reduced ? 0 : picture.frame}
     data-reduced-motion={Boolean(reduced)}>
