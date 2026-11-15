@@ -114,15 +114,26 @@ function prohibited(input: OwnInput, token: string): boolean {
   };
   return Boolean(foreign[input.action]?.test(token));
 }
+function stopsPetting(input:OwnInput,line:string):boolean {
+  return input.action==="pet"&&/쓰다듬지|만지지|손.*치워|그만|멈춰|거기까지만/.test(line);
+}
+function contradicts(input:OwnInput,line:string):boolean {
+  const boundary=line.search(/[.!?]/);
+  if(boundary<0)return false;
+  const first=line.slice(0,boundary+1),second=line.slice(boundary+1);
+  // A clear request to stop is already a complete short reaction. Keep its
+  // boundary unambiguous instead of adding a potentially permissive clause.
+  if(stopsPetting(input,first)&&second.trim())return true;
+  return /내 옆|네 옆|곁에 있어/.test(first)&&/떨어져|멀리|혼자.*있/.test(second);
+}
 function acceptable(input: OwnInput, line: string): boolean {
   if (!/[가-힣]/.test(line) || Array.from(line).length < 4 || Array.from(line).length > 50) return false;
   const flat = normalized(line);
   if ((input.previous || []).some(previous => normalized(previous) === flat)) return false;
+  if(contradicts(input,line))return false;
   const sentences=line.match(/[^.!?]+[.!?]+|[^.!?]+$/gu)||[];
   if(sentences.length>1){
     const first=sentences[0]!,second=sentences.slice(1).join(" ");
-    if(input.action==="pet"&&/쓰다듬지|만지지|손.*치워|지금은.*멈춰|거기까지만/.test(first)&&/더.*쓰다듬|조금만 더|한 번 더/.test(second))return false;
-    if(/내 옆|네 옆|곁에 있어/.test(first)&&/떨어져|멀리|혼자.*있/.test(second))return false;
     const firstFlat=normalized(first),secondFlat=normalized(second);
     if(firstFlat===secondFlat||firstFlat.endsWith(secondFlat)||secondFlat.endsWith(firstFlat))return false;
     const tail=(text:string)=>text.replace(/[.!?…]/g,"").trim().split(/\s+/).slice(-2).join(" ");
@@ -161,7 +172,7 @@ export function generateOwnLine(model: OwnModel, input: OwnInput, seed = Date.no
       for (let id = 1; id < scores.length; id++) {
         if(!model.nextTokens[history[3]].has(id))continue;
         const token = model.vocab[id];
-        if(id===4&&(clause!==0||!words.length||!punctuation.test(words.at(-1)!)))continue;
+        if(id===4&&(clause!==0||!words.length||!punctuation.test(words.at(-1)!)||stopsPetting(input,render(words))))continue;
         if (id === 2 || id === 3 || (id === 1 && words.length < 2) || (punctuation.test(token) && (!words.length || punctuation.test(words.at(-1)!))) ||
             (id > 4 && prohibited(input,token)) || (id>4 && !punctuation.test(token) && words.slice(-2).includes(token))) continue;
         const score = scores[id];
@@ -180,7 +191,7 @@ export function generateOwnLine(model: OwnModel, input: OwnInput, seed = Date.no
       else if(chosen===4)line=decode([0,0,0,0],words,1,step+1);
       else{
         const next=[...words,model.vocab[chosen]],current=render(next);
-        if(Array.from(current).length>50)continue;
+        if(Array.from(current).length>50||contradicts(input,current))continue;
         if(next.filter(word=>/^[.!?]$/.test(word)).length>=2||(current.length>=44&&/[.!?…]$/.test(current)))line=finish(next);
         else line=decode([...history.slice(1),chosen],next,clause,step+1);
       }

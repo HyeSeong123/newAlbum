@@ -58,6 +58,12 @@ test('sleeping Gomi keeps producing distinct reactions at low affection after re
   }
  }
 });
+test('petting can decline touch without exhausting contradictory second clauses',()=>{
+ const ai=engine.loadOwnModel(model);
+ const reply=engine.generateOwnLine(ai,{...input,action:'pet',affection:45},20261146);
+ assert.match(reply,/쓰다듬|손|만지|살살|멈춰|거기|그만|어색/);
+ assert.doesNotMatch(reply,/멈춰[^.!?]*[.!?]\s*\S/);
+});
 test('learned word connections constrain syntax without a whole-reply lookup table',()=>{
  const ai=engine.loadOwnModel(model),ids=new Map(ai.vocab.map((word,index)=>[word,index]));
  const reply=engine.generateOwnLine(ai,{...input,sleeping:true,mood:'sleepy',energy:0},20261828);
