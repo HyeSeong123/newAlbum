@@ -28,6 +28,7 @@ export function assertOwnTimings(records,targetMs=1000){
 /** Actual installed app UI -> stored relationship -> own Worker -> painted line. */
 export async function verifyInstalledGomiAction(page,output='test-results/android-smoke',{offline=true}={}){
  let previousAirplane,previousWifi,previousData;
+ const records=[];
  try{
   if(offline){
    assert.match(await adb('get-serialno'),/^emulator-/,'Automatic radio controls are restricted to the CI emulator');
@@ -49,6 +50,12 @@ export async function verifyInstalledGomiAction(page,output='test-results/androi
   await page.evaluate(()=>{
    const original=window.__TAURI_INTERNALS__.invoke.bind(window.__TAURI_INTERNALS__);
    window.__ownAiForbiddenCalls=[];
+   window.__ownAiRequests=[];
+   const post=Worker.prototype.postMessage;
+   Worker.prototype.postMessage=function(message,...args){
+    if(message?.input?.characterId&&Number.isFinite(message.seed))window.__ownAiRequests.push(structuredClone(message));
+    return Reflect.apply(post,this,[message,...args]);
+   };
    window.__TAURI_INTERNALS__.invoke=(command,args,...rest)=>{
     if(command==='generate_chat_reply'||command==='download_chat_model'){
      window.__ownAiForbiddenCalls.push(command);throw new Error('External character AI boundary was called');
@@ -56,7 +63,6 @@ export async function verifyInstalledGomiAction(page,output='test-results/androi
     return original(command,args,...rest);
    };
   });
-  const records=[];
   for(let index=0;index<8;index++){
    records.push(await page.evaluate(()=>new Promise((resolve,reject)=>{
     const before=document.querySelector('#homeMessage')?.textContent;
@@ -75,6 +81,7 @@ export async function verifyInstalledGomiAction(page,output='test-results/androi
     observer.observe(document.querySelector('.homeDialogueSlot'),{childList:true,subtree:true,characterData:true,attributes:true});
     document.querySelector('.homeMascot').click();
    })));
+   records.at(-1).request=await page.evaluate(()=>window.__ownAiRequests.at(-1));
   }
   const timings=assertOwnTimings(records);
   assert.deepEqual(await page.evaluate(()=>window.__ownAiForbiddenCalls),[]);
@@ -102,6 +109,13 @@ export async function verifyInstalledGomiAction(page,output='test-results/androi
    scope:'Installed x86_64 emulator UI, full text after a render opportunity. Not Galaxy26 hardware.'};
   if(output){await mkdir(output,{recursive:true});await writeFile(join(output,'gomi-action-smoke.json'),JSON.stringify(evidence,null,2)+'\n');}
   return evidence;
+ }catch(error){
+  if(output){
+   await mkdir(output,{recursive:true});
+   const requests=await page.evaluate(()=>window.__ownAiRequests||[]).catch(()=>[]);
+   await writeFile(join(output,'gomi-action-failure.json'),JSON.stringify({records,requests,error:String(error),syntheticInput:true},null,2)+'\n');
+  }
+  throw error;
  }finally{
   if(previousAirplane!=null)await adb('shell','cmd','connectivity','airplane-mode',previousAirplane==='1'?'enable':'disable');
   if(previousWifi!=null)await adb('shell','svc','wifi',previousWifi==='1'||previousWifi==='2'?'enable':'disable');

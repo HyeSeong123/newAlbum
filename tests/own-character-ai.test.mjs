@@ -42,6 +42,22 @@ test('generation supports cancellation before any work',()=>{
  const ai=engine.loadOwnModel(model);
  assert.throws(()=>engine.generateOwnLine(ai,input,1,()=>true),/AI_CANCELLED/);
 });
+test('sleeping Gomi keeps producing distinct reactions at low affection after repeated touches',()=>{
+ const ai=engine.loadOwnModel(model);
+ const previous=['조금 더 잘래. 더 잘래.','자는 동안은 조용히 말해줘.','나 졸리단 말이야. 더 잘래.',
+  '조금만 조용히 해줘. 더 잘래.','조금만 더 자게 해줘.','왜 불러? 더 잘래.',
+  '나 졸리단 말이야. 나 좀 더 자게 해줘.','조금만 조용히 해줘. 지금은 조용히 해.','나 졸리단 말이야. 조금 더 잘래.'];
+ const line=engine.generateOwnLine(ai,{...input,action:'touch',affection:0,mood:'sleepy',energy:1,sleeping:true,previous},20261448);
+ assert.ok(!previous.includes(line));assert.match(line,/잘|자게|자고|졸|조용|깨우|쉬/);
+ for(const mood of ['sleepy','irritated']){
+  const recent=[];
+  for(let index=0;index<16;index++){
+   const reply=engine.generateOwnLine(ai,{...input,action:'touch',affection:0,mood,energy:1,sleeping:true,previous:recent},20261115+index*37);
+   assert.ok(!recent.includes(reply));assert.ok(Array.from(reply).length<=50);
+   recent.push(reply);if(recent.length>12)recent.shift();
+  }
+ }
+});
 test('learned word connections constrain syntax without a whole-reply lookup table',()=>{
  const ai=engine.loadOwnModel(model),ids=new Map(ai.vocab.map((word,index)=>[word,index]));
  const reply=engine.generateOwnLine(ai,{...input,sleeping:true,mood:'sleepy',energy:0},20261828);

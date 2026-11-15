@@ -123,7 +123,10 @@ function acceptable(input: OwnInput, line: string): boolean {
     const first=sentences[0]!,second=sentences.slice(1).join(" ");
     if(input.action==="pet"&&/쓰다듬지|만지지|손.*치워|지금은.*멈춰|거기까지만/.test(first)&&/더.*쓰다듬|조금만 더|한 번 더/.test(second))return false;
     if(/내 옆|네 옆|곁에 있어/.test(first)&&/떨어져|멀리|혼자.*있/.test(second))return false;
-    if(normalized(first)===normalized(second))return false;
+    const firstFlat=normalized(first),secondFlat=normalized(second);
+    if(firstFlat===secondFlat||firstFlat.endsWith(secondFlat)||secondFlat.endsWith(firstFlat))return false;
+    const tail=(text:string)=>text.replace(/[.!?…]/g,"").trim().split(/\s+/).slice(-2).join(" ");
+    if(tail(first).includes(" ")&&tail(first)===tail(second))return false;
   }
   if (input.condition === "cold" || input.condition === "unwell") return /안아줘|안고/.test(line);
   if (input.sleeping) return /잘|자게|자고|졸|조용|깨우|쉬/.test(line);
@@ -140,14 +143,20 @@ export function generateOwnLine(model: OwnModel, input: OwnInput, seed = Date.no
   const states = [conditioned(model,input,0),conditioned(model,input,1)], started = performance.now();
   let randomState = (seed | 0) || 1;
   const random = () => { randomState ^= randomState << 13; randomState ^= randomState >>> 17; randomState ^= randomState << 5; return (randomState >>> 0) / 4294967296; };
-  for (let attempt = 0; attempt < 16; attempt++) {
-    let history = [0,0,0,0];
-    let clause = 0;
-    let ended = false;
-    const words: string[] = [];
-    for (let step = 0; step < 22; step++) {
+  const render=(words:string[])=>words.join(" ").replace(/\s+([.!?…])/g,"$1").trim();
+  const finish=(words:string[])=>{
+    let line=render(words);if(!/[.!?…]$/.test(line))line+=".";
+    return acceptable(input,line)?line:undefined;
+  };
+  let evaluated=0;
+  // Sample each continuation once. When a complete line repeats a recent
+  // reply or fails a state check, backtrack to an untried learned word edge
+  // instead of restarting and repeatedly drawing the same rejected sentence.
+  function decode(history:number[],words:string[],clause:number,step:number):string|undefined {
       if (cancelled()) throw new Error("AI_CANCELLED");
       if (performance.now()-started > 700) throw new Error("AI_OWN_TIMEOUT");
+      if(step>=22||evaluated>=256)return undefined;
+      evaluated++;
       const scores = logits(model,history,states[clause]), candidates: Array<{id:number; score:number}> = [];
       for (let id = 1; id < scores.length; id++) {
         if(!model.nextTokens[history[3]].has(id))continue;
@@ -160,23 +169,26 @@ export function generateOwnLine(model: OwnModel, input: OwnInput, seed = Date.no
         if (position < 0) position = candidates.length;
         if (position < 8) { candidates.splice(position,0,{id,score}); if (candidates.length > 8) candidates.pop(); }
       }
-      if (!candidates.length) break;
-      const temperature = attempt < 6 ? 0.68 : 0.82;
+    while(candidates.length&&evaluated<256){
+      const temperature = evaluated < 96 ? 0.68 : 0.82;
       const weights = candidates.map(item => Math.exp((item.score-candidates[0].score)/temperature));
-      let draw = random() * weights.reduce((sum,value) => sum+value,0), chosen = candidates[0].id;
-      for (let i = 0; i < candidates.length; i++) { draw -= weights[i]; if (draw <= 0) { chosen = candidates[i].id; break; } }
-      if (chosen === 1) {ended=true;break;}
-      if(chosen===4){clause=1;history=[0,0,0,0];continue;}
-      words.push(model.vocab[chosen]); history = [...history.slice(1),chosen];
-      const current = words.join(" ").replace(/\s+([.!?…])/g,"$1");
-      if(words.filter(word=>/^[.!?]$/.test(word)).length>=2){ended=true;break;}
-      if (current.length >= 44 && /[.!?…]$/.test(current)) {ended=true;break;}
-      if (current.length > 50) { words.pop(); break; }
+      let draw = random() * weights.reduce((sum,value) => sum+value,0), selected = 0;
+      for (let i = 0; i < candidates.length; i++) { draw -= weights[i]; if (draw <= 0) { selected=i; break; } }
+      const chosen=candidates.splice(selected,1)[0].id;
+      let line:string|undefined;
+      if(chosen===1)line=finish(words);
+      else if(chosen===4)line=decode([0,0,0,0],words,1,step+1);
+      else{
+        const next=[...words,model.vocab[chosen]],current=render(next);
+        if(Array.from(current).length>50)continue;
+        if(next.filter(word=>/^[.!?]$/.test(word)).length>=2||(current.length>=44&&/[.!?…]$/.test(current)))line=finish(next);
+        else line=decode([...history.slice(1),chosen],next,clause,step+1);
+      }
+      if(line)return line;
     }
-    if(!ended) continue;
-    let line = words.join(" ").replace(/\s+([.!?…])/g,"$1").trim();
-    if (!/[.!?…]$/.test(line)) line += ".";
-    if (acceptable(input,line)) return line;
+    return undefined;
   }
+  const line=decode([0,0,0,0],[],0,0);
+  if(line)return line;
   throw new Error("AI_OWN_NO_VALID_LINE");
 }
