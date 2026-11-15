@@ -65,6 +65,17 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     }
   });
   const lastLine = useRef(0);
+  useEffect(()=>{
+    if(document.hidden||(aiStatus!=="generating"&&!spokenLine))return;
+    const message=document.getElementById("homeMessage");if(!message)return;
+    const box=message.getBoundingClientRect(),x=box.left+box.width/2;
+    const visible=box.top>=0&&box.bottom<=window.innerHeight&&[box.top+2,box.top+box.height/2,box.bottom-2].every(y=>{
+      const hit=document.elementFromPoint(x,y);return hit!=null&&message.contains(hit);
+    });
+    // Activity buttons can be below the speech balloon, behind the sticky
+    // navigation after scrolling. Bring the actual response back into view.
+    if(!visible)message.scrollIntoView({block:"center",behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
+  },[aiStatus,spokenLine]);
   const timer = useRef<number | undefined>(undefined);
   const reactionRequest = useRef(0);
   const storedInteraction = useRef<Promise<OwnedCharacter | undefined>>(Promise.resolve(undefined));

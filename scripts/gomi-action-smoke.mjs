@@ -46,22 +46,30 @@ async function pressAndPaint(page,selector){
  await page.locator('#homeMessage').scrollIntoViewIfNeeded();
  const record=await page.evaluate(selector=>new Promise((resolve,reject)=>{
   const before=document.querySelector('#homeMessage')?.textContent,started=performance.now();let finished=false;
-  const dispose=()=>{finished=true;clearTimeout(timer);observer.disconnect();};
-  const observer=new MutationObserver(()=>{
+  const dispose=()=>{finished=true;clearTimeout(timer);};
+  const visible=node=>{
+   const box=node.getBoundingClientRect(),x=box.left+box.width/2;
+   return box.top>=0&&box.bottom<=innerHeight&&[box.top+2,box.top+box.height/2,box.bottom-2].every(y=>{
+    const hit=document.elementFromPoint(x,y);return hit!=null&&node.contains(hit);
+   });
+  };
+  const check=()=>{
+   if(finished)return;
    const node=document.querySelector('#homeMessage');
-   if(finished||node?.getAttribute('data-source')!=='on-device'||node.textContent===before)return;
-   requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    if(finished)return;
-    const box=node.getBoundingClientRect();
-    if(box.top<0||box.bottom>innerHeight)return;
-    const hit=document.elementFromPoint(box.left+box.width/2,box.top+box.height/2);
-    if(!hit||!node.contains(hit))return;
-    const line=node.textContent,elapsedMs=performance.now()-started;dispose();resolve({source:'on-device',line,elapsedMs});
-   }));
-  });
+   if(node?.getAttribute('data-source')==='on-device'&&node.textContent!==before&&visible(node)){
+    const candidate=node.textContent;
+    requestAnimationFrame(()=>{
+     if(finished)return;
+     const painted=document.querySelector('#homeMessage');
+     if(painted?.getAttribute('data-source')==='on-device'&&painted.textContent===candidate&&visible(painted)){
+      const elapsedMs=performance.now()-started;dispose();resolve({source:'on-device',line:candidate,elapsedMs});
+     }else requestAnimationFrame(check);
+    });
+   }else requestAnimationFrame(check);
+  };
   const timer=setTimeout(()=>{dispose();reject(new Error('No complete own-AI response within 1 second: '+document.querySelector('#homeMessage')?.textContent));},1000);
-  observer.observe(document.querySelector('.homeDialogueSlot'),{childList:true,subtree:true,characterData:true,attributes:true});
   const button=document.querySelector(selector);if(!button){dispose();reject(new Error('Missing action: '+selector));return;}button.click();
+  requestAnimationFrame(check);
  }),selector);
  record.request=await page.evaluate(()=>window.__ownAiRequests.at(-1));
  assert.ok(record.request,'Actual Home action must reach the own neural Worker');
