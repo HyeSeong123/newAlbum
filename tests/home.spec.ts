@@ -7,15 +7,18 @@ test('Home shows no prewritten greeting across navigation, reload or legacy gree
   const speech = page.locator('#homeMessage');
   await expect(speech).toHaveAttribute('data-source', 'nonverbal');
   await expect(page.locator('.homeSpeech')).toHaveCount(0);
-  await expect(speech).toContainText('고미가 눈길을 돌리고 있어요');
+  await expect(page.locator('.homeQuietDots')).toHaveText('...');
+  await expect(page.locator('.homeQuietDots')).toBeVisible();
   for (const command of ['사진 기록', '홈']) {
     await page.locator('.navList').getByRole('button', { name: command, exact: true }).click();
   }
   await expect(speech).toHaveAttribute('data-source', 'nonverbal');
   await expect(page.locator('.homeSpeech')).toHaveCount(0);
+  await expect(page.locator('.homeQuietDots')).toBeVisible();
   await page.reload();
   await expect(speech).toHaveAttribute('data-source', 'nonverbal');
   await expect(page.locator('.homeSpeech')).toHaveCount(0);
+  await expect(page.locator('.homeQuietDots')).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('gamjassak:gomi-greeting:gomi'))).toBe('2026-01-01');
 });
 
