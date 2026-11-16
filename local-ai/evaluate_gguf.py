@@ -5,8 +5,6 @@ import subprocess
 import tempfile
 import time
 from core import HERE,ROOT,read_json,write_json,registries,messages_for,valid_reply,sha256
-from modeling import local_base
-from transformers import AutoTokenizer
 
 
 def write_native_prompt(path,prompt):
@@ -14,6 +12,10 @@ def write_native_prompt(path,prompt):
 
 
 def main():
+    # Byte-exact prompt writing and lightweight storage/UI tests do not need
+    # the optional PC training stack. Load it only when running evaluation.
+    from modeling import local_base
+    from transformers import AutoTokenizer
     p=argparse.ArgumentParser()
     p.add_argument('--model',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)

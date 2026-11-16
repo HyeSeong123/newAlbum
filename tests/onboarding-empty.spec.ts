@@ -25,7 +25,7 @@ test('first run can start Gomi tutorial and the tutorial can be reopened after d
   await page.addInitScript(() => localStorage.removeItem('geuruteogi.first-run-completed-v1'));
   await page.goto('/');
   const firstRun = page.getByRole('dialog',{name:'곰고미에 사진을 담아보세요'});
-  await expect(firstRun).toContainText('…여기 봐.');
+  await expect(firstRun.getByLabel('고미의 안내')).toContainText('사진과 영상을 가져오면 날짜별로');
   await firstRun.getByRole('button',{name:'고미와 사용 방법 살펴보기'}).click();
   const guide = page.getByRole('dialog',{name:'버튼 도움말'});
   await expect(guide).toBeVisible();

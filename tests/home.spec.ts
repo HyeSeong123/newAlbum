@@ -5,16 +5,16 @@ test('Home shows no prewritten greeting across navigation, reload or legacy gree
   await page.addInitScript(() => localStorage.setItem('gamjassak:gomi-greeting:gomi', '2026-01-01'));
   await page.goto('/');
   const speech = page.locator('#homeMessage');
-  await expect(speech).toHaveAttribute('data-source', 'status');
+  await expect(speech).toHaveAttribute('data-source', 'nonverbal');
   await expect(page.locator('.homeSpeech')).toHaveCount(0);
-  await expect(speech).toContainText('AI가 새로운 대사를 만들어요');
+  await expect(speech).toContainText('고미가 눈길을 돌리고 있어요');
   for (const command of ['사진 기록', '홈']) {
     await page.locator('.navList').getByRole('button', { name: command, exact: true }).click();
   }
-  await expect(speech).toHaveAttribute('data-source', 'status');
+  await expect(speech).toHaveAttribute('data-source', 'nonverbal');
   await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await page.reload();
-  await expect(speech).toHaveAttribute('data-source', 'status');
+  await expect(speech).toHaveAttribute('data-source', 'nonverbal');
   await expect(page.locator('.homeSpeech')).toHaveCount(0);
   expect(await page.evaluate(() => localStorage.getItem('gamjassak:gomi-greeting:gomi'))).toBe('2026-01-01');
 });
@@ -46,23 +46,35 @@ test('startup, every logo link, the first menu item and reload all lead to Home'
   await expect(home).toBeVisible();
 });
 
-test('Home touch, Enter and Space never invent a line when the AI is unavailable', async ({ page }) => {
+test('unbonded Gomi completes touch, Enter and Space silently without requesting inference', async ({ page }) => {
+  await page.addInitScript(() => {
+    const OriginalWorker = window.Worker;
+    (window as any).__homeAiInputs = [];
+    window.Worker = class extends OriginalWorker {
+      postMessage(message: any, options?: any) {
+        if (message?.input) (window as any).__homeAiInputs.push(message.input);
+        super.postMessage(message, options);
+      }
+    };
+  });
   await page.goto('/');
   const mascot = page.getByRole('button', { name: '고미에게 말 걸기', exact: true });
   const speech = page.locator('#homeMessage');
   await mascot.locator('img').evaluate((image: HTMLImageElement) => image.decode());
   await expect(speech).toHaveAttribute('aria-live', 'polite');
-  await expect(speech).toHaveAttribute('data-source', 'status');
+  await expect(speech).toHaveAttribute('data-source', 'nonverbal');
   const requests: string[] = [];
   page.on('request', request => requests.push(request.url()));
   for (const trigger of ['click', 'Enter', 'Space', 'click']) {
+    const previous = Number(await speech.getAttribute('data-response-id'));
     if (trigger === 'click') await mascot.click();
     else await mascot.press(trigger);
-    await expect(speech).toHaveAttribute('data-state', 'failed');
-    await expect(speech).toContainText('AI 대사');
+    await expect(speech).toHaveAttribute('data-state', 'quiet');
+    await expect.poll(async () => Number(await speech.getAttribute('data-response-id'))).toBeGreaterThan(previous);
     await expect(page.locator('.homeSpeech')).toHaveCount(0);
   }
   expect(requests.filter(url => !url.startsWith('http://127.0.0.1:5173/'))).toEqual([]);
+  expect(await page.evaluate(() => (window as any).__homeAiInputs)).toEqual([]);
 });
 
 test('Home shortcuts show existing counts and open the matching records', async ({ page }) => {
@@ -128,7 +140,7 @@ test('Home companion actions expand, respond, remember locally and never award a
   await expect(actions.getByRole('button')).toHaveCount(5);
 
   await actions.getByRole('button', { name: '함께 산책' }).click();
-  await expect(speech).toHaveAttribute('data-state', 'failed');
+  await expect(speech).toHaveAttribute('data-state', 'quiet');
   await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await expect(page.locator('.homeActivityMood')).toHaveCount(0);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
@@ -137,7 +149,7 @@ test('Home companion actions expand, respond, remember locally and never award a
   expect(saved?.mood).toBe('curious');
 
   await actions.getByRole('button', { name: '간식 주기' }).click();
-  await expect(speech).toHaveAttribute('data-state', 'failed');
+  await expect(speech).toHaveAttribute('data-state', 'quiet');
   await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await expect(page.locator('.homeActivityMood')).toHaveCount(0);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
