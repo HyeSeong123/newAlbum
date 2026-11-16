@@ -9,7 +9,36 @@ const greetingSource = ts.transpileModule(readFileSync(new URL('../src/features/
 const { claimGomiGreeting } = await import(`data:text/javascript;base64,${Buffer.from(greetingSource).toString('base64')}`);
 const source = readFileSync(new URL('../src/features/characters/gomiBehavior.ts', import.meta.url), 'utf8');
 const { outputText } = ts.transpileModule(source.replace('"./gomiAffinity"', JSON.stringify(affinityUrl)), { compilerOptions:{ target:ts.ScriptTarget.ES2022, module:ts.ModuleKind.ESNext } });
-const { allowedGomiMotion, gomiInteractionMotion, gomiHomeMotion, gomiSeason, gomiSleepReaction, gomiFoodSequence, gomiMotionFrames, gomiMotionDuration, GOMI_BOND_AFFECTION, GOMI_LICK_AFFECTION, gomiSleepLine } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
+const { allowedGomiMotion, gomiInteractionMotion, gomiHomeMotion, gomiSeason, gomiSleepReaction, gomiFoodSequence, gomiMotionFrames, gomiMotionDuration, gomiRetreatAnimation, GOMI_BOND_AFFECTION, GOMI_LICK_AFFECTION, gomiSleepLine } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
+
+test('Gomi retreats in three small centered steps per touch and remains visible after repeated touches', () => {
+  for (const [sequence, from, to] of [[1,1,.88],[2,.88,.76],[3,.76,.64],[4,.64,.52],[50,.52,.52]]) {
+    const {keyframes, duration} = gomiRetreatAnimation(sequence, false);
+    assert.equal(keyframes.x,0); assert.equal(keyframes.rotate,0);
+    assert.equal(duration,.9);
+    assert.equal(keyframes.scaleX[0],from); assert.equal(keyframes.scaleX.at(-1),to);
+    assert.deepEqual(keyframes.scaleY,keyframes.scaleX);
+    for(let i=1;i<keyframes.scaleX.length;i++) assert.ok(keyframes.scaleX[i]<=keyframes.scaleX[i-1]);
+    assert.ok(keyframes.y.at(-1)<=keyframes.y[0]);
+    assert.ok(keyframes.scaleX.every(value=>value>=.52));
+  }
+});
+
+test('reduced motion keeps the same retreat depth without moving and Home entry starts at full size', () => {
+  const initial=gomiRetreatAnimation(0,true);
+  assert.deepEqual(initial.keyframes,{x:0,y:0,rotate:0,scaleX:1,scaleY:1});
+  const reduced=gomiRetreatAnimation(3,true);
+  assert.equal(reduced.duration,0);
+  assert.equal(reduced.keyframes.scaleX,.64);assert.equal(reduced.keyframes.scaleY,.64);
+  assert.ok(reduced.keyframes.y<0);assert.equal(reduced.keyframes.x,0);
+});
+
+test('another touch during a backward step continues from the current drawing instead of snapping ahead', () => {
+  const plan=gomiRetreatAnimation(2,false,{scale:.98,y:-1.25});
+  assert.equal(plan.keyframes.scaleX[0],.98);
+  assert.equal(plan.keyframes.y[0],-1.25);
+  assert.equal(plan.keyframes.scaleX.at(-1),.76);
+});
 
 test('unbonded Gomi quietly looks away rather than giving a hostile front-facing response', () => {
   for(const affection of [0,19,20,29,30,59]){

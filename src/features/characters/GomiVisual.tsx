@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { motion as animated, useAnimationControls, useReducedMotion } from "motion/react";
-import { allowedGomiMotion, gomiMotionFrames, isGomiAngry, isGomiSleeping, isGomiSleepReaction, type GomiMotion } from "./gomiBehavior";
+import { motion as animated, useAnimationControls, useMotionValue, useReducedMotion } from "motion/react";
+import { allowedGomiMotion, gomiMotionFrames, gomiRetreatAnimation, isGomiAngry, isGomiSleeping, isGomiSleepReaction, type GomiMotion } from "./gomiBehavior";
 
 export function GomiVisual({ motion = "idle", affection = 0, className = "", reactionKey = 0 }: {
   motion?: GomiMotion; affection?: number; className?: string; reactionKey?: number;
 }) {
   const reduced = useReducedMotion();
   const controls = useAnimationControls();
+  const scaleX = useMotionValue(1), scaleY = useMotionValue(1), y = useMotionValue(0);
   const action = allowedGomiMotion(motion, affection);
   const frames = gomiMotionFrames[action];
   const [picture, setPicture] = useState(() => ({ frames, frame:0 }));
@@ -28,8 +29,12 @@ export function GomiVisual({ motion = "idle", affection = 0, className = "", rea
     return () => { active = false; window.clearInterval(timer); };
   }, [frames, action, reduced, reactionKey]);
   useEffect(() => {
-    const pose = reduced ? { y:0, rotate:0, scaleX:1, scaleY:1 } : action === "avoid"
-      ? { x:reactionKey ? (reactionKey % 2 ? 14 : -14) : 0, y:0, rotate:reactionKey ? (reactionKey % 2 ? -1 : 1) : 0, scaleX:1, scaleY:1 } : sleeping
+    if (action === "avoid") {
+      const retreat = gomiRetreatAnimation(reactionKey, Boolean(reduced), {scale:scaleX.get(),y:y.get()});
+      void controls.start(retreat.keyframes, {duration:retreat.duration,repeat:0,ease:"easeInOut"});
+      return () => controls.stop();
+    }
+    const pose = reduced ? { y:0, rotate:0, scaleX:1, scaleY:1 } : sleeping
       ? { y:[0,-.5,0], rotate:0, scaleX:[1,1.012,1], scaleY:[1,1.025,1] }
       : action === "cynical" ? { y:0, rotate:0, scaleX:1, scaleY:1 }
       : action === "rest-front" ? { y:0, rotate:0, scaleX:1, scaleY:[1,1.006,1] }
@@ -41,18 +46,17 @@ export function GomiVisual({ motion = "idle", affection = 0, className = "", rea
       : action === "happy" || action === "grow" ? { y:[0,-3,0], rotate:[0,-2,0], scaleX:1, scaleY:1 }
       : { y:[0,-1,0], rotate:[0,.4,0], scaleX:1, scaleY:1 };
     void controls.start({ x:0, ...pose },
-    reduced ? { duration:0 } : action === "avoid" ? { duration:.45, repeat:0, ease:"easeOut" }
-      : action === "cynical" || angry || sleepReaction ? { duration:angry ? .35 : .2, repeat:0, ease:"easeInOut" }
+    reduced ? { duration:0 } : action === "cynical" || angry || sleepReaction ? { duration:angry ? .35 : .2, repeat:0, ease:"easeInOut" }
       : action === "stretch" ? { duration:2.4, ease:"easeInOut" }
       : { duration:sleeping ? 3.8 : action === "paw-wave" ? .36 : action === "lick" ? .46 : 4.6, repeat:Infinity, ease:"easeInOut" });
     return () => controls.stop();
-  }, [controls, reduced, action, sleeping, angry, sleepReaction, reactionKey]);
+  }, [controls, reduced, action, sleeping, angry, sleepReaction, reactionKey, scaleX, y]);
   const expression = action === "avoid" ? "avoid" : action === "cynical" || action === "rest-front" ? "cynical" : angry ? "angry" : action.endsWith("-peek") ? "peek" : action === "idle" || sleeping || action === "stretch" ? "idle" : action === "sad" ? "sad" : "happy";
   return <span className={`characterVisual characterVisual--gomi characterMotion--poised-ear-tilt ${className}`.trim()}
     data-character="gomi" data-stage="6" data-expression={expression} data-motion={action} data-frame={reduced ? 0 : picture.frame}
     data-reduced-motion={Boolean(reduced)}>
     <animated.span className="characterBody gomiBody" initial={false}
-      style={{ transformOrigin: "50% 90%" }}
+      style={{ transformOrigin: "50% 90%", scaleX, scaleY, y }}
       animate={controls}>
       <img className="characterIllustration gomiIllustration" src={picture.frames[(reduced ? 0 : picture.frame) % picture.frames.length]}
         data-stage="6" data-expression={expression} alt="" draggable={false} width={220} height={220} />

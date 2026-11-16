@@ -137,7 +137,7 @@ test('Home companion actions expand, respond, remember locally and never award a
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-expanded', 'true');
   const actions = page.getByRole('group', { name: '친구와 함께하기' });
-  await expect(actions.getByRole('button')).toHaveCount(5);
+  await expect(actions.getByRole('button')).toHaveCount(6);
 
   await actions.getByRole('button', { name: '함께 산책' }).click();
   await expect(speech).toHaveAttribute('data-state', 'quiet');

@@ -88,3 +88,19 @@ export function gomiMotionDuration(motion: GomiMotion) {
   return motion === "cynical" || motion === "avoid" ? 1_800 : motion === "stretch" ? GOMI_STRETCH_MS : isGomiAngry(motion) ? 2_600 : motion.endsWith("-peek") ? 1_800
     : motion === "paw-wave" ? 2_200 : motion === "lick" ? 1_800 : 1_000;
 }
+
+// Distance is local to this Home visit. Keep the drawing centered and the
+// surrounding touch target full-sized, even after many hesitant steps away.
+export function gomiRetreatAnimation(sequence: number, reduced: boolean, current?: {scale:number;y:number}) {
+  const step = Number.isFinite(sequence) ? Math.max(0, Math.floor(sequence)) : 0;
+  const scaleAt = (index: number) => Number((1 - Math.min(4, index) * .12).toFixed(2));
+  const to = scaleAt(step);
+  const from = current ? Math.max(to, Math.min(1, current.scale)) : scaleAt(Math.max(0, step - 1));
+  const height = (scale: number) => scale === 1 ? 0 : -(1 - scale) * 80;
+  if (reduced) return {keyframes:{x:0,y:height(to),rotate:0,scaleX:to,scaleY:to},duration:0};
+  const first = from + (to - from) / 3, second = from + (to - from) * 2 / 3;
+  const scales = [from, first, first, second, second, to];
+  const lift = from === to ? 0 : 1.8;
+  return {keyframes:{x:0,rotate:0,scaleX:scales,scaleY:scales,
+    y:[current?.y ?? height(from),height(first)-lift,height(first),height(second)-lift,height(second),height(to)]},duration:.9};
+}
