@@ -2,7 +2,7 @@ import type {Page} from '@playwright/test';
 
 type Options = {
   characterId?: 'gomi' | 'potato'; affection?: number; sleeping?: boolean;
-  interactionDelay?: number; saveError?: boolean;
+  interactionDelay?: number; saveError?: boolean; holdSaves?: boolean;
   worker?: {delay?: number; error?: string; controlled?: boolean};
 };
 
@@ -22,10 +22,13 @@ export async function installOwnAi(page:Page,options:Options={}) {
   `}));
   await page.addInitScript(settings=>{
     Math.random=()=>settings.sleeping?.55:.1;
-    const probe=(window as any).ownAiProbe={requests:[] as any[],native:[] as string[],saveStarted:0,saveError:Boolean(settings.saveError),worker:null as Worker|null};
+    const probe=(window as any).ownAiProbe={requests:[] as any[],responses:[] as any[],native:[] as string[],saveStarted:0,saveError:Boolean(settings.saveError),holdSaves:Boolean(settings.holdSaves),pendingSaves:[] as (()=>void)[],worker:null as Worker|null};
     const OriginalWorker=window.Worker;
     window.Worker=class extends OriginalWorker {
-      constructor(url:string|URL,options?:WorkerOptions){super(url,options);if(String(url).includes('/characters/ownAi/worker.ts'))probe.worker=this;}
+      constructor(url:string|URL,options?:WorkerOptions){
+        super(url,options);
+        if(String(url).includes('/characters/ownAi/worker.ts')){probe.worker=this;this.addEventListener('message',event=>probe.responses.push(event.data));}
+      }
       postMessage(message:any,options?:any){if(message?.input)probe.requests.push(message.input);super.postMessage(message,options);}
     };
     let interacted=false,disturbances=0;
@@ -37,6 +40,7 @@ export async function installOwnAi(page:Page,options:Options={}) {
       if(command==='sync_characters')return snapshot();
       if(command==='interact_character'){
         probe.saveStarted++;
+        if(probe.holdSaves)await new Promise<void>(resolve=>probe.pendingSaves.push(resolve));
         if(settings.interactionDelay)await new Promise(resolve=>setTimeout(resolve,settings.interactionDelay));
         if(probe.saveError)throw new Error('fixture relationship save failed');
         const owned=characters.find(row=>row.id===args.id)!;

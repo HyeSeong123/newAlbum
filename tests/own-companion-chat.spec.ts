@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test';
 import {installOwnAi,requestedInputs,configureInference} from './fixtures/own-ai';
 
-test('bundled settings fit 320px without downloads or typing and restore focus',async({page})=>{
+test('bundled settings fit 320px without downloads or typing and restore focus',async({page,isMobile})=>{
   await page.setViewportSize({width:320,height:700});await installOwnAi(page);await page.goto('/');
   const opener=page.getByRole('button',{name:'AI 반응 설정',exact:true});await opener.click();
   const dialog=page.getByRole('dialog',{name:'AI 반응 설정',exact:true});
@@ -12,12 +12,14 @@ test('bundled settings fit 320px without downloads or typing and restore focus',
   await dialog.getByText('최근 실행 시간 보기',{exact:true}).click();await expect(dialog).toContainText('모델 준비');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await dialog.screenshot({path:`preview-results/own-ai-settings-${test.info().project.name}.png`});
-  await page.keyboard.press('Escape');await expect(dialog).toHaveCount(0);await expect(opener).toBeFocused();
+  if(isMobile)expect(await page.evaluate(()=>window.__gamjassakBack?.())).toBe(true);
+  else await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);await expect(opener).toBeFocused();
 });
 
 test('real bundled model produces short new lines for five actions without external requests',async({page})=>{
-  await installOwnAi(page,{affection:95});await page.goto('/');await page.evaluate(()=>document.fonts.ready);
   const external:string[]=[];page.on('request',request=>{if(!['127.0.0.1','localhost'].includes(new URL(request.url()).hostname))external.push(request.url());});
+  await installOwnAi(page,{affection:95});await page.goto('/');await page.evaluate(()=>document.fonts.ready);
   await page.getByRole('button',{name:'함께하기',exact:true}).click();const bubble=page.locator('#homeMessage');
   for(const name of ['함께 산책','간식 주기','쓰다듬기','함께 놀기','함께 쉬기']){
     await page.getByRole('group',{name:'친구와 함께하기'}).getByRole('button',{name,exact:true}).click();
@@ -42,6 +44,18 @@ test('a saved relationship reaching 60 enables speech using the saved value',asy
   await installOwnAi(page,{affection:59,interactionDelay:150,worker:{}});await page.goto('/');await page.locator('.homeMascot').click();
   await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
   expect((await requestedInputs(page))[0].affection).toBe(60);await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 60');
+});
+
+test('a failed quiet save never completes an interaction and retry stays silent',async({page})=>{
+  await installOwnAi(page,{affection:20,saveError:true,worker:{}});await page.goto('/');
+  await page.locator('.homeMascot').click();const bubble=page.locator('#homeMessage');
+  await expect(bubble).toHaveAttribute('data-state','failed');
+  expect(Number(await bubble.getAttribute('data-response-id'))).toBe(0);
+  expect(await requestedInputs(page)).toEqual([]);
+  await page.evaluate(()=>(window as any).ownAiProbe.saveError=false);
+  await page.locator('.homeMascot').click();await expect(bubble).toHaveAttribute('data-state','quiet');
+  await expect(bubble).toHaveAttribute('data-response-id',/^[1-9]\d*$/);
+  expect(await requestedInputs(page)).toEqual([]);await expect(page.locator('.homeSpeech')).toHaveCount(0);
 });
 
 test('failed relationship storage starts no inference and retry saves before speaking',async({page})=>{
@@ -89,6 +103,39 @@ test('leaving Home discards a late reply and next interaction gets its own answe
   await page.locator('.navList').getByRole('button',{name:'홈',exact:true}).click();await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await configureInference(page,{controlled:false});await page.locator('.homeMascot').click();
   await expect(page.locator('#homeMessage')).toHaveText('gomi touch 새 반응 2');
+});
+
+test('an old reply stays hidden while a new sleep disturbance is saving',async({page})=>{
+  await installOwnAi(page,{affection:95,sleeping:true,worker:{controlled:true}});await page.goto('/');
+  await page.locator('.homeMascot').click();await expect.poll(async()=>(await requestedInputs(page)).length).toBe(1);
+  await page.evaluate(()=>(window as any).ownAiProbe.holdSaves=true);
+  await page.locator('.homeMascot').click();await page.locator('.homeMascot').click();
+  await expect.poll(()=>page.evaluate(()=>(window as any).ownAiProbe.pendingSaves.length)).toBe(1);
+  await page.evaluate(()=>(window as any).ownAiProbe.worker.postMessage({finish:true}));
+  // Observe the old result reaching the client, not an arbitrary sleep.
+  await expect.poll(()=>page.evaluate(()=>(window as any).ownAiProbe.responses.filter((row:any)=>row.type==='reply').length)).toBe(1);
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
+  expect((await requestedInputs(page)).length).toBe(1);
+  await configureInference(page,{controlled:false});
+  await page.evaluate(()=>(window as any).ownAiProbe.pendingSaves.shift()());
+  await expect(page.locator('#homeMessage')).toHaveText('gomi touch 새 반응 2');
+  const input=(await requestedInputs(page)).at(-1);expect(input.affection).toBe(94);expect(input.mood).toBe('irritated');
+});
+
+test('backgrounding during relationship storage invalidates the pending reaction',async({page})=>{
+  await installOwnAi(page,{holdSaves:true,worker:{}});await page.goto('/');await page.locator('.homeMascot').click();
+  await expect.poll(()=>page.evaluate(()=>(window as any).ownAiProbe.pendingSaves.length)).toBe(1);
+  await page.evaluate(()=>{
+    Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));
+    Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));
+    (window as any).ownAiProbe.pendingSaves.shift()();
+  });
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 76');
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-state','idle');
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);expect(await requestedInputs(page)).toEqual([]);
+  await page.evaluate(()=>(window as any).ownAiProbe.holdSaves=false);
+  await page.locator('.homeMascot').click();await expect(page.locator('#homeMessage')).toHaveText('gomi touch 새 반응 1');
 });
 
 test('switching representative character drops previous pending speech',async({page})=>{

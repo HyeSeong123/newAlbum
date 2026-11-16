@@ -13,7 +13,7 @@
 - Preserve sub-60 Gomi's silent response, affection storage ordering, and no inference for silent interactions.
 - Preserve source media, SQLite, model/training originals, package identity and permanent signing.
 - Do not hide failures with unconditional skips, disable browser suites or relax the one-recognition-Worker contract.
-- Keep app dependencies unchanged. Training libraries belong only to the dedicated CI job.
+- Keep AI/runtime dependencies unchanged. Training libraries belong only to the dedicated CI job. Bundle the existing SUIT font after the browser test exposed its external CDN request.
 
 ## Review Focus
 
@@ -49,3 +49,5 @@
 - Remote final and local starting HEAD: 4357f5b2295acb6dcf28a2b76d2b4290433bed44; no open PRs at start.
 - Remote baseline: APK pipeline passed; source browser shards failed 65 executions, help 2, UX Python discovery 4 missing-module errors.
 - Existing isolated checkout: gomgomi-ci-fix. No changes to the shared final branch during implementation.
+- First PR CI: all previously failing browser cases recovered; only two new offline checks failed on the external SUIT font. Replace that runtime CDN dependency with the official pinned font package and preserve its OFL notice.
+- Review fix: add overlapping generation/storage and background/return coverage, failed silent-save coverage, observation before model warm-up, and retain successful mobile screenshots as CI artifacts.

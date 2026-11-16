@@ -126,6 +126,7 @@ jobs:
           name: audit-screens-${{ github.sha }}-shard-${{ matrix.shard }}
           path: |
             preview-results/audit/**
+            preview-results/own-ai-*.png
             test-results/**/test-failed-*.png
             test-results/**/error-context.md
           if-no-files-found: ignore
