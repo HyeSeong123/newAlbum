@@ -48,3 +48,16 @@ test('legacy external model generation/download are disabled and Home exposes th
  assert.equal((await service.chatModelStatus('gomi','home-actions')).model,'own-character-v3');
  assert.equal((await service.chatModelStatus()).supported,false);
 });
+
+
+test('cancelled Home AI reactions no longer appear running or falsely claim navigation',async()=>{
+ const service=await import(await modelUrl(new URL('../src/features/characters/companionChatService.ts',import.meta.url)));
+ const id='gomi-cancelled-status-test';
+ service.markChatReaction(id,'queued');
+ assert.equal(service.lastChatReaction(id)?.phase,'queued');
+ service.markChatReaction(id,'running');
+ assert.equal(service.lastChatReaction(id)?.phase,'running');
+ service.markChatReaction(id,'cancelled');
+ assert.equal(service.lastChatReaction(id)?.phase,'cancelled');
+ assert.equal(service.lastChatReaction(id)?.message,'AI 반응을 멈췄어요.');
+});

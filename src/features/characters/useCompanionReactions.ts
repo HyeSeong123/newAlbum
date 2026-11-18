@@ -46,12 +46,19 @@ export function useCompanionReactions(characterId: string | undefined, onResult:
     document.addEventListener("visibilitychange", visibility);
     return () => { cancel(); current.dispose(); queue.current = undefined; document.removeEventListener("visibilitychange", visibility); };
   }, [characterId]);
+  // A cancelled request must not keep showing as queued/running in AI settings.
+  const cancelReaction = () => {
+    queue.current?.cancel();
+    if (characterId && ["queued", "running"].includes(lastChatReaction(characterId)?.phase || "")) {
+      markChatReaction(characterId, "cancelled");
+    }
+  };
   return {
     waitForContext: () => queue.current?.hold(),
     react: (context: Omit<TouchContext, "previous" | "hour">) => { usedSession.current = true; markChatReaction(context.owned.id, "queued"); queue.current?.enqueue({ ...context, previous: recentTouchLines(context.owned.id), hour: new Date().getHours() }); },
-    cancel: () => queue.current?.cancel(),
+    cancel: cancelReaction,
     stopAndRelease: () => {
-      queue.current?.cancel();
+      cancelReaction();
       if (usedSession.current) {
         void releaseChatModel(sessionId.current);
         usedSession.current = false;
