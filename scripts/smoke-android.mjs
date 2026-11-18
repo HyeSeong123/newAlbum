@@ -385,9 +385,11 @@ try {
     // This workflow boots a disposable emulator. Seed its test relationship only
     // after exercising the actual new-install (quiet) path.
     assert.match(await adb('get-serialno'), /^emulator-\d+$/);
-    const db = await adb('shell', 'run-as', appId, 'find', 'files', '-name', 'album.sqlite');
-    assert.match(db, /^files\/(?:[a-zA-Z0-9._-]+\/)*album\.sqlite$/);
-    await adb('shell', `run-as ${appId} sqlite3 ${db} "UPDATE owned_character SET affection=95 WHERE character_id='gomi'"`);
+    await disconnect();
+    await adb('shell', 'am', 'force-stop', appId);
+    await run('python3', ['scripts/seed-emulator-bond.py', appId]);
+    await startApp();
+    connection = await connect(); context = connection.context; page = connection.page;
     const bonded = await verifyInstalledGomiAction(page, join(output, 'bonded'));
     assert.equal(bonded.timings?.samples, 10, 'All bonded gestures must produce real speech');
     console.log('Offline bonded Gomi, button to painted speech (ms)', bonded.timings);

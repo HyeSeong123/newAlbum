@@ -37,6 +37,7 @@ on:
       - 'scripts/pet-model-lock.json'
       - 'scripts/pet-runtime-benchmark.mjs'
       - 'scripts/smoke-android.mjs'
+      - 'scripts/seed-emulator-bond.py'
       - 'scripts/manual-photo-smoke.mjs'
       - 'scripts/app-ux-smoke.mjs'
       - 'scripts/pet-improvements-smoke.mjs'
@@ -213,6 +214,7 @@ jobs:
             test-results/android-smoke/friend-motions.json
             test-results/android-smoke/pet-improvements-smoke.json
             test-results/android-smoke/gomi-action-smoke.json
+            test-results/android-smoke/bonded/
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: failure()
