@@ -1,0 +1,53 @@
+name: Compare mobile snack retry
+on:
+  push:
+    branches: [qa/gomgomi-0.9.59-mobile-comparison]
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - stage: before
+            revision: 720efae04aa961db662229c902f6947ccc08322e
+          - stage: after
+            revision: c3930d7d3b7f5ffc79cc2998b1c9d6d525a26b0f
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: qa
+          sparse-checkout: |
+            tests/fixtures
+            tests/retry-comparison.spec.ts
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ matrix.revision }}
+          path: app
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Compare isolated relationship fixture in actual Home
+        working-directory: app
+        env:
+          STAGE: ${{ matrix.stage }}
+          PROOF_DIR: ${{ github.workspace }}/proof
+        run: |
+          mkdir -p tests/fixtures
+          cp ../qa/tests/fixtures/own-ai.ts tests/fixtures/own-ai.ts
+          cp ../qa/tests/retry-comparison.spec.ts tests/
+          npm ci
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y --no-install-recommends fonts-noto-cjk
+          npx playwright test tests/retry-comparison.spec.ts --project mobile --workers=1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-retry-${{ matrix.stage }}
+          path: proof/
+          retention-days: 14
