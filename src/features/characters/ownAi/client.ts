@@ -3,21 +3,34 @@ import type {OwnInput} from "./engine";
 type Result = {line:string;totalMs:number;generationMs:number};
 type Pending = {resolve:(value:Result)=>void;reject:(error:Error)=>void;started:number;dispose:()=>void};
 let worker: Worker | undefined, ready: Promise<void> | undefined, count = 0;
+let failWorker: ((error: Error) => void) | undefined;
 const pending = new Map<number,Pending>();
 const metrics = {loadMs:0,totalMs:0,generationMs:0,bytes:0,loadCount:0,stage:"idle",lastAt:0,lastError:"",lastOutcome:"none"};
 export function warmOwnAi(): Promise<void> {
   if (ready) return ready;
   if (typeof Worker === "undefined") return Promise.reject(new Error("AI_OWN_WORKER_UNAVAILABLE"));
+  let current: Worker;
+  try {
+    current = new Worker(new URL("./worker.ts",import.meta.url),{type:"module"});
+  } catch {
+    metrics.lastError = "AI_OWN_WORKER_FAILED";
+    metrics.stage = "error";
+    metrics.lastOutcome = "error";
+    return Promise.reject(new Error(metrics.lastError));
+  }
+  worker = current;
   ready = new Promise<void>((resolve,reject) => {
-    worker = new Worker(new URL("./worker.ts",import.meta.url),{type:"module"});
     const fail = (error: Error) => {
+      if (worker !== current) return;
       metrics.lastError=error.message;metrics.stage="error";metrics.lastOutcome="error";
       reject(error);
       for (const job of pending.values()) { job.dispose();job.reject(error); }
-      pending.clear();worker?.terminate();worker=undefined;ready=undefined;
+      pending.clear();current.terminate();worker=undefined;ready=undefined;failWorker=undefined;
     };
-    worker.onerror=() => fail(new Error("AI_OWN_WORKER_FAILED"));
-    worker.onmessage=event => {
+    failWorker = fail;
+    current.onerror=() => fail(new Error("AI_OWN_WORKER_FAILED"));
+    current.onmessage=event => {
+      if (worker !== current) return;
       const data=event.data;
       if (data.type === "ready") {
         metrics.loadMs=data.loadMs;metrics.bytes=data.bytes;metrics.loadCount++;metrics.stage="ready";resolve();return;
@@ -41,9 +54,22 @@ export async function generateOwnReaction(input: OwnInput, signal?: AbortSignal)
   return new Promise<string>((resolve,reject) => {
     const id=++count;
     const cancel=() => finish(new Error("AI_CANCELLED"));
-    const timer=setTimeout(() => finish(new Error("AI_OWN_TIMEOUT")),900);
+    const timer = setTimeout(() => {
+      const timeout = new Error("AI_OWN_TIMEOUT");
+      if (pending.size === 1 && pending.has(id) && failWorker) failWorker(timeout);
+      else finish(timeout);
+    }, 900);
     const dispose=() => {clearTimeout(timer);signal?.removeEventListener("abort",cancel);};
-    const finish=(error:Error) => {const job=pending.get(id);if(!job)return;pending.delete(id);dispose();metrics.lastError=error.message;metrics.lastOutcome=error.message==="AI_CANCELLED"?"cancelled":"error";reject(error);};
+    const finish = (error: Error) => {
+      if (!pending.delete(id)) return;
+      dispose();
+      if (!pending.size) {
+        metrics.lastError = error.message;
+        metrics.lastOutcome = error.message === "AI_CANCELLED" ? "cancelled" : "error";
+        if (metrics.stage === "generating") metrics.stage = worker ? "ready" : "idle";
+      }
+      reject(error);
+    };
     pending.set(id,{started,dispose,resolve:value=>resolve(value.line),reject});
     signal?.addEventListener("abort",cancel,{once:true});
     metrics.stage="generating";metrics.lastOutcome="running";

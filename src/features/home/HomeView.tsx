@@ -54,9 +54,11 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   const [aiStatus, setAiStatus] = useState<"idle" | "quiet" | "watching" | "generating" | "failed">("idle");
   const [quietResponseId, setQuietResponseId] = useState(0);
   const [aiFailure, setAiFailure] = useState("");
+  const retryContext = useRef<Parameters<ReturnType<typeof useCompanionReactions>["react"]>[0] | undefined>(undefined);
   const ai = useCompanionReactions(mainCharacter?.id, result => {
     // Never speak an authored fallback as though the model said it.
     if (result.source === "on-device" && result.line.trim()) {
+      retryContext.current = undefined;
       setSpokenLine(result.line.trim());
       setAiStatus("idle");
       setAiFailure("");
@@ -68,7 +70,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   });
   const lastLine = useRef(0);
   useEffect(()=>{
-    if(document.hidden||(!["generating","quiet","watching"].includes(aiStatus)&&!spokenLine))return;
+    if(document.hidden||(!["generating","quiet","watching","failed"].includes(aiStatus)&&!spokenLine))return;
     const message=document.getElementById("homeMessage");if(!message)return;
     const box=message.getBoundingClientRect(),x=box.left+box.width/2;
     const visible=box.top>=0&&box.bottom<=window.innerHeight&&[box.top+2,box.top+box.height/2,box.bottom-2].every(y=>{
@@ -85,6 +87,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     const invalidate = () => {
       if (document.hidden) {
         ++reactionRequest.current;
+        retryContext.current = undefined;
         setSpokenLine(undefined);
         setAiStatus("idle");
       }
@@ -96,6 +99,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   const appearance = definition?.id === "peach" ? "ㄱ 모양을 닮은 기린" : characterPortraits[definition?.id || ""]?.subject || "강아지 고미";
   useEffect(() => {
     ++reactionRequest.current;
+    retryContext.current = undefined;
     storedInteraction.current = Promise.resolve(undefined);
     setActivitiesOpen(false);
     setAiSetupOpen(false);
@@ -127,6 +131,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
 
   async function reactWithStoredRelationship(context: Parameters<typeof ai.react>[0], source?: CharacterInteractionSource) {
     const request = ++reactionRequest.current;
+    retryContext.current = undefined;
     ai.waitForContext();
     if (source) storedInteraction.current = onInteract(context.owned.id, source);
     const updated = await storedInteraction.current;
@@ -149,7 +154,8 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
       return;
     }
     setAiStatus("generating");
-    ai.react({ ...context, owned });
+    retryContext.current = { ...context, owned };
+    ai.react(retryContext.current);
   }
 
   function talk() {
@@ -185,6 +191,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     // both unresolved saves and queued inference without changing their data.
     const request = ++reactionRequest.current;
     ai.cancel();
+    retryContext.current = undefined;
     window.clearTimeout(timer.current);
     setHappy(false);
     setSpokenLine(undefined);
@@ -245,6 +252,13 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
                   isGomi && !gomi.ready ? "친구를 준비하고 있어요." :
                   definition ? "친구를 터치하면 AI가 새로운 대사를 만들어요." : "친구를 선택하면 AI와 대화할 수 있어요."}
               </p>}
+          {aiStatus === "failed" && retryContext.current && <button type="button" className="homeReactionRetry" onClick={() => {
+            const context = retryContext.current;
+            if (!context || context.owned.id !== mainCharacter?.id || document.hidden) return;
+            setAiStatus("generating");
+            setAiFailure("");
+            ai.react(context);
+          }}>대사 다시 생성</button>}
         </div>
         <button className={`homeMascot${happy ? " happy" : ""}`} type="button" aria-label={`${definition ? characterName(definition, mainCharacter) : "곰고미"}에게 말 걸기`} onClick={talk}>
           {definition && mainCharacter ? <CharacterVisual definition={definition} stage={mainCharacter.growthStage} expression={happy ? "happy" : "idle"}

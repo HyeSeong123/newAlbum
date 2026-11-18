@@ -7,7 +7,7 @@ const changed = () => listeners.forEach(listener => listener());
 export const subscribeChatReaction = (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; };
 export function markChatReaction(id: string, phase: "queued" | "running" | "cancelled") {
   if (phase === "queued" && reactionResults.get(id)?.phase === "running") return;
-  reactionResults.set(id, { source:"local-rules", phase, message: phase === "cancelled" ? "화면을 벗어나 AI 반응을 멈췄어요." : phase === "queued" ? "최근 행동의 AI 반응을 준비하고 있어요." : "최근 행동에 맞는 새 대사를 만들고 있어요." });
+  reactionResults.set(id, { source:"local-rules", phase, message: phase === "cancelled" ? "AI 반응을 멈췄어요." : phase === "queued" ? "최근 행동의 AI 반응을 준비하고 있어요." : "최근 행동에 맞는 새 대사를 만들고 있어요." });
   changed();
 }
 export function recordChatReaction(id: string, reply: CompanionGeneration) {

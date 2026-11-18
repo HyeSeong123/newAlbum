@@ -1,6 +1,8 @@
 """Exercise the production SQLite schema without a running Tauri application."""
 
 from pathlib import Path
+from contextlib import closing
+from tempfile import TemporaryDirectory
 import sqlite3
 import unittest
 
@@ -35,6 +37,39 @@ class AlbumStorageTests(unittest.TestCase):
 
     def covers(self):
         return self.db.execute("SELECT id, cover_media_id FROM album ORDER BY id").fetchall()
+
+    def test_snapshot_restore_preserves_links_and_repeated_restore_is_idempotent(self):
+        schema = Path(__file__).resolve().parents[1] / "src-tauri/database"
+        self.db.executescript((schema / "characters.sql").read_text())
+        self.db.executescript((schema / "diary-photos.sql").read_text())
+        self.db.executescript("""
+            INSERT INTO owned_character(character_id, custom_name, growth_stage, affection, is_main)
+                VALUES ('gomi', '테스트 고미', 4, 75, 1);
+            INSERT INTO diary(id, entry_date, title, mood, weather, album_id)
+                VALUES (1, '2026-11-19', '테스트 일기', 'calm', 'sunny', 2);
+            INSERT INTO diary_photo VALUES (1, 4, 0);
+            INSERT INTO pet(id, name, cover_media_id) VALUES (1, '테스트 강아지', 4);
+            INSERT INTO pet_media VALUES (1, 4);
+        """)
+        with TemporaryDirectory() as folder:
+            snapshot = Path(folder) / "snapshot.sqlite"
+            restored = Path(folder) / "candidate.sqlite"
+            with closing(sqlite3.connect(snapshot)) as archive:
+                self.db.backup(archive)
+            with closing(sqlite3.connect(restored)) as target:
+                for _ in range(2):
+                    with closing(sqlite3.connect(f"{snapshot.as_uri()}?mode=ro", uri=True)) as archive:
+                        archive.backup(target)
+                    self.assertEqual(target.execute("PRAGMA integrity_check").fetchone(), ("ok",))
+                    self.assertEqual(target.execute("PRAGMA foreign_key_check").fetchall(), [])
+                    self.assertEqual(list(target.iterdump()), list(self.db.iterdump()))
+            broken = Path(folder) / "broken.sqlite"
+            broken.write_bytes(snapshot.read_bytes()[:100])
+            with closing(sqlite3.connect(broken)) as invalid:
+                with self.assertRaises(sqlite3.DatabaseError):
+                    invalid.execute("PRAGMA integrity_check").fetchall()
+            with closing(sqlite3.connect(restored)) as target:
+                self.assertEqual(list(target.iterdump()), list(self.db.iterdump()))
 
     def test_cover_removal_uses_each_albums_saved_sequence(self):
         self.db.execute("DELETE FROM media WHERE id = 1")

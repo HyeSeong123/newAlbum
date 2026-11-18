@@ -70,12 +70,42 @@ test('failed relationship storage starts no inference and retry saves before spe
 test('inference failure is an error rather than speech and successful retry clears it',async({page})=>{
   await installOwnAi(page,{worker:{error:'AI_OWN_NO_VALID_LINE'}});await page.goto('/');await page.locator('.homeMascot').click();
   const bubble=page.locator('#homeMessage');await expect(bubble).toHaveAttribute('data-state','failed');
-  await expect(bubble).toContainText('다시 터치');await expect(page.locator('.homeSpeech')).toHaveCount(0);
+  await expect(bubble).toContainText('행동에 맞는 대사를 만들지 못했어요');await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await configureInference(page,{error:null});await page.locator('.homeMascot').click();
   await expect(bubble).toHaveAttribute('data-source','on-device');await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
   await expect(page.getByRole('dialog')).toContainText('AI가 새로운 대사를 만들었어요');
   await expect(page.getByRole('dialog').getByRole('alert')).toHaveCount(0);
 });
+
+for (const width of [320, 360, 393]) {
+  test(`retry generates the same snack response without repeating care at ${width}px`, async ({page}) => {
+    await page.setViewportSize({width, height:780});
+    await installOwnAi(page, {affection:95, worker:{error:'AI_OWN_NO_VALID_LINE'}});
+    await page.goto('/');
+    await page.getByRole('button', {name:'함께하기', exact:true}).click();
+    await page.getByRole('button', {name:'간식 주기', exact:true}).click();
+    const retry = page.getByRole('button', {name:'대사 다시 생성', exact:true});
+    await expect(retry).toBeVisible();
+    const memory = () => page.evaluate(() => localStorage.getItem('gamjassak:companion:v1:gomi'));
+    const saved = await memory();
+    expect(saved).toBeTruthy();
+    expect((await retry.boundingBox())!.height).toBeGreaterThanOrEqual(48);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.locator('.homeDialogueSlot').screenshot({path:`preview-results/own-ai-retry-${width}-${test.info().project.name}.png`});
+    await configureInference(page, {error:null});
+    await retry.click();
+    await expect(page.locator('#homeMessage')).toHaveText('gomi treat 새 반응 2');
+    await expect(retry).toHaveCount(0);
+    const requests = await requestedInputs(page);
+    expect(requests).toHaveLength(2);
+    expect(requests[1]).toEqual(requests[0]);
+    expect(await memory()).toBe(saved);
+    expect(await page.evaluate(() => (window as any).ownAiProbe.saveStarted)).toBe(0);
+    await page.reload();
+    expect(await memory()).toBe(saved);
+    await expect(retry).toHaveCount(0);
+  });
+}
 
 test('corrupt bundled asset is rejected and retry reloads a valid asset',async({page})=>{
   let broken=true;await page.route('**/character-ai/manifest.json',route=>broken?route.fulfill({contentType:'application/json',body:'{"id":"unverified"}'}):route.continue());

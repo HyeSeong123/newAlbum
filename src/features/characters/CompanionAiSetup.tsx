@@ -32,7 +32,7 @@ export function CompanionAiSetup({definition,owned,onClose}:{definition:Characte
         <button type="button" aria-label="AI 반응 설정 닫기" onClick={onClose}><X size={22}/></button>
       </header>
       <div className="companionChatSetup" role="status">
-        <Sparkles size={28} aria-hidden="true"/><h3>{ready?"곰고미 전용 AI가 준비됐어요":"AI를 준비하고 있어요"}</h3>
+        <Sparkles size={28} aria-hidden="true"/><h3>{status?.phase === "error" ? "AI를 준비하지 못했어요" : ready ? "곰고미 전용 AI가 준비됐어요" : "AI를 준비하고 있어요"}</h3>
         <p className="companionResponseDescription">친구를 터치하거나 함께하기를 누르면 행동과 관계에 맞는 짧은 새 대사를 만들어요. 앱에 포함되어 인터넷 없이 사용할 수 있어요.</p>
         {ready&&<div className="companionAiOutcome">
           <strong>AI 모델</strong><p>곰고미 전용 AI · 앱에 포함됨{status.total>0?` · ${Math.round(status.total/1024)}KB`:""}</p>
@@ -44,7 +44,9 @@ export function CompanionAiSetup({definition,owned,onClose}:{definition:Characte
             <dt>최근 생성 요청 전체</dt><dd>{milliseconds(runtime?.totalMs)}</dd>
           </dl><p>이 기기에서 측정한 최근 요청이에요. 화면 조작과 저장에 걸린 시간은 별도예요.</p></details>
         </div>}
-        {!ready&&<p>{status?.message||"준비 상태를 확인하고 있어요."}</p>}
+        {!ready&&<p role={status?.phase === "error" ? "alert" : "status"}>{status?.phase === "error"
+          ? reaction?.message || "홈에서 대사를 다시 요청해 주세요."
+          : status?.message || "준비 상태를 확인하고 있어요."}</p>}
         <p>아직 말투를 다듬고 있어요. 생성에 실패하면 준비된 대사로 바꾸지 않아요.</p>
         <a href="/notices/companion-ai-NOTICE.txt" target="_blank" rel="noreferrer">AI 모듈 안내</a>
       </div>

@@ -101,16 +101,18 @@ pub fn prepare_paths(app: &tauri::AppHandle, paths: Vec<String>, mut on_progress
             } else { document.uri.clone() };
             let mut options = OpenOptions::new(); options.read(true);
             let input = app.fs().open(FilePath::Url(source.parse().map_err(|error| format!("잘못된 사진 주소입니다: {error}"))?), options).map_err(|error| format!("{} 파일을 열 수 없습니다: {error}", document.name))?;
-            let previous_gps = image && target.is_file() && crate::location::analyze_path(&target, "image").latitude.is_some();
             let mut preserved_gps = false;
             let count = managed_import::copy_document_checked(input, &target,
                 |bytes| { status.bytes_processed = copied + bytes; on_progress(status.clone()); },
                 |candidate| {
+                    let previous_gps = image && crate::location::analyze_path(&target, "image").latitude.is_some();
                     let replace = !previous_gps || crate::location::analyze_path(candidate, "image").latitude.is_some();
                     preserved_gps = !replace;
                     replace
                 })
-                .map_err(|error| format!("{} 파일을 보관하지 못했습니다: {error}", document.name))?;
+                .map_err(|error| if error.kind() == io::ErrorKind::StorageFull {
+                    format!("저장 공간이 부족해 {} 파일을 보관하지 못했어요. 공간을 확보한 뒤 다시 가져와 주세요.", document.name)
+                } else { format!("{} 파일을 보관하지 못했습니다: {error}", document.name) })?;
             if preserved_gps {
                 status.notice = Some("선택한 사진에서 촬영 위치를 읽지 못해 위치정보가 있는 기존 보관본을 유지했습니다. 휴대폰의 원본을 다시 선택해 주세요.".into());
                 on_progress(status.clone());
@@ -121,7 +123,7 @@ pub fn prepare_paths(app: &tauri::AppHandle, paths: Vec<String>, mut on_progress
                 status.notice = original_notice;
                 on_progress(status.clone());
             }
-            if let Some(modified) = document.modified.filter(|value| *value > 0) {
+            if let Some(modified) = document.modified.filter(|value| !preserved_gps && *value > 0) {
                 if let Ok(file) = fs::File::options().write(true).open(&target) {
                     let _ = file.set_times(fs::FileTimes::new().set_modified(UNIX_EPOCH + Duration::from_millis(modified)));
                 }

@@ -30,9 +30,9 @@ export function cleanCompanionGeneratedText(text: string): string {
 export function companionExecutionError(cause: unknown): string {
   const message = typeof cause === "string" ? cause : cause instanceof Error ? cause.message : "";
   if (/AI_ACTION_UNTRAINED|AI_CHARACTER_UNTRAINED|AI_STATE_UNTRAINED/.test(message)) return "이 행동은 아직 학습되지 않았어요. 학습 자료를 추가한 앱 업데이트가 필요해요.";
-  if (/AI_OWN_TIMEOUT/.test(message)) return "이번 반응이 늦어 생성을 멈췄어요. 다시 터치해 주세요.";
+  if (/AI_OWN_TIMEOUT/.test(message)) return "이번 반응이 늦어 생성을 멈췄어요.";
   if (/AI_OWN_MODEL|AI_OWN_WORKER/.test(message)) return "앱에 포함된 AI를 준비하지 못했어요. 앱 업데이트를 확인해 주세요.";
-  if (/AI_OWN_NO_VALID_LINE/.test(message)) return "행동에 맞는 대사를 만들지 못했어요. 다시 터치해 주세요.";
+  if (/AI_OWN_NO_VALID_LINE/.test(message)) return "행동에 맞는 대사를 만들지 못했어요.";
   if (/AI_GOMI_MODEL_MISSING/.test(message)) return "고미 AI 파일이 포함되지 않았어요. 앱 업데이트를 확인해 주세요.";
   if (/AI_NOT_INSTALLED/.test(message)) return "AI 모델이 설치되지 않았어요. AI 반응 설정에서 AI 준비하기를 눌러 주세요.";
   if (/AI_UNSUPPORTED/.test(message)) return "이 기기에서는 AI 대사를 생성할 수 없어요. 지원되는 Android 스마트폰에서 이용해 주세요.";

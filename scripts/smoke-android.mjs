@@ -381,6 +381,17 @@ try {
   let connection = await connect(); context = connection.context;
   let page = connection.page;
   await verifyInstalledGomiAction(page, output);
+  if (process.env.GITHUB_ACTIONS === 'true' && process.env.GOMGOMI_FOCUSED_AI_SMOKE === '1') {
+    // This workflow boots a disposable emulator. Seed its test relationship only
+    // after exercising the actual new-install (quiet) path.
+    assert.match(await adb('get-serialno'), /^emulator-\d+$/);
+    const db = await adb('shell', 'run-as', appId, 'find', 'files', '-name', 'album.sqlite');
+    assert.match(db, /^files\/(?:[a-zA-Z0-9._-]+\/)*album\.sqlite$/);
+    await adb('shell', `run-as ${appId} sqlite3 ${db} "UPDATE owned_character SET affection=95 WHERE character_id='gomi'"`);
+    const bonded = await verifyInstalledGomiAction(page, join(output, 'bonded'));
+    assert.equal(bonded.timings?.samples, 10, 'All bonded gestures must produce real speech');
+    console.log('Offline bonded Gomi, button to painted speech (ms)', bonded.timings);
+  }
   if (process.env.GOMGOMI_FOCUSED_AI_SMOKE !== '1') {
   const affectionBeforeGuide = await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('sync_characters')).characters.find(character => character.id === 'gomi').affection);
   await page.evaluate(() => localStorage.setItem('geuruteogi.first-run-completed-v1', 'true'));
