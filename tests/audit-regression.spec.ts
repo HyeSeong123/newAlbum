@@ -4,7 +4,9 @@ import { auditLibrary as library } from './audit-fixture';
 
 test('native import of 100 dog and 100 cat records never authorizes inference', async ({ page }) => {
   let inferenceRequests = 0;
-  page.on('worker', () => inferenceRequests++);
+  // Home warms its separate character Worker. Only photo-recognition Workers
+  // authorize the inference this test forbids during import.
+  page.on('worker', worker => { if (/\/(?:person|pet)\.worker\./.test(worker.url())) inferenceRequests++; });
   await library(page, true);
   await page.getByRole('button', { name: '사진 기록', exact: true }).click();
   await page.getByRole('button', { name: '사진·영상 가져오기', exact: true }).click();

@@ -1,6 +1,6 @@
 {
   "name": "local-album-manager",
-  "version": "0.9.57",
+  "version": "0.9.59",
   "private": true,
   "type": "module",
   "scripts": {
@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@fontsource/noto-serif-kr": "^5.2.7",
+    "@sun-typeface/suit": "2.0.5",
     "@tauri-apps/api": "2.12.1",
     "@tauri-apps/plugin-dialog": "^2.7.3",
     "@tensorflow-models/coco-ssd": "^2.2.3",

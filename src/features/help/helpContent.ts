@@ -12,6 +12,7 @@ const explicitContent: Record<string, { title: string; instruction: string }> = 
   'companion-pet': { title: '쓰다듬기', instruction: '친구의 성격에 따라 다른 반응을 보여요. 친밀도 상승 횟수와 성장 상태는 바꾸지 않아요.' },
   'companion-play': { title: '함께 놀기', instruction: '친구와 짧은 상상 놀이를 해요. 최근 행동과 기분을 기기 안에 기억해요.' },
   'companion-rest': { title: '함께 쉬기', instruction: '친구와 잠깐 쉬면서 활력을 회복해요. 앱의 다른 기록은 변경하지 않아요.' },
+  'companion-watch': { title: '지켜보기', instruction: '말을 걸지 않고 친구의 현재 모습을 조용히 지켜봐요. 잠을 깨우거나 친밀도와 활력을 바꾸지 않아요. 기다리던 대사가 있다면 멈추고 지켜봐요.' },
   'pet-body-region': { title: '반려동물 영역 지정', instruction: '사진에서 한 마리의 몸 전체를 드래그해 감싸세요. 드래그가 어려우면 여기서 위치와 크기를 백분율로 조절할 수 있어요. 얼굴 영역은 추가 후 인식 결과 수정에서 따로 지정해요.' },
   'pet-kind': { title: '반려동물 종류', instruction: '강아지인지 고양이인지 확인하고 잘못 분류됐다면 바꿔요. 영역 추가 또는 변경 저장을 눌러야 반영돼요.' },
   'pet-assignment-kind': { title: '인식된 종류 바로잡기', instruction: '자동 분류가 잘못됐다면 강아지 또는 고양이로 바꿔요. 이름 지정을 누르면 선택한 결과의 종류와 이름 연결을 함께 저장해요. 기존 등록의 다른 결과는 바뀌지 않아요.' },

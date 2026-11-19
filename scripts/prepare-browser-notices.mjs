@@ -4,7 +4,7 @@ import {readFile,readdir,stat,writeFile,mkdir,access} from 'node:fs/promises';
 import {resolve,dirname,relative,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url));
-const roots=['@fontsource/noto-serif-kr','@tauri-apps/api','@tauri-apps/plugin-dialog',
+const roots=['@fontsource/noto-serif-kr','@sun-typeface/suit','@tauri-apps/api','@tauri-apps/plugin-dialog',
  '@tensorflow-models/coco-ssd','@tensorflow/tfjs','@tensorflow/tfjs-backend-wasm','@vladmandic/face-api',
  'lucide-react','motion','react','react-dom'];
 const exists=async path=>{try{await access(path);return true;}catch{return false;}};

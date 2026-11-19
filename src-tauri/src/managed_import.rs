@@ -1,5 +1,5 @@
 //! Streaming snapshots of Android documents; never modify the selected original.
-use std::{fs, io::{self, Read, Write}, path::{Path, PathBuf}, time::Instant};
+use std::{fs, hash::{DefaultHasher, Hash, Hasher}, sync::Mutex, io::{self, Read, Write}, path::{Path, PathBuf}, time::Instant};
 
 pub fn safe_file_name(name: &str, mime: &str) -> String {
     let mut name: String = name.chars().map(|c| if c.is_control() || "/\\:*?\"<>|".contains(c) { '_' } else { c }).take(180).collect();
@@ -43,6 +43,13 @@ pub fn copy_document_checked(mut reader: impl Read, target: &Path, mut on_read: 
     mut should_replace: impl FnMut(&Path) -> bool) -> io::Result<u64> {
     on_read(0);
     let parent = target.parent().ok_or_else(|| io::Error::other("보관 위치가 없습니다."))?;
+    // Imports of the same document directory share a staging file. Serialize
+    // those copies through comparison and rename, including GPS preservation.
+    static COPY_LOCKS: [Mutex<()>; 64] = [const { Mutex::new(()) }; 64];
+    let mut hash = DefaultHasher::new();
+    parent.hash(&mut hash);
+    let _guard = COPY_LOCKS[hash.finish() as usize % COPY_LOCKS.len()]
+        .lock().unwrap_or_else(|error| error.into_inner());
     fs::create_dir_all(parent)?;
     let temporary = parent.join(".importing");
     let result = (|| {
@@ -56,6 +63,9 @@ pub fn copy_document_checked(mut reader: impl Read, target: &Path, mut on_read: 
             writer.write_all(&buffer[..count])?;
             copied += count as u64;
             if update.elapsed().as_millis() >= 100 { on_read(copied); update = Instant::now(); }
+        }
+        if copied == 0 {
+            return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "선택한 파일이 비어 있습니다. 원본을 확인한 뒤 다시 선택해 주세요."));
         }
         writer.sync_all()?;
         drop(writer);
@@ -120,6 +130,43 @@ mod tests {
         assert_eq!(fs::read(&target).unwrap(), b"previous snapshot");
         assert!(!root.join(".importing").exists());
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn empty_provider_stream_never_replaces_a_snapshot() {
+        let dir = root("empty-stream");
+        fs::create_dir_all(&dir).unwrap();
+        let target = dir.join("photo.jpg");
+        for existing in [false, true] {
+            if existing { fs::write(&target, b"previous snapshot").unwrap(); }
+            assert_eq!(copy_document(io::empty(), &target, |_| {}).unwrap_err().kind(), io::ErrorKind::UnexpectedEof);
+            assert_eq!(target.exists(), existing);
+            if existing { assert_eq!(fs::read(&target).unwrap(), b"previous snapshot"); }
+            assert!(!dir.join(".importing").exists());
+        }
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn overlapping_imports_publish_only_complete_snapshots() {
+        let dir = root("concurrent");
+        let target = dir.join("photo.jpg");
+        let start = std::sync::Barrier::new(4);
+        std::thread::scope(|scope| {
+            for byte in 0..4u8 {
+                let (start, target) = (&start, &target);
+                scope.spawn(move || {
+                    let bytes = vec![byte; 200_001];
+                    start.wait();
+                    copy_document(io::Cursor::new(bytes), target, |_| {}).unwrap();
+                });
+            }
+        });
+        let bytes = fs::read(target).unwrap();
+        assert_eq!(bytes.len(), 200_001);
+        assert!(bytes.iter().all(|byte| *byte == bytes[0]));
+        assert!(!dir.join(".importing").exists());
+        fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]

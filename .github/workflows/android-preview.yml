@@ -8,7 +8,7 @@ on:
         type: boolean
         default: false
   push:
-    branches: [feature/warm-journal-v2, feature/gamjassak-native-ai, feature/gamjassak-audit-refactor, feature/people-pets-ux-android-20261022, feature/app-ux-20261023, feature/pet-recognition-ux-20261023, feature/person-selective-precision-20261028, master, final]
+    branches: [feature/warm-journal-v2, feature/gamjassak-native-ai, feature/gamjassak-audit-refactor, feature/people-pets-ux-android-20261022, feature/app-ux-20261023, feature/pet-recognition-ux-20261023, feature/person-selective-precision-20261028, master, final, fix/apk-ci-regressions-20261116]
     paths:
       - 'src/**'
       - 'public/**'
@@ -37,6 +37,7 @@ on:
       - 'scripts/pet-model-lock.json'
       - 'scripts/pet-runtime-benchmark.mjs'
       - 'scripts/smoke-android.mjs'
+      - 'scripts/seed-emulator-bond.py'
       - 'scripts/manual-photo-smoke.mjs'
       - 'scripts/app-ux-smoke.mjs'
       - 'scripts/pet-improvements-smoke.mjs'
@@ -213,6 +214,7 @@ jobs:
             test-results/android-smoke/friend-motions.json
             test-results/android-smoke/pet-improvements-smoke.json
             test-results/android-smoke/gomi-action-smoke.json
+            test-results/android-smoke/bonded/
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: failure()

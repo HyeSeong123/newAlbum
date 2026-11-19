@@ -66,8 +66,13 @@ test('repeated recognition alternates real isolated Workers, cancels and keeps i
   Object.defineProperty(window, '__repetitionState', { value: state });
   window.Worker = class extends OriginalWorker {
    private ended = false;
-   constructor(url: string | URL, options?: WorkerOptions) { super(url, options); state.live++; state.peak = Math.max(state.peak, state.live); }
-   terminate() { if (!this.ended) { this.ended = true; state.live--; } super.terminate(); }
+   private recognition: boolean;
+   constructor(url: string | URL, options?: WorkerOptions) {
+    super(url, options);
+    this.recognition = /\/(?:person|pet)\.worker\./.test(String(url));
+    if (this.recognition) { state.live++; state.peak = Math.max(state.peak, state.live); }
+   }
+   terminate() { if (!this.ended) { this.ended = true; if (this.recognition) state.live--; } super.terminate(); }
   };
   Object.defineProperty(window, '__TAURI_INTERNALS__', { value: { convertFileSrc: (path: string) => path.includes('pet') ? '/repeat-pet.jpg' : '/repeat-person.jpg', invoke: async (command: string) => {
    if (command === 'list_media') return [1, 2].map(id => ({ id, file_path: id === 1 ? 'person.jpg' : 'pet.jpg', file_type: 'image', taken_at: '2026-10-10', size_bytes: 1, rating: 0, comment: '', favorite: false, metadata_status: 'ready' }));

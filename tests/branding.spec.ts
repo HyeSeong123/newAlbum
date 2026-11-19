@@ -59,11 +59,21 @@ test('new users meet Gomi and dismissing the guide survives a reload', async ({ 
   const introduction = guide.getByLabel('고미의 안내');
   const mascot = introduction.locator('[data-character="gomi"] img');
   await mascot.evaluate((image: HTMLImageElement) => image.decode());
-  await expect(mascot).toHaveAttribute('src', '/characters/gomi/cynical.png');
+  await expect(mascot).toBeVisible();
+  // First-run Gomi may look away or rest. Verify the approved local artwork
+  // actually loaded instead of freezing one incidental expression.
+  await expect(mascot).toHaveAttribute('src', /^\/characters\/gomi\/[^/]+\.png$/);
+  expect(await mascot.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
   await expect(introduction.locator('.characterHelpName')).toHaveText('고미');
   await expect(guide.locator('#firstRunDescription')).toContainText('사진과 영상을 가져오면 날짜별로 둘러보고, 앨범과 추억으로 다시 볼 수 있어요.');
   await expect(guide).toContainText('원본 사진과 영상 파일은 그대로 두고 함께 추억을 정리해 봐요.');
-  await page.screenshot({ path: `test-results/branding-guide-${test.info().project.name}.png` });
+  for (const width of [320, 393]) {
+    await page.setViewportSize({width, height:852});
+    await expect(guide.getByRole('button', {name:'사진 가져오기',exact:true})).toBeInViewport();
+    await expect(guide.getByRole('button', {name:'나중에 하기',exact:true})).toBeInViewport();
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    await page.screenshot({path:`test-results/branding-guide-${test.info().project.name}-${width}.png`});
+  }
   await guide.getByRole('button', { name: '나중에 하기' }).click();
   await page.reload();
   await expect(guide).toBeHidden();

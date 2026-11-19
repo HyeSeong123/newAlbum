@@ -15,14 +15,17 @@ class TransportWorker {
  reply(id,line){this.onmessage?.({data:{id,type:'reply',line,generationMs:1}});}
  terminate(){this.terminated=true;}
 }
+async function loadClient(temporary) {
+  const source=await readFile(new URL('../src/features/characters/ownAi/client.ts',import.meta.url),'utf8');
+  const output=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
+  const file=join(temporary,'client.mjs');await writeFile(file,output);
+  return import(pathToFileURL(file).href);
+}
 test('cancelled work cannot publish into the next own-AI request; tiny weights are reused',async()=>{
  const temporary=await mkdtemp(join(tmpdir(),'gomgomi-own-client-'));
  const previous=globalThis.Worker;globalThis.Worker=TransportWorker;
  try{
-  const source=await readFile(new URL('../src/features/characters/ownAi/client.ts',import.meta.url),'utf8');
-  const output=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
-  const file=join(temporary,'client.mjs');await writeFile(file,output);
-  const client=await import(pathToFileURL(file).href);
+  const client=await loadClient(temporary);
   await client.warmOwnAi();await client.warmOwnAi();
   assert.equal(TransportWorker.instances.length,1);
   const worker=TransportWorker.instances[0],input={characterId:'gomi',action:'touch',affection:80,mood:'calm',energy:3};
@@ -60,4 +63,30 @@ test('cancelled Home AI reactions no longer appear running or falsely claim navi
  service.markChatReaction(id,'cancelled');
  assert.equal(service.lastChatReaction(id)?.phase,'cancelled');
  assert.equal(service.lastChatReaction(id)?.message,'AI 반응을 멈췄어요.');
+});
+
+test('a worker that cannot start or never becomes ready can be retried in the same session', async () => {
+ const previous = globalThis.Worker;
+ const temporary = await mkdtemp(join(tmpdir(), 'gomgomi-retry-'));
+ const client = await loadClient(temporary);
+ const input = {characterId:'gomi',action:'treat',affection:95,mood:'calm',energy:3};
+ try {
+  globalThis.Worker = class { constructor() { throw new Error('fixture: worker unavailable'); } };
+  await assert.rejects(client.generateOwnReaction(input), /AI_OWN_WORKER_FAILED/);
+  let stalled;
+  globalThis.Worker = class { constructor() { stalled = this; } terminate() { this.stopped = true; } };
+  await assert.rejects(client.generateOwnReaction(input), /AI_OWN_TIMEOUT/);
+  assert.equal(stalled.stopped, true);
+  globalThis.Worker = TransportWorker;
+  const retried = client.generateOwnReaction(input);
+  await tick();
+  stalled.onerror();
+  const current = TransportWorker.instances.at(-1);
+  current.reply(current.messages.at(-1).id, '간식 먹으러 갈게.');
+  assert.equal(await retried, '간식 먹으러 갈게.');
+  assert.equal(client.ownAiStatus().runtime.ownModelApplied, true);
+ } finally {
+  globalThis.Worker = previous;
+  await rm(temporary, {recursive:true, force:true});
+ }
 });

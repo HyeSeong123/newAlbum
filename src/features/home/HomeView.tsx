@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, BookHeart, ChevronDown, Footprints, Gamepad2, HandHeart, Heart, Images, Moon, NotebookPen, Sun, Users } from "lucide-react";
+import { ArrowUpRight, BookHeart, ChevronDown, Eye, Footprints, Gamepad2, HandHeart, Heart, Images, Moon, NotebookPen, Sun, Users } from "lucide-react";
 import { CharacterVisual } from "../characters/CharacterVisual";
 import { CompanionAiSetup } from "../characters/CompanionAiSetup";
 import { useCompanionReactions } from "../characters/useCompanionReactions";
@@ -51,12 +51,14 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   const [happy, setHappy] = useState(false);
   const [activitiesOpen, setActivitiesOpen] = useState(false);
   const [aiSetupOpen, setAiSetupOpen] = useState(false);
-  const [aiStatus, setAiStatus] = useState<"idle" | "quiet" | "generating" | "failed">("idle");
+  const [aiStatus, setAiStatus] = useState<"idle" | "quiet" | "watching" | "generating" | "failed">("idle");
   const [quietResponseId, setQuietResponseId] = useState(0);
   const [aiFailure, setAiFailure] = useState("");
+  const retryContext = useRef<Parameters<ReturnType<typeof useCompanionReactions>["react"]>[0] | undefined>(undefined);
   const ai = useCompanionReactions(mainCharacter?.id, result => {
     // Never speak an authored fallback as though the model said it.
     if (result.source === "on-device" && result.line.trim()) {
+      retryContext.current = undefined;
       setSpokenLine(result.line.trim());
       setAiStatus("idle");
       setAiFailure("");
@@ -68,7 +70,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   });
   const lastLine = useRef(0);
   useEffect(()=>{
-    if(document.hidden||(aiStatus!=="generating"&&!spokenLine))return;
+    if(document.hidden||(!["generating","quiet","watching","failed"].includes(aiStatus)&&!spokenLine))return;
     const message=document.getElementById("homeMessage");if(!message)return;
     const box=message.getBoundingClientRect(),x=box.left+box.width/2;
     const visible=box.top>=0&&box.bottom<=window.innerHeight&&[box.top+2,box.top+box.height/2,box.bottom-2].every(y=>{
@@ -77,7 +79,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     // Activity buttons can be below the speech balloon, behind the sticky
     // navigation after scrolling. Bring the actual response back into view.
     if(!visible)message.scrollIntoView({block:"center",behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
-  },[aiStatus,spokenLine]);
+  },[aiStatus,spokenLine,quietResponseId]);
   const timer = useRef<number | undefined>(undefined);
   const reactionRequest = useRef(0);
   const storedInteraction = useRef<Promise<OwnedCharacter | undefined>>(Promise.resolve(undefined));
@@ -85,6 +87,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     const invalidate = () => {
       if (document.hidden) {
         ++reactionRequest.current;
+        retryContext.current = undefined;
         setSpokenLine(undefined);
         setAiStatus("idle");
       }
@@ -96,6 +99,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   const appearance = definition?.id === "peach" ? "ㄱ 모양을 닮은 기린" : characterPortraits[definition?.id || ""]?.subject || "강아지 고미";
   useEffect(() => {
     ++reactionRequest.current;
+    retryContext.current = undefined;
     storedInteraction.current = Promise.resolve(undefined);
     setActivitiesOpen(false);
     setAiSetupOpen(false);
@@ -127,6 +131,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
 
   async function reactWithStoredRelationship(context: Parameters<typeof ai.react>[0], source?: CharacterInteractionSource) {
     const request = ++reactionRequest.current;
+    retryContext.current = undefined;
     ai.waitForContext();
     if (source) storedInteraction.current = onInteract(context.owned.id, source);
     const updated = await storedInteraction.current;
@@ -142,14 +147,15 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
       ai.cancel();
       setSpokenLine(undefined);
       setAiFailure("");
-      // Quiet responses have no changing text. Identify completion only after
+      // The ellipsis is nonverbal feedback. Identify completion only after
       // relationship storage succeeds, so an old quiet state is never a reply.
       setQuietResponseId(request);
       setAiStatus("quiet");
       return;
     }
     setAiStatus("generating");
-    ai.react({ ...context, owned });
+    retryContext.current = { ...context, owned };
+    ai.react(retryContext.current);
   }
 
   function talk() {
@@ -178,6 +184,21 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   }
 
   const activityIcons = { walk: Footprints, treat: Sun, pet: HandHeart, play: Gamepad2, rest: Moon };
+
+  function watchCompanion() {
+    if (!definition || !mainCharacter || (isGomi && !gomi.ready)) return;
+    // Observation is not a touch, rest, meal or sleep disturbance. Invalidate
+    // both unresolved saves and queued inference without changing their data.
+    const request = ++reactionRequest.current;
+    ai.cancel();
+    retryContext.current = undefined;
+    window.clearTimeout(timer.current);
+    setHappy(false);
+    setSpokenLine(undefined);
+    setAiFailure("");
+    setQuietResponseId(request);
+    setAiStatus("watching");
+  }
 
   function chooseActivity(action: CompanionAction) {
     if (!definition || !mainCharacter || (isGomi && !gomi.ready)) return;
@@ -218,17 +239,26 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
           {spokenLine
             ? <p id="homeMessage" className="homeSpeech" data-source="on-device" data-gomi={isGomi ? "true" : undefined}
                 role="status" aria-live="polite" aria-atomic="true">{spokenLine}</p>
-            : aiStatus === "quiet" || (isGomi && !gomiCanSpeak(mainCharacter?.affection || 0) && aiStatus === "idle")
+            : aiStatus === "quiet" || (isGomi && !gomiCanSpeak(mainCharacter?.affection || 0) && ["idle","watching"].includes(aiStatus))
               ? <p id="homeMessage" className="homeQuiet" data-source="nonverbal" data-state={aiStatus} data-response-id={quietResponseId} role="status" aria-live="polite">
-                  <span>{gomi.sleeping ? "고미가 말없이 쉬고 있어요." : "고미가 눈길을 돌리고 있어요."}</span>
+                  <span className="homeQuietDots" aria-hidden="true">...</span>
+                  <span className="homeQuietDescription">{aiStatus === "watching" ? "고미를 조용히 지켜보고 있어요." : gomi.sleeping ? "고미가 말없이 쉬고 있어요." : "고미가 말없이 거리를 두고 있어요."}</span>
                 </p>
             : <p id="homeMessage" className="homeSpeechNotice" data-source="status" data-state={aiStatus}
                 role="status" aria-live="polite" aria-atomic="true">
                 {aiStatus === "generating" ? "AI가 대사를 생성하고 있어요." :
                   aiStatus === "failed" ? aiFailure :
+                  aiStatus === "watching" ? `${definition ? characterName(definition, mainCharacter) : "친구"}의 모습을 조용히 지켜보고 있어요.` :
                   isGomi && !gomi.ready ? "친구를 준비하고 있어요." :
                   definition ? "친구를 터치하면 AI가 새로운 대사를 만들어요." : "친구를 선택하면 AI와 대화할 수 있어요."}
               </p>}
+          {aiStatus === "failed" && retryContext.current && <button type="button" className="homeReactionRetry" onClick={() => {
+            const context = retryContext.current;
+            if (!context || context.owned.id !== mainCharacter?.id || document.hidden) return;
+            setAiStatus("generating");
+            setAiFailure("");
+            ai.react(context);
+          }}>대사 다시 생성</button>}
         </div>
         <button className={`homeMascot${happy ? " happy" : ""}`} type="button" aria-label={`${definition ? characterName(definition, mainCharacter) : "곰고미"}에게 말 걸기`} onClick={talk}>
           {definition && mainCharacter ? <CharacterVisual definition={definition} stage={mainCharacter.growthStage} expression={happy ? "happy" : "idle"}
@@ -251,6 +281,9 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
                 <Icon size={19} aria-hidden="true" /><span>{companionActionLabel(definition, action)}</span>
               </button>;
             })}
+            <button type="button" className="homeActivity" data-help="companion-watch" onClick={watchCompanion}>
+              <Eye size={19} aria-hidden="true" /><span>지켜보기</span>
+            </button>
           </div>}
         </div>}
         <button className="homeCharacterLink" type="button" onClick={onShowCharacters}>친구들 보기</button>
