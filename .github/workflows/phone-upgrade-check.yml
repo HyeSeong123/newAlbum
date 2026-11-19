@@ -23,7 +23,7 @@ jobs:
         run: |
           gh run download 43823422688 -n Gomgomi-Android-0.9.58 -D apk-0.9.58
           for attempt in $(seq 1 40); do
-            if gh run download 44339351054 -n Gomgomi-Android-0.9.59 -D apk-0.9.59; then exit 0; fi
+            if gh run download 44438626331 -n Gomgomi-Android-0.9.59 -D apk-0.9.59; then exit 0; fi
             sleep 20
           done
           exit 1
