@@ -28,3 +28,25 @@ for(const width of [320,360,393]) test(`Gomi snack failure at ${width}px`,async(
  expect(end.overflow).toBe(false);
  writeFileSync(`${dir}/${process.env.STAGE}-${width}.json`,JSON.stringify({text,actions,additionalRelationshipSaves:end.writes-initial.writes,overflow:end.overflow}));
 });
+test('watch cancels pending speech on Home and in AI settings before talking again', async ({page}) => {
+  test.skip(process.env.STAGE === 'before', 'Watch was introduced after 0.9.57');
+  await page.setViewportSize({width:360,height:780});
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await installOwnAi(page,{affection:95,worker:{controlled:true}});
+  await page.goto('/');
+  await page.getByRole('button',{name:'함께하기',exact:true}).click();
+  await page.getByRole('button',{name:'간식 주기',exact:true}).click();
+  await page.waitForFunction(() => (window as any).ownAiProbe.requests.length === 1);
+  await page.getByRole('button',{name:'지켜보기',exact:true}).click();
+  await page.evaluate(()=>(window as any).ownAiProbe.worker.postMessage({finish:true}));
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-state','watching');
+  await page.getByRole('button',{name:'AI 반응 설정',exact:true}).click();
+  const dialog=page.getByRole('dialog',{name:'AI 반응 설정',exact:true});
+  await expect(dialog).toContainText('AI 반응을 멈췄어요.');
+  await expect(dialog).not.toContainText('최근 행동에 맞는 새 대사를 만들고 있어요.');
+  await dialog.getByRole('button',{name:'친구 만나러 가기'}).click();
+  await expect(page.locator('.homeSpeech')).toHaveCount(0);
+  await configureInference(page,{controlled:false});
+  await page.getByRole('button',{name:'고미에게 말 걸기'}).click();
+  await expect(page.locator('#homeMessage')).toHaveText('gomi touch 새 반응 2');
+});
