@@ -12,6 +12,21 @@ pub(crate) const WEB: &str = "web.json";
 pub(crate) type Storage = BTreeMap<String, String>;
 const WEB_LIMIT: u64 = 32 * 1024 * 1024;
 
+pub(crate) fn message(error: Box<dyn Error + Send + Sync>) -> String {
+    if let Some(io) = error.downcast_ref::<std::io::Error>() {
+        match io.kind() {
+            std::io::ErrorKind::StorageFull => return "저장 공간이 부족합니다. 여유 공간을 확보한 뒤 다시 시도해 주세요.".into(),
+            std::io::ErrorKind::UnexpectedEof => return "백업 파일이 끝까지 저장되지 않았습니다. 다른 백업 파일을 선택해 주세요.".into(),
+            std::io::ErrorKind::PermissionDenied => return "파일에 접근할 수 없습니다. 접근 가능한 폴더나 파일을 다시 선택해 주세요.".into(),
+            _ => {}
+        }
+    }
+    if let Some(rusqlite::Error::SqliteFailure(code, _)) = error.downcast_ref::<rusqlite::Error>() {
+        if code.extended_code & 255 == rusqlite::ffi::SQLITE_FULL { return "기기 저장 공간이 부족합니다. 공간을 확보한 뒤 다시 시도해 주세요.".into(); }
+    }
+    error.to_string()
+}
+
 pub(crate) fn validate_storage(storage: &Storage) -> Result<()> {
     if storage.keys().all(|key| ["gamjassak:", "oraedameun.", "warm-journal-", "geuruteogi."].iter().any(|p| key.starts_with(p)))
         && serde_json::to_vec(storage)?.len() as u64 <= WEB_LIMIT { Ok(()) }
@@ -53,23 +68,31 @@ fn replace_path(c: &Connection, from: &str, to: &str) -> Result<()> {
 
 // A digest covers the entry name, size and payload. A final digest authenticates
 // the ordered list against accidental truncation (this is not encryption).
-fn transfer(r: &mut impl Read, w: &mut impl Write, size: u64, name: &str) -> Result<[u8;32]> {
+fn transfer(r: &mut impl Read, w: &mut impl Write, size: u64, name: &str, registered_hash: Option<&str>) -> Result<[u8;32]> {
     let mut digest = Sha256::new();
     digest.update((name.len() as u32).to_le_bytes()); digest.update(name); digest.update(size.to_le_bytes());
+    let mut media_hash = 0xcbf29ce484222325u64;
     let mut remaining = size;
     let mut buf = [0u8; 65536];
     while remaining > 0 {
         let len = remaining.min(buf.len() as u64) as usize;
         r.read_exact(&mut buf[..len])?;
         w.write_all(&buf[..len])?;
-        digest.update(&buf[..len]); remaining -= len as u64;
+        digest.update(&buf[..len]);
+        if registered_hash.is_some() {
+            media_hash = crate::update_file_hash(media_hash, &buf[..len]);
+        }
+        remaining -= len as u64;
+    }
+    if registered_hash.is_some_and(|expected| expected != format!("{media_hash:016x}")) {
+        return Err("등록 후 파일이 변경되었습니다. 사진을 다시 가져온 뒤 백업해 주세요.".into());
     }
     Ok(digest.finalize().into())
 }
 
 pub(crate) fn export(c: &Connection, root: &Path, scratch: &Path, storage: &Storage, out: &mut impl Write) -> Result<()> {
     validate_storage(storage)?;
-    let _access = crate::managed_import::MEDIA_ACCESS.try_write().map_err(|_| "사진을 가져오는 중입니다. 가져오기가 끝나면 다시 백업해 주세요.")?;
+    let _access = crate::managed_import::MEDIA_ACCESS.write().map_err(|_| "보관 파일을 읽을 수 없습니다. 앱을 다시 열어 주세요.")?;
     let db = scratch.join(DB);
     c.execute("VACUUM INTO ?1", [db.to_str().ok_or("백업 경로 오류")?])?;
     let mut snapshot = Connection::open(&db)?;
@@ -97,6 +120,7 @@ pub(crate) fn export(c: &Connection, root: &Path, scratch: &Path, storage: &Stor
     }
     let managed = root.join(MEDIA);
     if managed.is_dir() {
+        if managed.symlink_metadata()?.file_type().is_symlink() { return Err("앱 보관 폴더 경로를 확인해 주세요.".into()); }
         for entry in walkdir::WalkDir::new(&managed).min_depth(1) {
             let entry = entry?;
             if entry.file_type().is_dir() || entry.file_name() == ".importing" { continue; }
@@ -106,6 +130,11 @@ pub(crate) fn export(c: &Connection, root: &Path, scratch: &Path, storage: &Stor
             entries.entry(name.to_owned()).or_insert_with(|| path.to_owned());
         }
     }
+    let registered: BTreeMap<String, (u64, Option<String>)> = {
+        let mut statement = tx.prepare("SELECT file_path,size_bytes,content_hash FROM media")?;
+        let rows = statement.query_map([], |r| Ok((r.get(0)?, (r.get(1)?,r.get(2)?))))?;
+        rows.collect::<rusqlite::Result<_>>()?
+    };
     tx.commit()?; drop(snapshot);
     fs::write(scratch.join(WEB), serde_json::to_vec(storage)?)?;
     entries.insert(DB.into(), db);
@@ -118,7 +147,11 @@ pub(crate) fn export(c: &Connection, root: &Path, scratch: &Path, storage: &Stor
         out.write_all(&(name.len() as u32).to_le_bytes())?;
         out.write_all(name.as_bytes())?;
         out.write_all(&size.to_le_bytes())?;
-        let hash = transfer(&mut file, out, size, &name)?;
+        let expected_hash = if let Some((registered_size, hash)) = registered.get(&name) {
+            if size != *registered_size { return Err("등록된 파일의 크기가 변경되었습니다. 사진을 다시 가져온 뒤 백업해 주세요.".into()); }
+            hash.as_deref()
+        } else { None };
+        let hash = transfer(&mut file, out, size, &name, expected_hash)?;
         manifest.update(hash);
         out.write_all(&hash)?;
     }
@@ -148,7 +181,7 @@ fn unpack(input: &mut impl Read, stage: &Path) -> Result<BTreeSet<String>> {
         let path = stage.join(&name);
         fs::create_dir_all(path.parent().unwrap())?;
         let mut file = File::create_new(path)?;
-        let hash = transfer(input, &mut file, size, &name)?;
+        let hash = transfer(input, &mut file, size, &name, None)?;
         let mut expected = [0;32]; input.read_exact(&mut expected)?;
         if expected != hash { return Err("백업 파일이 손상되었습니다.".into()); }
         manifest.update(hash);
@@ -306,22 +339,28 @@ mod tests {
         let mut live = Connection::open(target.join(DB)).unwrap();
         crate::database::initialize(&mut live).unwrap();
         for i in 0..2 {
-            let stage = f.dir(&format!("sandbox-{i}"));
+            let work = f.dir(&format!("sandbox-{i}"));
+            let stage = f.dir(&format!("sandbox-{i}/stage"));
             let n = prepare(&mut &archive[..],&live,&target,&stage).unwrap();
             assert_eq!((n.media,n.albums,n.diaries),(1,1,1));
             assert_eq!(storage_at(&stage).unwrap(),storage);
             assert_eq!(fs::read(stage.join(sample)).unwrap(),b"photo fixture");
-            let c = Connection::open(stage.join(DB)).unwrap();
+            drop(live);
+            install(&target,&work).unwrap();
+            live = Connection::open(target.join(DB)).unwrap();
+            let c = &live;
             assert_eq!(c.query_row("SELECT count(*) FROM sqlite_sequence WHERE name='diary' AND seq=99",[],|r| r.get::<_,i64>(0)).unwrap(),1);
             c.execute("INSERT INTO diary(entry_date,title,body,mood,weather) VALUES('2026-11-20','추가','','기쁨','맑음')",[]).unwrap();
             assert_eq!(c.last_insert_rowid(),100);
             assert_eq!(strings(&c,"SELECT file_path FROM diary_photo JOIN media ON media.id=diary_photo.media_id").unwrap(),[target.join(sample).to_str().unwrap()]);
         }
-        let mut changed=archive.clone(); let pos = changed.iter().position(|&b| b==b'G').unwrap(); changed[pos]^=1;
+        let mut changed = archive.clone();
+        let pos = changed.windows(13).position(|b| b == b"photo fixture").unwrap();
+        changed[pos] ^= 1;
         for (i, bad) in [&changed[..], &archive[..archive.len()-1]].into_iter().enumerate() {
             assert!(prepare(&mut &bad[..],&live,&target,&f.dir(&format!("bad-{i}"))).is_err());
         }
-        assert_eq!(counts(&live).unwrap().media,0);
+        assert_eq!(counts(&live).unwrap().media,1);
         assert_eq!(fs::read(root.join(sample)).unwrap(),b"photo fixture");
         assert!(!safe_media("imported-media-v1/123456789abcdef0/../album.sqlite"));
         assert!(!safe_media("imported-media-v1/123456789abcdef0/.importing"));

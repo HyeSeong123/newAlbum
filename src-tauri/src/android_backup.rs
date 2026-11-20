@@ -37,7 +37,7 @@ pub(crate) fn action(app: &AppHandle, action: &str, storage: Option<Storage>, to
         "startup" if state == "install" => {
             fs::create_dir_all(&previous)?;
             if !previous.join(WEB).exists() {
-                let storage = storage.ok_or("기존 앱 기록을 읽지 못했습니다.")?;
+                let Some(storage) = storage else { return Ok(json!({"mode":"capture"})); };
                 backup::validate_storage(&storage)?;
                 durable_write(&previous.join(WEB),&serde_json::to_vec(&storage)?)?;
             }

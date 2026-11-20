@@ -37,6 +37,7 @@ on:
       - 'scripts/pet-model-lock.json'
       - 'scripts/pet-runtime-benchmark.mjs'
       - 'scripts/smoke-android.mjs'
+      - 'scripts/backup-smoke.mjs'
       - 'scripts/seed-emulator-bond.py'
       - 'scripts/manual-photo-smoke.mjs'
       - 'scripts/app-ux-smoke.mjs'

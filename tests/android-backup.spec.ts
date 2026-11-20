@@ -40,6 +40,8 @@ test("Android backup buttons, totals, cancellation and retry on narrow screens",
   await mkdir("preview-results/audit",{recursive:true});
   for (const width of [320,360,393]) {
     await page.setViewportSize({width,height:780});
+    await panel.scrollIntoViewIfNeeded();
+    await page.screenshot({path:`preview-results/audit/backup-settings-${width}.png`,fullPage:true});
     await panel.getByRole("button",{name:"백업에서 복원"}).click();
     const dialog=page.getByRole("dialog",{name:"백업으로 기록을 바꿀까요?"});
     await expect(dialog.getByRole("row",{name:/일기/}).getByRole("cell")).toHaveText(["3","1"]);

@@ -10,7 +10,12 @@ export function BackupStartup({children}: {children: ReactNode}) {
   async function resume(undo: boolean) {
     setBusy(true);
     try {
-      const pending = await backupCommand<Recovery | null>(undo ? "rollback" : "startup", {storage:readRecords(localStorage)});
+      const state = undo
+        ? await backupCommand<Recovery | null>("rollback", {storage:readRecords(localStorage)})
+        : await backupCommand<Recovery | {mode:"capture"} | null>("startup");
+      const pending = state?.mode === "capture"
+        ? await backupCommand<Recovery>("startup",{storage:readRecords(localStorage)})
+        : state;
       if (pending) {
         setCanUndo(pending.mode === "restore");
         replaceRecords(localStorage, pending.storage);

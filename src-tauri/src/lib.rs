@@ -1188,6 +1188,13 @@ fn file_hash(path: &Path) -> io::Result<String> {
     file_hash_with_progress(path, |_| {})
 }
 
+fn update_file_hash(mut hash: u64, bytes: &[u8]) -> u64 {
+    for &byte in bytes {
+        hash = (hash ^ u64::from(byte)).wrapping_mul(0x100000001b3);
+    }
+    hash
+}
+
 fn file_hash_with_progress(path: &Path, mut on_read: impl FnMut(u64)) -> io::Result<String> {
     let mut file = fs::File::open(path)?;
     let mut hash = 0xcbf29ce484222325_u64;
@@ -1202,10 +1209,7 @@ fn file_hash_with_progress(path: &Path, mut on_read: impl FnMut(u64)) -> io::Res
             break;
         }
 
-        for byte in &buffer[..read] {
-            hash ^= u64::from(*byte);
-            hash = hash.wrapping_mul(0x100000001b3);
-        }
+        hash = update_file_hash(hash, &buffer[..read]);
         processed += read as u64;
         if last_update.elapsed().as_millis() >= 100 {
             on_read(processed);
@@ -1405,7 +1409,7 @@ pub fn run() {
 #[tauri::command]
 async fn android_backup_action(app: AppHandle, action: String, storage: Option<std::collections::BTreeMap<String,String>>, token: Option<String>) -> Result<serde_json::Value, String> {
     #[cfg(target_os = "android")]
-    return tauri::async_runtime::spawn_blocking(move || android_backup::action(&app, &action, storage, token).map_err(|e| e.to_string())).await.map_err(|e| e.to_string())?;
+    return tauri::async_runtime::spawn_blocking(move || android_backup::action(&app, &action, storage, token).map_err(backup::message)).await.map_err(|e| e.to_string())?;
     #[cfg(not(target_os = "android"))]
     { let _ = (app, action, storage, token); Err("Android 전용 기능입니다.".into()) }
 }

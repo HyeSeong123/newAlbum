@@ -1,3 +1,4 @@
+import { androidAppId, isAndroidManagedMediaPath } from './android-app.mjs';
 import assert from 'node:assert/strict';
 import { expect } from '@playwright/test';
 
@@ -6,11 +7,24 @@ export async function verifyInstalledBackup({ page, adb, tapNative, nativeTree, 
   assert.match(await adb('get-serialno'), /^emulator-\d+$/);
   const folder = 'GomgomiBackupQA';
   await adb('shell','mkdir','-p','/sdcard/Download/'+folder);
-  await page.evaluate(async () => {
+  const root = await adb('shell','run-as',androidAppId,'pwd');
+  const relative = 'imported-media-v1/a1b2c3d4e5f60718/backup-test.jpg';
+  const managed = root + '/' + relative;
+  assert.ok(isAndroidManagedMediaPath(managed));
+  const original = '/sdcard/Download/GamjassakSmoke/gamjassak-smoke.jpg';
+  const checksum = (await adb('shell','sha256sum',original)).split(/\s/)[0];
+  await adb('shell','run-as',androidAppId,'mkdir','-p',relative.slice(0,relative.lastIndexOf('/')));
+  await adb('shell',`cat ${original} | run-as ${androidAppId} sh -c 'cat > ${relative}'`);
+  const saved = await page.evaluate(async path => {
+    const invoke = window.__TAURI_INTERNALS__.invoke;
+    const media = await invoke('register_paths',{paths:[path]});
+    const photo = media.find(item=>item.file_path.endsWith('/backup-test.jpg'));
+    const album = await invoke('create_album_from_media',{title:'복원 시험 앨범',mediaIds:[photo.id],coverColor:'#B9C58E'});
     localStorage.setItem('geuruteogi.first-run-completed-v1','true');
     localStorage.setItem('oraedameun.dayNotes', JSON.stringify({ '2026-11-20':'기억해요' }));
-    await window.__TAURI_INTERNALS__.invoke('save_diary',{entry:{id:0,date:'2026-11-20',title:'백업 시험 일기',body:'복원할 기록',mood:'기쁨',weather:'맑음',album_id:null,photos:[]}});
-  });
+    await window.__TAURI_INTERNALS__.invoke('save_diary',{entry:{id:0,date:'2026-11-20',title:'백업 시험 일기',body:'복원할 기록',mood:'기쁨',weather:'맑음',album_id:album,photos:[{id:photo.id}]}});
+    return {album,photo:photo.id};
+  },managed);
   await page.reload();
   const settings = page.getByRole('button',{name:'설정',exact:true}).filter({visible:true});
   if (!(await settings.count())) await page.getByRole('button',{name:'전체 메뉴',exact:true}).click();
@@ -39,9 +53,13 @@ export async function verifyInstalledBackup({ page, adb, tapNative, nativeTree, 
     localStorage.setItem('oraedameun.dayNotes','{}');
     await window.__TAURI_INTERNALS__.invoke('save_diary',{entry:{id:0,date:'2026-11-20',title:'백업 이후의 시험 일기',body:'',mood:'평온',weather:'맑음',album_id:null,photos:[]}});
   });
+  await adb('shell',`head -c 12 /sdcard/Download/${folder}/*.gomgomi > /sdcard/Download/${folder}/broken.gomgomi`);
+  await panel.getByRole('button',{name:'백업에서 복원'}).click();
+  await tapNative(/text="broken\.gomgomi"/);
+  await expect(panel.getByRole('status')).toContainText('끝까지 저장되지 않았습니다');
   async function preview() {
     await panel.getByRole('button',{name:'백업에서 복원'}).click();
-    await tapNative(/text="[^"]+\.gomgomi"/);
+    await tapNative(/text="곰고미-[0-9]+\.gomgomi"/);
     const dialog = page.getByRole('dialog',{name:'백업으로 기록을 바꿀까요?'});
     await expect(dialog).toBeVisible();
     const cells=await dialog.getByRole('row',{name:/일기/}).getByRole('cell').allTextContents();
@@ -56,11 +74,15 @@ export async function verifyInstalledBackup({ page, adb, tapNative, nativeTree, 
   await dialog.getByRole('button',{name:'앱 닫고 복원'}).click();
   const result=await restart();
   const restored=await result.page.evaluate(async () => ({
-    titles:(await window.__TAURI_INTERNALS__.invoke('list_diary')).map(d=>d.title),
+    diaries:await window.__TAURI_INTERNALS__.invoke('list_diary'),
     memo:JSON.parse(localStorage.getItem('oraedameun.dayNotes')||'{}')['2026-11-20'],
   }));
-  assert.ok(restored.titles.includes('백업 시험 일기'));
-  assert.ok(!restored.titles.includes('백업 이후의 시험 일기'));
+  const diary = restored.diaries.find(d=>d.title==='백업 시험 일기');
+  assert.equal(diary.album_id,saved.album);
+  assert.deepEqual(diary.photos.map(p=>p.id),[saved.photo]);
+  assert.ok(!restored.diaries.some(d=>d.title==='백업 이후의 시험 일기'));
+  assert.equal((await adb('shell','run-as',androidAppId,'sha256sum',relative)).split(/\s/)[0],checksum);
+  assert.equal((await adb('shell','sha256sum',original)).split(/\s/)[0],checksum);
   assert.equal(restored.memo,'기억해요');
   return result;
 }
