@@ -1,5 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { hasBackupBridge } from "./features/settings/backupStorage";
+import { BackupStartup } from "./features/settings/BackupStartup";
 import { App } from "./App";
 // Keep feature styles before the shared/mobile overrides when its UI loads lazily.
 import "./features/people/people.css";
@@ -24,8 +26,7 @@ import { observeMobileViewport } from "./services/mobileViewport";
 document.documentElement.dataset.platform = isAndroidRuntime() ? "android" : "desktop";
 if (isAndroidRuntime()) observeMobileViewport();
 
+const app = <React.StrictMode><App /></React.StrictMode>;
 createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
+  isAndroidRuntime() && hasBackupBridge() ? <BackupStartup>{app}</BackupStartup> : app,
 );

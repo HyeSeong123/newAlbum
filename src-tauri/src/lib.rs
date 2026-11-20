@@ -28,6 +28,10 @@ mod media_dimensions;
 mod location;
 mod album_content;
 mod database;
+#[cfg(any(target_os = "android", test))]
+mod backup;
+#[cfg(target_os = "android")]
+mod android_backup;
 mod gallery_sources;
 mod diary;
 mod characters;
@@ -1297,6 +1301,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            android_backup_action,
             native_ai::save_native_ai_feature,
             native_ai::list_native_ai_features,
             companion_chat::chat_model_status, companion_chat::download_chat_model, companion_chat::generate_chat_reply, companion_chat::stop_chat_model, companion_chat::release_chat_model,
@@ -1395,3 +1400,12 @@ pub fn run() {
     });
 }
 
+
+
+#[tauri::command]
+async fn android_backup_action(app: AppHandle, action: String, storage: Option<std::collections::BTreeMap<String,String>>, token: Option<String>) -> Result<serde_json::Value, String> {
+    #[cfg(target_os = "android")]
+    return tauri::async_runtime::spawn_blocking(move || android_backup::action(&app, &action, storage, token).map_err(|e| e.to_string())).await.map_err(|e| e.to_string())?;
+    #[cfg(not(target_os = "android"))]
+    { let _ = (app, action, storage, token); Err("Android 전용 기능입니다.".into()) }
+}

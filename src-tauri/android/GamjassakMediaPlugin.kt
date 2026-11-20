@@ -262,6 +262,23 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
     }
 
     @Command
+    fun pickBackup(invoke: Invoke) {
+        try {
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).setType("*/*").addCategory(Intent.CATEGORY_OPENABLE)
+            startActivityForResult(invoke, intent, "directoryResult")
+        } catch (error: Exception) { invoke.reject(error.message ?: "백업 파일을 열지 못했습니다.") }
+    }
+
+    @Command
+    fun finishForRestore(invoke: Invoke) {
+        invoke.resolve(JSObject())
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            activity.finishAndRemoveTask()
+            android.os.Process.killProcess(android.os.Process.myPid())
+        }, 400)
+    }
+
+    @Command
     fun pickDirectory(invoke: Invoke) {
         try {
             val args = invoke.parseArgs(PickDirectoryArgs::class.java)

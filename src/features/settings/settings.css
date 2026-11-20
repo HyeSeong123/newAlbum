@@ -28,3 +28,13 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+.backupPanel p, .backupStartup p { line-height: 1.5; overflow-wrap: anywhere; }
+.backupPanel p:empty { display: none; }
+.backupPanel button, .backupStartup button { min-height: 48px; padding: 8px 14px; margin: 4px; }
+.backupPanel dialog { width: min(340px, calc(100% - 32px)); max-height: 85dvh; overflow: auto; box-sizing: border-box; padding: 16px; border: 1px solid var(--border); border-radius: 12px; color: var(--text); background: var(--surface); }
+.backupPanel dialog::backdrop { background: rgb(0 0 0 / 48%); }
+.backupPanel table { border-collapse: collapse; width: 100%; }
+.backupPanel td, .backupPanel th { padding: 6px; text-align: right; }
+.backupPanel th:first-child { text-align: left; }
+.backupStartup { margin: 2rem auto; max-width: 400px; padding: 1rem; }

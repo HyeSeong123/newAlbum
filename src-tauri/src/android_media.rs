@@ -7,7 +7,7 @@ use crate::{ImportProgressDto, export::{ExportResultDto, valid_export_folder_nam
 struct AndroidMedia(PluginHandle<tauri::Wry>);
 
 pub fn init() -> TauriPlugin<tauri::Wry> {
-    Builder::new("android-media").setup(|app, api| {
+    Builder::new("android-media").js_init_script("window.__GOMGOMI_BACKUP__ = true;".to_owned()).setup(|app, api| {
         let handle = api.register_android_plugin("com.oraedameun.album", "GamjassakMediaPlugin")?;
         app.manage(AndroidMedia(handle));
         Ok(())
@@ -227,3 +227,25 @@ pub fn video_thumbnail(app: &tauri::AppHandle, source: &Path, target: &Path) -> 
     Ok(())
 }
 
+
+pub(crate) fn open_backup(app: &tauri::AppHandle, create: bool) -> Result<Option<FilePath>, String> {
+    let bridge = app.state::<AndroidMedia>();
+    let uri = if create {
+        let Some(folder) = pick_directory(app, false)? else { return Ok(None) };
+        let millis = std::time::SystemTime::now().duration_since(UNIX_EPOCH).map_err(|e| e.to_string())?.as_millis();
+        let name = format!("곰고미-{millis}.gomgomi");
+        let file: Created = bridge.0.run_mobile_plugin("createDocument", CreatePayload { uri: &folder, name: &name, directory: false })
+            .map_err(|e| e.to_string())?;
+        file.uri
+    } else {
+        let picked: PickedDirectory = bridge.0.run_mobile_plugin("pickBackup", serde_json::json!({})).map_err(|e| e.to_string())?;
+        let Some(uri) = picked.uri else { return Ok(None) };
+        uri
+    };
+    Ok(Some(FilePath::Url(uri.parse().map_err(|_| "선택한 주소가 올바르지 않습니다.")?)))
+}
+
+pub(crate) fn finish_for_restore(app: &tauri::AppHandle) -> Result<(), String> {
+    let _: serde_json::Value = app.state::<AndroidMedia>().0.run_mobile_plugin("finishForRestore", serde_json::json!({})).map_err(|e| e.to_string())?;
+    Ok(())
+}
