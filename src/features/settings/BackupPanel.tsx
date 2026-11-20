@@ -45,7 +45,9 @@ export function BackupPanel() {
     <button disabled={busy} onClick={()=>void run("export")}>백업 파일 만들기</button>
     <button disabled={busy} onClick={()=>void run("preview")}>백업에서 복원</button>
     {!preview && <p role="status">{message}</p>}
-    {preview && <dialog ref={dialog} aria-labelledby="restore-heading" onCancel={e=>{e.preventDefault(); void run("cancel");}}>
+    {preview && <dialog ref={dialog} onKeyDown={e=>{
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); void run("cancel"); }
+    }} aria-labelledby="restore-heading" onCancel={e=>{e.preventDefault(); void run("cancel");}}>
       <h2 id="restore-heading">백업으로 기록을 바꿀까요?</h2>
       <table><thead><tr><th>기록</th><th>현재</th><th>복원 후</th></tr></thead>
       <tbody>{labels.map(([key,label])=><tr key={key}><th>{label}</th><td>{preview.current[key]}</td><td>{preview.restored[key]}</td></tr>)}</tbody></table>

@@ -199,8 +199,8 @@ pub(crate) fn prepare(input: &mut impl Read, live: &Connection, root: &Path, sta
     let mut ordered: Vec<String> = allowed.into_iter().collect();
     ordered.sort_by_key(|t| if t == "native_ai_model" { 0 } else { 1 });
     ordered.push("sqlite_sequence".into());
-    tx.execute("DELETE FROM sqlite_sequence", [])?;
     for name in ordered {
+        if name == "sqlite_sequence" { tx.execute("DELETE FROM sqlite_sequence", [])?; }
         let table = ident(&name)?;
         let columns = strings(&tx,&format!("SELECT name FROM pragma_table_info('{name}') ORDER BY name"))?;
         if strings(&src,&format!("SELECT name FROM pragma_table_xinfo('{name}') WHERE hidden=0 ORDER BY name"))? != columns ||
@@ -213,7 +213,7 @@ pub(crate) fn prepare(input: &mut impl Read, live: &Connection, root: &Path, sta
         let mut rows = read.query([])?;
         let mut insert = tx.prepare(&format!("INSERT INTO {table} ({list}) VALUES ({placeholders})"))?;
         while let Some(row) = rows.next()? {
-            let values = (0..columns.len()).map(|i| row.get_ref(i)).collect::<rusqlite::Result<Vec<_>>>()?;
+            let values = (0..columns.len()).map(|i| row.get_ref(i).map(rusqlite::types::ToSqlOutput::Borrowed)).collect::<rusqlite::Result<Vec<_>>>()?;
             insert.execute(rusqlite::params_from_iter(values))?;
         }
     }
@@ -298,6 +298,7 @@ mod tests {
         source.execute_batch("INSERT INTO album(id,title,cover_media_id) VALUES(4,'가족',9);
             INSERT INTO diary(id,entry_date,title,body,mood,weather,album_id) VALUES(5,'2026-11-20','고미','기록','기쁨','맑음',4);
             INSERT INTO diary_photo VALUES(5,9,0);").unwrap();
+        source.execute("UPDATE sqlite_sequence SET seq=99 WHERE name='diary'",[]).unwrap();
         let storage = Storage::from([("oraedameun.dayNotes".into(),"달력 기록".into())]);
         let mut archive = vec![];
         export(&source,&root,&f.dir("export"),&storage,&mut archive).unwrap();
@@ -311,6 +312,9 @@ mod tests {
             assert_eq!(storage_at(&stage).unwrap(),storage);
             assert_eq!(fs::read(stage.join(sample)).unwrap(),b"photo fixture");
             let c = Connection::open(stage.join(DB)).unwrap();
+            assert_eq!(c.query_row("SELECT count(*) FROM sqlite_sequence WHERE name='diary' AND seq=99",[],|r| r.get::<_,i64>(0)).unwrap(),1);
+            c.execute("INSERT INTO diary(entry_date,title,body,mood,weather) VALUES('2026-11-20','추가','','기쁨','맑음')",[]).unwrap();
+            assert_eq!(c.last_insert_rowid(),100);
             assert_eq!(strings(&c,"SELECT file_path FROM diary_photo JOIN media ON media.id=diary_photo.media_id").unwrap(),[target.join(sample).to_str().unwrap()]);
         }
         let mut changed=archive.clone(); let pos = changed.iter().position(|&b| b==b'G').unwrap(); changed[pos]^=1;
