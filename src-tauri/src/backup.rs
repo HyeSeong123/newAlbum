@@ -69,10 +69,12 @@ fn transfer(r: &mut impl Read, w: &mut impl Write, size: u64, name: &str) -> Res
 
 pub(crate) fn export(c: &Connection, root: &Path, scratch: &Path, storage: &Storage, out: &mut impl Write) -> Result<()> {
     validate_storage(storage)?;
+    let _access = crate::managed_import::MEDIA_ACCESS.try_write().map_err(|_| "사진을 가져오는 중입니다. 가져오기가 끝나면 다시 백업해 주세요.")?;
     let db = scratch.join(DB);
     c.execute("VACUUM INTO ?1", [db.to_str().ok_or("백업 경로 오류")?])?;
     let mut snapshot = Connection::open(&db)?;
     crate::gallery_sources::initialize(&snapshot)?;
+    check(&snapshot)?;
     let tx = snapshot.transaction()?;
     let canonical_root = root.canonicalize()?;
     let mut entries = BTreeMap::new();

@@ -249,3 +249,10 @@ pub(crate) fn finish_for_restore(app: &tauri::AppHandle) -> Result<(), String> {
     let _: serde_json::Value = app.state::<AndroidMedia>().0.run_mobile_plugin("finishForRestore", serde_json::json!({})).map_err(|e| e.to_string())?;
     Ok(())
 }
+
+pub(crate) fn discard_failed_backup(app: &tauri::AppHandle, document: &FilePath) {
+    if let FilePath::Url(uri) = document {
+        let _: Result<serde_json::Value, _> = app.state::<AndroidMedia>().0.run_mobile_plugin(
+            "discardFailedBackup", UriPayload { uri: uri.as_str() });
+    }
+}

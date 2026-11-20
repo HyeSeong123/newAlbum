@@ -70,9 +70,9 @@ pub(crate) fn action(app: &AppHandle, action: &str, storage: Option<Storage>, to
         _ if !state.is_empty() => Err("복원을 마치려면 앱을 다시 열어 주세요.".into()),
         "export" => {
             let storage = storage.ok_or("앱 기록을 읽지 못했습니다.")?;
-            let Some(path) = android_media::open_backup(app,true)? else { return Ok(Value::Null) };
             let temp = work.join("export");
             backup::reset_dir(&temp)?;
+            let Some(path) = android_media::open_backup(app,true)? else { return Ok(Value::Null) };
             let result = (|| -> Result<Value> {
                 let c = crate::open_database(app)?;
                 let mut options = OpenOptions::new(); options.write(true).truncate(true);
@@ -81,6 +81,7 @@ pub(crate) fn action(app: &AppHandle, action: &str, storage: Option<Storage>, to
                 out.sync_all()?;
                 Ok(json!(true))
             })();
+            if result.is_err() { android_media::discard_failed_backup(app, &path); }
             let _ = fs::remove_dir_all(temp);
             result
         }

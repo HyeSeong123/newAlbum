@@ -6,6 +6,7 @@ import { verifyInstalledManualPhotos } from './manual-photo-smoke.mjs';
 import { verifyInstalledRepetitionMeasurement } from './person-repetition-smoke.mjs';
 import { verifyInstalledLocationSettings } from './location-settings-smoke.mjs';
 import { verifyInstalledFriendMotions } from './friend-motions-smoke.mjs';
+import { verifyInstalledBackup } from './backup-smoke.mjs';
 import { verifyInstalledGomiAction } from './gomi-action-smoke.mjs';
 import { expect } from '@playwright/test';
 import { _android as android } from 'playwright';
@@ -35,7 +36,7 @@ async function apkFiles(path) {
   }
   return all;
 }
-async function connect() {
+async function connect(afterBackup = false) {
   // Android WebView does not support the browser-context/download overrides
   // used by a desktop Chromium CDP connection. Use Playwright's Android adapter.
   if (!device) {
@@ -65,6 +66,11 @@ async function connect() {
   let page;
   await expect.poll(async () => {
     for (const candidate of context.pages().reverse()) {
+      if (afterBackup && await candidate.getByRole('button',{name:'곰고미 열기',exact:true}).isVisible().catch(()=>false)) {
+        await expect(candidate.getByRole('heading',{name:'백업 기록을 복원했어요.'})).toBeVisible();
+        await captureScreen('backup-restored');
+        await candidate.getByRole('button',{name:'곰고미 열기',exact:true}).click();
+      }
       if (await candidate.locator('main.app .navList').isVisible().catch(() => false)) {
         page = candidate;
         return true;
@@ -393,6 +399,12 @@ try {
     const bonded = await verifyInstalledGomiAction(page, join(output, 'bonded'));
     assert.equal(bonded.timings?.samples, 10, 'All bonded gestures must produce real speech');
     console.log('Offline bonded Gomi, button to painted speech (ms)', bonded.timings);
+    connection = await verifyInstalledBackup({page, adb, tapNative, nativeTree, captureScreen, restart:async () => {
+      await expect.poll(async()=>adb('shell','pidof',appId).catch(()=>''),{timeout:15000}).toBe('');
+      await disconnect(); await startApp();
+      return connect(true);
+    }});
+    context = connection.context; page = connection.page;
   }
   if (process.env.GOMGOMI_FOCUSED_AI_SMOKE !== '1') {
   const affectionBeforeGuide = await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('sync_characters')).characters.find(character => character.id === 'gomi').affection);

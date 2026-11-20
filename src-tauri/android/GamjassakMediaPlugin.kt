@@ -261,10 +261,26 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
         invoke.resolve(JSObject().put("uris", uris))
     }
 
+    private var newBackupDocument: String? = null
+
+    @Command
+    fun discardFailedBackup(invoke: Invoke) {
+        val uri = invoke.parseArgs(DescribeArgs::class.java).uri
+        if (newBackupDocument == uri) {
+            newBackupDocument = null
+            try { DocumentsContract.deleteDocument(activity.contentResolver, Uri.parse(uri)) }
+            catch (_: Exception) { /* Some providers do not support deletion. */ }
+        }
+        invoke.resolve(JSObject())
+    }
+
     @Command
     fun pickBackup(invoke: Invoke) {
         try {
             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).setType("*/*").addCategory(Intent.CATEGORY_OPENABLE)
+            activity.getPreferences(Context.MODE_PRIVATE).getString("backupFolder", null)?.let {
+                intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, Uri.parse(it))
+            }
             startActivityForResult(invoke, intent, "directoryResult")
         } catch (error: Exception) { invoke.reject(error.message ?: "백업 파일을 열지 못했습니다.") }
     }
@@ -473,6 +489,10 @@ class GamjassakMediaPlugin(private val activity: Activity) : Plugin(activity) {
                     else MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension) ?: "application/octet-stream"
                 val created = DocumentsContract.createDocument(activity.contentResolver, parent, mime, args.name)
                     ?: error("저장할 파일을 만들지 못했습니다.")
+                if (!args.directory && extension == "gomgomi") {
+                    newBackupDocument = created.toString()
+                    activity.getPreferences(Context.MODE_PRIVATE).edit().putString("backupFolder", parent.toString()).apply()
+                }
                 invoke.resolve(JSObject().put("uri", created.toString()))
             } catch (error: Exception) { invoke.reject(error.message ?: "저장 위치를 준비하지 못했습니다.") }
         }.start()
