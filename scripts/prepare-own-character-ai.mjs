@@ -28,7 +28,8 @@ async function stageWeights(root, directory, filename) {
 }
 export async function prepareOwnAi(root) {
   const directory=resolve(root,'public/character-ai');await mkdir(directory,{recursive:true});
-  const [base,dorongi]=await Promise.all([stageWeights(root,directory,'model.json'),stageWeights(root,directory,'dorongi.json')]);
+  const base=await stageWeights(root,directory,'model.json');
+  const dorongi=await stageWeights(root,directory,'dorongi.json');
   const manifest={id:'own-character-v3',...base,dorongi};
   await writeFile(resolve(directory,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
   await mkdir(resolve(root,'public/notices'),{recursive:true});

@@ -65,7 +65,7 @@ test('preparation installs the bridge, excludes backups, and requires signing on
     for (const file of ['GamjassakMediaPlugin.kt', 'GamjassakGalleryActivity.kt', 'GamjassakOwnCompanionPlugin.kt']) await copyFile(`src-tauri/android/${file}`, join(root, `src-tauri/android/${file}`));
     const { cp } = await import('node:fs/promises');
     await mkdir(join(root,'src/features/characters/ownAi'),{recursive:true});
-    await copyFile('src/features/characters/ownAi/model.json',join(root,'src/features/characters/ownAi/model.json'));
+    for (const file of ['model.json','dorongi.json']) await copyFile(`src/features/characters/ownAi/${file}`,join(root,`src/features/characters/ownAi/${file}`));
     for (const variant of ['main', 'debug']) await copyFile(`src-tauri/android/network-security-${variant}.xml`, join(root, `src-tauri/android/network-security-${variant}.xml`));
     await mkdir(join(root, 'src-tauri/gen/android/app/src/main'), { recursive:true });
     await writeFile(join(root, 'src-tauri/gen/android/app/build.gradle.kts'), template);
@@ -91,7 +91,7 @@ test('preparation installs the bridge, excludes backups, and requires signing on
     assert.match(bridge,/AI_EXTERNAL_MODELS_DISABLED/);assert.doesNotMatch(bridge,/nativeGenerate|System.loadLibrary|HttpURLConnection/);
     const {readdir}=await import('node:fs/promises');
     assert.deepEqual(await readdir(join(root,'src-tauri/gen/android/app/src/main/assets/companion')),[]);
-    assert.deepEqual(await readFile(join(root,'public/character-ai/model.json')),await readFile('src/features/characters/ownAi/model.json'));
+    for (const file of ['model.json','dorongi.json']) assert.deepEqual(await readFile(join(root,`public/character-ai/${file}`)),await readFile(`src/features/characters/ownAi/${file}`));
     assert.doesNotMatch(await readFile(join(root,'src-tauri/gen/android/app/build.gradle.kts'),'utf8'),/companion\/CMakeLists|externalNativeBuild/);
     await assert.rejects(prepareAndroid(root, true), /서명 설정이 없습니다/);
     await writeFile(join(root, 'src-tauri/gen/android/keystore.properties'), 'storeFile=private-upload-key.jks');
