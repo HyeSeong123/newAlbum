@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
 import { toStep } from './fixtures/helpSpotlight';
 import { characterPortraits } from '../src/features/characters/characterPortraits';
 const definitions = JSON.parse(readFileSync('src/features/characters/data/characterDefinitions.json','utf8')) as Array<{ id:string; defaultName:string; regionLabel:string; maxStage:number; fixedGrowthStage?:number; stageAssetPaths?:string[]; expressionAssetPaths?:Record<string,string> }>;
@@ -148,19 +149,22 @@ for (const id of ['potato','sweet-potato']) {
   });
 }
 
-test('unavailable new artwork leaves the preserved original portrait visible',async({page})=>{
-  await page.route('**/characters/brothers-v2/potato-atlas.png',route=>route.abort());
-  await installSnapshot(page,[companion('potato',6,true)]);
-  await page.goto('/');
-  const art=page.locator('.homeMascot [data-art="pencil-v2"]');
-  await expect(art).toHaveAttribute('data-art-ready','false');
-  await expect(art.locator('image')).toHaveAttribute('href','/characters/portraits/potato-source.png');
-  await expect(art).toBeVisible();
-  await page.getByRole('button',{name:'함께하기',exact:true}).click();
-  await page.getByRole('button',{name:'함께 쉬기',exact:true}).click();
-  await expect(art.locator('image')).toHaveAttribute('href','/characters/portraits/potato-source.png');
-  await expect(art).toBeVisible();
-});
+for (const id of ['potato','sweet-potato']) {
+  test(`${id} keeps the same idle drawing when its animation fails to load`,async({page})=>{
+    await page.route(`**/characters/brothers-v2/${id}-atlas.png`,route=>route.abort());
+    await installSnapshot(page,[companion(id,6,true)]);
+    await page.goto('/');
+    const art=page.locator('.homeMascot [data-art="pencil-v2"]');
+    const expected=`/characters/portraits/current/${id}.webp`;
+    await expect(art).toHaveAttribute('data-art-ready','false');
+    await expect(art.locator('image')).toHaveAttribute('href',expected);
+    await expect(art).toBeVisible();
+    await page.getByRole('button',{name:'함께하기',exact:true}).click();
+    await page.getByRole('button',{name:'함께 쉬기',exact:true}).click();
+    await expect(art.locator('image')).toHaveAttribute('href',expected);
+    await expect(art).toBeVisible();
+  });
+}
 
 test('returning Home rotates visible poses without changing affection', async ({page}) => {
   await installSnapshot(page,[companion('potato',6,true)]);
@@ -311,7 +315,7 @@ test('book viewing, portraits, rename and main selection never interact; only Ho
 test('a discovered friend can be named and selected without explaining how it was found',async({page}) => {
   await installSnapshot(page,[companion('potato',1,true),companion('sweet-potato'),companion('orange',3)],{id:1,characterId:'orange',kind:'unlock',stage:3});
   await page.goto('/');
-  const dialog=page.getByRole('dialog',{name:'새로운 새싹을 발견했어요!'});
+  const dialog=page.getByRole('dialog',{name:'새로운 친구를 만났어요!'});
   await expect(dialog).not.toContainText(/GPS|제주|장/);
   await dialog.getByRole('button',{name:'만나보기'}).click();
   await expect(cardFor(page,'귤')).toBeVisible();
@@ -348,15 +352,16 @@ test('each of the six current forms loads without showing any future form',async
     for(const def of definitions) {
       const art=cardFor(page,def.defaultName);
       const portrait=characterPortraits[def.id];
-      if (portrait) expect(def.defaultName).toBe(portrait.subject);
       if(def.id==='potato'||def.id==='sweet-potato'){
         await expect(art.locator('.characterPortrait image')).toHaveAttribute('href','/characters/brothers-v2/'+def.id+'-atlas.png');
         await expect(art.locator('.characterPortrait')).toHaveAttribute('viewBox','0 0 362 362');
         await expect(art.locator('.characterPortrait')).toBeVisible();
       }else if(portrait){
-        await expect(art.locator('.characterPortrait image')).toHaveAttribute('href',portrait.src);
-        await expect(art.locator('.characterPortrait')).toHaveAttribute('viewBox',portrait.viewBox);
-        await expect(art.locator('.characterPortrait')).toBeVisible();
+        const image=art.locator('img.characterPortrait');
+        await expect(image).toHaveAttribute('src',portrait);
+        await expect(image).toHaveAttribute('data-portrait',def.defaultName);
+        await image.evaluate((element:HTMLImageElement)=>element.decode());
+        await expect(image).toBeVisible();
       }else{
         const image=art.locator('.characterCardArt img');
         await expect(image).toHaveAttribute('src','/characters/gomi/avoid.png');
@@ -366,6 +371,33 @@ test('each of the six current forms loads without showing any future form',async
     expect(await page.evaluate(()=>document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     if(test.info().project.name === 'desktop') await page.screenshot({path:`test-results/sprouts-current-stage-${stage}.png`,fullPage:true});
   }
+});
+
+test('all current designs are legible in a narrow book and the seagull gift follows it to Home', async ({page},info) => {
+  test.skip(info.project.name !== 'mobile');
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await installSnapshot(page,definitions.map(d=>companion(d.id,d.fixedGrowthStage || 3,d.id === 'gomi')));
+  await page.goto('/');
+  await page.getByRole('button',{name:'친구들 보기'}).click();
+  await mkdir('preview-results/audit',{recursive:true});
+  for (const width of [320,360,393]) {
+    await page.setViewportSize({width,height:800});
+    await expect(page.locator('.characterBook .characterVisual')).toHaveCount(17);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    if (width===360) await page.screenshot({path:'preview-results/audit/all-character-designs-360.png',fullPage:true});
+  }
+  const gull=cardFor(page,'갈매기');
+  await expect(gull.locator('img.characterPortrait')).toHaveAttribute('src','/characters/portraits/current/camellia.webp');
+  await gull.getByRole('button',{name:'대표로 설정'}).click();
+  await page.getByRole('button',{name:'곰고미 홈으로 이동'}).click();
+  const portrait=page.getByRole('button',{name:'갈매기에게 말 걸기'}).locator('[data-portrait="갈매기"]');
+  await expect(portrait).toBeVisible();
+  await page.getByRole('button',{name:'함께하기',exact:true}).click();
+  await page.getByRole('button',{name:'새우 과자 주기'}).click();
+  await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-motion','treat');
+  await expect(page.locator('#homeMessage[data-source=activity]')).toContainText('새우 과자');
+  await expect(portrait).toHaveAttribute('src','/characters/portraits/current/camellia.webp');
+  await page.screenshot({path:'preview-results/audit/seagull-home-393.png'});
 });
 
 test('redesigned completed potato uses its new picture and reduced motion still permits Home affection',async({page}) => {

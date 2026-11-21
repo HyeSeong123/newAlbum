@@ -93,10 +93,11 @@ test('review retains selections across pages, saves edited candidates, and fits 
   await expect(review.getByRole('combobox', { name: '미확인 얼굴 1 인물 후보', exact: true })).toHaveValue('2');
   if (isMobile) for (const width of [360, 390, 430]) {
     await page.setViewportSize({ width, height: 780 });
-    const bounds = (await review.boundingBox())!;
-    expect(bounds.x).toBeGreaterThanOrEqual(0);
-    expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
-    expect(bounds.y + bounds.height).toBeLessThanOrEqual(780);
+    await expect.poll(async () => {
+      const bounds = await review.boundingBox();
+      return bounds !== null && bounds.x >= 0 && bounds.x + bounds.width <= width
+        && bounds.y >= 0 && bounds.y + bounds.height <= 780;
+    }).toBe(true);
     expect(await review.evaluate(e => e.scrollWidth <= e.clientWidth)).toBe(true);
     await expect(review.locator('.faceMatchSaveActions')).toBeInViewport();
     await page.screenshot({ path: `preview-results/help-review/review-${width}.png` });

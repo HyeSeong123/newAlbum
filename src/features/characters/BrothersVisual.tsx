@@ -1,16 +1,13 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 import { brotherArtAssets, brotherArtFrame, brotherArtPoses, brotherArtViewBox, type BrotherArtId } from "./brothersArt";
-import { characterPortraits } from "./characterPortraits";
 import type { CompanionMotion } from "./companionBehavior";
 
 // Only changes the visible drawing. Interaction, affection and growth remain with their existing owners.
-export function BrothersVisual({ id, stage, motion, expression, reactionKey, paused, reduced }: {
+export function BrothersVisual({ id, stage, motion, expression, reactionKey, paused, reduced, poster, subject }: {
   id: BrotherArtId; stage: number; motion: CompanionMotion; expression: "idle" | "happy" | "sad" | "grow";
-  reactionKey: number; paused: boolean; reduced: boolean;
+  reactionKey: number; paused: boolean; reduced: boolean; poster: string; subject: string;
 }) {
   const src = brotherArtAssets[id];
-  const fallback = characterPortraits[id];
-  const clipId = useId();
   const [loaded, setLoaded] = useState<{ src: string; width: number; height: number }>();
   const [hidden, setHidden] = useState(() => document.hidden);
   const ready = loaded?.src === src;
@@ -48,15 +45,12 @@ export function BrothersVisual({ id, stage, motion, expression, reactionKey, pau
     return () => window.clearInterval(timer);
   }, [id, motion, expression, reactionKey, key, initialFrame, ready, paused, hidden, reduced]);
 
-  const [x, y, w, h] = fallback.viewBox.split(" ").map(Number);
   return <svg className="characterIllustration characterPortrait brotherPencilArt"
-    viewBox={ready ? brotherArtViewBox(frame, loaded.width, loaded.height) : fallback.viewBox}
-    data-portrait={fallback.subject} data-stage={stage} data-expression={expression}
+    viewBox={ready ? brotherArtViewBox(frame, loaded.width, loaded.height) : "0 0 384 384"}
+    data-portrait={subject} data-stage={stage} data-expression={expression}
     data-art="pencil-v2" data-art-ready={ready} data-frame={frame} data-pose={brotherArtPoses[frame]}
     aria-hidden="true" width={220} height={220} overflow="hidden">
-    <defs><clipPath id={clipId}><rect x={x} y={y} width={w} height={h} /></clipPath></defs>
-    <image href={ready ? src : fallback.src} width={ready ? loaded.width : fallback.width}
-      height={ready ? loaded.height : fallback.height} clipPath={ready ? undefined : "url(#" + clipId + ")"}
-      onError={() => setLoaded(undefined)} />
+    <image href={ready ? src : poster} width={ready ? loaded.width : 384}
+      height={ready ? loaded.height : 384} onError={() => setLoaded(undefined)} />
   </svg>;
 }

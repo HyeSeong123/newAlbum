@@ -1,4 +1,5 @@
 """Set affection in a stopped, disposable CI installation for offline speech tests."""
+import json
 import os
 from pathlib import Path
 import re
@@ -36,6 +37,10 @@ def main(package):
         try:
             with conn:
                 changed = conn.execute("UPDATE owned_character SET affection=95 WHERE character_id='gomi'")
+                definitions = Path("src/features/characters/data/characterDefinitions.json")
+                for friend in json.loads(definitions.read_text(encoding="utf-8")):
+                    conn.execute("INSERT OR IGNORE INTO owned_character(character_id,growth_stage) VALUES(?,?)",
+                                 (friend["id"], friend.get("fixedGrowthStage", 3)))
                 if changed.rowcount != 1 or conn.execute("PRAGMA integrity_check").fetchone() != ("ok",):
                     raise RuntimeError("Invalid fixture database")
         finally:

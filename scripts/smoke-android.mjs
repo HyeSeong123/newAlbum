@@ -409,6 +409,31 @@ try {
     const bonded = await verifyInstalledGomiAction(page, join(output, 'bonded'));
     assert.equal(bonded.timings?.samples, 10, 'All bonded gestures must produce real speech');
     console.log('Offline bonded Gomi, button to painted speech (ms)', bonded.timings);
+    const roster = JSON.parse(await readFile('src/features/characters/data/characterDefinitions.json','utf8'));
+    const bookButton=page.getByRole('button',{name:'친구들 보기',exact:true});
+    await bookButton.scrollIntoViewIfNeeded();
+    await bookButton.click();
+    const book = page.getByRole('region',{name:'친구들',exact:true});
+    await expect(book.locator('.characterVisual')).toHaveCount(roster.length);
+    for (const friend of roster) {
+      const card=book.locator('.characterCard').filter({has:page.getByRole('heading',{name:friend.defaultName,exact:true})});
+      if (!friend.companionRole) {
+        const img=card.locator('img.characterIllustration');
+        await img.evaluate(element=>element.decode());
+        if (friend.id!=='gomi') await expect(img).toHaveAttribute('src',`/characters/portraits/current/${friend.id}.webp`);
+      }
+    }
+    const seagull=book.locator('.characterCard').filter({has:page.getByRole('heading',{name:'갈매기',exact:true})});
+    await seagull.scrollIntoViewIfNeeded();
+    await captureScreen('character-design-seagull-book');
+    await seagull.getByRole('button',{name:'대표로 설정',exact:true}).click();
+    await page.getByRole('button',{name:'곰고미 홈으로 이동',exact:true}).click();
+    await expect(page.getByRole('button',{name:'갈매기에게 말 걸기',exact:true}).locator('[data-portrait="갈매기"]')).toBeVisible();
+    await page.getByRole('button',{name:'함께하기',exact:true}).click();
+    await page.getByRole('button',{name:'새우 과자 주기',exact:true}).click();
+    await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-motion','treat');
+    await expect(page.locator('#homeMessage[data-source=activity]')).toContainText('새우 과자');
+    await captureScreen('character-design-seagull-home');
     connection = await verifyInstalledBackup({page, adb, tapNative, nativeTree, captureScreen, restart:async confirmed => {
       if (!confirmed) await adb('shell','am','force-stop',appId);
       await expect.poll(async()=>adb('shell','pidof',appId).catch(()=>''),{timeout:15000}).toBe('');

@@ -18,7 +18,7 @@ export type CharacterPersonality = {
 
 export type CharacterDefinition = {
   id: string; type: string; regionCode: string; regionName: string; regionLabel: string;
-  defaultName: string; description: string; maxStage: number; assetPath: string;
+  defaultName: string; appearance?: string; treatLabel?: string; description: string; maxStage: number; assetPath: string;
   originalAssetPath?: string;
   expressionAssetPaths?: Partial<Record<"idle" | "happy" | "sad" | "grow", string>>;
   stageAssetPaths?: string[];
