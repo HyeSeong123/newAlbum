@@ -45,6 +45,7 @@ function BotanicalVisual({ definition, stage, expression = "idle", className = "
   const brotherSignature = companionMotion && (definition.id === "potato" || definition.id === "sweet-potato") && isBrotherSignature(signature)
     ? signature : undefined;
   const portrait = characterPortraits[definition.id];
+  const subject = definition.motif ?? definition.defaultName;
   useEffect(() => {
     if (paused) { controls.stop(); return; }
     // Replay the motion, keeping the decoded portrait and SVG clip in place.
@@ -61,9 +62,9 @@ function BotanicalVisual({ definition, stage, expression = "idle", className = "
       initial={false} style={{ transformOrigin: "50% 84%" }}
       animate={controls}>
       {isBrotherArtId(definition.id) && portrait ? <BrothersVisual id={definition.id} stage={currentStage} motion={playbackMotion}
-        poster={portrait} subject={definition.defaultName} expression={expression} reactionKey={reactionKey} paused={paused} reduced={Boolean(reduced)} /> :
+        poster={portrait} subject={subject} expression={expression} reactionKey={reactionKey} paused={paused} reduced={Boolean(reduced)} /> :
         <img className="characterIllustration characterPortrait" src={portrait || characterAsset(definition, currentStage, expression)}
-          data-portrait={definition.defaultName} data-stage={currentStage} data-expression={expression}
+          data-portrait={subject} data-stage={currentStage} data-expression={expression}
           alt="" draggable={false} width={220} height={220} />}
     </motion.span>
     <AnimatePresence>{excited && activeMotion !== "rest" && !reduced && !paused && !brotherSignature && <motion.span key={reactionKey} className="characterHeart" aria-hidden="true"
