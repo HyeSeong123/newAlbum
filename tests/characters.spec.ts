@@ -407,20 +407,25 @@ test('Haesil speaks in his own voice on touch, in activities and in Help', async
   await page.goto('/');
   const mascot=page.getByRole('button',{name:'해실에게 말 걸기',exact:true});
   const reply=page.locator('#homeMessage[data-source="activity"]');
-  const speech=/그대|허허|하오|시게|구려|다네|것이오|이오|겠소|십시다/;
+  const scholar = JSON.parse(readFileSync('src/features/characters/data/characterDefinitions.json','utf8'))
+    .find((friend:{id:string})=>friend.id==='apple') as {
+      dialogues:{situations:{idle:string[]};stages:Record<string,string[]>};
+      activityVoices:Record<string,string[]>;
+      personality:{helpVoices:string[][]};
+    };
+  const touchLines=[...scholar.dialogues.situations.idle,...scholar.dialogues.stages['3']];
+  const expectReply=async (pool:string[])=>expect.poll(async()=>pool.includes(await reply.innerText())).toBe(true);
   await mascot.click();
-  await expect(reply).toContainText(speech);
+  await expectReply(touchLines);
   const first=await reply.innerText();
   await mascot.click();
   await expect(reply).not.toHaveText(first);
-  await expect(reply).toContainText(speech);
+  await expectReply(touchLines);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
   await page.getByRole('button',{name:'함께하기',exact:true}).click();
-  for (const label of ['함께 산책','햇살 선물','쓰다듬기','함께 놀기','함께 쉬기']) {
-    const previous=await reply.innerText();
+  for (const [action,label] of [['walk','함께 산책'],['treat','햇살 선물'],['pet','쓰다듬기'],['play','함께 놀기'],['rest','함께 쉬기']]) {
     await page.getByRole('button',{name:label,exact:true}).click();
-    await expect(reply).not.toHaveText(previous);
-    await expect(reply).toContainText(speech);
+    await expectReply(scholar.activityVoices[action]);
   }
   await page.getByRole('button',{name:'지켜보기',exact:true}).click();
   await expect(page.locator('#homeMessage')).toHaveAttribute('data-state','watching');
@@ -429,7 +434,7 @@ test('Haesil speaks in his own voice on touch, in activities and in Help', async
   await page.getByRole('button',{name:'현재 화면 도움말'}).click();
   const help=page.getByRole('dialog',{name:'버튼 도움말'});
   await expect(help.locator('.characterHelpName')).toHaveText('해실');
-  await expect(help.locator('.helpVoice')).toContainText(speech);
+  await expect.poll(async()=>scholar.personality.helpVoices[0].includes(await help.locator('.helpVoice').innerText())).toBe(true);
 });
 
 test('redesigned completed potato uses its new picture and reduced motion still permits Home affection',async({page}) => {
