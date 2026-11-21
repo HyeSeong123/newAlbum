@@ -387,7 +387,7 @@ test('all current designs are legible in a narrow book and the seagull gift foll
     if (width===360) await page.screenshot({path:'preview-results/audit/all-character-designs-360.png',fullPage:true});
   }
   const gull=cardFor(page,'갈매기');
-  await expect(gull.locator('img.characterPortrait')).toHaveAttribute('src','/characters/portraits/current/camellia.webp');
+  await expect(gull.locator('img.characterPortrait')).toHaveAttribute('src','/characters/portraits/pencil/camellia.webp');
   await gull.getByRole('button',{name:'대표로 설정'}).click();
   await page.getByRole('button',{name:'곰고미 홈으로 이동'}).click();
   const portrait=page.getByRole('button',{name:'갈매기에게 말 걸기'}).locator('[data-portrait="갈매기"]');
@@ -396,7 +396,7 @@ test('all current designs are legible in a narrow book and the seagull gift foll
   await page.getByRole('button',{name:'새우 과자 주기'}).click();
   await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-motion','treat');
   await expect(page.locator('#homeMessage[data-source=activity]')).toContainText('새우 과자');
-  await expect(portrait).toHaveAttribute('src','/characters/portraits/current/camellia.webp');
+  await expect(portrait).toHaveAttribute('src','/characters/portraits/pencil/camellia.webp');
   await page.screenshot({path:'preview-results/audit/seagull-home-393.png'});
 });
 

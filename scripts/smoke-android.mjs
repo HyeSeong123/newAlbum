@@ -420,7 +420,7 @@ try {
       if (!friend.companionRole) {
         const img=card.locator('img.characterIllustration');
         await img.evaluate(element=>element.decode());
-        if (friend.id!=='gomi') await expect(img).toHaveAttribute('src',`/characters/portraits/current/${friend.id}.webp`);
+        if (friend.id!=='gomi') await expect(img).toHaveAttribute('src',`/characters/portraits/pencil/${friend.id}.webp`);
       }
     }
     const seagull=book.locator('.characterCard').filter({has:page.getByRole('heading',{name:'갈매기',exact:true})});
