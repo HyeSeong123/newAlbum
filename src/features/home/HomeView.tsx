@@ -262,7 +262,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
           {definition && mainCharacter ? <CharacterVisual definition={definition} stage={mainCharacter.growthStage} expression={happy ? "happy" : "idle"}
             gomiMotion={isGomi ? gomi.motion : undefined} companionMotion={!isGomi ? companion.motion : undefined}
             paused={!isGomi && companion.paused} affection={mainCharacter.affection} reactionKey={isGomi ? gomi.sequence : companion.sequence} />
-            : <img src="/brand/gamjassak-symbol.png" alt="" width={1254} height={1254} draggable={false} />}
+            : <img src="/characters/gomi/avoid.png" alt="" width={1254} height={1254} draggable={false} />}
         </button>
         {definition && mainCharacter && <p className="homeCharacterMeta"><strong>{characterName(definition, mainCharacter)}</strong><span className="homeAffection"><Heart size={14} aria-hidden="true" />친밀도 {mainCharacter.affection}</span></p>}
         {definition && mainCharacter && <div className="homeActivities">

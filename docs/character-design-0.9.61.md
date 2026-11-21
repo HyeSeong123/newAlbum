@@ -24,4 +24,4 @@
 
 홈에서 대표를 고르면 도감과 같은 그림을 표시한다. 도움말, 설정, 발견과 성장 알림도 같은 그림을 사용한다. 도감에서 이름을 비워 저장하면 그림에 맞는 기본 이름을 표시한다. 지역 친구는 성장 단계마다 같은 실루엣을 사용하고 단계 수와 성장 조건을 보존한다.
 
-기존 원본은 `public/characters/portraits/`에 보존한다. 앱에 표시하는 16개의 개별 WebP는 `public/characters/portraits/current/`에 있다. 고미는 기존 자세별 PNG, 감자와 고구마는 기존 애니메이션 시트를 사용한다.
+기존 원본은 `public/characters/portraits/`에 보존한다. 앱에 표시하는 16개의 개별 WebP는 `public/characters/portraits/current/`에 있다. 고미는 기존 자세별 PNG를 사용하며 홈에서 친구를 불러오는 동안에도 고미를 표시한다. 감자와 고구마는 기존 애니메이션 시트를 사용한다.
