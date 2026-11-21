@@ -1,7 +1,9 @@
 import { useEffect, useState, lazy, Suspense } from 'react';
 import { getVersion } from '@tauri-apps/api/app';
 import appPackage from '../../../package.json';
-import { isTauriRuntime } from '../../services/tauriMediaService';
+import { hasBackupBridge } from "./backupStorage";
+import { BackupPanel } from "./BackupPanel";
+import { isAndroidRuntime, isTauriRuntime } from '../../services/tauriMediaService';
 import type { MediaItem } from '../../types/media';
 // Evaluation exports and benchmarks belong to developer builds, not photo management.
 const RecognitionEvaluation=import.meta.env.DEV ? lazy(()=>import('./RecognitionEvaluation').then(m=>({default:m.RecognitionEvaluation}))) : null;
@@ -32,6 +34,7 @@ export function SettingsPanel({ itemCount, clearing, onClear, photos=[] }: { pho
           <strong data-testid="current-app-version">v{version}</strong>
         </div>
       </section>
+      {isAndroidRuntime() && hasBackupBridge() && <BackupPanel />}
       {RecognitionEvaluation && <section className="settingsSummary"><h2>개발용 인식 검증</h2><p>별도 평가 자료로 성능을 확인합니다.</p><button aria-expanded={evaluation} onClick={()=>setEvaluation(!evaluation)}>{evaluation?'인식 검증 닫기':'인식 검증 열기 · 고급'}</button>{evaluation&&<Suspense fallback={<p>불러오는 중</p>}><RecognitionEvaluation photos={photos}/></Suspense>}</section>}
       <section className="dangerPanel" aria-label="등록 목록 관리">
         <div>

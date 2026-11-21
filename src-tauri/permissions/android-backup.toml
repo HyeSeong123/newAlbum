@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "android-backup"
+description = "Back up or restore app-owned Android records with the system picker."
+commands.allow = ["android_backup_action"]

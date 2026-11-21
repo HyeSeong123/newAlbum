@@ -1,6 +1,9 @@
 //! Streaming snapshots of Android documents; never modify the selected original.
 use std::{fs, hash::{DefaultHasher, Hash, Hasher}, sync::Mutex, io::{self, Read, Write}, path::{Path, PathBuf}, time::Instant};
 
+// A backup must see the same managed files while it reads the DB snapshot.
+pub(crate) static MEDIA_ACCESS: std::sync::RwLock<()> = std::sync::RwLock::new(());
+
 pub fn safe_file_name(name: &str, mime: &str) -> String {
     let mut name: String = name.chars().map(|c| if c.is_control() || "/\\:*?\"<>|".contains(c) { '_' } else { c }).take(180).collect();
     name = name.trim().trim_matches('.').to_owned();
@@ -41,6 +44,7 @@ pub fn copy_document(reader: impl Read, target: &Path, on_read: impl FnMut(u64))
 /// A rejected candidate leaves the old file intact and returns its byte count.
 pub fn copy_document_checked(mut reader: impl Read, target: &Path, mut on_read: impl FnMut(u64),
     mut should_replace: impl FnMut(&Path) -> bool) -> io::Result<u64> {
+    let _access = MEDIA_ACCESS.read().map_err(|_| io::Error::other("보관 파일이 사용 중입니다."))?;
     on_read(0);
     let parent = target.parent().ok_or_else(|| io::Error::other("보관 위치가 없습니다."))?;
     // Imports of the same document directory share a staging file. Serialize

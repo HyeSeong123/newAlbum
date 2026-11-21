@@ -3,5 +3,5 @@
   "description": "Bundled Android app access to the album library and system document picker",
   "platforms": ["android"],
   "windows": ["main"],
-  "permissions": ["core:default", "dialog:default", "dialog:allow-open", "dialog:allow-save", "album-library"]
+  "permissions": ["core:default", "dialog:default", "dialog:allow-open", "dialog:allow-save", "album-library", "android-backup"]
 }
