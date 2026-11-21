@@ -402,10 +402,10 @@ test('all current designs are legible in a narrow book and the seagull gift foll
   await page.screenshot({path:'preview-results/audit/seagull-home-393.png'});
 });
 
-test('Haesil speaks in his own voice on touch, in activities and in Help', async ({page}) => {
+test('Dorongi speaks in his own voice on touch, in activities and in Help', async ({page}) => {
   await installSnapshot(page,[companion('apple',3,true)]);
   await page.goto('/');
-  const mascot=page.getByRole('button',{name:'해실에게 말 걸기',exact:true});
+  const mascot=page.getByRole('button',{name:'도롱이에게 말 걸기',exact:true});
   const reply=page.locator('#homeMessage[data-source="activity"]');
   const scholar = JSON.parse(readFileSync('src/features/characters/data/characterDefinitions.json','utf8'))
     .find((friend:{id:string})=>friend.id==='apple') as {
@@ -433,8 +433,21 @@ test('Haesil speaks in his own voice on touch, in activities and in Help', async
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
   await page.getByRole('button',{name:'현재 화면 도움말'}).click();
   const help=page.getByRole('dialog',{name:'버튼 도움말'});
-  await expect(help.locator('.characterHelpName')).toHaveText('해실');
+  await expect(help.locator('.characterHelpName')).toHaveText('도롱이');
   await expect.poll(async()=>scholar.personality.helpVoices[0].includes(await help.locator('.helpVoice').innerText())).toBe(true);
+});
+
+test('Dorongi keeps a saved nickname and shares his feelings when closer', async ({page}) => {
+  await installSnapshot(page,[{...companion('apple',3,true),customName:'해실',affection:29}]);
+  await page.goto('/');
+  const mascot=page.getByRole('button',{name:'해실에게 말 걸기',exact:true});
+  await mascot.click();
+  await expect(page.locator('#homeMessage[data-source="activity"]')).toHaveText(
+    '그대가 내 이름을 먼저 불러 주니, 오늘은 숨을 곳이 없구려. …기쁜 뜻이오.',
+  );
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 30');
+  await page.getByRole('button',{name:'친구들 보기',exact:true}).click();
+  await expect(cardFor(page,'해실').locator('.characterMotif')).toHaveText('하회탈 친구');
 });
 
 test('redesigned completed potato uses its new picture and reduced motion still permits Home affection',async({page}) => {

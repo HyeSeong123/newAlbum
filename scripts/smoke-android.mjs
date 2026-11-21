@@ -423,13 +423,16 @@ try {
         if (friend.id!=='gomi') await expect(img).toHaveAttribute('src',`/characters/portraits/pencil/${friend.id}.webp`);
       }
     }
-    const scholar=book.locator('.characterCard').filter({has:page.getByRole('heading',{name:'해실',exact:true})});
+    const scholar=book.locator('.characterCard').filter({has:page.getByRole('heading',{name:'도롱이',exact:true})});
     await expect(scholar.locator('.characterMotif')).toHaveText('하회탈 친구');
     await scholar.getByRole('button',{name:'대표로 설정',exact:true}).click();
     await page.getByRole('button',{name:'곰고미 홈으로 이동',exact:true}).click();
-    await page.getByRole('button',{name:'해실에게 말 걸기',exact:true}).click();
-    await expect(page.locator('#homeMessage[data-source=activity]')).toContainText(/그대|허허|구려|시게|다네|하오/);
-    await captureScreen('character-name-haesil-home');
+    await page.getByRole('button',{name:'도롱이에게 말 걸기',exact:true}).click();
+    const dorongi = roster.find(friend => friend.id === 'apple');
+    const dorongiReply = page.locator('#homeMessage[data-source=activity]');
+    const touchLines = [...dorongi.dialogues.situations.idle, ...Object.values(dorongi.dialogues.stages).flat()];
+    await expect.poll(async () => touchLines.includes(await dorongiReply.innerText())).toBe(true);
+    await captureScreen('character-name-dorongi-home');
     await page.getByRole('button',{name:'친구들 보기',exact:true}).click();
     const seagull=book.locator('.characterCard').filter({has:page.getByRole('heading',{name:'끼룩',exact:true})});
     await seagull.scrollIntoViewIfNeeded();
