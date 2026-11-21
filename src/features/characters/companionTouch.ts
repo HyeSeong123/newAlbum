@@ -23,7 +23,7 @@ export function buildTouchPrompt(context: TouchContext): string {
     "말투 참고 예시(그대로 복사하지 말기): " + (definition.personality?.speechTone || ""),
     "친밀도: " + owned.affection + ". 현재 관계: " + relation + ". 낮은 친밀도에서 갑자기 살갑게 굴지 않는다.",
     "현재 기분: " + companionMoodLabel(memory.mood) + ", 활력: " + memory.energy + "/5. 현재 시간대: " + period,
-    "현재 외형: " + (context.appearance || "작은 캐릭터"),
+    "현재 외형: " + (context.appearance || definition.appearance || "작은 캐릭터"),
     "현재 외형에 없는 신체 부위(잎·뿌리 등)를 지어내지 않는다.",
     "화면 안에서 함께한 최근 행동: " + history,
     "최근 했던 말(그대로 반복하지 말기): " + previous.slice(-5).join(" / "),

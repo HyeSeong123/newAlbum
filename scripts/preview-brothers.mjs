@@ -5,10 +5,10 @@ import { fileURLToPath } from 'node:url';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const output=resolve(process.argv[2]||resolve(root,'preview-results/brothers-v2.html'));
-const dataUrl=async path=>'data:image/png;base64,'+(await readFile(resolve(root,'public',path))).toString('base64');
+const dataUrl=async path=>'data:image/'+(path.endsWith('.webp')?'webp':'png')+';base64,'+(await readFile(resolve(root,'public',path))).toString('base64');
 const replacements=new Map(await Promise.all([
   '/characters/brothers-v2/potato-atlas.png','/characters/brothers-v2/sweet-potato-atlas.png',
-  '/characters/portraits/potato-source.png','/characters/portraits/sweet-potato.png',
+  '/characters/portraits/current/potato.webp','/characters/portraits/current/sweet-potato.webp',
 ].map(async path=>[path,await dataUrl(path.slice(1))])));
 const result=await build({entryPoints:[resolve(root,'scripts/brothers-preview.tsx')],bundle:true,write:false,
   outfile:'preview.js',format:'iife',minify:true,target:'es2022',jsx:'automatic',loader:{'.png':'dataurl'},

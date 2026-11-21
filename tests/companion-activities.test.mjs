@@ -37,6 +37,20 @@ test("all 17 distinct personalities react to each of the five shared Home action
   assert.equal(companionActionLabel(definitions[1], "treat"), "햇살 선물");
 });
 
+test("regional gifts and reactions describe the current character artwork", () => {
+  for (const [id, action, phrase] of [
+    ["apple","pet","모자"], ["ginkgo","pet","뚜껑"], ["camellia","treat","새우 과자"],
+    ["pear","pet","지느러미"], ["jujube","pet","호두 껍데기"], ["chestnut","treat","잔뿌리"], ["persimmon","rest","꽃잎"],
+  ]) {
+    const def=definitions.find(character=>character.id===id);
+    const reply=performCompanionActivity(def,emptyCompanionMemory(),action,10,"2026-11-21");
+    assert.ok(reply.line.includes(phrase), id);
+    assert.ok(buildCompanionPrompt(def,owned(def),emptyCompanionMemory(),action).system.includes(def.appearance));
+  }
+  assert.equal(companionActionLabel(definitions.find(def=>def.id==="camellia"),"treat"),"새우 과자 주기");
+  assert.equal(companionActionLabel(definitions.find(def=>def.id==="chestnut"),"treat"),"물 주기");
+});
+
 test("Gomi stays guarded at low affection and affectionate at high affection", () => {
   const gomi = definitions[0];
   for (const action of COMPANION_ACTIONS) {

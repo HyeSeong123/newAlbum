@@ -8,7 +8,7 @@ const explicitContent: Record<string, { title: string; instruction: string }> = 
   'companion-ai': { title: '친구의 AI 반응', instruction: 'AI를 한 번 준비하면 캐릭터를 터치할 때 기분과 성격, 친밀도와 함께한 행동에 맞춰 새로운 말을 해요. 준비 후에는 인터넷 없이 반응하며, 글을 입력할 필요가 없어요.' },
   'companion-actions': { title: '친구와 함께하기', instruction: '친밀도는 캐릭터에게 직접 말을 걸 때만 하루 한 번 올라요. 깨어 있을 때만 오르며, 잠든 고미를 깨우는 행동은 친밀도가 1씩, 하루 최대 3까지 줄어요. 함께 쉬기는 잠을 지켜 줘요. 화면 속 행동은 실제 GPS 산책이나 음식 섭취를 뜻하지 않아요.' },
   'companion-walk': { title: '함께 산책', instruction: '친구와 산책하는 상황을 상상하며 대화를 나눠요. 실제 이동을 추적하거나 사진 위치를 읽지는 않아요.' },
-  'companion-treat': { title: '작은 선물', instruction: '고미에게는 간식을, 식물 친구들에게는 햇살을 선물해요. 실제 물건이나 보상을 소비하지 않아요.' },
+  'companion-treat': { title: '작은 선물', instruction: '친구에 따라 간식이나 햇살처럼 건넬 선물이 달라요. 실제 물건이나 보상을 소비하지 않아요.' },
   'companion-pet': { title: '쓰다듬기', instruction: '친구의 성격에 따라 다른 반응을 보여요. 친밀도 상승 횟수와 성장 상태는 바꾸지 않아요.' },
   'companion-play': { title: '함께 놀기', instruction: '친구와 짧은 상상 놀이를 해요. 최근 행동과 기분을 기기 안에 기억해요.' },
   'companion-rest': { title: '함께 쉬기', instruction: '친구와 잠깐 쉬면서 활력을 회복해요. 앱의 다른 기록은 변경하지 않아요.' },

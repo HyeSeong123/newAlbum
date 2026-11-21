@@ -341,7 +341,7 @@ test('keyboard users can reach help within a writing dialog and return to their 
 
 test('discovery popup stays in place during its button help without dismissing the event', async ({ page }) => {
   await prepareHelp(page, 'gomi', 0, 12, true);
-  const discovery = page.getByRole('dialog', { name: '새로운 새싹을 발견했어요!', exact: true });
+  const discovery = page.getByRole('dialog', { name: '새로운 친구를 만났어요!', exact: true });
   await expect(discovery).toBeVisible();
   await openHelp(page);
   await expect(page.locator('[data-help-highlighted]')).toHaveText('만나보기');

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useAnimationControls, useReducedMotion } from "motion/react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 import { characterAsset, type CharacterDefinition } from "./models";
 import { GomiVisual } from "./GomiVisual";
 import { characterPortraits } from "./characterPortraits";
@@ -44,10 +44,7 @@ function BotanicalVisual({ definition, stage, expression = "idle", className = "
   const playbackMotion = expression === "sad" && !companionMotion ? "rest" : activeMotion;
   const brotherSignature = companionMotion && (definition.id === "potato" || definition.id === "sweet-potato") && isBrotherSignature(signature)
     ? signature : undefined;
-  const src = characterAsset(definition, currentStage, expression);
   const portrait = characterPortraits[definition.id];
-  const clipId = useId();
-  const crop = portrait?.viewBox.split(" ").map(Number);
   useEffect(() => {
     if (paused) { controls.stop(); return; }
     // Replay the motion, keeping the decoded portrait and SVG clip in place.
@@ -63,13 +60,10 @@ function BotanicalVisual({ definition, stage, expression = "idle", className = "
     <motion.span className="characterBody"
       initial={false} style={{ transformOrigin: "50% 84%" }}
       animate={controls}>
-      {isBrotherArtId(definition.id) ? <BrothersVisual id={definition.id} stage={currentStage} motion={playbackMotion}
-        expression={expression} reactionKey={reactionKey} paused={paused} reduced={Boolean(reduced)} /> :
-      portrait && crop ? <svg className="characterIllustration characterPortrait" viewBox={portrait.viewBox} data-portrait={portrait.subject}
-        data-stage={currentStage} data-expression={expression} aria-hidden="true" width={220} height={220} overflow="hidden">
-        <defs><clipPath id={clipId}>{portrait.clip ? <polygon points={portrait.clip} /> : <rect x={crop[0]} y={crop[1]} width={crop[2]} height={crop[3]} />}</clipPath></defs>
-        <image href={portrait.src} width={portrait.width} height={portrait.height} clipPath={`url(#${clipId})`} /></svg> :
-        <img className="characterIllustration" src={src} data-stage={currentStage} data-expression={expression}
+      {isBrotherArtId(definition.id) && portrait ? <BrothersVisual id={definition.id} stage={currentStage} motion={playbackMotion}
+        poster={portrait} subject={definition.defaultName} expression={expression} reactionKey={reactionKey} paused={paused} reduced={Boolean(reduced)} /> :
+        <img className="characterIllustration characterPortrait" src={portrait || characterAsset(definition, currentStage, expression)}
+          data-portrait={definition.defaultName} data-stage={currentStage} data-expression={expression}
           alt="" draggable={false} width={220} height={220} />}
     </motion.span>
     <AnimatePresence>{excited && activeMotion !== "rest" && !reduced && !paused && !brotherSignature && <motion.span key={reactionKey} className="characterHeart" aria-hidden="true"

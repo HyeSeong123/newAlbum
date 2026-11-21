@@ -4,7 +4,6 @@ import { CharacterVisual } from "../characters/CharacterVisual";
 import { CompanionAiSetup } from "../characters/CompanionAiSetup";
 import { useCompanionReactions } from "../characters/useCompanionReactions";
 import { chooseCompanionFallback, companionFallbackCandidates } from "../characters/companionFallback";
-import { characterPortraits } from "../characters/characterPortraits";
 import { characterDefinitions, characterName, dialogueLines, nextDialogue, type OwnedCharacter, type CharacterInteractionSource } from "../characters/models";
 import { useGomiBehavior } from "../characters/useGomiBehavior";
 import { gomiCanSpeak } from "../characters/gomiBehavior";
@@ -96,7 +95,6 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     return () => document.removeEventListener("visibilitychange", invalidate);
   }, []);
   const definition = characterDefinitions.find(item => item.id === mainCharacter?.id);
-  const appearance = definition?.id === "peach" ? "ㄱ 모양을 닮은 기린" : characterPortraits[definition?.id || ""]?.subject || "강아지 고미";
   useEffect(() => {
     ++reactionRequest.current;
     retryContext.current = undefined;
@@ -176,7 +174,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     if (definition && mainCharacter) {
       const memory = readCompanionMemory(mainCharacter.id);
       const source = reaction?.sleeping ? (reaction.disturbed ? "sleep" : undefined) : "home";
-      void reactWithStoredRelationship({ definition, appearance, owned: mainCharacter, memory: reaction?.sleeping ? { ...memory, mood:reaction.disturbed ? "irritated" : "sleepy", energy:Math.min(1,memory.energy) } : memory, action:"touch", fallback, sleeping:Boolean(reaction?.sleeping) }, source);
+      void reactWithStoredRelationship({ definition, owned: mainCharacter, memory: reaction?.sleeping ? { ...memory, mood:reaction.disturbed ? "irritated" : "sleepy", energy:Math.min(1,memory.energy) } : memory, action:"touch", fallback, sleeping:Boolean(reaction?.sleeping) }, source);
     }
     setHappy(!isGomi && !restLine && !companion.resting);
     window.clearTimeout(timer.current);
@@ -212,7 +210,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     setSpokenLine(undefined);
     setAiStatus(isGomi && !gomiCanSpeak(mainCharacter.affection) ? "idle" : "generating");
     setAiFailure("");
-    void reactWithStoredRelationship({ definition, appearance, owned: mainCharacter, memory: {...result.memory,energy:previous.energy}, action, fallback, sleeping }, disturbed ? "sleep" : undefined);
+    void reactWithStoredRelationship({ definition, owned: mainCharacter, memory: {...result.memory,energy:previous.energy}, action, fallback, sleeping }, disturbed ? "sleep" : undefined);
     if (isGomi) gomi.activity(action,previous.energy);
     else { companion.activity(action); setHappy(action !== "rest"); }
     window.clearTimeout(timer.current);
