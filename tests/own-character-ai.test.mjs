@@ -29,9 +29,9 @@ test('unregistered actions and corrupt weights fail explicitly',()=>{
  assert.throws(()=>engine.generateOwnLine(ai,{...input,action:'unregistered'},1),/AI_ACTION_UNTRAINED/);
  assert.throws(()=>engine.loadOwnModel({...model,weights:{}}),/AI_OWN_MODEL_INVALID/);
 });
-test('each plant gift response matches the actual sunlight button, while Gomi receives a snack',()=>{
+test('the trained gift scene still responds to the sunlight button and Gomi receives a snack',()=>{
  const ai=engine.loadOwnModel(model);
- for(const definition of definitions.filter(row=>row.type!=='gomi')){
+ for(const definition of definitions.filter(row=>row.type!=='gomi'&&!row.treatLabel)){
   assert.equal(activities.companionActionLabel(definition,'treat'),'햇살 선물');
   const reply=engine.generateOwnLine(ai,{...input,characterId:definition.id,mood:'delighted'},20261115);
   assert.match(reply,/햇살|빛|따뜻|포근|선물/);assert.doesNotMatch(reply,/간식|먹을|먹어/);

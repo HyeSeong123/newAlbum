@@ -432,6 +432,7 @@ try {
     await page.getByRole('button',{name:'함께하기',exact:true}).click();
     await page.getByRole('button',{name:'새우 과자 주기',exact:true}).click();
     await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-motion','treat');
+    await expect(page.locator('#homeMessage[data-source=activity]')).toContainText('새우 과자');
     await captureScreen('character-design-seagull-home');
     connection = await verifyInstalledBackup({page, adb, tapNative, nativeTree, captureScreen, restart:async confirmed => {
       if (!confirmed) await adb('shell','am','force-stop',appId);

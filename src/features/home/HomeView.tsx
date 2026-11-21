@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, BookHeart, ChevronDown, Eye, Footprints, Gamepad2, HandHeart, Heart, Images, Moon, NotebookPen, Sun, Users } from "lucide-react";
+import { ArrowUpRight, BookHeart, ChevronDown, Eye, Footprints, Gamepad2, Gift, HandHeart, Heart, Images, Moon, NotebookPen, Sun, Users } from "lucide-react";
 import { CharacterVisual } from "../characters/CharacterVisual";
 import { CompanionAiSetup } from "../characters/CompanionAiSetup";
 import { useCompanionReactions } from "../characters/useCompanionReactions";
@@ -46,7 +46,7 @@ type HomeViewProps = {
 };
 
 export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibrary, onShowAlbums, onShowDiary, onShowPeople, onShowCharacters, mainCharacter, onInteract }: HomeViewProps) {
-  const [spokenLine, setSpokenLine] = useState<string | undefined>(undefined);
+  const [spokenLine, setSpokenLine] = useState<{text: string; source: "on-device" | "activity"}>();
   const [happy, setHappy] = useState(false);
   const [activitiesOpen, setActivitiesOpen] = useState(false);
   const [aiSetupOpen, setAiSetupOpen] = useState(false);
@@ -58,7 +58,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     // Never speak an authored fallback as though the model said it.
     if (result.source === "on-device" && result.line.trim()) {
       retryContext.current = undefined;
-      setSpokenLine(result.line.trim());
+      setSpokenLine({text:result.line.trim(),source:"on-device"});
       setAiStatus("idle");
       setAiFailure("");
     } else {
@@ -205,12 +205,22 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     const result = performCompanionActivity(definition, previous, action, mainCharacter.affection, today, { sleeping });
     const disturbed=companionDisturbsSleep(action,sleeping);
     saveCompanionMemory(mainCharacter.id, result.memory);
-    const fallback = isGomi && !gomiCanSpeak(mainCharacter.affection) ? "" : chooseCompanionFallback(mainCharacter.id, companionFallbackCandidates({ gomi:Boolean(isGomi), affection:mainCharacter.affection,
-      action, sleeping, disturbed, basis:result.line }));
-    setSpokenLine(undefined);
-    setAiStatus(isGomi && !gomiCanSpeak(mainCharacter.affection) ? "idle" : "generating");
     setAiFailure("");
-    void reactWithStoredRelationship({ definition, owned: mainCharacter, memory: {...result.memory,energy:previous.energy}, action, fallback, sleeping }, disturbed ? "sleep" : undefined);
+    if (action === "treat" && definition.treatLabel) {
+      // Offload only the two scene-specific gifts from the sunlight-trained model.
+      ++reactionRequest.current;
+      retryContext.current = undefined;
+      ai.cancel();
+      setSpokenLine({text:result.line,source:"activity"});
+      setAiStatus("idle");
+    } else {
+      const fallback = isGomi && !gomiCanSpeak(mainCharacter.affection) ? "" : chooseCompanionFallback(mainCharacter.id, companionFallbackCandidates({
+        gomi:Boolean(isGomi), affection:mainCharacter.affection, action, sleeping, disturbed, basis:result.line,
+      }));
+      setSpokenLine(undefined);
+      setAiStatus(isGomi && !gomiCanSpeak(mainCharacter.affection) ? "idle" : "generating");
+      void reactWithStoredRelationship({ definition, owned: mainCharacter, memory: {...result.memory,energy:previous.energy}, action, fallback, sleeping }, disturbed ? "sleep" : undefined);
+    }
     if (isGomi) gomi.activity(action,previous.energy);
     else { companion.activity(action); setHappy(action !== "rest"); }
     window.clearTimeout(timer.current);
@@ -235,8 +245,8 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
       <div className="homeCompanion">
         <div className="homeDialogueSlot">
           {spokenLine
-            ? <p id="homeMessage" className="homeSpeech" data-source="on-device" data-gomi={isGomi ? "true" : undefined}
-                role="status" aria-live="polite" aria-atomic="true">{spokenLine}</p>
+            ? <p id="homeMessage" className="homeSpeech" data-source={spokenLine.source} data-gomi={isGomi ? "true" : undefined}
+                role="status" aria-live="polite" aria-atomic="true">{spokenLine.text}</p>
             : aiStatus === "quiet" || (isGomi && !gomiCanSpeak(mainCharacter?.affection || 0) && ["idle","watching"].includes(aiStatus))
               ? <p id="homeMessage" className="homeQuiet" data-source="nonverbal" data-state={aiStatus} data-response-id={quietResponseId} role="status" aria-live="polite">
                   <span className="homeQuietDots" aria-hidden="true">...</span>
@@ -273,7 +283,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
           </button>
           {activitiesOpen && <div id="homeActivitiesChoices" className="homeActivitiesChoices" role="group" aria-label="친구와 함께하기">
             {COMPANION_ACTIONS.map(action => {
-              const Icon = activityIcons[action];
+              const Icon = action === "treat" && definition.treatLabel ? Gift : activityIcons[action];
               return <button key={action} type="button" className="homeActivity" data-help={"companion-" + action}
                 onClick={() => chooseActivity(action)}>
                 <Icon size={19} aria-hidden="true" /><span>{companionActionLabel(definition, action)}</span>

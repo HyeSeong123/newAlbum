@@ -392,6 +392,7 @@ test('all current designs are legible in a narrow book and the seagull gift foll
   await page.getByRole('button',{name:'함께하기',exact:true}).click();
   await page.getByRole('button',{name:'새우 과자 주기'}).click();
   await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-motion','treat');
+  await expect(page.locator('#homeMessage[data-source=activity]')).toContainText('새우 과자');
   await expect(portrait).toHaveAttribute('src','/characters/portraits/current/camellia.webp');
   await page.screenshot({path:'preview-results/audit/seagull-home-393.png'});
 });

@@ -619,8 +619,7 @@
         "description": "자기다운 모습으로 곁에서 추억을 나누는 친구예요."
       }
     ],
-    "appearance": "검은 모자를 쓴 갈색 하회탈, 반달 눈과 크게 웃는 입",
-    "treatLabel": "선물 주기"
+    "appearance": "검은 모자를 쓴 갈색 하회탈, 반달 눈과 크게 웃는 입"
   },
   {
     "id": "orange",
@@ -884,8 +883,7 @@
       ],
       "archetype": "무심한 몽상가"
     },
-    "appearance": "빨간 줄무늬 컵과 반쯤 열린 뚜껑, 노란 면이 보이는 컵라면",
-    "treatLabel": "선물 주기"
+    "appearance": "빨간 줄무늬 컵과 반쯤 열린 뚜껑, 노란 면이 보이는 컵라면"
   },
   {
     "id": "camellia",
@@ -1150,8 +1148,7 @@
       ],
       "archetype": "소심한 순정파"
     },
-    "appearance": "둥근 노란 얼굴 둘레에 햇살이 뻗은 해님",
-    "treatLabel": "선물 주기"
+    "appearance": "둥근 노란 얼굴 둘레에 햇살이 뻗은 해님"
   },
   {
     "id": "sea-lavender",
@@ -1283,8 +1280,7 @@
       ],
       "archetype": "살짝 우울한 감성 시인"
     },
-    "appearance": "흰 그릇에 검은 춘장과 노란 면이 담긴 짜장면",
-    "treatLabel": "선물 주기"
+    "appearance": "흰 그릇에 검은 춘장과 노란 면이 담긴 짜장면"
   },
   {
     "id": "grape",
@@ -1416,8 +1412,7 @@
       ],
       "archetype": "수다쟁이 인싸"
     },
-    "appearance": "바삭해 보이는 황금빛 과자 소보로가 얹힌 둥근 빵",
-    "treatLabel": "선물 주기"
+    "appearance": "바삭해 보이는 황금빛 과자 소보로가 얹힌 둥근 빵"
   },
   {
     "id": "pear",
@@ -1549,8 +1544,7 @@
       ],
       "archetype": "꼼꼼한 완벽주의자"
     },
-    "appearance": "파란 몸과 흰 배를 가진 고래, 등 위에서 솟는 물줄기",
-    "treatLabel": "선물 주기"
+    "appearance": "파란 몸과 흰 배를 가진 고래, 등 위에서 솟는 물줄기"
   },
   {
     "id": "rose",
@@ -1682,8 +1676,7 @@
       ],
       "archetype": "당당한 승부욕쟁이"
     },
-    "appearance": "오돌토돌한 튀김옷과 뼈가 달린 치킨 닭다리",
-    "treatLabel": "선물 주기"
+    "appearance": "오돌토돌한 튀김옷과 뼈가 달린 치킨 닭다리"
   },
   {
     "id": "jujube",
@@ -1815,8 +1808,7 @@
       ],
       "archetype": "능청스러운 괴짜"
     },
-    "appearance": "구불구불한 결이 있고 가운데 금이 간 둥근 호두",
-    "treatLabel": "선물 주기"
+    "appearance": "구불구불한 결이 있고 가운데 금이 간 둥근 호두"
   },
   {
     "id": "chestnut",
@@ -2081,8 +2073,7 @@
       ],
       "archetype": "엉뚱한 낙천가"
     },
-    "appearance": "달걀과 여러 색 나물이 담긴 둥근 비빔밥 그릇",
-    "treatLabel": "선물 주기"
+    "appearance": "달걀과 여러 색 나물이 담긴 둥근 비빔밥 그릇"
   },
   {
     "id": "persimmon",
@@ -2346,7 +2337,6 @@
       ],
       "archetype": "새침한 애교쟁이"
     },
-    "appearance": "긴 주둥이와 목이 ㄱ 모양인 노란 기린",
-    "treatLabel": "선물 주기"
+    "appearance": "긴 주둥이와 목이 ㄱ 모양인 노란 기린"
   }
 ]
