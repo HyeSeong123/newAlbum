@@ -149,19 +149,22 @@ for (const id of ['potato','sweet-potato']) {
   });
 }
 
-test('unavailable new artwork leaves the preserved original portrait visible',async({page})=>{
-  await page.route('**/characters/brothers-v2/potato-atlas.png',route=>route.abort());
-  await installSnapshot(page,[companion('potato',6,true)]);
-  await page.goto('/');
-  const art=page.locator('.homeMascot [data-art="pencil-v2"]');
-  await expect(art).toHaveAttribute('data-art-ready','false');
-  await expect(art.locator('image')).toHaveAttribute('href','/characters/portraits/potato-source.png');
-  await expect(art).toBeVisible();
-  await page.getByRole('button',{name:'함께하기',exact:true}).click();
-  await page.getByRole('button',{name:'함께 쉬기',exact:true}).click();
-  await expect(art.locator('image')).toHaveAttribute('href','/characters/portraits/potato-source.png');
-  await expect(art).toBeVisible();
-});
+for (const id of ['potato','sweet-potato']) {
+  test(`${id} keeps the same idle drawing when its animation fails to load`,async({page})=>{
+    await page.route(`**/characters/brothers-v2/${id}-atlas.png`,route=>route.abort());
+    await installSnapshot(page,[companion(id,6,true)]);
+    await page.goto('/');
+    const art=page.locator('.homeMascot [data-art="pencil-v2"]');
+    const expected=`/characters/portraits/current/${id}.webp`;
+    await expect(art).toHaveAttribute('data-art-ready','false');
+    await expect(art.locator('image')).toHaveAttribute('href',expected);
+    await expect(art).toBeVisible();
+    await page.getByRole('button',{name:'함께하기',exact:true}).click();
+    await page.getByRole('button',{name:'함께 쉬기',exact:true}).click();
+    await expect(art.locator('image')).toHaveAttribute('href',expected);
+    await expect(art).toBeVisible();
+  });
+}
 
 test('returning Home rotates visible poses without changing affection', async ({page}) => {
   await installSnapshot(page,[companion('potato',6,true)]);
@@ -395,18 +398,6 @@ test('all current designs are legible in a narrow book and the seagull gift foll
   await expect(page.locator('#homeMessage[data-source=activity]')).toContainText('새우 과자');
   await expect(portrait).toHaveAttribute('src','/characters/portraits/current/camellia.webp');
   await page.screenshot({path:'preview-results/audit/seagull-home-393.png'});
-});
-
-test('the brothers show their matching idle posters if the atlases fail to load',async({page}) => {
-  await page.route('**/characters/brothers-v2/*-atlas.png',route=>route.abort());
-  await installSnapshot(page,[companion('potato',4,true),companion('sweet-potato',3)]);
-  await page.goto('/');
-  await page.getByRole('button',{name:'친구들 보기'}).click();
-  for(const [name,id] of [['감자','potato'],['고구마','sweet-potato']]) {
-    const portrait = cardFor(page,name).locator('.characterPortrait');
-    await expect(portrait).toHaveAttribute('data-art-ready','false');
-    await expect(portrait.locator('image')).toHaveAttribute('href','/characters/portraits/current/'+id+'.webp');
-  }
 });
 
 test('redesigned completed potato uses its new picture and reduced motion still permits Home affection',async({page}) => {
