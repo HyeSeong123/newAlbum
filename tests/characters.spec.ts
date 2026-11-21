@@ -402,6 +402,36 @@ test('all current designs are legible in a narrow book and the seagull gift foll
   await page.screenshot({path:'preview-results/audit/seagull-home-393.png'});
 });
 
+test('Haesil speaks in his own voice on touch, in activities and in Help', async ({page}) => {
+  await installSnapshot(page,[companion('apple',3,true)]);
+  await page.goto('/');
+  const mascot=page.getByRole('button',{name:'해실에게 말 걸기',exact:true});
+  const reply=page.locator('#homeMessage[data-source="activity"]');
+  const speech=/그대|허허|하오|시게|구려|다네|것이오|이오|겠소|십시다/;
+  await mascot.click();
+  await expect(reply).toContainText(speech);
+  const first=await reply.innerText();
+  await mascot.click();
+  await expect(reply).not.toHaveText(first);
+  await expect(reply).toContainText(speech);
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
+  await page.getByRole('button',{name:'함께하기',exact:true}).click();
+  for (const label of ['함께 산책','햇살 선물','쓰다듬기','함께 놀기','함께 쉬기']) {
+    const previous=await reply.innerText();
+    await page.getByRole('button',{name:label,exact:true}).click();
+    await expect(reply).not.toHaveText(previous);
+    await expect(reply).toContainText(speech);
+  }
+  await page.getByRole('button',{name:'지켜보기',exact:true}).click();
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-state','watching');
+  await expect(reply).toHaveCount(0);
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
+  await page.getByRole('button',{name:'현재 화면 도움말'}).click();
+  const help=page.getByRole('dialog',{name:'버튼 도움말'});
+  await expect(help.locator('.characterHelpName')).toHaveText('해실');
+  await expect(help.locator('.helpVoice')).toContainText(speech);
+});
+
 test('redesigned completed potato uses its new picture and reduced motion still permits Home affection',async({page}) => {
   await page.emulateMedia({reducedMotion:'reduce'});
   await installSnapshot(page,[companion('potato',6,true),companion('sweet-potato')]);
