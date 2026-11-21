@@ -372,8 +372,18 @@ try {
   assert.ok(apk, 'x86_64 debug APK is required for the emulator');
   await adb('install', '-r', apk);
   await adb('shell', 'cmd', 'overlay', 'enable-exclusive', '--category', 'com.android.internal.systemui.navbar.threebutton');
-  await adb('shell', 'mkdir', '-p', '/sdcard/Download/GamjassakSmoke');
-  await adb('push', resolve('tests/fixtures/pet-dog.jpg'), '/sdcard/Download/GamjassakSmoke/gamjassak-smoke.jpg');
+  // Emulated shared storage can lag behind sys.boot_completed on API 36.
+  // Stage via a local guest file, and wait for the shared volume to accept writes.
+  const pushFixture = async (source, name) => {
+    const staged = '/data/local/tmp/' + name;
+    await adb('push', source, staged);
+    await expect.poll(async () => {
+      try {
+        return await adb('shell', `mkdir -p /sdcard/Download/GamjassakSmoke && cp "${staged}" "/sdcard/Download/GamjassakSmoke/${name}" && test -s "/sdcard/Download/GamjassakSmoke/${name}" && echo ready`);
+      } catch { return ''; }
+    }, {timeout:60000, message:'Wait for writable emulator shared storage'}).toBe('ready');
+  };
+  await pushFixture(resolve('tests/fixtures/pet-dog.jpg'), 'gamjassak-smoke.jpg');
   const video = join(output, 'large-smoke.mp4');
   const fixture = await readFile('tests/fixtures/playback.mp4');
   const padded = Buffer.alloc(64 * 1024 * 1024);
@@ -382,7 +392,7 @@ try {
   padded.writeUInt32BE(padded.length - fixture.length, fixture.length);
   padded.write('free', fixture.length + 4);
   await writeFile(video, padded);
-  await adb('push', resolve(video), '/sdcard/Download/GamjassakSmoke/large-smoke.mp4');
+  if (process.env.GOMGOMI_FOCUSED_AI_SMOKE !== '1') await pushFixture(resolve(video), 'large-smoke.mp4');
   await startApp();
   let connection = await connect(); context = connection.context;
   let page = connection.page;
@@ -399,10 +409,15 @@ try {
     const bonded = await verifyInstalledGomiAction(page, join(output, 'bonded'));
     assert.equal(bonded.timings?.samples, 10, 'All bonded gestures must produce real speech');
     console.log('Offline bonded Gomi, button to painted speech (ms)', bonded.timings);
-    connection = await verifyInstalledBackup({page, adb, tapNative, nativeTree, captureScreen, restart:async () => {
+    connection = await verifyInstalledBackup({page, adb, tapNative, nativeTree, captureScreen, restart:async confirmed => {
+      if (!confirmed) await adb('shell','am','force-stop',appId);
       await expect.poll(async()=>adb('shell','pidof',appId).catch(()=>''),{timeout:15000}).toBe('');
+      // The old process has already exited. Its WebView context is detached.
+      context = undefined;
       await disconnect(); await startApp();
-      return connect(true);
+      const resumed = await connect(confirmed);
+      context = resumed.context;
+      return resumed;
     }});
     context = connection.context; page = connection.page;
   }

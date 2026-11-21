@@ -26,10 +26,13 @@ export async function verifyInstalledBackup({ page, adb, tapNative, nativeTree, 
     return {album,photo:photo.id};
   },managed);
   await page.reload();
-  const settings = page.getByRole('button',{name:'설정',exact:true}).filter({visible:true});
-  if (!(await settings.count())) await page.getByRole('button',{name:'전체 메뉴',exact:true}).click();
-  await settings.click();
-  const panel = page.getByRole('region',{name:'기록 백업과 복원'});
+  async function openSettings() {
+    const settings = page.getByRole('button',{name:'설정',exact:true}).filter({visible:true});
+    if (!(await settings.count())) await page.getByRole('button',{name:'전체 메뉴',exact:true}).click();
+    await settings.click();
+    return page.getByRole('region',{name:'기록 백업과 복원'});
+  }
+  let panel = await openSettings();
   await panel.scrollIntoViewIfNeeded();
   await captureScreen('backup-settings');
   await panel.getByRole('button',{name:'백업에서 복원'}).click();
@@ -70,9 +73,17 @@ export async function verifyInstalledBackup({ page, adb, tapNative, nativeTree, 
   await captureScreen('backup-restore-preview');
   await dialog.getByRole('button',{name:'현재 기록 유지'}).click();
   await expect(panel.getByRole('status')).toContainText('현재 기록을 유지');
+  await preview();
+  page = (await restart(false)).page;
+  const retained = await page.evaluate(async () => ({
+    current:(await window.__TAURI_INTERNALS__.invoke('list_diary')).some(d=>d.title==='백업 이후의 시험 일기'),
+    memo:localStorage.getItem('oraedameun.dayNotes'),
+  }));
+  assert.deepEqual(retained,{current:true,memo:'{}'});
+  panel = await openSettings();
   dialog=await preview();
   await dialog.getByRole('button',{name:'앱 닫고 복원'}).click();
-  const result=await restart();
+  const result=await restart(true);
   const restored=await result.page.evaluate(async () => ({
     diaries:await window.__TAURI_INTERNALS__.invoke('list_diary'),
     memo:JSON.parse(localStorage.getItem('oraedameun.dayNotes')||'{}')['2026-11-20'],

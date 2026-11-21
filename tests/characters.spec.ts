@@ -76,7 +76,7 @@ test('other friends keep their drawing while five activities and quiet rest have
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
 });
 
-for (const [id, name] of [['potato','감자싹'],['sweet-potato','고구마싹']] as const) {
+for (const [id, name] of [['potato','감자'],['sweet-potato','고구마']] as const) {
   test(`${name} has four unique touches and five illustrated actions without replacing the portrait`, async ({page},testInfo) => {
     await installSnapshot(page,[companion(id,6,true)]);
     await page.goto('/');
@@ -268,7 +268,7 @@ test('the starter potato has a visible portrait and the book reveals no discover
   await page.goto('/');
   await page.getByRole('button',{name:'친구들 보기'}).click();
   const book=page.locator('.characterBook');
-  const potato=cardFor(page,'감자싹');
+  const potato=cardFor(page,'감자');
   await expect(potato.locator('.characterPortrait image')).toHaveAttribute('href','/characters/brothers-v2/potato-atlas.png');
   await expect(potato.locator('[data-portrait="감자"]')).toBeVisible();
   const box=(await potato.locator('.characterVisual').boundingBox())!;
@@ -314,8 +314,26 @@ test('a discovered friend can be named and selected without explaining how it wa
   const dialog=page.getByRole('dialog',{name:'새로운 새싹을 발견했어요!'});
   await expect(dialog).not.toContainText(/GPS|제주|장/);
   await dialog.getByRole('button',{name:'만나보기'}).click();
-  await expect(cardFor(page,'귤싹')).toBeVisible();
+  await expect(cardFor(page,'귤')).toBeVisible();
   await expect(page.locator('.characterCard.locked')).toHaveCount(13);
+});
+
+test('regional portraits keep the same name across the book, Home and growth notice', async ({page}) => {
+  const gull = { ...companion('camellia',4), customName:'바다' };
+  await installSnapshot(page,[gull,companion('ginkgo',3,true)],{id:2,characterId:gull.id,kind:'grow',stage:4});
+  await page.goto('/');
+  const growth = page.getByRole('dialog',{name:'바다 · 한 단계 성장했어요!'});
+  await expect(growth.locator('[data-portrait="갈매기"]')).toBeVisible();
+  await growth.getByRole('button',{name:'만나보기'}).click();
+  const card = cardFor(page,'바다');
+  await expect(card.locator('[data-portrait="갈매기"]')).toBeVisible();
+  await card.getByRole('button',{name:'이름 바꾸기'}).click();
+  await expect(card.getByRole('textbox',{name:'친구 이름'})).toHaveAttribute('placeholder','갈매기');
+  await card.getByRole('textbox',{name:'친구 이름'}).fill('');
+  await card.getByRole('button',{name:'저장',exact:true}).click();
+  await cardFor(page,'갈매기').getByRole('button',{name:'대표로 설정'}).click();
+  await page.getByRole('button',{name:'곰고미 홈으로 이동'}).click();
+  await expect(page.getByRole('button',{name:'갈매기에게 말 걸기'}).locator('[data-portrait="갈매기"]')).toBeVisible();
 });
 
 test('each of the six current forms loads without showing any future form',async({page}) => {
@@ -325,11 +343,12 @@ test('each of the six current forms loads without showing any future form',async
   await page.getByRole('button',{name:'친구들 보기'}).click();
   for(const stage of [1,2,3,4,5,6]) {
     await page.evaluate(stage=>(window as unknown as {setSproutStage:(stage:number)=>void}).setSproutStage(stage),stage);
-    await expect(cardFor(page,'감자싹').locator('.characterVisual')).toHaveAttribute('data-stage',String(stage));
+    await expect(cardFor(page,'감자').locator('.characterVisual')).toHaveAttribute('data-stage',String(stage));
     await expect(page.locator('.characterBook .characterVisual')).toHaveCount(17);
     for(const def of definitions) {
       const art=cardFor(page,def.defaultName);
       const portrait=characterPortraits[def.id];
+      if (portrait) expect(def.defaultName).toBe(portrait.subject);
       if(def.id==='potato'||def.id==='sweet-potato'){
         await expect(art.locator('.characterPortrait image')).toHaveAttribute('href','/characters/brothers-v2/'+def.id+'-atlas.png');
         await expect(art.locator('.characterPortrait')).toHaveAttribute('viewBox','0 0 362 362');
@@ -353,7 +372,7 @@ test('redesigned completed potato uses its new picture and reduced motion still 
   await page.emulateMedia({reducedMotion:'reduce'});
   await installSnapshot(page,[companion('potato',6,true),companion('sweet-potato')]);
   await page.goto('/');
-  const mascot=page.getByRole('button',{name:'감자싹에게 말 걸기'});
+  const mascot=page.getByRole('button',{name:'감자에게 말 걸기'});
   await expect(mascot.locator('.characterPortrait image')).toHaveAttribute('href','/characters/brothers-v2/potato-atlas.png');
   await expect(mascot.locator('.characterVisual')).toHaveAttribute('data-reduced-motion','true');
   await mascot.click();
@@ -437,9 +456,9 @@ test('Gomi tutorial navigation fits a short narrow phone with larger text', asyn
 test('help uses the selected main character instead of Gomi', async ({page}) => {
   await page.goto('/');
   await page.getByRole('button',{name:'친구들 보기'}).click();
-  await cardFor(page,'감자싹').getByRole('button',{name:'대표로 설정'}).click();
+  await cardFor(page,'감자').getByRole('button',{name:'대표로 설정'}).click();
   await page.getByRole('button',{name:'곰고미 홈으로 이동'}).click();
-  await expect(page.getByRole('button',{name:'감자싹에게 말 걸기'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'감자에게 말 걸기'})).toBeVisible();
   await page.getByRole('button',{name:'현재 화면 도움말'}).click();
   await expect(page.getByRole('dialog',{name:'버튼 도움말'}).locator('.characterVisual')).toHaveAttribute('data-character','potato');
 });
@@ -679,6 +698,6 @@ test('another selected companion does not inherit Gomi dialogue or affection', a
   await page.getByRole('button',{name:'현재 화면 도움말'}).click();
   const guide = page.getByRole('dialog',{name:'버튼 도움말'});
   await expect(guide.locator('.characterVisual')).toHaveAttribute('data-character','potato');
-  await expect(guide.locator('.characterHelpName')).toHaveText('감자싹');
+  await expect(guide.locator('.characterHelpName')).toHaveText('감자');
   await expect(guide).not.toContainText('휴. 네가 좋아하는 순간부터 고르자. 같이 보고 싶으니까.');
 });

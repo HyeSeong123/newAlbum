@@ -331,6 +331,7 @@ export function App() {
         </section>
         {firstRunOpen && <FirstRunGuide onLater={closeFirstRun} onGuide={() => { closeFirstRun(); setHelpRequest(value => value + 1); }} onImport={() => { closeFirstRun(); setImportOpen(true); }} />}
         {!firstRunOpen && pendingCharacterEvent && <CharacterEventModal event={pendingCharacterEvent}
+          owned={characters.snapshot.characters.find(friend => friend.id === pendingCharacterEvent.characterId)}
           onMeet={() => { void characters.dismiss(pendingCharacterEvent.id).then(saved => { if (saved) navigate("Characters"); }); }}
           onLater={() => { void characters.dismiss(pendingCharacterEvent.id); }} />}
         {importOpen && <MediaImportModal onClose={() => setImportOpen(false)} onImport={async options => {

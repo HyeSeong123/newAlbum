@@ -38,3 +38,12 @@
 .backupPanel td, .backupPanel th { padding: 6px; text-align: right; }
 .backupPanel th:first-child { text-align: left; }
 .backupStartup { margin: 2rem auto; max-width: 400px; padding: 1rem; }
+.backupPanel button, .backupStartup button {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+}
+.backupPanel > button:first-of-type { border-color: var(--text); background: var(--text); color: var(--surface); }
+.backupPanel dialog button:last-of-type { border-color: var(--danger); color: var(--danger); }

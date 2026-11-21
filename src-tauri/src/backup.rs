@@ -210,7 +210,7 @@ fn check(c: &Connection) -> Result<()> {
 
 // Copy values only. All live tables, constraints, indexes and triggers come from
 // the installed app, never from SQL supplied by a document provider.
-pub(crate) fn prepare(input: &mut impl Read, live: &Connection, root: &Path, stage: &Path) -> Result<Counts> {
+pub(crate) fn prepare(input: &mut impl Read, root: &Path, stage: &Path) -> Result<Counts> {
     let files = unpack(input, stage)?;
     validate_storage(&serde_json::from_slice(&fs::read(stage.join(WEB))?)?)?;
     let raw = stage.join("source.sqlite");
@@ -221,11 +221,29 @@ pub(crate) fn prepare(input: &mut impl Read, live: &Connection, root: &Path, sta
     if version != crate::database::VERSION { return Err("이 백업의 DB 버전을 지원하지 않습니다. 호환되는 곰고미 버전에서 복원해 주세요.".into()); }
     // Reject virtual tables, views and generated columns before accessing any values.
     if src.prepare("SELECT 1 FROM pragma_table_list WHERE type NOT IN ('table')")?.exists([])? { return Err("백업 DB 구조가 올바르지 않습니다.".into()); }
-    live.execute("VACUUM INTO ?1", [stage.join(DB).to_str().ok_or("복원 경로 오류")?])?;
+    // Build only the installed schema; copying the current user's entire library
+    // just to discard its rows would double restore-time storage on large albums.
     let mut dest = Connection::open(stage.join(DB))?;
+    crate::database::initialize(&mut dest)?;
     crate::gallery_sources::initialize(&dest)?;
+    let incoming = tables(&src)?;
+    let current = tables(&dest)?;
+    let legacy = ["media_tag", "media_person", "tag"];
+    if legacy.iter().any(|&t| incoming.contains(t) != current.contains(t)) {
+        dest.execute_batch("PRAGMA foreign_keys=OFF")?;
+        dest.execute_batch(include_str!("../database/legacy-optional.sql"))?;
+        for name in legacy {
+            if !incoming.contains(name) { dest.execute_batch(&format!("DROP TABLE {}", ident(name)?))?; }
+        }
+        if incoming.contains("media_tag") {
+            dest.execute_batch("CREATE INDEX IF NOT EXISTS idx_media_tag_tag ON media_tag(tag_id)")?;
+        }
+        if incoming.contains("media_person") {
+            dest.execute_batch("CREATE INDEX IF NOT EXISTS idx_media_person_person ON media_person(person_id)")?;
+        }
+    }
     let allowed = tables(&dest)?;
-    if tables(&src)? != allowed { return Err("백업과 설치된 앱의 DB 구성이 다릅니다. 현재 기록은 보존됩니다.".into()); }
+    if incoming != allowed { return Err("백업과 설치된 앱의 DB 구성이 다릅니다. 현재 기록은 보존됩니다.".into()); }
     dest.execute_batch("PRAGMA foreign_keys=OFF")?;
     let tx = dest.transaction()?;
     for table in &allowed { tx.execute(&format!("DELETE FROM {}", ident(table)?), [])?; }
@@ -331,6 +349,8 @@ mod tests {
         source.execute_batch("INSERT INTO album(id,title,cover_media_id) VALUES(4,'가족',9);
             INSERT INTO diary(id,entry_date,title,body,mood,weather,album_id) VALUES(5,'2026-11-20','고미','기록','기쁨','맑음',4);
             INSERT INTO diary_photo VALUES(5,9,0);").unwrap();
+        source.execute_batch(include_str!("test_fixtures/legacy-unused-tables.sql")).unwrap();
+        source.execute_batch("DROP TABLE media_person; INSERT INTO tag VALUES(3,'가족'); INSERT INTO media_tag VALUES(9,3)").unwrap();
         source.execute("UPDATE sqlite_sequence SET seq=99 WHERE name='diary'",[]).unwrap();
         let storage = Storage::from([("oraedameun.dayNotes".into(),"달력 기록".into())]);
         let mut archive = vec![];
@@ -341,7 +361,7 @@ mod tests {
         for i in 0..2 {
             let work = f.dir(&format!("sandbox-{i}"));
             let stage = f.dir(&format!("sandbox-{i}/stage"));
-            let n = prepare(&mut &archive[..],&live,&target,&stage).unwrap();
+            let n = prepare(&mut &archive[..],&target,&stage).unwrap();
             assert_eq!((n.media,n.albums,n.diaries),(1,1,1));
             assert_eq!(storage_at(&stage).unwrap(),storage);
             assert_eq!(fs::read(stage.join(sample)).unwrap(),b"photo fixture");
@@ -349,6 +369,7 @@ mod tests {
             install(&target,&work).unwrap();
             live = Connection::open(target.join(DB)).unwrap();
             let c = &live;
+            assert_eq!(strings(c,"SELECT tag.name FROM tag JOIN media_tag ON tag.id=media_tag.tag_id WHERE media_id=9").unwrap(),["가족"]);
             assert_eq!(c.query_row("SELECT count(*) FROM sqlite_sequence WHERE name='diary' AND seq=99",[],|r| r.get::<_,i64>(0)).unwrap(),1);
             c.execute("INSERT INTO diary(entry_date,title,body,mood,weather) VALUES('2026-11-20','추가','','기쁨','맑음')",[]).unwrap();
             assert_eq!(c.last_insert_rowid(),100);
@@ -358,7 +379,7 @@ mod tests {
         let pos = changed.windows(13).position(|b| b == b"photo fixture").unwrap();
         changed[pos] ^= 1;
         for (i, bad) in [&changed[..], &archive[..archive.len()-1]].into_iter().enumerate() {
-            assert!(prepare(&mut &bad[..],&live,&target,&f.dir(&format!("bad-{i}"))).is_err());
+            assert!(prepare(&mut &bad[..],&target,&f.dir(&format!("bad-{i}"))).is_err());
         }
         assert_eq!(counts(&live).unwrap().media,1);
         assert_eq!(fs::read(root.join(sample)).unwrap(),b"photo fixture");

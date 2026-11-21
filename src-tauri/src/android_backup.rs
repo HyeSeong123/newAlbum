@@ -92,7 +92,7 @@ pub(crate) fn action(app: &AppHandle, action: &str, storage: Option<Storage>, to
                 let mut options = OpenOptions::new(); options.read(true);
                 let mut input = app.fs().open(path,options)?;
                 let c = crate::open_database(app)?;
-                let restored = backup::prepare(&mut input,&c,&root,&stage)?;
+                let restored = backup::prepare(&mut input,&root,&stage)?;
                 let token = uuid::Uuid::new_v4().to_string();
                 durable_write(&stage.join("ticket"),token.as_bytes())?;
                 Ok(json!({"current":backup::counts(&c)?,"restored":restored,"token":token}))
@@ -103,6 +103,10 @@ pub(crate) fn action(app: &AppHandle, action: &str, storage: Option<Storage>, to
         "cancel" => { if stage.exists() { fs::remove_dir_all(stage)?; } Ok(Value::Null) }
         "confirm" => {
             if token.as_deref() != Some(fs::read_to_string(stage.join("ticket"))?.as_str()) { return Err("백업 파일을 다시 확인해 주세요.".into()); }
+            let storage = storage.ok_or("기존 앱 기록을 확인할 수 없습니다.")?;
+            backup::validate_storage(&storage)?;
+            fs::create_dir_all(&previous)?;
+            durable_write(&previous.join(WEB),&serde_json::to_vec(&storage)?)?;
             set_phase("install")?;
             CLOSING.store(true,Ordering::SeqCst);
             if let Err(e) = android_media::finish_for_restore(app) {

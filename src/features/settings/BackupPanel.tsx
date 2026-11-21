@@ -25,7 +25,7 @@ export function BackupPanel() {
         setMessage(result ? "" : "파일 선택을 취소했어요.");
       } else if (action === "confirm" && preview) {
         setMessage("앱을 다시 열면 복원을 마칩니다.");
-        await backupCommand("confirm",{token:preview.token});
+        await backupCommand("confirm",{token:preview.token, storage:readRecords(localStorage)});
         return;
       } else {
         await backupCommand("cancel");
@@ -41,7 +41,7 @@ export function BackupPanel() {
   }
   return <section className="settingsAppInfo backupPanel" aria-label="기록 백업과 복원">
     <h2>기록 백업과 복원</h2>
-    <p>앱에 보관한 사진·영상, 앨범, 일기, 인물·반려동물 정보와 캐릭터 기록을 한 파일에 담아요. 개인 기록이 담긴 파일은 안전한 폴더에 보관해 주세요.</p>
+    <p>앱에 보관한 사진·영상, 앨범, 일기, 인물·반려동물 정보와 캐릭터 기록을 한 파일에 담아요. 백업 파일은 암호화되지 않으니 개인 폴더에 보관해 주세요.</p>
     <button disabled={busy} onClick={()=>void run("export")}>백업 파일 만들기</button>
     <button disabled={busy} onClick={()=>void run("preview")}>백업에서 복원</button>
     {!preview && <p role="status">{message}</p>}
