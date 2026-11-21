@@ -58,6 +58,11 @@ export function companionMotionAnimation(motion: CompanionMotion, signature: str
     case "play": Object.assign(keyframes,{ x:[0,-5,5,0],y:[0,-hop,0,-hop*.8,0],rotate:[0,-tilt,tilt,0] }); duration=1.7; break;
     case "rest": Object.assign(keyframes,{ y:[13,12,13],rotate:[-5,-5,-5],scaleX:[1.10,1.095,1.10],scaleY:[.86,.87,.86] }); duration=6; break;
   }
+  if (signature === "quiet-nod") {
+    // Dorongi's wooden mask stays rigid, including between animated poses.
+    keyframes.scaleX = keyframes.scaleY = 1;
+    if (motion === "stretch") Object.assign(keyframes,{ y:[-4,-8,-4],rotate:[-2,-4,-2] });
+  }
   return { keyframes, duration, repeat:motion === "idle" || motion === "rest" || homePoses.has(motion) ? Infinity : 0 };
 }
 

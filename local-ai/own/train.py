@@ -220,9 +220,26 @@ def quantized(tensor):
             'scales':base64.b64encode(scales.tobytes()).decode()}
 
 
+def dorongi_rows(path):
+    drafts=read(path)
+    for action, group in drafts['actions'].items():
+        for name, affection in [('distant',10), ('familiar',45), ('close',80)]:
+            for pi, opening in enumerate(group[name]):
+                for ei, ending in enumerate(group['end']):
+                    if (pi+ei)%4 == 0:
+                        continue
+                    reply=f'{opening} {ending}'
+                    if not 4<=len(reply)<=50:
+                        raise ValueError(f'Dorongi reply exceeds the mobile limit: {reply}')
+                    for value in (0,1,3):
+                        yield {'characterId':'apple','action':action,'reply':reply,'affection':affection,
+                               'energy':value,'authorship':drafts['authorship']}
+
+
 def train(args):
     rng = random.Random(args.seed)
-    rows = corpus(args.extra)
+    source = HERE/('dorongi-drafts.json' if args.dorongi else 'corpus.json')
+    rows = list(dorongi_rows(source)) if args.dorongi else corpus(args.extra)
     vocab = ['<bos>','<eos>','<pad>','<unk>'] + sorted({t for r in rows for t in words(r)})
     feature_names = sorted({f for r in rows for f in features(r)}|{'mood:'+m for m in MOODS})
     tok = {t:i for i,t in enumerate(vocab)}
@@ -259,20 +276,22 @@ def train(args):
             'trainingTool':'first-party forward/backprop/AdamW; NumPy matrix arithmetic on PC only',
             'dataAuthorshipCounts':dict(Counter(r.get('authorship','unknown') for r in rows)),
             'syntheticDraftAuthor':'AI coding assistant in this session; not human-approved. No teacher-model API is called by the trainer.',
-            'sourceCorpusSha256':sha(HERE/'corpus.json'),'trainerSha256':sha(Path(__file__)),
+            'sourceCorpusSha256':sha(source),'trainerSha256':sha(Path(__file__)),
             'learningAlgorithmSha256':sha(HERE/'neural.py'),
             'seed':args.seed,'epochs':args.epochs,'rows':len(rows),'wordExamples':len(y),
-            'speechPolicy':'normal Gomi below affection 60 is nonverbal before inference; cold/unwell source exceptions preserved',
+            'speechPolicy':('Dorongi only; awake Home actions' if args.dorongi else
+                'normal Gomi below affection 60 is nonverbal before inference; cold/unwell source exceptions preserved'),
             'parameters':sum(p.size for p in model.params.values()),'trainingSeconds':round(time.perf_counter()-started,3),
             'trainingLoss':loss_value, 'commercialLegalClearance':False},
     }
-    destination = ROOT/'src/features/characters/ownAi/model.json'
+    destination = ROOT/'src/features/characters/ownAi'/('dorongi.json' if args.dorongi else 'model.json')
     if len(json.dumps(artifact,ensure_ascii=False,separators=(',',':')).encode('utf-8'))>2_000_000:
         raise ValueError('Own model and learned support exceed the two-megabyte mobile budget')
     dump(destination,artifact)
-    np.savez(HERE/'checkpoint.npz',**model.params)
-    dump(HERE/'training-result.json',{'model':str(destination.relative_to(ROOT)),'bytes':destination.stat().st_size,
-         'sha256':sha(destination),'device':device,'provenance':artifact['provenance']})
+    if not args.dorongi:
+        np.savez(HERE/'checkpoint.npz',**model.params)
+        dump(HERE/'training-result.json',{'model':str(destination.relative_to(ROOT)),'bytes':destination.stat().st_size,
+             'sha256':sha(destination),'device':device,'provenance':artifact['provenance']})
     print(json.dumps({'finished':True,'bytes':destination.stat().st_size,'parameters':artifact['provenance']['parameters'],
                       'rows':len(rows),'sha256':sha(destination)}),flush=True)
 
@@ -283,6 +302,8 @@ if __name__ == '__main__':
     parser.add_argument('--lr',type=float,default=0.006)
     parser.add_argument('--seed',type=int,default=20261115)
     parser.add_argument('--extra',type=Path,help='Optional user-authored JSONL with new actions/character examples')
+    parser.add_argument('--dorongi',action='store_true',help='Train only Dorongi without altering the existing model or corpus')
     args=parser.parse_args()
+    if args.dorongi and args.extra:parser.error('Dorongi uses only the versioned Dorongi draft file')
     if args.epochs<1 or not 0<args.lr<1:parser.error('epochs must be positive and learning rate must be between zero and one')
     train(args)

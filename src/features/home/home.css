@@ -35,7 +35,7 @@
 }
 /* Label generated speech separately from the nonverbal ellipsis. Status and
    repair hints are not presented as the character's words. */
-.homeSpeech[data-gomi="true"]::before, .homeSpeech[data-source="activity"]::before {
+.homeSpeech[data-source]::before {
   position: absolute;
   top: 2px;
   right: 12px;
@@ -45,7 +45,7 @@
   line-height: 1.4;
   pointer-events: none;
 }
-.homeSpeech[data-gomi="true"][data-source="on-device"]::before { content: "AI가 만든 말"; }
+.homeSpeech[data-source="on-device"]::before { content: "AI가 만든 말"; }
 .homeSpeech[data-source="activity"]::before { content: "행동 반응"; }
 .homeSpeechNotice {
   display: grid;

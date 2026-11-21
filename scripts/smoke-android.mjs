@@ -7,7 +7,7 @@ import { verifyInstalledRepetitionMeasurement } from './person-repetition-smoke.
 import { verifyInstalledLocationSettings } from './location-settings-smoke.mjs';
 import { verifyInstalledFriendMotions } from './friend-motions-smoke.mjs';
 import { verifyInstalledBackup } from './backup-smoke.mjs';
-import { verifyInstalledGomiAction } from './gomi-action-smoke.mjs';
+import { pressAndPaint, verifyInstalledGomiAction } from './gomi-action-smoke.mjs';
 import { expect } from '@playwright/test';
 import { _android as android } from 'playwright';
 import assert from 'node:assert/strict';
@@ -427,12 +427,37 @@ try {
     await expect(scholar.locator('.characterMotif')).toHaveText('하회탈 친구');
     await scholar.getByRole('button',{name:'대표로 설정',exact:true}).click();
     await page.getByRole('button',{name:'곰고미 홈으로 이동',exact:true}).click();
-    await page.getByRole('button',{name:'도롱이에게 말 걸기',exact:true}).click();
-    const dorongi = roster.find(friend => friend.id === 'apple');
-    const dorongiReply = page.locator('#homeMessage[data-source=activity]');
-    const touchLines = [...dorongi.dialogues.situations.idle, ...Object.values(dorongi.dialogues.stages).flat()];
-    await expect.poll(async () => touchLines.includes(await dorongiReply.innerText())).toBe(true);
-    await captureScreen('character-name-dorongi-home');
+    const airplane = await adb('shell','settings','get','global','airplane_mode_on');
+    const wifi = await adb('shell','settings','get','global','wifi_on');
+    const data = await adb('shell','settings','get','global','mobile_data');
+    try {
+      await adb('shell','cmd','connectivity','airplane-mode','enable');
+      await adb('shell','svc','wifi','disable');
+      await adb('shell','svc','data','disable');
+      assert.equal(await adb('shell','settings','get','global','airplane_mode_on'),'1');
+      const dorongiReply = await pressAndPaint(page,'.homeMascot');
+      assert.equal(dorongiReply.source,'on-device');
+      assert.match(dorongiReply.line,/소[.!?]|구려[.!?]|시게[.!?]/);
+      await captureScreen('character-name-dorongi-home');
+      await page.getByRole('button',{name:'함께하기',exact:true}).click();
+      await page.getByRole('button',{name:'함께 쉬기',exact:true}).click();
+      await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
+      await expect(page.locator('#homeMessage')).toContainText(/쉬|곁|자리|바람|눈/);
+      const body = page.locator('.homeMascot .characterBody');
+      for(let frame=0;frame<4;frame++) {
+        const scale = await body.evaluate(element=>{
+          const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform);
+          return [Math.hypot(matrix.a,matrix.b),Math.hypot(matrix.c,matrix.d)];
+        });
+        assert.ok(scale.every(axis=>Math.abs(axis-1)<0.002));
+        await pause(120);
+      }
+      console.log('Offline Dorongi, button to painted speech (ms)', Math.round(dorongiReply.elapsedMs));
+    } finally {
+      await adb('shell','cmd','connectivity','airplane-mode',airplane==='1'?'enable':'disable');
+      await adb('shell','svc','wifi',wifi==='1'||wifi==='2'?'enable':'disable');
+      await adb('shell','svc','data',data==='1'?'enable':'disable');
+    }
     await page.getByRole('button',{name:'친구들 보기',exact:true}).click();
     const seagull=book.locator('.characterCard').filter({has:page.getByRole('heading',{name:'끼룩',exact:true})});
     await seagull.scrollIntoViewIfNeeded();

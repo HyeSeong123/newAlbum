@@ -26,6 +26,8 @@ on:
       - 'scripts/android-app.mjs'
       - 'tests/android-signing.test.mjs'
       - 'scripts/prepare-ai.mjs'
+      - 'scripts/prepare-own-character-ai.mjs'
+      - 'tests/android-prepare.test.mjs'
       - 'scripts/release/**'
       - 'scripts/prepare-pet-models.mjs'
       - 'scripts/prepare-recognition-models.mjs'
