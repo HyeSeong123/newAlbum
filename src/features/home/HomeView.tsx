@@ -255,7 +255,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
       <div className="homeCompanion">
         <div className="homeDialogueSlot">
           {spokenLine
-            ? <p id="homeMessage" className="homeSpeech" data-source={spokenLine.source} data-gomi={isGomi ? "true" : undefined}
+            ? <p id="homeMessage" className="homeSpeech" data-source={spokenLine.source}
                 role="status" aria-live="polite" aria-atomic="true">{spokenLine.text}</p>
             : aiStatus === "quiet" || (isGomi && !gomiCanSpeak(mainCharacter?.affection || 0) && ["idle","watching"].includes(aiStatus))
               ? <p id="homeMessage" className="homeQuiet" data-source="nonverbal" data-state={aiStatus} data-response-id={quietResponseId} role="status" aria-live="polite">
