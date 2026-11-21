@@ -19,7 +19,10 @@ export function CharacterBook({ characters, onRename, onSetMain }: Props) {
         <div className="characterCardArt" role="img" aria-label={owned ? `${name}의 현재 모습` : "아직 만나지 않은 친구"}>
           {owned ? <CharacterVisual definition={def} stage={owned.growthStage} affection={owned.affection} /> : <span className="characterMystery" aria-hidden="true">?</span>}
         </div>
-        <h3>{owned ? name : "아직 만나지 않은 친구"}</h3>
+        <div className="characterCardTitle">
+          <h3>{owned ? name : "아직 만나지 않은 친구"}</h3>
+          {owned && def.motif && <span className="characterMotif">{def.motif} 친구</span>}
+        </div>
         {owned ? <>
           <p className="characterDescription">{characterDescription(def, owned)}</p>
           <div className="characterCardActions">

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { toStep } from './fixtures/helpSpotlight';
 import { characterPortraits } from '../src/features/characters/characterPortraits';
-const definitions = JSON.parse(readFileSync('src/features/characters/data/characterDefinitions.json','utf8')) as Array<{ id:string; defaultName:string; regionLabel:string; maxStage:number; fixedGrowthStage?:number; stageAssetPaths?:string[]; expressionAssetPaths?:Record<string,string> }>;
+const definitions = JSON.parse(readFileSync('src/features/characters/data/characterDefinitions.json','utf8')) as Array<{ id:string; defaultName:string; motif?:string; regionLabel:string; maxStage:number; fixedGrowthStage?:number; stageAssetPaths?:string[]; expressionAssetPaths?:Record<string,string> }>;
 test.beforeEach(async ({page}) => { await page.addInitScript(()=>{Math.random=()=>.1;}); });
 
 type Companion = { id:string; customName:string|null; growthStage:number; regionPhotoCount:number; growthPhotoCount:number; affection:number; isMain:boolean; unlockedAt:string; createdAt:string; updatedAt:string };
@@ -77,7 +77,7 @@ test('other friends keep their drawing while five activities and quiet rest have
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
 });
 
-for (const [id, name] of [['potato','감자'],['sweet-potato','고구마']] as const) {
+for (const [id, name] of [['potato','알토'],['sweet-potato','구마루']] as const) {
   test(`${name} has four unique touches and five illustrated actions without replacing the portrait`, async ({page},testInfo) => {
     await installSnapshot(page,[companion(id,6,true)]);
     await page.goto('/');
@@ -272,7 +272,7 @@ test('the starter potato has a visible portrait and the book reveals no discover
   await page.goto('/');
   await page.getByRole('button',{name:'친구들 보기'}).click();
   const book=page.locator('.characterBook');
-  const potato=cardFor(page,'감자');
+  const potato=cardFor(page,'알토');
   await expect(potato.locator('.characterPortrait image')).toHaveAttribute('href','/characters/brothers-v2/potato-atlas.png');
   await expect(potato.locator('[data-portrait="감자"]')).toBeVisible();
   const box=(await potato.locator('.characterVisual').boundingBox())!;
@@ -316,9 +316,10 @@ test('a discovered friend can be named and selected without explaining how it wa
   await installSnapshot(page,[companion('potato',1,true),companion('sweet-potato'),companion('orange',3)],{id:1,characterId:'orange',kind:'unlock',stage:3});
   await page.goto('/');
   const dialog=page.getByRole('dialog',{name:'새로운 친구를 만났어요!'});
+  await expect(dialog).toContainText('톡귤 · 귤 친구');
   await expect(dialog).not.toContainText(/GPS|제주|장/);
   await dialog.getByRole('button',{name:'만나보기'}).click();
-  await expect(cardFor(page,'귤')).toBeVisible();
+  await expect(cardFor(page,'톡귤')).toBeVisible();
   await expect(page.locator('.characterCard.locked')).toHaveCount(13);
 });
 
@@ -330,14 +331,15 @@ test('regional portraits keep the same name across the book, Home and growth not
   await expect(growth.locator('[data-portrait="갈매기"]')).toBeVisible();
   await growth.getByRole('button',{name:'만나보기'}).click();
   const card = cardFor(page,'바다');
+  await expect(card.locator('.characterMotif')).toHaveText('갈매기 친구');
   await expect(card.locator('[data-portrait="갈매기"]')).toBeVisible();
   await card.getByRole('button',{name:'이름 바꾸기'}).click();
-  await expect(card.getByRole('textbox',{name:'친구 이름'})).toHaveAttribute('placeholder','갈매기');
+  await expect(card.getByRole('textbox',{name:'친구 이름'})).toHaveAttribute('placeholder','끼룩');
   await card.getByRole('textbox',{name:'친구 이름'}).fill('');
   await card.getByRole('button',{name:'저장',exact:true}).click();
-  await cardFor(page,'갈매기').getByRole('button',{name:'대표로 설정'}).click();
+  await cardFor(page,'끼룩').getByRole('button',{name:'대표로 설정'}).click();
   await page.getByRole('button',{name:'곰고미 홈으로 이동'}).click();
-  await expect(page.getByRole('button',{name:'갈매기에게 말 걸기'}).locator('[data-portrait="갈매기"]')).toBeVisible();
+  await expect(page.getByRole('button',{name:'끼룩에게 말 걸기'}).locator('[data-portrait="갈매기"]')).toBeVisible();
 });
 
 test('each of the six current forms loads without showing any future form',async({page}) => {
@@ -347,7 +349,7 @@ test('each of the six current forms loads without showing any future form',async
   await page.getByRole('button',{name:'친구들 보기'}).click();
   for(const stage of [1,2,3,4,5,6]) {
     await page.evaluate(stage=>(window as unknown as {setSproutStage:(stage:number)=>void}).setSproutStage(stage),stage);
-    await expect(cardFor(page,'감자').locator('.characterVisual')).toHaveAttribute('data-stage',String(stage));
+    await expect(cardFor(page,'알토').locator('.characterVisual')).toHaveAttribute('data-stage',String(stage));
     await expect(page.locator('.characterBook .characterVisual')).toHaveCount(17);
     for(const def of definitions) {
       const art=cardFor(page,def.defaultName);
@@ -359,7 +361,7 @@ test('each of the six current forms loads without showing any future form',async
       }else if(portrait){
         const image=art.locator('img.characterPortrait');
         await expect(image).toHaveAttribute('src',portrait);
-        await expect(image).toHaveAttribute('data-portrait',def.defaultName);
+        await expect(image).toHaveAttribute('data-portrait',def.motif || def.defaultName);
         await image.evaluate((element:HTMLImageElement)=>element.decode());
         await expect(image).toBeVisible();
       }else{
@@ -386,11 +388,11 @@ test('all current designs are legible in a narrow book and the seagull gift foll
     expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     if (width===360) await page.screenshot({path:'preview-results/audit/all-character-designs-360.png',fullPage:true});
   }
-  const gull=cardFor(page,'갈매기');
+  const gull=cardFor(page,'끼룩');
   await expect(gull.locator('img.characterPortrait')).toHaveAttribute('src','/characters/portraits/pencil/camellia.webp');
   await gull.getByRole('button',{name:'대표로 설정'}).click();
   await page.getByRole('button',{name:'곰고미 홈으로 이동'}).click();
-  const portrait=page.getByRole('button',{name:'갈매기에게 말 걸기'}).locator('[data-portrait="갈매기"]');
+  const portrait=page.getByRole('button',{name:'끼룩에게 말 걸기'}).locator('[data-portrait="갈매기"]');
   await expect(portrait).toBeVisible();
   await page.getByRole('button',{name:'함께하기',exact:true}).click();
   await page.getByRole('button',{name:'새우 과자 주기'}).click();
@@ -400,11 +402,46 @@ test('all current designs are legible in a narrow book and the seagull gift foll
   await page.screenshot({path:'preview-results/audit/seagull-home-393.png'});
 });
 
+test('Haesil speaks in his own voice on touch, in activities and in Help', async ({page}) => {
+  await installSnapshot(page,[companion('apple',3,true)]);
+  await page.goto('/');
+  const mascot=page.getByRole('button',{name:'해실에게 말 걸기',exact:true});
+  const reply=page.locator('#homeMessage[data-source="activity"]');
+  const scholar = JSON.parse(readFileSync('src/features/characters/data/characterDefinitions.json','utf8'))
+    .find((friend:{id:string})=>friend.id==='apple') as {
+      dialogues:{situations:{idle:string[]};stages:Record<string,string[]>};
+      activityVoices:Record<string,string[]>;
+      personality:{helpVoices:string[][]};
+    };
+  const touchLines=[...scholar.dialogues.situations.idle,...scholar.dialogues.stages['3']];
+  const expectReply=async (pool:string[])=>expect.poll(async()=>pool.includes(await reply.innerText())).toBe(true);
+  await mascot.click();
+  await expectReply(touchLines);
+  const first=await reply.innerText();
+  await mascot.click();
+  await expect(reply).not.toHaveText(first);
+  await expectReply(touchLines);
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
+  await page.getByRole('button',{name:'함께하기',exact:true}).click();
+  for (const [action,label] of [['walk','함께 산책'],['treat','햇살 선물'],['pet','쓰다듬기'],['play','함께 놀기'],['rest','함께 쉬기']]) {
+    await page.getByRole('button',{name:label,exact:true}).click();
+    await expectReply(scholar.activityVoices[action]);
+  }
+  await page.getByRole('button',{name:'지켜보기',exact:true}).click();
+  await expect(page.locator('#homeMessage')).toHaveAttribute('data-state','watching');
+  await expect(reply).toHaveCount(0);
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
+  await page.getByRole('button',{name:'현재 화면 도움말'}).click();
+  const help=page.getByRole('dialog',{name:'버튼 도움말'});
+  await expect(help.locator('.characterHelpName')).toHaveText('해실');
+  await expect.poll(async()=>scholar.personality.helpVoices[0].includes(await help.locator('.helpVoice').innerText())).toBe(true);
+});
+
 test('redesigned completed potato uses its new picture and reduced motion still permits Home affection',async({page}) => {
   await page.emulateMedia({reducedMotion:'reduce'});
   await installSnapshot(page,[companion('potato',6,true),companion('sweet-potato')]);
   await page.goto('/');
-  const mascot=page.getByRole('button',{name:'감자에게 말 걸기'});
+  const mascot=page.getByRole('button',{name:'알토에게 말 걸기'});
   await expect(mascot.locator('.characterPortrait image')).toHaveAttribute('href','/characters/brothers-v2/potato-atlas.png');
   await expect(mascot.locator('.characterVisual')).toHaveAttribute('data-reduced-motion','true');
   await mascot.click();
@@ -488,9 +525,9 @@ test('Gomi tutorial navigation fits a short narrow phone with larger text', asyn
 test('help uses the selected main character instead of Gomi', async ({page}) => {
   await page.goto('/');
   await page.getByRole('button',{name:'친구들 보기'}).click();
-  await cardFor(page,'감자').getByRole('button',{name:'대표로 설정'}).click();
+  await cardFor(page,'알토').getByRole('button',{name:'대표로 설정'}).click();
   await page.getByRole('button',{name:'곰고미 홈으로 이동'}).click();
-  await expect(page.getByRole('button',{name:'감자에게 말 걸기'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'알토에게 말 걸기'})).toBeVisible();
   await page.getByRole('button',{name:'현재 화면 도움말'}).click();
   await expect(page.getByRole('dialog',{name:'버튼 도움말'}).locator('.characterVisual')).toHaveAttribute('data-character','potato');
 });
@@ -730,6 +767,6 @@ test('another selected companion does not inherit Gomi dialogue or affection', a
   await page.getByRole('button',{name:'현재 화면 도움말'}).click();
   const guide = page.getByRole('dialog',{name:'버튼 도움말'});
   await expect(guide.locator('.characterVisual')).toHaveAttribute('data-character','potato');
-  await expect(guide.locator('.characterHelpName')).toHaveText('감자');
+  await expect(guide.locator('.characterHelpName')).toHaveText('알토');
   await expect(guide).not.toContainText('휴. 네가 좋아하는 순간부터 고르자. 같이 보고 싶으니까.');
 });

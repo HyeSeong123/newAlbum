@@ -171,7 +171,7 @@ test('backgrounding during relationship storage invalidates the pending reaction
 test('switching representative character drops previous pending speech',async({page})=>{
   await installOwnAi(page,{worker:{controlled:true}});await page.goto('/');await page.locator('.homeMascot').click();
   await expect.poll(async()=>(await requestedInputs(page)).length).toBe(1);await page.getByRole('button',{name:'친구들 보기',exact:true}).click();
-  await page.locator('.characterCard').filter({has:page.getByRole('heading',{name:'감자',exact:true})}).getByRole('button',{name:'대표로 설정'}).click();
+  await page.locator('.characterCard').filter({has:page.getByRole('heading',{name:'알토',exact:true})}).getByRole('button',{name:'대표로 설정'}).click();
   await page.evaluate(()=>(window as any).ownAiProbe.worker.postMessage({finish:true}));
   await page.locator('.navList').getByRole('button',{name:'홈',exact:true}).click();await expect(page.locator('.homeSpeech')).toHaveCount(0);
   await configureInference(page,{controlled:false});await page.locator('.homeMascot').click();

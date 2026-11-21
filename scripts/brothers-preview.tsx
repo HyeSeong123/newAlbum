@@ -33,9 +33,9 @@ function Preview() {
       <p className="intro">감자는 먼저 움직이고, 고구마는 한 박자 뒤에 반응해요.</p></div>
       <div className="gomiReference"><img src={gomi} alt="그림체 기준인 고미"/><span>그림체 기준 · 고미</span></div></header>
     <section className="previewPair" aria-label="두 형제의 움직임">
-      {([['potato','감자','먼저 해 보는 동생','이거 해 보자! 내가 먼저 할게.'],['sweet-potato','고구마','한마디 얹는 형','…옆으로 와. 같이 보게.']] as const).map(([id,name,role,line])=>{
+      {([['potato','먼저 해 보는 동생','이거 해 보자! 내가 먼저 할게.'],['sweet-potato','한마디 얹는 형','…옆으로 와. 같이 보게.']] as const).map(([id,role,line])=>{
         const definition=characterDefinitions.find(item=>item.id===id)!;
-        return <article className={"previewCard "+id} key={id}><div className="cardHeading"><h2>{name}</h2><span>{role}</span></div>
+        return <article className={"previewCard "+id} key={id}><div className="cardHeading"><h2>{definition.defaultName}</h2><span>{role}</span></div>
           <div className="previewArt"><CharacterVisual definition={definition} stage={6} expression={choice.expression||"idle"}
             companionMotion={choice.motion} reactionKey={sequence} paused={paused}/></div>
           <p className="sampleLine">{line}</p><span className="currentPose">{choice.label}</span></article>;

@@ -74,8 +74,7 @@ export function companionDisturbsSleep(action:CompanionAction,sleeping:boolean){
 const personaLines: Record<string, readonly [string, string, string, string, string]> = {
   gomi: ["산책 갈 거야? 난 벌써 가고 싶은데.", "간식이네. …내가 고를래.", "손은 살살. …허락한 적은 없지만.", "놀자고? 뭘 할 건데?", "이제 쉬자. 자리 좀 내줘."],
   potato: ["좋아, 출발하는 상상부터! 내가 앞장설게!", "내 자리까지 따끈해졌어! 형 것도 남겨 둘까?", "간지러워! 잠깐, 나 웃은 거 아니거든?", "내가 새 규칙 생각했어! 하면서 알려 줄게!", "조금만 쉬자. 좋은 생각 나면 바로 말할게!"],
-  "sweet-potato": ["방 안에서 산책 상상이라. 뭐, 같이 보자.", "이쪽도 따뜻하네. 감자 자리도 좀 남겨 둬.", "그렇게 열심히 안 해도 돼. …조금은 괜찮고.", "규칙은 생각한 거지? 알았어, 일단 해 봐.", "조용해졌네. 옆에 있어. 같이 쉬게."],
-  apple: ["좋아, 길을 정하고 차분하게 다녀오자.", "선물은 고마워. 잘 골랐네.", "조심해. 모자가 비뚤어지면 곤란하니까.", "규칙은 간단해. 끝까지 집중하기.", "휴식도 계획의 일부야. 잘했어."],
+  "sweet-potato": ["방 안에서 산책 상상이라. 뭐, 같이 보자.", "이쪽도 따뜻하네. 알토 자리도 좀 남겨 둬.", "그렇게 열심히 안 해도 돼. …조금은 괜찮고.", "규칙은 생각한 거지? 알았어, 일단 해 봐.", "조용해졌네. 옆에 있어. 같이 쉬게."],
   orange: ["출발! 톡톡 튀는 하루가 될 거야!", "햇살 한 입! 아, 기분 좋아!", "꺄, 간지럽잖아! 한 번 더!", "술래잡기? 내가 먼저 숨을게!", "쉿! 잠깐 충전하고 다시 놀자!"],
   ginkgo: ["바람이 지나간 자리를 천천히 보자.", "선물을 담아 둘 자리가 있겠군. 고마워.", "음… 뚜껑이 바스락거렸군.", "구름 모양을 맞히는 놀이도 괜찮겠지.", "잠깐 조용히 있는 것도 좋은 시간이야."],
   camellia: ["좋아. 내가 길을 살펴볼 테니 따라와.", "새우 과자라니 잘 골랐군. 바닷바람도 함께 떠오르네.", "고마워. 다만 품위는 지켜 줘.", "이번 놀이는 내가 진행할게.", "오늘 일정은 여기까지. 편히 쉬자."],
@@ -137,6 +136,8 @@ export function performCompanionActivity(definition: CharacterDefinition, previo
     const annoyedLines = ["휴… 자는데 건들지 마.","자잖아. 나중에 해.","지금은 졸려. 조금만 기다려.","지금은 더 자고 싶어… 옆에만 있어 줘.","너라도 지금 깨우면 서운해… 조금만 더 잘게."];
     return { line:(action === "rest" ? restLines : annoyedLines)[tier], memory };
   }
+  const voice = definition.activityVoices?.[action];
+  if (voice?.length) return { line: voice[before % voice.length], memory };
   const basis = definition.type === "gomi" ? gomiByAffinity[action][tier] :
     (personaLines[definition.type] || personaLines.potato)[COMPANION_ACTIONS.indexOf(action)];
   // Repeated actions vary their closing, but never silently change affection or growth.

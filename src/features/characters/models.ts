@@ -1,3 +1,4 @@
+import type { CompanionAction } from "./companionActivities";
 import definitions from "./data/characterDefinitions.json";
 import { gomiAffinity, gomiDescriptions, gomiDialogueLines } from "./gomiAffinity";
 
@@ -18,7 +19,7 @@ export type CharacterPersonality = {
 
 export type CharacterDefinition = {
   id: string; type: string; regionCode: string; regionName: string; regionLabel: string;
-  defaultName: string; appearance?: string; treatLabel?: string; description: string; maxStage: number; assetPath: string;
+  defaultName: string; motif?: string; appearance?: string; treatLabel?: string; description: string; maxStage: number; assetPath: string;
   originalAssetPath?: string;
   expressionAssetPaths?: Partial<Record<"idle" | "happy" | "sad" | "grow", string>>;
   stageAssetPaths?: string[];
@@ -32,6 +33,7 @@ export type CharacterDefinition = {
   growthStages: { name: string; description: string }[];
   growthConditions: { stage1: number; stage2: number; stage3: number; stage4: number; stage5: number; stage6: number };
   personality?: CharacterPersonality;
+  activityVoices?: Record<CompanionAction, readonly string[]>;
   dialogues: { all: string[]; stages: Record<string, string[]>; situations?: Partial<Record<DialogueContext, string[]>> };
 };
 export const characterDefinitions = (definitions as CharacterDefinition[]).slice().sort((a, b) =>
