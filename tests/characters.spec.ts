@@ -402,11 +402,12 @@ test('all current designs are legible in a narrow book and the seagull gift foll
   await page.screenshot({path:'preview-results/audit/seagull-home-393.png'});
 });
 
-test('Dorongi speaks in his own voice on touch, in activities and in Help', async ({page}) => {
+test('Dorongi offers his own basic lines when AI fails and still speaks in Help', async ({page}) => {
   await installSnapshot(page,[companion('apple',3,true)]);
   await page.goto('/');
   const mascot=page.getByRole('button',{name:'도롱이에게 말 걸기',exact:true});
   const reply=page.locator('#homeMessage[data-source="activity"]');
+  const basic=page.getByRole('button',{name:'기본 대사 보기',exact:true});
   const scholar = JSON.parse(readFileSync('src/features/characters/data/characterDefinitions.json','utf8'))
     .find((friend:{id:string})=>friend.id==='apple') as {
       dialogues:{situations:{idle:string[]};stages:Record<string,string[]>};
@@ -414,13 +415,18 @@ test('Dorongi speaks in his own voice on touch, in activities and in Help', asyn
       personality:{helpVoices:string[][]};
     };
   const touchLines=[...scholar.dialogues.situations.idle,...scholar.dialogues.stages['3']];
-  const expectReply=async (pool:string[])=>expect.poll(async()=>pool.includes(await reply.innerText())).toBe(true);
+  const expectReply=async (pool:string[])=>{
+    await expect(page.locator('#homeMessage')).toHaveAttribute('data-state','failed');
+    await expect(page.getByRole('button',{name:'대사 다시 생성',exact:true})).toBeVisible();
+    await basic.click();
+    await expect.poll(async()=>pool.includes(await reply.innerText())).toBe(true);
+  };
   await mascot.click();
   await expectReply(touchLines);
   const first=await reply.innerText();
   await mascot.click();
-  await expect(reply).not.toHaveText(first);
   await expectReply(touchLines);
+  await expect(reply).not.toHaveText(first);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
   await page.getByRole('button',{name:'함께하기',exact:true}).click();
   for (const [action,label] of [['walk','함께 산책'],['treat','햇살 선물'],['pet','쓰다듬기'],['play','함께 놀기'],['rest','함께 쉬기']]) {
@@ -437,11 +443,12 @@ test('Dorongi speaks in his own voice on touch, in activities and in Help', asyn
   await expect.poll(async()=>scholar.personality.helpVoices[0].includes(await help.locator('.helpVoice').innerText())).toBe(true);
 });
 
-test('Dorongi keeps a saved nickname and shares his feelings when closer', async ({page}) => {
+test('Dorongi keeps a saved nickname and his close basic dialogue', async ({page}) => {
   await installSnapshot(page,[{...companion('apple',3,true),customName:'해실',affection:29}]);
   await page.goto('/');
   const mascot=page.getByRole('button',{name:'해실에게 말 걸기',exact:true});
   await mascot.click();
+  await page.getByRole('button',{name:'기본 대사 보기',exact:true}).click();
   await expect(page.locator('#homeMessage[data-source="activity"]')).toHaveText(
     '그대가 내 이름을 먼저 불러 주니, 오늘은 숨을 곳이 없구려. …기쁜 뜻이오.',
   );

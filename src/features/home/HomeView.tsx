@@ -162,8 +162,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     }
     if (context.definition.activityVoices && context.action === "touch") {
       const tone = owned.affection >= 20 ? "highAffection" : "idle";
-      showActivityReply(chooseCompanionFallback(owned.id, dialogueLines(context.definition, owned.growthStage, tone, owned.affection)));
-      return;
+      context = { ...context, fallback: chooseCompanionFallback(owned.id, dialogueLines(context.definition, owned.growthStage, tone, owned.affection)) };
     }
     setAiStatus("generating");
     retryContext.current = { ...context, owned };
@@ -183,7 +182,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
       basis:restLine || lines[next], touchLines:lines,
     }));
     setSpokenLine(undefined);
-    setAiStatus(definition.activityVoices || (isGomi && !gomiCanSpeak(mainCharacter.affection)) ? "idle" : "generating");
+    setAiStatus(isGomi && !gomiCanSpeak(mainCharacter.affection) ? "idle" : "generating");
     setAiFailure("");
     if (definition && mainCharacter) {
       const memory = readCompanionMemory(mainCharacter.id);
@@ -221,12 +220,11 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     saveCompanionMemory(mainCharacter.id, result.memory);
     setAiFailure("");
     const voice = definition.activityVoices?.[action];
-    if (voice?.length) {
-      showActivityReply(chooseCompanionFallback(mainCharacter.id, voice));
-    } else if (action === "treat" && definition.treatLabel) {
+    if (action === "treat" && definition.treatLabel) {
       showActivityReply(result.line);
     } else {
-      const fallback = isGomi && !gomiCanSpeak(mainCharacter.affection) ? "" : chooseCompanionFallback(mainCharacter.id, companionFallbackCandidates({
+      const fallback = voice?.length ? chooseCompanionFallback(mainCharacter.id, voice) :
+        isGomi && !gomiCanSpeak(mainCharacter.affection) ? "" : chooseCompanionFallback(mainCharacter.id, companionFallbackCandidates({
         gomi:Boolean(isGomi), affection:mainCharacter.affection, action, sleeping, disturbed, basis:result.line,
       }));
       setSpokenLine(undefined);
@@ -270,7 +268,6 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
                   aiStatus === "failed" ? aiFailure :
                   aiStatus === "watching" ? `${definition ? characterName(definition, mainCharacter) : "친구"}의 모습을 조용히 지켜보고 있어요.` :
                   isGomi && !gomi.ready ? "친구를 준비하고 있어요." :
-                  definition?.activityVoices ? "친구를 터치해 말을 걸어 보세요." :
                   definition ? "친구를 터치하면 AI가 새로운 대사를 만들어요." : "친구를 선택하면 AI와 대화할 수 있어요."}
               </p>}
           {aiStatus === "failed" && retryContext.current && <button type="button" className="homeReactionRetry" onClick={() => {
@@ -280,6 +277,12 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
             setAiFailure("");
             ai.react(context);
           }}>대사 다시 생성</button>}
+          {aiStatus === "failed" && definition?.activityVoices && retryContext.current?.fallback && (
+            <button type="button" className="homeReactionRetry" onClick={() => {
+              const context = retryContext.current;
+              if (context?.owned.id === mainCharacter?.id && context?.fallback) showActivityReply(context.fallback);
+            }}>기본 대사 보기</button>
+          )}
         </div>
         <button className={`homeMascot${happy ? " happy" : ""}`} type="button" aria-label={`${definition ? characterName(definition, mainCharacter) : "곰고미"}에게 말 걸기`} onClick={talk}>
           {definition && mainCharacter ? <CharacterVisual definition={definition} stage={mainCharacter.growthStage} expression={happy ? "happy" : "idle"}
@@ -289,7 +292,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
         </button>
         {definition && mainCharacter && <p className="homeCharacterMeta"><strong>{characterName(definition, mainCharacter)}</strong><span className="homeAffection"><Heart size={14} aria-hidden="true" />친밀도 {mainCharacter.affection}</span></p>}
         {definition && mainCharacter && <div className="homeActivities">
-          {!definition.activityVoices && <button type="button" className="homeActivitiesToggle" data-help="companion-ai" onClick={() => setAiSetupOpen(true)}>AI 반응 설정</button>}
+          <button type="button" className="homeActivitiesToggle" data-help="companion-ai" onClick={() => setAiSetupOpen(true)}>AI 반응 설정</button>
           <button type="button" className="homeActivitiesToggle" aria-expanded={activitiesOpen} aria-controls="homeActivitiesChoices"
             data-help="companion-actions" onClick={() => setActivitiesOpen(value => !value)}>
             함께하기 <ChevronDown size={17} aria-hidden="true" className={activitiesOpen ? "expanded" : ""} />

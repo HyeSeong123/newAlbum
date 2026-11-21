@@ -115,3 +115,14 @@ test('the deadpan older brother uses smaller turns than the energetic younger br
     assert.ok(magnitude(older.keyframes.rotate)<magnitude(younger.keyframes.rotate),action);
   }
 });
+
+test('Dorongi keeps the wooden mask proportions in every pose, including reduced motion', () => {
+  const signature = definitions.find(friend => friend.id === 'apple').personality.signatureAnimation;
+  for(const motion of ['idle','look-around','nod','stretch','sway','bounce','walk','treat','pet','play','rest']){
+    const {keyframes}=companionMotionAnimation(motion,signature);
+    assert.equal(keyframes.scaleX,1,motion);
+    assert.equal(keyframes.scaleY,1,motion);
+    assert.equal(companionMotionStillFrame(motion,signature).scaleY,1,motion);
+  }
+  assert.notDeepEqual(companionMotionStillFrame('stretch',signature),companionMotionStillFrame('nod',signature));
+});

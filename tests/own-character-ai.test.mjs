@@ -126,3 +126,21 @@ test('a finite learned scene still generates after its larger recent window is e
   previous.push(line);if(previous.length>12)previous.shift();
  }
 });
+
+test('Dorongi generates fresh Joseon-style reactions for every action, relationship and energy',()=>{
+ const personal=JSON.parse(readFileSync(new URL('../src/features/characters/ownAi/dorongi.json',import.meta.url),'utf8'));
+ const ai=engine.loadOwnModel(personal);
+ assert.deepEqual(ai.characters,['apple']);
+ for(const action of ['touch','walk','treat','pet','play','rest']) for(const affection of [0,35,80]) for(const energy of [0,1,3]){
+  const previous=[];
+  for(let i=0;i<6;i++){
+   const state={...input,characterId:'apple',action,affection,energy,previous};
+   const line=engine.generateOwnLine(ai,state,31829+i*41);
+   assert.match(line,/소[.!?]|구려[.!?]|시게[.!?]|하오[.!?]|오[.!?]|십시다[.!?]/,line);
+   assert.doesNotMatch(line,/간식|목줄|집사/);
+   assert.ok(!previous.includes(line),line);
+   assert.ok(Array.from(line).length<=50);
+   previous.push(line);
+  }
+ }
+});

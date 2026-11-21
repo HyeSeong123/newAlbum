@@ -31,6 +31,31 @@ test('real bundled model produces short new lines for five actions without exter
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 95');expect(external).toEqual([]);
 });
 
+test('Dorongi uses the locally bundled voice for touch and all five actions', async ({page}) => {
+  await installOwnAi(page,{characterId:'apple',affection:44});
+  await page.goto('/');
+  const bubble=page.locator('#homeMessage');
+  const expectVoice=async (meaning:RegExp)=>{
+    await expect(bubble).toHaveAttribute('data-source','on-device');
+    await expect(bubble).toContainText(meaning);
+    await expect(bubble).toContainText(/소[.!?]|구려[.!?]|시게[.!?]|하오[.!?]|오[.!?]|십시다[.!?]/);
+  };
+  await page.getByRole('button',{name:'도롱이에게 말 걸기',exact:true}).click();
+  await expectVoice(/이름|잊으신|불러/);
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 45');
+  await page.getByRole('button',{name:'함께하기',exact:true}).click();
+  for(const [label,meaning] of [
+    ['함께 산책', /길|걷|걸/], ['햇살 선물', /볕|햇살|따뜻|따스/],
+    ['쓰다듬기', /손|모자/], ['함께 놀기', /차례|판|놀이|웃어/], ['함께 쉬기', /쉬|곁|자리|말이/],
+  ] as const){
+    await page.getByRole('button',{name:label,exact:true}).click();
+    await expectVoice(meaning);
+  }
+  await page.getByRole('button',{name:'지켜보기',exact:true}).click();
+  await expect(bubble).toHaveAttribute('data-state','watching');
+  expect((await requestedInputs(page)).map((input:{action:string})=>input.action)).toEqual(['touch','walk','treat','pet','play','rest']);
+});
+
 test('silent Gomi completes a fresh saved interaction without inference below the threshold',async({page})=>{
   await installOwnAi(page,{affection:58});await page.goto('/');await page.locator('.homeMascot').click();
   const bubble=page.locator('#homeMessage');await expect(bubble).toHaveAttribute('data-state','quiet');

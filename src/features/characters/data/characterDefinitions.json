@@ -593,7 +593,7 @@
       "signatureAnimation": "quiet-nod",
       "emotionalRole": "freshness",
       "visualTraits": [
-        "검은 모자를 쓴 갈색 하회탈, 반달 눈과 크게 웃는 입"
+        "반달 눈으로 웃는 갈색 하회탈과 검은 모자, 띠를 두른 날렵한 선비옷"
       ],
       "growthVisualTraits": [
         "지금 알아볼 수 있는 고유 실루엣과 색을 성장 단계마다 유지해요."
@@ -658,7 +658,7 @@
         "description": "자기다운 모습으로 곁에서 추억을 나누는 친구예요."
       }
     ],
-    "appearance": "검은 모자를 쓴 갈색 하회탈, 반달 눈과 크게 웃는 입",
+    "appearance": "반달 눈으로 웃는 갈색 하회탈과 검은 모자, 띠를 두른 날렵한 선비옷",
     "motif": "하회탈",
     "activityVoices": {
       "walk": [

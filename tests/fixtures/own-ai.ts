@@ -1,7 +1,7 @@
 import type {Page} from '@playwright/test';
 
 type Options = {
-  characterId?: 'gomi' | 'potato'; affection?: number; sleeping?: boolean;
+  characterId?: 'gomi' | 'potato' | 'apple'; affection?: number; sleeping?: boolean;
   interactionDelay?: number; saveError?: boolean; holdSaves?: boolean;
   worker?: {delay?: number; error?: string; controlled?: boolean};
 };
@@ -32,7 +32,7 @@ export async function installOwnAi(page:Page,options:Options={}) {
       postMessage(message:any,options?:any){if(message?.input)probe.requests.push(message.input);super.postMessage(message,options);}
     };
     let interacted=false,disturbances=0;
-    const characters=['gomi','potato'].map(id=>({id,customName:null,growthStage:6,affection:settings.affection??75,isMain:id===(settings.characterId??'gomi')}));
+    const characters=[...new Set(['gomi','potato',settings.characterId??'gomi'])].map(id=>({id,customName:null,growthStage:6,affection:settings.affection??75,isMain:id===(settings.characterId??'gomi')}));
     const snapshot=()=>({characters:characters.map(owned=>({...owned})),events:[]});
     (window as any).__TAURI_INTERNALS__={convertFileSrc:()=>'/favicon.png',invoke:async(command:string,args:any={})=>{
       probe.native.push(command);
