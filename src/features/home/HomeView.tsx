@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, BookHeart, ChevronDown, Eye, Footprints, Gamepad2, Gift, HandHeart, Heart, Images, Moon, NotebookPen, Sun, Users } from "lucide-react";
+import { ArrowUpRight, BookHeart, ChevronDown, Droplet, Eye, Footprints, Gamepad2, Gift, HandHeart, Heart, Images, Moon, NotebookPen, Sun, Users } from "lucide-react";
 import { CharacterVisual } from "../characters/CharacterVisual";
 import { CompanionAiSetup } from "../characters/CompanionAiSetup";
 import { useCompanionReactions } from "../characters/useCompanionReactions";
@@ -220,7 +220,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     saveCompanionMemory(mainCharacter.id, result.memory);
     setAiFailure("");
     const voice = definition.activityVoices?.[action];
-    if (action === "treat" && definition.treatLabel) {
+    if (result.authored || (action === "treat" && definition.treatLabel)) {
       showActivityReply(result.line);
     } else {
       const fallback = voice?.length ? chooseCompanionFallback(mainCharacter.id, voice) :
@@ -299,7 +299,9 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
           </button>
           {activitiesOpen && <div id="homeActivitiesChoices" className="homeActivitiesChoices" role="group" aria-label="친구와 함께하기">
             {COMPANION_ACTIONS.map(action => {
-              const Icon = action === "treat" && definition.treatLabel ? Gift : activityIcons[action];
+              const special = definition.specialActivities?.[action];
+              const Icon = special?.icon === "water" ? Droplet : special?.icon === "sun" ? Sun
+                : action === "treat" && (special || definition.treatLabel) ? Gift : activityIcons[action];
               return <button key={action} type="button" className="homeActivity" data-help={"companion-" + action}
                 onClick={() => chooseActivity(action)}>
                 <Icon size={19} aria-hidden="true" /><span>{companionActionLabel(definition, action)}</span>

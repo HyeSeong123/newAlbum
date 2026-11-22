@@ -34,7 +34,32 @@ test("all 17 distinct personalities react to each of the five shared Home action
     assert.equal(new Set(lines).size, 17, "character-specific: " + action);
   }
   assert.equal(companionActionLabel(definitions[0], "treat"), "간식 주기");
-  assert.equal(companionActionLabel(definitions[1], "treat"), "햇살 선물");
+  assert.equal(companionActionLabel(definitions[1], "treat"), "물 주기");
+});
+
+test("each friend has fitting choices and authored actions retain the saved activity keys", () => {
+  for (const def of definitions.filter(friend => friend.id !== "gomi")) {
+    const special = Object.entries(def.specialActivities ?? {});
+    assert.ok(special.length >= 2, def.id);
+    const labels = COMPANION_ACTIONS.map(action => companionActionLabel(def, action));
+    assert.equal(new Set(labels).size, COMPANION_ACTIONS.length, def.id);
+    for (const [action, activity] of special) {
+      assert.ok(activity.label.length <= 12, activity.label);
+      const previous = emptyCompanionMemory();
+      const first = performCompanionActivity(def, previous, action, 10, "2026-11-22");
+      assert.deepEqual(first.memory.history, [{action, day:"2026-11-22"}]);
+      assert.deepEqual(previous.history, []);
+      assert.equal(companionActionLabel(def, action), activity.label);
+      if (!activity.replies) {
+        assert.equal(def.id, "apple");
+        assert.notEqual(first.authored, true);
+        continue;
+      }
+      assert.equal(first.authored, true);
+      assert.equal(first.line, activity.replies[0]);
+      assert.notEqual(performCompanionActivity(def, first.memory, action, 10, "2026-11-22").line, first.line);
+    }
+  }
 });
 
 test("regional gifts and reactions describe the current character artwork", () => {

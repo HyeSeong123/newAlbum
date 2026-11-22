@@ -45,8 +45,8 @@ test('Dorongi uses the locally bundled voice for touch and all five actions', as
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 45');
   await page.getByRole('button',{name:'함께하기',exact:true}).click();
   for(const [label,meaning] of [
-    ['함께 산책', /길|걷|걸/], ['햇살 선물', /볕|햇살|따뜻|따스/],
-    ['쓰다듬기', /손|모자/], ['함께 놀기', /차례|판|놀이|웃어/], ['함께 쉬기', /쉬|곁|자리|말이/],
+    ['고요한 길 걷기', /길|걷|걸/], ['햇볕 나누기', /볕|햇살|따뜻|따스/],
+    ['쓰다듬기', /손|모자/], ['한 판 두기', /차례|판|놀이|웃어/], ['나란히 쉬기', /쉬|곁|자리|말이/],
   ] as const){
     await page.getByRole('button',{name:label,exact:true}).click();
     await expectVoice(meaning);

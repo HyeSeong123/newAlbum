@@ -122,6 +122,7 @@
 .homeActivitiesChoices { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; width: 100%; padding: 12px; border: 1px solid #dcdccd; border-radius: 14px; background: #fffefa; }
 .homeActivity { display: flex; min-width: 0; min-height: 48px; align-items: center; justify-content: center; gap: 8px; padding: 10px 8px; border: 1px solid #e0e4d8; border-radius: 9px; background: #f8f9f3; color: #455441; font-size: 13px; font-weight: 600; }
 .homeActivity svg { flex: none; }
+.homeActivity span { word-break: keep-all; overflow-wrap: anywhere; }
 .homeActivity:active, .homeActivity:hover { background: #e8efdc; }
 @media (max-width: 360px) {
   .homeActivitiesChoices { gap: 7px; padding: 9px; }

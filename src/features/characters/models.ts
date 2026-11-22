@@ -34,6 +34,7 @@ export type CharacterDefinition = {
   growthConditions: { stage1: number; stage2: number; stage3: number; stage4: number; stage5: number; stage6: number };
   personality?: CharacterPersonality;
   activityVoices?: Record<CompanionAction, readonly string[]>;
+  specialActivities?: Partial<Record<CompanionAction, { label: string; replies?: readonly string[]; icon?: "water" | "sun" }>>;
   dialogues: { all: string[]; stages: Record<string, string[]>; situations?: Partial<Record<DialogueContext, string[]>> };
 };
 export const characterDefinitions = (definitions as CharacterDefinition[]).slice().sort((a, b) =>
