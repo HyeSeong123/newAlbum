@@ -44,10 +44,11 @@ export function useCompanionBehavior(enabled: boolean, characterId?: string, sig
     if (motion === rest.current) motion = companionInteractionMotion(signature,++interactions.current,false);
     setState(value => ({ owner:characterId,motion,sequence:value.sequence+1 }));
   }
-  function activity(action: CompanionAction) {
+  function activity(action: CompanionAction, motion?: CompanionMotion) {
     if (!enabled || !characterId) return;
-    rest.current=action === "rest" ? "rest" : homePose.current;
-    setState(value => ({ owner:characterId,motion:companionMotionForAction(action),sequence:value.sequence+1 }));
+    const activityMotion = motion ?? companionMotionForAction(action);
+    rest.current = activityMotion === "rest" ? "rest" : homePose.current;
+    setState(value => ({ owner:characterId,motion:activityMotion,sequence:value.sequence+1 }));
   }
   return { motion:state.owner === characterId ? state.motion : "idle" as CompanionMotion,
     sequence:state.owner === characterId ? state.sequence : 0,paused:!visible,

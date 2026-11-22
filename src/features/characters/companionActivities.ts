@@ -1,17 +1,39 @@
 import type { CharacterDefinition, OwnedCharacter } from "./models";
 import { gomiAffinity } from "./gomiAffinity";
+import type { CompanionMotion } from "./companionBehavior";
 
 // Home-only, imaginary interactions. No GPS, media contents, account data or native AI work is accessed.
 export const COMPANION_ACTIONS = ["walk", "treat", "pet", "play", "rest"] as const;
 export type CompanionAction = typeof COMPANION_ACTIONS[number];
 export type CompanionMood = "calm" | "curious" | "delighted" | "playful" | "sleepy" | "irritated";
+export type SpecialActivity = {
+  label: string;
+  replies?: readonly string[];
+  icon?: "water" | "sun";
+  scene?: {
+    id: string;
+    prop: string;
+    outcome: string;
+    mood: CompanionMood;
+    energy: number;
+    motion?: CompanionMotion;
+    ai?: boolean;
+  };
+};
+export const FIRST_LOVE_CHAPTERS = [
+  { id:"first-love-meeting", title:"개울가의 첫 만남", prop:"🌿" },
+  { id:"first-love-letter", title:"접어 둔 편지", prop:"💌" },
+  { id:"first-love-farewell", title:"나루의 작별", prop:"🌙" },
+] as const;
 export type CompanionMemory = {
   version: 1;
   mood: CompanionMood;
   energy: number;
-  history: Array<{ action: CompanionAction; day: string }>;
+  history: Array<{ action: CompanionAction; day: string; activityId?: string }>;
+  bakery?: "filled" | "baked";
+  storyChapter?: number;
 };
-export type CompanionReply = { line: string; memory: CompanionMemory; authored?: boolean };
+export type CompanionReply = { line: string; memory: CompanionMemory; authored?: boolean; aiAction?: string };
 const memoryCache = new Map<string, CompanionMemory>();
 const moodLabels: Record<CompanionMood, string> = {
   calm: "차분함", curious: "호기심", delighted: "기쁨", playful: "신남", sleepy: "나른함", irritated: "짜증",
@@ -28,9 +50,14 @@ function normalizedMemory(value: unknown): CompanionMemory | null {
   const item = value as Partial<CompanionMemory>;
   if (item.version !== 1 || typeof item.energy !== "number" || !Number.isFinite(item.energy)
     || !Object.hasOwn(moodLabels, String(item.mood)) || !Array.isArray(item.history)) return null;
+  const history = item.history.filter(entry => entry && isAction(entry.action) && /^\d{4}-\d{2}-\d{2}$/.test(entry.day)).slice(-12);
   return {
     version: 1, energy: Math.max(0, Math.min(5, Math.round(item.energy))), mood: item.mood as CompanionMood,
-    history: item.history.filter(entry => entry && isAction(entry.action) && /^\d{4}-\d{2}-\d{2}$/.test(entry.day)).slice(-12),
+    history: history.map(({ action, day, activityId }) => ({
+      action, day, ...(/^[a-z][a-z0-9-]{0,47}$/.test(activityId ?? "") ? { activityId } : {}),
+    })),
+    ...(item.bakery === "filled" || item.bakery === "baked" ? { bakery:item.bakery } : {}),
+    ...(item.storyChapter === 1 || item.storyChapter === 2 || item.storyChapter === 3 ? { storyChapter:item.storyChapter } : {}),
   };
 }
 function localStore(): Storage | undefined {
@@ -58,12 +85,15 @@ export function saveCompanionMemory(characterId: string, memory: CompanionMemory
     return Boolean(storage);
   } catch { return false; }
 }
-export function companionActionLabel(definition: CharacterDefinition, action: CompanionAction): string {
+function baseActionLabel(definition: CharacterDefinition, action: CompanionAction): string {
   const labels: Record<CompanionAction, string> = {
     walk: "함께 산책", treat: definition.treatLabel || (definition.type === "gomi" ? "간식 주기" : "햇살 선물"),
     pet: "쓰다듬기", play: "함께 놀기", rest: "함께 쉬기",
   };
-  return definition.specialActivities?.[action]?.label ?? labels[action];
+  return labels[action];
+}
+export function companionActionLabel(definition: CharacterDefinition, action: CompanionAction): string {
+  return definition.specialActivities?.[action]?.label ?? baseActionLabel(definition, action);
 }
 export function companionDisturbsSleep(action:CompanionAction,sleeping:boolean){
   return sleeping&&action!=="rest"&&action!=="treat";
@@ -112,16 +142,29 @@ const afterLines: Record<CompanionAction, readonly string[]> = {
 };
 export function performCompanionActivity(definition: CharacterDefinition, previous: CompanionMemory,
   action: CompanionAction, affection: number, day: string, state: { sleeping?:boolean } = {}): CompanionReply {
-  const before = previous.history.filter(entry => entry.action === action).length;
+  const activity = definition.specialActivities?.[action];
+  const scene = activity?.scene;
+  if (scene?.id === "bake-bread" && previous.bakery !== "filled") {
+    return { line:"고구마 앙금부터 넣어 줘!", memory:previous, authored:true };
+  }
+  if ((scene?.id === "pack-bread" || scene?.id === "cool-on-rack") && previous.bakery !== "baked") {
+    return { line:"앙금 넣은 소보로부터 구워 줘!", memory:previous, authored:true };
+  }
+  const chapter = scene?.id === "first-love" ? (previous.storyChapter ?? 0) % FIRST_LOVE_CHAPTERS.length + 1 : undefined;
+  const activityId = scene?.id;
+  const before = previous.history.filter(entry => activityId ? entry.activityId === activityId : entry.action === action).length;
   const deltas: Record<CompanionAction, number> = { walk: -1, treat: 1, pet: 0, play: -1, rest: 2 };
   const moods: Record<CompanionAction, CompanionMood> = {
     walk: "curious", treat: "delighted", pet: "calm", play: "playful", rest: "sleepy",
   };
-  const energy = Math.min(5, Math.max(0, previous.energy + deltas[action]));
+  const energy = Math.min(5, Math.max(0, previous.energy + (scene?.energy ?? deltas[action])));
   const memory: CompanionMemory = {
-    version: 1, mood: moods[action], energy,
-    history: [...previous.history, { action, day }].slice(-12),
+    ...previous, mood:scene?.mood ?? moods[action], energy,
+    history: [...previous.history, { action, day, ...(activityId ? { activityId } : {}) }].slice(-12),
   };
+  if (activityId === "fill-bread") memory.bakery = "filled";
+  if (activityId === "bake-bread") memory.bakery = "baked";
+  if (chapter !== undefined) memory.storyChapter = chapter;
   const tier = gomiAffinity(affection);
   if (definition.type === "gomi" && state.sleeping) {
     if(action==="treat"){
@@ -136,7 +179,11 @@ export function performCompanionActivity(definition: CharacterDefinition, previo
     const annoyedLines = ["휴… 자는데 건들지 마.","자잖아. 나중에 해.","지금은 졸려. 조금만 기다려.","지금은 더 자고 싶어… 옆에만 있어 줘.","너라도 지금 깨우면 서운해… 조금만 더 잘게."];
     return { line:(action === "rest" ? restLines : annoyedLines)[tier], memory };
   }
-  const authored = definition.specialActivities?.[action]?.replies;
+  const authored = activity?.replies;
+  if (scene?.ai) {
+    const aiAction = chapter ? FIRST_LOVE_CHAPTERS[chapter - 1].id : scene.id;
+    return { line:authored?.[chapter ? chapter - 1 : before % authored.length] ?? "", memory, aiAction };
+  }
   if (authored?.length) return { line: authored[before % authored.length], memory, authored: true };
   const voice = definition.activityVoices?.[action];
   if (voice?.length) return { line: voice[before % voice.length], memory };
@@ -150,7 +197,11 @@ export function performCompanionActivity(definition: CharacterDefinition, previo
 export function buildCompanionPrompt(definition: CharacterDefinition, owned: OwnedCharacter,
   memory: CompanionMemory, action: CompanionAction): { system: string; user: string } {
   const name = owned.customName || definition.defaultName;
-  const history = memory.history.slice(-5).map(entry => entry.day + " " + companionActionLabel(definition, entry.action)).join(", ") || "아직 없음";
+  const history = memory.history.slice(-5).map(entry => {
+    const specific = definition.specialActivities?.[entry.action];
+    const label = specific?.scene?.id === entry.activityId && specific ? specific.label : baseActionLabel(definition, entry.action);
+    return entry.day + " " + label;
+  }).join(", ") || "아직 없음";
   return {
     system: [
       "너는 곰고미 홈 화면에서만 대화하는 캐릭터다. 반드시 자연스러운 한국어로 답한다.",

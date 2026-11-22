@@ -115,14 +115,28 @@
         "replies": [
           "잎까지 물방울이 튀었어! 시원하니까 한 방울만 더!",
           "내가 물을 톡 튀겨 볼까? 앗, 살살 마실게!"
-        ]
+        ],
+        "scene": {
+          "id": "water-sprout",
+          "prop": "💧",
+          "outcome": "잎에 물방울이 맺혔어요.",
+          "mood": "delighted",
+          "energy": 1
+        }
       },
       "play": {
         "label": "새싹 박수 놀이",
         "replies": [
           "내가 잎을 딱 멈추면 박수야! 앗, 나도 먼저 쳐 버렸네.",
           "이번 박수는 두 번! 잎을 흔들 테니까 따라 해 봐!"
-        ]
+        ],
+        "scene": {
+          "id": "sprout-clap",
+          "prop": "👏",
+          "outcome": "알토가 잎을 흔들며 박수를 쳐요.",
+          "mood": "playful",
+          "energy": -1
+        }
       }
     },
     "description": "재밌는 일이 떠오르면 몸부터 움직이는 동생이에요. 자신 있게 나섰다가 당황해도 금세 다음 장난을 궁리해요.",
@@ -325,14 +339,28 @@
         "replies": [
           "아, 여기 햇볕 따뜻하네. 알토 자리도 남겨 두자.",
           "이쪽 햇볕이 딱 좋아. 멀쩡히 서 있지 말고 너도 앉아."
-        ]
+        ],
+        "scene": {
+          "id": "warm-vine",
+          "prop": "☀️",
+          "outcome": "구마루의 잎이 햇볕을 받아요.",
+          "mood": "calm",
+          "energy": 1
+        }
       },
       "play": {
         "label": "흙 언덕 넘기",
         "replies": [
           "이 조그만 흙 언덕을 넘는다고? 알았어, 내가 뒤에서 봐 줄게.",
           "흙 언덕을 넘었으면 됐지. …그래, 한 번 더 갈까?"
-        ]
+        ],
+        "scene": {
+          "id": "climb-soil-mound",
+          "prop": "⛰️",
+          "outcome": "구마루가 흙 언덕을 넘어갔어요.",
+          "mood": "playful",
+          "energy": -1
+        }
       }
     },
     "description": "알토의 엉뚱한 생각에 덤덤하게 한마디 얹는 형이에요. 툴툴거리면서도 어느새 옆에서 같이하고 있어요.",
@@ -534,17 +562,85 @@
     "defaultName": "도롱이",
     "specialActivities": {
       "walk": {
-        "label": "고요한 길 걷기"
+        "label": "첫사랑 얘기 듣기",
+        "replies": [
+          "그이를 처음 본 곳은 개울가였소.",
+          "그이에게 줄 편지를 접어 두었소.",
+          "나루에서 마지막 인사를 했소."
+        ],
+        "scene": {
+          "id": "first-love",
+          "prop": "💌",
+          "outcome": "첫사랑 이야기를 들려줘요.",
+          "mood": "calm",
+          "energy": 0,
+          "motion": "nod",
+          "ai": true
+        }
       },
       "treat": {
-        "label": "햇볕 나누기",
-        "icon": "sun"
+        "label": "막걸리 따르기",
+        "replies": [
+          "막걸리 잔은 이만하면 족하오.",
+          "그대 잔도 소반에 올려 두었소."
+        ],
+        "scene": {
+          "id": "pour-makgeolli",
+          "prop": "🍶",
+          "outcome": "소반 위 두 잔을 채웠어요.",
+          "mood": "calm",
+          "energy": 0,
+          "motion": "sway",
+          "ai": true
+        }
       },
       "play": {
-        "label": "한 판 두기"
+        "label": "장기 두기",
+        "replies": [
+          "차를 곧장 올렸구려. 이제 내 차례요.",
+          "장기판을 천천히 살피겠소."
+        ],
+        "scene": {
+          "id": "janggi",
+          "prop": "♟️",
+          "outcome": "차를 옮겨 장기 한 수를 뒀어요.",
+          "mood": "curious",
+          "energy": 0,
+          "motion": "look-around",
+          "ai": true
+        }
       },
       "rest": {
-        "label": "나란히 쉬기"
+        "label": "붓글씨 쓰기",
+        "replies": [
+          "벗 우 자를 썼소. 그대를 떠올렸소.",
+          "먹이 마르면 이 글을 드리겠소."
+        ],
+        "scene": {
+          "id": "write-calligraphy",
+          "prop": "🖌️",
+          "outcome": "먹으로 ‘벗 우(友)’를 썼어요.",
+          "mood": "calm",
+          "energy": 0,
+          "motion": "nod",
+          "ai": true
+        }
+      },
+      "pet": {
+        "label": "갓 매만지기",
+        "replies": [
+          "갓이 반듯해졌구려. 고맙소.",
+          "갓끈은 내가 매겠소."
+        ],
+        "scene": {
+          "id": "straighten-hat",
+          "prop": "🎩",
+          "outcome": "기울었던 갓을 바로잡았어요.",
+          "mood": "calm",
+          "energy": 0,
+          "motion": "nod",
+          "ai": true
+        }
       }
     },
     "description": "한발 물러서서 친구를 살피는 하회탈 선비예요. 슬쩍 챙겨 주고도 티를 내지 않아요. 가끔 자기가 잊힌 줄 알고 서운해하지만, 이름을 불러 주면 금세 웃어요.",
@@ -746,18 +842,48 @@
     "defaultName": "톡귤",
     "specialActivities": {
       "walk": {
-        "label": "귤밭 걷기",
+        "label": "둥근 귤 찾기",
         "replies": [
           "귤밭 길에는 내가 먼저 갈래! 주황색이 보이면 손들기야!",
           "귤밭이 끝나기 전에 가장 동그란 귤을 찾아보자!"
-        ]
+        ],
+        "scene": {
+          "id": "seek-round-orange",
+          "prop": "🍊",
+          "outcome": "귤밭에서 둥근 귤을 찾았어요.",
+          "mood": "curious",
+          "energy": 0,
+          "motion": "look-around"
+        }
       },
       "play": {
         "label": "귤 굴리기",
         "replies": [
           "귤을 살짝 밀면 톡톡 굴러가! 이번엔 네 차례야.",
           "내 귤이 먼저 도착했어! 반환점부터 다시 굴려 볼까?"
-        ]
+        ],
+        "scene": {
+          "id": "roll-orange",
+          "prop": "🍊",
+          "outcome": "톡귤이 귤을 반환점까지 굴렸어요.",
+          "mood": "playful",
+          "energy": -1
+        }
+      },
+      "treat": {
+        "label": "귤 바구니 채우기",
+        "replies": [
+          "톡! 이번 귤은 내가 담았어.",
+          "가득 차면 우리 같이 세어 보자!"
+        ],
+        "scene": {
+          "id": "fill-orange-basket",
+          "prop": "🧺",
+          "outcome": "귤 바구니에 귤이 하나 더 담겼어요.",
+          "mood": "delighted",
+          "energy": 0,
+          "motion": "nod"
+        }
       }
     },
     "description": "가만히 있어도 신나는 일이 생각난대요. 당신을 보면 장난부터 걸고 싶어 해요.",
@@ -899,14 +1025,30 @@
         "replies": [
           "후, 김이 조금 잦아들었군. 이렇게 식혀 주니 고맙네.",
           "너무 오래 불지 않아도 되네. 김이 사라지는 건 천천히 보고 싶으니."
-        ]
+        ],
+        "scene": {
+          "id": "cool-noodles",
+          "prop": "🍜",
+          "outcome": "컵 위의 김이 잦아들었어요.",
+          "mood": "calm",
+          "energy": 0,
+          "motion": "nod"
+        }
       },
       "play": {
         "label": "김 모양 맞히기",
         "replies": [
           "컵 위 김이 토끼처럼 올라가는군. 너는 무슨 모양이 보이나?",
           "이번 김은 구름 같군. 잠깐, 꼬리를 보니 여우일지도 모르겠네."
-        ]
+        ],
+        "scene": {
+          "id": "guess-steam-shape",
+          "prop": "☁️",
+          "outcome": "김이 피어 올라 모양을 만들었어요.",
+          "mood": "curious",
+          "energy": 0,
+          "motion": "look-around"
+        }
       }
     },
     "description": "말수는 적지만 당신 이야기는 오래 기억해요. 느릿하게 고개를 끄덕여 줘요.",
@@ -1044,18 +1186,47 @@
     "defaultName": "끼룩",
     "specialActivities": {
       "walk": {
-        "label": "바닷가 걷기",
+        "label": "밀려오는 파도 살피기",
         "replies": [
-          "바닷가 길은 익숙하지. 모래에 발이 빠지지 않게 내 쪽으로 오게.",
-          "바닷바람이 제법 부는군. 물결이 닿기 전에 같이 한 걸음 물러서자."
-        ]
+          "물결 끝을 보게. 이만큼 물러나면 되겠군.",
+          "모래 위에 물이 닿았군. 이번 파도는 길었어."
+        ],
+        "scene": {
+          "id": "watch-tide",
+          "prop": "🌊",
+          "outcome": "끼룩이 물결이 닿는 자리를 살펴요.",
+          "mood": "curious",
+          "energy": 0,
+          "motion": "look-around"
+        }
       },
       "play": {
         "label": "연 날리기",
         "replies": [
           "바람은 내가 읽을 테니 연줄은 네가 잡게. 지금 띄우면 되겠군.",
           "연이 구름 쪽으로 기우는군. 줄을 조금 풀어 봐."
-        ]
+        ],
+        "scene": {
+          "id": "fly-kite",
+          "prop": "🪁",
+          "outcome": "끼룩이 바람을 타고 연을 띄웠어요.",
+          "mood": "playful",
+          "energy": -1
+        }
+      },
+      "treat": {
+        "label": "새우 과자 주기",
+        "replies": [
+          "새우 과자라니 잘 골랐군.",
+          "바닷바람이 함께 떠오르는 맛이야."
+        ],
+        "scene": {
+          "id": "offer-shrimp-cracker",
+          "prop": "🦐",
+          "outcome": "끼룩에게 새우 과자를 건넸어요.",
+          "mood": "delighted",
+          "energy": 1
+        }
       }
     },
     "description": "당당하게 서 있다가도 당신이 오면 살짝 웃어요. 오늘도 곁을 지켜 주고 싶대요.",
@@ -1198,14 +1369,28 @@
         "replies": [
           "작은 구름까지 비켜 주셨네요. 저, 이제 좀 더 환히 웃어도 될까요?",
           "구름 뒤에 숨어 있었어요. 기다려 주셔서 고마워요."
-        ]
+        ],
+        "scene": {
+          "id": "part-cloud",
+          "prop": "⛅",
+          "outcome": "구름이 비켜 얼굴이 드러났어요.",
+          "mood": "delighted",
+          "energy": 0
+        }
       },
       "play": {
         "label": "그림자 밟기",
         "replies": [
           "제 그림자도 찾으셨어요? 이번엔 제가 살짝 밟아 볼게요.",
           "그림자가 길어졌네요. 저… 아주 조용히 따라가 볼래요."
-        ]
+        ],
+        "scene": {
+          "id": "step-on-shadow",
+          "prop": "👣",
+          "outcome": "온빛이 그림자 끝을 살짝 밟았어요.",
+          "mood": "playful",
+          "energy": -1
+        }
       }
     },
     "description": "먼저 말을 걸기는 쑥스럽대요. 다정하게 불러 주면 작은 용기를 내요.",
@@ -1347,14 +1532,45 @@
         "replies": [
           "이 면발이 제일 길 줄 알았는데, 나란히 놓으니 네 쪽이 더 길구나.",
           "다음엔 면발 둘을 꼬지 말고 재자. 그래도 엉킨 모양이 조금 웃기네."
-        ]
+        ],
+        "scene": {
+          "id": "measure-noodles",
+          "prop": "📏",
+          "outcome": "면 두 가닥을 나란히 놓고 길이를 쟀어요.",
+          "mood": "curious",
+          "energy": 0,
+          "motion": "look-around"
+        }
       },
       "rest": {
-        "label": "나란히 쉬기",
+        "label": "면발로 시 짓기",
         "replies": [
-          "의자를 나란히 놓아 줘. 오늘은 말하지 않고 같이 쉬고 싶어.",
-          "나란히 앉아 있으니 흐린 마음도 조금 가라앉네."
-        ]
+          "길게 늘어진 면 하나에도 저녁이 담기는구나.",
+          "엉킨 면도 떼어 보면 한 줄의 시가 되겠지."
+        ],
+        "scene": {
+          "id": "fold-noodle-note",
+          "prop": "📝",
+          "outcome": "짜루가 면발에 관한 시 한 줄을 남겼어요.",
+          "mood": "calm",
+          "energy": 1,
+          "motion": "nod"
+        }
+      },
+      "treat": {
+        "label": "춘장 섞어 주기",
+        "replies": [
+          "이제 춘장이 면 끝까지 닿았네.",
+          "한쪽에 남은 춘장도 살짝 섞어 줄래?"
+        ],
+        "scene": {
+          "id": "mix-chunjang",
+          "prop": "🥢",
+          "outcome": "면에 춘장이 고루 섞였어요.",
+          "mood": "calm",
+          "energy": 0,
+          "motion": "sway"
+        }
       }
     },
     "description": "가끔 마음에 구름이 끼지만 혼자이고 싶지는 않대요. 나란히 쉬는 시간을 좋아해요.",
@@ -1492,18 +1708,64 @@
     "defaultName": "보슬",
     "specialActivities": {
       "walk": {
-        "label": "빵집 골목 걷기",
+        "label": "빵 봉투에 담기",
         "replies": [
-          "빵집 골목 이쪽이야! 고소한 냄새 나는 곳마다 이야기 하나씩 해 줄게.",
-          "빵집 문을 또 지나쳤어? 내가 얘기하느라 길을 놓쳤네!"
-        ]
+          "봉투 입구는 열어 둘게. 고소한 냄새도 맡아야지!",
+          "소보로 하나, 봉투 하나! 누구한테 줄지 벌써 궁금해."
+        ],
+        "scene": {
+          "id": "pack-bread",
+          "prop": "🛍️",
+          "outcome": "보슬이 소보로를 종이봉투에 담았어요.",
+          "mood": "curious",
+          "energy": 0,
+          "motion": "nod"
+        }
       },
       "play": {
-        "label": "빵집 놀이",
+        "label": "구워주기",
         "replies": [
-          "어서 오세요! 오늘 갓 구운 소보로는… 앗, 내 이야기가 더 많네!",
-          "이번엔 네가 빵집 주인이야. 나는 제일 수다스러운 손님 할게!"
-        ]
+          "딩! 고구마 앙금 소보로 다 구워졌어!",
+          "오븐에서 나왔어! 겉은 바삭하고 속은 고구마 맛이야."
+        ],
+        "scene": {
+          "id": "bake-bread",
+          "prop": "🥯",
+          "outcome": "고구마 앙금 소보로가 구워졌어요.",
+          "mood": "delighted",
+          "energy": 0,
+          "motion": "sway"
+        }
+      },
+      "treat": {
+        "label": "고구마 앙금 넣기",
+        "replies": [
+          "고구마 앙금은 가운데 쏙! 이제 반죽을 닫자.",
+          "앙금이 들어갔어! 다음은 오븐 차례야."
+        ],
+        "scene": {
+          "id": "fill-bread",
+          "prop": "🍠",
+          "outcome": "반죽에 고구마 앙금을 넣었어요.",
+          "mood": "delighted",
+          "energy": 0,
+          "motion": "nod"
+        }
+      },
+      "rest": {
+        "label": "식힘망에 올리기",
+        "replies": [
+          "소보로는 식힘망으로! 바삭한 소리가 살아야 하거든.",
+          "식힘망에 올려 둬. 식는 동안 빵집 얘기나 할래?"
+        ],
+        "scene": {
+          "id": "cool-on-rack",
+          "prop": "🧺",
+          "outcome": "보슬이 소보로를 식힘망에 올렸어요.",
+          "mood": "calm",
+          "energy": 1,
+          "motion": "rest"
+        }
       }
     },
     "description": "당신의 이야기를 듣다 보면 할 말이 끝없이 생겨요. 작은 일에도 함께 웃어 줘요.",
@@ -1641,18 +1903,48 @@
     "defaultName": "파도리",
     "specialActivities": {
       "walk": {
-        "label": "파도 따라가기",
+        "label": "파도 간격 재기",
         "replies": [
-          "파도 간격 확인 완료. 물결이 잦아들면 같은 속도로 따라가자.",
-          "파도가 방향을 바꿨군. 괜찮아, 네 쪽에 맞춰 갈게."
-        ]
+          "하나, 둘. 이번 파도는 간격이 길었어.",
+          "파도가 한 번 쉬고 들어왔군. 다음 물결도 세어 보자."
+        ],
+        "scene": {
+          "id": "count-waves",
+          "prop": "🌊",
+          "outcome": "파도 간격을 세어 보았어요.",
+          "mood": "curious",
+          "energy": 0,
+          "motion": "look-around"
+        }
       },
       "play": {
         "label": "물기둥 놀이",
         "replies": [
           "물기둥 높이 기록, 시작. 젖지 않는 자리는 내가 표시해 뒀어.",
           "이번엔 더 높이 솟았어. 네가 박자를 맞춰 준 덕분이군."
-        ]
+        ],
+        "scene": {
+          "id": "spout-water",
+          "prop": "🐳",
+          "outcome": "파도리가 등 위로 물줄기를 뿜었어요.",
+          "mood": "playful",
+          "energy": -1
+        }
+      },
+      "treat": {
+        "label": "지느러미 물 뿌리기",
+        "replies": [
+          "지느러미 쪽에 딱 맞게 물을 뿌렸군.",
+          "이번 물보라는 양쪽에 고르게 닿았어."
+        ],
+        "scene": {
+          "id": "rinse-flipper",
+          "prop": "💦",
+          "outcome": "파도리의 지느러미에 물보라가 튀었어요.",
+          "mood": "delighted",
+          "energy": 0,
+          "motion": "nod"
+        }
       }
     },
     "description": "반듯하게 앉아서 기다리지만 마음은 꽤 따뜻해요. 당신만의 작은 습관을 좋아해요.",
@@ -1794,14 +2086,30 @@
         "replies": [
           "흥, 박수까지 보낼 줄이야. 한 번만 더 해 봐. 힘이 좀 나거든.",
           "응원 소리가 여기까지 다 들렸어! …고맙다는 뜻이야."
-        ]
+        ],
+        "scene": {
+          "id": "cheer-for-crunch",
+          "prop": "👏",
+          "outcome": "바삭이에게 응원 박수를 보냈어요.",
+          "mood": "delighted",
+          "energy": 0,
+          "motion": "nod"
+        }
       },
       "play": {
         "label": "바삭 소리 맞히기",
         "replies": [
           "바삭 소리 한 번만 듣고 맞혀 봐! 이 분야엔 내가 자신 있거든.",
           "이번 소리는 두 번 났어. 맞히면 내가 당당하게 인정해 줄게!"
-        ]
+        ],
+        "scene": {
+          "id": "guess-crunch-sound",
+          "prop": "🥁",
+          "outcome": "바삭이와 바삭 소리를 맞혀요.",
+          "mood": "curious",
+          "energy": 0,
+          "motion": "look-around"
+        }
       }
     },
     "description": "괜히 자신만만한 척하다가도 칭찬 한마디에 들떠요. 당신 편이 되는 건 자신 있대요.",
@@ -1943,14 +2251,30 @@
         "replies": [
           "오호, 비밀 쪽지라. 호두 껍데기 뒤에 숨겨 두겠네.",
           "쪽지를 펴 보니 단서인가? 나만 읽고 살짝 웃고 말지."
-        ]
+        ],
+        "scene": {
+          "id": "deliver-secret-note",
+          "prop": "✉️",
+          "outcome": "두두가 호두 껍데기 뒤에 쪽지를 숨겼어요.",
+          "mood": "curious",
+          "energy": 0,
+          "motion": "nod"
+        }
       },
       "play": {
         "label": "호두 탐정 놀이",
         "replies": [
           "호두 탐정, 출동. 수상한 껍데기 자국부터 살펴볼까?",
           "찾았다. 이 호두에 남은 금은 단서가 아니라 그냥 주름이었군."
-        ]
+        ],
+        "scene": {
+          "id": "inspect-walnut-clue",
+          "prop": "🔎",
+          "outcome": "호두 껍데기의 금을 단서로 살폈어요.",
+          "mood": "curious",
+          "energy": 0,
+          "motion": "look-around"
+        }
       }
     },
     "description": "혼자 재미있는 생각을 하고는 씩 웃어요. 당신에게만 자기만의 발견을 들려줘요.",
@@ -2088,18 +2412,48 @@
     "defaultName": "삼동",
     "specialActivities": {
       "walk": {
-        "label": "숲길 걷기",
+        "label": "잎 사이 길 찾기",
         "replies": [
-          "숲길에서 잎이 바스락거렸어. 네 옆으로 바짝 걸어도 될까?",
-          "숲길이 익숙해졌어. 이제는 내가 앞에 난 작은 길을 찾아볼래."
-        ]
+          "잎 뒤에 길이 있었어. 네 옆에서 살펴볼래.",
+          "이쪽 길은 잎이 포근해. 내가 먼저 찾았어."
+        ],
+        "scene": {
+          "id": "find-berry-path",
+          "prop": "🌿",
+          "outcome": "삼동이 잎 사이의 작은 길을 찾아요.",
+          "mood": "curious",
+          "energy": 0,
+          "motion": "look-around"
+        }
       },
       "play": {
         "label": "열매 숨기기",
         "replies": [
           "빨간 열매는 잎 아래에… 앗, 말해 버렸네. 다시 숨길게!",
           "열매 찾았어? 너무 꼭꼭 숨긴 줄 알았는데 네가 잘 보는구나."
-        ]
+        ],
+        "scene": {
+          "id": "hide-ginseng-berry",
+          "prop": "🔴",
+          "outcome": "삼동이 빨간 열매를 잎 아래 숨겼어요.",
+          "mood": "playful",
+          "energy": -1
+        }
+      },
+      "treat": {
+        "label": "물 주기",
+        "replies": [
+          "잔뿌리까지 시원해졌어. 고마워.",
+          "물을 조금씩 주니까 덜 놀랐어!"
+        ],
+        "scene": {
+          "id": "water-ginseng",
+          "prop": "💧",
+          "outcome": "삼동이의 잔뿌리에 물이 닿았어요.",
+          "mood": "delighted",
+          "energy": 1,
+          "motion": "nod"
+        }
       }
     },
     "description": "조금만 놀라도 움찔하지만 금방 다시 다가와요. 익숙한 당신 곁이 제일 편안하대요.",
@@ -2238,18 +2592,49 @@
     "defaultName": "비비",
     "specialActivities": {
       "walk": {
-        "label": "시장 골목 걷기",
+        "label": "빨간 고추 찾기",
         "replies": [
-          "시장 골목 출발! 빨간 고추가 보이면 오늘 산책 작전 성공이야!",
-          "시장 끝까지 갈 건 아니야. 고소한 냄새 나는 쪽으로 새어 보자!"
-        ]
+          "빨간 고추 발견! 오늘의 시장 작전 성공이야!",
+          "고추를 먼저 찾아 줄 거라고는 몰랐지? 히히!"
+        ],
+        "scene": {
+          "id": "spot-red-pepper",
+          "prop": "🌶️",
+          "outcome": "비비가 시장에서 빨간 고추를 찾아요.",
+          "mood": "curious",
+          "energy": 0,
+          "motion": "look-around"
+        }
       },
       "play": {
         "label": "나물 색 찾기",
         "replies": [
           "초록 나물 찾았다! 남은 건 주황색. 네 눈에 보이는 색은 뭐야?",
           "나물 색을 다 모았다! 마지막엔 마음속에서 한 번 비벼 보자!"
-        ]
+        ],
+        "scene": {
+          "id": "match-namul-colors",
+          "prop": "🥗",
+          "outcome": "비비가 나물 색을 한 가지씩 골랐어요.",
+          "mood": "curious",
+          "energy": 0,
+          "motion": "look-around"
+        }
+      },
+      "treat": {
+        "label": "나물 얹기",
+        "replies": [
+          "당근 옆에 초록 나물! 색 조합 대성공!",
+          "가운데 달걀은 가리지 말고 나물만 얹어 줘!"
+        ],
+        "scene": {
+          "id": "add-namul",
+          "prop": "🥕",
+          "outcome": "비빔밥 그릇에 나물을 얹었어요.",
+          "mood": "delighted",
+          "energy": 0,
+          "motion": "nod"
+        }
       }
     },
     "description": "엉뚱한 생각이 툭툭 떠오른대요. 별일 없는 하루에도 작은 즐거움을 찾아 줘요.",
@@ -2387,18 +2772,48 @@
     "defaultName": "꽃비",
     "specialActivities": {
       "walk": {
-        "label": "꽃길 걷기",
+        "label": "꽃잎 흩날림 보기",
         "replies": [
-          "꽃길엔 천천히 가자. 발끝에 꽃잎이 쌓이는 것도 같이 보고 싶어.",
-          "바람이 또 꽃잎을 날리네. 나란히 걷다 보면 어깨에도 앉겠지."
-        ]
+          "저기 꽃잎 한 장이 하늘에 떠 있네.",
+          "바람이 멎으니까 꽃잎도 천천히 떨어지네."
+        ],
+        "scene": {
+          "id": "watch-petal-flight",
+          "prop": "🌸",
+          "outcome": "꽃비와 바람에 날리는 꽃잎을 살폈어요.",
+          "mood": "calm",
+          "energy": 0,
+          "motion": "sway"
+        }
       },
       "play": {
         "label": "꽃잎 받기",
         "replies": [
           "떨어지는 꽃잎 하나 받아 볼까? 안 잡혀도 그게 더 재미있어.",
           "손바닥에 꽃잎이 내려앉았어. 다음 한 장은 네 손에 줄게."
-        ]
+        ],
+        "scene": {
+          "id": "catch-petal",
+          "prop": "🌸",
+          "outcome": "손바닥 위로 꽃잎 한 장을 받았어요.",
+          "mood": "playful",
+          "energy": 0
+        }
+      },
+      "treat": {
+        "label": "꽃잎 모아주기",
+        "replies": [
+          "모아 둔 꽃잎이 자그마한 꽃다발 같네.",
+          "마지막 꽃잎은 바람이 부는 쪽에 남겨 두자."
+        ],
+        "scene": {
+          "id": "gather-petals",
+          "prop": "🌸",
+          "outcome": "흩어진 꽃잎을 한데 모았어요.",
+          "mood": "calm",
+          "energy": 0,
+          "motion": "nod"
+        }
       }
     },
     "description": "햇살과 낮잠, 맛있는 이야기를 좋아해요. 당신과 함께라면 천천히 가도 좋대요.",
@@ -2540,14 +2955,30 @@
         "replies": [
           "높은 데 있던 잎을 내 몫으로 골랐어? …잘 어울리긴 하네.",
           "높은 잎까지 챙겨 준 거야? 고개 숙여 줄 테니 여기 건네줘."
-        ]
+        ],
+        "scene": {
+          "id": "offer-tall-leaf",
+          "prop": "🍃",
+          "outcome": "기루가 높은 나뭇가지의 잎을 받아요.",
+          "mood": "delighted",
+          "energy": 1,
+          "motion": "stretch"
+        }
       },
       "play": {
         "label": "ㄱ자 모양 찾기",
         "replies": [
           "저 모퉁이도 ㄱ자잖아. 딱히 내가 닮았다는 뜻은 아니고.",
           "네가 찾은 ㄱ자는 괜찮네. …내 목처럼 조금 더 길긴 하지만."
-        ]
+        ],
+        "scene": {
+          "id": "find-right-angle",
+          "prop": "📐",
+          "outcome": "기루와 ㄱ자 모양을 찾았어요.",
+          "mood": "curious",
+          "energy": 0,
+          "motion": "look-around"
+        }
       }
     },
     "description": "ㄱ을 닮은 기린 친구예요. 새침한 말투 뒤에 다정한 마음을 숨기고 있어요.",

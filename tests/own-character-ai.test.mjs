@@ -131,9 +131,9 @@ test('Dorongi generates fresh Joseon-style reactions for every action, relations
  const personal=JSON.parse(readFileSync(new URL('../src/features/characters/ownAi/dorongi.json',import.meta.url),'utf8'));
  const ai=engine.loadOwnModel(personal);
  assert.deepEqual(ai.characters,['apple']);
- for(const action of ['touch','walk','treat','pet','play','rest']) for(const affection of [0,35,80]) for(const energy of [0,1,3]){
+ for(const action of ['touch','janggi','pour-makgeolli','straighten-hat','write-calligraphy','first-love-meeting','first-love-letter','first-love-farewell']) for(const affection of [0,35,80]) for(const energy of [0,1,3]){
   const previous=[];
-  for(let i=0;i<6;i++){
+  for(let i=0;i<12;i++){
    const state={...input,characterId:'apple',action,affection,energy,previous};
    const line=engine.generateOwnLine(ai,state,31829+i*41);
    assert.match(line,/소[.!?]|구려[.!?]|시게[.!?]|하오[.!?]|오[.!?]|십시다[.!?]/,line);

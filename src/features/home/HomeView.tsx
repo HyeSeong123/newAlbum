@@ -9,6 +9,7 @@ import { useGomiBehavior } from "../characters/useGomiBehavior";
 import { gomiCanSpeak } from "../characters/gomiBehavior";
 import { useCompanionBehavior } from "../characters/useCompanionBehavior";
 import { COMPANION_ACTIONS, companionActionLabel, companionDisturbsSleep, performCompanionActivity, readCompanionMemory, saveCompanionMemory, type CompanionAction } from "../characters/companionActivities";
+import { HomeActivityScene, type VisibleActivityScene } from "./HomeActivityScene";
 import "../characters/characters.css";
 import "./home.css";
 
@@ -49,6 +50,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   const [spokenLine, setSpokenLine] = useState<{text: string; source: "on-device" | "activity"}>();
   const [happy, setHappy] = useState(false);
   const [activitiesOpen, setActivitiesOpen] = useState(false);
+  const [activityScene, setActivityScene] = useState<VisibleActivityScene>();
   const [aiSetupOpen, setAiSetupOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<"idle" | "quiet" | "watching" | "generating" | "failed">("idle");
   const [quietResponseId, setQuietResponseId] = useState(0);
@@ -100,6 +102,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     retryContext.current = undefined;
     storedInteraction.current = Promise.resolve(undefined);
     setActivitiesOpen(false);
+    setActivityScene(undefined);
     setAiSetupOpen(false);
     setQuietResponseId(0);
     setSpokenLine(undefined);
@@ -171,6 +174,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
 
   function talk() {
     if (!definition || !mainCharacter || (isGomi && !gomi.ready)) return;
+    setActivityScene(undefined);
     // Draw from every other message, so even rapid clicks never repeat the last line.
     const next = nextDialogue(lines,lastLine.current);
     lastLine.current=next;
@@ -205,34 +209,52 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     retryContext.current = undefined;
     window.clearTimeout(timer.current);
     setHappy(false);
+    setActivityScene(undefined);
     setSpokenLine(undefined);
     setAiFailure("");
     setQuietResponseId(request);
     setAiStatus("watching");
   }
 
-  function chooseActivity(action: CompanionAction) {
+  function chooseActivity(action: CompanionAction, input?: { janggiSquare: number } | { poured: true }) {
     if (!definition || !mainCharacter || (isGomi && !gomi.ready)) return;
+    const scene = definition.specialActivities?.[action]?.scene;
+    if ((scene?.id === "janggi" || scene?.id === "pour-makgeolli") && !input) {
+      ++reactionRequest.current;
+      ai.cancel();
+      retryContext.current = undefined;
+      setSpokenLine(undefined);
+      setAiStatus("idle");
+      setActivityScene({ scene, pending:true });
+      return;
+    }
     const sleeping = isGomi && gomi.sleeping;
     const previous=readCompanionMemory(mainCharacter.id);
     const result = performCompanionActivity(definition, previous, action, mainCharacter.affection, today, { sleeping });
+    if (result.memory === previous) {
+      setActivityScene(undefined);
+      showActivityReply(result.line);
+      return;
+    }
     const disturbed=companionDisturbsSleep(action,sleeping);
     saveCompanionMemory(mainCharacter.id, result.memory);
+    const janggiSquare = input && "janggiSquare" in input ? input.janggiSquare : undefined;
+    setActivityScene(scene ? { scene, chapter:result.memory.storyChapter, janggiSquare } : undefined);
     setAiFailure("");
     const voice = definition.activityVoices?.[action];
     if (result.authored || (action === "treat" && definition.treatLabel)) {
       showActivityReply(result.line);
     } else {
-      const fallback = voice?.length ? chooseCompanionFallback(mainCharacter.id, voice) :
+      const fallback = result.aiAction ? result.line : voice?.length ? chooseCompanionFallback(mainCharacter.id, voice) :
         isGomi && !gomiCanSpeak(mainCharacter.affection) ? "" : chooseCompanionFallback(mainCharacter.id, companionFallbackCandidates({
         gomi:Boolean(isGomi), affection:mainCharacter.affection, action, sleeping, disturbed, basis:result.line,
       }));
       setSpokenLine(undefined);
       setAiStatus(isGomi && !gomiCanSpeak(mainCharacter.affection) ? "idle" : "generating");
-      void reactWithStoredRelationship({ definition, owned: mainCharacter, memory: {...result.memory,energy:previous.energy}, action, fallback, sleeping }, disturbed ? "sleep" : undefined);
+      void reactWithStoredRelationship({ definition, owned: mainCharacter, memory: {...result.memory,energy:previous.energy}, action, aiAction:result.aiAction, fallback, sleeping }, disturbed ? "sleep" : undefined);
     }
     if (isGomi) gomi.activity(action,previous.energy);
-    else { companion.activity(action); setHappy(action !== "rest"); }
+    else { companion.activity(action, scene?.motion); setHappy(action !== "rest"); }
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setHappy(false), 1000);
     // Awake activities keep affection; deliberate sleep disturbance is saved separately.
@@ -311,6 +333,11 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
               <Eye size={19} aria-hidden="true" /><span>지켜보기</span>
             </button>
           </div>}
+          {activitiesOpen && activityScene && <HomeActivityScene activity={activityScene}
+            onJanggiMove={square => chooseActivity("play", { janggiSquare:square })}
+            onPour={() => chooseActivity("treat", { poured:true })}
+            onNextChapter={() => chooseActivity("walk")}
+            chapterPending={aiStatus === "generating" || aiStatus === "failed"} />}
         </div>}
         <button className="homeCharacterLink" type="button" onClick={onShowCharacters}>친구들 보기</button>
       </div>

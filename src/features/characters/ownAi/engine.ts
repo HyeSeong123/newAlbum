@@ -116,9 +116,9 @@ export function supportsOwnLine(model:OwnModel,input:OwnInput,line:string):boole
   }
   return true;
 }
-function acceptable(input:OwnInput,line:string,repeatWindow=12):boolean{
+function acceptable(line:string, excluded:Set<string>):boolean{
   if(!/[가-힣]/.test(line)||Array.from(line).length<4||Array.from(line).length>50||/[<>{}]|고미는|건드지/.test(line))return false;
-  if((input.previous||[]).slice(-repeatWindow).some(previous=>normalized(previous)===normalized(line)))return false;
+  if(excluded.has(normalized(line)))return false;
   const sentences=line.match(/[^.!?]+[.!?]+|[^.!?]+$/gu)||[];
   if(sentences.length>2)return false;
   if(sentences.length===2){
@@ -131,7 +131,9 @@ export function generateOwnLine(model:OwnModel,input:OwnInput,seed=Date.now(),ca
   if(cancelled())throw new Error("AI_CANCELLED");
   const state=conditioned(model,input),initialGroups=model.scenes.get(ownSceneKey(input));
   if(!initialGroups)throw new Error("AI_SCENE_UNTRAINED");
-  const started=performance.now();let randomState=(seed|0)||1,evaluated=0,repeatWindow=12;
+  const started=performance.now();
+  let randomState=(seed|0)||1,evaluated=0;
+  let excluded = new Set<string>();
   const random=()=>{randomState^=randomState<<13;randomState^=randomState>>>17;randomState^=randomState<<5;return(randomState>>>0)/4294967296;};
   function decode(history:number[],words:string[],groups:number[],step:number):string|undefined{
     if(cancelled())throw new Error("AI_CANCELLED");
@@ -149,19 +151,24 @@ export function generateOwnLine(model:OwnModel,input:OwnInput,seed=Date.now(),ca
       let draw=random()*weights.reduce((sum,value)=>sum+value,0),selected=candidates.length-1;
       for(let i=0;i<candidates.length;i++){draw-=weights[i];if(draw<=0){selected=i;break;}}
       const chosen=candidates.splice(selected,1)[0].id;
-      if(chosen===1){const line=render(words);if(acceptable(input,line,repeatWindow)&&supportsOwnLine(model,input,line))return line;continue;}
+      if(chosen===1){const line=render(words);if(acceptable(line,excluded)&&supportsOwnLine(model,input,line))return line;continue;}
       const next=[...words,model.vocab[chosen]];if(Array.from(render(next)).length>50)continue;
       const remaining=groups.filter(id=>model.grammars[id].get(edge)?.has(chosen));
       const line=decode([...history.slice(1),chosen],next,remaining,step+1);if(line)return line;
     }
     return undefined;
   }
-  let line=decode([0,0,0,0],[],initialGroups,0);if(line)return line;
-  // A newly taught scene may have fewer than twelve valid ways to say it.
-  // Re-generate from the same learned scene while retaining the latest three
-  // exclusions. Never substitute another scene or a cached/authored reply.
-  if((input.previous?.length||0)>3){
-    repeatWindow=3;evaluated=0;line=decode([0,0,0,0],[],initialGroups,0);if(line)return line;
+  const previous = input.previous ?? [];
+  const windows = input.characterId === "gomi" || input.characterId === "apple" ? [24,12,3] : [12,3];
+  let lastWindow = -1;
+  for (const size of windows) {
+    const window = Math.min(size, previous.length);
+    if (lastWindow === window) continue;
+    lastWindow = window;
+    excluded = new Set(previous.slice(-size).map(normalized));
+    evaluated = 0;
+    const line = decode([0,0,0,0],[],initialGroups,0);
+    if (line) return line;
   }
   throw new Error("AI_OWN_NO_VALID_LINE");
 }

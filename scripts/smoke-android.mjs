@@ -440,12 +440,13 @@ try {
       assert.match(dorongiReply.line,/소[.!?]|구려[.!?]|시게[.!?]/);
       await captureScreen('character-name-dorongi-home');
       await page.getByRole('button',{name:'함께하기',exact:true}).click();
-      await page.getByRole('button',{name:'한 판 두기',exact:true}).click();
+      await page.getByRole('button',{name:'장기 두기',exact:true}).click();
+      await page.getByRole('button',{name:'차를 한 칸 올리기',exact:true}).click();
       await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
-      await expect(page.locator('#homeMessage')).toContainText(/차례|판|놀이|수 두/);
-      await page.getByRole('button',{name:'나란히 쉬기',exact:true}).click();
+      await expect(page.locator('#homeMessage')).toContainText(/장기|차|말|한 수/);
+      await page.getByRole('button',{name:'붓글씨 쓰기',exact:true}).click();
       await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
-      await expect(page.locator('#homeMessage')).toContainText(/쉬|곁|자리|바람|눈/);
+      await expect(page.locator('#homeMessage')).toContainText(/붓|먹|획|글|종이/);
       const body = page.locator('.homeMascot .characterBody');
       for(let frame=0;frame<4;frame++) {
         const scale = await body.evaluate(element=>{

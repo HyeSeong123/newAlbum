@@ -119,6 +119,7 @@ def corpus(extra=None):
             excluded.append({'id':row['id'], 'reason':'previous home drafts replaced by coherent scene/intent drafts' if row['action'] in ACTIONS else 'free-form scene lacks an unambiguous structured action; original preserved'})
     rows.extend(natural_gomi_rows())
     rows.extend(natural_gomi_rows('gomi-bonded-refinement.json','agent-authored-bonded-refinement-v1'))
+    rows.extend(natural_gomi_rows('gomi-activity-turns.json','agent-authored-gomi-contextual-v2'))
     drafts = read(HERE/'action-drafts.json')
     characters = read(ROOT/'local-ai/characters.json')
     rng = random.Random(20261115)
@@ -181,6 +182,7 @@ def corpus(extra=None):
                     'newDrafts':{'path':'local-ai/own/action-drafts.json','sha256':sha(HERE/'action-drafts.json')},
                     'naturalGomiDrafts':{'path':'local-ai/own/gomi-natural-drafts.json','sha256':sha(HERE/'gomi-natural-drafts.json')},
                     'bondedRefinement':{'path':'local-ai/own/gomi-bonded-refinement.json','sha256':sha(HERE/'gomi-bonded-refinement.json')},
+                    'activityTurns':{'path':'local-ai/own/gomi-activity-turns.json','sha256':sha(HERE/'gomi-activity-turns.json')},
                     'extraTraining':extra_sources},
          'pretrainedParents':[], 'teacherModel':None,
          'dataAuthorship':'User-original verbatim rows and explicitly labeled AI coding-assistant drafts; not all human-authored or human-approved.'})
@@ -222,23 +224,21 @@ def quantized(tensor):
 
 def dorongi_rows(path):
     drafts=read(path)
-    for action, group in drafts['actions'].items():
-        for name, affection in [('distant',10), ('familiar',45), ('close',80)]:
-            for pi, opening in enumerate(group[name]):
-                for ei, ending in enumerate(group['end']):
-                    if (pi+ei)%4 == 0:
-                        continue
-                    reply=f'{opening} {ending}'
-                    if not 4<=len(reply)<=50:
-                        raise ValueError(f'Dorongi reply exceeds the mobile limit: {reply}')
-                    for value in (0,1,3):
-                        yield {'characterId':'apple','action':action,'reply':reply,'affection':affection,
-                               'energy':value,'authorship':drafts['authorship']}
+    for action, replies in drafts['actions'].items():
+        if len(set(replies)) != len(replies):
+            raise ValueError(f'Duplicate Dorongi draft for {action}')
+        for reply in replies:
+            if not 4<=len(reply)<=50:
+                raise ValueError(f'Dorongi reply exceeds the mobile limit: {reply}')
+            for affection in (10,45,80):
+                for value in (0,1,3):
+                    yield {'characterId':'apple','action':action,'reply':reply,'affection':affection,
+                           'energy':value,'authorship':drafts['authorship']}
 
 
 def train(args):
     rng = random.Random(args.seed)
-    source = HERE/('dorongi-drafts.json' if args.dorongi else 'corpus.json')
+    source = HERE/('dorongi-activity-turns.json' if args.dorongi else 'corpus.json')
     rows = list(dorongi_rows(source)) if args.dorongi else corpus(args.extra)
     vocab = ['<bos>','<eos>','<pad>','<unk>'] + sorted({t for r in rows for t in words(r)})
     feature_names = sorted({f for r in rows for f in features(r)}|{'mood:'+m for m in MOODS})

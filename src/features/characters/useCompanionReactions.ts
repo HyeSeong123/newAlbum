@@ -24,7 +24,7 @@ export function useCompanionReactions(characterId: string | undefined, onResult:
       try {
         if (signal.aborted || document.hidden) throw new Error("AI_CANCELLED");
         markChatReaction(context.owned.id, "running");
-        const line = await generateOwnReaction({characterId:context.definition.id, action:context.action,
+        const line = await generateOwnReaction({characterId:context.definition.id, action:context.aiAction ?? context.action,
           affection:context.owned.affection,mood:context.memory.mood,energy:context.memory.energy,
           sleeping:Boolean(context.sleeping),previous:context.previous},signal);
         return {source:"on-device",line} as CompanionGeneration;

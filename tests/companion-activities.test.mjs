@@ -25,7 +25,9 @@ test("all 17 distinct personalities react to each of the five shared Home action
   assert.equal(COMPANION_ACTIONS.length, 5);
   for (const action of COMPANION_ACTIONS) {
     const lines = definitions.map(definition => {
-      const reply = performCompanionActivity(definition, emptyCompanionMemory(), action, 10, "2026-10-25");
+      const previous = emptyCompanionMemory();
+      if (definition.id === "grape") previous.bakery = action === "play" ? "filled" : "baked";
+      const reply = performCompanionActivity(definition, previous, action, 10, "2026-10-25");
       assert.ok(reply.line.length >= 2, definition.type);
       assert.equal(reply.memory.history.length, 1);
       assert.equal(reply.memory.history[0].action, action);
@@ -47,12 +49,17 @@ test("each friend has fitting choices and authored actions retain the saved acti
       assert.ok(activity.label.length <= 12, activity.label);
       const previous = emptyCompanionMemory();
       const first = performCompanionActivity(def, previous, action, 10, "2026-11-22");
-      assert.deepEqual(first.memory.history, [{action, day:"2026-11-22"}]);
+      if (def.id === "grape" && action !== "treat") {
+        assert.equal(first.memory, previous);
+        continue;
+      }
+      assert.deepEqual(first.memory.history, [{action, day:"2026-11-22", activityId:activity.scene.id}]);
       assert.deepEqual(previous.history, []);
       assert.equal(companionActionLabel(def, action), activity.label);
-      if (!activity.replies) {
+      if (activity.scene.ai) {
         assert.equal(def.id, "apple");
         assert.notEqual(first.authored, true);
+        assert.ok(first.aiAction);
         continue;
       }
       assert.equal(first.authored, true);
@@ -62,9 +69,25 @@ test("each friend has fitting choices and authored actions retain the saved acti
   }
 });
 
+test("bread filling survives across actions and baking advances the recipe only once", () => {
+  const bread = definitions.find(friend => friend.id === "grape");
+  const day = "2026-11-22";
+  const empty = emptyCompanionMemory();
+  assert.equal(performCompanionActivity(bread, empty, "play", 45, day).memory, empty);
+  const filled = performCompanionActivity(bread, empty, "treat", 45, day);
+  assert.equal(filled.memory.bakery, "filled");
+  assert.equal(filled.memory.energy, empty.energy);
+  const baked = performCompanionActivity(bread, filled.memory, "play", 45, day);
+  assert.equal(baked.memory.bakery, "baked");
+  assert.deepEqual(baked.memory.history.map(entry=>entry.activityId), ["fill-bread","bake-bread"]);
+  assert.equal(performCompanionActivity(bread, baked.memory, "play", 45, day).memory, baked.memory);
+  assert.equal(performCompanionActivity(bread, filled.memory, "walk", 45, day).memory, filled.memory);
+  assert.equal(performCompanionActivity(bread, baked.memory, "walk", 45, day).memory.history.at(-1).activityId,"pack-bread");
+});
+
 test("regional gifts and reactions describe the current character artwork", () => {
   for (const [id, action, phrase] of [
-    ["apple","pet","모자"], ["ginkgo","pet","뚜껑"], ["camellia","treat","새우 과자"],
+    ["apple","pet","갓"], ["ginkgo","pet","뚜껑"], ["camellia","treat","새우 과자"],
     ["pear","pet","지느러미"], ["jujube","pet","호두 껍데기"], ["chestnut","treat","잔뿌리"], ["persimmon","rest","꽃잎"],
   ]) {
     const def=definitions.find(character=>character.id===id);

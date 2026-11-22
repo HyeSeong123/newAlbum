@@ -58,8 +58,8 @@ if(existsSync(path)){
  });
  test('recent generated lines remain character-specific, bounded and corruption tolerant',()=>{
   const values=new Map();const store={getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v)};
-  for(let i=0;i<15;i++)mod.rememberTouchLine('gomi','테스트 반응 '+i,store);
-  assert.equal(mod.recentTouchLines('gomi',store).length,12);
+  for(let i=0;i<30;i++)mod.rememberTouchLine('gomi','테스트 반응 '+i,store);
+  assert.equal(mod.recentTouchLines('gomi',store).length,24);
   assert.deepEqual(mod.recentTouchLines('potato',store),[]);
   assert.deepEqual(mod.recentTouchLines('broken',{getItem:()=>'{bad'}),[]);
  });

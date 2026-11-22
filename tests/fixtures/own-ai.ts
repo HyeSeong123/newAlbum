@@ -1,7 +1,7 @@
 import type {Page} from '@playwright/test';
 
 type Options = {
-  characterId?: 'gomi' | 'potato' | 'apple'; affection?: number; sleeping?: boolean;
+  characterId?: 'gomi' | 'potato' | 'apple' | 'grape'; affection?: number; sleeping?: boolean;
   interactionDelay?: number; saveError?: boolean; holdSaves?: boolean;
   worker?: {delay?: number; error?: string; controlled?: boolean};
 };

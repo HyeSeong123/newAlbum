@@ -6,7 +6,7 @@ import { cleanCompanionGeneratedText, companionExecutionError, type CompanionGen
 
 export type TouchContext = {
   definition: CharacterDefinition; owned: OwnedCharacter; memory: CompanionMemory;
-  action: CompanionAction | "touch"; fallback: string; previous: string[]; hour: number; appearance?: string; sleeping?: boolean; repair?: string;
+  action: CompanionAction | "touch"; aiAction?: string; fallback: string; previous: string[]; hour: number; appearance?: string; sleeping?: boolean; repair?: string;
 };
 const plain = (value: string) => value.replace(/<\|[^>]*\|>/g, "").replace(/<\/?think>/gi, "");
 export function buildTouchPrompt(context: TouchContext): string {
@@ -84,24 +84,25 @@ export async function generateTouchLine(context: TouchContext, generator: (promp
 }
 const KEY = "gamjassak:reaction-lines:v1:";
 const sessions = new Map<string, string[]>();
+const historyLimit = (id: string) => id === "gomi" || id === "apple" ? 24 : 12;
 function storage(): Storage | undefined { try { return window.localStorage; } catch { return undefined; } }
 export function recentTouchLines(id: string, store: Pick<Storage, "getItem"> | undefined = storage()): string[] {
   const cached = sessions.get(id);
   if (cached) return cached;
   try {
     const value = JSON.parse(store?.getItem(KEY + encodeURIComponent(id)) || "null");
-    if (Array.isArray(value)) return value.filter(line => typeof line === "string" && line.length <= 100).slice(-12);
+    if (Array.isArray(value)) return value.filter(line => typeof line === "string" && line.length <= 100).slice(-historyLimit(id));
   } catch { /* Corrupted optional memory must not affect the character. */ }
   return sessions.get(id) || [];
 }
 export function rememberTouchLine(id: string, line: string, store: Pick<Storage, "getItem" | "setItem"> | undefined = storage()) {
-  const lines = [...recentTouchLines(id, store), line].slice(-12);
+  const lines = [...recentTouchLines(id, store), line].slice(-historyLimit(id));
   sessions.set(id, lines);
   try { store?.setItem(KEY + encodeURIComponent(id), JSON.stringify(lines)); } catch { /* Keep session-only variety. */ }
 }
 
 function sameReaction(a: TouchContext, b: TouchContext): boolean {
-  return a.owned.id === b.owned.id && a.action === b.action && a.memory.mood === b.memory.mood
+  return a.owned.id === b.owned.id && a.action === b.action && a.aiAction === b.aiAction && a.memory.mood === b.memory.mood
     && a.memory.energy === b.memory.energy && a.owned.affection === b.owned.affection
     && a.owned.growthStage === b.owned.growthStage && a.owned.customName === b.owned.customName
     && a.appearance === b.appearance && a.hour === b.hour && Boolean(a.sleeping) === Boolean(b.sleeping);

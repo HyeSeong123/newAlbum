@@ -31,7 +31,7 @@ test('real bundled model produces short new lines for five actions without exter
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 95');expect(external).toEqual([]);
 });
 
-test('Dorongi uses the locally bundled voice for touch and all five actions', async ({page}) => {
+test('Dorongi moves a janggi piece, follows three story chapters and speaks from the bundled model', async ({page}) => {
   await installOwnAi(page,{characterId:'apple',affection:44});
   await page.goto('/');
   const bubble=page.locator('#homeMessage');
@@ -41,19 +41,57 @@ test('Dorongi uses the locally bundled voice for touch and all five actions', as
     await expect(bubble).toContainText(/소[.!?]|구려[.!?]|시게[.!?]|하오[.!?]|오[.!?]|십시다[.!?]/);
   };
   await page.getByRole('button',{name:'도롱이에게 말 걸기',exact:true}).click();
-  await expectVoice(/이름|잊으신|불러/);
+  await expectVoice(/부르|인사|이름|기억|곁|말씀|기척|소식|자리|기다|얼른|목소리|여기|놓이|오셨|마음|말할|궁금|와 주|듣|반갑|오시게|안부|발소리/);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 45');
   await page.getByRole('button',{name:'함께하기',exact:true}).click();
-  for(const [label,meaning] of [
-    ['고요한 길 걷기', /길|걷|걸/], ['햇볕 나누기', /볕|햇살|따뜻|따스/],
-    ['쓰다듬기', /손|모자/], ['한 판 두기', /차례|판|놀이|웃어/], ['나란히 쉬기', /쉬|곁|자리|말이/],
-  ] as const){
+  const scene=page.getByRole('region',{name:'함께하기 장면'});
+  await page.getByRole('button',{name:'장기 두기',exact:true}).click();
+  await expect(scene).toContainText('차를 옮길');
+  expect(await requestedInputs(page)).toHaveLength(1);
+  await page.getByRole('button',{name:'차를 두 칸 올리기'}).click();
+  await expectVoice(/장기|차|말|한 수/);
+  await expect(scene.locator('.homeJanggiBoard > :nth-child(2)')).toHaveAttribute('data-piece','chariot');
+  await page.getByRole('button',{name:'첫사랑 얘기 듣기',exact:true}).click();
+  await expectVoice(/개울|처음|첫 만남|그이/);
+  await expect(scene).toContainText('개울가의 첫 만남');
+  await scene.getByRole('button',{name:'이어서 듣기'}).click();
+  await expectVoice(/편지|답장/);
+  await expect(scene).toContainText('접어 둔 편지');
+  await scene.getByRole('button',{name:'이어서 듣기'}).click();
+  await expectVoice(/나루|작별|배웅|떠나|떠날|멀어|마지막 인사/);
+  await expect(scene).toContainText('나루의 작별');
+  for(const [label,meaning] of [['막걸리 따르기',/막걸리|잔|주전자|소반/],['갓 매만지기',/갓|매듭/],['붓글씨 쓰기',/붓|먹|획|글|종이/]] as const){
     await page.getByRole('button',{name:label,exact:true}).click();
+    if(label==='막걸리 따르기'){
+      await expect(scene.locator('.homePourTray')).toHaveAttribute('data-filled','false');
+      await scene.getByRole('button',{name:'두 잔에 따르기'}).click();
+      await expect(scene.locator('.homePourTray')).toHaveAttribute('data-filled','true');
+    }
     await expectVoice(meaning);
   }
   await page.getByRole('button',{name:'지켜보기',exact:true}).click();
   await expect(bubble).toHaveAttribute('data-state','watching');
-  expect((await requestedInputs(page)).map((input:{action:string})=>input.action)).toEqual(['touch','walk','treat','pet','play','rest']);
+  expect((await requestedInputs(page)).map((input:{action:string})=>input.action)).toEqual([
+    'touch','janggi','first-love-meeting','first-love-letter','first-love-farewell','pour-makgeolli','straighten-hat','write-calligraphy',
+  ]);
+});
+
+test('Bosul fills and bakes one bread batch, and the batch survives reload', async ({page}) => {
+  await installOwnAi(page,{characterId:'grape',affection:44});
+  await page.goto('/');
+  const open=()=>page.getByRole('button',{name:'함께하기',exact:true}).click();
+  await open();
+  await expect(page.getByRole('button',{name:/햇살/})).toHaveCount(0);
+  await page.getByRole('button',{name:'구워주기',exact:true}).click();
+  await expect(page.locator('#homeMessage')).toContainText('앙금부터');
+  await page.getByRole('button',{name:'고구마 앙금 넣기',exact:true}).click();
+  await expect(page.locator('[data-activity="fill-bread"]')).toContainText('반죽에 고구마 앙금');
+  await page.reload();
+  await open();
+  await page.getByRole('button',{name:'구워주기',exact:true}).click();
+  await expect(page.locator('[data-activity="bake-bread"]')).toContainText('소보로가 구워졌어요');
+  await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 44');
+  expect(await requestedInputs(page)).toEqual([]);
 });
 
 test('silent Gomi completes a fresh saved interaction without inference below the threshold',async({page})=>{
