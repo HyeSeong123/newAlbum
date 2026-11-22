@@ -53,13 +53,18 @@ test('other friends keep their drawing while five activities and quiet rest have
   await expect(visual).toHaveAttribute('data-motion','nod');
   await page.evaluate(()=>{(window as any).originalFriendDrawing=document.querySelector('.homeMascot .characterPortrait image');});
   await page.getByRole('button',{name:'함께하기',exact:true}).click();
-  for(const [label,motion] of [['함께 산책','walk'],['햇살 선물','treat'],['쓰다듬기','pet'],['함께 놀기','play'],['함께 쉬기','rest']]) {
+  for(const [label,motion] of [['함께 산책','walk'],['물 주기','treat'],['쓰다듬기','pet'],['새싹 박수 놀이','play'],['함께 쉬기','rest']]) {
     await page.getByRole('button',{name:label,exact:true}).click();
     await expect(visual).toHaveAttribute('data-motion',motion);
     expect(await page.evaluate(()=>(window as any).originalFriendDrawing===document.querySelector('.homeMascot .characterPortrait image'))).toBe(true);
-    // Since 0.9.49, ungenerated speech must not appear even when a friend moves.
-    await expect(page.locator('.homeSpeech')).toHaveCount(0);
-    await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','status');
+    const message=page.locator('#homeMessage');
+    if(motion==='treat'||motion==='play') {
+      await expect(message).toHaveAttribute('data-source','activity');
+      await expect(message).toContainText(motion==='treat'?'물방울':'박수');
+    } else {
+      await expect(page.locator('.homeSpeech')).toHaveCount(0);
+      await expect(message).toHaveAttribute('data-source','status');
+    }
   }
   await page.clock.fastForward(60_000);
   await expect(visual).toHaveAttribute('data-motion','rest');
@@ -96,8 +101,8 @@ for (const [id, name] of [['potato','알토'],['sweet-potato','구마루']] as c
     await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
     await page.getByRole('button',{name:'함께하기',exact:true}).click();
     for (const [label, motion, effect] of [
-      ['함께 산책','walk','steps'],['햇살 선물','treat','shine'],['쓰다듬기','pet','heart'],
-      ['함께 놀기','play','stars'],['함께 쉬기','rest','sleep'],
+      ['함께 산책','walk','steps'],[id==='potato'?'물 주기':'햇볕 쬐기','treat',id==='potato'?'water':'shine'],['쓰다듬기','pet','heart'],
+      [id==='potato'?'새싹 박수 놀이':'흙 언덕 넘기','play','stars'],['함께 쉬기','rest','sleep'],
     ] as const) {
       await page.getByRole('button',{name:label,exact:true}).click();
       await expect(visual).toHaveAttribute('data-motion',motion);
@@ -398,8 +403,31 @@ test('all current designs are legible in a narrow book and the seagull gift foll
   await page.getByRole('button',{name:'새우 과자 주기'}).click();
   await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-motion','treat');
   await expect(page.locator('#homeMessage[data-source=activity]')).toContainText('새우 과자');
+  await page.getByRole('button',{name:'연 날리기',exact:true}).click();
+  await expect(page.locator('#homeMessage[data-source=activity]')).toContainText('연줄');
   await expect(portrait).toHaveAttribute('src','/characters/portraits/pencil/camellia.webp');
   await page.screenshot({path:'preview-results/audit/seagull-home-393.png'});
+});
+
+test('a narrow Home shows AlTo’s own actions and Help uses the visible button name', async ({page}, info) => {
+  await page.setViewportSize({width:320,height:760});
+  await installSnapshot(page,[companion('potato',6,true)]);
+  await page.goto('/');
+  await page.getByRole('button',{name:'함께하기',exact:true}).click();
+  const panel=page.getByRole('group',{name:'친구와 함께하기'});
+  const water=panel.getByRole('button',{name:'물 주기',exact:true});
+  await expect(panel.getByRole('button')).toHaveCount(6);
+  expect((await water.boundingBox())?.height).toBeGreaterThanOrEqual(48);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await water.click();
+  await expect(page.locator('#homeMessage[data-source=activity]')).toContainText('물방울');
+  await panel.screenshot({path:`preview-results/audit/alto-actions-${info.project.name}.png`});
+  const memory=()=>page.evaluate(()=>localStorage.getItem('gamjassak:companion:v1:potato'));
+  const before=await memory();
+  await page.getByRole('button',{name:'현재 화면 도움말',exact:true}).click();
+  await toStep(page,'물 주기');
+  await expect(page.getByRole('dialog',{name:'버튼 도움말',exact:true})).toContainText('돌봄 방법');
+  expect(await memory()).toBe(before);
 });
 
 test('Dorongi offers his own basic lines when AI fails and still speaks in Help', async ({page}) => {
@@ -429,7 +457,7 @@ test('Dorongi offers his own basic lines when AI fails and still speaks in Help'
   await expect(reply).not.toHaveText(first);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
   await page.getByRole('button',{name:'함께하기',exact:true}).click();
-  for (const [action,label] of [['walk','함께 산책'],['treat','햇살 선물'],['pet','쓰다듬기'],['play','함께 놀기'],['rest','함께 쉬기']]) {
+  for (const [action,label] of [['walk','고요한 길 걷기'],['treat','햇볕 나누기'],['pet','쓰다듬기'],['play','한 판 두기'],['rest','나란히 쉬기']]) {
     await page.getByRole('button',{name:label,exact:true}).click();
     await expectReply(scholar.activityVoices[action]);
   }

@@ -16,7 +16,7 @@ export async function verifyInstalledFriendMotions({page,captureScreen}) {
   await expect(visual).toHaveAttribute('data-character','potato');
   await page.evaluate(()=>{window.friendMotionDrawing=document.querySelector('.homeMascot .characterPortrait image');});
   await page.getByRole('button',{name:'함께하기',exact:true}).click();
-  for(const [label,motion] of [['함께 산책','walk'],['햇살 선물','treat'],['쓰다듬기','pet'],['함께 놀기','play'],['함께 쉬기','rest']]) {
+  for(const [label,motion] of [['함께 산책','walk'],['물 주기','treat'],['쓰다듬기','pet'],['새싹 박수 놀이','play'],['함께 쉬기','rest']]) {
     await page.getByRole('button',{name:label,exact:true}).click();
     await expect(visual).toHaveAttribute('data-motion',motion);
     assert.equal(await page.evaluate(()=>window.friendMotionDrawing===document.querySelector('.homeMascot .characterPortrait image')),true);

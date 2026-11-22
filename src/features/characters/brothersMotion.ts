@@ -6,7 +6,7 @@ export type BrotherGesture = "idle" | "look-around" | "nod" | "stretch" | "sway"
 type Step = number | number[];
 type Frames = Record<"x" | "y" | "rotate" | "scaleX" | "scaleY", Step>;
 export type BrotherPlan = { keyframes: Frames; duration: number; repeat: number };
-export type BrotherEffect = "none" | "curious" | "shine" | "steps" | "heart" | "stars" | "sleep";
+export type BrotherEffect = "none" | "curious" | "shine" | "steps" | "heart" | "stars" | "sleep" | "water";
 
 const pose = (x: Step, y: Step, rotate: Step, duration: number, loop = false): BrotherPlan => ({
   keyframes: { x, y, rotate, scaleX: 1, scaleY: 1 }, duration, repeat: loop ? Infinity : 0,
@@ -46,11 +46,11 @@ export function isBrotherSignature(signature: string): signature is BrotherSigna
 export function brotherMotionAnimation(motion: BrotherGesture, signature: BrotherSignature): BrotherPlan {
   return (signature === "bashful-peek" ? potato : sweetPotato)[motion];
 }
-export function brotherEffectForMotion(motion: BrotherGesture): BrotherEffect {
+export function brotherEffectForMotion(motion: BrotherGesture, signature?: BrotherSignature): BrotherEffect {
   switch (motion) {
     case "look-around": return "curious";
-    case "stretch":
-    case "treat": return "shine";
+    case "stretch": return "shine";
+    case "treat": return signature === "bashful-peek" ? "water" : "shine";
     case "walk": return "steps";
     case "pet": return "heart";
     case "bounce":

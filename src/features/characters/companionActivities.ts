@@ -11,7 +11,7 @@ export type CompanionMemory = {
   energy: number;
   history: Array<{ action: CompanionAction; day: string }>;
 };
-export type CompanionReply = { line: string; memory: CompanionMemory };
+export type CompanionReply = { line: string; memory: CompanionMemory; authored?: boolean };
 const memoryCache = new Map<string, CompanionMemory>();
 const moodLabels: Record<CompanionMood, string> = {
   calm: "차분함", curious: "호기심", delighted: "기쁨", playful: "신남", sleepy: "나른함", irritated: "짜증",
@@ -63,7 +63,7 @@ export function companionActionLabel(definition: CharacterDefinition, action: Co
     walk: "함께 산책", treat: definition.treatLabel || (definition.type === "gomi" ? "간식 주기" : "햇살 선물"),
     pet: "쓰다듬기", play: "함께 놀기", rest: "함께 쉬기",
   };
-  return labels[action];
+  return definition.specialActivities?.[action]?.label ?? labels[action];
 }
 export function companionDisturbsSleep(action:CompanionAction,sleeping:boolean){
   return sleeping&&action!=="rest"&&action!=="treat";
@@ -136,6 +136,8 @@ export function performCompanionActivity(definition: CharacterDefinition, previo
     const annoyedLines = ["휴… 자는데 건들지 마.","자잖아. 나중에 해.","지금은 졸려. 조금만 기다려.","지금은 더 자고 싶어… 옆에만 있어 줘.","너라도 지금 깨우면 서운해… 조금만 더 잘게."];
     return { line:(action === "rest" ? restLines : annoyedLines)[tier], memory };
   }
+  const authored = definition.specialActivities?.[action]?.replies;
+  if (authored?.length) return { line: authored[before % authored.length], memory, authored: true };
   const voice = definition.activityVoices?.[action];
   if (voice?.length) return { line: voice[before % voice.length], memory };
   const basis = definition.type === "gomi" ? gomiByAffinity[action][tier] :

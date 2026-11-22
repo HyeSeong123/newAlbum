@@ -31,7 +31,7 @@ test('unregistered actions and corrupt weights fail explicitly',()=>{
 });
 test('the trained gift scene still responds to the sunlight button and Gomi receives a snack',()=>{
  const ai=engine.loadOwnModel(model);
- for(const definition of definitions.filter(row=>row.type!=='gomi'&&!row.treatLabel)){
+ for(const definition of definitions.filter(row=>row.type!=='gomi'&&!row.treatLabel&&!row.specialActivities?.treat)){
   assert.equal(activities.companionActionLabel(definition,'treat'),'햇살 선물');
   const reply=engine.generateOwnLine(ai,{...input,characterId:definition.id,mood:'delighted'},20261115);
   assert.match(reply,/햇살|빛|따뜻|포근|선물/);assert.doesNotMatch(reply,/간식|먹을|먹어/);

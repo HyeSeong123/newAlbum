@@ -440,7 +440,10 @@ try {
       assert.match(dorongiReply.line,/소[.!?]|구려[.!?]|시게[.!?]/);
       await captureScreen('character-name-dorongi-home');
       await page.getByRole('button',{name:'함께하기',exact:true}).click();
-      await page.getByRole('button',{name:'함께 쉬기',exact:true}).click();
+      await page.getByRole('button',{name:'한 판 두기',exact:true}).click();
+      await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
+      await expect(page.locator('#homeMessage')).toContainText(/차례|판|놀이|수 두/);
+      await page.getByRole('button',{name:'나란히 쉬기',exact:true}).click();
       await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
       await expect(page.locator('#homeMessage')).toContainText(/쉬|곁|자리|바람|눈/);
       const body = page.locator('.homeMascot .characterBody');
@@ -470,6 +473,18 @@ try {
     await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-motion','treat');
     await expect(page.locator('#homeMessage[data-source=activity]')).toContainText('새우 과자');
     await captureScreen('character-design-seagull-home');
+    await page.getByRole('button',{name:'연 날리기',exact:true}).click();
+    await expect(page.locator('#homeMessage[data-source=activity]')).toContainText('연줄');
+    await page.getByRole('button',{name:'친구들 보기',exact:true}).click();
+    const potato = book.locator('.characterCard').filter({has:page.getByRole('heading',{name:'알토',exact:true})});
+    await potato.getByRole('button',{name:'대표로 설정',exact:true}).click();
+    await page.getByRole('button',{name:'곰고미 홈으로 이동',exact:true}).click();
+    await page.getByRole('button',{name:'함께하기',exact:true}).click();
+    await page.getByRole('button',{name:'물 주기',exact:true}).click();
+    await expect(page.locator('#homeMessage[data-source=activity]')).toContainText('물방울');
+    await expect(page.locator('.homeMascot [data-brother-effect=water]')).toBeVisible();
+    await page.getByRole('group',{name:'친구와 함께하기'}).scrollIntoViewIfNeeded();
+    await captureScreen('friend-activities-potato');
     connection = await verifyInstalledBackup({page, adb, tapNative, nativeTree, captureScreen, restart:async confirmed => {
       if (!confirmed) await adb('shell','am','force-stop',appId);
       await expect.poll(async()=>adb('shell','pidof',appId).catch(()=>''),{timeout:15000}).toBe('');

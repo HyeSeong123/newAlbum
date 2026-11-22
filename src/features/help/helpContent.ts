@@ -5,10 +5,10 @@ type Meaning = { id: string; title?: string; instruction: string };
 type Rule = readonly [RegExp, string, string];
 
 const explicitContent: Record<string, { title: string; instruction: string }> = {
-  'companion-ai': { title: '친구의 AI 반응', instruction: 'AI를 한 번 준비하면 캐릭터를 터치할 때 기분과 성격, 친밀도와 함께한 행동에 맞춰 새로운 말을 해요. 준비 후에는 인터넷 없이 반응하며, 글을 입력할 필요가 없어요.' },
+  'companion-ai': { title: '친구의 AI 반응', instruction: '인터넷 없이 친구가 새로 만든 대사와 최근 반응을 확인해요. 친구마다 미리 준비된 행동 반응도 볼 수 있어요.' },
   'companion-actions': { title: '친구와 함께하기', instruction: '친밀도는 캐릭터에게 직접 말을 걸 때만 하루 한 번 올라요. 깨어 있을 때만 오르며, 잠든 고미를 깨우는 행동은 친밀도가 1씩, 하루 최대 3까지 줄어요. 함께 쉬기는 잠을 지켜 줘요. 화면 속 행동은 실제 GPS 산책이나 음식 섭취를 뜻하지 않아요.' },
   'companion-walk': { title: '함께 산책', instruction: '친구와 산책하는 상황을 상상하며 대화를 나눠요. 실제 이동을 추적하거나 사진 위치를 읽지는 않아요.' },
-  'companion-treat': { title: '작은 선물', instruction: '친구에 따라 간식이나 햇살처럼 건넬 선물이 달라요. 실제 물건이나 보상을 소비하지 않아요.' },
+  'companion-treat': { title: '작은 선물', instruction: '친구에 따라 간식이나 햇볕을 건네거나 물을 주는 등 돌봄 방법이 달라요. 실제 물건이나 보상을 소비하지 않아요.' },
   'companion-pet': { title: '쓰다듬기', instruction: '친구의 성격에 따라 다른 반응을 보여요. 친밀도 상승 횟수와 성장 상태는 바꾸지 않아요.' },
   'companion-play': { title: '함께 놀기', instruction: '친구와 짧은 상상 놀이를 해요. 최근 행동과 기분을 기기 안에 기억해요.' },
   'companion-rest': { title: '함께 쉬기', instruction: '친구와 잠깐 쉬면서 활력을 회복해요. 앱의 다른 기록은 변경하지 않아요.' },
@@ -156,7 +156,10 @@ function meaning(element: HTMLElement, root: HTMLElement, context: HelpContext):
   const rawName = controlName(element);
   const name = element.closest('.homeShortcuts') ? rawName.replace(/ 열기$/, '') : rawName;
   const explicit = element.dataset.help;
-  if (explicit && explicitContent[explicit]) return { id: explicit, ...explicitContent[explicit] };
+  if (explicit && explicitContent[explicit]) {
+    const item = explicitContent[explicit];
+    return { id: explicit, ...item, title: element.classList.contains('homeActivity') && name ? name : item.title };
+  }
   const named = Object.entries(explicitContent).find(([id, item]) => item.title === name && !['entity-photo-choice', 'entity-photo-save', 'save-pet-assignment', 'pet-save-correction'].includes(id));
   if (named) return { id: named[0], ...named[1] };
   if (explicit === 'import-files') return { id: explicit, title: '사진·영상', instruction: '기기의 갤러리나 파일 선택 화면에서 사진과 영상을 골라요. 원본은 그대로예요. 촬영 위치를 자동으로 남기려면 촬영 전에 카메라 위치 권한과 위치 태그를 켜야 해요. 이미 찍은 사진에 위치가 없으면 가져올 때 지역을 직접 고를 수 있어요.' };

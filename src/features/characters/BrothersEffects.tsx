@@ -8,6 +8,11 @@ function MotionMark({ type }: { type: Exclude<BrotherEffect, "none"> }) {
     <ellipse cx="50" cy="33" rx="9" ry="5" transform="rotate(22 50 33)" />
     <circle cx="43" cy="21" r="2.8" /><circle cx="50" cy="18" r="2.8" /><circle cx="57" cy="21" r="2.5" />
   </svg>;
+  if (type === "water") return <svg viewBox="0 0 72 72" fill="currentColor" aria-hidden="true">
+    <path d="M42 9C37 20 29 27 29 39a13 13 0 0 0 26 0C55 27 47 20 42 9Z" />
+    <path d="M17 31c-3 7-8 11-8 18a8 8 0 0 0 16 0c0-7-5-11-8-18Z" opacity=".68" />
+    <path d="M35 42c0 3 2 5 4 6" fill="none" stroke="#fffdf8" strokeLinecap="round" strokeWidth="3" />
+  </svg>;
   if (type === "shine") return <svg viewBox="0 0 72 72" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
     <circle cx="36" cy="36" r="14" fill="currentColor" fillOpacity=".22" />
     <path d="M36 8v8m0 40v8M8 36h8m40 0h8M16 16l6 6m28 28 6 6m0-40-6 6M22 50l-6 6" />
@@ -33,7 +38,7 @@ function MotionMark({ type }: { type: Exclude<BrotherEffect, "none"> }) {
 export function BrothersEffects({ signature, gesture, reactionKey, paused, reduced }: {
   signature: BrotherSignature; gesture: BrotherGesture; reactionKey: number; paused: boolean; reduced: boolean;
 }) {
-  const effect = brotherEffectForMotion(gesture);
+  const effect = brotherEffectForMotion(gesture, signature);
   const animate = !paused && !reduced;
   const persistent = gesture === "look-around" || gesture === "stretch" || gesture === "rest";
   return <>

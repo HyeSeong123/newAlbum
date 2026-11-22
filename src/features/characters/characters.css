@@ -75,7 +75,8 @@
 .brotherFx--heart { color: #d7959a; }
 .brotherFx--sleep { color: #8993b2; }
 .brotherFx--curious { top: 6%; right: 7%; width: 34px; height: 34px; }
-.brotherFx--shine { top: 3%; right: 9%; }
+.brotherFx--shine, .brotherFx--water { top: 3%; right: 9%; }
+.brotherFx--water { color: #6294aa; }
 .brotherFx--steps { bottom: 13%; left: 7%; width: 57px; height: 57px; }
 .brotherFx--heart { top: 10%; right: 2%; width: 34px; height: 34px; }
 .brotherFx--stars { top: 5%; left: 6%; width: 47px; height: 47px; }
