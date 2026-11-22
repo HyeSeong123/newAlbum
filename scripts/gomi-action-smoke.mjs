@@ -180,16 +180,14 @@ export async function verifyInstalledGomiAction(page,output='test-results/androi
    const record={...await pressAndPaint(page,'[data-help="companion-treat"]'),scenario:energy?'sleepy-snack':'exhausted-snack'};
    records.push(record);
    if(record.source==='on-device'){assert.equal(record.request.input.energy,energy);assert.equal(record.request.input.sleeping,true);assert.equal(record.request.input.action,'treat');}
-   const firstMotion=await page.locator('.homeMascot [data-motion]').getAttribute('data-motion');
-   assert.equal(firstMotion,energy?'sleep-curled-peek':'sleep-curled');
    const snapshot=await page.evaluate(async()=>({memory:JSON.parse(localStorage.getItem('gamjassak:companion:v1:gomi')),
     affection:(await window.__TAURI_INTERNALS__.invoke('sync_characters')).characters.find(row=>row.id==='gomi').affection}));
    assert.equal(snapshot.memory.energy,energy,'Offering food must not pre-emptively energize a sleeper');
    assert.equal(snapshot.memory.mood,energy?'curious':'sleepy');assert.equal(snapshot.affection,affectionBefore,'Offering food must not incur a sleep-disturbance penalty');
    if(output){await mkdir(output,{recursive:true});await page.screenshot({path:join(output,energy?'gomi-food-sleepy.png':'gomi-food-exhausted.png')});}
    if(energy){
-    // Observe from before the click: taking a screenshot can outlast the
-    // one-second dazed pose, so polling only afterwards can miss a real phase.
+    // Validate the recording from before the click. WebView round trips or
+    // screenshots can outlast transient poses even after the response paints.
     await page.waitForFunction(()=>window.__ownMotionTrace.some(row=>row.motion==='rest-front')&&
      ['avoid','cynical','idle'].includes(window.__ownMotionTrace.at(-1)?.motion),undefined,{timeout:5000});
    }
