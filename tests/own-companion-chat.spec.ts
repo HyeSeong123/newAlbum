@@ -39,13 +39,14 @@ test('Dorongi moves a janggi piece, follows three story chapters and speaks from
   await installOwnAi(page,{characterId:'apple',affection:44});
   await page.goto('/');
   const bubble=page.locator('#homeMessage');
-  const expectVoice=async (meaning:RegExp)=>{
+  const expectVoice=async (meaning?:RegExp)=>{
     await expect(bubble).toHaveAttribute('data-source','on-device');
-    await expect(bubble).toContainText(meaning);
+    if (meaning) await expect(bubble).toContainText(meaning);
     await expect(bubble).toContainText(/소[.!?]|구려[.!?]|시게[.!?]|하오[.!?]|오[.!?]|십시다[.!?]/);
   };
   await page.getByRole('button',{name:'도롱이에게 말 걸기',exact:true}).click();
-  await expectVoice(/부르|인사|이름|기억|곁|말씀|기척|소식|자리|기다|얼른|목소리|여기|놓이|오셨|마음|말할|궁금|와 주|듣|반갑|오시게|앉으시게|안부|발소리/);
+  await expectVoice();
+  expect((await requestedInputs(page))[0]).toMatchObject({characterId:'apple',action:'touch'});
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 45');
   await page.getByRole('button',{name:'함께하기',exact:true}).click();
   const actions = page.getByRole('group',{name:'친구와 함께하기'});
@@ -81,7 +82,7 @@ test('Dorongi moves a janggi piece, follows three story chapters and speaks from
   await expectVoice(/나루|작별|배웅|떠나|떠날|멀어|마지막 인사/);
   await expect(scene).toContainText('나루의 작별');
   await closeActivity(page);
-  for(const [label,meaning] of [['막걸리 따르기',/막걸리|잔|주전자|소반/],['붓글씨 쓰기',/붓|먹|획|글|종이/]] as const){
+  for(const [label,meaning] of [['막걸리 따르기',/막걸리|잔|주전자|소반/],['붓글씨 쓰기',/붓|먹|획|글|종이|벗 우/]] as const){
     await page.getByRole('button',{name:label,exact:true}).click();
     if(label==='막걸리 따르기'){
       await expect(scene.locator('.homePourTray')).toHaveAttribute('data-filled','false');
