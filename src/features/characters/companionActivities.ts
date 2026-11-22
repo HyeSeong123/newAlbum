@@ -6,10 +6,11 @@ import type { CompanionMotion } from "./companionBehavior";
 export const COMPANION_ACTIONS = ["walk", "treat", "pet", "play", "rest"] as const;
 export type CompanionAction = typeof COMPANION_ACTIONS[number];
 export type CompanionMood = "calm" | "curious" | "delighted" | "playful" | "sleepy" | "irritated";
+export type SpecialActivityIcon = "water" | "sun" | "love-story" | "makgeolli" | "gat" | "janggi" | "calligraphy";
 export type SpecialActivity = {
   label: string;
   replies?: readonly string[];
-  icon?: "water" | "sun";
+  icon?: SpecialActivityIcon;
   scene?: {
     id: string;
     prop: string;

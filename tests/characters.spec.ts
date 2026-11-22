@@ -521,7 +521,7 @@ test('Gomi starts as an adult main; help and book never award affection and home
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 0');
   await mascot.click();
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
-  await expect(mascot.locator('img')).toHaveAttribute('src', '/characters/gomi/avoid.png');
+  await expect(mascot.locator('img')).toHaveAttribute('src', '/characters/gomi/retreat-look-back.webp');
   await mascot.click();
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
   await expect(mascot.locator('.characterVisual')).toHaveAttribute('data-stage', '6');
@@ -681,7 +681,7 @@ test('Gomi still ignores repeated touches around 20 and never offers a paw or li
   for (let n=0;n<4;n++) {
     await mascot.click();
     await expect(mascot.locator('.characterVisual')).toHaveAttribute('data-motion','avoid');
-    await expect(mascot.locator('img')).toHaveAttribute('src','/characters/gomi/avoid.png');
+    await expect(mascot.locator('img')).toHaveAttribute('src','/characters/gomi/retreat-look-back.webp');
   }
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 20');
   await page.getByRole('button',{name:'현재 화면 도움말'}).click();

@@ -17,14 +17,25 @@ test('early Gomi shows only dots and takes centered backward steps while the tou
   await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','nonverbal');
   const start=await geometry(page);
   await page.locator('.homeWelcome').screenshot({path:`preview-results/own-ai-retreat-before-${test.info().project.name}.png`});
+  const sprite = page.locator('.homeMascot img');
+  await sprite.evaluate(image => {
+    const poses: (string | null)[] = [];
+    const observer = new MutationObserver(records => poses.push(...records.map(record => record.oldValue)));
+    observer.observe(image, { attributes:true, attributeFilter:['src'], attributeOldValue:true });
+    (window as typeof window & { gomiPoseTrace: typeof poses }).gomiPoseTrace = poses;
+  });
   for(const scale of [.88,.76,.64,.52,.52]){
     await page.locator('.homeMascot').click();await expect(page.locator('#homeMessage')).toHaveAttribute('data-state','quiet');
+    await expect(sprite).toHaveAttribute('src','/characters/gomi/retreat-look-back.webp');
+    await sprite.evaluate((image:HTMLImageElement) => image.decode());
     await expect.poll(async()=>(await geometry(page)).width).toBeCloseTo(start.width*scale,0);
     const current=await geometry(page);
     expect(Math.abs(current.x)).toBeLessThan(1);
     expect(current.top).toBeGreaterThan(start.top); // The top recedes toward the anchored feet as the drawing shrinks.
     expect(current.targetWidth).toBe(start.targetWidth);expect(current.targetHeight).toBe(start.targetHeight);
   }
+  const poses = await page.evaluate(() => (window as typeof window & { gomiPoseTrace: string[] }).gomiPoseTrace);
+  expect(poses.filter(path => path === '/characters/gomi/retreat-turn.webp')).toHaveLength(1);
   expect(await requestedInputs(page)).toEqual([]);
   await expect(page.locator('.homeQuietDots')).toHaveText('...');
   await page.locator('.homeWelcome').screenshot({path:`preview-results/own-ai-retreat-after-${test.info().project.name}.png`});
@@ -34,6 +45,7 @@ test('reduced motion retains a smaller centered pose without intermediate moveme
   await page.emulateMedia({reducedMotion:'reduce'});await installOwnAi(page,{affection:20});await page.goto('/');
   await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-reduced-motion','true');
   const start=await geometry(page);await page.locator('.homeMascot').click();
+  await expect(page.locator('.homeMascot img')).toHaveAttribute('src','/characters/gomi/retreat-look-back.webp');
   await expect.poll(async()=>(await geometry(page)).width).toBeCloseTo(start.width*.88,0);
   const endpoint=await geometry(page);
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));

@@ -44,6 +44,15 @@ test('Dorongi moves a janggi piece, follows three story chapters and speaks from
   await expectVoice(/부르|인사|이름|기억|곁|말씀|기척|소식|자리|기다|얼른|목소리|여기|놓이|오셨|마음|말할|궁금|와 주|듣|반갑|오시게|안부|발소리/);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 45');
   await page.getByRole('button',{name:'함께하기',exact:true}).click();
+  const actions = page.getByRole('group',{name:'친구와 함께하기'});
+  for (const [label, icon] of [
+    ['첫사랑 얘기 듣기','book-heart'], ['막걸리 따르기','makgeolli-pour'], ['갓 매만지기','gat'],
+    ['장기 두기','janggi-piece'], ['붓글씨 쓰기','paintbrush'], ['지켜보기','eye'],
+  ]) {
+    const svg = actions.getByRole('button',{name:label,exact:true}).locator(`svg.lucide-${icon}`);
+    await expect(svg).toBeVisible();
+    await expect(svg).toHaveAttribute('aria-hidden','true');
+  }
   const scene=page.getByRole('region',{name:'함께하기 장면'});
   await page.getByRole('button',{name:'장기 두기',exact:true}).click();
   await expect(scene).toContainText('차를 옮길');

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { motion as animated, useAnimationControls, useMotionValue, useReducedMotion } from "motion/react";
-import { allowedGomiMotion, gomiMotionFrames, gomiRetreatAnimation, isGomiAngry, isGomiSleeping, isGomiSleepReaction, type GomiMotion } from "./gomiBehavior";
+import { allowedGomiMotion, gomiMotionFrames, gomiRetreatAnimation, gomiRetreatFrames, isGomiAngry, isGomiSleeping, isGomiSleepReaction, type GomiMotion } from "./gomiBehavior";
+
+const RETREAT_TURN_MS = 180;
 
 export function GomiVisual({ motion = "idle", affection = 0, className = "", reactionKey = 0 }: {
   motion?: GomiMotion; affection?: number; className?: string; reactionKey?: number;
@@ -9,8 +11,13 @@ export function GomiVisual({ motion = "idle", affection = 0, className = "", rea
   const controls = useAnimationControls();
   const scaleX = useMotionValue(1), scaleY = useMotionValue(1), y = useMotionValue(0);
   const action = allowedGomiMotion(motion, affection);
-  const frames = gomiMotionFrames[action];
-  const [picture, setPicture] = useState(() => ({ frames, frame:0 }));
+  const retreating = motion === "avoid" && reactionKey > 0;
+  const frames = retreating ? gomiRetreatFrames : gomiMotionFrames[action];
+  // Further taps adjust the distance without replaying the turn.
+  const frameReactionKey = retreating ? 0 : reactionKey;
+  const [picture, setPicture] = useState(() => ({ frames:gomiMotionFrames[action], frame:0 }));
+  const [retreatUnavailable, setRetreatUnavailable] = useState(false);
+  const waitingForTurn = retreating && !retreatUnavailable && (picture.frames !== frames || picture.frame === 0);
   const sleeping = isGomiSleeping(action);
   const sleepReaction = isGomiSleepReaction(action);
   const angry = isGomiAngry(action);
@@ -23,13 +30,22 @@ export function GomiVisual({ motion = "idle", affection = 0, className = "", rea
       return image.decode();
     })).then(() => {
       if (!active) return;
+      if (retreating) {
+        setPicture({ frames, frame:reduced ? 1 : 0 });
+        if (!reduced) timer = window.setTimeout(() => setPicture({ frames, frame:1 }), RETREAT_TURN_MS);
+        return;
+      }
       setPicture({ frames, frame:0 });
       if (frames.length > 1 && !reduced) timer = window.setInterval(() => setPicture(value => ({ ...value, frame:(value.frame + 1) % value.frames.length })), action === "lick" ? 230 : 180);
-    }).catch(() => { /* An unreadable replacement must not hide the current picture. */ });
+    }).catch(() => {
+      // Keep the current drawing and still let Gomi move if the new art fails to load.
+      if (active && retreating) setRetreatUnavailable(true);
+    });
     return () => { active = false; window.clearInterval(timer); };
-  }, [frames, action, reduced, reactionKey]);
+  }, [frames, action, reduced, frameReactionKey, retreating]);
   useEffect(() => {
     if (action === "avoid") {
+      if (waitingForTurn) return;
       const retreat = gomiRetreatAnimation(reactionKey, Boolean(reduced), {scale:scaleX.get(),y:y.get()});
       void controls.start(retreat.keyframes, {duration:retreat.duration,repeat:0,ease:"easeInOut"});
       return () => controls.stop();
@@ -50,15 +66,15 @@ export function GomiVisual({ motion = "idle", affection = 0, className = "", rea
       : action === "stretch" ? { duration:2.4, ease:"easeInOut" }
       : { duration:sleeping ? 3.8 : action === "paw-wave" ? .36 : action === "lick" ? .46 : 4.6, repeat:Infinity, ease:"easeInOut" });
     return () => controls.stop();
-  }, [controls, reduced, action, sleeping, angry, sleepReaction, reactionKey, scaleX, y]);
+  }, [controls, reduced, action, sleeping, angry, sleepReaction, reactionKey, scaleX, y, waitingForTurn]);
   const expression = action === "avoid" ? "avoid" : action === "cynical" || action === "rest-front" ? "cynical" : angry ? "angry" : action.endsWith("-peek") ? "peek" : action === "idle" || sleeping || action === "stretch" ? "idle" : action === "sad" ? "sad" : "happy";
   return <span className={`characterVisual characterVisual--gomi characterMotion--poised-ear-tilt ${className}`.trim()}
-    data-character="gomi" data-stage="6" data-expression={expression} data-motion={action} data-frame={reduced ? 0 : picture.frame}
+    data-character="gomi" data-stage="6" data-expression={expression} data-motion={action} data-frame={picture.frame}
     data-reduced-motion={Boolean(reduced)}>
     <animated.span className="characterBody gomiBody" initial={false}
       style={{ transformOrigin: "50% 90%", scaleX, scaleY, y }}
       animate={controls}>
-      <img className="characterIllustration gomiIllustration" src={picture.frames[(reduced ? 0 : picture.frame) % picture.frames.length]}
+      <img className="characterIllustration gomiIllustration" src={picture.frames[picture.frame]}
         data-stage="6" data-expression={expression} alt="" draggable={false} width={220} height={220} />
     </animated.span>
   </span>;

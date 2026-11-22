@@ -17,6 +17,7 @@ export function useGomiBehavior(enabled: boolean, affection: number, today: stri
   const foodSequence=useRef<GomiMotion[]>([]);
   useEffect(() => {
     interactions.current = 0;
+    setSequence(0);
     sleepTouches.current = { count:0, lastAt:0 };
     foodSequence.current=[];
     const initial = enabled ? gomiHomeMotion(entryDate.current) : "idle";

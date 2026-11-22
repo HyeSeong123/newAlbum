@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, BookHeart, ChevronDown, Droplet, Eye, Footprints, Gamepad2, Gift, HandHeart, Heart, Images, Moon, NotebookPen, Sun, Users } from "lucide-react";
+import { ArrowUpRight, BookHeart, ChevronDown, Eye, Footprints, Gamepad2, Gift, HandHeart, Heart, Images, Moon, NotebookPen, Sun, Users } from "lucide-react";
+import { specialActivityIcons } from "./homeActivityIcons";
 import { CharacterVisual } from "../characters/CharacterVisual";
 import { CompanionAiSetup } from "../characters/CompanionAiSetup";
 import { useCompanionReactions } from "../characters/useCompanionReactions";
@@ -322,7 +323,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
           {activitiesOpen && <div id="homeActivitiesChoices" className="homeActivitiesChoices" role="group" aria-label="친구와 함께하기">
             {COMPANION_ACTIONS.map(action => {
               const special = definition.specialActivities?.[action];
-              const Icon = special?.icon === "water" ? Droplet : special?.icon === "sun" ? Sun
+              const Icon = special?.icon ? specialActivityIcons[special.icon]
                 : action === "treat" && (special || definition.treatLabel) ? Gift : activityIcons[action];
               return <button key={action} type="button" className="homeActivity" data-help={"companion-" + action}
                 onClick={() => chooseActivity(action)}>

@@ -130,16 +130,31 @@ export async function verifyInstalledGomiAction(page,output='test-results/androi
    await window.__TAURI_INTERNALS__.invoke('sync_characters');
    await window.__TAURI_INTERNALS__.invoke('set_main_character',{id:'gomi'});
   });
-  // Harness-only deterministic initial sleep pose. Model sampling still uses
-  // crypto random seeds. The flag is removed before unrelated UI tests run.
+  // Select entry poses in the harness. Model sampling still uses crypto seeds.
   await page.addInitScript(()=>{
-   if(sessionStorage.getItem('gomi:smoke-force-sleep')==='1'){
-    window.__gomiSmokeOriginalRandom=Math.random;Math.random=()=>0.45;
+   const pose=sessionStorage.getItem('gomi:smoke-pose');
+   if(pose){
+    window.__gomiSmokeOriginalRandom=Math.random;Math.random=()=>pose==='awake'?.1:.45;
    }
   });
+  const affection=await page.evaluate(async()=>(await window.__TAURI_INTERNALS__.invoke('sync_characters')).characters.find(row=>row.id==='gomi').affection);
+  if(affection<59){
+   await page.evaluate(()=>sessionStorage.setItem('gomi:smoke-pose','awake'));
+   await page.reload();
+   await page.waitForSelector('.homeMascot [data-motion="avoid"]');
+   await installProbe(page);
+   assertQuietReactions([await pressAndPaint(page,'.homeMascot')]);
+   await page.waitForFunction(()=>{
+    const image=document.querySelector('.homeMascot img');
+    const body=document.querySelector('.homeMascot .gomiBody');
+    return image?.getAttribute('src')==='/characters/gomi/retreat-look-back.webp'&&image.naturalWidth>0&&body&&
+     Math.abs(new DOMMatrixReadOnly(getComputedStyle(body).transform).a-.88)<.002;
+   });
+   if(output){await mkdir(output,{recursive:true});await page.locator('.homeCompanion').screenshot({path:join(output,'gomi-retreat-look-back.png')});}
+  }
   const reset=async energy=>{
    await page.evaluate(energy=>{
-    sessionStorage.setItem('gomi:smoke-force-sleep','1');
+    sessionStorage.setItem('gomi:smoke-pose','sleep');
     localStorage.setItem('gamjassak:companion:v1:gomi',JSON.stringify({version:1,mood:'sleepy',energy,history:[]}));
    },energy);
    await page.reload();await page.waitForSelector('.homeMascot');
@@ -223,7 +238,7 @@ export async function verifyInstalledGomiAction(page,output='test-results/androi
   }
   throw error;
  }finally{
-  await page.evaluate(()=>{sessionStorage.removeItem('gomi:smoke-force-sleep');if(window.__gomiSmokeOriginalRandom)Math.random=window.__gomiSmokeOriginalRandom;}).catch(()=>{});
+  await page.evaluate(()=>{sessionStorage.removeItem('gomi:smoke-pose');if(window.__gomiSmokeOriginalRandom)Math.random=window.__gomiSmokeOriginalRandom;}).catch(()=>{});
   if(previousAirplane!=null)await adb('shell','cmd','connectivity','airplane-mode',previousAirplane==='1'?'enable':'disable');
   if(previousWifi!=null)await adb('shell','svc','wifi',previousWifi==='1'||previousWifi==='2'?'enable':'disable');
   if(previousData!=null)await adb('shell','svc','data',previousData==='1'?'enable':'disable');

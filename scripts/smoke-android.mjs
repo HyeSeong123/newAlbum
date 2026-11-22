@@ -440,6 +440,13 @@ try {
       assert.match(dorongiReply.line,/소[.!?]|구려[.!?]|시게[.!?]/);
       await captureScreen('character-name-dorongi-home');
       await page.getByRole('button',{name:'함께하기',exact:true}).click();
+      const dorongiActions=page.getByRole('group',{name:'친구와 함께하기'});
+      for(const [label, icon] of [
+        ['첫사랑 얘기 듣기','book-heart'],['막걸리 따르기','makgeolli-pour'],['갓 매만지기','gat'],
+        ['장기 두기','janggi-piece'],['붓글씨 쓰기','paintbrush'],['지켜보기','eye'],
+      ]) await expect(dorongiActions.getByRole('button',{name:label,exact:true}).locator(`svg.lucide-${icon}`)).toBeVisible();
+      await dorongiActions.scrollIntoViewIfNeeded();
+      await captureScreen('friend-activities-dorongi');
       await page.getByRole('button',{name:'장기 두기',exact:true}).click();
       await page.getByRole('button',{name:'차를 한 칸 올리기',exact:true}).click();
       await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');

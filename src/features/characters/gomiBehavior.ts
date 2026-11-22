@@ -8,6 +8,7 @@ export const GOMI_ANGRY_TOUCHES = 3;
 
 export type GomiSleepMotion = "sleep-curled" | "sleep-stretched" | "sleep-cool" | "sleep-warm";
 export type GomiMotion = "idle" | "avoid" | "cynical" | "rest-front" | "happy" | "sad" | "angry" | "grow" | GomiSleepMotion | `${GomiSleepMotion}-peek` | `${GomiSleepMotion}-angry` | "stretch" | "paw-wave" | "lick";
+export const gomiRetreatFrames = ["/characters/gomi/retreat-turn.webp", "/characters/gomi/retreat-look-back.webp"];
 export const gomiMotionFrames: Record<GomiMotion, string[]> = {
   idle: ["/characters/gomi/idle.png"],
   avoid: ["/characters/gomi/avoid.png"],
