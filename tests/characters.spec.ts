@@ -65,6 +65,7 @@ test('other friends keep their drawing while five activities and quiet rest have
       await expect(page.locator('.homeSpeech')).toHaveCount(0);
       await expect(message).toHaveAttribute('data-source','status');
     }
+    await page.getByRole('button',{name:'함께하기 닫기',exact:true}).click();
   }
   await page.clock.fastForward(60_000);
   await expect(visual).toHaveAttribute('data-motion','rest');
@@ -111,6 +112,7 @@ for (const [id, name] of [['potato','알토'],['sweet-potato','구마루']] as c
       await expect(activeEffect).toHaveCount(1);
       await expect(activeEffect).toBeVisible();
       expect(await page.evaluate(()=>(window as any).savedPortrait===document.querySelector('.homeMascot .characterPortrait image'))).toBe(true);
+      await page.getByRole('button',{name:'함께하기 닫기',exact:true}).click();
     }
     await expect(visual.locator('.brotherGround')).toHaveCount(1);
     await expect(page.locator('.homeMascot .characterHeart')).toHaveCount(0);
@@ -404,6 +406,7 @@ test('all current designs are legible in a narrow book and the seagull gift foll
   await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-motion','treat');
   await expect(page.locator('[data-activity="offer-shrimp-cracker"]')).toContainText('새우 과자');
   await expect(page.locator('#homeMessage[data-source=activity]')).toContainText('새우 과자');
+  await page.getByRole('button',{name:'함께하기 닫기',exact:true}).click();
   await page.getByRole('button',{name:'연 날리기',exact:true}).click();
   await expect(page.locator('#homeMessage[data-source=activity]')).toContainText('연줄');
   await expect(portrait).toHaveAttribute('src','/characters/portraits/pencil/camellia.webp');
@@ -422,6 +425,7 @@ test('a narrow Home shows AlTo’s own actions and Help uses the visible button 
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   await water.click();
   await expect(page.locator('#homeMessage[data-source=activity]')).toContainText('물방울');
+  await page.getByRole('button',{name:'함께하기 닫기',exact:true}).click();
   await panel.screenshot({path:`preview-results/audit/alto-actions-${info.project.name}.png`});
   const memory=()=>page.evaluate(()=>localStorage.getItem('gamjassak:companion:v1:potato'));
   const before=await memory();
@@ -440,7 +444,7 @@ test('Dorongi offers his own basic lines when AI fails and still speaks in Help'
   const scholar = JSON.parse(readFileSync('src/features/characters/data/characterDefinitions.json','utf8'))
     .find((friend:{id:string})=>friend.id==='apple') as {
       dialogues:{situations:{idle:string[]};stages:Record<string,string[]>};
-      specialActivities:Record<string,{label:string;replies:string[]}>;
+      specialActivities:Record<string,{label:string;replies?:string[]}>;
       personality:{helpVoices:string[][]};
     };
   const touchLines=[...scholar.dialogues.situations.idle,...scholar.dialogues.stages['3']];
@@ -462,12 +466,15 @@ test('Dorongi offers his own basic lines when AI fails and still speaks in Help'
     await page.getByRole('button',{name:label,exact:true}).click();
     if(action==='play') await page.getByRole('button',{name:'차를 한 칸 올리기'}).click();
     if(action==='treat') await page.getByRole('button',{name:'두 잔에 따르기'}).click();
-    await expectReply(replies);
+    if(replies) await expectReply(replies);
+    else await expect(reply).not.toBeEmpty();
+    await page.getByRole('button',{name:'함께하기 닫기',exact:true}).click();
   }
   await page.getByRole('button',{name:'지켜보기',exact:true}).click();
   await expect(page.locator('#homeMessage')).toHaveAttribute('data-state','watching');
   await expect(reply).toHaveCount(0);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 1');
+  await page.getByRole('button',{name:'함께하기 닫기',exact:true}).click();
   await page.getByRole('button',{name:'현재 화면 도움말'}).click();
   const help=page.getByRole('dialog',{name:'버튼 도움말'});
   await expect(help.locator('.characterHelpName')).toHaveText('도롱이');
@@ -797,6 +804,7 @@ for (const [before, after, tier] of [[0,1,0],[19,20,1],[29,30,2],[58,59,2],[59,6
         await page.getByRole('button',{name:label,exact:true}).click();
         await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','nonverbal');
         await expect(page.locator('#homeMessage')).toHaveAttribute('data-state','quiet');
+        await page.getByRole('button',{name:'함께하기 닫기',exact:true}).click();
       }
       expect(await page.evaluate(()=>(window as any).affinityInputs)).toEqual([]);
       expect(await page.evaluate(()=>(window as any).sproutCommands.filter((c:any)=>c.command==='interact_character'))).toHaveLength(1);

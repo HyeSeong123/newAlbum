@@ -631,20 +631,15 @@
         }
       },
       "pet": {
-        "label": "갓 매만지기",
-        "icon": "gat",
-        "replies": [
-          "갓이 반듯해졌구려. 고맙소.",
-          "갓끈은 내가 매겠소."
-        ],
+        "label": "훈련하기",
+        "icon": "training",
         "scene": {
-          "id": "straighten-hat",
-          "prop": "🎩",
-          "outcome": "기울었던 갓을 바로잡았어요.",
-          "mood": "calm",
-          "energy": 0,
-          "motion": "nod",
-          "ai": true
+          "id": "training",
+          "prop": "👣",
+          "outcome": "도롱이가 수련을 마쳤어요.",
+          "mood": "playful",
+          "energy": -1,
+          "motion": "bounce"
         }
       }
     },

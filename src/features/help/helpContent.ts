@@ -10,6 +10,7 @@ const explicitContent: Record<string, { title: string; instruction: string }> = 
   'companion-walk': { title: '친구와 교감하기', instruction: '친구와 산책하거나, 이야기를 듣거나, 친구가 좋아하는 것을 함께 찾아봐요.' },
   'companion-treat': { title: '친구 돌보기', instruction: '친구에게 어울리는 돌봄을 해요. 보슬의 빵은 고구마 앙금을 넣은 뒤 구울 수 있어요.' },
   'companion-pet': { title: '쓰다듬기', instruction: '친구의 성격에 따라 다른 반응을 보여요. 친밀도 상승 횟수와 성장 상태는 바꾸지 않아요.' },
+  'companion-training': { title: '훈련하기', instruction: '도롱이의 수련을 하나 뽑아요. 어떤 수련을 했는지와 도롱이의 반응을 열린 창에서 볼 수 있어요.' },
   'companion-play': { title: '친구와 함께 놀기', instruction: '친구마다 다른 놀이를 해요. 도롱이와 장기를 둘 때는 차를 옮길 칸을 골라요.' },
   'companion-rest': { title: '친구와 여유 보내기', instruction: '함께 쉬거나 친구가 좋아하는 조용한 활동을 해요. 최근 행동과 기분은 기기에 기억해요.' },
   'companion-watch': { title: '지켜보기', instruction: '말을 걸지 않고 친구의 현재 모습을 조용히 지켜봐요. 잠을 깨우거나 친밀도와 활력을 바꾸지 않아요. 기다리던 대사가 있다면 멈추고 지켜봐요.' },

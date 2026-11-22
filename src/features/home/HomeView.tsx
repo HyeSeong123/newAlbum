@@ -10,7 +10,7 @@ import { useGomiBehavior } from "../characters/useGomiBehavior";
 import { gomiCanSpeak } from "../characters/gomiBehavior";
 import { useCompanionBehavior } from "../characters/useCompanionBehavior";
 import { COMPANION_ACTIONS, companionActionLabel, companionDisturbsSleep, performCompanionActivity, readCompanionMemory, saveCompanionMemory, type CompanionAction } from "../characters/companionActivities";
-import { HomeActivityScene, type VisibleActivityScene } from "./HomeActivityScene";
+import { HomeActivityDialog, type VisibleActivityScene } from "./HomeActivityScene";
 import "../characters/characters.css";
 import "./home.css";
 
@@ -72,16 +72,15 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   });
   const lastLine = useRef(0);
   useEffect(()=>{
-    if(document.hidden||(!["generating","quiet","watching","failed"].includes(aiStatus)&&!spokenLine))return;
+    if(activityScene||document.hidden||(!["generating","quiet","watching","failed"].includes(aiStatus)&&!spokenLine))return;
     const message=document.getElementById("homeMessage");if(!message)return;
     const box=message.getBoundingClientRect(),x=box.left+box.width/2;
     const visible=box.top>=0&&box.bottom<=window.innerHeight&&[box.top+2,box.top+box.height/2,box.bottom-2].every(y=>{
       const hit=document.elementFromPoint(x,y);return hit!=null&&message.contains(hit);
     });
-    // Activity buttons can be below the speech balloon, behind the sticky
-    // navigation after scrolling. Bring the actual response back into view.
+    // Bring a mascot response back into view when the sticky header covers it.
     if(!visible)message.scrollIntoView({block:"center",behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
-  },[aiStatus,spokenLine,quietResponseId]);
+  },[activityScene,aiStatus,spokenLine,quietResponseId]);
   const timer = useRef<number | undefined>(undefined);
   const reactionRequest = useRef(0);
   const storedInteraction = useRef<Promise<OwnedCharacter | undefined>>(Promise.resolve(undefined));
@@ -90,6 +89,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
       if (document.hidden) {
         ++reactionRequest.current;
         retryContext.current = undefined;
+        setActivityScene(undefined);
         setSpokenLine(undefined);
         setAiStatus("idle");
       }
@@ -201,6 +201,17 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
 
   const activityIcons = { walk: Footprints, treat: Sun, pet: HandHeart, play: Gamepad2, rest: Moon };
 
+  function closeActivity() {
+    ++reactionRequest.current;
+    ai.cancel();
+    retryContext.current = undefined;
+    setActivityScene(undefined);
+    setSpokenLine(undefined);
+    setAiFailure("");
+    setQuietResponseId(0);
+    setAiStatus("idle");
+  }
+
   function watchCompanion() {
     if (!definition || !mainCharacter || (isGomi && !gomi.ready)) return;
     // Observation is not a touch, rest, meal or sleep disturbance. Invalidate
@@ -210,7 +221,7 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     retryContext.current = undefined;
     window.clearTimeout(timer.current);
     setHappy(false);
-    setActivityScene(undefined);
+    setActivityScene({ title:"지켜보기", watching:true });
     setSpokenLine(undefined);
     setAiFailure("");
     setQuietResponseId(request);
@@ -220,27 +231,30 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
   function chooseActivity(action: CompanionAction, input?: { janggiSquare: number } | { poured: true }) {
     if (!definition || !mainCharacter || (isGomi && !gomi.ready)) return;
     const scene = definition.specialActivities?.[action]?.scene;
+    const title = companionActionLabel(definition, action);
     if ((scene?.id === "janggi" || scene?.id === "pour-makgeolli") && !input) {
       ++reactionRequest.current;
       ai.cancel();
       retryContext.current = undefined;
       setSpokenLine(undefined);
       setAiStatus("idle");
-      setActivityScene({ scene, pending:true });
+      setActivityScene({ title, scene, pending:true });
       return;
     }
     const sleeping = isGomi && gomi.sleeping;
     const previous=readCompanionMemory(mainCharacter.id);
     const result = performCompanionActivity(definition, previous, action, mainCharacter.affection, today, { sleeping });
     if (result.memory === previous) {
-      setActivityScene(undefined);
+      setActivityScene({ title });
       showActivityReply(result.line);
       return;
     }
     const disturbed=companionDisturbsSleep(action,sleeping);
     saveCompanionMemory(mainCharacter.id, result.memory);
     const janggiSquare = input && "janggiSquare" in input ? input.janggiSquare : undefined;
-    setActivityScene(scene ? { scene, chapter:result.memory.storyChapter, janggiSquare } : undefined);
+    const training = result.training;
+    setActivityScene({ title:training?.title ?? title, scene:scene && training ? { ...scene, id:training.id, prop:training.prop, outcome:training.outcome } : scene,
+      chapter:result.memory.storyChapter, janggiSquare });
     setAiFailure("");
     const voice = definition.activityVoices?.[action];
     if (result.authored || (action === "treat" && definition.treatLabel)) {
@@ -268,50 +282,61 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
     { label: "사람과 반려동물", description: "", count: "", icon: Users, onClick: onShowPeople },
   ];
 
+  const mascot = definition && mainCharacter ? <CharacterVisual definition={definition} stage={mainCharacter.growthStage} expression={happy ? "happy" : "idle"}
+    gomiMotion={isGomi ? gomi.motion : undefined} companionMotion={!isGomi ? companion.motion : undefined}
+    paused={!isGomi && companion.paused} affection={mainCharacter.affection} reactionKey={isGomi ? gomi.sequence : companion.sequence} />
+    : <img src="/characters/gomi/avoid.png" alt="" width={1254} height={1254} draggable={false} />;
+  const response = <>
+    {spokenLine
+      ? <p id="homeMessage" className="homeSpeech" data-source={spokenLine.source}
+          role="status" aria-live="polite" aria-atomic="true">{spokenLine.text}</p>
+      : aiStatus === "quiet" || (isGomi && !gomiCanSpeak(mainCharacter?.affection || 0) && ["idle","watching"].includes(aiStatus))
+        ? <p id="homeMessage" className="homeQuiet" data-source="nonverbal" data-state={aiStatus} data-response-id={quietResponseId} role="status" aria-live="polite">
+            <span className="homeQuietDots" aria-hidden="true">...</span>
+            <span className="homeQuietDescription">{aiStatus === "watching" ? "고미를 조용히 지켜보고 있어요." : gomi.sleeping ? "고미가 말없이 쉬고 있어요." : activityScene ? "고미가 조용히 반응해요." : "고미가 말없이 거리를 두고 있어요."}</span>
+          </p>
+      : <p id="homeMessage" className="homeSpeechNotice" data-source="status" data-state={aiStatus}
+          role="status" aria-live="polite" aria-atomic="true">
+          {aiStatus === "generating" ? "AI가 대사를 생성하고 있어요." :
+            aiStatus === "failed" ? aiFailure :
+            aiStatus === "watching" ? `${definition ? characterName(definition, mainCharacter) : "친구"}의 모습을 조용히 지켜보고 있어요.` :
+            isGomi && !gomi.ready ? "친구를 준비하고 있어요." :
+            definition ? "친구를 터치하면 AI가 새로운 대사를 만들어요." : "친구를 선택하면 AI와 대화할 수 있어요."}
+        </p>}
+    {aiStatus === "failed" && retryContext.current && <button type="button" className="homeReactionRetry" onClick={() => {
+      const context = retryContext.current;
+      if (!context || context.owned.id !== mainCharacter?.id || document.hidden) return;
+      setAiStatus("generating");
+      setAiFailure("");
+      ai.react(context);
+    }}>대사 다시 생성</button>}
+    {aiStatus === "failed" && definition?.activityVoices && retryContext.current?.fallback && (
+      <button type="button" className="homeReactionRetry" onClick={() => {
+        const context = retryContext.current;
+        if (context?.owned.id === mainCharacter?.id && context?.fallback) showActivityReply(context.fallback);
+      }}>기본 대사 보기</button>
+    )}
+  </>;
+
   return <section className="homeView" aria-label="곰고미 홈">
     {aiSetupOpen && definition && mainCharacter && <CompanionAiSetup key={mainCharacter.id} definition={definition} owned={mainCharacter}
       onClose={() => setAiSetupOpen(false)} />}
+    {activityScene && <HomeActivityDialog activity={activityScene} onClose={closeActivity}
+      onJanggiMove={square => chooseActivity("play", { janggiSquare:square })}
+      onPour={() => chooseActivity("treat", { poured:true })}
+      onNextChapter={() => chooseActivity("walk")}
+      chapterPending={aiStatus === "generating" || aiStatus === "failed"}>
+      {activityScene.watching && <div className="homeActivityPreview" aria-hidden="true">{mascot}</div>}
+      {!activityScene.pending && <div className="homeActivityReply">{response}</div>}
+    </HomeActivityDialog>}
     <div className="homeWelcome">
       <time className="homeDate" dateTime={today}>{dateLabel}</time>
       <h2>작은 하루가 자라는 곳</h2>
       <p className="homeIntroduction">소중한 순간도, 평범한 하루도 차곡차곡 담아두세요.</p>
       <div className="homeCompanion">
-        <div className="homeDialogueSlot">
-          {spokenLine
-            ? <p id="homeMessage" className="homeSpeech" data-source={spokenLine.source}
-                role="status" aria-live="polite" aria-atomic="true">{spokenLine.text}</p>
-            : aiStatus === "quiet" || (isGomi && !gomiCanSpeak(mainCharacter?.affection || 0) && ["idle","watching"].includes(aiStatus))
-              ? <p id="homeMessage" className="homeQuiet" data-source="nonverbal" data-state={aiStatus} data-response-id={quietResponseId} role="status" aria-live="polite">
-                  <span className="homeQuietDots" aria-hidden="true">...</span>
-                  <span className="homeQuietDescription">{aiStatus === "watching" ? "고미를 조용히 지켜보고 있어요." : gomi.sleeping ? "고미가 말없이 쉬고 있어요." : "고미가 말없이 거리를 두고 있어요."}</span>
-                </p>
-            : <p id="homeMessage" className="homeSpeechNotice" data-source="status" data-state={aiStatus}
-                role="status" aria-live="polite" aria-atomic="true">
-                {aiStatus === "generating" ? "AI가 대사를 생성하고 있어요." :
-                  aiStatus === "failed" ? aiFailure :
-                  aiStatus === "watching" ? `${definition ? characterName(definition, mainCharacter) : "친구"}의 모습을 조용히 지켜보고 있어요.` :
-                  isGomi && !gomi.ready ? "친구를 준비하고 있어요." :
-                  definition ? "친구를 터치하면 AI가 새로운 대사를 만들어요." : "친구를 선택하면 AI와 대화할 수 있어요."}
-              </p>}
-          {aiStatus === "failed" && retryContext.current && <button type="button" className="homeReactionRetry" onClick={() => {
-            const context = retryContext.current;
-            if (!context || context.owned.id !== mainCharacter?.id || document.hidden) return;
-            setAiStatus("generating");
-            setAiFailure("");
-            ai.react(context);
-          }}>대사 다시 생성</button>}
-          {aiStatus === "failed" && definition?.activityVoices && retryContext.current?.fallback && (
-            <button type="button" className="homeReactionRetry" onClick={() => {
-              const context = retryContext.current;
-              if (context?.owned.id === mainCharacter?.id && context?.fallback) showActivityReply(context.fallback);
-            }}>기본 대사 보기</button>
-          )}
-        </div>
+        <div className="homeDialogueSlot">{!activityScene && response}</div>
         <button className={`homeMascot${happy ? " happy" : ""}`} type="button" aria-label={`${definition ? characterName(definition, mainCharacter) : "곰고미"}에게 말 걸기`} onClick={talk}>
-          {definition && mainCharacter ? <CharacterVisual definition={definition} stage={mainCharacter.growthStage} expression={happy ? "happy" : "idle"}
-            gomiMotion={isGomi ? gomi.motion : undefined} companionMotion={!isGomi ? companion.motion : undefined}
-            paused={!isGomi && companion.paused} affection={mainCharacter.affection} reactionKey={isGomi ? gomi.sequence : companion.sequence} />
-            : <img src="/characters/gomi/avoid.png" alt="" width={1254} height={1254} draggable={false} />}
+          {mascot}
         </button>
         {definition && mainCharacter && <p className="homeCharacterMeta"><strong>{characterName(definition, mainCharacter)}</strong><span className="homeAffection"><Heart size={14} aria-hidden="true" />친밀도 {mainCharacter.affection}</span></p>}
         {definition && mainCharacter && <div className="homeActivities">
@@ -325,20 +350,17 @@ export function HomeView({ today, itemCount, albumCount, diaryCount, onShowLibra
               const special = definition.specialActivities?.[action];
               const Icon = special?.icon ? specialActivityIcons[special.icon]
                 : action === "treat" && (special || definition.treatLabel) ? Gift : activityIcons[action];
-              return <button key={action} type="button" className="homeActivity" data-help={"companion-" + action}
-                onClick={() => chooseActivity(action)}>
+              return <button key={action} type="button" className="homeActivity" aria-haspopup="dialog"
+                data-help={special?.scene?.id === "training" ? "companion-training" : "companion-" + action}
+                onClick={event => { event.currentTarget.focus({ preventScroll:true }); chooseActivity(action); }}>
                 <Icon size={19} aria-hidden="true" /><span>{companionActionLabel(definition, action)}</span>
               </button>;
             })}
-            <button type="button" className="homeActivity" data-help="companion-watch" onClick={watchCompanion}>
+            <button type="button" className="homeActivity" data-help="companion-watch" aria-haspopup="dialog"
+              onClick={event => { event.currentTarget.focus({ preventScroll:true }); watchCompanion(); }}>
               <Eye size={19} aria-hidden="true" /><span>지켜보기</span>
             </button>
           </div>}
-          {activitiesOpen && activityScene && <HomeActivityScene activity={activityScene}
-            onJanggiMove={square => chooseActivity("play", { janggiSquare:square })}
-            onPour={() => chooseActivity("treat", { poured:true })}
-            onNextChapter={() => chooseActivity("walk")}
-            chapterPending={aiStatus === "generating" || aiStatus === "failed"} />}
         </div>}
         <button className="homeCharacterLink" type="button" onClick={onShowCharacters}>친구들 보기</button>
       </div>

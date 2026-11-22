@@ -1,11 +1,16 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
+import { X } from "lucide-react";
+import { useDialogFocus } from "../../hooks/useDialogFocus";
+import { useModalBehavior } from "../../hooks/useModalBehavior";
 import { FIRST_LOVE_CHAPTERS, type SpecialActivity } from "../characters/companionActivities";
 
 export type VisibleActivityScene = {
-  scene: NonNullable<SpecialActivity["scene"]>;
+  title: string;
+  scene?: SpecialActivity["scene"];
   chapter?: number;
   janggiSquare?: number;
   pending?: boolean;
+  watching?: boolean;
 };
 
 const janggiTargets = [
@@ -13,7 +18,37 @@ const janggiTargets = [
   { square:4, label:"차를 한 칸 올리기" },
 ];
 
-export function HomeActivityScene({ activity, onJanggiMove, onPour, onNextChapter, chapterPending }: {
+export function HomeActivityDialog({ activity, onClose, onJanggiMove, onPour, onNextChapter, chapterPending, children }: {
+  activity: VisibleActivityScene;
+  onClose: () => void;
+  onJanggiMove: (square: number) => void;
+  onPour: () => void;
+  onNextChapter: () => void;
+  chapterPending: boolean;
+  children?: ReactNode;
+}) {
+  const panel = useRef<HTMLElement>(null);
+  useModalBehavior(onClose);
+  const focus = useDialogFocus(panel);
+  useEffect(() => {
+    if (!panel.current?.contains(document.activeElement)) panel.current?.focus({ preventScroll:true });
+  }, [activity.pending, activity.chapter]);
+  return <div className="companionChatBackdrop homeActivityBackdrop" onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
+    <section className="companionChat homeActivityDialog" role="dialog" aria-modal="true" aria-labelledby="home-activity-title"
+      tabIndex={-1} ref={panel} onKeyDown={focus}>
+      <header className="companionChatHeader">
+        <h2 id="home-activity-title">{activity.title}</h2>
+        <button type="button" aria-label="함께하기 닫기" onClick={onClose}><X size={22} aria-hidden="true" /></button>
+      </header>
+      <div className="homeActivityDialogContent">
+        <HomeActivityScene activity={activity} onJanggiMove={onJanggiMove} onPour={onPour} onNextChapter={onNextChapter} chapterPending={chapterPending} />
+        {children}
+      </div>
+    </section>
+  </div>;
+}
+
+function HomeActivityScene({ activity, onJanggiMove, onPour, onNextChapter, chapterPending }: {
   activity: VisibleActivityScene;
   onJanggiMove: (square: number) => void;
   onPour: () => void;
@@ -21,15 +56,12 @@ export function HomeActivityScene({ activity, onJanggiMove, onPour, onNextChapte
   chapterPending: boolean;
 }) {
   const { scene, chapter = 0, janggiSquare, pending } = activity;
-  const panel = useRef<HTMLElement>(null);
-  useEffect(() => {
-    if (pending) panel.current?.scrollIntoView({ block:"center" });
-  }, [pending, scene.id]);
+  if (!scene) return null;
   const story = scene.id === "first-love" ? FIRST_LOVE_CHAPTERS[chapter - 1] : undefined;
   const waitingForMove = scene.id === "janggi" && pending;
   const waitingForPour = scene.id === "pour-makgeolli" && pending;
   const chariotPosition = janggiSquare ?? 7;
-  return <section ref={panel} className="homeActivityScene" aria-label="함께하기 장면" data-activity={scene.id}>
+  return <section className="homeActivityScene" aria-label="함께하기 장면" data-activity={scene.id}>
     {scene.id === "janggi" ? (
       <div className="homeJanggiBoard" aria-label="장기판 일부">
         {Array.from({ length:9 }, (_, square) => {

@@ -441,16 +441,32 @@ try {
       await captureScreen('character-name-dorongi-home');
       await page.getByRole('button',{name:'함께하기',exact:true}).click();
       const dorongiActions=page.getByRole('group',{name:'친구와 함께하기'});
+      const closeActivity=()=>page.getByRole('button',{name:'함께하기 닫기',exact:true}).click();
       for(const [label, icon] of [
-        ['첫사랑 얘기 듣기','book-heart'],['막걸리 따르기','makgeolli-pour'],['갓 매만지기','gat'],
-        ['장기 두기','janggi-piece'],['붓글씨 쓰기','paintbrush'],['지켜보기','eye'],
+        ['첫사랑 얘기 듣기','book-heart'],['막걸리 따르기','makgeolli-pour'],['훈련하기','ninja-training'],
+        ['장기 두기','janggi-piece'],['붓글씨 쓰기','ink-brush'],['지켜보기','eye'],
       ]) await expect(dorongiActions.getByRole('button',{name:label,exact:true}).locator(`svg.lucide-${icon}`)).toBeVisible();
       await dorongiActions.scrollIntoViewIfNeeded();
       await captureScreen('friend-activities-dorongi');
+      const train=dorongiActions.getByRole('button',{name:'훈련하기',exact:true});
+      await train.click();
+      const training=page.locator('.homeActivityDialog [data-activity^="training-"]');
+      await expect(training).toBeVisible();
+      await expect(page.locator('.homeActivityDialog #homeMessage')).toHaveAttribute('data-source','activity');
+      const firstTraining=await training.getAttribute('data-activity');
+      await captureScreen('friend-training-dorongi');
+      assert.equal(await page.evaluate(()=>window.__gamjassakBack?.()),true);
+      await expect(training).toHaveCount(0);
+      await expect(train).toBeFocused();
+      await train.click();
+      await expect(training).toBeVisible();
+      await expect(training).not.toHaveAttribute('data-activity',firstTraining);
+      await closeActivity();
       await page.getByRole('button',{name:'장기 두기',exact:true}).click();
       await page.getByRole('button',{name:'차를 한 칸 올리기',exact:true}).click();
       await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
       await expect(page.locator('#homeMessage')).toContainText(/장기|차|말|한 수/);
+      await closeActivity();
       await page.getByRole('button',{name:'붓글씨 쓰기',exact:true}).click();
       await expect(page.locator('#homeMessage')).toHaveAttribute('data-source','on-device');
       await expect(page.locator('#homeMessage')).toContainText(/붓|먹|획|글|종이/);
@@ -463,6 +479,7 @@ try {
         assert.ok(scale.every(axis=>Math.abs(axis-1)<0.002));
         await pause(120);
       }
+      await closeActivity();
       console.log('Offline Dorongi, button to painted speech (ms)', Math.round(dorongiReply.elapsedMs));
     } finally {
       await adb('shell','cmd','connectivity','airplane-mode',airplane==='1'?'enable':'disable');
@@ -481,8 +498,10 @@ try {
     await expect(page.locator('.homeMascot .characterVisual')).toHaveAttribute('data-motion','treat');
     await expect(page.locator('#homeMessage[data-source=activity]')).toContainText('새우 과자');
     await captureScreen('character-design-seagull-home');
+    await page.getByRole('button',{name:'함께하기 닫기',exact:true}).click();
     await page.getByRole('button',{name:'연 날리기',exact:true}).click();
     await expect(page.locator('#homeMessage[data-source=activity]')).toContainText('연줄');
+    await page.getByRole('button',{name:'함께하기 닫기',exact:true}).click();
     await page.getByRole('button',{name:'친구들 보기',exact:true}).click();
     const potato = book.locator('.characterCard').filter({has:page.getByRole('heading',{name:'알토',exact:true})});
     await potato.getByRole('button',{name:'대표로 설정',exact:true}).click();
@@ -491,6 +510,7 @@ try {
     await page.getByRole('button',{name:'물 주기',exact:true}).click();
     await expect(page.locator('#homeMessage[data-source=activity]')).toContainText('물방울');
     await expect(page.locator('.homeMascot [data-brother-effect=water]')).toBeVisible();
+    await page.getByRole('button',{name:'함께하기 닫기',exact:true}).click();
     await page.getByRole('group',{name:'친구와 함께하기'}).scrollIntoViewIfNeeded();
     await captureScreen('friend-activities-potato');
     connection = await verifyInstalledBackup({page, adb, tapNative, nativeTree, captureScreen, restart:async confirmed => {

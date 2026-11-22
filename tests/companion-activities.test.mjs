@@ -53,6 +53,7 @@ test("each friend has fitting choices and authored actions retain the saved acti
         assert.equal(first.memory, previous);
         continue;
       }
+      if (activity.scene.id === "training") continue;
       assert.deepEqual(first.memory.history, [{action, day:"2026-11-22", activityId:activity.scene.id}]);
       assert.deepEqual(previous.history, []);
       assert.equal(companionActionLabel(def, action), activity.label);
@@ -87,7 +88,7 @@ test("bread filling survives across actions and baking advances the recipe only 
 
 test("regional gifts and reactions describe the current character artwork", () => {
   for (const [id, action, phrase] of [
-    ["apple","pet","갓"], ["ginkgo","pet","뚜껑"], ["camellia","treat","새우 과자"],
+    ["ginkgo","pet","뚜껑"], ["camellia","treat","새우 과자"],
     ["pear","pet","지느러미"], ["jujube","pet","호두 껍데기"], ["chestnut","treat","잔뿌리"], ["persimmon","rest","꽃잎"],
   ]) {
     const def=definitions.find(character=>character.id===id);
@@ -97,6 +98,28 @@ test("regional gifts and reactions describe the current character artwork", () =
   }
   assert.equal(companionActionLabel(definitions.find(def=>def.id==="camellia"),"treat"),"새우 과자 주기");
   assert.equal(companionActionLabel(definitions.find(def=>def.id==="chestnut"),"treat"),"물 주기");
+});
+
+test("Dorongi chooses all seven training events, skips the last one, and preserves earlier hat records", () => {
+  const dorongi = definitions.find(friend => friend.id === "apple");
+  const day = "2026-11-22";
+  const previous = emptyCompanionMemory();
+  previous.history.push({ action:"pet", day, activityId:"straighten-hat" });
+  const choose = (history, roll) => performCompanionActivity(dorongi, history, "pet", 44, day, { random:() => roll });
+  const titles = ["지붕 뛰어넘기", "낙법 연습하기", "담장 넘기", "소리 없이 뛰기", "팔굽혀펴기", "스쿼트", "러닝"];
+  assert.equal(companionActionLabel(dorongi, "pet"), "훈련하기");
+  for (const [index, title] of titles.entries()) {
+    const reply = choose(previous, (index + .5) / titles.length);
+    assert.equal(reply.training.title, title);
+    assert.equal(reply.authored, true);
+    assert.ok(reply.line.length >= 2);
+    assert.deepEqual(reply.memory.history, [previous.history[0], { action:"pet", day, activityId:reply.training.id }]);
+    const prompt = buildCompanionPrompt(dorongi, owned(dorongi), reply.memory, "walk");
+    assert.ok(prompt.system.includes(title));
+    assert.ok(prompt.system.includes("갓 매만지기"));
+  }
+  const first = choose(previous, 0);
+  assert.notEqual(choose(first.memory, 0).training.id, first.training.id);
 });
 
 test("Gomi stays guarded at low affection and affectionate at high affection", () => {

@@ -6,7 +6,7 @@ import type { CompanionMotion } from "./companionBehavior";
 export const COMPANION_ACTIONS = ["walk", "treat", "pet", "play", "rest"] as const;
 export type CompanionAction = typeof COMPANION_ACTIONS[number];
 export type CompanionMood = "calm" | "curious" | "delighted" | "playful" | "sleepy" | "irritated";
-export type SpecialActivityIcon = "water" | "sun" | "love-story" | "makgeolli" | "gat" | "janggi" | "calligraphy";
+export type SpecialActivityIcon = "water" | "sun" | "love-story" | "makgeolli" | "training" | "janggi" | "calligraphy";
 export type SpecialActivity = {
   label: string;
   replies?: readonly string[];
@@ -26,6 +26,20 @@ export const FIRST_LOVE_CHAPTERS = [
   { id:"first-love-letter", title:"접어 둔 편지", prop:"💌" },
   { id:"first-love-farewell", title:"나루의 작별", prop:"🌙" },
 ] as const;
+const DORONGI_TRAINING = [
+  { id:"training-roofs", title:"지붕 뛰어넘기", prop:"🏯", outcome:"도롱이가 달빛 아래 기와지붕을 훌쩍 건넜어요.", line:"기왓장 한 장도 깨우지 않았소." },
+  { id:"training-roll", title:"낙법 연습하기", prop:"🍃", outcome:"도롱이가 훈련장에 놓인 짚 매트 위를 데굴 굴렀어요.", line:"구르고 나니 짚 냄새가 옷자락에 배었구려." },
+  { id:"training-wall", title:"담장 넘기", prop:"🧱", outcome:"도롱이가 훈련장 담을 넘어 반대편에 가볍게 내려섰어요.", line:"담 너머에 먼저 와 있었소. 언제 넘었는지 알아챘소?" },
+  { id:"training-silent-run", title:"소리 없이 뛰기", prop:"👣", outcome:"도롱이가 낙엽 사이를 발소리 없이 지나갔어요.", line:"바람은 들렸어도 내 발소리는 못 들었겠지요." },
+  { id:"training-push-ups", title:"팔굽혀펴기", prop:"💪", outcome:"도롱이가 마루에서 팔굽혀펴기를 마쳤어요.", line:"팔이 후들거려도 태연한 척하는 것까지 수련이오." },
+  { id:"training-squats", title:"스쿼트", prop:"🏋️", outcome:"도롱이가 마당에서 앉았다 일어나는 수련을 했어요.", line:"다리가 든든해야 어디서든 흔들리지 않는 법이오." },
+  { id:"training-run", title:"러닝", prop:"🏃", outcome:"도롱이가 새벽 훈련장을 한 바퀴 달렸어요.", line:"한 바퀴를 뛰고 보니 동이 텄구려." },
+] as const;
+function chooseDorongiTraining(history: CompanionMemory["history"], random: () => number) {
+  const last = history.filter(entry => entry.activityId?.startsWith("training-")).at(-1)?.activityId;
+  const choices = DORONGI_TRAINING.filter(item => item.id !== last);
+  return choices[Math.floor(random() * choices.length)];
+}
 export type CompanionMemory = {
   version: 1;
   mood: CompanionMood;
@@ -34,7 +48,7 @@ export type CompanionMemory = {
   bakery?: "filled" | "baked";
   storyChapter?: number;
 };
-export type CompanionReply = { line: string; memory: CompanionMemory; authored?: boolean; aiAction?: string };
+export type CompanionReply = { line: string; memory: CompanionMemory; authored?: boolean; aiAction?: string; training?: typeof DORONGI_TRAINING[number] };
 const memoryCache = new Map<string, CompanionMemory>();
 const moodLabels: Record<CompanionMood, string> = {
   calm: "차분함", curious: "호기심", delighted: "기쁨", playful: "신남", sleepy: "나른함", irritated: "짜증",
@@ -96,6 +110,15 @@ function baseActionLabel(definition: CharacterDefinition, action: CompanionActio
 export function companionActionLabel(definition: CharacterDefinition, action: CompanionAction): string {
   return definition.specialActivities?.[action]?.label ?? baseActionLabel(definition, action);
 }
+export function companionHistoryLabel(definition: CharacterDefinition, { action, activityId }: CompanionMemory["history"][number]): string {
+  const specific = definition.specialActivities?.[action];
+  if (definition.id === "apple" && action === "pet") {
+    if (activityId === "straighten-hat") return "갓 매만지기";
+    const training = DORONGI_TRAINING.find(item => item.id === activityId);
+    if (training) return training.title;
+  }
+  return specific?.scene?.id === activityId && specific ? specific.label : baseActionLabel(definition, action);
+}
 export function companionDisturbsSleep(action:CompanionAction,sleeping:boolean){
   return sleeping&&action!=="rest"&&action!=="treat";
 }
@@ -142,7 +165,7 @@ const afterLines: Record<CompanionAction, readonly string[]> = {
   rest: ["오늘은 서두르지 말자.", "조용한 시간도 소중해.", "잠깐의 휴식도 남겨 두자."],
 };
 export function performCompanionActivity(definition: CharacterDefinition, previous: CompanionMemory,
-  action: CompanionAction, affection: number, day: string, state: { sleeping?:boolean } = {}): CompanionReply {
+  action: CompanionAction, affection: number, day: string, state: { sleeping?:boolean; random?:() => number } = {}): CompanionReply {
   const activity = definition.specialActivities?.[action];
   const scene = activity?.scene;
   if (scene?.id === "bake-bread" && previous.bakery !== "filled") {
@@ -152,7 +175,8 @@ export function performCompanionActivity(definition: CharacterDefinition, previo
     return { line:"앙금 넣은 소보로부터 구워 줘!", memory:previous, authored:true };
   }
   const chapter = scene?.id === "first-love" ? (previous.storyChapter ?? 0) % FIRST_LOVE_CHAPTERS.length + 1 : undefined;
-  const activityId = scene?.id;
+  const training = scene?.id === "training" ? chooseDorongiTraining(previous.history, state.random ?? Math.random) : undefined;
+  const activityId = training?.id ?? scene?.id;
   const before = previous.history.filter(entry => activityId ? entry.activityId === activityId : entry.action === action).length;
   const deltas: Record<CompanionAction, number> = { walk: -1, treat: 1, pet: 0, play: -1, rest: 2 };
   const moods: Record<CompanionAction, CompanionMood> = {
@@ -166,6 +190,7 @@ export function performCompanionActivity(definition: CharacterDefinition, previo
   if (activityId === "fill-bread") memory.bakery = "filled";
   if (activityId === "bake-bread") memory.bakery = "baked";
   if (chapter !== undefined) memory.storyChapter = chapter;
+  if (training) return { line:training.line, memory, authored:true, training };
   const tier = gomiAffinity(affection);
   if (definition.type === "gomi" && state.sleeping) {
     if(action==="treat"){
@@ -198,11 +223,7 @@ export function performCompanionActivity(definition: CharacterDefinition, previo
 export function buildCompanionPrompt(definition: CharacterDefinition, owned: OwnedCharacter,
   memory: CompanionMemory, action: CompanionAction): { system: string; user: string } {
   const name = owned.customName || definition.defaultName;
-  const history = memory.history.slice(-5).map(entry => {
-    const specific = definition.specialActivities?.[entry.action];
-    const label = specific?.scene?.id === entry.activityId && specific ? specific.label : baseActionLabel(definition, entry.action);
-    return entry.day + " " + label;
-  }).join(", ") || "아직 없음";
+  const history = memory.history.slice(-5).map(entry => entry.day + " " + companionHistoryLabel(definition, entry)).join(", ") || "아직 없음";
   return {
     system: [
       "너는 곰고미 홈 화면에서만 대화하는 캐릭터다. 반드시 자연스러운 한국어로 답한다.",

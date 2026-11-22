@@ -20,6 +20,7 @@ export async function verifyInstalledFriendMotions({page,captureScreen}) {
     await page.getByRole('button',{name:label,exact:true}).click();
     await expect(visual).toHaveAttribute('data-motion',motion);
     assert.equal(await page.evaluate(()=>window.friendMotionDrawing===document.querySelector('.homeMascot .characterPortrait image')),true);
+    await page.getByRole('button',{name:'함께하기 닫기',exact:true}).click();
   }
   await expect(page.locator('.homeMascot .characterHeart')).toHaveCount(0);
   assert.equal((await read()).characters.find(c=>c.id==='potato').affection,potato.affection);

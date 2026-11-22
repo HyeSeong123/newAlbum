@@ -67,19 +67,18 @@ export async function pressAndPaint(page,selector){
     const hit=document.elementFromPoint(x,y);return hit!=null&&node.contains(hit);
    });
   };
+  const quietTarget=node=>node?.closest('.homeActivityDialog')?node:document.querySelector('.homeMascot');
   const check=()=>{
    if(finished)return;
    const node=document.querySelector('#homeMessage');
    const responseId=node?.getAttribute('data-response-id');
    if(node?.getAttribute('data-source')==='nonverbal'&&node.getAttribute('data-state')==='quiet'&&/^\d+$/.test(responseId||'')&&Number(responseId)>Number(previousResponseId||0)){
-    const mascot=document.querySelector('.homeMascot');
-    // The activity panel can reflow after the click. Center the completed
-    // reaction clear of the fixed Android header before checking its paint.
-    if(!visible(mascot)){mascot?.scrollIntoView({block:'center',behavior:'instant'});requestAnimationFrame(check);return;}
+    const target=quietTarget(node);
+    if(!visible(target)){target?.scrollIntoView({block:'center',behavior:'instant'});requestAnimationFrame(check);return;}
     requestAnimationFrame(()=>{
      if(finished)return;
      const quiet=document.querySelector('#homeMessage');
-     if(quiet?.getAttribute('data-source')==='nonverbal'&&quiet.getAttribute('data-state')==='quiet'&&quiet.getAttribute('data-response-id')===responseId&&visible(document.querySelector('.homeMascot'))){
+     if(quiet?.getAttribute('data-source')==='nonverbal'&&quiet.getAttribute('data-state')==='quiet'&&quiet.getAttribute('data-response-id')===responseId&&visible(quietTarget(quiet))){
       const inferenceRequested=window.__ownAiRequests.length!==requestStart;
       const elapsedMs=performance.now()-started;dispose();resolve({source:'nonverbal',line:'',elapsedMs,inferenceRequested,responseId,previousResponseId});
      }else requestAnimationFrame(check);
@@ -199,6 +198,7 @@ export async function verifyInstalledGomiAction(page,output='test-results/androi
    if(energy){assert.deepEqual(motionSequence.slice(0,2),['sleep-curled-peek','rest-front']);assert.ok(['avoid','idle','cynical'].includes(motionSequence.at(-1)));}
    else assert.deepEqual(motionSequence,['sleep-curled']);
    foodBehaviour.push({energy,source:record.source,line:record.line,elapsedMs:record.elapsedMs,motionSequence,motionTrace,memory:snapshot.memory,affectionBefore,affectionAfter:snapshot.affection});
+   await page.getByRole('button',{name:'함께하기 닫기',exact:true}).click();
   }
   assert.equal(records.length,10,'All eight touches and two snack actions must complete');
   const spoken=records.filter(row=>row.source==='on-device');

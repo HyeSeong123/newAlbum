@@ -1,5 +1,7 @@
-import {test,expect} from '@playwright/test';
+import {test,expect,type Page} from '@playwright/test';
 import {installOwnAi,requestedInputs,configureInference} from './fixtures/own-ai';
+
+const closeActivity = (page:Page) => page.getByRole('button',{name:'함께하기 닫기',exact:true}).click();
 
 test('bundled settings fit 320px without downloads or typing and restore focus',async({page,isMobile})=>{
   await page.setViewportSize({width:320,height:700});await installOwnAi(page);await page.goto('/');
@@ -26,6 +28,8 @@ test('real bundled model produces short new lines for five actions without exter
     await expect(bubble).toHaveAttribute('data-source','on-device');await expect(bubble).toBeVisible();
     const line=await bubble.innerText();expect(Array.from(line).length).toBeGreaterThan(1);expect(Array.from(line).length).toBeLessThanOrEqual(100);
     expect(line).not.toMatch(/<think>|<\|im_|AI가 대사|다시 터치/);
+    await expect(page.getByRole('dialog',{name,exact:true}).locator('#homeMessage')).toBeVisible();
+    await closeActivity(page);
   }
   expect((await requestedInputs(page)).map((input:any)=>input.action)).toEqual(['walk','treat','pet','play','rest']);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 95');expect(external).toEqual([]);
@@ -41,13 +45,13 @@ test('Dorongi moves a janggi piece, follows three story chapters and speaks from
     await expect(bubble).toContainText(/소[.!?]|구려[.!?]|시게[.!?]|하오[.!?]|오[.!?]|십시다[.!?]/);
   };
   await page.getByRole('button',{name:'도롱이에게 말 걸기',exact:true}).click();
-  await expectVoice(/부르|인사|이름|기억|곁|말씀|기척|소식|자리|기다|얼른|목소리|여기|놓이|오셨|마음|말할|궁금|와 주|듣|반갑|오시게|안부|발소리/);
+  await expectVoice(/부르|인사|이름|기억|곁|말씀|기척|소식|자리|기다|얼른|목소리|여기|놓이|오셨|마음|말할|궁금|와 주|듣|반갑|오시게|앉으시게|안부|발소리/);
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 45');
   await page.getByRole('button',{name:'함께하기',exact:true}).click();
   const actions = page.getByRole('group',{name:'친구와 함께하기'});
   for (const [label, icon] of [
-    ['첫사랑 얘기 듣기','book-heart'], ['막걸리 따르기','makgeolli-pour'], ['갓 매만지기','gat'],
-    ['장기 두기','janggi-piece'], ['붓글씨 쓰기','paintbrush'], ['지켜보기','eye'],
+    ['첫사랑 얘기 듣기','book-heart'], ['막걸리 따르기','makgeolli-pour'], ['훈련하기','ninja-training'],
+    ['장기 두기','janggi-piece'], ['붓글씨 쓰기','ink-brush'], ['지켜보기','eye'],
   ]) {
     const svg = actions.getByRole('button',{name:label,exact:true}).locator(`svg.lucide-${icon}`);
     await expect(svg).toBeVisible();
@@ -55,11 +59,18 @@ test('Dorongi moves a janggi piece, follows three story chapters and speaks from
   }
   const scene=page.getByRole('region',{name:'함께하기 장면'});
   await page.getByRole('button',{name:'장기 두기',exact:true}).click();
+  await expect(page.getByRole('dialog',{name:'장기 두기'})).toContainText('차를 옮길');
+  await expect(page.locator('.homeActivities [data-activity]')).toHaveCount(0);
   await expect(scene).toContainText('차를 옮길');
+  await closeActivity(page);
   expect(await requestedInputs(page)).toHaveLength(1);
+  expect(await page.evaluate(() => localStorage.getItem('gamjassak:companion:v1:apple'))).toBeNull();
+  await page.getByRole('button',{name:'장기 두기',exact:true}).click();
   await page.getByRole('button',{name:'차를 두 칸 올리기'}).click();
   await expectVoice(/장기|차|말|한 수/);
   await expect(scene.locator('.homeJanggiBoard > :nth-child(2)')).toHaveAttribute('data-piece','chariot');
+  await scene.screenshot({path:`preview-results/own-ai-janggi-modal-${test.info().project.name}.png`});
+  await closeActivity(page);
   await page.getByRole('button',{name:'첫사랑 얘기 듣기',exact:true}).click();
   await expectVoice(/개울|처음|첫 만남|그이/);
   await expect(scene).toContainText('개울가의 첫 만남');
@@ -69,7 +80,8 @@ test('Dorongi moves a janggi piece, follows three story chapters and speaks from
   await scene.getByRole('button',{name:'이어서 듣기'}).click();
   await expectVoice(/나루|작별|배웅|떠나|떠날|멀어|마지막 인사/);
   await expect(scene).toContainText('나루의 작별');
-  for(const [label,meaning] of [['막걸리 따르기',/막걸리|잔|주전자|소반/],['갓 매만지기',/갓|매듭/],['붓글씨 쓰기',/붓|먹|획|글|종이/]] as const){
+  await closeActivity(page);
+  for(const [label,meaning] of [['막걸리 따르기',/막걸리|잔|주전자|소반/],['붓글씨 쓰기',/붓|먹|획|글|종이/]] as const){
     await page.getByRole('button',{name:label,exact:true}).click();
     if(label==='막걸리 따르기'){
       await expect(scene.locator('.homePourTray')).toHaveAttribute('data-filled','false');
@@ -77,12 +89,43 @@ test('Dorongi moves a janggi piece, follows three story chapters and speaks from
       await expect(scene.locator('.homePourTray')).toHaveAttribute('data-filled','true');
     }
     await expectVoice(meaning);
+    await closeActivity(page);
   }
   await page.getByRole('button',{name:'지켜보기',exact:true}).click();
   await expect(bubble).toHaveAttribute('data-state','watching');
   expect((await requestedInputs(page)).map((input:{action:string})=>input.action)).toEqual([
-    'touch','janggi','first-love-meeting','first-love-letter','first-love-farewell','pour-makgeolli','straighten-hat','write-calligraphy',
+    'touch','janggi','first-love-meeting','first-love-letter','first-love-farewell','pour-makgeolli','write-calligraphy',
   ]);
+});
+
+test('Dorongi shows a different training in the modal and restores the opener on Back', async ({page,isMobile}) => {
+  await page.setViewportSize({width:320,height:650});
+  await installOwnAi(page,{characterId:'apple',affection:44,worker:{}});
+  await page.goto('/');
+  await page.getByRole('button',{name:'함께하기',exact:true}).click();
+  const opener = page.getByRole('button',{name:'훈련하기',exact:true});
+  const modal = page.getByRole('dialog',{name:/지붕 뛰어넘기|낙법 연습하기/});
+  const history = () => page.evaluate(() => JSON.parse(localStorage.getItem('gamjassak:companion:v1:apple') || 'null').history);
+  await opener.click();
+  await expect(modal).toHaveAccessibleName('지붕 뛰어넘기');
+  await expect(modal).toContainText('기와지붕을 훌쩍');
+  await expect(modal.locator('#homeMessage')).toHaveAttribute('data-source','activity');
+  await expect(modal).toBeInViewport({ratio:1});
+  await expect(page.locator('.homeActivities [data-activity]')).toHaveCount(0);
+  await modal.screenshot({path:`preview-results/dorongi-training-${test.info().project.name}.png`});
+  if (isMobile) expect(await page.evaluate(() => window.__gamjassakBack?.())).toBe(true);
+  else await page.keyboard.press('Escape');
+  await expect(modal).toHaveCount(0);
+  await expect(opener).toBeFocused();
+  await opener.click();
+  await expect(modal).toHaveAccessibleName('낙법 연습하기');
+  await expect(modal).toContainText('짚 매트');
+  await closeActivity(page);
+  const saved = await history();
+  expect(saved.map((entry:{activityId:string}) => entry.activityId)).toEqual(['training-roofs','training-roll']);
+  expect(await requestedInputs(page)).toEqual([]);
+  await page.reload();
+  expect(await history()).toEqual(saved);
 });
 
 test('Bosul fills and bakes one bread batch, and the batch survives reload', async ({page}) => {
@@ -93,6 +136,7 @@ test('Bosul fills and bakes one bread batch, and the batch survives reload', asy
   await expect(page.getByRole('button',{name:/햇살/})).toHaveCount(0);
   await page.getByRole('button',{name:'구워주기',exact:true}).click();
   await expect(page.locator('#homeMessage')).toContainText('앙금부터');
+  await closeActivity(page);
   await page.getByRole('button',{name:'고구마 앙금 넣기',exact:true}).click();
   await expect(page.locator('[data-activity="fill-bread"]')).toContainText('반죽에 고구마 앙금');
   await page.reload();
@@ -163,7 +207,7 @@ for (const width of [320, 360, 393]) {
     expect(saved).toBeTruthy();
     expect((await retry.boundingBox())!.height).toBeGreaterThanOrEqual(48);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await page.locator('.homeDialogueSlot').screenshot({path:`preview-results/own-ai-retry-${width}-${test.info().project.name}.png`});
+    await page.getByRole('dialog',{name:'간식 주기'}).screenshot({path:`preview-results/own-ai-retry-${width}-${test.info().project.name}.png`});
     await configureInference(page, {error:null});
     await retry.click();
     await expect(page.locator('#homeMessage')).toHaveText('gomi treat 새 반응 2');

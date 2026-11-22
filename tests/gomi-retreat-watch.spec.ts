@@ -86,8 +86,11 @@ for(const affection of [20,75])test(`watching sleeping Gomi at affection ${affec
     await watchButton(page).click();await expect(page.locator('#homeMessage')).toHaveAttribute('data-state','watching');
     await expect(page.locator('#homeMessage')).toContainText('조용히 지켜보고');
     await expect(visual).toHaveAttribute('data-motion','sleep-curled');
+    const modal=page.getByRole('dialog',{name:'지켜보기',exact:true});
+    await expect(modal.locator('[data-motion="sleep-curled"]')).toBeVisible();
+    if(affection<60)await expect(modal.locator('.homeQuietDots')).toBeVisible();
+    await modal.getByRole('button',{name:'함께하기 닫기',exact:true}).click();
   }
-  if(affection<60)await expect(page.locator('.homeQuietDots')).toBeVisible();
   await expect(page.locator('.homeCharacterMeta')).toContainText(`친밀도 ${affection}`);
   expect(await requestedInputs(page)).toEqual([]);
   expect(await page.evaluate(()=>(window as any).ownAiProbe.saveStarted)).toBe(0);
@@ -102,6 +105,7 @@ test('watching cancels a pending generated line and talking again still works',a
   await expect.poll(()=>page.evaluate(()=>(window as any).ownAiProbe.responses.filter((row:any)=>row.type==='reply').length)).toBe(1);
   await expect(page.locator('#homeMessage')).toHaveAttribute('data-state','watching');
   await expect(page.locator('.homeSpeech')).toHaveCount(0);
+  await page.getByRole('button',{name:'함께하기 닫기',exact:true}).click();
   await configureInference(page,{controlled:false});await page.locator('.homeMascot').click();
   await expect(page.locator('#homeMessage')).toHaveText('gomi touch 새 반응 2');
 });
@@ -114,6 +118,7 @@ test('watching while a relationship is saving prevents delayed speech across the
   await expect(page.locator('.homeCharacterMeta')).toContainText('친밀도 60');
   await expect(page.locator('#homeMessage')).toHaveAttribute('data-state','watching');
   await expect(page.locator('.homeSpeech')).toHaveCount(0);expect(await requestedInputs(page)).toEqual([]);
+  await page.getByRole('button',{name:'함께하기 닫기',exact:true}).click();
   await page.evaluate(()=>(window as any).ownAiProbe.holdSaves=false);
   await page.locator('.homeMascot').click();await expect(page.locator('#homeMessage')).toHaveText('gomi touch 새 반응 1');
 });

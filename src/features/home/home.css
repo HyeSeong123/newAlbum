@@ -119,6 +119,15 @@
 .homeActivitiesToggle { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 18px; border: 1px solid #c9d0bc; border-radius: 999px; background: #f4f6ec; color: #455441; font-size: 14px; font-weight: 650; }
 .homeActivitiesToggle svg { transition: transform .16s ease; }
 .homeActivitiesToggle svg.expanded { transform: rotate(180deg); }
+.homeActivityDialog .companionChatHeader h2 { margin: 0; color: #514536; line-height: 1.5; word-break: keep-all; }
+.homeActivityDialogContent { display: grid; gap: 14px; overflow-y: auto; overscroll-behavior: contain; padding: 16px; }
+.homeActivityDialog .homeActivityDialogContent button { min-height: 48px; }
+.homeActivityReply { display: grid; justify-items: center; gap: 8px; text-align: center; }
+.homeActivityReply :is(.homeSpeech, .homeQuiet, .homeSpeechNotice) { min-height: 0; padding: 15px 12px; }
+.homeActivityReply :is(.homeSpeech, .homeQuiet)::after { content: none; }
+.homeActivityReply .homeQuietDescription { position: static; width: auto; height: auto; overflow: visible; clip-path: none; white-space: normal; font-size: 13px; }
+.homeActivityPreview { display: grid; justify-items: center; }
+.homeActivityPreview .characterVisual { width: 138px; }
 .homeActivityScene {
   display: grid;
   justify-items: center;
@@ -127,9 +136,9 @@
   padding: 12px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: var(--surface);
+  background: #f8f9f3;
 }
-.homeActivityScene p { margin: 0; color: var(--text); font-size: 13px; line-height: 1.5; }
+.homeActivityScene p { margin: 0; color: var(--text); font-size: 14px; line-height: 1.55; text-align: center; word-break: keep-all; }
 .homeActivityProp { font-size: 27px; line-height: 1.4; }
 .homeCalligraphy { display: inline-block; padding: 0 13px; background: #f6ead5; color: #3e3226; }
 .homePourTray { display: flex; align-items: end; gap: 12px; padding: 4px 10px; border-bottom: 3px solid #95724f; }
@@ -138,8 +147,8 @@
 .homePourTray b { font-size: 27px; line-height: 1; }
 .homeJanggiBoard {
   display: grid;
-  grid-template-columns: repeat(3, 44px);
-  grid-template-rows: repeat(3, 44px);
+  grid-template-columns: repeat(3, 48px);
+  grid-template-rows: repeat(3, 48px);
   border: 1px solid #a58b63;
   background: #f4e4c7;
   color: #52391e;
@@ -149,7 +158,7 @@
   place-items: center;
   border: 1px solid #c0a478;
 }
-.homeJanggiBoard button { background: #e2eacb; cursor: pointer; font-size: 22px; }
+.homeActivityDialog .homeJanggiBoard button { border-radius: 0; padding: 0; background: #e2eacb; cursor: pointer; font-size: 22px; }
 .homeJanggiBoard [data-piece] { background: #fff4de; font-weight: bold; }
 .homeActivitiesChoices { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; width: 100%; padding: 12px; border: 1px solid #dcdccd; border-radius: 14px; background: #fffefa; }
 .homeActivity { display: flex; min-width: 0; min-height: 48px; align-items: center; justify-content: center; gap: 8px; padding: 10px 8px; border: 1px solid #e0e4d8; border-radius: 9px; background: #f8f9f3; color: #455441; font-size: 13px; font-weight: 600; }

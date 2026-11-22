@@ -1,5 +1,5 @@
 import type { CharacterDefinition, OwnedCharacter } from "./models";
-import { companionActionLabel, companionMoodLabel, type CompanionAction, type CompanionMemory } from "./companionActivities";
+import { companionActionLabel, companionHistoryLabel, companionMoodLabel, type CompanionAction, type CompanionMemory } from "./companionActivities";
 import { gomiAffinity } from "./gomiAffinity";
 import { buildGomiActionPrompt, gomiReactionIssue, gomiRetryReason } from "./gomiActionPrompt";
 import { cleanCompanionGeneratedText, companionExecutionError, type CompanionGeneration } from "./companionLlm";
@@ -16,7 +16,7 @@ export function buildTouchPrompt(context: TouchContext): string {
   const period = hour < 6 || hour >= 22 ? "밤" : hour < 12 ? "아침" : hour < 18 ? "오후" : "저녁";
   const relation = ["아직 낯선 사이", "아직 서먹한 사이", "서로 익숙한 사이", "가까운 사이", "아주 친밀한 사이"][gomiAffinity(owned.affection)];
   const activity = action === "touch" ? "나를 살짝 터치하기" : companionActionLabel(definition, action);
-  const history = memory.history.slice(-5).map(entry => entry.day + " " + companionActionLabel(definition, entry.action)).join(", ") || "없음";
+  const history = memory.history.slice(-5).map(entry => entry.day + " " + companionHistoryLabel(definition, entry)).join(", ") || "없음";
   const system = [
     "너는 곰고미의 캐릭터 친구다. 사용자는 글 대신 캐릭터 터치나 함께하기 행동으로 말을 건넨다.",
     "너 자신의 이름: " + (owned.customName || definition.defaultName) + ". 사용자의 이름은 주어지지 않았다. 성격: " + (definition.personality?.archetype || "작은 친구") + ". 특징: " + (definition.personality?.keywords.join(", ") || ""),

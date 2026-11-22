@@ -150,6 +150,7 @@ test('Home companion actions expand, respond, remember locally and never award a
   let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('gamjassak:companion:v1:gomi') || 'null'));
   expect(saved?.history?.at(-1)?.action).toBe('walk');
   expect(saved?.mood).toBe('curious');
+  await page.getByRole('button',{name:'함께하기 닫기',exact:true}).click();
 
   await actions.getByRole('button', { name: '간식 주기' }).click();
   await expect(speech).toHaveAttribute('data-state', 'quiet');
@@ -159,6 +160,7 @@ test('Home companion actions expand, respond, remember locally and never award a
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem('gamjassak:companion:v1:gomi') || 'null'));
   expect(saved.history.map((entry: { action: string }) => entry.action)).toEqual(['walk', 'treat']);
 
+  await page.getByRole('button',{name:'함께하기 닫기',exact:true}).click();
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-expanded', 'false');
   await expect(actions).toHaveCount(0);
