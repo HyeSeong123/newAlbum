@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PC 학습실 | 곰고미</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/studio.js" type="module"></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <span class="brand">곰고미</span>
+      <span class="local"><span aria-hidden="true"></span> 내 PC에서 실행 중</span>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="intro" aria-labelledby="title">
+      <div>
+        <h1 id="title">PC 학습실</h1>
+        <p>캐릭터의 행동과 대사를 추가하고 학습 결과를 비교해 보세요.</p>
+      </div>
+      <img src="/gomi.webp" alt="" width="142" height="142">
+    </section>
+    <p id="connection" class="notice" role="status" hidden></p>
+    <div class="workspace">
+      <section class="panel" aria-labelledby="examples-title">
+        <div class="panel-heading">
+          <div>
+            <h2 id="examples-title">학습 자료</h2>
+            <p>기본 자료에 내 대사 예시를 더할 수 있어요.</p>
+          </div>
+          <button id="import" type="button" class="secondary">JSONL 가져오기</button>
+          <input id="file" type="file" accept=".jsonl,application/json,text/plain" hidden>
+        </div>
+        <div class="editor">
+          <label class="field">학습할 모델
+            <select id="target">
+              <option value="shared">공유 모델</option>
+              <option value="dorongi">도롱이 전용 모델</option>
+            </select>
+          </label>
+          <form id="example-form">
+            <div class="pair">
+              <label class="field">캐릭터 <select id="character" required></select></label>
+              <label class="field">행동 <select id="action" required></select></label>
+            </div>
+            <label id="custom-field" class="field" hidden>새 행동 ID
+              <input id="custom" maxlength="48" placeholder="예시 · greeting">
+            </label>
+            <div class="pair conditions">
+              <label class="field">친밀도 <input id="affection" type="number" min="0" max="100" value="75" required></label>
+              <label class="field">몸 상태
+                <select id="condition"><option value="normal">평소</option><option value="cold">추움</option><option value="unwell">아픔</option></select>
+              </label>
+            </div>
+            <details>
+              <summary>수면·활력·기분 설정</summary>
+              <div class="advanced">
+                <label class="field">수면 <select id="sleeping"><option value="false">깨어 있음</option><option value="true">자는 중</option></select></label>
+                <label class="field">활력 <input id="energy" type="number" min="0" max="5" value="3" required></label>
+                <label class="field">기분
+                  <select id="mood">
+                    <option value="calm">차분함</option><option value="curious">호기심</option>
+                    <option value="delighted">기쁨</option><option value="playful">장난스러움</option>
+                    <option value="sleepy">졸림</option><option value="irritated">짜증</option>
+                  </select>
+                </label>
+                <label class="field intent">대사 의도 ID <input id="meaning" maxlength="64" placeholder="기본값 · user-added"></label>
+              </div>
+            </details>
+            <label class="field reply">캐릭터가 할 대사
+              <textarea id="reply" maxlength="100" rows="2" aria-describedby="count" placeholder="예시 · 간식이야? 잠깐만, 나도 갈게."></textarea>
+            </label>
+            <div class="editor-footer">
+              <span id="count" class="muted">0 / 50자</span>
+              <button id="add" type="submit" class="secondary">예시 추가</button>
+            </div>
+          </form>
+          <p id="examples-feedback" class="feedback" role="status"></p>
+        </div>
+        <div class="examples">
+          <h3 id="queue-heading">추가 예시 0건</h3>
+          <p id="empty" class="muted">기본 자료만으로도 학습을 시작할 수 있어요.</p>
+          <ul id="queue" aria-labelledby="queue-heading"></ul>
+        </div>
+      </section>
+      <section class="panel training" aria-labelledby="training-title">
+        <div class="panel-heading">
+          <div>
+            <h2 id="training-title">모델 학습</h2>
+            <p>곰고미 자체 AI · CPU 학습</p>
+          </div>
+        </div>
+        <div class="training-body">
+          <label class="field">반복 횟수 <input id="epochs" type="number" min="1" max="500" value="180" required></label>
+          <div class="presets">
+            <button type="button" class="secondary" id="quick" aria-pressed="false">빠른 확인 · 1회</button>
+            <button type="button" class="secondary" id="standard" aria-pressed="true">기본 · 180회</button>
+          </div>
+          <div class="job">
+            <div class="job-heading">
+              <h3><span id="job-status" role="status">학습 대기</span></h3>
+              <span id="percent">0%</span>
+            </div>
+            <progress id="progress" max="1" value="0" aria-label="학습 진행률"></progress>
+            <dl class="metrics">
+              <div><dt>반복</dt><dd id="epoch">—</dd></div>
+              <div><dt>손실값</dt><dd id="loss">—</dd></div>
+              <div><dt>학습 시간</dt><dd id="seconds">—</dd></div>
+            </dl>
+            <p id="job-detail" class="muted">학습을 시작하면 진행 상황이 여기에 표시돼요.</p>
+          </div>
+          <div class="job-actions">
+            <button type="button" id="start" class="primary" disabled>학습 시작</button>
+            <button type="button" id="stop" class="secondary" disabled>중지</button>
+          </div>
+          <p id="training-feedback" class="feedback" role="status"></p>
+          <div id="result" class="result" hidden>
+            <h3>결과 파일</h3>
+            <p id="result-dir" class="muted"></p>
+            <a id="download" class="secondary" download>모델 JSON 저장</a>
+          </div>
+        </div>
+      </section>
+    </div>
+    <section class="panel compare" aria-labelledby="compare-title">
+      <div class="panel-heading">
+        <div>
+          <h2 id="compare-title">대사 비교</h2>
+          <p>위에서 선택한 캐릭터와 행동으로 기본 모델과 최근 학습 결과를 시험해요.</p>
+        </div>
+        <button type="button" id="compare" class="secondary">대사 생성</button>
+      </div>
+      <div class="comparison" aria-live="polite">
+        <div><h3>기본 모델</h3><p id="before">—</p></div>
+        <div><h3>최근 학습 결과</h3><p id="after">—</p></div>
+      </div>
+      <p id="compare-feedback" class="feedback" role="status"></p>
+    </section>
+  </main>
+</body>
+</html>
