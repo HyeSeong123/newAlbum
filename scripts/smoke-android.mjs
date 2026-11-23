@@ -203,11 +203,27 @@ async function loadedAlbumPreviews(reader) {
   await reader.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 }
 
-async function verifyInstalledAlbumIntroduction(page) {
-  // Use the sample album and linked diary restored by the preceding backup check.
-  const albumTitle = '복원 시험 앨범';
-  const before = await page.evaluate(async title => {
+async function verifyInstalledAlbumIntroduction(page, {standalone = false} = {}) {
+  assert.match(await adb('get-serialno'), /^emulator-\d+$/);
+  const albumTitle = standalone ? '소개 검증 앨범' : '복원 시험 앨범';
+  const diaryTitle = standalone ? '소개에서 제외할 일기' : '백업 시험 일기';
+  let fixturePath;
+  if (standalone) {
+    const dir = 'imported-media-v1/1234567890abcdef';
+    const root = await adb('shell','run-as',appId,'pwd');
+    await adb('shell','run-as',appId,'mkdir','-p',dir);
+    await adb('shell',`cat /sdcard/Download/GamjassakSmoke/gamjassak-smoke.jpg | run-as ${appId} sh -c 'cat > ${dir}/backup-test.jpg'`);
+    fixturePath = `${root}/${dir}/backup-test.jpg`;
+  }
+  const before = await page.evaluate(async ({title,diaryTitle,fixturePath}) => {
     const invoke = window.__TAURI_INTERNALS__.invoke;
+    if (fixturePath) {
+      const photos = await invoke('register_paths',{paths:[fixturePath]});
+      const photo = photos.find(item => item.file_path.endsWith('/backup-test.jpg'));
+      const albumId = await invoke('create_album_from_media',{title,mediaIds:[photo.id],coverColor:'#B9C58E'});
+      await invoke('save_diary',{entry:{id:0,date:'2026-11-20',title:diaryTitle,body:'복원할 기록',mood:'기쁨',weather:'맑음',album_id:albumId,photos:[{id:photo.id}]}});
+      localStorage.setItem('geuruteogi.first-run-completed-v1','true');
+    }
     const album = (await invoke('list_albums')).find(item => item.title === title);
     const [photo] = album.items;
     const written = (id, kind, title, body) => ({ id, kind, title, body, media_id:null,
@@ -220,8 +236,8 @@ async function verifyInstalledAlbumIntroduction(page) {
     await invoke('set_main_character',{id:'potato'});
     await invoke('rename_character',{id:'potato',name:'밤도깨비'});
     return { albums:await invoke('list_albums'), diaries:await invoke('list_diary'), characters:await invoke('sync_characters') };
-  },albumTitle);
-  assert.ok(before.diaries.some(diary => diary.title === '백업 시험 일기'));
+  },{title:albumTitle,diaryTitle,fixturePath});
+  assert.ok(before.diaries.some(diary => diary.title === diaryTitle));
   await page.reload();
   await page.locator('.navList').getByRole('button',{name:'내 앨범',exact:true}).click();
   await page.getByRole('button',{name:`${albumTitle} 앨범 열기`,exact:true}).click();
@@ -237,7 +253,8 @@ async function verifyInstalledAlbumIntroduction(page) {
     `앨범 제목: ${albumTitle}`, '사진 제목: 바닷가 사진','사진 설명: 잔잔한 물결','챕터 제목: 여행 둘째 날',
     '챕터 내용: 이른 아침 산책','편지 제목: 작은 편지','편지 내용: 오래 기억할게',
   ]);
-  await expect(intro).not.toContainText(/backup-test\.jpg|백업 시험 일기|복원할 기록/);
+  await expect(intro).not.toContainText(diaryTitle);
+  await expect(intro).not.toContainText(/backup-test\.jpg|복원할 기록/);
   await captureScreen('album-introduction-android');
   await adb('shell','input','keyevent','4');
   await expect(intro).toHaveCount(0);
@@ -450,6 +467,9 @@ try {
   await startApp();
   let connection = await connect(); context = connection.context;
   let page = connection.page;
+  if (process.env.GOMGOMI_ALBUM_INTRODUCTION_SMOKE === '1') {
+    await verifyInstalledAlbumIntroduction(page,{standalone:true});
+  } else {
   await verifyInstalledGomiAction(page, output);
   if (process.env.GITHUB_ACTIONS === 'true' && process.env.GOMGOMI_FOCUSED_AI_SMOKE === '1') {
     // This workflow boots a disposable emulator. Seed its test relationship only
@@ -1054,6 +1074,7 @@ try {
   } else {
     await page.screenshot({ path:join(output, 'gomi-action-home.png') });
     console.log('Signed APK installation and offline interaction outcomes under 1 second: quiet below 60, generated speech when bonded. Full unrelated UI regression was not requested.');
+  }
   }
 } catch (error) {
   console.error(error);
