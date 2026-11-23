@@ -11,12 +11,16 @@ import { ActionMenu } from "../../components/ActionMenu";
 import { ExportModal } from "../../components/ExportModal";
 import { mediaSummary } from "../media/journalModel";
 import { AlbumFullscreenReader } from "./AlbumReader";
+import { AlbumIntroductionDialog } from "./AlbumIntroductionDialog";
+import { albumIntroductionText } from "./albumIntroductionContent";
+import { characterDefinitions, characterName, type OwnedCharacter } from "../characters/models";
 import type { DiaryEntry } from "../diary/DiaryView";
 import { AlbumWrittenEditor, type WrittenRequest } from "./chapter/AlbumWrittenEditor";
 import { AlbumEditor, type AlbumEditorSection } from "./AlbumEditor";
 
 export function SavedAlbumsView({
   albums,
+  mainCharacter,
   diaries = [],
   onOpen,
   onSave,
@@ -25,6 +29,7 @@ export function SavedAlbumsView({
   query = "",
 }: {
   albums: SavedAlbum[];
+  mainCharacter?: OwnedCharacter;
   diaries?: DiaryEntry[];
   onOpen: (item: MediaItem, collection?: MediaItem[]) => void;
   onSave: (album: SavedAlbum) => Promise<void>;
@@ -34,6 +39,11 @@ export function SavedAlbumsView({
 }) {
   const [activeAlbumId, setActiveAlbumId] = useState<string | null>(null);
   const activeAlbum = albums.find((album) => album.id === activeAlbumId);
+  const [introducingAlbumId, setIntroducingAlbumId] = useState<string | null>(null);
+  const introducingAlbum = albums.find(album => album.id === introducingAlbumId);
+  const mainDefinition = characterDefinitions.find(definition => definition.id === mainCharacter?.id);
+  const mainName = mainDefinition ? characterName(mainDefinition, mainCharacter) : null;
+  const introductionText = introducingAlbum ? albumIntroductionText(introducingAlbum) : null;
   const [editing, setEditing] = useState<{ album: SavedAlbum; section: AlbumEditorSection } | null>(null);
   const openEditor = (album: SavedAlbum, section: AlbumEditorSection = "details") => setEditing({ album, section });
   const [writing, setWriting] = useState<{ album: SavedAlbum; request: WrittenRequest } | null>(null);
@@ -110,6 +120,8 @@ export function SavedAlbumsView({
       {activeAlbum && (
         <AlbumFullscreenReader
           title={activeAlbum.title}
+          onIntroduce={() => setIntroducingAlbumId(activeAlbum.id)}
+          introduceLabel={mainName ? `${mainName}에게 소개하기` : "대표 친구에게 소개하기"}
           items={activeAlbum.items}
           contents={[...albumContents(activeAlbum), ...diaries.filter(d => d.album_id === Number(activeAlbum.id)).map(d => ({ id: `diary-${d.id}`, kind: "TEXT" as const, title: `${d.date} · ${d.title}`, body: `${d.mood} · ${d.weather}\n\n${d.body}`, displayDuration: 5, transitionType: "fade" as const, commentVisible: true }))]}
           color={activeAlbum.coverColor}
@@ -123,6 +135,7 @@ export function SavedAlbumsView({
           onAddWritten={(kind, afterId) => setWriting({ album: activeAlbum, request: { kind, afterId } })}
         />
       )}
+      {introducingAlbum && <AlbumIntroductionDialog key={introducingAlbum.id} albumTitle={introducingAlbum.title} characterName={mainName} content={introductionText!} onClose={() => setIntroducingAlbumId(null)} />}
       {editing && <AlbumEditor key={editing.album.id} album={editing.album} initialSection={editing.section} onClose={() => setEditing(null)} onSave={onSave} />}
       {writing && <AlbumWrittenEditor key={writing.request.entryId ?? writing.request.kind} album={writing.album} request={writing.request} onClose={() => setWriting(null)} onSave={onSave} />}
       {exporting && <ExportModal title={exporting.title} items={exporting.items} onClose={() => setExporting(null)} />}

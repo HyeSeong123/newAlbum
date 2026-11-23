@@ -1,5 +1,5 @@
 import { type CSSProperties } from "react";
-import { BookOpen, ChevronLeft, ChevronRight, FolderOutput, Mail, Maximize, Minimize, MoreVertical, Music, Pencil, Play } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, FolderOutput, HeartHandshake, Mail, Maximize, Minimize, MoreVertical, Music, Pencil, Play } from "lucide-react";
 import type { AlbumContent, MediaItem } from "../../types/media";
 import { AlbumWrittenPage } from "./chapter/AlbumWrittenPage";
 import { EmptyState, MediaVisual } from "../../components/MediaVisual";
@@ -11,7 +11,7 @@ import { ALBUM_TURN_TIMING } from "./albumAnimation";
 import albumOpenBase from "../../assets/album-open-white-thin.png";
 import { DEFAULT_ALBUM_COLOR } from "./AlbumCover";
 
-export function AlbumFullscreenReader({ title, items, contents, color, open, onOpen, onClose, onExport, onEdit, onAddWritten, onEditWritten, canEditWritten, backLabel = "내 앨범" }: {
+export function AlbumFullscreenReader({ title, items, contents, color, open, onOpen, onClose, onExport, onEdit, onAddWritten, onEditWritten, canEditWritten, onIntroduce, introduceLabel, backLabel = "내 앨범" }: {
   title: string;
   items: MediaItem[];
   contents?: AlbumContent[];
@@ -25,6 +25,8 @@ export function AlbumFullscreenReader({ title, items, contents, color, open, onO
   onEditWritten?: (entry: AlbumContent) => void;
   canEditWritten?: (entry: AlbumContent) => boolean;
   backLabel?: string;
+  onIntroduce?: () => void;
+  introduceLabel?: string;
 }) {
   const diaryCount = contents?.filter(entry => entry.kind === "TEXT").length ?? 0;
   const chapterCount = contents?.filter(entry => entry.kind === "CHAPTER").length ?? 0;
@@ -49,6 +51,7 @@ export function AlbumFullscreenReader({ title, items, contents, color, open, onO
         orderedItems.length ? mediaSummary(orderedItems) : "", diaryCount ? `편지 ${diaryCount}편` : "", chapterCount ? `챕터 ${chapterCount}개` : "",
       ].filter(Boolean).join(" · ") || "기록 없음"}{!singlePage && orderedItems.length > 0 && " · 세로 4장 / 가로 2장"}</span></div>
       <div className="albumJournalTools">
+        {onIntroduce && <button type="button" className="albumIntroduceAction" onClick={onIntroduce} aria-label={introduceLabel || "대표 캐릭터에게 앨범 소개하기"} title={introduceLabel || "대표 캐릭터에게 앨범 소개하기"}><HeartHandshake size={18} aria-hidden="true" /><span className="albumIntroduceFullLabel">{introduceLabel || "앨범 소개하기"}</span><span className="albumIntroduceShortLabel">추억 소개하기</span></button>}
         {!singlePage && onEdit && <button className="albumJournalEdit" onClick={onEdit} aria-label="앨범 수정" title="앨범 수정"><Pencil size={18} /><span>앨범 수정</span></button>}
         {!mobile && !singlePage && <button onClick={() => void toggleFullscreen()} disabled={!document.fullscreenEnabled} aria-pressed={fullscreen} title={fullscreen ? "전체화면 종료" : "전체화면"}>{fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}<span>{fullscreen ? "전체화면 종료" : "전체화면"}</span></button>}
         {(onExport || (singlePage && onEdit) || (!mobile && singlePage)) && <ActionMenu label="앨범 보기 옵션" triggerText="더 보기" icon={<MoreVertical size={18} />} actions={[

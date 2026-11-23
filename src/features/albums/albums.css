@@ -458,3 +458,21 @@
   .is-single-page .albumJournalCanvas { --writing-action-height: 44px; }
 }
 @media (prefers-reduced-motion: reduce) { .albumSwipePreview { display: none; } }
+
+/* Album introduction entry: keep the reading canvas and page controls unchanged. */
+.albumJournalTools .albumIntroduceAction { min-height: 44px; max-width: min(65vw, 240px); padding: 0 12px; display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--primary); border-radius: 6px; background: var(--primary); color: #fff; font-weight: 650; }
+.albumJournalTools .albumIntroduceAction:hover:not(:disabled) { background: var(--primary); color: #fff; filter: brightness(.94); }
+.albumIntroduceAction span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.albumIntroduceShortLabel { display: none; }
+@media (max-width: 370px), (max-width: 1000px) and (max-height: 520px) {
+  .albumIntroduceFullLabel { display: none; }
+  .albumIntroduceShortLabel { display: inline; }
+  .albumJournalTools .albumIntroduceAction { max-width: 150px; }
+}
+.albumIntroBackdrop { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 16px; background: #10120f9c; }
+.albumIntroDialog { width: min(100%, 440px); max-height: calc(100dvh - 32px); display: flex; flex-direction: column; gap: 12px; padding: 20px; overflow: hidden; border-radius: 8px; background: var(--surface); color: var(--text); }
+.albumIntroDialog h2 { margin: 0; font-size: 19px; }
+.albumIntroDialog p { margin: 0; line-height: 1.55; }
+.albumIntroPreview { min-height: 0; overflow: auto; padding: 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
+.albumIntroPreview p { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; }
+.albumIntroDialog .albumIntroClose { min-height: 44px; align-self: flex-end; padding: 0 18px; border-radius: 6px; background: var(--primary); color: #fff; }
