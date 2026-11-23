@@ -8,7 +8,7 @@ on:
         type: boolean
         default: false
   push:
-    branches: [feature/warm-journal-v2, feature/gamjassak-native-ai, feature/gamjassak-audit-refactor, feature/people-pets-ux-android-20261022, feature/app-ux-20261023, feature/pet-recognition-ux-20261023, feature/person-selective-precision-20261028, master, final, fix/apk-ci-regressions-20261116, feature/android-backup-restore, feature/character-design-audit, feature/soft-pencil-friends, feature/character-names]
+    branches: [feature/warm-journal-v2, feature/gamjassak-native-ai, feature/gamjassak-audit-refactor, feature/people-pets-ux-android-20261022, feature/app-ux-20261023, feature/pet-recognition-ux-20261023, feature/person-selective-precision-20261028, master, final, fix/apk-ci-regressions-20261116, feature/android-backup-restore, feature/character-design-audit, feature/soft-pencil-friends, feature/character-names, feature/album-introduction-entry]
     paths:
       - 'src/**'
       - 'public/**'
@@ -156,9 +156,10 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Check installed Gomi offline on Android
+      - name: Check installed app on Android
         timeout-minutes: 25
         env:
+          GOMGOMI_ALBUM_INTRODUCTION_SMOKE: ${{ github.event_name == 'push' && github.ref_name == 'feature/album-introduction-entry' && '1' || '0' }}
           GOMGOMI_FOCUSED_AI_SMOKE: ${{ github.event_name == 'workflow_dispatch' && inputs.full_ui_validation && '0' || '1' }}
         uses: reactivecircus/android-emulator-runner@v2
         with:
