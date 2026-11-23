@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { modelUrl } from './model-loader.mjs';
 const { albumIntroductionText } = await import(await modelUrl('features/albums/albumIntroductionContent.ts'));
-const media = (id, title, comment) => ({ id: String(id), title, comment, fileName: 'private-photo.jpg', filePath: '/private/photo.jpg', latitude: 12.123, thumbnail: 'private-image-byte' });
+const media = (id, title, comment, fileType = 'image') => ({ id: String(id), title, comment, fileType, fileName: 'private-photo.jpg', filePath: '/private/photo.jpg', latitude: 12.123, thumbnail: 'private-image-byte' });
 const page = (id, kind, title, body, mediaId) => ({ id, kind, title, body, mediaId, displayDuration: 5, transitionType: 'fade', commentVisible: true });
 
 test('only written album data is extracted in saved chapter and letter order', () => {
@@ -15,12 +15,10 @@ test('only written album data is extracted in saved chapter and letter order', (
   for (const forbidden of ['/private/', '12.123','private-image-byte','private-photo.jpg']) assert.equal(result.sections.join('|').includes(forbidden),false);
 });
 
-test('linked diary rendering does not enter introduction text', () => {
-  const album = { title: '일기 연결 앨범', description:'', items:[media(1,'','내 메모')], contents: [page('p1','PHOTO','','','1')] };
-  const screenOnlyDiary = page('diary-7','TEXT','연결 일기','소개 대상 아님');
-  const actual = albumIntroductionText(album);
-  assert.deepEqual(actual.sections,['앨범 제목: 일기 연결 앨범','사진 설명: 내 메모']);
-  assert.equal(screenOnlyDiary.body.includes('소개 대상 아님'),true);
+test('video and audio metadata do not enter a photo introduction', () => {
+  const album = { title: '여행 앨범', items:[media(1,'','내 메모'),media(2,'동영상 제목','동영상 설명','video'),media(3,'오디오 제목','오디오 설명','audio')],
+    contents:[page('p1','PHOTO','','','1'),page('v1','VIDEO','','','2')] };
+  assert.deepEqual(albumIntroductionText(album).sections,['앨범 제목: 여행 앨범','사진 설명: 내 메모']);
 });
 
 test('empty title-only album is not treated as shareable; legacy photos remain shareable', () => {

@@ -203,6 +203,60 @@ async function loadedAlbumPreviews(reader) {
   await reader.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 }
 
+async function verifyInstalledAlbumIntroduction(page) {
+  // Use the sample album and linked diary restored by the preceding backup check.
+  const albumTitle = '복원 시험 앨범';
+  const before = await page.evaluate(async title => {
+    const invoke = window.__TAURI_INTERNALS__.invoke;
+    const album = (await invoke('list_albums')).find(item => item.title === title);
+    const [photo] = album.items;
+    const written = (id, kind, title, body) => ({ id, kind, title, body, media_id:null,
+      display_duration:5, transition_type:'fade', comment_visible:true });
+    await invoke('update_media_title', {id:photo.id,title:'바닷가 사진'});
+    await invoke('update_media_details', {id:photo.id,rating:photo.rating,comment:'잔잔한 물결',favorite:photo.favorite});
+    await invoke('update_album', {id:album.id,title,coverColor:album.cover_color,mediaIds:[photo.id],
+      contents:[...album.contents,written('intro-test-chapter','CHAPTER','여행 둘째 날','이른 아침 산책'),
+        written('intro-test-letter','TEXT','작은 편지','오래 기억할게')]});
+    await invoke('set_main_character',{id:'potato'});
+    await invoke('rename_character',{id:'potato',name:'밤도깨비'});
+    return { albums:await invoke('list_albums'), diaries:await invoke('list_diary'), characters:await invoke('sync_characters') };
+  },albumTitle);
+  assert.ok(before.diaries.some(diary => diary.title === '백업 시험 일기'));
+  await page.reload();
+  await page.locator('.navList').getByRole('button',{name:'내 앨범',exact:true}).click();
+  await page.getByRole('button',{name:`${albumTitle} 앨범 열기`,exact:true}).click();
+  const reader = page.getByRole('dialog',{name:'앨범 전체창',exact:true});
+  const pagePicker = reader.getByLabel('앨범 책장 이동');
+  await pagePicker.fill('2');
+  await expect(reader.locator('.albumWrittenPage')).toContainText('여행 둘째 날');
+  const opener = reader.getByRole('button',{name:'밤도깨비에게 소개하기',exact:true});
+  await opener.click();
+  const intro = page.getByRole('dialog',{name:'밤도깨비에게 앨범 소개하기',exact:true});
+  const text = intro.getByRole('region',{name:'소개할 앨범 내용'});
+  await expect(text.locator('p')).toHaveText([
+    `앨범 제목: ${albumTitle}`, '사진 제목: 바닷가 사진','사진 설명: 잔잔한 물결','챕터 제목: 여행 둘째 날',
+    '챕터 내용: 이른 아침 산책','편지 제목: 작은 편지','편지 내용: 오래 기억할게',
+  ]);
+  await expect(intro).not.toContainText(/backup-test\.jpg|백업 시험 일기|복원할 기록/);
+  await captureScreen('album-introduction-android');
+  await adb('shell','input','keyevent','4');
+  await expect(intro).toHaveCount(0);
+  await expect(opener).toBeFocused();
+  await expect(pagePicker).toHaveValue('2');
+  await opener.click();
+  await intro.getByRole('button',{name:'닫기',exact:true}).click();
+  await expect(opener).toBeFocused();
+  await expect(reader).toBeVisible();
+  const after = await page.evaluate(async () => {
+    const invoke = window.__TAURI_INTERNALS__.invoke;
+    return { albums:await invoke('list_albums'), diaries:await invoke('list_diary'), characters:await invoke('sync_characters') };
+  });
+  assert.deepEqual(after,before);
+  await adb('shell','input','keyevent','4');
+  await expect(reader).toHaveCount(0);
+  console.log('Android album introduction: saved text, diary exclusion, native Back, focus and unchanged records OK');
+}
+
 async function checkVideoPlayback(page, label) {
   await page.locator('.navList').getByRole('button', { name:'사진 기록', exact:true }).click();
   const tile = page.getByRole('button', { name:'large-smoke.mp4 상세보기', exact:true });
@@ -524,6 +578,7 @@ try {
       return resumed;
     }});
     context = connection.context; page = connection.page;
+    await verifyInstalledAlbumIntroduction(page);
   }
   if (process.env.GOMGOMI_FOCUSED_AI_SMOKE !== '1') {
   const affectionBeforeGuide = await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('sync_characters')).characters.find(character => character.id === 'gomi').affection);

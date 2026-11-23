@@ -12,7 +12,8 @@ export function albumIntroductionText(album: SavedAlbum): { sections: string[]; 
   };
   add("앨범 제목", album.title);
   add("앨범 설명", album.description);
-  const byId = new Map(album.items.map(item => [item.id, item]));
+  const photos = album.items.filter(item => item.fileType === "image");
+  const byId = new Map(photos.map(item => [item.id, item]));
   const entries = albumContents(album);
   const used = new Set<string>();
   for (const entry of entries) {
@@ -28,7 +29,7 @@ export function albumIntroductionText(album: SavedAlbum): { sections: string[]; 
     }
   }
   // Older albums may have media absent from a saved contents sequence.
-  for (const media of album.items) {
+  for (const media of photos) {
     if (used.has(media.id)) continue;
     add("사진 제목", media.title);
     add("사진 설명", media.comment);

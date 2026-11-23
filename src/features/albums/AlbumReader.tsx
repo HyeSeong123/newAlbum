@@ -51,7 +51,10 @@ export function AlbumFullscreenReader({ title, items, contents, color, open, onO
         orderedItems.length ? mediaSummary(orderedItems) : "", diaryCount ? `편지 ${diaryCount}편` : "", chapterCount ? `챕터 ${chapterCount}개` : "",
       ].filter(Boolean).join(" · ") || "기록 없음"}{!singlePage && orderedItems.length > 0 && " · 세로 4장 / 가로 2장"}</span></div>
       <div className="albumJournalTools">
-        {onIntroduce && <button type="button" className="albumIntroduceAction" onClick={onIntroduce} aria-label={introduceLabel || "대표 캐릭터에게 앨범 소개하기"} title={introduceLabel || "대표 캐릭터에게 앨범 소개하기"}><HeartHandshake size={18} aria-hidden="true" /><span className="albumIntroduceFullLabel">{introduceLabel || "앨범 소개하기"}</span><span className="albumIntroduceShortLabel">추억 소개하기</span></button>}
+        {onIntroduce && <button type="button" className="albumIntroduceAction" aria-haspopup="dialog" title={introduceLabel} onClick={event => {
+          event.currentTarget.focus({ preventScroll:true });
+          onIntroduce();
+        }}><HeartHandshake size={18} aria-hidden="true" /><span>{introduceLabel || "앨범 소개 미리보기"}</span></button>}
         {!singlePage && onEdit && <button className="albumJournalEdit" onClick={onEdit} aria-label="앨범 수정" title="앨범 수정"><Pencil size={18} /><span>앨범 수정</span></button>}
         {!mobile && !singlePage && <button onClick={() => void toggleFullscreen()} disabled={!document.fullscreenEnabled} aria-pressed={fullscreen} title={fullscreen ? "전체화면 종료" : "전체화면"}>{fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}<span>{fullscreen ? "전체화면 종료" : "전체화면"}</span></button>}
         {(onExport || (singlePage && onEdit) || (!mobile && singlePage)) && <ActionMenu label="앨범 보기 옵션" triggerText="더 보기" icon={<MoreVertical size={18} />} actions={[
