@@ -7,6 +7,7 @@ export type OwnInput = {
 type Matrix={rows:number;cols:number;values:Float32Array};
 type Packed={shape:number[];values:string;scales:string};
 export type OwnModel={
+  affinityLevels?:5;
   vocab:string[];tokenIds:Map<string,number>;features:Map<string,number>;characters:string[];actions:string[];
   weights:Record<string,Matrix>;grammars:Array<Map<number,Set<number>>>;scenes:Map<string,number[]>;
 };
@@ -24,11 +25,11 @@ function unpack(item:Packed|undefined,shape:number[]):Matrix{
   return {rows,cols,values};
 }
 export function loadOwnModel(raw:unknown):OwnModel{
-  const m=raw as {format?:string;context?:number;embedding?:number;hidden?:number;supportOrder?:number;
+  const m=raw as {affinityLevels?:5;format?:string;context?:number;embedding?:number;hidden?:number;supportOrder?:number;
     vocab?:string[];features?:string[];characters?:string[];actions?:string[];grammars?:Array<Array<[number,number,number[]]>>;
     scenes?:Record<string,number[]>;weights?:Record<string,Packed>;
     provenance?:{initialization?:string;pretrainedParents?:string[];teacherModel?:string|null}};
-  if(!m||m.format!=="gomgomi-own-wordnet-v3"||m.context!==4||m.embedding!==24||m.hidden!==112||m.supportOrder!==2||
+  if(!m||(m.affinityLevels!==undefined&&m.affinityLevels!==5)||m.format!=="gomgomi-own-wordnet-v3"||m.context!==4||m.embedding!==24||m.hidden!==112||m.supportOrder!==2||
     !Array.isArray(m.vocab)||m.vocab.length<10||m.vocab.length>5000||m.vocab.slice(0,4).join()!=="<bos>,<eos>,<pad>,<unk>"||
     new Set(m.vocab).size!==m.vocab.length||!Array.isArray(m.features)||new Set(m.features).size!==m.features.length||
     !Array.isArray(m.characters)||!Array.isArray(m.actions)||!Array.isArray(m.grammars)||!m.grammars.length||m.grammars.length>10000||
@@ -56,24 +57,24 @@ export function loadOwnModel(raw:unknown):OwnModel{
     scenes.set(key,ids);
   }
   if(!scenes.size||scenes.size>10000)throw invalid();
-  return {vocab:m.vocab,tokenIds:new Map(m.vocab.map((word,id)=>[word,id])),features:new Map(m.features.map((name,id)=>[name,id])),
+  return {affinityLevels:m.affinityLevels,vocab:m.vocab,tokenIds:new Map(m.vocab.map((word,id)=>[word,id])),features:new Map(m.features.map((name,id)=>[name,id])),
     characters:m.characters,actions:m.actions,weights,grammars,scenes};
 }
-function tier(input:OwnInput):string{
+function tier(input:OwnInput,levels?:5):string{
   const a=input.affection;
-  if(input.characterId==="gomi")return a>=90?"bonded":a>=60?"close":a>=30?"familiar":a>=20?"reserved":"distant";
+  if(levels===5||input.characterId==="gomi")return a>=90?"bonded":a>=60?"close":a>=30?"familiar":a>=20?"reserved":"distant";
   return a>=60?"close":a>=30?"familiar":"distant";
 }
 function energy(input:OwnInput):string{
   const value=input.energy??3;
   return value<=0?"exhausted":input.sleeping||value<=1?"low":"normal";
 }
-export function ownSceneKey(input:OwnInput):string{
-  return [input.characterId,input.action,tier(input),input.sleeping?"asleep":"awake",input.condition||"normal",energy(input)].join("|");
+export function ownSceneKey(input:OwnInput,levels?:5):string{
+  return [input.characterId,input.action,tier(input,levels),input.sleeping?"asleep":"awake",input.condition||"normal",energy(input)].join("|");
 }
-export function ownFeatureNames(input:OwnInput):string[]{
+export function ownFeatureNames(input:OwnInput,levels?:5):string[]{
   const state=input.sleeping?"asleep":"awake",condition=input.condition||"normal",fatigue=energy(input);
-  return ["character:"+input.characterId,"action:"+input.action,"tier:"+tier(input),"state:"+state,"condition:"+condition,
+  return ["character:"+input.characterId,"action:"+input.action,"tier:"+tier(input,levels),"state:"+state,"condition:"+condition,
     "mood:"+(input.mood||"calm"),"energy:"+fatigue,"scenario:"+input.action+"/"+state+"/"+condition+"/"+fatigue];
 }
 function conditioned(model:OwnModel,input:OwnInput){
@@ -81,7 +82,7 @@ function conditioned(model:OwnModel,input:OwnInput){
   if(!model.actions.includes(input.action))throw new Error("AI_ACTION_UNTRAINED");
   if(!Number.isFinite(input.affection)||input.affection<0||input.affection>100||
     !Number.isInteger(input.energy??3)||(input.energy??3)<0||(input.energy??3)>5)throw new Error("AI_STATE_INVALID");
-  const ids=ownFeatureNames(input).map(name=>{const id=model.features.get(name);if(id==null)throw new Error("AI_STATE_UNTRAINED:"+name);return id;});
+  const ids=ownFeatureNames(input,model.affinityLevels).map(name=>{const id=model.features.get(name);if(id==null)throw new Error("AI_STATE_UNTRAINED:"+name);return id;});
   const emb=new Float32Array(24),bias=new Float32Array(model.vocab.length);
   for(const id of ids){
     const e=model.weights["features.weight"].values,b=model.weights["feature_bias.weight"].values;
@@ -108,7 +109,7 @@ const tokens=(line:string)=>line.match(/[^\s.!?…]+|[.!?…]/gu)||[];
 const normalized=(line:string)=>line.normalize("NFKC").replace(/[\p{P}\p{S}\s]/gu,"");
 const render=(words:string[])=>words.join(" ").replace(/\s+([.!?…])/g,"$1").trim();
 export function supportsOwnLine(model:OwnModel,input:OwnInput,line:string):boolean{
-  let groups=model.scenes.get(ownSceneKey(input))||[],a=0,b=0;
+  let groups=model.scenes.get(ownSceneKey(input,model.affinityLevels))||[],a=0,b=0;
   for(const token of [...tokens(line),"<eos>"]){
     const next=model.tokenIds.get(token);if(next==null)return false;
     groups=groups.filter(id=>model.grammars[id].get(a*model.vocab.length+b)?.has(next));
@@ -129,7 +130,7 @@ function acceptable(line:string, excluded:Set<string>):boolean{
 }
 export function generateOwnLine(model:OwnModel,input:OwnInput,seed=Date.now(),cancelled=()=>false):string{
   if(cancelled())throw new Error("AI_CANCELLED");
-  const state=conditioned(model,input),initialGroups=model.scenes.get(ownSceneKey(input));
+  const state=conditioned(model,input),initialGroups=model.scenes.get(ownSceneKey(input,model.affinityLevels));
   if(!initialGroups)throw new Error("AI_SCENE_UNTRAINED");
   const started=performance.now();
   let randomState=(seed|0)||1,evaluated=0;
