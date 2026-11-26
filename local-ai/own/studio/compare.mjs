@@ -11,11 +11,12 @@ for await (const chunk of stdin.setEncoding('utf8')) text += chunk;
 const input = JSON.parse(text);
 const [standard, candidate] = process.argv.slice(2);
 
+const seed = Math.floor(Math.random() * 0x7fffffff) || 1;
 async function response(file) {
   if (ownReplyMode(input) === 'nonverbal') return { status: 'nonverbal' };
   try {
     const model = loadOwnModel(JSON.parse(await readFile(file, 'utf8')));
-    return { status: 'ok', line: generateOwnLine(model, input, 20261115) };
+    return { status: 'ok', line: generateOwnLine(model, input, seed) };
   } catch (error) {
     return { status: 'error', code: error.message };
   }

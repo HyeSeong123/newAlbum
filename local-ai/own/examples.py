@@ -3,6 +3,8 @@
 import json
 import re
 
+from personality import TRAITS
+
 MOODS = ['calm', 'curious', 'delighted', 'playful', 'sleepy', 'irritated']
 CONDITIONS = ['normal', 'cold', 'unwell']
 ACTION_ID = re.compile(r'[a-z][a-z0-9-]{0,47}')
@@ -36,6 +38,11 @@ def normalize_example(row, characters, *, with_reply=True):
         meaning = row.get('meaning', 'user-added')
         if not isinstance(meaning, str) or not MEANING_ID.fullmatch(meaning):
             raise ValueError('대사 묶음 이름(meaning)은 영문 소문자로 시작하고 소문자·숫자·하이픈을 최대 64자까지 사용할 수 있습니다.')
+        tag = row.get('styleTrait')
+        if tag is not None:
+            if not isinstance(tag, str) or tag not in TRAITS:
+                raise ValueError('대사에서 드러나는 성격을 다시 선택해 주세요.')
+            normalized['styleTrait'] = tag
         normalized.update(reply=reply.strip(), meaning=meaning)
     return normalized
 

@@ -19,6 +19,7 @@ os.environ['OMP_NUM_THREADS']='4'
 import numpy as np
 from examples import MOODS, is_quiet_gomi, parse_examples
 from neural import OwnWordNet
+from personality import example_weight, validate_profile
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
@@ -42,9 +43,9 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def tier(row):
+def tier(row, five_levels=False):
     affection = row.get('affection', 45)
-    if row['characterId']=='gomi':
+    if five_levels or row['characterId']=='gomi':
         return 'bonded' if affection>=90 else 'close' if affection>=60 else 'familiar' if affection>=30 else 'reserved' if affection>=20 else 'distant'
     return 'close' if affection>=60 else 'familiar' if affection>=30 else 'distant'
 
@@ -54,14 +55,14 @@ def energy(row):
     return 'exhausted' if value<=0 else 'low' if row.get('sleeping') or value<=1 else 'normal'
 
 
-def scene(row):
-    return '|'.join([row['characterId'],row['action'],tier(row),'asleep' if row.get('sleeping') else 'awake',row.get('condition','normal'),energy(row)])
+def scene(row, five_levels=False):
+    return '|'.join([row['characterId'],row['action'],tier(row, five_levels),'asleep' if row.get('sleeping') else 'awake',row.get('condition','normal'),energy(row)])
 
 
-def features(row):
+def features(row, five_levels=False):
     state='asleep' if row.get('sleeping') else 'awake'
     condition=row.get('condition','normal')
-    return ['character:'+row['characterId'], 'action:'+row['action'], 'tier:'+tier(row),
+    return ['character:'+row['characterId'], 'action:'+row['action'], 'tier:'+tier(row, five_levels),
             'state:'+state, 'condition:'+condition,
             'mood:'+row.get('mood','calm'), 'energy:'+energy(row),
             'scenario:'+row['action']+'/'+state+'/'+condition+'/'+energy(row)]
@@ -118,7 +119,7 @@ def additional_rows(paths, characters):
     return rows, sources
 
 
-def corpus(extra=None, destination=HERE/'corpus.json'):
+def corpus(extra=None, destination=HERE/'corpus.json', five_levels=False):
     source = ROOT/'local-ai/data/gomi-actions-v3/train.jsonl'
     original = [json.loads(line) for line in source.read_text(encoding='utf-8-sig').splitlines()]
     rows, excluded = [], []
@@ -133,11 +134,12 @@ def corpus(extra=None, destination=HERE/'corpus.json'):
     drafts = read(HERE/'action-drafts.json')
     characters = read(ROOT/'local-ai/characters.json')
     rng = random.Random(20261115)
+    affinities = (10,25,45,80,95) if five_levels else (10,45,80)
     for cid in characters:
         if cid=='gomi':continue
         profile = drafts['profiles'].get(cid, drafts['profiles']['default'])
         for action in ACTIONS:
-            for tier, affection in [('distant',10), ('familiar',45), ('close',80)]:
+            for affection in affinities:
                 parts = {'starts':profile['starts'], 'ends':drafts['others'][action]}
                 for pi, opening in enumerate(parts['starts']):
                     for ei, ending in enumerate(parts['ends']):
@@ -157,7 +159,7 @@ def corpus(extra=None, destination=HERE/'corpus.json'):
             parts = drafts['sleepQuiet'] if action == 'rest' else drafts['sleepDisturbed']
             for start in parts['starts']:
                 for end in parts['ends']:
-                    for affection in (10,45,80):
+                    for affection in affinities:
                         for value in (0,1):
                             rows.append({'id':f'own-sleep-{len(rows)}', 'characterId':cid, 'action':action,
                                          'affection':affection, 'energy':value, 'sleeping':True,
@@ -183,20 +185,20 @@ def corpus(extra=None, destination=HERE/'corpus.json'):
     return rows
 
 
-def training_examples(rows,tok,fmap):
+def training_examples(rows,tok,fmap,five_levels=False):
     xs,fs,ys=[],[],[]
     for row in rows:
         history=[0]*4
         for target in [tok[word] for word in words(row)]+[1]:
-            xs.append(history[:]);fs.append([fmap[name] for name in features(row)]);ys.append(target)
+            xs.append(history[:]);fs.append([fmap[name] for name in features(row, five_levels)]);ys.append(target)
             history=(history+[target])[-4:]
     return np.asarray(xs,np.int32),np.asarray(fs,np.int32),np.asarray(ys,np.int32)
 
 
-def learned_support(rows,tok):
+def learned_support(rows,tok,five_levels=False):
     grouped={}
     for row in rows:
-        table=grouped.setdefault((scene(row),row.get('meaning','action')), {})
+        table=grouped.setdefault((scene(row, five_levels),row.get('meaning','action')), {})
         sequence=[0,0]+[tok[word] for word in words(row)]+[1]
         for a,b,c in zip(sequence,sequence[1:],sequence[2:]):table.setdefault((a,b),set()).add(c)
     grammars=[];intern={};scenes={}
@@ -216,7 +218,8 @@ def quantized(tensor):
             'scales':base64.b64encode(scales.tobytes()).decode()}
 
 
-def dorongi_rows(path):
+def dorongi_rows(path, five_levels=False):
+    affinities = (10,25,45,80,95) if five_levels else (10,45,80)
     drafts=read(path)
     for action, replies in drafts['actions'].items():
         if len(set(replies)) != len(replies):
@@ -224,20 +227,22 @@ def dorongi_rows(path):
         for reply in replies:
             if not 4<=len(reply)<=50:
                 raise ValueError(f'Dorongi reply exceeds the mobile limit: {reply}')
-            for affection in (10,45,80):
+            for affection in affinities:
                 for value in (0,1,3):
                     yield {'characterId':'apple','action':action,'reply':reply,'affection':affection,
                            'energy':value,'authorship':drafts['authorship']}
 
 
 def train(args):
+    five_levels = args.studio_profiles is not None
+    profiles = {key: validate_profile(value) for key, value in read(args.studio_profiles).items()} if five_levels else {}
     rng = random.Random(args.seed)
     filename = 'dorongi.json' if args.dorongi else 'model.json'
     destination = (args.output_dir or ROOT/'src/features/characters/ownAi') / filename
     evidence_dir = args.output_dir or HERE
     if args.dorongi:
         source = HERE/'dorongi-activity-turns.json'
-        rows = list(dorongi_rows(source))
+        rows = list(dorongi_rows(source, five_levels))
         if args.extra:
             extra, sources = additional_rows([args.extra], {'apple'})
             rows.extend(extra)
@@ -246,17 +251,22 @@ def train(args):
                                                    'extraTraining': sources}})
     else:
         source = evidence_dir/'corpus.json'
-        rows = corpus(args.extra, source)
+        rows = corpus(args.extra, source, five_levels)
     vocab = ['<bos>','<eos>','<pad>','<unk>'] + sorted({t for r in rows for t in words(r)})
-    feature_names = sorted({f for r in rows for f in features(r)}|{'mood:'+m for m in MOODS})
+    feature_names = sorted({f for r in rows for f in features(r, five_levels)}|{'mood:'+m for m in MOODS})
     tok = {t:i for i,t in enumerate(vocab)}
-    grammars,scenes=learned_support(rows,tok)
+    grammars,scenes=learned_support(rows,tok,five_levels)
     if args.output_dir and (len(vocab) > 5000 or max(len(grammars), len(scenes)) > 10000):
         raise ValueError('PC 학습 결과가 앱의 어휘 또는 장면 수 한도를 초과합니다. 추가 예시를 줄여 주세요.')
     fmap = {f:i for i,f in enumerate(feature_names)}
     rng.shuffle(rows)
     device = 'cpu-numpy-matrix-arithmetic'
-    x,f,y=training_examples(rows,tok,fmap)
+    x,f,y=training_examples(rows,tok,fmap,five_levels)
+    sample_weights = None
+    if profiles:
+        # Each token and the end-of-sentence target inherit the example's style weight.
+        sample_weights = np.repeat(np.asarray([example_weight(row, profiles) for row in rows], dtype=np.float32),
+                                   [len(words(row)) + 1 for row in rows])
     model=OwnWordNet(len(vocab),len(fmap),seed=args.seed)
     order_rng=np.random.default_rng(args.seed)
     started = time.perf_counter()
@@ -267,7 +277,8 @@ def train(args):
         learning_rate=args.lr*(0.1+0.9*(1-epoch/args.epochs))
         for start in range(0,len(y),512):
             indices=order[start:start+512]
-            loss,gradients=model.loss_and_gradients(x[indices],f[indices],y[indices])
+            loss,gradients=model.loss_and_gradients(x[indices],f[indices],y[indices],
+                                                    None if sample_weights is None else sample_weights[indices])
             if not np.isfinite(loss):raise ValueError('Own-network training loss became non-finite')
             model.step(gradients,learning_rate);losses.append(loss)
         loss_value = sum(losses)/len(losses)
@@ -293,6 +304,10 @@ def train(args):
             'parameters':sum(p.size for p in model.params.values()),'trainingSeconds':round(time.perf_counter()-started,3),
             'trainingLoss':loss_value, 'commercialLegalClearance':False},
     }
+    if five_levels:
+        artifact['affinityLevels'] = 5
+        artifact['provenance']['personalityTraits'] = {key: value['traits'] for key, value in profiles.items()}
+        artifact['provenance']['personalityWeightingSha256'] = sha(HERE/'personality.py')
     if len(json.dumps(artifact,ensure_ascii=False,separators=(',',':')).encode('utf-8'))>2_000_000:
         raise ValueError('Own model and learned support exceed the two-megabyte mobile budget')
     dump(destination,artifact)
@@ -310,6 +325,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs',type=int,default=180)
     parser.add_argument('--lr',type=float,default=0.006)
     parser.add_argument('--seed',type=int,default=20261115)
+    parser.add_argument('--studio-profiles',type=Path,help='Snapshot of PC personality settings; enable five affinity levels')
     parser.add_argument('--extra',type=Path,help='Optional user-authored JSONL with new actions/character examples')
     parser.add_argument('--dorongi',action='store_true',help='Train only Dorongi')
     parser.add_argument('--output-dir',type=Path,help='Save experimental weights and evidence here instead of the default paths')

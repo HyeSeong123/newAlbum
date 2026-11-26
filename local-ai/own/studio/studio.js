@@ -1,7 +1,29 @@
+import { personalityEditor, reviewPanel } from './notebook.js';
+
 const field = (id) => document.getElementById(id);
 const value = (id) => field(id).value;
 const text = (id, content) => { field(id).textContent = content; };
 const drafts = { shared: [], dorongi: [] };
+const draftRevisions = { shared: 0, dorongi: 0 };
+let draftWrite = Promise.resolve();
+
+function editDraft(model, edit) {
+  const task = async () => {
+    const rows = edit(drafts[model]);
+    if (rows.length > 5000) throw new Error('기대 대사는 최대 5,000개까지 저장할 수 있어요.');
+    const result = await request('/api/drafts', { target: model, rows, revision: draftRevisions[model] });
+    drafts[model] = rows;
+    draftRevisions[model] = result.revision;
+    saveDraft();
+    if (target() === model) {
+      renderQueue();
+      actions();
+    }
+  };
+  draftWrite = draftWrite.catch(() => {}).then(task);
+  return draftWrite;
+}
+
 const target = () => field('character').selectedOptions[0].dataset.target;
 const currentDraft = () => drafts[target()];
 const targetName = { shared: '친구들이 함께 쓰는 AI', dorongi: '도롱이 전용 AI' };
@@ -16,27 +38,35 @@ const scenes = [
 ];
 // Representatives fall inside the same relationship bands used by the trainer.
 const relationships = [
-  { min: 0, value: 10, label: '아직 낯선 사이' },
-  { min: 20, value: 25, label: '아직 서먹한 사이', gomiOnly: true },
-  { min: 30, value: 45, label: '서로 익숙한 사이' },
-  { min: 60, value: 75, label: '가까운 사이' },
-  { min: 90, value: 95, label: '아주 친한 사이', gomiOnly: true },
+  { min: 0, value: 10, label: '1단계 · 아직 낯선 사이' },
+  { min: 20, value: 25, label: '2단계 · 아직 서먹한 사이' },
+  { min: 30, value: 45, label: '3단계 · 서로 익숙한 사이' },
+  { min: 60, value: 75, label: '4단계 · 가까운 사이' },
+  { min: 90, value: 95, label: '5단계 · 아주 친한 사이' },
 ];
 const jobLabels = {
   starting: '학습 준비 중', running: '학습 중', stopping: '중지하는 중',
   stopped: '학습 중지됨', failed: '학습 실패', completed: '학습 완료', interrupted: '학습 중단됨',
 };
 let state;
+let editor;
+let reviews;
+let activityHints;
 let lastJob;
 let sending = false;
 let adding = false;
+let authoringWrites = 0;
+function busyWriting(change) {
+  authoringWrites += change;
+  renderJob(lastJob);
+}
 let comparisonRevision = 0;
 
 function saveDraft() {
   try {
-    sessionStorage.setItem('gomgomi-studio', JSON.stringify({ drafts, target: target(), character: value('character') }));
+    sessionStorage.setItem('gomgomi-studio', JSON.stringify({ target: target(), character: value('character') }));
   } catch {
-    // Training can still use examples held by the current page.
+    // PC-side examples remain available if selection storage is disabled.
   }
 }
 
@@ -76,12 +106,8 @@ function option(id, label) {
   return new Option(label, id);
 }
 
-function relationshipBands(character) {
-  return relationships.filter((band) => !band.gomiOnly || character === 'gomi');
-}
-
 function updateRelationships() {
-  const bands = relationshipBands(value('character'));
+  const bands = relationships;
   const exact = value('relationship') === 'custom';
   const amount = field('affection').valueAsNumber;
   field('relationship').replaceChildren(
@@ -118,7 +144,7 @@ function sceneLabel(row) {
 
 function contextLabel(row) {
   const name = state.characters[target()][row.characterId];
-  const band = relationshipBands(row.characterId).filter((item) => row.affection >= item.min).at(-1);
+  const band = relationships.filter((item) => row.affection >= item.min).at(-1);
   return [name, actionLabel(row.action, row.characterId), sceneLabel(row), band?.label].filter(Boolean).join(' · ');
 }
 
@@ -155,11 +181,19 @@ function changeAction() {
   const custom = value('action') === '+new';
   field('custom-field').hidden = !custom;
   field('custom').required = custom;
+  const hint = activityHints?.[value('character')]?.[value('action')] ??
+    (custom || !state.actions[target()][value('character')].includes(value('action'))
+      ? '새 행동은 PC에서 시험할 수 있어요. 앱에서 사용하려면 같은 행동 코드를 버튼에 연결하세요.' : '');
+  text('activity-hint', hint);
+  field('activity-hint').hidden = !hint;
   updateContext();
 }
 
 function changeCharacter() {
   saveDraft();
+  field('portrait').src = '/portraits/' + encodeURIComponent(value('character')) + '.webp';
+  editor.show(value('character'));
+  reviews.history(value('character'));
   updateRelationships();
   actions();
   renderQueue();
@@ -198,14 +232,20 @@ function renderQueue() {
     remove.className = 'secondary';
     remove.textContent = '빼기';
     remove.setAttribute('aria-label', (index + 1) + '번 예시 빼기');
-    remove.addEventListener('click', () => {
-      rows.splice(index, 1);
-      saveDraft();
-      renderQueue();
-      actions();
-      const next = field('queue').children[index] ?? field('queue').lastElementChild;
-      (next?.querySelector('button') ?? field('import')).focus();
-      feedback('import-feedback', '목록에서 대사를 뺐어요.');
+    remove.addEventListener('click', async () => {
+      const model = target();
+      remove.disabled = true;
+      busyWriting(1);
+      try {
+        await editDraft(model, (current) => current.filter((item) => item !== row));
+        if (target() !== model) return;
+        const next = field('queue').children[index] ?? field('queue').lastElementChild;
+        (next?.querySelector('button') ?? field('import')).focus();
+        feedback('import-feedback', '목록에서 대사를 뺐어요.');
+      } catch (error) {
+        remove.disabled = false;
+        feedback('import-feedback', error.message, true);
+      } finally { busyWriting(-1); }
     });
     content.append(context, reply);
     item.append(content, remove);
@@ -221,13 +261,7 @@ function verifyRows(rows) {
 
 function appendRows(model, rows) {
   verifyRows(rows);
-  if (drafts[model].length + rows.length > 5000) throw new Error('추가 학습 예시는 최대 5,000건까지 넣을 수 있어요.');
-  drafts[model].push(...rows);
-  saveDraft();
-  if (target() === model) {
-    renderQueue();
-    actions();
-  }
+  return editDraft(model, (current) => [...current, ...rows]);
 }
 
 function jobActive(job) {
@@ -240,7 +274,7 @@ function renderJob(job) {
     clearComparison();
   }
   lastJob = job;
-  field('start').disabled = sending || !state.numpy || jobActive(job);
+  field('start').disabled = sending || authoringWrites > 0 || !state.numpy || jobActive(job);
   field('stop').disabled = sending || !jobActive(job) || job.status === 'stopping';
   const title = job ? jobLabels[job.status] : '학습 대기';
   if (field('job-status').textContent !== title) text('job-status', title);
@@ -276,6 +310,11 @@ function updatePreset() {
 
 function clearComparison() {
   comparisonRevision++;
+  reviews?.show(null);
+  field('expected').replaceChildren();
+  const empty = document.createElement('li');
+  empty.textContent = '대사 비교하기를 누르면 확인할 수 있어요.';
+  field('expected').append(empty);
   text('before', '—');
   text('after', '—');
   feedback('compare-feedback');
@@ -315,6 +354,17 @@ async function refresh() {
 async function main() {
   await refresh();
   if (!state) return;
+  let notebook;
+  try {
+    notebook = await request('/api/notebook');
+    activityHints = notebook.activityHints;
+    editor = personalityEditor(request, notebook, busyWriting);
+    reviews = reviewPanel(request, contextLabel);
+  } catch {
+    connection('성격 설정을 열지 못했어요. PC 학습실을 다시 열어 주세요.');
+    field('start').disabled = true;
+    return;
+  }
   for (const [model, characters] of Object.entries(state.characters)) {
     for (const [id, name] of Object.entries(characters)) {
       const item = option(id, name);
@@ -324,6 +374,36 @@ async function main() {
   }
   field('scene').replaceChildren(...scenes.map((scene, i) => option(i, scene.label)), option('custom', '상황 직접 설정'));
   restoreDraft();
+  try {
+    for (const model of Object.keys(drafts)) {
+      const legacy = drafts[model];
+      const saved = notebook.drafts[model];
+      drafts[model] = saved?.rows ?? [];
+      draftRevisions[model] = saved?.revision ?? 0;
+      if (legacy.length) {
+        // Migrate each old tab once; keep intentional duplicates and rows already saved from other tabs.
+        const key = (row) => JSON.stringify(Object.entries(row).sort(([a], [b]) => a.localeCompare(b)));
+        const counts = new Map();
+        for (const row of drafts[model]) counts.set(key(row), (counts.get(key(row)) ?? 0) + 1);
+        const missing = legacy.filter((row) => {
+          const id = key(row);
+          const remaining = counts.get(id) ?? 0;
+          counts.set(id, remaining - 1);
+          return remaining <= 0;
+        });
+        if (missing.length) {
+          const rows = [...drafts[model], ...missing];
+          const result = await request('/api/drafts', { target: model, rows, revision: draftRevisions[model] });
+          draftRevisions[model] = result.revision;
+          drafts[model] = rows;
+        }
+      }
+    }
+  } catch (error) {
+    connection(error.message);
+    field('start').disabled = true;
+    return;
+  }
   changeCharacter();
   field('character').addEventListener('change', changeCharacter);
   field('scene').addEventListener('change', chooseScene);
@@ -346,11 +426,13 @@ async function main() {
     event.preventDefault();
     const model = target();
     const row = { ...conditions(), reply: value('reply'), meaning: value('meaning').trim() || 'user-added' };
+    if (value('style-trait')) row.styleTrait = value('style-trait');
     adding = true;
+    busyWriting(1);
     field('add').disabled = true;
     try {
       const example = await request('/api/example', { target: model, row });
-      appendRows(model, [example]);
+      await appendRows(model, [example]);
       if (target() === model && value('character') === row.characterId) {
         field('action').value = row.action;
         changeAction();
@@ -365,6 +447,7 @@ async function main() {
       feedback('examples-feedback', error.message, true);
     } finally {
       adding = false;
+      busyWriting(-1);
       field('add').disabled = quietGomi(conditions());
     }
   });
@@ -375,16 +458,18 @@ async function main() {
     if (!file) return;
     const model = target();
     field('import').disabled = true;
+    busyWriting(1);
     try {
       if (file.size > 2 * 1024 * 1024) throw new Error('2MB 이하의 JSONL 파일을 선택해 주세요.');
       const rows = await request('/api/import', { target: model, text: await file.text() });
-      appendRows(model, rows);
+      await appendRows(model, rows);
       if (target() === model) feedback('import-feedback', targetName[model] + '에 ' + rows.length + '건을 가져왔습니다.');
     } catch (error) {
       if (target() === model) feedback('import-feedback', error.message, true);
     } finally {
       field('file').value = '';
       field('import').disabled = false;
+      busyWriting(-1);
     }
   });
 
@@ -394,6 +479,7 @@ async function main() {
     if (path === '/api/start') text('job-status', '학습 요청 중');
     feedback('training-feedback');
     try {
+      if (path === '/api/start') await editor.save(Object.keys(state.characters[payload.target]));
       renderJob(await request(path, payload));
     } catch (error) {
       feedback('training-feedback', error.message, true);
@@ -409,7 +495,7 @@ async function main() {
       return;
     }
     updateJob('/api/start', {
-      target: target(), epochs: field('epochs').valueAsNumber, rows: currentDraft(),
+      target: target(), epochs: field('epochs').valueAsNumber, rows: [...currentDraft()],
     });
   });
   field('stop').addEventListener('click', () => updateJob('/api/stop', {}));
@@ -427,6 +513,13 @@ async function main() {
       if (revision === comparisonRevision) {
         text('before', comparisonText(result.standard));
         text('after', comparisonText(result.candidate));
+        const expected = result.expected?.length ? result.expected : ['이 조건으로 추가해 학습한 기대 대사가 없어요.'];
+        field('expected').replaceChildren(...expected.map((line) => {
+          const item = document.createElement('li');
+          item.textContent = line;
+          return item;
+        }));
+        reviews.show(result.review);
         feedback('compare-feedback');
       }
     } catch (error) {

@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import secrets
 import shutil
+import sqlite3
 import subprocess
 import sys
 import threading
@@ -17,6 +18,8 @@ from urllib.parse import urlsplit
 import uuid
 import webbrowser
 
+from personality import TRAITS, import_profile, suggested_traits, validate_profile
+from studio_notebook import Notebook
 from examples import is_quiet_gomi, normalize_example, parse_examples
 
 HERE = Path(__file__).resolve().parent
@@ -32,6 +35,30 @@ CHARACTERS = {
                if row['id'] in TRAINABLE and row['id'] != 'apple'},
     'dorongi': {'apple': next(row['defaultName'] for row in DEFINITIONS if row['id'] == 'apple')},
 }
+PERSONAS = {row['id']: ' · '.join(row.get('personality', {}).get('keywords', [])) + '\n' +
+            row.get('personality', {}).get('speechTone', '') for row in DEFINITIONS}
+
+DEFAULT_PROFILES = {key: validate_profile({'description': description, 'traits': suggested_traits(description)})
+                    for key, description in PERSONAS.items()}
+
+PORTRAITS = {}
+for character in PERSONAS:
+    directory = ROOT / 'public/characters/portraits'
+    pencil = directory / 'pencil' / f'{character}.webp'
+    image = pencil if pencil.is_file() else directory / 'current' / f'{character}.webp'
+    if character == 'gomi':
+        image = ROOT / 'public/characters/gomi/retreat-look-back.webp'
+    if image.is_file():
+        PORTRAITS[f'/portraits/{character}.webp'] = (image, 'image/webp')
+
+
+def character_id(payload):
+    character = payload.get('characterId')
+    if not isinstance(character, str) or not any(character in group for group in CHARACTERS.values()):
+        raise ValueError('캐릭터를 선택해 주세요.')
+    return character
+
+
 ACTION_LABELS = {key: value['label'] for key, value in json.loads(
     (ROOT / 'local-ai/actions.json').read_text(encoding='utf-8')).items()}
 ACTION_LABELS.update({
@@ -40,10 +67,24 @@ ACTION_LABELS.update({
     'first-love-farewell': '첫사랑 이야기 · 작별', 'straighten-hat': '갓 매만지기 (이전 행동)',
     'training': '훈련하기',
 })
+ACTIVITY_HINTS = {}
+SPECIAL_ACTIONS = {}
 for definition in DEFINITIONS:
-    for activity in definition.get('specialActivities', {}).values():
-        if 'scene' in activity:
-            ACTION_LABELS.setdefault(activity['scene']['id'], activity['label'])
+    character = definition['id']
+    hints = ACTIVITY_HINTS[character] = {}
+    actions = SPECIAL_ACTIONS[character] = set()
+    for base, activity in definition.get('specialActivities', {}).items():
+        scene = activity.get('scene')
+        if not scene:
+            continue
+        key = scene['id']
+        label = activity['label']
+        ACTION_LABELS.setdefault(key, label)
+        if key != 'first-love':  # The story button dispatches one of three chapter actions.
+            actions.add(key)
+        hints[base] = f'이 친구의 앱 버튼은 ‘{label}’예요. 지금 고른 기본 행동은 PC에서 시험할 수 있어요.'
+        if not scene.get('ai'):
+            hints[key] = '앱에서 이 행동은 미리 작성된 대사를 사용해요. 학습 결과는 PC에서 시험할 수 있어요.'
 
 
 def available_actions(target, filename):
@@ -53,8 +94,8 @@ def available_actions(target, filename):
         character, action, *_ = key.split('|')
         if character in actions:
             actions[character].add(action)
-    if target == 'dorongi':
-        actions['apple'].add('training')
+    for character in actions:
+        actions[character].update(SPECIAL_ACTIONS[character])
     return {character: sorted(ids, key=lambda name: (name != 'touch', name)) for character, ids in actions.items()}
 
 
@@ -91,7 +132,7 @@ class TrainingJobs:
         temporary.write_text(json.dumps(self.job, ensure_ascii=False), encoding='utf-8')
         temporary.replace(directory / 'job.json')
 
-    def start(self, target, epochs, rows):
+    def start(self, target, epochs, rows, profiles):
         model_filename(target)
         if type(epochs) is not int or not 1 <= epochs <= 500:
             raise ValueError('학습 반복 횟수는 1~500 사이의 정수로 입력해 주세요.')
@@ -109,6 +150,11 @@ class TrainingJobs:
             directory.mkdir(parents=True)
             command = [sys.executable, '-u', str(HERE / 'train.py'), '--epochs', str(epochs),
                        '--output-dir', str(directory)]
+            snapshot = directory / 'profiles.json'
+            selected = {key: profiles.get(key, DEFAULT_PROFILES[key]) for key in CHARACTERS[target]}
+            snapshot.write_text(json.dumps({key: {field: profile[field] for field in ('description', 'traits')}
+                                            for key, profile in selected.items()}, ensure_ascii=False, indent=2), encoding='utf-8')
+            command.extend(['--studio-profiles', str(snapshot)])
             if target == 'dorongi':
                 command.append('--dorongi')
             if rows:
@@ -206,7 +252,21 @@ def compare_line(target, row, candidate):
     try:
         result = subprocess.run(command, input=json.dumps(row, ensure_ascii=True), encoding='utf-8',
                                 capture_output=True, cwd=ROOT, timeout=20, check=True)
-        return json.loads(result.stdout)
+        comparison = json.loads(result.stdout)
+        comparison['expected'] = []
+        if candidate:
+            extras = candidate.parent / 'examples.jsonl'
+            if extras.is_file():
+                # Group exact imported affection values into the five visible levels.
+                def context(item):
+                    affection = item.get('affection', 45)
+                    level = sum(affection >= threshold for threshold in (20, 30, 60, 90))
+                    return (item['characterId'], item['action'], level, item.get('condition', 'normal'),
+                            item.get('sleeping', False), item.get('mood', 'calm'), min(2, item.get('energy', 3)))
+                scene = context(row)
+                rows = parse_examples(extras.read_text(encoding='utf-8'), CHARACTERS[target])
+                comparison['expected'] = list(dict.fromkeys(item['reply'] for item in rows if context(item) == scene))
+        return comparison
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         raise ValueError('대사 시험을 실행할 수 없습니다. Node.js와 모델 파일을 확인해 주세요.') from error
 
@@ -238,8 +298,11 @@ class StudioHandler(BaseHTTPRequestHandler):
             self.respond({'error': '로컬 학습 주소로 다시 열어 주세요.'}, HTTPStatus.FORBIDDEN)
             return
         assets = {
+            **PORTRAITS,
             '/': (WEB / 'index.html', 'text/html; charset=utf-8'),
             '/style.css': (WEB / 'style.css', 'text/css; charset=utf-8'),
+            '/notebook.js': (WEB / 'notebook.js', 'text/javascript; charset=utf-8'),
+            '/personality-example.txt': (WEB / 'personality-example.txt', 'text/plain; charset=utf-8'),
             '/studio.js': (WEB / 'studio.js', 'text/javascript; charset=utf-8'),
             '/gomi.webp': (ROOT / 'public/characters/gomi/retreat-look-back.webp', 'image/webp'),
         }
@@ -247,6 +310,9 @@ class StudioHandler(BaseHTTPRequestHandler):
         if path in assets:
             file, mime = assets[path]
             self.respond(file.read_bytes(), content_type=mime)
+        elif path == '/api/notebook':
+            self.respond({'profiles': self.server.notebook.profiles(), 'defaults': DEFAULT_PROFILES, 'traits': TRAITS, 'activityHints': ACTIVITY_HINTS,
+                          'drafts': self.server.notebook.drafts()})
         elif path == '/api/state':
             self.respond({'job': self.server.jobs.snapshot(), 'token': self.server.token,
                           'characters': CHARACTERS, 'labels': ACTION_LABELS, 'actions': self.server.actions,
@@ -273,12 +339,31 @@ class StudioHandler(BaseHTTPRequestHandler):
             if not isinstance(payload, dict):
                 raise ValueError('입력 형식을 확인해 주세요.')
             target = payload.get('target')
-            if self.path == '/api/stop':
+            if self.path == '/api/profile':
+                value = self.server.notebook.save_profile(character_id(payload), payload.get('profile'), payload.get('revision'))
+            elif self.path == '/api/drafts':
+                model_filename(target)
+                rows = payload.get('rows')
+                if not isinstance(rows, list) or len(rows) > 5000:
+                    raise ValueError('기대 대사는 최대 5,000개까지 저장할 수 있어요.')
+                rows = [normalize_example(row, CHARACTERS[target]) for row in rows]
+                if any(is_quiet_gomi(row) for row in rows):
+                    raise ValueError('평소 고미는 친밀도 4단계부터 말해요.')
+                value = self.server.notebook.save_draft(target, rows, payload.get('revision'))
+            elif self.path == '/api/profile-import':
+                value = import_profile(payload.get('filename'), payload.get('content'), payload.get('current'))
+                value['attachment'] = {'filename': payload['filename'], 'content': payload['content']}
+                value = validate_profile(value)
+            elif self.path == '/api/rating':
+                value = self.server.notebook.rate(payload.get('id'), payload.get('score'))
+            elif self.path == '/api/ratings':
+                value = self.server.notebook.history(character_id(payload))
+            elif self.path == '/api/stop':
                 value = self.server.jobs.stop()
             elif self.path == '/api/start':
                 if not self.server.numpy_ready:
                     raise ValueError('NumPy를 설치하고 학습 창을 다시 실행해 주세요.')
-                value = self.server.jobs.start(target, payload.get('epochs'), payload.get('rows'))
+                value = self.server.jobs.start(target, payload.get('epochs'), payload.get('rows'), self.server.notebook.profiles())
             elif self.path == '/api/import':
                 model_filename(target)
                 if not isinstance(payload.get('text'), str):
@@ -296,12 +381,15 @@ class StudioHandler(BaseHTTPRequestHandler):
                     candidate = self.server.jobs.result(target)
                 except ValueError:
                     candidate = None
-                value = compare_line(target, payload.get('row'), candidate)
+                row = normalize_example(payload.get('row'), CHARACTERS[target], with_reply=False)
+                value = compare_line(target, row, candidate)
+                if candidate and value['candidate']['status'] == 'ok':
+                    value['review'] = self.server.notebook.generated(candidate.parent.name, row, value['candidate']['line'])
             else:
                 self.respond({'error': '요청을 찾을 수 없습니다.'}, HTTPStatus.NOT_FOUND)
                 return
             self.respond(value)
-        except (OSError, ValueError) as error:
+        except (OSError, ValueError, sqlite3.Error) as error:
             self.respond({'error': str(error)}, HTTPStatus.BAD_REQUEST)
 
 
@@ -312,6 +400,7 @@ def main():
     with ThreadingHTTPServer(('127.0.0.1', 0), StudioHandler) as server:
         server.token = secrets.token_urlsafe(32)
         server.jobs = TrainingJobs(RUNS)
+        server.notebook = Notebook(RUNS)
         server.numpy_ready = subprocess.run([sys.executable, '-c', 'import numpy'], capture_output=True).returncode == 0
         server.actions = {
             target: available_actions(target, file)

@@ -17,28 +17,52 @@
   <main class="wrap">
     <section class="intro" aria-labelledby="title">
       <div>
-        <h1 id="title">대사 학습실</h1>
-        <p>어떤 순간에 어떤 말을 할지 캐릭터에게 알려 주세요.</p>
+        <h1 id="title">캐릭터 학습실</h1>
+        <p>성격과 기대 대사를 정하고, 학습한 친구가 어떻게 답하는지 확인하세요.</p>
       </div>
-      <img src="/gomi.webp" alt="" width="142" height="142">
+      <label class="field character-picker">캐릭터 <select id="character" required></select></label>
+      <img id="portrait" src="/gomi.webp" alt="" width="142" height="142">
     </section>
     <p id="connection" class="notice" role="status" hidden></p>
-    <div class="workspace">
+    <div class="workspace authoring">
+      <section class="panel" aria-labelledby="profile-title">
+        <div class="panel-heading"><h2 id="profile-title">캐릭터 성격</h2></div>
+        <div class="profile-body">
+          <label class="field">성격과 말투 참고 메모
+            <textarea id="profile-description" rows="3" maxlength="12000" placeholder="어떻게 말하는 친구인가요?"></textarea>
+          </label>
+          <div class="file-actions">
+            <button id="profile-import" class="secondary" type="button">성격 파일 불러오기</button>
+            <a href="/personality-example.txt" download="성격-예시.txt">예시 TXT 받기</a>
+            <input id="profile-file" type="file" accept=".txt,.md,.json" hidden>
+          </div>
+          <div id="attachment" hidden>첨부한 원본 · <a id="attachment-download" download></a>
+            <button id="attachment-remove" class="secondary" type="button">첨부 해제</button>
+          </div>
+          <p class="upload-hint muted">TXT · MD · JSON을 지원해요. 파일을 불러온 뒤 아래 수치를 조절할 수 있어요.</p>
+          <h3>기본 성격 강도</h3>
+          <p class="muted">1은 약하게, 10은 강하게 반영해요. 높은 항목이 드러나는 대사에 더 비중을 둬요.</p>
+          <div id="traits"></div>
+          <div class="profile-save"><button class="secondary" id="profile-save" type="button">성격 저장</button>
+            <span class="muted" id="profile-status" role="status"></span></div>
+        </div>
+      </section>
       <section class="panel" aria-labelledby="examples-title">
-        <div class="panel-heading"><h2 id="examples-title">대사 예시 만들기</h2></div>
+        <div class="panel-heading"><h2 id="examples-title">행동별 기대 대사</h2></div>
         <div class="editor">
           <form id="example-form">
             <div class="pair">
-              <label class="field">캐릭터 <select id="character" required></select></label>
-              <label class="field">함께할 행동 <select id="action" required></select></label>
+              <label class="field">사용자 행동 <select id="action" required></select></label>
+              <label class="field">친밀도 단계 <select id="relationship"></select></label>
             </div>
+            <p class="muted" id="activity-hint" hidden></p>
             <label id="custom-field" class="field" hidden>새 행동 코드
               <input id="custom" maxlength="48" placeholder="예: greeting" aria-describedby="action-hint">
               <small id="action-hint">영문 소문자로 시작하고 숫자와 붙임표(-)를 쓸 수 있어요.</small>
             </label>
             <div class="pair">
               <label class="field">어떤 상황인가요? <select id="scene"></select></label>
-              <label class="field">얼마나 친한가요? <select id="relationship"></select></label>
+              <label class="field">대사에 드러나는 성격 <select id="style-trait"><option value="">자동 판단</option></select></label>
             </div>
             <label id="affection-field" class="field" hidden>친한 정도 직접 입력 (0~100)
               <input id="affection" type="number" min="0" max="100" step="any" value="75" required>
@@ -65,9 +89,9 @@
                 </select>
               </label>
             </div>
-            <p id="quiet-hint" class="notice" role="status" hidden>이때 고미는 말없이 반응해요. 말하는 예시를 넣으려면 ‘가까운 사이’나 ‘아주 친한 사이’를 골라 주세요.</p>
-            <label class="field reply">캐릭터가 할 말
-              <textarea id="reply" maxlength="100" rows="2" aria-describedby="reply-hint count" placeholder="이 순간에 캐릭터가 할 말을 적어 주세요."></textarea>
+            <p id="quiet-hint" class="notice" role="status" hidden>이때 고미는 말없이 반응해요. 말하는 예시를 넣으려면 친밀도를 4단계 이상으로 골라 주세요.</p>
+            <label class="field reply">기대 대사
+              <textarea id="reply" maxlength="100" rows="2" aria-describedby="reply-hint count" placeholder="예: 간식이야? 잠깐만, 나도 갈게."></textarea>
             </label>
             <div class="reply-hints"><span id="reply-hint">한 줄에 4~50자, 두 문장까지</span><span id="count">0 / 50자</span></div>
             <details id="meaning-details">
@@ -77,7 +101,7 @@
                 <small id="meaning-hint">같은 상황에서 간식을 먹는 말과 거절하는 말을 따로 가르칠 때 써요. 영문 소문자로 시작하고 숫자와 붙임표(-)를 쓸 수 있어요.</small>
               </label>
             </details>
-            <button id="add" type="submit" class="secondary add">대사 목록에 추가</button>
+            <button id="add" type="submit" class="secondary add">기대 대사 추가</button>
           </form>
           <p id="examples-feedback" class="feedback" role="status"></p>
         </div>
@@ -92,6 +116,8 @@
           <ul id="queue" aria-labelledby="queue-heading"></ul>
         </div>
       </section>
+    </div>
+    <div class="workspace evaluation">
       <section class="panel training" aria-labelledby="training-title">
         <div class="panel-heading"><div>
           <h2 id="training-title">예시로 학습하기</h2>
@@ -108,7 +134,7 @@
               <input id="epochs" type="number" min="1" max="500" value="180" required>
             </label>
           </details>
-          <p id="pending-reply" class="notice" hidden>작성 중인 말도 학습하려면 먼저 ‘대사 목록에 추가’를 눌러 주세요.</p>
+          <p id="pending-reply" class="notice" hidden>작성 중인 말도 학습하려면 먼저 ‘기대 대사 추가’를 눌러 주세요.</p>
           <div class="job-actions">
             <button type="button" id="start" class="primary" disabled>학습 시작</button>
             <button type="button" id="stop" class="secondary" disabled>학습 중지</button>
@@ -131,23 +157,30 @@
             </details>
           </div>
           <div id="result" class="result" hidden>
-            <a id="download" class="secondary" download>학습 결과 파일 받기</a>
+            <a id="download" class="secondary" download>모바일 앱용 모델 받기</a>
             <details><summary>PC에 저장된 위치</summary><p id="result-dir" class="muted inset"></p></details>
           </div>
         </div>
       </section>
-    </div>
     <section class="panel compare" aria-labelledby="compare-title">
       <div class="panel-heading">
-        <div><h2 id="compare-title">학습 전후 대사 비교</h2><p id="compare-context"></p></div>
+        <div><h2 id="compare-title">학습 결과 평가</h2><p id="compare-context"></p></div>
         <button type="button" id="compare" class="secondary">대사 비교하기</button>
       </div>
       <div class="comparison" aria-live="polite">
+        <div class="expected"><h3>학습에 넣은 기대 대사</h3><ul id="expected"><li>—</li></ul></div>
         <div><h3>학습 전</h3><p id="before">—</p></div>
         <div><h3>최근 학습 후</h3><p id="after">—</p></div>
       </div>
+      <div id="review" hidden>
+        <h3>생성된 대사가 마음에 드나요?</h3>
+        <div id="rating-options" role="group" aria-label="생성 대사 평점"></div>
+      </div>
+      <p id="rating-feedback" class="feedback" role="status"></p>
+      <details id="rating-history"><summary>이 캐릭터의 최근 평가</summary><ol id="ratings"></ol></details>
       <p id="compare-feedback" class="feedback" role="status"></p>
     </section>
+    </div>
   </main>
 </body>
 </html>

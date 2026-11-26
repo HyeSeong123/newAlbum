@@ -24,7 +24,7 @@ class OwnWordNet:
         self.second={name:np.zeros_like(value) for name,value in self.params.items()}
         self.steps=0
 
-    def loss_and_gradients(self,x,features,targets):
+    def loss_and_gradients(self,x,features,targets,sample_weights=None):
         p=self.params;n=len(x);count=features.shape[1]
         indicator=np.zeros((n,self.feature_count),np.float32)
         np.add.at(indicator,(np.arange(n)[:,None],features),1)
@@ -34,9 +34,10 @@ class OwnWordNet:
         scores-=scores.max(axis=1,keepdims=True)
         probabilities=np.exp(scores)
         probabilities/=probabilities.sum(axis=1,keepdims=True)
-        loss=float(-np.log(np.maximum(probabilities[np.arange(n),targets],1e-30)).mean())
+        losses=-np.log(np.maximum(probabilities[np.arange(n),targets],1e-30))
+        loss=float(np.average(losses, weights=sample_weights))
         probabilities[np.arange(n),targets]-=1
-        delta=probabilities/n
+        delta=probabilities/n if sample_weights is None else probabilities*(sample_weights/sample_weights.sum())[:,None]
         dh=(delta@p['output.weight'])*(1-hidden*hidden)
         dx=dh@p['hidden.weight']
         embedding=p['tokens.weight'].shape[1]
