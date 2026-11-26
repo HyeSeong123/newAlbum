@@ -16,14 +16,14 @@ def normalize_example(row, characters, *, with_reply=True):
         raise ValueError('학습 대상에 포함된 캐릭터를 선택해 주세요.')
     action = row.get('action', '')
     if not isinstance(action, str) or not ACTION_ID.fullmatch(action):
-        raise ValueError('행동 ID는 영문 소문자로 시작하고 소문자·숫자·하이픈을 최대 48자까지 사용할 수 있습니다.')
+        raise ValueError('새 행동 코드(action)는 영문 소문자로 시작하고 소문자·숫자·하이픈을 최대 48자까지 사용할 수 있습니다.')
     normalized = {'characterId': row['characterId'], 'action': action, 'affection': 45,
                   'mood': 'calm', 'energy': 3, 'sleeping': False, 'condition': 'normal'}
     normalized.update({key: row[key] for key in normalized if key in row})
     if type(normalized['affection']) not in (int, float) or not 0 <= normalized['affection'] <= 100:
-        raise ValueError('친밀도는 0~100 사이의 숫자를 입력해 주세요.')
+        raise ValueError('친한 정도(affection)는 0~100 사이의 숫자로 입력해 주세요.')
     if type(normalized['energy']) is not int or not 0 <= normalized['energy'] <= 5:
-        raise ValueError('활력은 0~5 사이의 정수를 입력해 주세요.')
+        raise ValueError('피곤한 정도(energy)는 0~5 사이의 정수로 입력해 주세요. 0은 몹시 지침, 1은 졸림이에요.')
     if not isinstance(normalized['sleeping'], bool):
         raise ValueError('수면 여부는 true 또는 false여야 합니다.')
     if normalized['mood'] not in MOODS or normalized['condition'] not in CONDITIONS:
@@ -35,7 +35,7 @@ def normalize_example(row, characters, *, with_reply=True):
             raise ValueError('대사를 줄바꿈 없이 4~50자, 최대 두 문장으로 입력해 주세요. 꺾쇠와 괄호 기호 < > { } [ ]는 사용할 수 없습니다.')
         meaning = row.get('meaning', 'user-added')
         if not isinstance(meaning, str) or not MEANING_ID.fullmatch(meaning):
-            raise ValueError('대사 의도 ID는 영문 소문자로 시작하고 소문자·숫자·하이픈을 최대 64자까지 사용할 수 있습니다.')
+            raise ValueError('대사 묶음 이름(meaning)은 영문 소문자로 시작하고 소문자·숫자·하이픈을 최대 64자까지 사용할 수 있습니다.')
         normalized.update(reply=reply.strip(), meaning=meaning)
     return normalized
 
